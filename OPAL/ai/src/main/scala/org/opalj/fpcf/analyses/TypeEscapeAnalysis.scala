@@ -39,16 +39,13 @@ import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.ArgEscape
-import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.MaybeArgEscape
-import org.opalj.fpcf.properties.MaybeMethodEscape
-import org.opalj.fpcf.properties.MethodEscape
+import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.TypeEscapeProperty
 import org.opalj.fpcf.properties.GlobalType
 import org.opalj.fpcf.properties.PackageLocalType
 import org.opalj.fpcf.properties.MaybePackageLocalType
+import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.log.GlobalLogContext
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
@@ -73,14 +70,11 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                 for (allocation ← allocations) {
                     val escapeState = propertyStore(allocation, EscapeProperty.key)
                     escapeState match {
-                        case EP(_, NoEscape | ArgEscape) ⇒
-                        case EP(_, MaybeNoEscape | MaybeArgEscape) ⇒
+                        case EP(_, NoEscape | EscapeInCallee) ⇒
+                        case EP(_, MaybeNoEscape | MaybeEscapeInCallee) ⇒
                             maybeLocal = true
                         // /dependees += escapeState
-                        case EP(_, _: GlobalEscape)   ⇒ return ImmediateResult(cf, GlobalType)
-                        case EP(_, _: MethodEscape)   ⇒ return ImmediateResult(cf, GlobalType)
-                        case EP(_, MaybeMethodEscape) ⇒ return ImmediateResult(cf, GlobalType)
-                        case EP(_, x)                 ⇒ throw new RuntimeException(s"Unknown type ${x}")
+                        case EP(_, _)   ⇒ return ImmediateResult(cf, GlobalType)
                         case epk ⇒
                             throw new RuntimeException("Escape information should be present")
                         //dependees += epk

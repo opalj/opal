@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyKey.SomeEPKs
 
 import scala.annotation.switch
@@ -41,7 +40,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 
 }
 
-/**
+/*
  * Specifies the lifetime of object instance. This is classically used for compiler optimizations
  * such as scalar replacement, stack allocation or removal of synchronization.
  * However, other usages such as finding bugs, identifying pure methods or helping to
@@ -64,10 +63,10 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * method M' != M that can access O (at least when disregarding reflection and native code).
  * Objects with this property can be allocated at the stack or even scalar-replaced [2].
  *
- * An object instance O created in method M and thread T has the property [[ArgEscape]], if it holds
+ * An object instance O created in method M and thread T has the property [[EscapeInCallee]], if it holds
  * !Escapes(O, M) but M passes O as a parameter to a method which does not let O escape. This
  * implies that only M and methods M' that are (transitively) called by M have access to O.
- * For objects that have the property [[ArgEscape]] no synchronization is needed and they can
+ * For objects that have the property [[EscapeInCallee]] no synchronization is needed and they can
  * be allocated on the stack.
  * Note that Kotzmann and Mössenböck [2] denotes the exact same property as MethodEscape, which is
  * not the same property as [[MethodEscape]].
@@ -93,11 +92,11 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * called `lessOrEqualRestrictive` and describes the restrictiveness of the scope in, which objects
  * exists. The most restrictive (top) value is [[NoEscape]] and the least restrictive (bottom) one
  * is [[GlobalEscape]]. We have [[GlobalEscape]] is less restrictive than [[MethodEscape]] is less
- * restrictive than [[ArgEscape]] is less restrictive than [[NoEscape]]. Furthermore [[GlobalEscape]]
+ * restrictive than [[EscapeInCallee]] is less restrictive than [[NoEscape]]. Furthermore [[GlobalEscape]]
  * is less restrictive than [[MaybeMethodEscape]] is less restrictive than [[MaybeArgEscape]] is
  * less restrictive than [[MaybeNoEscape]] is less restrictive than [[NoEscape]]. Finally
- * [[MaybeArgEscape]] is less restrictive than [[ArgEscape]] and [[MaybeMethodEscape]] is less
- * restrictive than [[MethodEscape]]. The properties [[MaybeNoEscape]] and [[ArgEscape]] as well as
+ * [[MaybeArgEscape]] is less restrictive than [[EscapeInCallee]] and [[MaybeMethodEscape]] is less
+ * restrictive than [[MethodEscape]]. The properties [[MaybeNoEscape]] and [[EscapeInCallee]] as well as
  * [[MaybeArgEscape]] and [[MethodEscape]] are incomparable.
  * A dot graph of the lattice can be found under br/src/main/resources/org/opalj/fpcf/properties.
  *
@@ -105,10 +104,10 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
  * If they simply don't know the actual property they should use [[MaybeNoEscape]].
- * If we know that the actual property is at most [[ArgEscape]] (i.e. not [[NoEscape]],
+ * If we know that the actual property is at most [[EscapeInCallee]] (i.e. not [[NoEscape]],
  * [[MaybeArgEscape]] should be used.
  * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
- * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[ArgEscape]].
+ * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
@@ -122,7 +121,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * Compilation and Deoptimization.” In Proceedings of the 1st ACM/USENIX International Conference
  * on Virtual Execution Environments, 111–120. VEE ’05. New York, NY, USA: ACM, 2005.
  *
- * @param  level The escape level; the higher the value the more restricted can the usage of the
+ * TODO param level The escape level; the higher the value the more restricted can the usage of the
  *         respective value be.
  *         E.g., a client might only interested in objects that do not escape. In this case he
  *         reject all objects whose escape level is smaller than the escape level of [[NoEscape]].
@@ -132,9 +131,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  *
  * @author Florian Kuebler
  */
-sealed abstract class EscapeProperty(
-        final val level: Int
-) extends OrderedProperty with ExplicitlyNamedProperty with EscapePropertyMetaInformation {
+sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyNamedProperty with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -171,11 +168,23 @@ sealed abstract class EscapeProperty(
      * @return the most restrictive escape that is less or equal restrictive than `this` and `that`.
      * @see [[EscapeProperty.lessOrEqualRestrictive]]
      */
-    def meet(that: EscapeProperty): EscapeProperty
+    def meet(that: EscapeProperty): EscapeProperty = (that.propertyValueID: @switch) match {
+        case NoEscape.PID     ⇒ this
+        case GlobalEscape.PID ⇒ GlobalEscape
+        case _                ⇒ EscapeProperty(flags | that.flags)
+    }
 
     def isBottom: Boolean
 
     def isTop: Boolean
+
+    val flags: Int
+
+    final val isInCallee: Boolean = (flags & EscapeProperty.IN_CALLEE) != 0
+    final val viaParameter: Boolean = (flags & EscapeProperty.VIA_PARAMETER) != 0
+    final val viaReturn: Boolean = (flags & EscapeProperty.VIA_RETURN) != 0
+    final val viaAbnormalReturn: Boolean = (flags & EscapeProperty.VIA_ABNORMAL_RETURN) != 0
+    final val maybe: Boolean = (flags & EscapeProperty.MAYBE) != 0
 
 }
 
@@ -205,6 +214,39 @@ object EscapeProperty extends EscapePropertyMetaInformation {
         // cycle-resolution strategy
         cycleResolutionStrategy _
     )
+
+    final val EMPTY_FLAGS = 0x0
+    final val IN_CALLEE = 0x1
+    final val VIA_PARAMETER = 0x2
+    final val VIA_ABNORMAL_RETURN = 0x4
+    final val VIA_RETURN = 0x8
+    final val GLOBAL = 0x10
+    final val MAYBE = 0x20
+
+    def apply(flags: Int): EscapeProperty = {
+        (flags: @switch) match {
+            case NoEscape.flags                                          ⇒ NoEscape
+            case EscapeInCallee.flags                                    ⇒ EscapeInCallee
+            case EscapeViaParameter.flags                                ⇒ EscapeViaParameter
+            case EscapeViaAbnormalReturn.flags                           ⇒ EscapeViaAbnormalReturn
+            case EscapeViaReturn.flags                                   ⇒ EscapeViaReturn
+            case EscapeViaParameterAndAbnormalReturn.flags               ⇒ EscapeViaParameterAndAbnormalReturn
+            case EscapeViaParameterAndReturn.flags                       ⇒ EscapeViaParameterAndReturn
+            case EscapeViaNormalAndAbnormalReturn.flags                  ⇒ EscapeViaNormalAndAbnormalReturn
+            case EscapeViaParameterAndNormalAndAbnormalReturn.flags      ⇒ EscapeViaParameterAndNormalAndAbnormalReturn
+            case MaybeNoEscape.flags                                     ⇒ MaybeNoEscape
+            case MaybeEscapeInCallee.flags                               ⇒ MaybeEscapeInCallee
+            case MaybeEscapeViaParameter.flags                           ⇒ MaybeEscapeViaParameter
+            case MaybeEscapeViaAbnormalReturn.flags                      ⇒ MaybeEscapeViaAbnormalReturn
+            case MaybeEscapeViaReturn.flags                              ⇒ MaybeEscapeViaReturn
+            case MaybeEscapeViaParameterAndAbnormalReturn.flags          ⇒ MaybeEscapeViaParameterAndAbnormalReturn
+            case MaybeEscapeViaParameterAndReturn.flags                  ⇒ MaybeEscapeViaParameterAndReturn
+            case MaybeEscapeViaNormalAndAbnormalReturn.flags             ⇒ MaybeEscapeViaNormalAndAbnormalReturn
+            case MaybeEscapeViaParameterAndNormalAndAbnormalReturn.flags ⇒ MaybeEscapeViaParameterAndNormalAndAbnormalReturn
+            case GlobalEscape.flags                                      ⇒ GlobalEscape
+
+        }
+    }
 }
 
 /**
@@ -213,7 +255,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
  *
  * @see [[EscapeProperty]] for further details.
  */
-case object NoEscape extends EscapeProperty(3) {
+case object NoEscape extends EscapeProperty {
 
     final val isRefineable = false
 
@@ -225,12 +267,13 @@ case object NoEscape extends EscapeProperty(3) {
 
     override def meet(that: EscapeProperty): EscapeProperty = that
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        this.propertyValueID == that.propertyValueID
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
 
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = true
+
+    final val flags = EscapeProperty.EMPTY_FLAGS
 }
 
 /**
@@ -253,40 +296,359 @@ case object NoEscape extends EscapeProperty(3) {
  *  }
  * }
  * }}}
- * An analysis is only expected to return [[ArgEscape]] for the object o
+ * An analysis is only expected to return [[EscapeInCallee]] for the object o
  * instantiated in foo, if the analyses knows(!) that no subclass of X overrides bar s.t. it let
  * its parameter escape.
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
-case object ArgEscape extends EscapeProperty(2) {
+case object EscapeInCallee extends EscapeProperty {
     final val isRefineable = false
 
     final val PID = 1
 
     override def propertyValueID: PropertyKeyID = PID
 
-    override def propertyName: String = "Arg"
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID      ⇒ ArgEscape
-            case MaybeNoEscape.PID ⇒ MaybeArgEscape
-            case _                 ⇒ that
-        }
+    override def propertyName: String = "InCallee"
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID  ⇒ true
-            case ArgEscape.PID ⇒ true
-            case _             ⇒ false
-        }
+        that.propertyValueID == PID || !that.isInCallee
 
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.IN_CALLEE
 }
 
+case object EscapeViaParameter extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 2
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaParameter"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaParameter
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER
+}
+
+case object EscapeViaReturn extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 3
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN
+}
+
+case object EscapeViaAbnormalReturn extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 4
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object EscapeViaParameterAndReturn extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 5
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaParameterAndReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaParameter || !that.viaReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags =
+        EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
+}
+
+case object EscapeViaParameterAndAbnormalReturn extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 6
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaParameterAndAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaParameter || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags =
+        EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object EscapeViaNormalAndAbnormalReturn extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 7
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaNormalAndAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaReturn || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.VIA_RETURN
+}
+
+case object EscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 8
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaParameterAndNormalAndAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.viaParameter || !that.viaReturn || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object MaybeNoEscape extends EscapeProperty {
+
+    final val isRefineable = true
+
+    final val PID = 9
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeNo"
+
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = true
+
+    final val flags = EscapeProperty.MAYBE
+}
+
+case object MaybeEscapeInCallee extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 10
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeInCallee"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.isInCallee
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE
+}
+
+case object MaybeEscapeViaParameter extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 11
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeViaParameter"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaParameter
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER
+}
+
+case object MaybeEscapeViaReturn extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 12
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeViaReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN
+}
+
+case object MaybeEscapeViaAbnormalReturn extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 13
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeViaAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object MaybeEscapeViaParameterAndReturn extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 14
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeViaParameterAndReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaParameter || !that.viaReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
+}
+
+case object MaybeEscapeViaParameterAndAbnormalReturn extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 15
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeViaParameterAndAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaParameter || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object MaybeEscapeViaNormalAndAbnormalReturn extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 16
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaNormalAndAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaAbnormalReturn || !that.viaReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object MaybeEscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProperty {
+    final val isRefineable = true
+
+    final val PID = 17
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "MaybeViaParameterAndNormalAndAbnormalReturn"
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+        that.propertyValueID == PID || !that.maybe || !that.viaParameter || !that.viaReturn || !that.viaAbnormalReturn
+
+    override def isBottom: Boolean = false
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
+}
+
+case object GlobalEscape extends EscapeProperty {
+    final val isRefineable = false
+
+    final val PID = 18
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "Global"
+
+    override def meet(that: EscapeProperty): EscapeProperty = this
+
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
+
+    override def isBottom: Boolean = true
+
+    override def isTop: Boolean = false
+
+    final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.GLOBAL
+}
+
+/*
 /**
  * The object escapes the method M in which it was created directly via the return of M or
  * indirectly via an assignment to a field of the return value or a parameter of M.
@@ -301,14 +663,14 @@ sealed abstract class MethodEscape extends EscapeProperty(1) {
 
     override def meet(that: EscapeProperty): EscapeProperty =
         (that.propertyValueID: @switch) match {
-            case NoEscape.PID | ArgEscape.PID           ⇒ this
+            case NoEscape.PID | EscapeInCallee.PID           ⇒ this
             case MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ MaybeMethodEscape
             case _                                      ⇒ that
         }
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
-            case NoEscape.PID | ArgEscape.PID           ⇒ true
+            case NoEscape.PID | EscapeInCallee.PID           ⇒ true
             case MethodEscapeViaReturn.PID              ⇒ true
             case MethodEscapeViaReturnAssignment.PID    ⇒ true
             case MethodEscapeViaParameterAssignment.PID ⇒ true
@@ -428,7 +790,7 @@ case object MaybeNoEscape extends EscapeProperty(3) {
     override def meet(that: EscapeProperty): EscapeProperty =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID                           ⇒ MaybeNoEscape
-            case ArgEscape.PID                          ⇒ MaybeArgEscape
+            case EscapeInCallee.PID                          ⇒ MaybeArgEscape
             case MethodEscapeViaReturn.PID              ⇒ MaybeMethodEscape
             case MethodEscapeViaReturnAssignment.PID    ⇒ MaybeMethodEscape
             case MethodEscapeViaParameterAssignment.PID ⇒ MaybeMethodEscape
@@ -448,7 +810,7 @@ case object MaybeNoEscape extends EscapeProperty(3) {
 
 /**
  * Used when the respective object instance definitively escapes, but the final –
- * not yet available – escape level may just be [[ArgEscape]].
+ * not yet available – escape level may just be [[EscapeInCallee]].
  *
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
@@ -465,7 +827,7 @@ case object MaybeArgEscape extends EscapeProperty(2) {
 
     override def meet(that: EscapeProperty): EscapeProperty =
         (that.propertyValueID: @switch) match {
-            case NoEscape.PID | ArgEscape.PID | MaybeNoEscape.PID ⇒ MaybeArgEscape
+            case NoEscape.PID | EscapeInCallee.PID | MaybeNoEscape.PID ⇒ MaybeArgEscape
             case MethodEscapeViaReturn.PID                        ⇒ MaybeMethodEscape
             case MethodEscapeViaReturnAssignment.PID              ⇒ MaybeMethodEscape
             case MethodEscapeViaParameterAssignment.PID           ⇒ MaybeMethodEscape
@@ -474,7 +836,7 @@ case object MaybeArgEscape extends EscapeProperty(2) {
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
-            case NoEscape.PID | ArgEscape.PID | MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ true
+            case NoEscape.PID | EscapeInCallee.PID | MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ true
             case _ ⇒ false
         }
 
@@ -485,7 +847,7 @@ case object MaybeArgEscape extends EscapeProperty(2) {
 
 /**
  * Used, when we know that the respective object instance definitively escapes via an argument
- * ([[ArgEscape]]), but it is still possible that the value only escapes via the method
+ * ([[EscapeInCallee]]), but it is still possible that the value only escapes via the method
  * (and not globally); however, the analysis is not yet conclusive.
  *
  * @see [[EscapeProperty]] for further details.
@@ -527,7 +889,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  * This property should be used if and only if the analysis is conclusive and could determine
  * that the value definitively escapes globally.
  * If a more advanced analysis – potentially run later – could identify an object
- * as only [[MethodEscape]], [[ArgEscape]] or even [[NoEscape]] then the refineable property
+ * as only [[MethodEscape]], [[EscapeInCallee]] or even [[NoEscape]] then the refineable property
  * [[MaybeNoEscape]] should be used.
  *
  * @example
@@ -551,7 +913,6 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  * However, from a pure technical point-of-view it may be useful/necessary to use
  * [[GlobalEscape]] at some point to let depending computations know that no more
  * changes will happen and therefore the dependencies can be deleted.
- *
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
@@ -616,3 +977,4 @@ case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape {
     override def propertyValueID: PropertyKeyID = PID
     override def propertyName: String = "ViaHeapObject"
 }
+*/

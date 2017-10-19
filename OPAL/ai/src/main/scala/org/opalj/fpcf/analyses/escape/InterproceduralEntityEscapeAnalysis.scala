@@ -45,14 +45,11 @@ import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.tac.Expr
-import org.opalj.fpcf.properties.MaybeArgEscape
 import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.ArgEscape
-import org.opalj.fpcf.properties.MaybeMethodEscape
-import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.MaybeNoEscape
+import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.MethodEscape
+import org.opalj.fpcf.properties.MaybeEscapeInCallee
+import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.Parameters
@@ -167,7 +164,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                 // todo throw new NullPointerException()
             }
         } else if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo) {
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
         } else {
             //TODO
             val packageName = m.classFile.thisType.packageName
@@ -200,30 +197,30 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                     ((method.classFile.thisType eq ObjectType.VarHandle) ||
                         (method.classFile.thisType eq ObjectType.MethodHandle))) {
                     //IMPROVE
-                    calcMostRestrictive(MaybeArgEscape)
+                    calcMostRestrictive(MaybeEscapeInCallee)
                 } else {
                     val fps = propertyStore.context[FormalParameters]
                     val fp = fps(method)(param)
                     if (fp != e) {
                         val escapeState = propertyStore(fp, EscapeProperty.key)
                         escapeState match {
-                            case EP(_, NoEscape | ArgEscape) ⇒ calcMostRestrictive(ArgEscape)
-                            case EP(_, state: GlobalEscape)  ⇒ calcMostRestrictive(state)
-                            case EP(_, _: MethodEscape)      ⇒ calcMostRestrictive(MaybeArgEscape) //TODO
-                            case EP(_, MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape) ⇒
-                                dependees += escapeState
-                                calcMostRestrictive(ArgEscape)
+                            case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
+                            case EP(_, GlobalEscape)  ⇒ calcMostRestrictive(GlobalEscape)
+                            //case EP(_, _: MethodEscape)      ⇒ calcMostRestrictive(MaybeArgEscape) //TODO
+                            //case EP(_, MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape) ⇒
+                            //    dependees += escapeState
+                            //    calcMostRestrictive(EscapeInCallee)
                             case EP(_, _) ⇒
                                 throw new RuntimeException("not yet implemented")
                             // result not yet finished
                             case epk ⇒
                                 dependees += epk
-                                calcMostRestrictive(ArgEscape)
+                                calcMostRestrictive(EscapeInCallee)
                         }
                     }
                 }
             }
-            case _ ⇒ calcMostRestrictive(MaybeArgEscape)
+            case _ ⇒ calcMostRestrictive(MaybeEscapeInCallee)
         }
     }
 }

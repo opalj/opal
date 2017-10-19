@@ -43,15 +43,13 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.EmptyIntArraySet
 import org.opalj.fpcf.properties.MaybeNoEscape
+import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.MaybeArgEscape
-import org.opalj.fpcf.properties.MaybeMethodEscape
+import org.opalj.fpcf.properties.MaybeEscapeViaParameter
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.GlobalEscapeViaHeapObjectAssignment
-import org.opalj.fpcf.properties.ArgEscape
-import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
-import org.opalj.fpcf.properties.MethodEscapeViaReturn
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -94,7 +92,7 @@ class SimpleEntityEscapeAnalysis(
 /**
  * Handling for exceptions, that are allocated within the current method.
  * Only if the throw stmt leads to an abnormal return in the cfg, the escape state is decreased
- * down to [[org.opalj.fpcf.properties.MethodEscapeViaReturn]]. Otherwise (the exception is caught)
+ * down to [[org.opalj.fpcf.properties.EscapeViaAbnormalReturn]]. Otherwise (the exception is caught)
  * the escape state remains the same.
  */
 trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
@@ -104,7 +102,7 @@ trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
             val successors = cfg.bb(index).successors
             for (pc ← successors) {
                 if (pc.isAbnormalReturnExitNode) {
-                    calcMostRestrictive(MethodEscapeViaReturn)
+                    calcMostRestrictive(EscapeViaAbnormalReturn)
                 }
             }
         }
@@ -168,7 +166,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         /* if the base object came from a static field, the value assigned to it
                          escapes globally */
                         case Assignment(_, _, GetStatic(_, _, _, _)) ⇒
-                            calcMostRestrictive(GlobalEscapeViaHeapObjectAssignment)
+                            calcMostRestrictive(GlobalEscape) //TODO
                         case Assignment(_, _, GetField(_, _, _, _, objRef)) ⇒
                             objRef.asVar.definedBy foreach { x ⇒
                                 if (!seen.contains(x)) worklist = worklist + x
@@ -185,7 +183,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
 
                 } else if (referenceDefSite >= ai.VMLevelValuesOriginOffset) {
                     // assigned to field of parameter
-                    calcMostRestrictive(MaybeMethodEscape)
+                    calcMostRestrictive(MaybeEscapeViaParameter)
                     /* As may alias information are not easily available we cannot simply use
                     the code below:
                     val formalParameters = propertyStore.context[FormalParameters]
@@ -215,7 +213,7 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
      * constructor or escapes. Is this the case, leastRestrictiveProperty will be set to the lower bound
      * of the current value and the calculated escape state.
      *
-     * For non constructor calls, [[org.opalj.fpcf.properties.MaybeArgEscape]] of e will be returned
+     * For non constructor calls, [[org.opalj.fpcf.properties.MaybeEscapeInCallee]] of e will be returned
      * whenever the receiver or a parameter is a use of defSite.
      */
     override protected def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit = {
@@ -250,12 +248,12 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                         val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                         escapeState match {
                             case EP(_, NoEscape)            ⇒ //NOTHING TO DO
-                            case EP(_, state: GlobalEscape) ⇒ calcMostRestrictive(state)
-                            case EP(_, ArgEscape)           ⇒ calcMostRestrictive(ArgEscape)
-                            case EP(_, MethodEscapeViaParameterAssignment) ⇒
-                                calcMostRestrictive(MaybeNoEscape)
-                            case EP(_, MaybeArgEscape | MaybeMethodEscape | MaybeNoEscape) ⇒
-                                dependees += escapeState
+                            case EP(_, GlobalEscape) ⇒ calcMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeInCallee)           ⇒ calcMostRestrictive(EscapeInCallee)
+                            //case EP(_, MethodEscapeViaParameterAssignment) ⇒
+                            //    calcMostRestrictive(MaybeNoEscape)
+                            //case EP(_, MaybeArgEscape | MaybeMethodEscape | MaybeNoEscape) ⇒
+                            //    dependees += escapeState
                             case EP(_, _) ⇒
                                 // init methods are void, so there can't be other forms of
                                 // method escapes
@@ -270,7 +268,7 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
 
     protected def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     protected def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {

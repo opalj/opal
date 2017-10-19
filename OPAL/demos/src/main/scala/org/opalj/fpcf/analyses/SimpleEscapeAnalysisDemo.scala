@@ -31,26 +31,14 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.properties.MaybeArgEscape
 import java.net.URL
 
-import org.opalj.fpcf.properties.GlobalEscapeViaStaticFieldAssignment
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.fpcf.properties.ArgEscape
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.FormalParameter
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.br.AllocationSite
-import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.properties.MaybeMethodEscape
-import org.opalj.fpcf.properties.GlobalEscapeViaHeapObjectAssignment
-import org.opalj.fpcf.properties.MethodEscapeViaReturn
-import org.opalj.fpcf.properties.MethodEscapeViaReturnAssignment
-import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
@@ -95,12 +83,12 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
-        val staticEscapes = propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
+        /*val staticEscapes = propertyStore.entities(GlobalEscapeViaStaticFieldAssignment)
         val heapEscapes = propertyStore.entities(GlobalEscapeViaHeapObjectAssignment)
         val maybeNoEscape = propertyStore.entities(MaybeNoEscape)
         val maybeArgEscape = propertyStore.entities(MaybeArgEscape)
         val maybeMethodEscape = propertyStore.entities(MaybeMethodEscape)
-        val argEscapes = propertyStore.entities(ArgEscape)
+        val argEscapes = propertyStore.entities(EscapeInCallee)
         val returnEscapes = propertyStore.entities(MethodEscapeViaReturn)
         val returnAssignmentEscapes = propertyStore.entities(MethodEscapeViaReturnAssignment)
         val parameterEscapes = propertyStore.entities(MethodEscapeViaParameterAssignment)
@@ -132,8 +120,8 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
              |# of maybe no escaping objects: ${countFP(maybeNoEscape)}
              |# of maybe arg escaping objects: ${countFP(maybeArgEscape)}
              |# of maybe method escaping objects: ${countFP(maybeMethodEscape)}"""
-
-        BasicReport(message.stripMargin('|'))
+*/
+        BasicReport("")//message.stripMargin('|'))
     }
 
 }

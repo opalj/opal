@@ -32,7 +32,6 @@ package analyses
 package escape
 
 import scala.annotation.switch
-
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -43,15 +42,14 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.GlobalEscapeViaStaticFieldAssignment
 import org.opalj.fpcf.properties.MaybeNoEscape
-import org.opalj.fpcf.properties.MethodEscapeViaReturn
-import org.opalj.fpcf.properties.MaybeArgEscape
-import org.opalj.fpcf.properties.ArgEscape
-import org.opalj.fpcf.properties.MaybeMethodEscape
+import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.MethodEscape
-import org.opalj.fpcf.properties.MethodEscapeViaParameterAssignment
+import org.opalj.fpcf.properties.MaybeEscapeInCallee
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.EscapeViaParameter
+import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameter
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.UVar
@@ -131,7 +129,7 @@ trait AbstractEntityEscapeAnalysis {
      * given one.
      */
     @inline protected final def calcMostRestrictive(prop: EscapeProperty): Unit = {
-        assert((prop meet mostRestrictiveProperty).lessOrEqualRestrictive(mostRestrictiveProperty))
+        assert((mostRestrictiveProperty meet prop).lessOrEqualRestrictive(mostRestrictiveProperty))
         mostRestrictiveProperty = mostRestrictiveProperty meet prop
     }
 
@@ -162,10 +160,10 @@ trait AbstractEntityEscapeAnalysis {
         (stmt.astID: @switch) match {
             case PutStatic.ASTID ⇒
                 val value = stmt.asPutStatic.value
-                if (usesDefSite(value)) calcMostRestrictive(GlobalEscapeViaStaticFieldAssignment)
+                if (usesDefSite(value)) calcMostRestrictive(GlobalEscape)
             case ReturnValue.ASTID ⇒
                 if (usesDefSite(stmt.asReturnValue.expr))
-                    calcMostRestrictive(MethodEscapeViaReturn)
+                    calcMostRestrictive(EscapeViaReturn)
 
             case PutField.ASTID ⇒
                 handlePutField(stmt.asPutField)
@@ -209,7 +207,7 @@ trait AbstractEntityEscapeAnalysis {
 
     /**
      * Thrown exceptions that are not caught would lead to a
-     * [[org.opalj.fpcf.properties.MethodEscapeViaReturn]].
+     * [[org.opalj.fpcf.properties.EscapeViaAbnormalReturn]].
      * This analysis does not check whether the exception is caught or not.
      *
      * @see [[org.opalj.fpcf.analyses.escape.ExceptionAwareEntitiyEscapeAnalysis]] which overrides
@@ -222,29 +220,29 @@ trait AbstractEntityEscapeAnalysis {
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]].
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
     protected def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]].
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
     protected def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]]. An exception for this are the receiver objects of a
+     * [[org.opalj.fpcf.properties.EscapeInCallee]]. An exception for this are the receiver objects of a
      * constructor. Here [[org.opalj.fpcf.properties.NoEscape]] is still possible.
      *
      * $JustIntraProcedural
@@ -255,7 +253,7 @@ trait AbstractEntityEscapeAnalysis {
          * So if the receiver is a use of our def site, NoEscape is still possible.
          */
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
         else if (usesDefSite(call.receiver))
             calcMostRestrictive(MaybeNoEscape)
 
@@ -296,46 +294,46 @@ trait AbstractEntityEscapeAnalysis {
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]].
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
     protected def handleNonVirtualFunctionCall(call: NonVirtualFunctionCall[V]): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]].
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
     protected def handleVirtualFunctionCall(call: VirtualFunctionCall[V]): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]].
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
     protected[this] def handleStaticFunctionCall(call: StaticFunctionCall[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.ArgEscape]].
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
     protected[this] def handleInvokeDynamic(call: Invokedynamic[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeArgEscape)
+            calcMostRestrictive(MaybeEscapeInCallee)
     }
 
     /**
@@ -384,17 +382,21 @@ trait AbstractEntityEscapeAnalysis {
 
             case FormalParameter(method, -1) if method.isConstructor ⇒ p match {
 
-                case state: GlobalEscape ⇒ Result(e, state)
+                case GlobalEscape   ⇒ Result(e, GlobalEscape)
 
-                case NoEscape            ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
+                case NoEscape       ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
 
-                case ArgEscape           ⇒ removeFromDependeesAndComputeResult(other, ArgEscape)
+                case EscapeInCallee ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
 
-                case MethodEscapeViaParameterAssignment ⇒
+                case EscapeViaParameter ⇒
                     // we do not further track the field of the actual parameter
                     removeFromDependeesAndComputeResult(other, MaybeNoEscape)
 
-                case MaybeNoEscape | MaybeMethodEscape ⇒ u match {
+                case EscapeViaAbnormalReturn ⇒
+                    throw new RuntimeException("not yet implemented yet")
+                //TODO
+
+                case MaybeNoEscape | MaybeEscapeViaParameter ⇒ u match {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                         dependees = dependees.filter(_.e ne other) + newEP
@@ -403,13 +405,13 @@ trait AbstractEntityEscapeAnalysis {
                         removeFromDependeesAndComputeResult(other, MaybeNoEscape)
                 }
 
-                case MaybeArgEscape ⇒ u match {
+                case MaybeEscapeInCallee ⇒ u match {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                         dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, MaybeArgEscape meet mostRestrictiveProperty, dependees, c)
+                        IntermediateResult(e, MaybeEscapeInCallee meet mostRestrictiveProperty, dependees, c)
                     case _ ⇒
-                        removeFromDependeesAndComputeResult(other, MaybeArgEscape)
+                        removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
                 }
 
                 case p ⇒
@@ -419,13 +421,15 @@ trait AbstractEntityEscapeAnalysis {
             // this entity is passed as parameter (or this local) to a method
             case FormalParameter(_, _) ⇒ p match {
 
-                case state: GlobalEscape  ⇒ Result(e, state)
+                case GlobalEscape       ⇒ Result(e, GlobalEscape)
 
-                case NoEscape | ArgEscape ⇒ removeFromDependeesAndComputeResult(other, ArgEscape)
+                case NoEscape | EscapeInCallee ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                case _ => throw new RuntimeException("not yet implemented")
 
-                case _: MethodEscape      ⇒ removeFromDependeesAndComputeResult(other, MaybeArgEscape) //TODO What??
+                // we do not track the fields of the actual parameter or the return value any further
+                //case _: MethodEscape           ⇒ removeFromDependeesAndComputeResult(other, MaybeArgEscape) //TODO What??
 
-                case MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape ⇒ u match {
+                /*case MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape ⇒ u match {
 
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
@@ -433,7 +437,7 @@ trait AbstractEntityEscapeAnalysis {
                         IntermediateResult(e, MaybeArgEscape meet mostRestrictiveProperty, dependees, c)
 
                     case _ ⇒ removeFromDependeesAndComputeResult(other, MaybeArgEscape)
-                }
+                }*/
             }
 
         }
