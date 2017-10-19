@@ -39,7 +39,7 @@ object Dependencies {
 
     // Libraries
     val junit = "junit" % "junit" % "4.12" % "test,it"
-    val scalatest = "org.scalatest" %% "scalatest" % "3.0.3" % "test,it"
+    val scalatest = "org.scalatest" %% "scalatest" % "3.0.4" % "test,it"
     val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it"
 
     // centralized dependency sequences

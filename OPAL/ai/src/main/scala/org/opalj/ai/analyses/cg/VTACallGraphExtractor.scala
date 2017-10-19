@@ -174,8 +174,11 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheMethod](
             val receiverIsNull = receiver.isNull
 
             assert(
-                classHierarchy.isInterface(declaringClassType) == Answer(isInterface),
-                s"virtual call - inconsistent isInterface information for $declaringClassType"
+                classHierarchy.isInterface(declaringClassType).isUnknown ||
+                    classHierarchy.isInterface(declaringClassType) == Answer(isInterface),
+                "virtual call - inconsistent isInterface information ("+
+                    s"${classHierarchy.isInterface(declaringClassType)} vs. "+
+                    s"${Answer(isInterface)}) for $declaringClassType"
             )
 
             // Possible Cases:
