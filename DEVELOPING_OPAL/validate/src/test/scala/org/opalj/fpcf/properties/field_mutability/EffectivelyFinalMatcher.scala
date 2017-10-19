@@ -31,7 +31,7 @@ package fpcf
 package properties
 package field_mutability
 
-import org.opalj.br.Annotation
+import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 
@@ -53,7 +53,7 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
         )
     }
 
-    override def isRelevant(p: SomeProject, as: Set[ObjectType], a: Annotation): Boolean = {
+    override def isRelevant(p: SomeProject, as: Set[ObjectType], a: AnnotationLike): Boolean = {
         as.exists(SupportedAnalyses.contains)
     }
 
@@ -61,7 +61,7 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
         p:          SomeProject,
         as:         Set[ObjectType],
         entity:     Entity,
-        a:          Annotation,
+        a:          AnnotationLike,
         properties: List[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType

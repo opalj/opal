@@ -35,13 +35,21 @@ import java.net.URL
 import java.io.File
 
 import org.opalj.br.Type
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.Annotation
+import org.opalj.br.Annotations
 import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
+import org.opalj.br.AnnotationLike
 import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.analyses.FormalParameters
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -94,8 +102,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         p:             Project[URL],
         propertyKinds: Set[String]
     )(
-        annotation: Annotation
-    ): Option[(Annotation, String, Type /* type of the matcher */ )] = {
+        annotation: AnnotationLike
+    ): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
         if (!annotation.annotationType.isObjectType)
             return None;
 
@@ -115,25 +123,25 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
     def validateProperties(
         context:       (Project[URL], PropertyStore, Set[FPCFAnalysis]),
+        eas:           TraversableOnce[(Entity, /*the processed annotation*/ String ⇒ String /* a String identifying the entity */ , Traversable[AnnotationLike])],
         propertyKinds: Set[String]
     ): Unit = {
         val (p: Project[URL], ps: PropertyStore, as: Set[FPCFAnalysis]) = context
         val ats = as.map(a ⇒ ObjectType(a.getClass.getName.replace('.', '/')))
 
         for {
-            // TODO Define a parameter to pass in the entities which we want to analyze.
-            f ← p.allFields // cannot be effectivley parallelized since "it" is not thread safe
-            annotations = f.runtimeInvisibleAnnotations.flatMap(getPropertyMatcher(p, propertyKinds))
-            (annotation, propertyKind, matcherType) ← annotations
+            (e, entityIdentifier, annotations) ← eas
+            augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
+            (annotation, propertyKind, matcherType) ← augmentedAnnotations
         } {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
             val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
             if (matcher.isRelevant(p, ats, annotation)) {
-                it(f.toJava(s"@$annotationTypeName").substring(24)) {
+                it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
-                    val properties = ps.properties(f)
-                    matcher.validateProperty(p, ats, f, annotation, properties) match {
+                    val properties = ps.properties(e)
+                    matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
                             fail(propertiesAsStrings.mkString("actual: ", ", ", "\nerror: "+error))
@@ -145,13 +153,61 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
+    def fieldsWithAnnotations: Traversable[(Field, String ⇒ String, Annotations)] = {
+        for {
+            f ← FixtureProject.allFields // cannot be parallelized; "it" is not thread safe
+            annotations = f.runtimeInvisibleAnnotations
+            if annotations.nonEmpty
+        } yield {
+            (f, (a: String) ⇒ f.toJava(s"@$a").substring(24), annotations)
+        }
+    }
+
+    def methodsWithAnnotations: Traversable[(Method, String ⇒ String, Annotations)] = {
+        for {
+            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            annotations = m.runtimeInvisibleAnnotations
+            if annotations.nonEmpty
+        } yield {
+            (m, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+        }
+    }
+
+    def classFilesWithAnnotations: Traversable[(ClassFile, String ⇒ String, Annotations)] = {
+        for {
+            cf ← FixtureProject.allClassFiles // cannot be parallelized; "it" is not thread safe
+            annotations = cf.runtimeInvisibleAnnotations
+            if annotations.nonEmpty
+        } yield {
+            (cf, (a: String) ⇒ cf.thisType.toJava.substring(24) + s"@$a", annotations)
+        }
+    }
+
+    // there can't be any annotations of the implicit "this" parameter...
+    def explicitFormalParametersWithAnnotations: Traversable[(FormalParameter, String ⇒ String, Annotations)] = {
+        val formalParameters: FormalParameters = FixtureProject.get(FormalParametersKey)
+        for {
+            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            parameterAnnotations = m.runtimeInvisibleParameterAnnotations
+            i ← parameterAnnotations.indices
+            annotations = parameterAnnotations(i)
+            if annotations.nonEmpty
+        } yield {
+            val fp = formalParameters(m)(i + 1)
+            (fp, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+        }
+    }
+
     def executeAnalyses(
         analysisRunners: Set[FPCFAnalysisRunner]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
         val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(true, true)
+        ps.waitOnPropertyComputationCompletion(
+            resolveCycles = true,
+            useFallbacksForIncomputableProperties = true
+        )
         (p, ps, as)
     }
 }

@@ -33,7 +33,7 @@ import scala.collection.immutable.List;
 import scala.collection.immutable.Set;
 
 import org.opalj.fpcf.Property;
-import org.opalj.br.Annotation;
+import org.opalj.br.AnnotationLike;
 import org.opalj.br.ObjectType;
 import org.opalj.br.analyses.Project;
 
@@ -55,7 +55,7 @@ public interface PropertyMatcher {
      * @param p The project.
      * @param as The OPAL `ObjectType`'s of the executed analyses.
      */
-    default boolean isRelevant(Project<?> p,Set<ObjectType> as, Annotation a) {
+    default boolean isRelevant(Project<?> p,Set<ObjectType> as, AnnotationLike a) {
         return true;
     }
 
@@ -74,6 +74,6 @@ public interface PropertyMatcher {
      */
     Option<String> validateProperty(
             Project<?> p, Set<ObjectType> as,
-            Object entity, Annotation a, List<Property> properties);
+            Object entity, AnnotationLike a, List<Property> properties);
 
 }
