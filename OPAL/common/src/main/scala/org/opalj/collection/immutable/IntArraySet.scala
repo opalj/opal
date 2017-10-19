@@ -41,7 +41,7 @@ import scala.collection.mutable.Builder
  *
  * @author Michael Eichberg
  */
-abstract class IntArraySet extends ((Int) ⇒ Int) {
+sealed abstract class IntArraySet extends ((Int) ⇒ Int) {
 
     def isSingletonSet: Boolean
 
@@ -115,7 +115,7 @@ abstract class IntArraySet extends ((Int) ⇒ Int) {
         while (thisIt.hasNext && otherIt.hasNext) {
             val thisV = thisIt.next()
             var otherV = otherIt.next()
-            while (otherV != thisV && otherIt.hasNext) { otherV = otherIt.next() };
+            while (otherV != thisV && otherIt.hasNext) { otherV = otherIt.next() }
             if (thisV != otherV)
                 return false;
         }
@@ -216,7 +216,12 @@ case class IntArraySet1(i: Int) extends IntArraySet {
         if (this.i != i) this else EmptyIntArraySet
     }
     def +(i: Int): IntArraySet = {
-        if (this.i == i) this else if (this.i < i) new IntArraySet2(this.i, i) else new IntArraySet2(i, this.i)
+        if (this.i == i)
+            this
+        else if (this.i < i)
+            new IntArraySet2(this.i, i)
+        else
+            new IntArraySet2(i, this.i)
     }
     def iterator: Iterator[Int] = Iterator.single(i)
     def size: Int = 1
@@ -241,7 +246,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
 /**
  * Represents an orderd set of two values where i1 has to be smaller than i2.
  */
-case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
+private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
 
     assert(i1 < i2)
     def apply(index: Int): Int = {
@@ -331,7 +336,7 @@ case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
 /**
  * Represents an orderd set of three int values: i1 < i2 < i3.
  */
-case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
+private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
 
     assert(i1 < i2, s"i1 < i2: $i1 >= $i2")
     assert(i2 < i3, s"i2 < i3: $i2 >= $i3")
@@ -441,8 +446,8 @@ case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntArraySet if that.size == 3 ⇒
-                this(0) == that(0) && this(1) == that(1) && this(2) == that(2)
+            case that: IntArraySet ⇒
+                that.size == 3 && this.i1 == that(0) && this.i2 == that(1) && this.i3 == that(2)
             case _ ⇒ false
         }
     }
@@ -532,8 +537,9 @@ case class IntArraySetN private[immutable] (
                 System.arraycopy(is, index + 1, targetIs, index, is.length - 1 - index)
                 new IntArraySetN(targetIs)
             }
-        } else
+        } else {
             this
+        }
     }
 
     def +(i: Int): IntArraySet = {
@@ -544,7 +550,8 @@ case class IntArraySetN private[immutable] (
             val targetIs = new Array[Int](is.length + 1)
             System.arraycopy(is, 0, targetIs, 0, insertionPoint)
             targetIs(insertionPoint) = i
-            System.arraycopy(is, insertionPoint, targetIs, insertionPoint + 1, is.length - insertionPoint)
+            val count = is.length - insertionPoint
+            System.arraycopy(is, insertionPoint, targetIs, insertionPoint + 1, count)
             new IntArraySetN(targetIs)
         } else {
             this
@@ -596,7 +603,9 @@ case class IntArraySetN private[immutable] (
     override def hashCode: Int = Arrays.hashCode(is)
 }
 
-private[immutable] class FilteredIntArraySet(p: Int ⇒ Boolean, origS: IntArraySetN) extends IntArraySet {
+private[immutable] class FilteredIntArraySet(
+        p: Int ⇒ Boolean, origS: IntArraySetN
+) extends IntArraySet {
 
     @volatile private[this] var filteredS: IntArraySet = _
 
@@ -702,19 +711,21 @@ class IntArraySetBuilder private[immutable] (
     }
 
     def +=(elem: Int): this.type = {
+        import System.arraycopy
         val index = Arrays.binarySearch(is, 0, size, elem)
         if (index < 0) {
             // the element is NOT already found
             size += 1
             val insertionPoint = -index - 1
             if ( /*new*/ size <= is.length) { // we have enough space
-                System.arraycopy(is, insertionPoint, is, insertionPoint + 1, (size - 1) - insertionPoint)
+                arraycopy(is, insertionPoint, is, insertionPoint + 1, (size - 1) - insertionPoint)
                 is(insertionPoint) = elem
             } else {
                 val targetIs = new Array[Int](is.length * 2)
-                System.arraycopy(is, 0, targetIs, 0, insertionPoint)
+                arraycopy(is, 0, targetIs, 0, insertionPoint)
                 targetIs(insertionPoint) = elem
-                System.arraycopy(is, insertionPoint, targetIs, insertionPoint + 1, is.length - insertionPoint)
+                val count = is.length - insertionPoint
+                arraycopy(is, insertionPoint, targetIs, insertionPoint + 1, count)
                 is = targetIs
             }
         }
@@ -744,7 +755,9 @@ class IntArraySetBuilder private[immutable] (
         }
     }
 
-    override def toString: String = is.mkString(s"IntArraySetBuilder(size=$size;values={", ",", "})")
+    override def toString: String = {
+        is.mkString(s"IntArraySetBuilder(size=$size;values={", ",", "})")
+    }
 }
 
 object IntArraySetBuilder {
