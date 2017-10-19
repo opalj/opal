@@ -48,7 +48,7 @@ import org.opalj.control.{find ⇒ findInArray}
  *
  * @author Michael Eichberg
  */
-class ConstArray[T <: AnyRef] private (
+final class ConstArray[T <: AnyRef] private (
         private val data: Array[_ <: T]
 ) extends IndexedSeq[T] with IndexedSeqOptimized[T, ConstArray[T]] {
 
