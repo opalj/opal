@@ -2218,7 +2218,6 @@ object PropertyStore {
      * @param isInterrupted A function that is called by the framework to test if
      *          the running/scheduled computations should be aborted.
      *          It is important that this function is efficient as it is frequently called.
-     * @param debug `true` if debug output should be generated.
      * @param context A collection of objects which are of different types and which
      *        can be queried later on to get information about the property store's
      *        context. For example, in case of OPAL the project to which this property store
@@ -2279,7 +2278,7 @@ object PropertyStore {
 
 }
 
-class PropertyStoreContext[T <: AnyRef] private (val t: Type, val data: T) {
+class PropertyStoreContext[+T <: AnyRef] private (val t: Type, val data: T) {
 
     def asTuple: (Type, T) = (t, data)
 }
