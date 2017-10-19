@@ -111,8 +111,11 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
             classHierarchy.allSupertypes(classFile.thisType).
                 filter(!classHierarchy.isInterface(_)).
                 exists(
-                    classHierarchy.lookupMethodDefinition(_, method.name,
-                    method.descriptor, project).isDefined
+                    classHierarchy.lookupMethodDefinition(
+                        _,
+                        method.name, method.descriptor,
+                        project
+                    ).isDefined
                 )
         }
 

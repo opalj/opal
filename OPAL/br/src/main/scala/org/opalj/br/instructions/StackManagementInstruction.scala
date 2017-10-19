@@ -40,11 +40,11 @@ import org.opalj.collection.immutable.Chain
  */
 abstract class StackManagementInstruction extends Instruction with ConstantLengthInstruction {
 
-    def jvmExceptions: List[ObjectType] = Nil
+    final override def isStackManagementInstruction: Boolean = true
 
-    final def length: Int = 1
+    final override def length: Int = 1
 
-    final def nextInstructions(
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -55,21 +55,23 @@ abstract class StackManagementInstruction extends Instruction with ConstantLengt
         Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
 
-    final def readsLocal: Boolean = false
+    final override def readsLocal: Boolean = false
 
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final def writesLocal: Boolean = false
+    final override def writesLocal: Boolean = false
 
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def expressionResult: NoExpression.type = NoExpression
+    final override def expressionResult: NoExpression.type = NoExpression
 
     final override def toString(currentPC: Int): String = toString()
+
+    override def jvmExceptions: List[ObjectType] = Nil
 
 }

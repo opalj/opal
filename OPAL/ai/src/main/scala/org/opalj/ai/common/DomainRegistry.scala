@@ -132,7 +132,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultIntervalValuesDomain] A domain that uses intervals to represent the values of primitive values/variables.",
+        "[l1.DefaultIntervalValuesDomain] Computations related to int values are done using intervals to approximate the real values.",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultIntervalValuesDomain(project, method)
@@ -140,7 +140,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultSetValuesDomain] A domain that represents reference values at the type level and represents int/long values using sets.",
+        "[l1.DefaultSetValuesDomain] Computations related to int/long values are done using sets to approximate the real values.",
         classOf[domain.l1.DefaultSetValuesDomain[_]],
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultSetValuesDomain(project, method)
@@ -148,7 +148,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultReferenceValuesDomain] A domain that tracks various properties related to references values.",
+        "[l1.DefaultReferenceValuesDomain] Tracks nullness and must alias information related to references values.",
         classOf[domain.l1.DefaultReferenceValuesDomain[_]],
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultReferenceValuesDomain(project, method)
@@ -156,7 +156,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomain] A domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
+        "[l1.DefaultDomain] Uses intervals for int values and track nullness and must alias information for reference types.",
         classOf[domain.l1.DefaultDomain[_]],
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomain(project, method)
@@ -164,17 +164,11 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomainWithDefUse] A classical abstract domain that records the CFG and tracks the def/use relations. The null-ness properties of references values are also tracked as well as int/long values using ranges/sets.",
+        "[l1.DefaultDomainWithDefUse] Uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }
-    )
-
-    register(
-        "[l2.DefaultDomain] This abstract domain performs method invocations up to two levels deep additionally to the features of the l1.DefaultDomain.",
-        classOf[domain.l2.DefaultDomain[_]],
-        (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
     )
 
     register(
@@ -186,14 +180,15 @@ object DomainRegistry {
     )
 
     register(
+        "[l2.DefaultDomain] Called methods are context-sensitively analyzed (up to two levels per default)",
+        classOf[domain.l2.DefaultDomain[_]],
+        (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
+    )
+
+    register(
         "[la.DefaultDomain] This abstract domain reuses information provided by some pre analyses additionally to the features of the l1.DefaultDomain.",
         classOf[domain.l1.DefaultDomain[_]],
         (project: SomeProject, method: Method) ⇒ new domain.l1.DefaultDomain(project, method)
     )
 
-    register(
-        "[li.DefaultDomain] This domain performs some partial concrete evaluation.",
-        classOf[domain.la.DefaultDomain],
-        (project: SomeProject, method: Method) ⇒ new domain.la.DefaultDomain(project, method)
-    )
 }

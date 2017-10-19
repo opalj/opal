@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -43,17 +43,17 @@ import entity.annotation.Id
 @SerialVersionUID(100L)
 class Address extends AbstractEntity {
 
-  @Id
-  @Column(name = "id", nullable = false)
-  var id: Int = _
+    @Id
+    @Column(name = "id", nullable = false)
+    var id: Int = _
 
-  @Column(name = "street", nullable = false)
-  var street: String = ""
+    @Column(name = "street", nullable = false)
+    var street: String = ""
 
-  @Column(name = "city", nullable = false)
-  var city: String = ""
-  
-  @Column(name = "user_id", nullable = true)
-  var userId: Integer = null
+    @Column(name = "city", nullable = false)
+    var city: String = ""
+
+    @Column(name = "user_id", nullable = true)
+    var userId: Integer = null
 
 }

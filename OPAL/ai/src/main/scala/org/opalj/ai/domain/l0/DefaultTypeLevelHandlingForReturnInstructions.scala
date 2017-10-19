@@ -45,7 +45,6 @@ trait DefaultTypeLevelHandlingForReturnInstructions extends ReturnInstructionsDo
 
     /*base impl.*/ def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
-
     }
 
     /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue] = {

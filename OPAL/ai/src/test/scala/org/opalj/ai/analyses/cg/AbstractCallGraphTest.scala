@@ -177,8 +177,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
         val failCriteria =
             calleeMatchingAnnotation.isEmpty &&
-            (!receiverClassIsUnknown || unresolvedReceiverCalleesWithMatchingAnnotation.isEmpty) &&
-            preciselyResolvable
+                (!receiverClassIsUnknown || unresolvedReceiverCalleesWithMatchingAnnotation.isEmpty) &&
+                preciselyResolvable
 
         if (algorithmSpecified && !preciselyResolvable && calleeMatchingAnnotation.nonEmpty) {
             val className = method.classFile.fqn

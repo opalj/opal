@@ -46,7 +46,14 @@ trait IFLTLike extends IF0InstructionLike {
     final def condition: RelationalOperator = RelationalOperators.LT
 }
 
-case class IFLT(branchoffset: Int) extends IF0Instruction with IFLTLike
+case class IFLT(branchoffset: Int) extends IF0Instruction[IFLT] with IFLTLike {
+
+    def copy(branchoffset: Int): IFLT = new IFLT(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IFGE = {
+        IFGE(newBranchoffset)
+    }
+}
 
 /**
  * Defines constants and factory methods.

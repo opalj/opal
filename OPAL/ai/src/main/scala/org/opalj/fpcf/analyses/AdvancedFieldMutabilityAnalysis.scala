@@ -26,54 +26,99 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analysis
+package org.opalj
+package fpcf
+package analyses
 
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntSet
-import org.opalj.fpcf._
-import org.opalj.fpcf.properties.{DeclaredFinalField, EffectivelyFinalField, FieldMutability, NonFinalFieldByAnalysis}
-import org.opalj.tac._
+import org.opalj.fpcf.properties.DeclaredFinalField
+import org.opalj.fpcf.properties.EffectivelyFinalField
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.PutStatic
+import org.opalj.tac.PutField
+import org.opalj.tac.UVar
+import org.opalj.tac.SelfReferenceParameter
 
 /**
- * Determines if a field is always initialized at most once or if a field is or can be
- * mutated after (lazy) initialization.
+ * Simple analysis that checks if a private (static or instance) field is always initialized at
+ * most once or if a field is or can be mutated after (lazy) initialization.
+ *
+ * @note Requires that the 3-address code's expressions are not deeply nested.
  *
  * @author Dominik Helm
  * @author Florian Kuebler
- * @note Requires flat hierarchy of the three address code.
+ * @author Michael Eichberg
  */
 class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
-    def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
+    final val tacai = project.get(DefaultTACAIKey)
+
+    /**
+     * Analyzes the mutability of private non-final fields.
+     *
+     * This analysis is only ''soundy'' if the class file does not contain native methods.
+     * If the analysis is schedulued using its companion object all class files with
+     * native methods are filtered.
+     */
+    private def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
         val thisType = classFile.thisType
         val fields = classFile.fields
-        val pnfFields = fields.filter(f ⇒ f.isPrivate && !f.isFinal).toSet
-        var effectivelyFinalFields = pnfFields
-        if (effectivelyFinalFields.isEmpty) return NoResult
-        for {
-            method ← classFile.methods
-            if !method.isStaticInitializer
-            if !method.isAbstract
-            if !method.isNative
-        } {
-            val code = project.get(DefaultTACAIKey)(method).stmts
-            code exists {
-                // static fields should only be written in the static initializer
-                case PutStatic(_, `thisType`, fieldName, fieldType, _) ⇒
+        val pnfFields = fields.filter(f ⇒ f.isPrivate && !f.isFinal)
+
+        if (pnfFields.isEmpty)
+            return NoResult;
+
+        // We now (compared to the simple one) have to analyze the static initializer as
+        // the static initializer can be used to initialize a private field of an instance
+        // of the class after the reference to the class and (an indirect) reference to the
+        // field has become available. Consider the following example:
+        // class X implements Y{
+        //
+        //     private Object o;
+        //
+        //     public Object getO() { return o; }
+        //
+        //     private static X instance;
+        //     static {
+        //         instance = new X();
+        //         Z.register(instance);
+        //         // when we reach this point o is now (via getO) publically accessible and
+        //         // X is properly initialized!
+        //         o = new Object(); // o is mutated...
+        //     }
+        // }
+
+        // IMPROVE Implement special handling for those methods that are always (guaranteed) only called by the constructor. (Note: filtering is not possible as the reference to this object may leak!)
+
+        var effectivelyFinalFields = pnfFields.toSet
+        val methodsIterator = classFile.methods.filter(m ⇒ !m.isAbstract).iterator
+        // Note: we do not want to force the creation of the three address code for methods,
+        // we are no longer interested in.
+        while (methodsIterator.nonEmpty && effectivelyFinalFields.nonEmpty) {
+            val method = methodsIterator.next()
+
+            tacai(method).stmts exists {
+                case PutStatic(_, `thisType`, fieldName, fieldType, _) if (
+                    !method.isStaticInitializer
+                ) ⇒
                     val field = classFile.findField(fieldName, fieldType)
                     field.foreach(effectivelyFinalFields -= _)
                     effectivelyFinalFields.isEmpty // <=> true will abort the querying of the code
-                // for instance fields it should be okay if they where written in the constructor
+
                 case PutField(_, `thisType`, fieldName, fieldType, objRef, _) ⇒
-                    val field = classFile.findField(fieldName, fieldType)
-                    field foreach { f ⇒
+                    val fieldOption = classFile.findField(fieldName, fieldType)
+                    fieldOption foreach { f ⇒
+                        // for instance fields it is okay if they are written in the constructor
+                        // (w.r.t. the currently initialized object!)
                         if (method.isConstructor) {
                             // note that here we assume real three address code (flat hierarchy)
-                            val UVar(_, defSites) = objRef
-                            // if the field that is written is not the one of the this local
-                            // it is not effectively final
-                            if (defSites != IntSet(-1)) {
+                            val UVar(_, receiver) = objRef
+                            // If the field that is written is not the one referred to by the
+                            // self reference, it is not effectively final.
+                            if (receiver != SelfReferenceParameter) {
                                 effectivelyFinalFields -= f
                             }
 
@@ -83,36 +128,42 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
                     }
 
                     effectivelyFinalFields.isEmpty // <=> true will abort the querying of the code
+
                 case _ ⇒ false
             }
         }
 
-        val pnfFieldsResult = pnfFields map { f ⇒
+        val pnfFieldsEPs = pnfFields.map { f ⇒
             if (effectivelyFinalFields.contains(f))
                 EP(f, EffectivelyFinalField)
             else
                 EP(f, NonFinalFieldByAnalysis)
         }
 
-        val r = pnfFieldsResult ++ fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
-        ImmediateMultiResult(r)
+        ImmediateMultiResult(
+            pnfFieldsEPs ++ fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
+        )
     }
 }
 
+/**
+ * Executor for the field mutability analysis.
+ */
 object AdvancedFieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new AdvancedFieldMutabilityAnalysis(project)
-        propertyStore.scheduleForCollected {
-            case cf: ClassFile if (
-                !project.libraryClassFilesAreInterfacesOnly || !project.isLibraryType(cf)
-            ) ⇒
-                cf
-        }(
-            analysis.determineFieldMutabilities
-        )
+        val classFileCandidates =
+            if (project.libraryClassFilesAreInterfacesOnly)
+                project.allProjectClassFiles
+            else
+                project.allClassFiles
+
+        val classFiles = classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative))
+
+        propertyStore.scheduleForEntities(classFiles)(analysis.determineFieldMutabilities)
         analysis
     }
 }

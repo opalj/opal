@@ -42,6 +42,7 @@ import org.opalj.fpcf.PropertyKey
  *
  * @author Michael Reif
  */
+// IMPROVE Make this a regular project information.
 sealed trait ClientCallable extends Property {
     final type Self = ClientCallable
 

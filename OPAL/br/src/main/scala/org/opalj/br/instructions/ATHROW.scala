@@ -44,6 +44,10 @@ case object ATHROW extends Instruction {
 
     final val mnemonic = "athrow"
 
+    final override def isAthrow: Boolean = true
+
+    final override def asATHROW: this.type = this
+
     final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1

@@ -84,15 +84,15 @@ object FixtureCompileSpec {
      *          see the plugin's README.md document.
      */
     case class JavaFixtureCompilationTask(
-        fixture:          TestFixture,
-        targetFolder:     File,
-        configOptions:    String,
-        supportLibraries: String,
-        compiler:         TestFixtureCompiler
+            fixture:          TestFixture,
+            targetFolder:     File,
+            configOptions:    String,
+            supportLibraries: String,
+            compiler:         TestFixtureCompiler
     )
 
     /** Represents a test fixture by its source folder. */
-    case class TestFixture(sourceFolder: File    )
+    case class TestFixture(sourceFolder: File)
 
     /** Represents a test fixture compiler abstractly. */
     abstract class TestFixtureCompiler {

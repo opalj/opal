@@ -40,6 +40,7 @@ import java.io.FileNotFoundException;
  */
 public class MethodsWithTypeChecks {
 
+    // Returns either NULL or a value of type ArrayList
     public static java.util.List<Integer> get() {
         if (System.currentTimeMillis() > 0)
             return null;
@@ -47,11 +48,13 @@ public class MethodsWithTypeChecks {
             return new java.util.ArrayList<Integer>();
     }
 
+    // Regular downcast!
     @SuppressWarnings("unchecked")
     public static java.util.Collection<Object> castToCollection(Object o) {
         return (java.util.Collection<Object>) o;
     }
 
+    // Regular downcast!
     @SuppressWarnings("unchecked")
     public static java.util.Set<Object> castToSet(Object o) {
         return (java.util.Set<Object>) o;
@@ -59,6 +62,7 @@ public class MethodsWithTypeChecks {
 
     public static Object castToObject(Object o){return o;}
 
+    // Either a regular downcast or a useless one.
     public static Object onceUselessOnceUsefulCast(IOException o) {
         IOException fioe = null;
         if(o == null)
@@ -76,6 +80,7 @@ public class MethodsWithTypeChecks {
         return (FileNotFoundException)o;
     }
 
+    // Cast guarded by exception handler.
     public static FileNotFoundException catchFailingCast(Object o) {
         try {
             return (FileNotFoundException)o;
@@ -85,6 +90,7 @@ public class MethodsWithTypeChecks {
         }
     }
 
+    // Guarded cast which is always caught.
     public static FileNotFoundException explicitTypeCheckAndCast(Object o) {
         try {
 

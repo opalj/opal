@@ -71,7 +71,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     def initPSStrings(): PropertyStore = {
         val contextObject = "StringEntities"
         implicit val logContext = GlobalLogContext
-        val ps = PropertyStore(stringEntities, () ⇒ false, debug = false, context = contextObject)
+        val ps = PropertyStore(stringEntities, () ⇒ false, context = contextObject)
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -86,12 +86,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         val contextObject = "StringAndSetOfStringsEntities"
         implicit val logContext = GlobalLogContext
 
-        val ps = PropertyStore(
-            stringsAndSetsOfStrings,
-            () ⇒ false,
-            debug = false,
-            context = contextObject
-        )
+        val ps = PropertyStore(stringsAndSetsOfStrings, () ⇒ false, context = contextObject)
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -191,8 +186,10 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     final val PurityKey: PropertyKey[Purity] = {
         PropertyKey.create(
             "Purity",
-            (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ Iterable(Result(epks.head.e, Pure))
+            (ps: PropertyStore, e: Entity) ⇒
+                throw new UnknownError(s"no fallback available for $e"),
+            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒
+                Iterable(Result(epks.head.e, Pure))
         )
     }
     sealed trait Purity extends Property {
@@ -231,7 +228,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
     var psNodes: PropertyStore = initPSNodes
     def initPSNodes(): PropertyStore = {
-        psNodes = PropertyStore(nodeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        psNodes = PropertyStore(nodeEntities, () ⇒ false)(GlobalLogContext)
         psNodes
     }
 
@@ -280,7 +277,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     val treeEntities = List[Node](nodeRoot, nodeLRoot, nodeLLRoot, nodeRRoot, nodeLRRoot, nodeRRRoot)
     var treeNodes: PropertyStore = initTreeNodes
     def initTreeNodes(): PropertyStore = {
-        treeNodes = PropertyStore(treeEntities, () ⇒ false, debug = false)(GlobalLogContext)
+        treeNodes = PropertyStore(treeEntities, () ⇒ false)(GlobalLogContext)
         treeNodes
     }
 
@@ -363,7 +360,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
         val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
         @volatile var doInterrupt = false
-        val ps = PropertyStore(entities, () ⇒ doInterrupt, debug = false)(GlobalLogContext)
+        val ps = PropertyStore(entities, () ⇒ doInterrupt)(GlobalLogContext)
         ps schedule { e: Entity ⇒
             triggeredComputations.incrementAndGet()
             Thread.sleep(50)
@@ -692,7 +689,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
                 val testSizes = Set(1, 5, 50000)
                 for (testSize ← testSizes) {
-                    // 1. we create a very long chain
+                    // 1. we create a ((very) long) chain
                     val firstNode = Node(0.toString)
                     val allNodes = mutable.Set(firstNode)
                     var prevNode = firstNode
@@ -705,14 +702,15 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     prevNode.targets += firstNode
 
                     // 2. we create the store
-                    val store = PropertyStore(allNodes, () ⇒ false, debug = false)(GlobalLogContext)
+                    val store = PropertyStore(allNodes, () ⇒ false)(GlobalLogContext)
 
-                    // 3. lets add the analysis
-                    def onUpdate(node: Node) = {
-                        (_: Entity, _: Property, _: UserUpdateType) ⇒ purityAnalysis(node)
+                    def onUpdate(
+                        node: Node
+                    )(_: Entity, _: Property, _: UserUpdateType): PropertyComputationResult = {
+                        purityAnalysis(node)
                     }
                     def purityAnalysis(node: Node): PropertyComputationResult = {
-                        val nextNode = node.targets.head // HER: we always only have ony successor
+                        val nextNode = node.targets.head // HERE: we always have only one successor
                         store(nextNode, PurityKey) match {
                             case epk: EPK[_, _] ⇒
                                 IntermediateResult(
@@ -730,12 +728,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                     Iterable(ep),
                                     onUpdate(node)
                                 )
-
                         }
                     }
                     // 4. execute analysis
                     store.scheduleForCollected { case n: Node ⇒ n }(purityAnalysis)
-                    store.waitOnPropertyComputationCompletion(true)
+                    store.waitOnPropertyComputationCompletion(true, true)
 
                     // 5. let's evaluate the result
                     store.entities(PurityKey) foreach { ep ⇒

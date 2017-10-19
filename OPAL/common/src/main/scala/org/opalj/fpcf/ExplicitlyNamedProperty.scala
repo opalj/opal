@@ -29,7 +29,7 @@
 package org.opalj.fpcf
 
 /**
- * A property which has an explicit name. This is particular useful when we want to refer to a
+ * A property which has an explicit name. This is particularly useful when we want to refer to a
  * property in the context of some test cases. In general, it should be tried that the name is
  * reasonably unique w.r.t. its usage scenario.
  */

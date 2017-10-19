@@ -26,17 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package log
+package org.opalj.fpcf.properties;
 
-case class DefaultLogContext private ( final val startTime: Long) extends LogContext {
+import java.lang.annotation.*;
 
-    def this() {
-        this(startTime = System.currentTimeMillis())
-    }
+/**
+ * Meta-annotation that specifies which class will check an entity's property. This annotation
+ * is always used to annotate the custom annotations that specify the expected property.
+ *
+ * @author Michael Eichberg
+ */
+@Documented
+@Target(ElementType.ANNOTATION_TYPE)
+@Retention(RetentionPolicy.CLASS)
+public @interface PropertyValidator{
 
-    override def toString: String = "log context:"+startTime.toString().drop(6)
+    /**
+     * The key (name) of the respective property kind.
+     *
+     * The name is used to find the property validator that will be used to validate the property.
+     */
+    String key();
 
-    override def newInstance: LogContext = new DefaultLogContext(this.startTime)
-
+    /**
+     * The concrete class which will check if given element's computed property.
+     */
+    Class<? extends PropertyMatcher> validator();
 }

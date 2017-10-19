@@ -85,33 +85,31 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         val p: SomeProject = biProject("ai.jar")
 
-        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](p)(
+        PropertyStoreKey.addEntityDerivationFunction[Map[Method, Map[PC, AllocationSite]]](p) {
             // Callback function which is called, when the information is actually required
-            (p: SomeProject) ⇒ {
 
-                var allAs: List[Chain[AllocationSite]] = Nil
+            var allAs: List[Chain[AllocationSite]] = Nil
 
-                // Associate every new instruction in a method with an allocation site object
-                val as = p.allMethodsWithBody flatMap { m ⇒
-                    val code = m.body.get
-                    val as = code collectWithIndex {
-                        case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
-                    }
-                    if (as.nonEmpty) allAs ::= as
-                    as
+            // Associate every new instruction in a method with an allocation site object
+            val as = p.allMethodsWithBody flatMap { m ⇒
+                val code = m.body.get
+                val as = code collectWithIndex {
+                    case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
                 }
-
-                // In the context we store a map which makes the set of allocation sites
-                // easily accessible.
-                val mToPCToAs = allAs.map { asPerMethod ⇒
-                    val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
-                    val m = pcToAs.head._2.method
-                    m → pcToAs
-                }.toMap
-
-                (as, mToPCToAs)
+                if (as.nonEmpty) allAs ::= as
+                as
             }
-        )
+
+            // In the context we store a map which makes the set of allocation sites
+            // easily accessible.
+            val mToPCToAs = allAs.map { asPerMethod ⇒
+                val pcToAs = asPerMethod.map(as ⇒ as.pc → as).toMap
+                val m = pcToAs.head._2.method
+                m → pcToAs
+            }.toMap
+
+            (as, mToPCToAs)
+        }
 
         // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
         val ps = p.get(PropertyStoreKey)
@@ -146,12 +144,13 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
                     )
                 } else {
                     // check that the method does not contain a new instruction
-                    code.iterate((pc, i) ⇒
+                    code.iterate { (pc, i) ⇒
                         if (i.opcode == instructions.NEW.opcode) {
                             info("allocation sites: "+mToPCToAs.mkString("\n"))
                             val error = m.toJava(s"missing allocation site $pc:$i")
                             fail(error)
-                        })
+                        }
+                    }
                 }
             }
 
@@ -194,15 +193,12 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         assert(p.has(AllocationSitesKey).isDefined)
 
         it("should contain the allocation sites") {
+            val allocationSites = ps.context[AllocationSites]
 
-            val allAs: Iterable[AllocationSite] = ps.context[AllocationSites].allocationSites
+            assert(allocationSites.nonEmpty)
+            info(s"contains ${allocationSites.size} allocation sites")
 
-            val allocationSiteCount = allAs.size
-
-            assert(allocationSiteCount > 0)
-            info(s"contains $allocationSiteCount allocation sites")
-
-            val allAdded: Boolean = allAs.forall(ps.isKnown)
+            val allAdded: Boolean = allocationSites.forall(ps.isKnown)
             assert(allAdded)
         }
     }

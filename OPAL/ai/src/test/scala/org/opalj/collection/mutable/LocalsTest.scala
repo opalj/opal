@@ -43,8 +43,6 @@ import org.junit.runner.RunWith
 @RunWith(classOf[JUnitRunner])
 class LocalsTest extends FlatSpec with Matchers {
 
-    import org.opalj.collection.mutable.Locals
-
     behavior of "a Locals data structure"
 
     it should ("be empty if it has size 0") in {

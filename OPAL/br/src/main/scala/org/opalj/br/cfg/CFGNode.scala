@@ -47,6 +47,8 @@ trait CFGNode extends Node {
     def asCatchNode: CatchNode = throw new ClassCastException();
 
     def isExitNode: Boolean
+    def isAbnormalReturnExitNode: Boolean
+    def isNormalReturnExitNode: Boolean
 
     def isStartOfSubroutine: Boolean
 
@@ -85,6 +87,14 @@ trait CFGNode extends Node {
     //
 
     final override def hasSuccessors: Boolean = _successors.nonEmpty
+
+    /**
+     * Returns `true` if the last instruction of this basic block throws/may throw an exception;
+     * whether the exception is handled or not is not relevant!
+     */
+    def mayThrowException: Boolean = {
+        _successors.exists(successor ⇒ successor.isCatchNode || successor.isAbnormalReturnExitNode)
+    }
 
     final override def foreachSuccessor(f: Node ⇒ Unit): Unit = _successors foreach f
 

@@ -26,16 +26,45 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package tac
+package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
-import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
+import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
-/**
- * @author Michael Eichberg
- */
-trait TACAIKey extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]], Nothing]
+public class Singleton {
 
+    @NonFinal("written by static initializer after the field becomes (indirectly) readable")
+    private String name;
+
+    @EffectivelyFinal(
+            value = "only initialized once by the constructor",
+            analyses = { AdvancedFieldMutabilityAnalysis.class }
+    )
+    private Object mutex = new Object();
+
+    private Singleton() {
+        this.name = "";
+    }
+
+    public String getName() {
+        synchronized (mutex) {
+            return name;
+        }
+    }
+
+    // STATIC FUNCTIONALITY
+
+    @EffectivelyFinal("only set in the static initializer")
+    private static Singleton theInstance;
+
+    static {
+        theInstance = new Singleton();
+        theInstance.name = "The Singleton Instance";
+    }
+
+    public static Singleton getInstance() {
+        return theInstance;
+    }
+
+}

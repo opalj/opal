@@ -1,0 +1,54 @@
+/* NO PARAMETERS */
+0:/*pc=0:*/ lv0 = null
+1:/*pc=2:*/ ai.MethodsWithExceptions.doIt()
+// ⚡️ java.lang.Throwable → 3
+
+// 1 →
+2:/*pc=5:*/ goto 11
+
+// java.lang.Throwable →
+3:/*pc=8:*/ caught java.lang.Throwable /* <= {exception@1}*/
+4:/*pc=12:*/ ai.MethodsWithExceptions.processIt({exception@1})
+// ⚡️ java.lang.Throwable → 6
+
+// 4 →
+5:/*pc=15:*/ goto 9
+
+// java.lang.Throwable →
+6:/*pc=18:*/ caught java.lang.Throwable /* <= {exception@4}*/
+
+// 6 →
+7:/*pc=26:*/ ai.MethodsWithExceptions.processIt({exception@1})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 7 →
+8:/*pc=29:*/ goto 17
+
+// 5 →
+9:/*pc=42:*/ ai.MethodsWithExceptions.processIt({exception@1})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 9 →
+10:/*pc=45:*/ goto 17
+
+// 2 →
+11:/*pc=86:*/ ai.MethodsWithExceptions.processIt({lv0})
+// ⚡️ java.lang.Throwable → 13
+
+// 11 →
+12:/*pc=89:*/ goto 16
+
+// java.lang.Throwable →
+13:/*pc=92:*/ caught java.lang.Throwable /* <= {exception@11}*/
+14:/*pc=100:*/ ai.MethodsWithExceptions.processIt({exception@11})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 14 →
+15:/*pc=103:*/ goto 17
+
+// 12 →
+16:/*pc=116:*/ ai.MethodsWithExceptions.processIt({lv0})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 10, 15, 16, 8 →
+17:/*pc=119:*/ return

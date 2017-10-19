@@ -52,16 +52,37 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
-        ExceptionsRaisedByCalledMethods.Any
-    }
+    /*implements(not override!)*/ def throwNullPointerExceptionOnThrow: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnThrow: Boolean = true
+    /*implements(not override!)*/ def throwClassCastException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `false`
+     */
+    def abortProcessingExceptionsOfCalledMethodsOnUnknownException: Boolean = false
+
+    /**
+     * @inheritdoc
+     *
+     * @return `false`
+     */
+    def abortProcessingThrownExceptionsOnUnknownException: Boolean = false
+
+    /**
+     * @inheritdoc
+     *
+     * @return `ExceptionsRaisedByCalledMethods.Any`
+     */
+    /*implements(not override!)*/ def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
+        ExceptionsRaisedByCalledMethods.Any
+    }
 
     /**
      * @inheritdoc
@@ -125,13 +146,6 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      * @return `true`
      */
     /*implements(not override!)*/ def throwNegativeArraySizeException: Boolean = true
-
-    /**
-     * @inheritdoc
-     *
-     * @return `true`
-     */
-    /*implements(not override!)*/ def throwClassCastException: Boolean = true
 
     /**
      * @inheritdoc

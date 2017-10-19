@@ -46,22 +46,23 @@ import AnalysisModes._
 trait FPCFAnalysis {
 
     implicit val project: SomeProject
+    final def p = project
 
     final implicit val classHierarchy = project.classHierarchy
+    final def ch = classHierarchy
 
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    final def ps = propertyStore
 
     final implicit val logContext: LogContext = project.logContext
 
-    final def ps = propertyStore
-
     // The project type:
-
+    /** @migration won't be available in the near future*/
     final def isOpenLibrary: Boolean = project.analysisMode eq OPA
-
+    /** @migration won't be available in the near future*/
     final def isClosedLibrary: Boolean = project.analysisMode eq CPA
-
+    /** @migration won't be available in the near future*/
     final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
-
+    /** @migration won't be available in the near future*/
     final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
 }

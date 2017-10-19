@@ -89,13 +89,7 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EP
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.UpdateType
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.Impure
@@ -107,7 +101,8 @@ import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
 
 /**
- * Analyzes the purity of a method as defined by the Purity property.
+ * Very simple and fast analysis of the purity of methods as defined by the
+ * [[org.opalj.fpcf.properties.Purity]] property.
  *
  * @author Michael Eichberg
  */
@@ -262,13 +257,10 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
     }
 
     /**
-     * Determines the purity of the given method.
+     * Determines the purity of the given method. The given method must have a body!
      */
     def determinePurity(method: Method): PropertyComputationResult = {
-
-        // Due to a lack of knowledge, we classify all native methods or methods that
-        // have no body - because they are loaded using a library class file loader - as Impure.
-        if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
+        if (method.isSynchronized)
             return ImmediateResult(method, Impure);
 
         // All parameters either have to be base types or have to be immutable.

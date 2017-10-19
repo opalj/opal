@@ -79,7 +79,50 @@ trait Instruction extends InstructionLike {
     //
     // ---------------------------------------------------------------------------------------------
 
+    def isReturnInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
+    def isStackManagementInstruction: Boolean = false
+    def isLoadLocalVariableInstruction: Boolean = false
+    def isStoreLocalVariableInstruction: Boolean = false
+    def isCheckcast: Boolean = false
+    def isInvocationInstruction: Boolean = false
+    def isAthrow: Boolean = false
+    def isIINC: Boolean = false
+
+    def asReturnInstruction: ReturnInstruction = throw new ClassCastException();
+
+    def asATHROW: ATHROW.type = throw new ClassCastException();
+    def asIINC: IINC = throw new ClassCastException();
+
+    def asNEW: NEW = throw new ClassCastException();
+    def asCreateNewArrayInstruction: CreateNewArrayInstruction = throw new ClassCastException();
+
+    def asLoadLocalVariableInstruction: LoadLocalVariableInstruction = {
+        throw new ClassCastException();
+    }
+    def asStoreLocalVariableInstruction: StoreLocalVariableInstruction = {
+        throw new ClassCastException();
+    }
+    def asGotoInstruction: GotoInstruction = throw new ClassCastException();
+
+    def asSimpleConditionalBranchInstruction: SimpleConditionalBranchInstruction[_] = {
+        throw new ClassCastException();
+    }
+    def asIFICMPInstruction: IFICMPInstruction[_] = throw new ClassCastException();
+    def asIF0Instruction: IF0Instruction[_] = throw new ClassCastException();
+    def asIFACMPInstruction: IFACMPInstruction[_] = throw new ClassCastException();
+    def asIFXNullInstruction: IFXNullInstruction[_] = throw new ClassCastException();
+
+    def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = {
+        throw new ClassCastException();
+    }
+
+    def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
+
+    def asArithmeticInstruction: ArithmeticInstruction = throw new ClassCastException();
+
+    def asTABLESWITCH: TABLESWITCH = throw new ClassCastException();
+    def asLOOKUPSWITCH: LOOKUPSWITCH = throw new ClassCastException();
 }
 
 /**

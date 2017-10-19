@@ -26,23 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package util
+package org.opalj.fpcf.properties.field_mutability;
 
-import java.io.PrintStream
+import org.opalj.fpcf.FPCFAnalysis;
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.*;
 
 /**
- * Overrides the default `print` and `println` methods provided by Scala such that
- * always the UTF-8 charset is used and not the platform's (the JDK's) default.
+ * Annotation to state that the annotated field is effectively final (if a proper analysis
+ * was scheduled).
  *
  * @author Michael Eichberg
  */
-trait UTF8Println {
+@PropertyValidator(key="FieldMutability",validator=EffectivelyFinalMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface EffectivelyFinal{
 
-    val out: PrintStream = new PrintStream(System.out, true, "UTF-8")
+    /**
+     * A short reasoning of this property.
+     */
+    String value() ; // default = "N/A";
 
-    def println(s: String): Unit = { out.println(s) }
-
-    def print(s: String): Unit = { out.print(s) }
-
+    Class<? extends FPCFAnalysis>[] analyses() default {FieldMutabilityAnalysis.class, AdvancedFieldMutabilityAnalysis.class};
 }

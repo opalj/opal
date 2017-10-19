@@ -76,10 +76,7 @@ object Annotation {
         annotationType:    FieldType,
         elementValuePairs: (String, ElementValue)*
     ): Annotation = {
-        new Annotation(
-            annotationType,
-            elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq
-        )
+        new Annotation(annotationType, elementValuePairs.map(e ⇒ ElementValuePair(e)).toIndexedSeq)
     }
 
     def apply(
@@ -87,10 +84,7 @@ object Annotation {
         elementValuePair:  ElementValuePair,
         elementValuePairs: ElementValuePair*
     ): Annotation = {
-        new Annotation(
-            annotationType,
-            (elementValuePair +: elementValuePairs).toIndexedSeq
-        )
+        new Annotation(annotationType, (elementValuePair +: elementValuePairs).toIndexedSeq)
     }
 
 }

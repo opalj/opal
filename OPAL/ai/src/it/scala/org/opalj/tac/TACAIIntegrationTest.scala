@@ -34,20 +34,21 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
-
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.Domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 
 /**
- * Tests that all methods of the JDK can be converted to the ai-based three address representation.
+ * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
+ * three address representation.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -63,7 +64,6 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
-        val mutex = new Object
         val ch = project.classHierarchy
         for {
             cf ← project.allProjectClassFiles.par
@@ -73,41 +73,47 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             aiResult = BaseAI(m, domainFactory(project, m))
         } {
             try {
+
                 val TACode(params, tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
                 ToTxt(params, tacAICode, cfg, false, true, true)
+
+                // Some additional consistency tests...
+
+                tacAICode.iterator.zipWithIndex foreach { stmtIndex ⇒
+                    val (stmt, index) = stmtIndex
+                    val bb = cfg.bb(index)
+                    if (bb.endPC == index && bb.mayThrowException && stmt.isSideEffectFree) {
+                        fail(s"the statement: $stmt is side effect free but the basic block has a catch node/abnormal exit node as a successor")
+                    }
+                }
+
+                successfullyCompleted.incrementAndGet()
             } catch {
                 case e: Throwable ⇒ this.synchronized {
                     val methodSignature = m.toJava
-                    mutex.synchronized {
-                        println(methodSignature+" - size: "+body.instructions.length)
-                        e.printStackTrace(Console.out)
-                        if (e.getCause != null) {
-                            println("\tcause:")
-                            e.getCause.printStackTrace(Console.out)
-                        }
-                        val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
-                        println(
-                            instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
-                        )
-                        println(
-                            body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
-                        )
-                        errors ::= ((project.source(cf)+":"+methodSignature, e))
+
+                    println(methodSignature+" - size: "+body.instructions.length)
+                    e.printStackTrace(Console.out)
+                    if (e.getCause != null) {
+                        println("\tcause:")
+                        e.getCause.printStackTrace(Console.out)
                     }
+                    val instrWithIndex = body.instructions.zipWithIndex.filter(_._1 != null)
+                    println(
+                        instrWithIndex.map(_.swap).mkString("Instructions:\n\t", "\n\t", "\n")
+                    )
+                    println(
+                        body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
+                    )
+                    errors ::= ((project.source(cf)+":"+methodSignature, e))
                 }
             }
-            successfullyCompleted.incrementAndGet()
         }
         if (errors.nonEmpty) {
-            val message =
-                errors.
-                    map(_.toString()+"\n").
-                    mkString(
-                        "Errors thrown:\n",
-                        "\n",
-                        s"successfully transformed ${successfullyCompleted.get} methods: "+
-                            "; failed methods: "+errors.size+"\n"
-                    )
+            val summary =
+                s"successfully transformed ${successfullyCompleted.get} methods: "+
+                    "; failed methods: "+errors.size+"\n"
+            val message = errors.map(_.toString()).mkString("Errors thrown:\n", "\n\n", summary)
             fail(message)
         }
     }
@@ -115,33 +121,51 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
     protected def domainFactories = {
         Seq(
             (
-                "DefaultDomainWithCFGAndDefUse",
+                "l0.PrimitiveTACAIDomain",
+                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
+            ),
+            (
+                "l1.DefaultDomainWithCFGAndDefUse",
                 (p: SomeProject, m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(p, m)
             ),
             (
-                "PrimitiveTACAIDomain",
-                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
+                "l2.DefaultPerformInvocationsDomainWithCFGAndDefUse",
+                (p: SomeProject, m: Method) ⇒ {
+                    new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
+                }
             )
         )
     }
 
-    domainFactories foreach { domainInformation ⇒
-        val (domainName, domainFactory) = domainInformation
-        describe(s"creating the 3-address code using $domainName") {
-            allBIProjects() foreach { biProject ⇒
-                val (name, projectFactory) = biProject
-                it(s"it should be able to create the TAC for $name using $domainName") {
+    // TESTS
+
+    describe(s"creating the 3-address code") {
+
+        allBIProjects().foreach { biProject ⇒
+            val (name, projectFactory) = biProject
+
+            it(s"for $name") {
+                var p = projectFactory()
+                domainFactories foreach { domainInformation ⇒
+                    val (domainName, domainFactory) = domainInformation
                     time {
-                        checkProject(projectFactory(), domainFactory)
-                    } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                        checkProject(p, domainFactory)
+                    } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                    p = p.recreate()
                 }
             }
+        }
 
-            it(s"it should be able to create the TAC for the JDK using $domainName") {
+        it(s"for the (current) JDK") {
+            var p = createJREProject()
+            domainFactories foreach { domainInformation ⇒
+                val (domainName, domainFactory) = domainInformation
                 time {
-                    checkProject(createJREProject(), domainFactory)
-                } { t ⇒ info(s"conversion took ${t.toSeconds}") }
+                    checkProject(p, domainFactory)
+                } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                p = p.recreate()
             }
         }
+
     }
 }

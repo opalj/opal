@@ -63,4 +63,6 @@ trait GotoInstruction extends UnconditionalBranchInstruction with GotoInstructio
 
     final override def isGotoInstruction: Boolean = true
 
+    final override def asGotoInstruction: this.type = this
+
 }

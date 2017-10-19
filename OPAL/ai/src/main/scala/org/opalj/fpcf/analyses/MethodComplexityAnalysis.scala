@@ -39,7 +39,7 @@ import org.opalj.UShort
 /**
  * A shallow analysis that tries to identify methods that are relatively simple, that is,
  * which don't have loops and don't depend on other (more) complex methods. For such methods
- * it often makes sense to include them in the execution.
+ * it often makes sense to "inline them at analysis time".
  *
  * @param maxComplexity
  *

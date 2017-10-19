@@ -33,18 +33,17 @@ import org.opalj.fpcf.test.annotations.InstantiabilityProperty;
 
 /**
  * This class is used for test purpose only.
- * 
+ *
  * @author Michael Reif
  */
-@InstantiabilityProperty(
-		InstantiabilityKeys.NotInstantiable)
+@InstantiabilityProperty(InstantiabilityKeys.NotInstantiable)
 public class OnlyPrivateConstructors {
 
 	private OnlyPrivateConstructors(){
-		
+
 	}
-	
+
 	private OnlyPrivateConstructors(Object object){
-		
+
 	}
 }

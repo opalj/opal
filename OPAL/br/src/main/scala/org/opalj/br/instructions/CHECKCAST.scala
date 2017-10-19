@@ -41,6 +41,8 @@ case class CHECKCAST(
         referenceType: ReferenceType
 ) extends Instruction with ConstantLengthInstruction {
 
+    final override def isCheckcast: Boolean = true
+
     final def opcode: Opcode = CHECKCAST.opcode
 
     final def mnemonic: String = "checkcast"

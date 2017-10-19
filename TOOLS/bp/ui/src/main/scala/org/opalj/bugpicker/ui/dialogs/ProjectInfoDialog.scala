@@ -108,7 +108,7 @@ object ProjectInfoDialog {
                     for { (length, methods) ← project.projectMethodsLengthDistribution } yield {
                         val count = methods.size
                         val method = methods.head
-                        val methodId = method.toJava(project.classFile(method))
+                        val methodId = method.toJava
                         val methodsInfo = if (count == 1) methodId else methodId+", ..."
                         <tr><td>{ length }</td><td>{ count }</td><td>{ methodsInfo }</td></tr>
                     }

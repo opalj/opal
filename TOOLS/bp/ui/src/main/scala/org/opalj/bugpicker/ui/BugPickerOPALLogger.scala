@@ -35,7 +35,7 @@ import java.util.Date
 
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
-import org.opalj.log.AbstractOPALLogger
+import org.opalj.log.OPALLogger
 
 import scalafx.application.Platform
 import scalafx.collections.ObservableBuffer
@@ -47,9 +47,8 @@ import scalafx.collections.ObservableBuffer
  * @author David Becker
  */
 class BugPickerOPALLogger(
-    val messages: ObservableBuffer[BugPickerLogMessage]
-)
-        extends AbstractOPALLogger {
+        val messages: ObservableBuffer[BugPickerLogMessage]
+) extends OPALLogger {
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         Platform.runLater {

@@ -37,7 +37,6 @@ import scala.reflect.runtime.universe.typeOf
 
 import scala.collection.JavaConverters._
 
-import net.ceedubs.ficus.Ficus._
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
@@ -54,8 +53,6 @@ import org.opalj.fpcf.PropertyStoreContext
 object PropertyStoreKey
     extends ProjectInformationKey[PropertyStore, ConcurrentLinkedQueue[EntityDerivationFunction]] {
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.PropertyStoreKey."
-
     /**
      * Used to specify the number of threads the property store should use. This
      * value is read only once when the property store is created.
@@ -65,11 +62,13 @@ object PropertyStoreKey
      */
     @volatile var parallelismLevel: Int = Math.max(NumberOfThreadsForCPUBoundTasks, 2)
 
-    def defaultEntityDerivationFunctions(): ConcurrentLinkedQueue[EntityDerivationFunction] = {
+    def defaultEntityDerivationFunctions(
+        p: SomeProject
+    ): ConcurrentLinkedQueue[EntityDerivationFunction] = {
         val edfs = new ConcurrentLinkedQueue[EntityDerivationFunction]()
-        edfs.add((p: SomeProject) ⇒ (p.allMethods, typeOf[Iterable[Method]], p.allMethods))
-        edfs.add((p: SomeProject) ⇒ (p.allFields, typeOf[Iterable[Field]], p.allFields))
-        edfs.add((p: SomeProject) ⇒ (p.allClassFiles, typeOf[Iterable[ClassFile]], p.allClassFiles))
+        edfs.add(() ⇒ (p.allMethods, typeOf[Iterable[Method]], p.allMethods))
+        edfs.add(() ⇒ (p.allFields, typeOf[Iterable[Field]], p.allFields))
+        edfs.add(() ⇒ (p.allClassFiles, typeOf[Iterable[ClassFile]], p.allClassFiles))
         edfs
     }
 
@@ -89,7 +88,8 @@ object PropertyStoreKey
      * entities to drive the entity derivation function. (See [[makeAllocationSitesAvailable]] for
      * further details.)
      *
-     * @param f A function that takes a project and which computes (1) the set of entities and
+     * @param f A function which computes
+     *          (1) the set of entities and
      *          (2) (optionally) a data structure – which typically makes the set of computed
      *          properties available. This data structure is added as a context value to the
      *          property store; the key is the specified generic type. E.g., `Iterable[Method]`
@@ -100,14 +100,14 @@ object PropertyStoreKey
     def addEntityDerivationFunction[T <: AnyRef: TypeTag](
         project: SomeProject
     )(
-        f: SomeProject ⇒ (Traversable[AnyRef], T)
+        f: ⇒ (Traversable[AnyRef], T)
     ): Unit = this.synchronized {
         project.getOrCreateProjectInformationKeyInitializationData(
-            this, defaultEntityDerivationFunctions()
-        ).add((p: SomeProject) ⇒ {
-            val (es, ctxValue) = f(p)
-            (es, typeOf[T], ctxValue)
-        })
+            this, defaultEntityDerivationFunctions(project)
+        ).add {
+            () ⇒ { val (es, ctxValue) = f; (es, typeOf[T], ctxValue: AnyRef) }
+        }
+
     }
 
     /**
@@ -116,7 +116,7 @@ object PropertyStoreKey
      * is used to get the project's property store.
      */
     def makeAllocationSitesAvailable(p: SomeProject): Unit = {
-        addEntityDerivationFunction(p)(AllocationSitesKey.entityDerivationFunction)
+        addEntityDerivationFunction(p) { AllocationSitesKey.entityDerivationFunction(p) }
     }
 
     /**
@@ -125,7 +125,7 @@ object PropertyStoreKey
      * is used to get the project's property store.
      */
     def makeFormalParametersAvailable(p: SomeProject): Unit = {
-        addEntityDerivationFunction(p)(FormalParametersKey.entityDerivationFunction)
+        addEntityDerivationFunction(p) { FormalParametersKey.entityDerivationFunction(p) }
     }
 
     /**
@@ -139,21 +139,20 @@ object PropertyStoreKey
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
     override protected def compute(project: SomeProject): PropertyStore = {
-        val debug = project.config.as[Option[Boolean]](ConfigKeyPrefix+"debug").getOrElse(false)
         implicit val logContext = project.logContext
 
         val entityDerivationFunctions = project.
             getProjectInformationKeyInitializationData(this).
-            getOrElse(defaultEntityDerivationFunctions)
+            getOrElse(defaultEntityDerivationFunctions(project))
 
         var context: List[PropertyStoreContext[AnyRef]] = Nil
         val entities = entityDerivationFunctions.asScala.flatMap { edf ⇒
-            val (entities, ctxKey, ctxValue) = edf(project)
+            val (entities, ctxKey, ctxValue) = edf()
             if (ctxKey != typeOf[Nothing]) {
                 context ::= PropertyStoreContext[AnyRef](ctxKey, ctxValue)
             }
             entities
         }
-        PropertyStore(entities, defaultIsInterrupted, parallelismLevel, debug, context: _*)
+        PropertyStore(entities, defaultIsInterrupted, parallelismLevel, context: _*)
     }
 }

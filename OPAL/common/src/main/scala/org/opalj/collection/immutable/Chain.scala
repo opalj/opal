@@ -549,8 +549,8 @@ sealed trait Chain[@specialized(Int) +T]
         new Traversable[T] { def foreach[U](f: T ⇒ U): Unit = self.foreach(f) }
     }
 
-    def toIntSet(implicit ev: T <:< Int): IntSet = {
-        foldLeft(new IntSetBuilder())(_ += _).result()
+    def toIntArraySet(implicit ev: T <:< Int): IntArraySet = {
+        foldLeft(new IntArraySetBuilder())(_ += _).result()
     }
 
     def toStream: Stream[T] = toTraversable.toStream

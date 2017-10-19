@@ -69,21 +69,15 @@ trait LogMessage {
     def toConsoleOutput(ansiColored: Boolean): String = {
         val (lnStart, lnEnd) =
             if (ansiColored) {
-                (
-                    s"${level.ansiColorEscape}[${level.id}]$categoryToConsoleOutput ",
-                    Console.RESET
-                )
+                (s"${level.ansiColorEscape}[${level.id}]$categoryToConsoleOutput ", Console.RESET)
             } else {
-                (
-                    s"[${level.id}]$categoryToConsoleOutput ",
-                    ""
-                )
+                (s"[${level.id}]$categoryToConsoleOutput ", "")
             }
 
         message.split('\n').map { ln ⇒
             var cr = ""
             var rawln = ln
-            if (ln.startsWith("\r")) {
+            if (ln.length > 0 && ln.charAt(0) == '\r') {
                 cr = "\r"
                 rawln = ln.substring(1)
             }
@@ -97,10 +91,7 @@ trait LogMessage {
  *
  * @author Michael Eichberg
  */
-case class BasicLogMessage(
-        level:   Level  = Info,
-        message: String
-) extends LogMessage {
+case class BasicLogMessage(level: Level = Info, message: String) extends LogMessage {
 
     def category: Option[String] = None
 

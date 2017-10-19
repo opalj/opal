@@ -71,9 +71,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
-            info("project configuration", "Java 8 invokedynamics are rewritten")
+            info("class file reader", "Java 8 invokedynamics are rewritten")
         } else {
-            info("project configuration", "Java 8 invokedynamics are not rewritten")
+            info("class file reader", "Java 8 invokedynamics are not rewritten")
         }
         rewrite
     }
@@ -82,9 +82,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
-            info("project configuration", "Java 8 invokedynamic rewrites are logged")
+            info("class file reader", "Java 8 invokedynamic rewrites are logged")
         } else {
-            info("project configuration", "Java 8 invokedynamic rewrites are not logged")
+            info("class file reader", "Java 8 invokedynamic rewrites are not logged")
         }
         logRewrites
     }
@@ -93,9 +93,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
         val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logUnknownInvokeDynamics) {
-            info("project configuration", "unknown invokedynamics are logged")
+            info("class file reader", "unknown invokedynamics are logged")
         } else {
-            info("project configuration", "unknown invokedynamics are not logged")
+            info("class file reader", "unknown invokedynamics are not logged")
         }
         logUnknownInvokeDynamics
     }

@@ -76,7 +76,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     import autoImport._
 
-    lazy val baseJavafixtureSettings: Seq[Def.Setting[_]] = Seq(
+    lazy val baseJavaFixtureSettings: Seq[Def.Setting[_]] = Seq(
         javaFixtureProjectsDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
         javaFixtureSupportDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
         javaFixtureTargetDir in javaFixtureDiscovery := resourceManaged.value,
@@ -105,7 +105,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     )
 
-    override lazy val projectSettings = inConfig(Compile)(baseJavafixtureSettings)
+    override lazy val projectSettings = inConfig(Compile)(baseJavaFixtureSettings)
 
     /**
      * Object that contains the task implementations for the fixture compilation
@@ -145,8 +145,9 @@ object JavaFixtureCompiler extends AutoPlugin {
 
             val results = (
                 for (fixtureTask ← tasks.par) yield {
-                fixtureTask.compiler.compile(fixtureTask, std, err, log)
-            }).seq
+                    fixtureTask.compiler.compile(fixtureTask, std, err, log)
+                }
+            ).seq
 
             val (skipped, notSkipped) = results.toSeq.partition(_.wasSkipped)
             if (results.isEmpty) {
@@ -185,7 +186,7 @@ object JavaFixtureCompiler extends AutoPlugin {
             } else if (notSkipped.isEmpty) {
                 log.debug("All class files were already packaged.")
             } else {
-                val ratio = notSkipped.size+ "/"+results.size
+                val ratio = notSkipped.size+"/"+results.size
                 log.info(s"Packaged classed of $ratio Java fixture projects.");
             }
 

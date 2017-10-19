@@ -218,6 +218,9 @@ class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val metho
     with domain.TheProject
     with domain.TheMethod {
 
+    def abortProcessingExceptionsOfCalledMethodsOnUnknownException: Boolean = false
+    def abortProcessingThrownExceptionsOnUnknownException: Boolean = false
+
     def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethods.Value = {
         ExceptionsRaisedByCalledMethods.Any
     }

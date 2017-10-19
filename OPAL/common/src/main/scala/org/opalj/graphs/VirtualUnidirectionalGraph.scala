@@ -36,7 +36,7 @@ import org.opalj.collection.immutable.Chain
  * int values (0,1,3,...).
  * This graph in particular supports the case where many nodes do not have successors.
  * Furthermore, computing the strongly connected components is particular efficient as no
- * transformations are are required, because we already use int values for the nodes.
+ * transformations are required since we already use int values for the nodes.
  *
  * ==Thread Safety==
  * This class is not thread-safe!

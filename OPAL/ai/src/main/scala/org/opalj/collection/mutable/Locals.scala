@@ -401,6 +401,9 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
     }
 
     override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals1[T] = {
+        if (this eq other)
+            return this;
+
         val that = other.asInstanceOf[Locals1[T]]
         val thisV = this.v
         val thatV = that.v
@@ -488,6 +491,9 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
     }
 
     override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals2[T] = {
+        if (this eq other)
+            return this;
+
         val that = other.asInstanceOf[Locals2[T]]
         var useThis = true
         var useThat = true
@@ -497,10 +503,10 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
             if (thisV0 eq thatV0)
                 thisV0
             else {
-                val newV = onDiff(thisV0, thatV0)
-                if (newV ne thisV0) useThis = false
-                if (newV ne thatV0) useThat = false
-                newV
+                val newV0 = onDiff(thisV0, thatV0)
+                useThis = (newV0 eq thisV0)
+                useThat = (newV0 eq thatV0)
+                newV0
             }
         }
 
@@ -511,10 +517,10 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
             else if (useThat) that
             else new Locals2(newV0, thisV1)
         } else {
-            val newV = onDiff(thisV1, thatV1)
-            if ((newV eq thisV1) && useThis) this
-            else if ((newV eq thatV1) && useThat) that
-            else new Locals2(newV0, newV)
+            val newV1 = onDiff(thisV1, thatV1)
+            if (useThis && (newV1 eq thisV1)) this
+            else if (useThat && (newV1 eq thatV1)) that
+            else new Locals2(newV0, newV1)
         }
     }
 
@@ -596,6 +602,9 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
     }
 
     def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals3[T] = {
+        if (this eq other)
+            return this;
+
         val that = other.asInstanceOf[Locals3[T]]
         var useThis = true
         var useThat = true
@@ -606,10 +615,10 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             if (thisV0 eq thatV0)
                 thisV0
             else {
-                val newV = onDiff(thisV0, thatV0)
-                if (newV ne thisV0) useThis = false
-                if (newV ne thatV0) useThat = false
-                newV
+                val newV0 = onDiff(thisV0, thatV0)
+                useThis = (newV0 eq thisV0)
+                useThat = (newV0 eq thatV0)
+                newV0
             }
         }
         val newV1 = {
@@ -731,6 +740,9 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
     }
 
     def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals4[T] = {
+        if (this eq other)
+            return this;
+
         val that = other.asInstanceOf[Locals4[T]]
         var useThis = true
         var useThat = true
@@ -742,8 +754,8 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
                 thisV0
             else {
                 val newV = onDiff(thisV0, thatV0)
-                if (newV ne thisV0) useThis = false
-                if (newV ne thatV0) useThat = false
+                useThis = (newV eq thisV0)
+                useThat = (newV eq thatV0)
                 newV
             }
         }
@@ -859,6 +871,9 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
     }
 
     override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals5[T] = {
+        if (this eq other)
+            return this;
+
         val that = other.asInstanceOf[Locals5[T]]
         var useThis = true
         var useThat = true
@@ -868,10 +883,10 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
             if (thisVs1 eq thatVs1)
                 thisVs1
             else {
-                val newVs = thisVs1.fuse(thatVs1, onDiff)
-                if (newVs ne thisVs1) useThis = false
-                if (newVs ne thatVs1) useThat = false
-                newVs
+                val newVs1 = thisVs1.fuse(thatVs1, onDiff)
+                useThis = (newVs1 eq thisVs1)
+                useThat = (newVs1 eq thatVs1)
+                newVs1
             }
         }
         val newVs2 = {

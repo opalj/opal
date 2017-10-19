@@ -39,6 +39,10 @@ import org.opalj.collection.immutable.Chain
  */
 abstract class StoreLocalVariableInstruction extends Instruction {
 
+    final override def isStoreLocalVariableInstruction: Boolean = true
+
+    final override def asStoreLocalVariableInstruction: this.type = this
+
     def lvIndex: Int
 
     def computationalType: ComputationalType

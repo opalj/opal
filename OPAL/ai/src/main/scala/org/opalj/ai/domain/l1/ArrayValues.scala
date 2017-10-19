@@ -157,17 +157,17 @@ trait ArrayValues
             origin:      ValueOrigin,
             theType:     ArrayType,
             val lengths: Chain[Int],
-            t:           Timestamp
-    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
+            refId:       RefId
+    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) {
         this: DomainInitializedArrayValue ⇒
 
         def this(
             origin:  ValueOrigin,
             theType: ArrayType,
             length:  Int,
-            t:       Timestamp
+            refId:   RefId
         ) = {
-            this(origin, theType, lengths = Chain(length), t)
+            this(origin, theType, lengths = Chain(length), refId)
         }
 
         assert(lengths.size > 0, "uninitialized arrays are not supported")
@@ -178,12 +178,12 @@ trait ArrayValues
          */
         override def length: Some[Int] = Some(lengths.head)
 
-        override def updateT(
-            t:      Timestamp,
+        override def updateRefId(
+            refId:  RefId,
             origin: ValueOrigin,
             isNull: Answer
         ): DomainArrayValue = {
-            InitializedArrayValue(origin, theUpperTypeBound, lengths, t)
+            InitializedArrayValue(origin, theUpperTypeBound, lengths, refId)
         }
 
         /**
@@ -207,7 +207,7 @@ trait ArrayValues
                         origin,
                         theType.componentType.asArrayType,
                         lengths.tail,
-                        nextT()
+                        nextRefId()
                     )
                 ComputedValueOrException(value, potentialExceptions)
             } else {
@@ -239,7 +239,7 @@ trait ArrayValues
                         // an exception is raised - in this case the array remains
                         // unchanged; hence, we only have to schedule an update if no
                         // exception is raised!
-                        updateAfterEvaluation(this, InitializedArrayValue(origin, theType, Chain(lengths.head), t))
+                        updateAfterEvaluation(this, InitializedArrayValue(origin, theType, Chain(lengths.head), refId))
                         super.doStore(pc, value, index, potentialExceptions)
                 }
             } else {
@@ -256,18 +256,18 @@ trait ArrayValues
                 case DomainInitializedArrayValue(that) if (this.theUpperTypeBound eq that.theUpperTypeBound) ⇒
                     val prefix = this.lengths.sharedPrefix(that.lengths)
                     if (prefix eq this.lengths) {
-                        if (this.t == that.t)
+                        if (this.refId == that.refId)
                             NoUpdate
                         else
-                            TimestampUpdate(this.updateT(nextT()))
+                            RefIdUpdate(this.updateRefId(nextRefId()))
                     } else if (prefix eq that.lengths) {
-                        StructuralUpdate(that.updateT(nextT()))
+                        StructuralUpdate(that.updateRefId(nextRefId()))
                     } else {
-                        val newT = if (this.t == that.t) this.t else nextT()
+                        val newRefId = if (this.refId == that.refId) this.refId else nextRefId()
                         if (prefix.nonEmpty)
-                            StructuralUpdate(InitializedArrayValue(origin, this.theType, prefix, newT))
+                            StructuralUpdate(InitializedArrayValue(origin, this.theType, prefix, newRefId))
                         else
-                            StructuralUpdate(ArrayValue(origin, No, true, this.theType, newT))
+                            StructuralUpdate(ArrayValue(origin, No, true, this.theType, newRefId))
                     }
 
                 //                case DomainConcreteArrayValue(that) if (this.theUpperTypeBound eq that.theUpperTypeBound) ⇒
@@ -292,8 +292,8 @@ trait ArrayValues
                             // => This array and the other array have a corresponding
                             //    abstract representation (w.r.t. the next abstraction level!)
                             //    but we still need to drop the concrete information
-                            val newT = if (other.t == this.t) this.t else nextT()
-                            StructuralUpdate(ArrayValue(origin, No, true, theType, newT))
+                            val newRefId = if (other.refId == this.refId) this.refId else nextRefId()
+                            StructuralUpdate(ArrayValue(origin, No, true, theType, newRefId))
                         case answer ⇒ answer
                     }
             }
@@ -349,7 +349,7 @@ trait ArrayValues
         override def toString() = {
             val theType = theUpperTypeBound.toJava
             val lengths = this.lengths.mkString("[", "][", "]")
-            s"$theType[@$origin;lengths=$lengths;t=$t]"
+            s"$theType[@$origin;lengths=$lengths;refId=$refId]"
         }
 
     }
@@ -370,8 +370,8 @@ trait ArrayValues
             origin:     ValueOrigin,
             theType:    ArrayType,
             val values: Array[DomainValue],
-            t:          Timestamp
-    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
+            refId:      RefId
+    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) {
         this: DomainConcreteArrayValue ⇒
 
         override def length: Some[Int] = Some(values.size)
@@ -417,7 +417,7 @@ trait ArrayValues
                 // However, if some exception may be thrown, then we certainly
                 // do not have enough information about the value/the index and
                 // we are no longer able to track the array's content.
-                val abstractValue = InitializedArrayValue(origin, theType, Chain(values.size), t)
+                val abstractValue = InitializedArrayValue(origin, theType, Chain(values.size), refId)
                 updateAfterEvaluation(this, abstractValue)
                 return ComputationWithSideEffectOrException(potentialExceptions);
             }
@@ -427,7 +427,7 @@ trait ArrayValues
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
                 if (values(index) ne value) {
-                    val updatedValue = ArrayValue(origin, theType, values.updated(index, value), t)
+                    val updatedValue = ArrayValue(origin, theType, values.updated(index, value), refId)
                     updateAfterEvaluation(this, updatedValue)
                 }
                 ComputationWithSideEffectOnly
@@ -435,7 +435,7 @@ trait ArrayValues
                 // This handles the case that the index is not precise, but is still
                 // known to be valid. In this case we have to resort to the
                 // abstract representation of the array.
-                val abstractValue = InitializedArrayValue(origin, theType, Chain(values.size), t)
+                val abstractValue = InitializedArrayValue(origin, theType, Chain(values.size), refId)
                 updateAfterEvaluation(this, abstractValue)
                 ComputationWithSideEffectOnly
             }
@@ -447,7 +447,7 @@ trait ArrayValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainConcreteArrayValue(that) if this.t == that.t ⇒
+                case DomainConcreteArrayValue(that) if this.refId == that.refId ⇒
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
@@ -487,7 +487,7 @@ trait ArrayValues
                         // => This array and the other array have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information
-                        val abstractValue = ArrayValue(origin, No, true, theType, nextT)
+                        val abstractValue = ArrayValue(origin, No, true, theType, nextRefId)
                         StructuralUpdate(abstractValue)
                     } else {
                         answer
@@ -510,7 +510,7 @@ trait ArrayValues
                     thatDomain.ArrayValue(vo, theUpperTypeBound, adaptedValues)
 
                 case thatDomain: l1.ReferenceValues ⇒
-                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextT())
+                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextRefId())
 
                 case thatDomain: l0.TypeLevelReferenceValues ⇒
                     thatDomain.InitializedArrayValue(vo, theUpperTypeBound, Chain(values.size))
@@ -522,15 +522,15 @@ trait ArrayValues
 
         override def equals(other: Any): Boolean = {
             other match {
-                case DomainConcreteArrayValue(that) ⇒ (
+                case DomainConcreteArrayValue(that) ⇒
                     (that eq this) ||
-                    (
-                        (that canEqual this) &&
-                        this.origin == that.origin &&
-                        (this.theUpperTypeBound eq that.theUpperTypeBound) &&
-                        this.values == that.values
-                    )
-                )
+                        (
+                            (that canEqual this) &&
+                            this.origin == that.origin &&
+                            (this.theUpperTypeBound eq that.theUpperTypeBound) &&
+                            this.values == that.values
+                        )
+
                 case _ ⇒ false
             }
         }
@@ -543,7 +543,7 @@ trait ArrayValues
 
         override def toString: String = {
             val valuesAsString = values.mkString("«", ", ", "»")
-            s"${theType.toJava}[@$origin;length=${values.size};t=$t,$valuesAsString]"
+            s"${theType.toJava}[@$origin;length=${values.size};refId=$refId,$valuesAsString]"
         }
     }
 
@@ -555,7 +555,7 @@ trait ArrayValues
 
         val sizeOption = this.intValueOption(count)
         if (sizeOption.isEmpty)
-            return ArrayValue(pc, No, isPrecise = true, arrayType, nextT()); // <====== early return
+            return ArrayValue(pc, No, isPrecise = true, arrayType, nextRefId()); // <= early return
         val size: Int = sizeOption.get
         if (!reifyArray(pc, size, arrayType))
             return InitializedArrayValue(pc, arrayType, Chain(size));
@@ -617,14 +617,14 @@ trait ArrayValues
         origin:            ValueOrigin,
         theUpperTypeBound: ArrayType,
         values:            Array[DomainValue],
-        t:                 Timestamp
+        refId:             RefId
     ): DomainArrayValue
 
     def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
         counts:    Chain[Int],
-        t:         Timestamp
+        refId:     RefId
     ): DomainArrayValue
 
 }
@@ -638,7 +638,7 @@ object ArrayValues {
     //        FirstVirtualOriginAddressOfDefaultArrayValues+pc*UShort.MaxValue,
     //        FirstVirtualOriginAddressOfDefaultArrayValues+(pc+1)*UShort.MaxValue
     // ]
-    final val FirstVirtualOriginAddressOfDefaultArrayValues = (Int.MaxValue / 2)
+    final val FirstVirtualOriginAddressOfDefaultArrayValues = (Int.MaxValue / 2) // FIXME TODO XXX <= needs to be killed...
     final val MaxPossibleArraySize = (Int.MaxValue / 2) / UShort.MaxValue /*<=> max PC per method*/
 
 }

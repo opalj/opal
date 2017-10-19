@@ -47,7 +47,14 @@ trait IF_ICMPGELike extends IFICMPInstructionLike {
 
 }
 
-case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction with IF_ICMPGELike
+case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction[IF_ICMPGE] with IF_ICMPGELike {
+
+    def copy(branchoffset: Int): IF_ICMPGE = new IF_ICMPGE(branchoffset)
+
+    def negate(newBranchoffset: Int = branchoffset): IF_ICMPLT = {
+        IF_ICMPLT(newBranchoffset)
+    }
+}
 
 object IF_ICMPGE {
 

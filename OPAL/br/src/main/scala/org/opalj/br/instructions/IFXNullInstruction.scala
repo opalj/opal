@@ -43,13 +43,20 @@ trait IFXNullInstructionLike extends SimpleConditionalBranchInstructionLike {
     def condition: RelationalOperator
 
     final def stackSlotsChange: Int = -1
+
 }
 
-trait IFXNullInstruction extends SimpleConditionalBranchInstruction with IFXNullInstructionLike
+trait IFXNullInstruction[T <: IFXNullInstruction[T]]
+    extends SimpleConditionalBranchInstruction[T]
+    with IFXNullInstructionLike {
+
+    final override def asIFXNullInstruction: this.type = this
+
+}
 
 object IFXNullInstruction {
 
-    def unapply(i: IFXNullInstruction): Some[(RelationalOperator, Int)] = {
+    def unapply(i: IFXNullInstruction[_]): Some[(RelationalOperator, Int)] = {
         Some((i.condition, i.branchoffset))
     }
 

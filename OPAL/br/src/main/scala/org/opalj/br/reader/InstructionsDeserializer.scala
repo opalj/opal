@@ -27,27 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package graphs
+package br
+package reader
 
 /**
- * Wraps the information required to create a [[DominatorTree]] or related data structures.
- *
  * @author Michael Eichberg
  */
-case class DominatorTreeFactory(
-        startNode:                Int,
-        startNodeHasPredecessors: Boolean,
-        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        maxNode:                  Int
-) {
+trait InstructionsDeserializer extends DeferredInvokedynamicResolution {
 
-    lazy val dt: DominatorTree = {
-        DominatorTree(
-            startNode,
-            startNodeHasPredecessors,
-            foreachSuccessorOf, foreachPredecessorOf,
-            maxNode
-        )
-    }
+    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions
 }

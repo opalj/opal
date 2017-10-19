@@ -49,7 +49,8 @@ import org.opalj.fpcf.properties.ConditionallyImmutableObject
 import org.opalj.fpcf.properties.TypeImmutability
 
 /**
- * Determines the mutability of a specific type.
+ * Determines the mutability of a specific type by checking if all subtypes of a specific
+ * type are immutable and checking that the set of types is closed.
  *
  * @author Michael Eichberg
  */
@@ -73,7 +74,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
 
-        if (cf.isFinal || /*APP:*/ directSubtypes.isEmpty) {
+        if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
             def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                 p match {
@@ -274,14 +275,12 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
 
-        // An optimization if the analysis also includes the JDK.
+        // An optimization, if the analysis also includes the JDK.
         project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
 
-        ps.scheduleForCollected {
-            case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf
-        }(
+        ps.scheduleForEntities(project.allClassFiles.filter(_.thisType ne ObjectType.Object)) {
             analysis.step1(typeExtensibility)
-        )
+        }
 
         analysis
     }

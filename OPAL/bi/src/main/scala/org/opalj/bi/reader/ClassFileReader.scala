@@ -681,7 +681,7 @@ object ClassFileReader {
     type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
 
     final val defaultExceptionHandler: ExceptionHandler = (source, t) ⇒ {
-        OPALLogger.error("reading class files", s"processing $source failed", t)(GlobalLogContext)
+        OPALLogger.error("class file reader", s"processing $source failed", t)(GlobalLogContext)
     }
 
 }

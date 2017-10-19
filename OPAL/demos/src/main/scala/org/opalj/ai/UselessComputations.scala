@@ -99,13 +99,13 @@ object UselessComputations extends DefaultOneStepAnalysis {
                         UselessComputation(method, pc, "useless comparison with null")
                     case (
                         pc,
-                        _: IFICMPInstruction,
+                        _: IFICMPInstruction[_],
                         Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
                         ) ⇒
                         UselessComputation(method, pc, "comparison of constant values: "+a+", "+b)
                     case (
                         pc,
-                        _: IF0Instruction,
+                        _: IF0Instruction[_],
                         Seq(domain.ConcreteIntegerValue(a), _*)
                         ) ⇒
                         UselessComputation(method, pc, "comparison of 0 with constant value: "+a)
