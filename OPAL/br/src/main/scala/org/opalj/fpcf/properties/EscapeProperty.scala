@@ -743,6 +743,7 @@ trait GlobalEscape extends EscapeProperty {
 
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.GLOBAL
 
+    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 }
 
 case object GlobalEscape extends GlobalEscape {
@@ -754,8 +755,6 @@ case object GlobalEscape extends GlobalEscape {
     override def propertyName: String = "Global"
 
     override def meet(that: EscapeProperty): EscapeProperty = this
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 }
 
 case object EscapeViaHeapObject extends GlobalEscape {
@@ -770,8 +769,6 @@ case object EscapeViaHeapObject extends GlobalEscape {
         if (that.propertyValueID == EscapeViaStaticField.PID || that.propertyValueID == GlobalEscape.PID)
             GlobalEscape
         else this
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 }
 
 case object EscapeViaStaticField extends GlobalEscape {
@@ -786,8 +783,6 @@ case object EscapeViaStaticField extends GlobalEscape {
         if (that.propertyValueID == EscapeViaHeapObject.PID || that.propertyValueID == GlobalEscape.PID)
             GlobalEscape
         else this
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 }
 
 /*

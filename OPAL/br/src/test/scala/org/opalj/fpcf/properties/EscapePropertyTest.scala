@@ -69,8 +69,12 @@ class EscapePropertyTest extends FlatSpec with Matchers {
     for (prop1 <- allProperties) {
         for(prop2 <- allProperties) {
             it should s"be antisymmetric for $prop1 and $prop2" in {
-                if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop1))
-                    prop1 should be(prop2)
+                if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop1)) {
+                    if (prop1.isBottom)
+                        prop1.isBottom should be(true)
+                    else
+                        prop1 should be(prop2)
+                }
             }
             for(prop3 <- allProperties) {
                 it should s"be transitive for $prop1, $prop2 and $prop3" in {
