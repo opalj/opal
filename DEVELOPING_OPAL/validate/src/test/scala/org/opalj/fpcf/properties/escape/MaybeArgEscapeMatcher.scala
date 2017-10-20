@@ -29,7 +29,7 @@
 package org.opalj.fpcf.properties.escape
 
 import org.opalj.br.ObjectType
-import org.opalj.br.Annotation
+import org.opalj.br.AnnotationLike
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
@@ -40,7 +40,7 @@ class MaybeArgEscapeMatcher extends AbstractPropertyMatcher{
                             p:          SomeProject,
                             as:         Set[ObjectType],
                             entity:     Entity,
-                            a:          Annotation,
+                            a:          AnnotationLike,
                             properties: List[Property]
                         ): Option[String] = {
             ???
