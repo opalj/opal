@@ -115,6 +115,9 @@ trait AbstractEntityEscapeAnalysis {
     val defSite: ValueOrigin
     val uses: IntArraySet
 
+    var workset: IntArraySet = uses
+    var seen: IntArraySet = IntArraySet.empty
+
     //
     // STATE MUTATED WHILE ANALYZING THE METHOD
     //
@@ -123,7 +126,11 @@ trait AbstractEntityEscapeAnalysis {
 
     def doDetermineEscape(): PropertyComputationResult = {
         // for every use-site, check its escape state
-        for (use ← uses) checkStmtForEscape(code(use))
+        while (workset.nonEmpty) {
+            val use = workset.head; workset = workset - use; seen = seen + use
+            checkStmtForEscape(code(use))
+        }
+
 
         // if we do not depend on other entities, or are globally escaping, return the result
         if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
@@ -424,6 +431,7 @@ trait AbstractEntityEscapeAnalysis {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                         dependees = dependees.filter(_.e ne other) + newEP
+                        calcMostRestrictive(EscapeInCallee)
                         IntermediateResult(e, MaybeEscapeInCallee meet mostRestrictiveProperty, dependees, c)
                     case _ ⇒
                         removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
@@ -471,6 +479,7 @@ trait AbstractEntityEscapeAnalysis {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                         dependees = dependees.filter(_.e ne other) + newEP
+                        calcMostRestrictive(EscapeInCallee)
                         IntermediateResult(e, MaybeEscapeInCallee meet mostRestrictiveProperty, dependees, c)
                     case _ ⇒
                         removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)

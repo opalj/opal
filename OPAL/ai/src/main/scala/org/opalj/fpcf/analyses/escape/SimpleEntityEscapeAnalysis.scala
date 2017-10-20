@@ -56,10 +56,6 @@ import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.fpcf.properties.MaybeEscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndAbnormalReturn
-import org.opalj.fpcf.properties.MaybeEscapeViaReturn
-import org.opalj.fpcf.properties.MaybeEscapeViaNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndReturn
-import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndNormalAndAbnormalReturn
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -257,14 +253,18 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                         // check if the this local escapes in the callee
                         val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                         escapeState match {
-                            case EP(_, NoEscape)                                 ⇒ //NOTHING TO DO
-                            case EP(_, GlobalEscape)                             ⇒ calcMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeViaStaticField)                     ⇒ calcMostRestrictive(EscapeViaStaticField)
-                            case EP(_, EscapeViaHeapObject)                      ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, EscapeInCallee)                           ⇒ calcMostRestrictive(EscapeInCallee)
-                            case EP(_, EscapeViaParameter)                       ⇒ calcMostRestrictive(MaybeNoEscape)
-                            case EP(_, EscapeViaAbnormalReturn)                  ⇒ calcMostRestrictive(MaybeNoEscape)
-                            case EP(_, EscapeViaParameterAndAbnormalReturn)      ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, NoEscape)                            ⇒ //NOTHING TO DO
+                            case EP(_, GlobalEscape)                        ⇒ calcMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeViaStaticField)                ⇒ calcMostRestrictive(EscapeViaStaticField)
+                            case EP(_, EscapeViaHeapObject)                 ⇒ calcMostRestrictive(EscapeViaHeapObject)
+                            case EP(_, EscapeInCallee)                      ⇒ calcMostRestrictive(EscapeInCallee)
+                            case EP(_, EscapeViaParameter)                  ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, EscapeViaAbnormalReturn)             ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, EscapeViaParameterAndAbnormalReturn) ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, MaybeEscapeInCallee) ⇒
+                                calcMostRestrictive(EscapeInCallee)
+                                dependees += escapeState
+                            case EP(_, MaybeNoEscape)                            ⇒ dependees += escapeState
                             case EP(_, MaybeEscapeViaParameter)                  ⇒ dependees += escapeState
                             case EP(_, MaybeEscapeViaAbnormalReturn)             ⇒ dependees += escapeState
                             case EP(_, MaybeEscapeViaParameterAndAbnormalReturn) ⇒ dependees += escapeState
