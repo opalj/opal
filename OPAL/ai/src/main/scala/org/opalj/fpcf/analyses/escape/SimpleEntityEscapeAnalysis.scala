@@ -50,6 +50,16 @@ import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.MaybeEscapeInCallee
+import org.opalj.fpcf.properties.EscapeViaStaticField
+import org.opalj.fpcf.properties.EscapeViaHeapObject
+import org.opalj.fpcf.properties.EscapeViaParameter
+import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndNormalAndAbnormalReturn
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -74,20 +84,20 @@ import org.opalj.tac.Throw
  * @author Florian Kuebler
  */
 class SimpleEntityEscapeAnalysis(
-        val e:             Entity,
-        val defSite:       ValueOrigin,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val m:             Method,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    val defSite:       ValueOrigin,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val cfg:           CFG,
+    val handlers:      ExceptionHandlers,
+    val m:             Method,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends AbstractEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntitiyEscapeAnalysis
 
 /**
  * Handling for exceptions, that are allocated within the current method.
@@ -166,7 +176,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         /* if the base object came from a static field, the value assigned to it
                          escapes globally */
                         case Assignment(_, _, GetStatic(_, _, _, _)) ⇒
-                            calcMostRestrictive(GlobalEscape) //TODO
+                            calcMostRestrictive(EscapeViaHeapObject)
                         case Assignment(_, _, GetField(_, _, _, _, objRef)) ⇒
                             objRef.asVar.definedBy foreach { x ⇒
                                 if (!seen.contains(x)) worklist = worklist + x
@@ -247,17 +257,19 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                         // check if the this local escapes in the callee
                         val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                         escapeState match {
-                            case EP(_, NoEscape)            ⇒ //NOTHING TO DO
-                            case EP(_, GlobalEscape) ⇒ calcMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeInCallee)           ⇒ calcMostRestrictive(EscapeInCallee)
-                            //case EP(_, MethodEscapeViaParameterAssignment) ⇒
-                            //    calcMostRestrictive(MaybeNoEscape)
-                            //case EP(_, MaybeArgEscape | MaybeMethodEscape | MaybeNoEscape) ⇒
-                            //    dependees += escapeState
-                            case EP(_, _) ⇒
-                                // init methods are void, so there can't be other forms of
-                                // method escapes
-                                throw new RuntimeException("not yet implemented")
+                            case EP(_, NoEscape)                                 ⇒ //NOTHING TO DO
+                            case EP(_, GlobalEscape)                             ⇒ calcMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeViaStaticField)                     ⇒ calcMostRestrictive(EscapeViaStaticField)
+                            case EP(_, EscapeViaHeapObject)                      ⇒ calcMostRestrictive(EscapeViaHeapObject)
+                            case EP(_, EscapeInCallee)                           ⇒ calcMostRestrictive(EscapeInCallee)
+                            case EP(_, EscapeViaParameter)                       ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, EscapeViaAbnormalReturn)                  ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, EscapeViaParameterAndAbnormalReturn)      ⇒ calcMostRestrictive(MaybeNoEscape)
+                            case EP(_, MaybeEscapeViaParameter)                  ⇒ dependees += escapeState
+                            case EP(_, MaybeEscapeViaAbnormalReturn)             ⇒ dependees += escapeState
+                            case EP(_, MaybeEscapeViaParameterAndAbnormalReturn) ⇒ dependees += escapeState
+                            case EP(_, p) ⇒
+                                throw new UnknownError(s"unexpected escape property ($p) for constructors")
                             // result not yet finished
                             case epk ⇒ dependees += epk
                         }

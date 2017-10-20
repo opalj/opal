@@ -50,6 +50,18 @@ import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.MaybeEscapeViaParameter
+import org.opalj.fpcf.properties.EscapeViaStaticField
+import org.opalj.fpcf.properties.EscapeViaHeapObject
+import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
+import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndReturn
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.UVar
@@ -160,7 +172,7 @@ trait AbstractEntityEscapeAnalysis {
         (stmt.astID: @switch) match {
             case PutStatic.ASTID ⇒
                 val value = stmt.asPutStatic.value
-                if (usesDefSite(value)) calcMostRestrictive(GlobalEscape)
+                if (usesDefSite(value)) calcMostRestrictive(EscapeViaStaticField)
             case ReturnValue.ASTID ⇒
                 if (usesDefSite(stmt.asReturnValue.expr))
                     calcMostRestrictive(EscapeViaReturn)
@@ -365,38 +377,41 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
         other match {
 
-            /* Until there is no simple may-alias analysis, this code is useless
-            // this entity is written into a field of the other entity
-             case AllocationSite(_, _, _) ⇒ p match {
-                case MethodEscapeViaReturn                  ⇒ removeFromDependeesAndComputeResult(other, MethodEscapeViaReturnAssignment)
-                case GlobalEscapeViaStaticFieldAssignment   ⇒ removeFromDependeesAndComputeResult(other, GlobalEscapeViaHeapObjectAssignment)
-                case state: EscapeProperty if state.isFinal ⇒ removeFromDependeesAndComputeResult(other, state)
-                case state: EscapeProperty ⇒ u match {
-                    case IntermediateUpdate ⇒
-                        val newEP = EP(other, state)
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, state meet mostRestrictiveProperty, dependees, c)
-                    case _ ⇒ removeFromDependeesAndComputeResult(other, state)
-                }
-            }*/
-
+            // special handling for the this local of the constructor
             case FormalParameter(method, -1) if method.isConstructor ⇒ p match {
 
-                case GlobalEscape   ⇒ Result(e, GlobalEscape)
+                case GlobalEscape         ⇒ Result(e, GlobalEscape)
 
-                case NoEscape       ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
+                case EscapeViaStaticField ⇒ Result(e, EscapeViaStaticField)
 
-                case EscapeInCallee ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
+
+                case NoEscape             ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
+
+                case EscapeInCallee       ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
 
                 case EscapeViaParameter ⇒
                     // we do not further track the field of the actual parameter
                     removeFromDependeesAndComputeResult(other, MaybeNoEscape)
 
                 case EscapeViaAbnormalReturn ⇒
-                    throw new RuntimeException("not yet implemented yet")
-                //TODO
+                    // this could be the case if `other` is an exception and is thrown in its constructor
+                    removeFromDependeesAndComputeResult(other, MaybeNoEscape)
 
-                case MaybeNoEscape | MaybeEscapeViaParameter ⇒ u match {
+                case EscapeViaParameterAndAbnormalReturn ⇒
+                    // combines the two cases above
+                    removeFromDependeesAndComputeResult(other, MaybeNoEscape)
+
+                case EscapeViaReturn | EscapeViaNormalAndAbnormalReturn |
+                    EscapeViaParameterAndReturn | EscapeViaParameterAndNormalAndAbnormalReturn |
+                    MaybeEscapeViaReturn | MaybeEscapeViaNormalAndAbnormalReturn |
+                    MaybeEscapeViaParameterAndReturn |
+                    MaybeEscapeViaParameterAndNormalAndAbnormalReturn ⇒
+                    // the constructor has no return statement, so this should not occur
+                    throw new RuntimeException("Constructor has no return statement")
+
+                case MaybeNoEscape | MaybeEscapeViaParameter | MaybeEscapeViaAbnormalReturn |
+                    MaybeEscapeViaParameterAndAbnormalReturn ⇒ u match {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                         dependees = dependees.filter(_.e ne other) + newEP
@@ -421,23 +436,48 @@ trait AbstractEntityEscapeAnalysis {
             // this entity is passed as parameter (or this local) to a method
             case FormalParameter(_, _) ⇒ p match {
 
-                case GlobalEscape       ⇒ Result(e, GlobalEscape)
+                case GlobalEscape         ⇒ Result(e, GlobalEscape)
 
-                case NoEscape | EscapeInCallee ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
-                case _ => throw new RuntimeException("not yet implemented")
+                case EscapeViaStaticField ⇒ Result(e, EscapeViaStaticField)
 
-                // we do not track the fields of the actual parameter or the return value any further
-                //case _: MethodEscape           ⇒ removeFromDependeesAndComputeResult(other, MaybeArgEscape) //TODO What??
+                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
 
-                /*case MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape ⇒ u match {
+                case NoEscape | EscapeInCallee ⇒
+                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
 
+                case EscapeViaParameter ⇒
+                    // IMPROVE we do not further track the field of the actual parameter
+                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+
+                case EscapeViaAbnormalReturn ⇒
+                    // IMPROVE we do not further track the exception thrown in the callee
+                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+
+                case EscapeViaReturn ⇒
+                    // IMPROVE we do not further track the return value of the callee
+                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+
+                case EscapeViaParameterAndAbnormalReturn | EscapeViaNormalAndAbnormalReturn |
+                    EscapeViaParameterAndAbnormalReturn | EscapeViaParameterAndReturn |
+                    EscapeViaParameterAndNormalAndAbnormalReturn ⇒
+                    // combines the cases above
+                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+
+                case MaybeNoEscape | MaybeEscapeInCallee | MaybeEscapeViaParameter |
+                    MaybeEscapeViaAbnormalReturn | MaybeEscapeViaReturn |
+                    MaybeEscapeViaParameterAndAbnormalReturn | MaybeEscapeViaParameterAndReturn |
+                    MaybeEscapeViaNormalAndAbnormalReturn |
+                    MaybeEscapeViaParameterAndNormalAndAbnormalReturn ⇒ u match {
                     case IntermediateUpdate ⇒
                         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
                         dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, MaybeArgEscape meet mostRestrictiveProperty, dependees, c)
+                        IntermediateResult(e, MaybeEscapeInCallee meet mostRestrictiveProperty, dependees, c)
+                    case _ ⇒
+                        removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+                }
 
-                    case _ ⇒ removeFromDependeesAndComputeResult(other, MaybeArgEscape)
-                }*/
+                case p ⇒
+                    throw new UnknownError(s"unexpected escape property ($p) for constructors")
             }
 
         }
