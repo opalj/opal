@@ -50,6 +50,8 @@ import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.fpcf.properties.GlobalEscape
+import org.opalj.fpcf.properties.EscapeViaStaticField
+import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.Parameters
@@ -204,15 +206,11 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                     if (fp != e) {
                         val escapeState = propertyStore(fp, EscapeProperty.key)
                         escapeState match {
-                            case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
-                            case EP(_, GlobalEscape)  ⇒ calcMostRestrictive(GlobalEscape)
-                            //case EP(_, _: MethodEscape)      ⇒ calcMostRestrictive(MaybeArgEscape) //TODO
-                            //case EP(_, MaybeNoEscape | MaybeArgEscape | MaybeMethodEscape) ⇒
-                            //    dependees += escapeState
-                            //    calcMostRestrictive(EscapeInCallee)
-                            case EP(_, _) ⇒
-                                throw new RuntimeException("not yet implemented")
-                            // result not yet finished
+                            case EP(_, NoEscape | EscapeInCallee)           ⇒ calcMostRestrictive(EscapeInCallee)
+                            case EP(_, GlobalEscape)                        ⇒ calcMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeViaStaticField)                ⇒ calcMostRestrictive(EscapeViaStaticField)
+                            case EP(_, EscapeViaHeapObject)                 ⇒ calcMostRestrictive(EscapeViaHeapObject)
+                            case EP(_, p) if p.isFinal                      ⇒ calcMostRestrictive(MaybeEscapeInCallee)
                             case epk ⇒
                                 dependees += epk
                                 calcMostRestrictive(EscapeInCallee)
@@ -226,16 +224,16 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 }
 
 class InterproceduralEntityEscapeAnalysis(
-        val e:             Entity,
-        val defSite:       ValueOrigin,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val m:             Method,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    val defSite:       ValueOrigin,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val cfg:           CFG,
+    val handlers:      ExceptionHandlers,
+    val m:             Method,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntitiyEscapeAnalysis
