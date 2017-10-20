@@ -31,7 +31,7 @@ package fpcf
 package properties
 package field_mutability
 
-import org.opalj.br.Annotation
+import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 
@@ -48,7 +48,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         p:          SomeProject,
         as:         Set[ObjectType],
         entity:     Entity,
-        a:          Annotation,
+        a:          AnnotationLike,
         properties: List[Property]
     ): Option[String] = {
         if (properties.forall(p ⇒ p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))

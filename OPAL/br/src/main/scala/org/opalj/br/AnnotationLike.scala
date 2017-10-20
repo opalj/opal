@@ -27,33 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
+package br
 
 /**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * An annotation of a code entity.
+ *
+ * Annotations are associated with a class, field, method, type etc. using the respective
+ * attributes.
  *
  * @author Michael Eichberg
  */
-class FieldMutabilityTests extends PropertiesTest {
+abstract class AnnotationLike {
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
+    def annotationType: FieldType
 
-    describe("the org.opalj.fpcf.analyses.FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(FieldMutabilityAnalysis))
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
+    def elementValuePairs: ElementValuePairs
 
 }
