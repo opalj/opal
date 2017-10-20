@@ -45,11 +45,17 @@ import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
+import org.opalj.br.AllocationSite
+import org.opalj.br.MethodWithBody
+import org.opalj.br.TAOfNew
+import org.opalj.br.AnnotationLikes
 import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.analyses.AllocationSites
+import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -195,6 +201,23 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         } yield {
             val fp = formalParameters(m)(i + 1)
             (fp, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+        }
+    }
+
+    def allocationSitesWithAnnotations: Traversable[(AllocationSite, String ⇒ String, Traversable[AnnotationLike])] = {
+        val allocationSites: AllocationSites = FixtureProject.get(AllocationSitesKey)
+        for {
+            m <- FixtureProject.allMethodsWithBody
+            (pc, as) ← allocationSites(m)
+            annotations = m.runtimeVisibleTypeAnnotations.filter { ta ⇒
+                ta.target match {
+                    case TAOfNew(`pc`) ⇒ true
+                    case _             ⇒ false
+                }
+            }
+            if annotations.nonEmpty
+        } yield {
+            (as, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
         }
     }
 
