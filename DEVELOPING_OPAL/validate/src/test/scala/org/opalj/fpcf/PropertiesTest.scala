@@ -46,10 +46,7 @@ import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
 import org.opalj.br.AllocationSite
-import org.opalj.br.MethodWithBody
 import org.opalj.br.TAOfNew
-import org.opalj.br.AnnotationLikes
-import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
@@ -83,7 +80,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
-        val libraryClassFiles = ClassFiles(RTJar) ++ propertiesClassFiles
+        val libraryClassFiles = /*ClassFiles(RTJar) ++*/ propertiesClassFiles
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -207,7 +204,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def allocationSitesWithAnnotations: Traversable[(AllocationSite, String ⇒ String, Traversable[AnnotationLike])] = {
         val allocationSites: AllocationSites = FixtureProject.get(AllocationSitesKey)
         for {
-            m <- FixtureProject.allMethodsWithBody
+            m ← FixtureProject.allMethodsWithBody
             (pc, as) ← allocationSites(m)
             annotations = m.runtimeVisibleTypeAnnotations.filter { ta ⇒
                 ta.target match {

@@ -13,11 +13,11 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
-@PropertyValidator(key = "EscapeProperty",validator = EscapeViaReturnMatcher.class)
+@PropertyValidator(key = "EscapeProperty",validator = MaybeEscapeViaParameterAndNormalAndAbnormalReturnMatcher.class)
 @Target({ TYPE_USE, PARAMETER })
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface EscapeViaReturn {
+public @interface MaybeEscapeViaParameterAndNormalAndAbnormalReturn {
     /**
      * A short reasoning of this property.
      */
