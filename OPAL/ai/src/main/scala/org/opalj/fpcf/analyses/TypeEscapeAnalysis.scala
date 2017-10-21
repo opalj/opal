@@ -74,7 +74,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                         case EP(_, MaybeNoEscape | MaybeEscapeInCallee) ⇒
                             maybeLocal = true
                         // /dependees += escapeState
-                        case EP(_, _)   ⇒ return ImmediateResult(cf, GlobalType)
+                        case EP(_, _) ⇒ return ImmediateResult(cf, GlobalType)
                         case epk ⇒
                             throw new RuntimeException("Escape information should be present")
                         //dependees += epk

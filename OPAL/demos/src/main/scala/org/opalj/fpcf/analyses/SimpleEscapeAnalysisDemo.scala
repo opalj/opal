@@ -121,7 +121,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
              |# of maybe arg escaping objects: ${countFP(maybeArgEscape)}
              |# of maybe method escaping objects: ${countFP(maybeMethodEscape)}"""
 */
-        BasicReport("")//message.stripMargin('|'))
+        BasicReport("") //message.stripMargin('|'))
     }
 
 }

@@ -131,7 +131,6 @@ trait AbstractEntityEscapeAnalysis {
             checkStmtForEscape(code(use))
         }
 
-
         // if we do not depend on other entities, or are globally escaping, return the result
         if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
             ImmediateResult(e, mostRestrictiveProperty)

@@ -206,11 +206,11 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                     if (fp != e) {
                         val escapeState = propertyStore(fp, EscapeProperty.key)
                         escapeState match {
-                            case EP(_, NoEscape | EscapeInCallee)           ⇒ calcMostRestrictive(EscapeInCallee)
-                            case EP(_, GlobalEscape)                        ⇒ calcMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeViaStaticField)                ⇒ calcMostRestrictive(EscapeViaStaticField)
-                            case EP(_, EscapeViaHeapObject)                 ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, p) if p.isFinal                      ⇒ calcMostRestrictive(MaybeEscapeInCallee)
+                            case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
+                            case EP(_, GlobalEscape)              ⇒ calcMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
+                            case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
+                            case EP(_, p) if p.isFinal            ⇒ calcMostRestrictive(MaybeEscapeInCallee)
                             case epk ⇒
                                 dependees += epk
                                 calcMostRestrictive(EscapeInCallee)
@@ -224,16 +224,16 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 }
 
 class InterproceduralEntityEscapeAnalysis(
-    val e:             Entity,
-    val defSite:       ValueOrigin,
-    val uses:          IntArraySet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val cfg:           CFG,
-    val handlers:      ExceptionHandlers,
-    val m:             Method,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
+        val e:             Entity,
+        val defSite:       ValueOrigin,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val cfg:           CFG,
+        val handlers:      ExceptionHandlers,
+        val m:             Method,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntitiyEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntitiyEscapeAnalysis

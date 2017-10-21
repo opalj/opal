@@ -48,8 +48,8 @@ class EscapePropertyTest extends FlatSpec with Matchers {
 
     behavior of "the meet operator"
 
-    for (prop1 <- allProperties) {
-        for (prop2 <- allProperties){
+    for (prop1 ← allProperties) {
+        for (prop2 ← allProperties) {
             val meet12 = prop1 meet prop2
             val meet21 = prop2 meet prop1
             it should s"be symmetric for $prop1 and $prop2" in {
@@ -66,8 +66,8 @@ class EscapePropertyTest extends FlatSpec with Matchers {
     }
 
     behavior of "the less or equal restrictive relation"
-    for (prop1 <- allProperties) {
-        for(prop2 <- allProperties) {
+    for (prop1 ← allProperties) {
+        for (prop2 ← allProperties) {
             it should s"be antisymmetric for $prop1 and $prop2" in {
                 if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop1)) {
                     if (prop1.isBottom)
@@ -76,9 +76,9 @@ class EscapePropertyTest extends FlatSpec with Matchers {
                         prop1 should be(prop2)
                 }
             }
-            for(prop3 <- allProperties) {
+            for (prop3 ← allProperties) {
                 it should s"be transitive for $prop1, $prop2 and $prop3" in {
-                    if((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop3))
+                    if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop3))
                         prop1 lessOrEqualRestrictive prop3 should be(true)
                 }
             }
@@ -140,7 +140,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         NoEscape meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeInCallee meet $EscapeViaReturn" should s"be $EscapeViaReturn" in {
         EscapeInCallee meet EscapeViaReturn should be(EscapeViaReturn)
     }
@@ -193,7 +192,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeInCallee meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaReturn meet $EscapeViaParameter" should s"be $EscapeViaParameterAndReturn" in {
         EscapeViaReturn meet EscapeViaParameter should be(EscapeViaParameterAndReturn)
     }
@@ -243,7 +241,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaParameter meet $EscapeViaAbnormalReturn" should s"be $EscapeViaParameterAndAbnormalReturn" in {
         EscapeViaParameter meet EscapeViaAbnormalReturn should be(EscapeViaParameterAndAbnormalReturn)
     }
@@ -290,7 +287,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaParameter meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
         EscapeViaAbnormalReturn meet EscapeViaParameterAndReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -334,7 +330,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaParameterAndReturn meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
         EscapeViaParameterAndReturn meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -375,7 +370,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaParameterAndReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
         EscapeViaParameterAndAbnormalReturn meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -413,7 +407,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaParameterAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
         EscapeViaNormalAndAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -448,7 +441,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
         EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -480,7 +472,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$MaybeEscapeInCallee meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaReturn" in {
         MaybeEscapeInCallee meet MaybeEscapeViaReturn should be(MaybeEscapeViaReturn)
     }
@@ -509,7 +500,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeInCallee meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndReturn" in {
         MaybeEscapeViaReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndReturn)
     }
@@ -535,7 +525,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeViaReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
         MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
     }
@@ -558,7 +547,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeViaParameter meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
         MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -578,8 +566,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeViaParameterAndReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
-
     s"$MaybeEscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
         MaybeEscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -596,7 +582,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeViaParameterAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$MaybeEscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
         MaybeEscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
     }
@@ -610,7 +595,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeViaNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
         MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
     }
@@ -621,14 +605,12 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
     }
 
-
     s"$GlobalEscape meet $EscapeViaStaticField" should s"be $GlobalEscape" in {
         GlobalEscape meet EscapeViaStaticField should be(GlobalEscape)
     }
     s"$GlobalEscape meet $EscapeViaHeapObject" should s"be $GlobalEscape" in {
         GlobalEscape meet EscapeViaHeapObject should be(GlobalEscape)
     }
-
 
     s"$EscapeViaStaticField meet $EscapeViaHeapObject" should s"be $GlobalEscape" in {
         EscapeViaStaticField meet EscapeViaHeapObject should be(GlobalEscape)
