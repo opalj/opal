@@ -39,7 +39,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
     final type Self = EscapeProperty
 }
 
-/*
+/**
  * Specifies the lifetime of object instance. This is classically used for compiler optimizations
  * such as scalar replacement, stack allocation or removal of synchronization.
  * However, other usages such as finding bugs, identifying pure methods or helping to
@@ -57,56 +57,72 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * Furthermore it holds that "For any object O, !Escapes(O, M) implies !Escapes(O, T), where method
  * M is invoked in thread T." [1]
  *
- * [[NoEscape]] now refers to the property of an object instance O created in method M for that
+ * In contrast to this, Kotzmann and Mössenböck [2] describe the escape of an object with the access
+ * to this object from other methods or threads.
+ * This EscapeProperty combines both concepts and furthermore tries to be more specific about the
+ * reason why an object escapes.
+ *
+ * In the following we provide further details about the different escape properties:
+ *
+ * [[NoEscape]] refers to the property of an object instance O created in method M for that
  * !Escapes(O, M) holds and no other method than M has access to O. This implies that there is no
  * method M' != M that can access O (at least when disregarding reflection and native code).
  * Objects with this property can be allocated at the stack or even scalar-replaced [2].
  *
- * An object instance O created in method M and thread T has the property [[EscapeInCallee]], if it holds
- * !Escapes(O, M) but M passes O as a parameter to a method which does not let O escape. This
- * implies that only M and methods M' that are (transitively) called by M have access to O.
+ * An object instance O created in method M and thread T has the property [[EscapeInCallee]], if it
+ * holds !Escapes(O, M) but M passes O as a parameter to a method which does not let O escape any
+ * further then [[EscapeInCallee]]. This implies that only M and methods M' that are (transitively)
+ * called by M have access to O.
  * For objects that have the property [[EscapeInCallee]] no synchronization is needed and they can
  * be allocated on the stack.
- * Note that Kotzmann and Mössenböck [2] denotes the exact same property as MethodEscape, which is
- * not the same property as [[MethodEscape]].
  *
- * An object instance O created in method M and thread T has the property [[MethodEscape]], if it
- * holds that Escape(O, M) but not Escapes(O, T). This is the case if O is returned by M but all
- * direct and indirect callers of M do not let O escape the thread. The return of O is either
- * directly via the return statement ([[MethodEscapeViaReturn]]), or by assigning O to a field of a
- * parameter ([[MethodEscapeViaParameterAssignment]]) or the return value
- * ([[MethodEscapeViaReturnAssignment]]). For objects that are at least [[MethodEscape]] no
- * synchronization is needed.
+ * For objects O, created in method M and thread T, whose lifetime exceeds its method of creation M
+ * and (therefore) accessible by other methods, we provide seven different properties. For all of
+ * them we assume that O M and all methods called by M do not let O escape T. But it is not
+ * guarantied that O will not escape T via a caller of M.
+ * The properties differ in the reason why the lifetime of O exceeds the lifetime of M.
+ * [[EscapeViaReturn]] describes the case that, O is returned by M. If O has an exception type and
+ * is thrown in M, it has the property [[EscapeViaAbnormalReturn]].
+ * For both of them it has no consequences if O escapes T via a caller of M. This is, because
+ * the execution ends with the (abnormal) return of O. All synchronization mechanisms inside of M
+ * or callees of M can be removed.
+ * The property [[EscapeViaParameter]] describes objects that gets assigned to a parameter of its
+ * method of creation (M). If O gets assigned to p.f for a parameter p of M, it could be the case
+ * that the actual parameter of p already escaped T. In this case O would also escape T directly
+ * via this assignment. Therefore no synchronization for O can be removed.
+ * As it could be also the case that O gets assigned to a parameter and returned by M, there are
+ * also properties representing the combinations of this kind of escapes. They are
+ * [[EscapeViaParameterAndAbnormalReturn]], [[EscapeViaParameterAndReturn]],
+ * [[EscapeViaNormalAndAbnormalReturn]] and [[EscapeViaParameterAndNormalAndAbnormalReturn]].
+ *
  *
  * An object instance O created in method M and thread T has the property [[GlobalEscape]], if it
  * holds that Escapes(O, M) and Escapes(O, T). For example this is the case if O gets assigned to
- * a static field ([[GlobalEscapeViaStaticFieldAssignment]] but also if assigned to a field of an
- * object that has also [[GlobalEscape]] as property ([[GlobalEscapeViaHeapObjectAssignment]]).
+ * a static field ([[EscapeViaStaticField]] but also if assigned to a field of an
+ * object that has also [[GlobalEscape]] as property ([[EscapeViaHeapObject]]).
  * Objects that have the property  [[GlobalEscape]] have to be allocated on the heap and
  * synchronization mechanisms can not be removed/proper synchronization is required if the
  * object is accessed concurrently – the latter may be the goal of static analyses that find
- * concurrency bugs).
+ * concurrency bugs). If the reason for the global escape is unspecified the case class
+ * [[GlobalEscape]] is used.
  *
  * The property values are partially ordered and form a lattice. The binary relation of the order is
  * called `lessOrEqualRestrictive` and describes the restrictiveness of the scope in, which objects
  * exists. The most restrictive (top) value is [[NoEscape]] and the least restrictive (bottom) one
- * is [[GlobalEscape]]. We have [[GlobalEscape]] is less restrictive than [[MethodEscape]] is less
- * restrictive than [[EscapeInCallee]] is less restrictive than [[NoEscape]]. Furthermore [[GlobalEscape]]
- * is less restrictive than [[MaybeMethodEscape]] is less restrictive than [[MaybeArgEscape]] is
- * less restrictive than [[MaybeNoEscape]] is less restrictive than [[NoEscape]]. Finally
- * [[MaybeArgEscape]] is less restrictive than [[EscapeInCallee]] and [[MaybeMethodEscape]] is less
- * restrictive than [[MethodEscape]]. The properties [[MaybeNoEscape]] and [[EscapeInCallee]] as well as
- * [[MaybeArgEscape]] and [[MethodEscape]] are incomparable.
+ * is [[GlobalEscape]].
  * A dot graph of the lattice can be found under br/src/main/resources/org/opalj/fpcf/properties.
  *
  * Algorithms are free to over approximate this property, i.e. for object
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
+ *
  * If they simply don't know the actual property they should use [[MaybeNoEscape]].
  * If we know that the actual property is at most [[EscapeInCallee]] (i.e. not [[NoEscape]],
- * [[MaybeArgEscape]] should be used.
- * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
- * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
+ * [[MaybeEscapeInCallee]] should be used.
+ * The same holds for every other non-bottom property.
+ * E.g. [[MaybeEscapeViaParameter]] should be used if we know that the actual property is at most
+ * [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
+ *
  *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
@@ -119,14 +135,6 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * [2] Kotzmann, Thomas, and Hanspeter Mössenböck. “Escape Analysis in the Context of Dynamic
  * Compilation and Deoptimization.” In Proceedings of the 1st ACM/USENIX International Conference
  * on Virtual Execution Environments, 111–120. VEE ’05. New York, NY, USA: ACM, 2005.
- *
- * TODO param level The escape level; the higher the value the more restricted can the usage of the
- *         respective value be.
- *         E.g., a client might only interested in objects that do not escape. In this case he
- *         reject all objects whose escape level is smaller than the escape level of [[NoEscape]].
- *         In the case of [[MaybeNoEscape]] he could run a more precise analysis.
- *         The precise value is subject to change without notice and should
- *         not be used!
  *
  * @author Florian Kuebler
  */
@@ -316,6 +324,28 @@ case object EscapeInCallee extends EscapeProperty {
     final val flags = EscapeProperty.IN_CALLEE
 }
 
+/**
+ * Characterizes escapes via an assignment to a field of a method parameter, where no caller let
+ * this field escape globally. (It may additionally escape by other means too, but this property
+ * was derived first. It must not be the case that an additional escape has the
+ * property [[GlobalEscape]].)
+ *
+ * @example
+ * Given the following code:
+ * {{{
+ * public class X{
+ *  public Object f;
+ *  private void foo(X param) {
+ *   param.f = new Object();        // ALLOCATION SITE
+ *  }
+ *  public void bar() {
+ *   foo(new X());
+ *  }
+ * }
+ * }}}
+ * An analysis is only expected to return [[EscapeViaParameter]] for the object o
+ * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
+ */
 case object EscapeViaParameter extends EscapeProperty {
     final val isRefineable = false
 
@@ -340,6 +370,30 @@ case object EscapeViaParameter extends EscapeProperty {
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER
 }
 
+/**
+ * Characterizes escapes via a return statement, where no caller let this return value escape
+ * globally. (It may additionally escape by other means too, but this property
+ * was derived first. It must not be the case that an additional escape has the
+ * property [[GlobalEscape]].)
+ *
+ * @note For escape characterization, a 'throw' statements is seen as a 'return' statement.
+ * @example
+ * Given the following code:
+ * {{{
+ * public class X{
+ *  public Object f;
+ *  private Object foo() {
+ *   Object o = new Object();        // ALLOCATION SITE
+ *   return o;
+ *  }
+ *  public void bar() {
+ *   foo(); // do not use the return
+ *  }
+ * }
+ * }}}
+ * An analysis is only expected to return [[EscapeViaReturn]] for the object o
+ * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
+ */
 case object EscapeViaReturn extends EscapeProperty {
     final val isRefineable = false
 
@@ -498,6 +552,12 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProperty 
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * Used, when we know nothing about the escape property so far.
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeNoEscape extends EscapeProperty {
 
     final val isRefineable = true
@@ -518,6 +578,13 @@ case object MaybeNoEscape extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just be [[EscapeInCallee]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeInCallee extends EscapeProperty {
     final val isRefineable = true
 
@@ -735,6 +802,40 @@ case object MaybeEscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProp
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * ''The object escapes globally, typically because it is assigned to a static variable or to a
+ * field of a heap object.''
+ *
+ * This property should be used if and only if the analysis is conclusive and could determine
+ * that the value definitively escapes globally.
+ * If a more advanced analysis – potentially run later – could identify an object
+ * as only [[EscapeViaParameter]], [[EscapeInCallee]] or even [[NoEscape]] then the refineable
+ * property [[MaybeNoEscape]] (or another non final property) should be used.
+ *
+ * @example
+ * Given the following library code:
+ * {{{
+ * public class X{
+ *  public static Object o;
+ *  public void m(boolean b) {
+ *      Object o = new Object();        // ALLOCATION SITE
+ *      if (b) X.o = o;
+ *      return;
+ *  }
+ * }
+ * }}}
+ * An analysis is only expected to return [[EscapeViaStaticField]] for the object o
+ * instantiated in m, if the analyses ''knows'' that m is called and the parameter b is
+ * potentially `true`. If the above code is found in a library it may very well be the case that
+ * certain parameter values/combinations will never be used in a certain setting and – therefore –
+ * o does not escape.
+ *
+ * However, from a pure technical point-of-view it may be useful/necessary to use
+ * [[GlobalEscape]] at some point to let depending computations know that no more
+ * changes will happen and therefore the dependencies can be deleted.
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 trait GlobalEscape extends EscapeProperty {
     final val isRefineable = false
     override def isBottom: Boolean = true
@@ -755,336 +856,6 @@ case object GlobalEscape extends GlobalEscape {
     override def propertyName: String = "Global"
 
     override def meet(that: EscapeProperty): EscapeProperty = this
-}
-
-case object EscapeViaHeapObject extends GlobalEscape {
-
-    final val PID = 19
-
-    override def propertyValueID: PropertyKeyID = PID
-
-    override def propertyName: String = "ViaHeapObject"
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        if (that.propertyValueID == EscapeViaStaticField.PID || that.propertyValueID == GlobalEscape.PID)
-            GlobalEscape
-        else this
-}
-
-case object EscapeViaStaticField extends GlobalEscape {
-
-    final val PID = 20
-
-    override def propertyValueID: PropertyKeyID = PID
-
-    override def propertyName: String = "ViaStaticField"
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        if (that.propertyValueID == EscapeViaHeapObject.PID || that.propertyValueID == GlobalEscape.PID)
-            GlobalEscape
-        else this
-}
-
-/*
-/**
- * The object escapes the method M in which it was created directly via the return of M or
- * indirectly via an assignment to a field of the return value or a parameter of M.
- * Objects that have the property [[MethodEscape]] do not escape its thread.
- *
- * @see [[EscapeProperty]] for further details.
- * @note This property does not refer to the identically named property defined by Kotzmann
- *       and Mössenböck
- */
-sealed abstract class MethodEscape extends EscapeProperty(1) {
-    final val isRefineable = false
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID           ⇒ this
-            case MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ MaybeMethodEscape
-            case _                                      ⇒ that
-        }
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID           ⇒ true
-            case MethodEscapeViaReturn.PID              ⇒ true
-            case MethodEscapeViaReturnAssignment.PID    ⇒ true
-            case MethodEscapeViaParameterAssignment.PID ⇒ true
-            case _                                      ⇒ false
-        }
-
-    override def isBottom: Boolean = false
-
-    override def isTop: Boolean = false
-}
-
-/**
- * Characterizes escapes via a return statement, where no caller let this return value escape
- * globally. (It may additionally escape by other means too, but this property
- * was derived first. It must not be the case that an additional escape has the
- * property [[GlobalEscape]].)
- *
- * @note For escape characterization, a 'throw' statements is seen as a 'return' statement.
- * @example
- * Given the following code:
- * {{{
- * public class X{
- *  public Object f;
- *  private Object foo() {
- *   Object o = new Object();        // ALLOCATION SITE
- *   return o;
- *  }
- *  public void bar() {
- *   foo(); // do not use the return
- *  }
- * }
- * }}}
- * An analysis is only expected to return [[MethodEscapeViaReturn]] for the object o
- * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
- */
-case object MethodEscapeViaReturn extends MethodEscape {
-    final val PID = 2
-    override def propertyValueID: PropertyKeyID = PID
-    override def propertyName: String = "ViaReturn"
-}
-
-/**
- * Characterizes escapes via an assignment to a field of a method parameter, where no caller let
- * this field escape globally. (It may additionally escape by other means too, but this property
- * was derived first. It must not be the case that an additional escape has the
- * property [[GlobalEscape]].)
- *
- * @example
- * Given the following code:
- * {{{
- * public class X{
- *  public Object f;
- *  private void foo(X param) {
- *   param.f = new Object();        // ALLOCATION SITE
- *  }
- *  public void bar() {
- *   foo(new X());
- *  }
- * }
- * }}}
- * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
- * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
- */
-case object MethodEscapeViaParameterAssignment extends MethodEscape {
-    override def propertyName: String = "ViaParameter"
-    final val PID = 3
-    override def propertyValueID: PropertyKeyID = PID
-}
-
-/**
- * Characterizes escapes via an assignment to a field of the return value, where no caller let
- * this field escape globally. (It may additionally escape by other means too, but this property
- * was derived first. It must not be the case that an additional escape has the
- * property [[GlobalEscape]].)
- *
- * @example
- * Given the following code:
- * {{{
- * public class X{
- *  public Object f;
- *  private X foo() {
- *   Object o = new Object();        // ALLOCATION SITE
- *   X x = new X();
- *   x.f = o;
- *   return x;
- *  }
- *  public void bar() {
- *   foo(); // do not use the return
- *  }
- * }
- * }}}
- * An analysis is only expected to return [[MethodEscapeViaParameterAssignment]] for the object o
- * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
- */
-case object MethodEscapeViaReturnAssignment extends MethodEscape {
-    final val PID = 4
-    override def propertyValueID: PropertyKeyID = PID
-    override def propertyName: String = "ViaReturnAssignment"
-}
-
-/**
- * Used, when we know nothing about the escape property so far.
- *
- * @see [[EscapeProperty]] for further details.
- * @author Florian Kuebler
- */
-case object MaybeNoEscape extends EscapeProperty(3) {
-    // TODO shouldn't "level" be "0" ... a refinement to MaybeArgEscape should be possible... right?
-    final val isRefineable = true
-
-    final val PID = 5
-
-    override def propertyValueID: PropertyKeyID = PID
-
-    override def propertyName: String = "MaybeNo"
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID                           ⇒ MaybeNoEscape
-            case EscapeInCallee.PID                          ⇒ MaybeArgEscape
-            case MethodEscapeViaReturn.PID              ⇒ MaybeMethodEscape
-            case MethodEscapeViaReturnAssignment.PID    ⇒ MaybeMethodEscape
-            case MethodEscapeViaParameterAssignment.PID ⇒ MaybeMethodEscape
-            case _                                      ⇒ that
-        }
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | MaybeNoEscape.PID ⇒ true
-            case _                                ⇒ false
-        }
-
-    override def isBottom: Boolean = false
-
-    override def isTop: Boolean = false
-}
-
-/**
- * Used when the respective object instance definitively escapes, but the final –
- * not yet available – escape level may just be [[EscapeInCallee]].
- *
- * @see [[EscapeProperty]] for further details.
- * @author Florian Kuebler
- */
-case object MaybeArgEscape extends EscapeProperty(2) {
-
-    final val isRefineable = true
-
-    final val PID = 6
-
-    override def propertyValueID: PropertyKeyID = PID
-
-    override def propertyName: String = "MaybeArg"
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID | MaybeNoEscape.PID ⇒ MaybeArgEscape
-            case MethodEscapeViaReturn.PID                        ⇒ MaybeMethodEscape
-            case MethodEscapeViaReturnAssignment.PID              ⇒ MaybeMethodEscape
-            case MethodEscapeViaParameterAssignment.PID           ⇒ MaybeMethodEscape
-            case _                                                ⇒ that
-        }
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case NoEscape.PID | EscapeInCallee.PID | MaybeNoEscape.PID | MaybeArgEscape.PID ⇒ true
-            case _ ⇒ false
-        }
-
-    override def isBottom: Boolean = false
-
-    override def isTop: Boolean = false
-}
-
-/**
- * Used, when we know that the respective object instance definitively escapes via an argument
- * ([[EscapeInCallee]]), but it is still possible that the value only escapes via the method
- * (and not globally); however, the analysis is not yet conclusive.
- *
- * @see [[EscapeProperty]] for further details.
- * @author Florian Kuebler
- */
-case object MaybeMethodEscape extends EscapeProperty(1) {
-
-    final val isRefineable = true
-
-    final val PID = 7
-
-    override def propertyValueID: PropertyKeyID = PID
-
-    override def propertyName: String = "MaybeMethod"
-
-    override def meet(that: EscapeProperty): EscapeProperty =
-        (that.propertyValueID: @switch) match {
-            case GlobalEscapeViaStaticFieldAssignment.PID ⇒ that
-            case GlobalEscapeViaHeapObjectAssignment.PID  ⇒ that
-            case _                                        ⇒ this
-        }
-
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
-        (that.propertyValueID: @switch) match {
-            case GlobalEscapeViaStaticFieldAssignment.PID ⇒ false
-            case GlobalEscapeViaHeapObjectAssignment.PID  ⇒ false
-            case _                                        ⇒ true
-        }
-
-    override def isBottom: Boolean = false
-
-    override def isTop: Boolean = false
-}
-
-/**
- * ''The object escapes globally, typically because it is assigned to a static variable or to a
- * field of a heap object.''
- *
- * This property should be used if and only if the analysis is conclusive and could determine
- * that the value definitively escapes globally.
- * If a more advanced analysis – potentially run later – could identify an object
- * as only [[MethodEscape]], [[EscapeInCallee]] or even [[NoEscape]] then the refineable property
- * [[MaybeNoEscape]] should be used.
- *
- * @example
- * Given the following library code:
- * {{{
- * public class X{
- *  public static Object o;
- *  public void m(boolean b) {
- *      Object o = new Object();        // ALLOCATION SITE
- *      if (b) X.o = o;
- *      return;
- *  }
- * }
- * }}}
- * An analysis is only expected to return [[GlobalEscapeViaStaticFieldAssignment]] for the object o
- * instantiated in m, if the analyses ''knows'' that m is called and the parameter b is
- * potentially `true`. If the above code is found in a library it may very well be the case that
- * certain parameter values/combinations will never be used in a certain setting and – therefore –
- * o does not escape.
- *
- * However, from a pure technical point-of-view it may be useful/necessary to use
- * [[GlobalEscape]] at some point to let depending computations know that no more
- * changes will happen and therefore the dependencies can be deleted.
- * @see [[EscapeProperty]] for further details.
- * @author Florian Kuebler
- */
-sealed abstract class GlobalEscape extends EscapeProperty(0) {
-    final val isRefineable = false
-    override def meet(that: EscapeProperty): EscapeProperty = this
-    override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
-    override def isBottom: Boolean = true
-    override def isTop: Boolean = false
-}
-
-/**
- * Characterizes escapes via the write to a static field. (It may additionally escape by other
- * means too, but this property was derived first.)
- *
- * @example
- * Given the following code:
- * {{{
- * public class X{
- *  public static Object o;
- *  public void m() {
- *      Object o = new Object();        // ALLOCATION SITE
- *      X.o = o;
- *      return;
- *  }
- * }
- * }}}
- *
- * @see [[GlobalEscape]] for further details.
- * @author Florian Kuebler
- */
-case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
-    final val PID = 8
-    override def propertyValueID: PropertyKeyID = PID
-    override def propertyName: String = "ViaStaticField"
 }
 
 /**
@@ -1109,9 +880,50 @@ case object GlobalEscapeViaStaticFieldAssignment extends GlobalEscape {
  * @see [[GlobalEscape]] for further details.
  * @author Florian Kuebler
  */
-case object GlobalEscapeViaHeapObjectAssignment extends GlobalEscape {
-    final val PID = 9
+case object EscapeViaHeapObject extends GlobalEscape {
+
+    final val PID = 19
+
     override def propertyValueID: PropertyKeyID = PID
+
     override def propertyName: String = "ViaHeapObject"
+
+    override def meet(that: EscapeProperty): EscapeProperty =
+        if (that.propertyValueID == EscapeViaStaticField.PID || that.propertyValueID == GlobalEscape.PID)
+            GlobalEscape
+        else this
 }
-*/
+
+/**
+ * Characterizes escapes via the write to a static field. (It may additionally escape by other
+ * means too, but this property was derived first.)
+ *
+ * @example
+ * Given the following code:
+ * {{{
+ * public class X{
+ *  public static Object o;
+ *  public void m() {
+ *      Object o = new Object();        // ALLOCATION SITE
+ *      X.o = o;
+ *      return;
+ *  }
+ * }
+ * }}}
+ *
+ * @see [[GlobalEscape]] for further details.
+ * @author Florian Kuebler
+ */
+case object EscapeViaStaticField extends GlobalEscape {
+
+    final val PID = 20
+
+    override def propertyValueID: PropertyKeyID = PID
+
+    override def propertyName: String = "ViaStaticField"
+
+    override def meet(that: EscapeProperty): EscapeProperty =
+        if (that.propertyValueID == EscapeViaHeapObject.PID || that.propertyValueID == GlobalEscape.PID)
+            GlobalEscape
+        else this
+}
