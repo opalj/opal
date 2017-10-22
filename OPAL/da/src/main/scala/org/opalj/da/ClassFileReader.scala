@@ -41,50 +41,50 @@ import org.opalj.bi.AttributeParent
  * @author Noorulla Sharief
  */
 object ClassFileReader
-        extends Constant_PoolBinding
-        with bi.reader.ClassFileReader
-        with bi.reader.FieldsReader
-        with bi.reader.MethodsReader
-        with bi.reader.AttributesReader
-        with bi.reader.Unknown_attributeReader
-        with bi.reader.BootstrapMethods_attributeReader
-        with bi.reader.Code_attributeReader
-        with bi.reader.CodeReader
-        with bi.reader.SourceFile_attributeReader
-        with bi.reader.Signature_attributeReader
-        with bi.reader.ConstantValue_attributeReader
-        with bi.reader.Synthetic_attributeReader
-        with bi.reader.Deprecated_attributeReader
-        with bi.reader.SourceDebugExtension_attributeReader
-        with bi.reader.InnerClasses_attributeReader
-        with bi.reader.Exceptions_attributeReader
-        with bi.reader.EnclosingMethod_attributeReader
-        with bi.reader.LineNumberTable_attributeReader
-        with bi.reader.LocalVariableTable_attributeReader
-        with bi.reader.LocalVariableTypeTable_attributeReader
-        with bi.reader.ElementValuePairsReader
-        with bi.reader.ParametersAnnotationsReader
-        with bi.reader.MethodParameters_attributeReader
-        with bi.reader.AnnotationsReader
-        with bi.reader.AnnotationDefault_attributeReader
-        with bi.reader.RuntimeVisibleAnnotations_attributeReader
-        with bi.reader.RuntimeInvisibleAnnotations_attributeReader
-        with bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
-        with bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
-        with bi.reader.VerificationTypeInfoReader
-        with bi.reader.StackMapTable_attributeReader
-        with bi.reader.StackMapFrameReader
-        with bi.reader.TypeAnnotationTargetReader
-        with bi.reader.RuntimeInvisibleTypeAnnotations_attributeReader
-        with bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
-        with bi.reader.TypeAnnotationPathReader
-        with bi.reader.TypeAnnotationsReader
-        // JAVA 9
-        with bi.reader.Module_attributeReader
-        with bi.reader.Version_attributeReader
-        with bi.reader.MainClass_attributeReader
-        with bi.reader.ConcealedPackages_attributeReader
-        with bi.reader.TargetPlatform_attributeReader {
+    extends Constant_PoolBinding
+    with bi.reader.ClassFileReader
+    with bi.reader.FieldsReader
+    with bi.reader.MethodsReader
+    with bi.reader.AttributesReader
+    with bi.reader.Unknown_attributeReader
+    with bi.reader.BootstrapMethods_attributeReader
+    with bi.reader.Code_attributeReader
+    with bi.reader.CodeReader
+    with bi.reader.SourceFile_attributeReader
+    with bi.reader.Signature_attributeReader
+    with bi.reader.ConstantValue_attributeReader
+    with bi.reader.Synthetic_attributeReader
+    with bi.reader.Deprecated_attributeReader
+    with bi.reader.SourceDebugExtension_attributeReader
+    with bi.reader.InnerClasses_attributeReader
+    with bi.reader.Exceptions_attributeReader
+    with bi.reader.EnclosingMethod_attributeReader
+    with bi.reader.LineNumberTable_attributeReader
+    with bi.reader.LocalVariableTable_attributeReader
+    with bi.reader.LocalVariableTypeTable_attributeReader
+    with bi.reader.ElementValuePairsReader
+    with bi.reader.ParametersAnnotationsReader
+    with bi.reader.MethodParameters_attributeReader
+    with bi.reader.AnnotationsReader
+    with bi.reader.AnnotationDefault_attributeReader
+    with bi.reader.RuntimeVisibleAnnotations_attributeReader
+    with bi.reader.RuntimeInvisibleAnnotations_attributeReader
+    with bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
+    with bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
+    with bi.reader.VerificationTypeInfoReader
+    with bi.reader.StackMapTable_attributeReader
+    with bi.reader.StackMapFrameReader
+    with bi.reader.TypeAnnotationTargetReader
+    with bi.reader.RuntimeInvisibleTypeAnnotations_attributeReader
+    with bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
+    with bi.reader.TypeAnnotationPathReader
+    with bi.reader.TypeAnnotationsReader
+    // JAVA 9
+    with bi.reader.Module_attributeReader
+    with bi.reader.Version_attributeReader
+    with bi.reader.MainClass_attributeReader
+    with bi.reader.ConcealedPackages_attributeReader
+    with bi.reader.TargetPlatform_attributeReader {
 
     type CPIndex = Constant_Pool_Index
 
@@ -103,12 +103,15 @@ object ClassFileReader
 
     def ClassFile(
         cp:            Constant_Pool,
-        minor_version: Int, major_version: Int,
-        access_flags: Int,
-        this_class:   Constant_Pool_Index, super_class: Constant_Pool_Index, interfaces: Interfaces,
-        fields:     Fields,
-        methods:    Methods,
-        attributes: Attributes
+        minor_version: Int,
+        major_version: Int,
+        access_flags:  Int,
+        this_class:    Constant_Pool_Index,
+        super_class:   Constant_Pool_Index,
+        interfaces:    Interfaces,
+        fields:        Fields,
+        methods:       Methods,
+        attributes:    Attributes
     ): ClassFile =
         new ClassFile(
             cp, minor_version, major_version, access_flags,

@@ -59,7 +59,7 @@ object StringConstants extends DefaultOneStepAnalysis {
                 replace("\"", "\\\"")
             locations.map { methodPc ⇒
                 val (method, pc) = methodPc
-                method.toJava(project.classFile(method), s"pc=$pc")
+                method.toJava(s"pc=$pc")
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }
 

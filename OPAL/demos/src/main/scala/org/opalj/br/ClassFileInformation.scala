@@ -119,9 +119,9 @@ object ClassFileInformation {
             // JDK defines additional (new) features.
             println(s"\tVERSION: $majorVersion.$minorVersion (${org.opalj.bi.jdkVersion(majorVersion)})")
 
-            println(fields.map(_.toJavaSignature).mkString("\tFIELDS:\n\t", "\n\t", ""))
+            println(fields.map(_.signatureToJava(false)).mkString("\tFIELDS:\n\t", "\n\t", ""))
 
-            println(methods.map(_.toJava(false)).mkString("\tMETHODS:\n\t", "\n\t", ""))
+            println(methods.map(_.signatureToJava(false)).mkString("\tMETHODS:\n\t", "\n\t", ""))
 
             println()
         }

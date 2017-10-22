@@ -32,7 +32,6 @@ package domain
 package l2
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 
 /**
  * Enables to perform invocations.
@@ -43,7 +42,7 @@ import org.opalj.br.ClassFile
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations with TheMemoryLayout {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with TheClassHierarchy with Configuration with TheProject with TheMethod ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with TheProject with TheMethod with Configuration ⇒
 
     override type CalledMethodDomain <: TargetDomain with ChildPerformInvocationsWithRecursionDetection with MethodCallResults
 
@@ -58,17 +57,16 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
     private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
 
     override protected[this] def doInvoke(
-        pc:            PC,
-        definingClass: ClassFile,
-        method:        Method,
-        operands:      Operands,
-        fallback:      () ⇒ MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
 
-        callingDomain.calledMethodsStore.testOrElseUpdated(definingClass, method, operands) match {
+        callingDomain.calledMethodsStore.testOrElseUpdated(method, operands) match {
             case Some(newCalledMethodsStore) ⇒
                 childCalledMethodsStore = newCalledMethodsStore
-                super.doInvoke(pc, definingClass, method, operands, fallback)
+                super.doInvoke(pc, method, operands, fallback)
             case None ⇒
                 fallback();
         }
@@ -80,7 +78,9 @@ trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWi
 
     val callerDomain: PerformInvocationsWithRecursionDetection
 
-    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = callerDomain.coordinatingDomain
+    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = {
+        callerDomain.coordinatingDomain
+    }
 
     def frequentEvaluationWarningLevel: Int = callerDomain.frequentEvaluationWarningLevel
 

@@ -48,9 +48,9 @@ import org.opalj.collection.SingletonSet
  * @author David Becker
  */
 trait IntegerSetValues
-        extends IntegerValuesDomain
-        with ConcreteIntegerValues
-        with IntegerRangeValuesFactory {
+    extends IntegerValuesDomain
+    with ConcreteIntegerValues
+    with IntegerRangeValuesFactory {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
@@ -78,8 +78,8 @@ trait IntegerSetValues
      * Abstracts over all values with computational type `integer`.
      */
     abstract class IntegerLikeValue
-            extends TypedValue[CTIntType]
-            with IsIntegerValue[IntegerLikeValue] {
+        extends TypedValue[CTIntType]
+        with IsIntegerValue[IntegerLikeValue] {
         this: DomainTypedValue[CTIntType] ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt

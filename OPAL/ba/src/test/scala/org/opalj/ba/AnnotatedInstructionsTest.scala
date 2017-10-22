@@ -52,25 +52,25 @@ class AnnotatedInstructionsTest extends FlatSpec {
     {
         behavior of "Instructions annotated with Strings"
 
+        val brClassTemplate: CLASS[(Map[org.opalj.br.PC, String], List[String])] = CLASS(
+            accessModifiers = PUBLIC SUPER,
+            thisType = "Test",
+            methods = METHODS(
+                METHOD(PUBLIC, "<init>", "()V", CODE(
+                    'UnUsedLabel1,
+                    ALOAD_0 → "MarkerAnnotation1",
+                    'UnUsedLabel2,
+                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                    RETURN → "MarkerAnnotation2"
+                ))
+            )
+        )
         val (
             daClassFile,
-            methodAnnotations: Map[br.Method, Option[(Map[br.PC, String], List[String])]]
-            ) =
-            CLASS(
-                accessModifiers = PUBLIC SUPER,
-                thisType = "Test",
-                methods = METHODS(
-                    METHOD(PUBLIC, "<init>", "()V", CODE(
-                        'UnUsedLabel1,
-                        ALOAD_0 → "MarkerAnnotation1",
-                        'UnUsedLabel2,
-                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                        RETURN → "MarkerAnnotation2"
-                    ))
-                )
-            ).toDA()
+            methodAnnotations: Map[br.Method, (Map[br.PC, String], List[String])]
+            ) = brClassTemplate.toDA()
         val (pcAnnotations: List[Map[br.PC, String]], warnings) =
-            methodAnnotations.values.head.unzip
+            methodAnnotations.values.unzip
 
         "[String Annotated Instructions] the class generation" should "have no warnings" in {
             assert(warnings.flatten.isEmpty)
@@ -84,7 +84,6 @@ class AnnotatedInstructionsTest extends FlatSpec {
         }
 
         "[String Annotated Instructions] the method " should "have the correct annotations" in {
-
             assert(pcAnnotations.head(0) == "MarkerAnnotation1")
             assert(pcAnnotations.head(4) == "MarkerAnnotation2")
         }
@@ -95,7 +94,7 @@ class AnnotatedInstructionsTest extends FlatSpec {
 
         val (
             daClassFile,
-            methodAnnotations: Map[br.Method, Option[(Map[br.PC, (Symbol, String)], List[String])]]
+            methodAnnotations: Map[br.Method, (Map[br.PC, (Symbol, String)], List[String])]
             ) =
             CLASS(
                 accessModifiers = PUBLIC SUPER,
@@ -111,12 +110,10 @@ class AnnotatedInstructionsTest extends FlatSpec {
                 )
             ).toDA()
         val (pcAnnotations: List[Map[br.PC, (Symbol, String)]], warnings) =
-            methodAnnotations.values.head.unzip
+            methodAnnotations.values.unzip
 
         "[Tuple Annotated Instructions] the class generation" should "have no warnings" in {
-            assert(
-                warnings.flatten.isEmpty
-            )
+            assert(warnings.flatten.isEmpty)
         }
 
         "[Tuple Annotated Instructions] the generated class" should "load correctly" in {

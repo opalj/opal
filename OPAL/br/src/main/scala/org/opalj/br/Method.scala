@@ -53,46 +53,96 @@ import org.opalj.br.instructions.Instruction
  *
  * Method objects are constructed using the companion object's factory methods.
  *
- * @note   Methods have – by default – no link to their defining [[ClassFile]]. However,
- *         if a [[analyses.Project]] is available then it is possible to get a `Method`'s
- *         [[ClassFile]] by using `Project`'s `classFile(Method)` method.
+ * @note   Methods, which are directly created, have no link to "their defining" [[ClassFile]].
+ *         This link is implicitly established when a method is added to a [[ClassFile]]. This
+ *         operation also updates the method object. Hence, an empty method/constructor which
+ *         is identical across multiple classes can be reused.
  *
  * @note   Equality of methods is – by purpose – reference based.
- *
- * @param  accessFlags The ''access flags'' of this method. Though it is possible to
- *         directly work with the `accessFlags` field, it may be more convenient to use
- *         the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
- * @param  name The name of the method. The name is interned (see `String.intern()`
- *         for details) to enable reference comparisons.
- * @param  descriptor This method's descriptor.
- * @param  body The body of the method if any.
- * @param  attributes This method's defined attributes. (Which attributes are available
- *         generally depends on the configuration of the class file reader. However,
- *         the `Code_Attribute` is – if it was loaded – always directly accessible by
- *         means of the `body` attribute.).
  *
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-final class Method private (
-        val accessFlags: Int,
-        val name:        String,
-        val descriptor:  MethodDescriptor,
-        val body:        Option[Code],
-        val attributes:  Attributes
-) extends ClassMember with Ordered[Method] with InstructionsContainer {
+sealed abstract class JVMMethod
+    extends ClassMember
+    with Ordered[JVMMethod]
+    with InstructionsContainer {
+
+    //
+    //
+    // THE STATE
+    //
+    //
 
     /**
-     * Compares this method with the given one for structural equality.
+     * The ''access flags'' of this method. Though it is possible to
+     * directly work with the `accessFlags` field, it may be more convenient to use
+     * the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
+     */
+    def accessFlags: Int
+
+    /**
+     * The name of the method. The name is interned (see `String.intern()`
+     * for details) to enable reference comparisons.
+     */
+    def name: String
+
+    /** This method's descriptor. */
+    def descriptor: MethodDescriptor
+
+    /** The body of the method if any. */
+    def body: Option[Code]
+
+    /**
+     * This method's defined attributes. (Which attributes are available
+     * generally depends on the configuration of the class file reader. However,
+     * the `Code_Attribute` is – if it was loaded – always directly accessible by
+     * means of the `body` attribute.).
+     */
+    def attributes: Attributes
+
+    // This method is only to be called by ..br.ClassFile to associate this method
+    // with the respective class file.
+    private[br] def prepareClassFileAttachement: Method = {
+        new Method(
+            null /*will be set by class file*/ ,
+            accessFlags, name, descriptor, body, attributes
+        )
+    }
+
+    /**
+     * Creates a copy of this method object which is not associated with any class file.
+     */
+    def copy(
+        accessFlags: Int              = this.accessFlags,
+        name:        String           = this.name,
+        descriptor:  MethodDescriptor = this.descriptor,
+        body:        Option[Code]     = this.body,
+        attributes:  Attributes       = this.attributes
+    ): MethodTemplate = {
+        // ensure invariant that the code attribute is explicitly extracted...
+        assert(attributes.forall { a ⇒ a.kindId != Code.KindId })
+
+        val n = if (this.name eq name) name else name.intern()
+
+        new MethodTemplate(accessFlags, n, descriptor, body, attributes)
+    }
+
+    //
+    //
+    // THE METHODS
+    //
+    //
+
+    /**
+     * Compares this method with the given one for structural equality. The declaring class
+     * file is ignored.
      *
-     * Two methods are structurlly equaly if they have the same names, flags and descriptor.
+     * Two methods are structurally equal if they have the same names, flags and descriptor.
      * The bodies and attributes are recursively checked for structural equality. In case of the
      * attributes, the order doesn't matter!
      */
-    def similar(
-        other:  Method,
-        config: SimilarityTestConfiguration
-    ): Boolean = {
+    def similar(other: JVMMethod, config: SimilarityTestConfiguration): Boolean = {
         // IMPROVE Define a method "findDissimilarity" as in case of ClassFile to report the difference
         if (this.accessFlags != other.accessFlags ||
             this.name != other.name ||
@@ -114,33 +164,14 @@ final class Method private (
         compareAttributes(other.attributes, config).isEmpty
     }
 
-    def copy(
-        accessFlags: Int              = this.accessFlags,
-        name:        String           = this.name,
-        descriptor:  MethodDescriptor = this.descriptor,
-        body:        Option[Code]     = this.body,
-        attributes:  Attributes       = this.attributes
-    ): Method = {
-        new Method(accessFlags, name, descriptor, body, attributes)
-    }
-
     final override def instructionsOption: Option[Array[Instruction]] = body.map(_.instructions)
-
-    final override def isMethod: Boolean = true
-
-    final override def asMethod: this.type = this
-
-    final def asVirtualMethod(declaringClassFile: ClassFile): VirtualMethod = {
-        asVirtualMethod(declaringClassFile.thisType)
-    }
-
-    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod = {
-        VirtualMethod(declaringClassType, name, descriptor)
-    }
 
     /**
      * The number of registers required to store this method's parameters (
      * including the self reference if necessary).
+     *
+     * Basically, `MethodDescriptor.requiredRegisters` adapted by the required parameter for
+     * `this` in case of an instance method.
      */
     def requiredRegisters: Int = {
         descriptor.requiredRegisters + (if (isStatic) 0 else 1)
@@ -149,9 +180,9 @@ final class Method private (
     /**
      * Returns `true` if this method has the given name and descriptor.
      *
-     * @param ignoreReturnType If `false` (default), then the return type is taken
-     *      into consideration. This models the behavior of the JVM w.r.t. method
-     *      dispatch.
+     * @param  ignoreReturnType If `false`, then the return type is taken
+     *         into consideration; this models the behavior of the JVM w.r.t. method
+     *         dispatch.
      */
     def hasSignature(
         name:             String,
@@ -174,7 +205,7 @@ final class Method private (
      *      dispatch.
      *      However, if you want to determine whether this method potentially overrides
      *      the given one, you may want to specify that you want to ignore the return type.
-     *      (The Java compiler generate the appropriate methods.)
+     *      (The Java compiler generates the appropriate methods.)
      */
     def hasSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
         this.hasSignature(other.name, other.descriptor, ignoreReturnType)
@@ -215,6 +246,42 @@ final class Method private (
      */
     def annotationDefault: Option[ElementValue] = {
         attributes collectFirst { case ev: ElementValue ⇒ ev }
+    }
+
+    /**
+     * If this method has extended method parameter information, the `MethodParameterTable` is
+     * returned.
+     */
+    def methodParameters: Option[MethodParameterTable] = {
+        attributes collectFirst { case mp: MethodParameterTable ⇒ mp }
+    }
+
+    /**
+     * Returns `Yes` if the parameter with the given index is synthetic; `No` if not and `Unknown`
+     * if the information is not available. The indexes correspond to those used by the
+     * [[MethodDescriptor]].
+     */
+    def isSyntheticParameter(parameterIndex: Int): Answer = {
+        val mpsOpt = methodParameters
+        if (mpsOpt.isEmpty)
+            return Unknown;
+
+        val mps = mpsOpt.get
+        Answer(mps(parameterIndex).isSynthetic)
+    }
+
+    /**
+     * Returns `Yes` if the parameter with the given index is mandated; `No` if not and `Unknown`
+     * if the information is not available. The indexes correspond to those used by the
+     * [[MethodDescriptor]].
+     */
+    def isMandatedParameter(parameterIndex: Int): Answer = {
+        val mpsOpt = methodParameters
+        if (mpsOpt.isEmpty)
+            return Unknown;
+
+        val mps = mpsOpt.get
+        Answer(mps(parameterIndex).isMandated)
     }
 
     // This is directly supported due to its need for the resolution of signature
@@ -266,8 +333,8 @@ final class Method private (
     def parameterTypes: IndexedSeq[FieldType] = descriptor.parameterTypes
 
     /**
-     * The number of explicit and implicit – that is, including `this` in case of a
-     * non-static method – parameters of this method.
+     * The number of explicit and implicit parameters of this method – that is,
+     * including `this` in case of a non-static method.
      */
     def actualArgumentsCount: Int = (if (isStatic) 0 else 1) + descriptor.parametersCount
 
@@ -289,7 +356,7 @@ final class Method private (
      * and – in case that the names of both methods are identical – by comparing
      * their method descriptors.
      */
-    def compare(other: Method): Int = {
+    def compare(other: JVMMethod): Int = {
         if (this.name eq other.name)
             this.descriptor.compare(other.descriptor)
         else
@@ -303,7 +370,7 @@ final class Method private (
             this.name.compareTo(otherName)
     }
 
-    def toJava(withVisibility: Boolean = true): String = {
+    def signatureToJava(withVisibility: Boolean = true): String = {
         val visibility =
             if (withVisibility)
                 VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("")
@@ -311,28 +378,6 @@ final class Method private (
                 ""
         val static = if (isStatic) "static " else ""
         visibility + static + descriptor.toJava(name)
-    }
-
-    def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
-
-    def toJava(project: ClassFileRepository): String = toJava(project.classFile(this).thisType)
-
-    def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ ${toJava()} }"
-
-    def toJava(declaringClass: ClassFile, methodInfo: String): String = {
-        toJava(declaringClass.thisType, methodInfo)
-    }
-
-    def toJava(methodInfo: String)(implicit project: ClassFileRepository): String = {
-        toJava(project.classFile(this), methodInfo)
-    }
-
-    def toJava(declaringType: ObjectType, methodInfo: String): String = {
-        s"${declaringType.toJava}{ ${toJava(true)}{ $methodInfo } }"
-    }
-
-    def fullyQualifiedSignature(declaringClassType: ObjectType): String = {
-        descriptor.toJava(declaringClassType.toJava+"."+name)
     }
 
     //
@@ -358,6 +403,75 @@ final class Method private (
     }
 
 }
+
+/**
+ * A method which is not (yet) associated with a class file.
+ */
+final class MethodTemplate private[br] (
+        val accessFlags: Int,
+        val name:        String,
+        val descriptor:  MethodDescriptor,
+        val body:        Option[Code],
+        val attributes:  Attributes
+) extends JVMMethod {
+
+    /** This template is not (yet) a [[Method]] which is a [[SourceElement]].  */
+    final override def isMethod: Boolean = false
+
+}
+
+/**
+ * A method belonging to a class file. [[Method]] objects are created by creating a class file
+ * using [[MethodTemplate]]s.
+ *
+ * @param declaringClassFile The declaring class file.
+ */
+final class Method private[br] (
+        private[br] var declaringClassFile: ClassFile, // unfortunately, Scala forces us to use this ugly approach to initialize the data structure
+        val accessFlags:                    Int,
+        val name:                           String,
+        val descriptor:                     MethodDescriptor,
+        val body:                           Option[Code],
+        val attributes:                     Attributes
+) extends JVMMethod {
+
+    /**
+     * This method's class file.
+     */
+    final def classFile: ClassFile = declaringClassFile
+
+    /**
+     * @return This method as a [[VirtualMethod]].
+     */
+    final def asVirtualMethod: VirtualMethod = asVirtualMethod(declaringClassFile.thisType)
+
+    /**
+     * This method as a virtual method belonging to the given declaring class type.
+     */
+    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod = {
+        VirtualMethod(declaringClassType, name, descriptor)
+    }
+
+    def toJava: String = s"${classFile.thisType.toJava}{ ${signatureToJava(true)} }"
+
+    /**
+     * A Java-like representation of the signature of this method; "the body" will contain
+     * the given `methodInfo` data.
+     */
+    def toJava(methodInfo: String): String = {
+        s"${classFile.thisType.toJava}{ ${signatureToJava(true)}{ $methodInfo } }"
+    }
+
+    /**
+     * The fully qualified signature of this method.
+     */
+    def fullyQualifiedSignature: String = descriptor.toJava(s"${classFile.thisType.toJava}.$name")
+
+    final override def isMethod: Boolean = true
+
+    final override def asMethod: this.type = this
+}
+
 /**
  * Defines factory and extractor methods for `Method` objects.
  *
@@ -365,10 +479,15 @@ final class Method private (
  */
 object Method {
 
+    @inline def isNativeAndVarargs(accessFlags: Int) = {
+        import AccessFlagsMatcher.ACC_NATIVEAndVARARGS
+        (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
+    }
+
     /**
      * Returns `true` if the method is object serialization related.
-     * That is, if the declaring class is `Externalizable` then the methods readObject and
-     * writeObject are unused.
+     * That is, if the declaring class is `Externalizable` then the methods `readObject` and
+     * `writeObject` are unused.
      * If the declaring class is '''only''' `Seralizable` then the write and read
      * external methods are not serialization related unless a subclass exists that inherits
      * these two methods and implements the interface `Externalizable`.
@@ -418,11 +537,6 @@ object Method {
                 )
     }
 
-    private def isNativeAndVarargs(accessFlags: Int) = {
-        import AccessFlagsMatcher.ACC_NATIVEAndVARARGS
-        (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
-    }
-
     /**
      * Returns `true` if a method declared by a subclass in the package
      * `declaringPackageOfSubclassMethod` can directly override a method which has the
@@ -452,12 +566,33 @@ object Method {
         name:        String,
         descriptor:  MethodDescriptor,
         attributes:  Attributes
+    ): MethodTemplate = {
+
+        val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
+        val theBody = bodySeq.headOption.asInstanceOf[Option[Code]]
+
+        new MethodTemplate(
+            accessFlags,
+            name.intern(),
+            descriptor,
+            theBody,
+            remainingAttributes
+        )
+    }
+
+    // To be called only by the class file reader!
+    protected[br] def unattached(
+        accessFlags: Int,
+        name:        String,
+        descriptor:  MethodDescriptor,
+        attributes:  Attributes
     ): Method = {
 
         val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
         val theBody = bodySeq.headOption.asInstanceOf[Option[Code]]
 
         new Method(
+            null,
             accessFlags,
             name.intern(),
             descriptor,
@@ -467,7 +602,7 @@ object Method {
     }
 
     /**
-     * Factory for Method objects.
+     * Factory for MethodTemplate objects.
      *
      * @example A new method that is public abstract that takes no parameters and
      *          returns void and has the name "myMethod" can be created as shown next:
@@ -481,17 +616,17 @@ object Method {
         parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty,
         returnType:     Type                  = VoidType,
         attributes:     Attributes            = Seq.empty[Attribute]
-    ): Method = {
+    ): MethodTemplate = {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
 
-    def unapply(method: Method): Option[(Int, String, MethodDescriptor)] = {
+    def unapply(method: JVMMethod): Option[(Int, String, MethodDescriptor)] = {
         Some((method.accessFlags, method.name, method.descriptor))
     }
 
-    def defaultConstructor(superclassType: ObjectType = ObjectType.Object): Method = {
+    def defaultConstructor(superclassType: ObjectType = ObjectType.Object): MethodTemplate = {
         import MethodDescriptor.NoArgsAndReturnVoid
-        val theBody = Code(
+        val theBody = Some(Code(
             maxStack = 1,
             maxLocals = 1,
             instructions = Array(
@@ -501,7 +636,8 @@ object Method {
                 null,
                 RETURN
             )
-        )
-        new Method(ACC_PUBLIC.mask, "<init>", NoArgsAndReturnVoid, Some(theBody), IndexedSeq.empty)
+        ))
+        val accessFlags = ACC_PUBLIC.mask
+        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, theBody, IndexedSeq.empty)
     }
 }

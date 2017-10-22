@@ -243,7 +243,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case Deprecated.KindId ⇒ /*do nothing*/
 
                 case _ ⇒
-                    val fieldInfo = field.toJava(declaringClass.thisType)
+                    val fieldInfo = field.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
                     throw new BytecodeProcessingFailedException(message)
             }
@@ -327,8 +327,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     case LineNumberTable.KindId ⇒ /* Do Nothing */
 
                     case _ ⇒
-                        val methodInfo = method.toJava(declaringClass.thisType)
-                        val message = s"unexpected code attribute: $attribute ($methodInfo)"
+                        val methodSignature = method.toJava
+                        val message = s"unexpected code attribute: $attribute ($methodSignature)"
                         throw BytecodeProcessingFailedException(message)
                 }
             }
@@ -394,8 +394,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case MethodParameterTable.KindId ⇒ /* nothing to do */
 
                 case _ ⇒
-                    val methodInfo = method.toJava(declaringClass.thisType)
-                    val message = s"unexpected method attribute: $attribute ($methodInfo)"
+                    val methodSignature = method.toJava
+                    val message = s"unexpected method attribute: $attribute ($methodSignature)"
                     throw BytecodeProcessingFailedException(message)
             }
         }
@@ -1005,12 +1005,19 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
  */
 private object DependencyExtractor {
 
-    private final val incompleteHandlingOfInvokedynamicMessage: String = {
+    private[this] final val incompleteHandlingOfInvokedynamicMessage: String = {
         "for the code's invokedynamic instructions only dependencies to the runtime are resolved"
     }
 
+    @volatile private[this] var incompleteHandlingOfInvokedynamicWasLogged = false
+
     def warnAboutIncompleteHandlingOfInvokedynamic(): Unit = {
-        implicit val logContext = GlobalLogContext
-        OPALLogger.logOnce(BasicLogMessage(message = incompleteHandlingOfInvokedynamicMessage))
+        if (!incompleteHandlingOfInvokedynamicWasLogged) this.synchronized {
+            if (!incompleteHandlingOfInvokedynamicWasLogged) {
+                incompleteHandlingOfInvokedynamicWasLogged = true
+                implicit val logContext = GlobalLogContext
+                OPALLogger.log(BasicLogMessage(message = incompleteHandlingOfInvokedynamicMessage))
+            }
+        }
     }
 }

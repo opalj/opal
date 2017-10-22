@@ -42,7 +42,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
 import org.opalj.log.{GlobalLogContext, OPALLogger}
 import org.opalj.util.Nanoseconds
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
+import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.resultsAsXHTML
 import scala.util.control.ControlThrowable
 import org.opalj.issues.Issue
 
@@ -52,10 +52,10 @@ import org.opalj.issues.Issue
  * @author David Becker
  */
 class AnalysisWorker(
-    doc:                    ObjectProperty[xmlNode],
-    project:                Project[URL],
-    theIssues:              ObjectProperty[Iterable[Issue]],
-    initProgressManagement: Int ⇒ ProgressManagement
+        doc:                    ObjectProperty[xmlNode],
+        project:                Project[URL],
+        theIssues:              ObjectProperty[Iterable[Issue]],
+        initProgressManagement: Int ⇒ ProgressManagement
 ) extends Service[Unit](new jService[Unit]() {
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {

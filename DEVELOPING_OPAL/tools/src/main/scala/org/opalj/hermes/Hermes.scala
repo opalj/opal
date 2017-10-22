@@ -110,7 +110,7 @@ object Hermes extends JFXApp with HermesCore {
         import Console.err
         err.println("OPAL - Hermes")
         err.println("Invalid parameters: "+parameters.named.mkString("{", ",", "}"))
-        err.println("The parameter has to be the configuration which lists a corpus' projects and, ")
+        err.println("The parameter has to be the configuration which lists a corpus' projects and,")
         err.println("optionally, the file to which the results should be exported ")
         err.println("(\"--csv=<FileName>\"). If such a file is specified the application will")
         err.println("close automatically after running all analyses.")
@@ -122,10 +122,10 @@ object Hermes extends JFXApp with HermesCore {
     initialize(new File(parameters.unnamed(0)))
 
     if (parameters.named.size == 1) {
-        // when the CSV was requested, we perform the analysis and then finish Hermes
+        // when the statistics were requested, we perform the analysis and then finish Hermes
         analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
-                exportCSV(new File(parameters.named("csv")))
+                exportStatistics(new File(parameters.named("csv")))
                 stage.close() // <=> quit Hermes
             }
         }
@@ -522,36 +522,36 @@ object Hermes extends JFXApp with HermesCore {
     mainPane.setContent(featuresTableView);
     mainPane.setRight(
         new VBox(
-        new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
-            padding = Insets(5, 5, 5, 5)
-            hgrow = Priority.ALWAYS
-            maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        locationsView
-    ) {
-        padding = Insets(100, 0, 100, 5)
-        vgrow = Priority.ALWAYS
-        maxHeight = Double.MaxValue
-    }.delegate
+            new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
+                padding = Insets(5, 5, 5, 5)
+                hgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+                alignment = Pos.Center
+                style = "-fx-background-color: #ccc"
+            },
+            locationsView
+        ) {
+            padding = Insets(100, 0, 100, 5)
+            vgrow = Priority.ALWAYS
+            maxHeight = Double.MaxValue
+        }.delegate
     )
     mainPane.setTop(
         new VBox(
-        new Label(s"Table Configuration") {
-            padding = Insets(5, 5, 5, 5)
+            new Label(s"Table Configuration") {
+                padding = Insets(5, 5, 5, 5)
+                hgrow = Priority.ALWAYS
+                maxWidth = Double.MaxValue
+                alignment = Pos.Center
+                style = "-fx-background-color: #ccc"
+            },
+            onlyShowNotAvailableFeatures,
+            showFeatureQueryResults
+        ) {
+            padding = Insets(0, 250, 0, 250)
             hgrow = Priority.ALWAYS
             maxWidth = Double.MaxValue
-            alignment = Pos.Center
-            style = "-fx-background-color: #ccc"
-        },
-        onlyShowNotAvailableFeatures,
-        showFeatureQueryResults
-    ) {
-        padding = Insets(0, 250, 0, 250)
-        hgrow = Priority.ALWAYS
-        maxWidth = Double.MaxValue
-    }.delegate
+        }.delegate
     )
 
     def createFileMenuItems(): List[MenuItem] = {
@@ -646,7 +646,7 @@ object Hermes extends JFXApp with HermesCore {
                     val filename = selectedFile.getName
                     val extension = filename.substring(filename.lastIndexOf("."), filename.length())
                     if (extension.equals(".csv")) {
-                        exportCSV(selectedFile)
+                        exportStatistics(selectedFile)
                     } else if (extension.equals(".json")) {
                         exportFlare(selectedFile)
                     }

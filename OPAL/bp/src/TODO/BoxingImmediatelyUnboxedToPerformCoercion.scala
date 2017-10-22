@@ -51,7 +51,7 @@ import br.instructions._
  * @author Daniel Klauer
  * @author Michael Eichberg
  */
-object BoxingImmediatelyUnboxedToPerformCoercion{
+object BoxingImmediatelyUnboxedToPerformCoercion {
 
     override def description: String =
         "Reports sections of code that box a value but then immediately unbox it."
@@ -65,7 +65,7 @@ object BoxingImmediatelyUnboxedToPerformCoercion{
      */
     def doAnalyze(
         project:       SomeProject,
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String]  = List.empty,
         isInterrupted: () ⇒ Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 

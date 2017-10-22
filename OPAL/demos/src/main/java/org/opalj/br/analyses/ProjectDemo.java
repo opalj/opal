@@ -78,12 +78,12 @@ public class ProjectDemo {
                     // Use a fixed domain
                     // Domain<?> domain = new BaseDomain();
                     // OR use a user-specified domain
-                    Domain domain = DomainRegistry.newDomain(chosenDomain, project,
-                            classFile, method);
+                    Domain domain = DomainRegistry.newDomain(chosenDomain, project, method);
 
-                    AIResult result = ai.apply(classFile, method, domain);
-                    System.out.println(XHTML.dump(classFile, method,
-                            "Abstract Interpretation Succeeded", result));
+                    AIResult result = ai.apply( method, domain);
+                    System.out.println(
+                        XHTML.dump(classFile,method,"Abstract Interpretation Succeeded", result)
+                    );
 
                 }
             }

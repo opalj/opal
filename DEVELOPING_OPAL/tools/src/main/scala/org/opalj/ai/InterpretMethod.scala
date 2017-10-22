@@ -32,17 +32,18 @@ package ai
 import java.util.Date
 import java.net.URL
 
-import org.opalj.br.{ClassFile, Method}
-import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.io.writeAndOpen
+import org.opalj.graphs.toDot
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.util.XHTML
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.ai.common.XHTML.dumpAIState
-import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.graphs.toDot
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -56,13 +57,13 @@ object InterpretMethod {
 
         override def isInterrupted: Boolean = Thread.interrupted()
 
-        override val tracer = {
-            val consoleTracer = new ConsoleTracer { override val printOIDs = true }
-            val xHTMLTracer = new XHTMLTracer {}
-            //    Some(new ConsoleTracer {})
-            //Some(new ConsoleEvaluationTracer {})
-            Some(new MultiTracer(consoleTracer, xHTMLTracer))
-        }
+        val consoleTracer =
+            new ConsoleTracer { override val printOIDs = true }
+        //new ConsoleEvaluationTracer {}
+
+        val xHTMLTracer = new XHTMLTracer {}
+
+        override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
     }
 
     /**
@@ -130,21 +131,15 @@ object InterpretMethod {
             return ;
         }
 
-        def createDomain[Source: reflect.ClassTag](
-            project:   SomeProject,
-            classFile: ClassFile,
-            method:    Method
-        ): Domain = {
+        def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
-                return constructor.newInstance(classFile);
+                return constructor.newInstance(method.classFile);
             }
 
-            val constructor =
-                domainClass.getConstructor(classOf[Project[URL]], classOf[ClassFile], classOf[Method])
-
-            constructor.newInstance(project, classFile, method)
+            val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
+            constructor.newInstance(project, method)
         }
 
         val file = new java.io.File(fileName)
@@ -193,25 +188,23 @@ object InterpretMethod {
                         return ;
                 }
 
+        var ai: AI[Domain] = null;
         try {
             val result =
-                if (doTrace)
-                    new IMAI(doIdentifyDeadVariables)(
-                        classFile, method, createDomain(project, classFile, method)
-                    )
-                else {
+                if (doTrace) {
+                    ai = new IMAI(doIdentifyDeadVariables)
+                    ai(method, createDomain(project, method))
+                } else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
                     println("\t"+classFile.thisType.toJava+"{")
-                    println("\t\t"+method.toJava(true)+
+                    println("\t\t"+method.signatureToJava(true)+
                         "[instructions="+body.instructions.size+
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")
                     println("\t}")
-                    val result =
-                        new BaseAI(doIdentifyDeadVariables)(
-                            classFile, method, createDomain(project, classFile, method)
-                        )
+                    ai = new BaseAI(doIdentifyDeadVariables)
+                    val result = ai(method, createDomain(project, method))
                     println("Finished abstract interpretation.")
                     result
                 }
@@ -224,16 +217,16 @@ object InterpretMethod {
                 val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
                 println("AI CFG: "+cfgFile)
 
-                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".gv")
+                val domAsDot = cfgDomain.dominatorTree.toDot(evaluatedInstructions.contains)
+                val domFile = writeAndOpen(domAsDot, "DominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Dominator tree: "+domFile)
 
-                val postDominatorTreeAsDot = cfgDomain.postDominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
+                val postDomAsDot = cfgDomain.postDominatorTree.toDot(evaluatedInstructions.contains)
+                val postDomFile = writeAndOpen(postDomAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Post-Dominator tree: "+postDomFile)
 
-                val cdg = cfgDomain.controlDependencies
-                val rdfAsDotGraph = cdg.dominanceFrontiers.toDot(evaluatedInstructions.contains(_))
+                val cdg = cfgDomain.pdtBasedControlDependencies
+                val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains)
                 val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
                 println("AI CFG - Reverse Dominance Frontiers: "+rdfFile)
             }
@@ -278,7 +271,13 @@ object InterpretMethod {
         } catch {
             case ife: InterpretationFailedException ⇒
 
+                ai match {
+                    case ai: IMAI ⇒ ai.xHTMLTracer.result(null);
+                    case _        ⇒ /*nothing to do*/
+                }
+
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
+                    val domain = ife.domain
                     val parameters =
                         if (nested) {
                             ife.localsArray(0).toSeq.reverse.
@@ -288,7 +287,7 @@ object InterpretMethod {
                             ""
 
                     val aiState =
-                        "<p><i>"+ife.domain.getClass.getName+"</i><b>( "+ife.domain.toString+" )"+"</b></p>"+
+                        s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>"+
                             parameters+
                             "Current instruction: "+ife.pc+"<br>"+
                             XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
@@ -332,6 +331,7 @@ object InterpretMethod {
                     )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
+
         }
     }
 }

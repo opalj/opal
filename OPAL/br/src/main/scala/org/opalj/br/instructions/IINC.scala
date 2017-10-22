@@ -39,6 +39,10 @@ import org.opalj.collection.immutable.Chain
  */
 case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
+    final override def isIINC: Boolean = true
+
+    final override def asIINC: this.type = this
+
     final def opcode: Opcode = IINC.opcode
 
     final def mnemonic: String = "iinc"

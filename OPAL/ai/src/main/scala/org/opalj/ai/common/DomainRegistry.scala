@@ -34,8 +34,8 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Registry for all domains that can be instantiated given a `Project`, `ClassFile` and
- * `Method` object.
+ * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a
+ * body.
  *
  * The registry was developed to support tools for debugging purposes that let
  * the user/developer choose between different domains. After choosing a domain,
@@ -50,7 +50,7 @@ import org.opalj.br.analyses.SomeProject
  */
 object DomainRegistry {
 
-    type TheRegistry = Map[Class[_ <: Domain], (SomeProject, ClassFile, Method) ⇒ Domain]
+    type TheRegistry = Map[Class[_ <: Domain], (SomeProject, Method) ⇒ Domain]
 
     private[this] var descriptions: Map[String, Class[_ <: Domain]] = Map.empty
     private[this] var theRegistry: TheRegistry = Map.empty
@@ -68,7 +68,7 @@ object DomainRegistry {
     def register(
         domainDescription: String,
         domainClass:       Class[_ <: Domain],
-        factory:           (SomeProject, ClassFile, Method) ⇒ Domain
+        factory:           (SomeProject, Method) ⇒ Domain
     ): Unit = {
         this.synchronized {
             descriptions += ((domainDescription, domainClass))
@@ -92,20 +92,17 @@ object DomainRegistry {
      *
      * @param domainDescription The description that identifies the domain.
      * @param project The project.
-     * @param classFile A class file object that belongs to the given project.
-     * @param method A non-native/non-abstract method belonging to the specified class
-     *      file.
+     * @param method A method with a body.
      */
     // primarily introduced to facilitate the interaction with Java
     def newDomain(
         domainDescription: String,
         project:           SomeProject,
-        classFile:         ClassFile,
         method:            Method
     ): Domain = {
         this.synchronized {
             val domainClass: Class[_ <: Domain] = descriptions(domainDescription)
-            newDomain(domainClass, project, classFile, method)
+            newDomain(domainClass, project, method)
         }
     }
 
@@ -115,107 +112,83 @@ object DomainRegistry {
      *
      * @param domainClass The class object of the domain.
      * @param project The project.
-     * @param classFile A class file object that belongs to the given project.
-     * @param method A non-native/non-abstract method belonging to the specified class
-     *      file.
+     * @param method A method with a body.
      */
-    def newDomain(
-        domainClass: Class[_ <: Domain],
-        project:     SomeProject,
-        classFile:   ClassFile,
-        method:      Method
-    ): Domain = {
-        this.synchronized {
-            theRegistry(domainClass)(project, classFile, method)
-        }
+    def newDomain(domainClass: Class[_ <: Domain], project: SomeProject, method: Method): Domain = {
+        this.synchronized { theRegistry(domainClass)(project, method) }
     }
 
     // initialize the registry with the known default domains
     register(
         "[l0.BaseDomain] The most basic domain; it does all computations at the type level.",
         classOf[domain.l0.BaseDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l0.BaseDomain(project, classFile, method)
-        }
+        (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomain(project, method)
     )
 
     register(
         "[l0.BaseDomainWithDefUse] The most basic domain; it does all computations at the type level and records the definition/use information.",
         classOf[domain.l0.BaseDomainWithDefUse[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l0.BaseDomainWithDefUse(project, classFile, method)
-        }
+        (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomainWithDefUse(project, method)
     )
 
     register(
-        "[l1.DefaultIntervalValuesDomain] A domain that uses intervals to represent the values of primitive values/variables.",
+        "[l1.DefaultIntervalValuesDomain] Computations related to int values are done using intervals to approximate the real values.",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultIntervalValuesDomain(project, classFile, method)
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l1.DefaultIntervalValuesDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultSetValuesDomain] A domain that represents reference values at the type level and represents int/long values using sets.",
+        "[l1.DefaultSetValuesDomain] Computations related to int/long values are done using sets to approximate the real values.",
         classOf[domain.l1.DefaultSetValuesDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultSetValuesDomain(project, classFile, method)
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l1.DefaultSetValuesDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultReferenceValuesDomain] A domain that tracks various properties related to references values.",
+        "[l1.DefaultReferenceValuesDomain] Tracks nullness and must alias information related to references values.",
         classOf[domain.l1.DefaultReferenceValuesDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultReferenceValuesDomain(project, classFile, method)
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l1.DefaultReferenceValuesDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultDomain] A domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
+        "[l1.DefaultDomain] Uses intervals for int values and track nullness and must alias information for reference types.",
         classOf[domain.l1.DefaultDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultDomain(project, classFile, method)
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l1.DefaultDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultDomainWithDefUse] A classical abstract domain that records the CFG and tracks the def/use relations. The null-ness properties of references values are also tracked as well as int/long values using ranges/sets.",
+        "[l1.DefaultDomainWithDefUse] Uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultDomainWithCFGAndDefUse(project, classFile, method)
-        }
-    )
-
-    register(
-        "[l2.DefaultDomain] This abstract domain performs method invocations up to two levels deep additionally to the features of the l1.DefaultDomain.",
-        classOf[domain.l2.DefaultDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l2.DefaultDomain(project, classFile, method)
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }
     )
 
     register(
         "[l2.DefaultPerformInvocationsDomain] This abstract domain performs simple method invocations additionally to the features of the l1.DefaultDomain.",
         classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l2.DefaultPerformInvocationsDomain(project, classFile, method)
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l2.DefaultPerformInvocationsDomain(project, method)
         }
+    )
+
+    register(
+        "[l2.DefaultDomain] Called methods are context-sensitively analyzed (up to two levels per default)",
+        classOf[domain.l2.DefaultDomain[_]],
+        (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
     )
 
     register(
         "[la.DefaultDomain] This abstract domain reuses information provided by some pre analyses additionally to the features of the l1.DefaultDomain.",
         classOf[domain.l1.DefaultDomain[_]],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultDomain(project, classFile, method)
-        }
+        (project: SomeProject, method: Method) ⇒ new domain.l1.DefaultDomain(project, method)
     )
 
-    register(
-        "[li.DefaultDomain] This domain performs some partial concrete evaluation.",
-        classOf[domain.la.DefaultDomain],
-        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.la.DefaultDomain(project, classFile, method)
-        }
-    )
 }

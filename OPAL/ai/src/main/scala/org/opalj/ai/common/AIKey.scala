@@ -30,12 +30,8 @@ package org.opalj
 package ai
 package common
 
-import scala.collection.concurrent.TrieMap
-
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.RecordDefUse
 
 /**
@@ -43,65 +39,5 @@ import org.opalj.ai.domain.RecordDefUse
  *
  * @author Michael Eichberg
  */
-trait AIKey extends ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, Nothing]
-
-/**
- * Key to get the result of the abstract interpretation of a method using a configured domain
- * factory.
- *
- * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
- *          pass in `this` object.
- *
- * @author Michael Eichberg
- */
-object SimpleAIKey extends AIKey {
-
-    @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
-        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new domain.l1.DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
-
-    /**
-     * The SimpleAIKey has no special prerequisites.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
-
-    /**
-     * Returns an object which performs and caches the result of the abstract interpretation of a
-     * method when required.
-     *
-     * All methods belonging to a project are analyzed using the same `domainFactory`. Hence,
-     * the `domainFactory` needs to be set before compute is called/this key is passed to a
-     * specific project. If multiple projects are instead concurrently, external synchronization
-     * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
-     * instantiated using the desired domain.
-     */
-    override protected def compute(
-        project: SomeProject
-    ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
-        val domainFactory = this.domainFactory
-
-        val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
-
-        (m: Method) ⇒ {
-            aiResults.get(m) match {
-                case Some(taCode) ⇒ taCode
-                case None ⇒
-                    val brCode = m.body.get
-                    // Basically, we use double checked locking; we really don't want to
-                    // transform the code more than once!
-                    brCode.synchronized {
-                        aiResults.get(m) match {
-                            case Some(aiResult) ⇒ aiResult
-                            case None ⇒
-                                val cf = project.classFile(m)
-                                val domain = domainFactory(project, cf, m)
-                                val aiResult = BaseAI(cf, m, domain)
-                                aiResults.put(m, aiResult)
-                                aiResult
-                        }
-                    }
-            }
-        }
-    }
-}
+trait AIKey
+    extends ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method ⇒ Domain with RecordDefUse]

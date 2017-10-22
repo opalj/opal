@@ -41,7 +41,6 @@ import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -59,26 +58,26 @@ import org.opalj.util.PerformanceEvaluation.time
 object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
-        override val project: Project[java.net.URL],
-        val ai:               InterruptableAI[_],
-        val method:           Method
+            override val project: Project[java.net.URL],
+            val ai:               InterruptableAI[_],
+            val method:           Method
     ) extends CorrelationalDomain
-            with domain.DefaultDomainValueBinding
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelIntegerValues
-            with domain.l0.DefaultTypeLevelLongValues
-            with domain.l0.TypeLevelPrimitiveValuesConversions
-            with domain.l0.TypeLevelLongValuesShiftOperators
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultReferenceValuesBinding
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.TheProject
-            with domain.TheMethod
-            with domain.RecordReturnedValuesInfrastructure {
+        with domain.DefaultDomainValueBinding
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelIntegerValues
+        with domain.l0.DefaultTypeLevelLongValues
+        with domain.l0.TypeLevelPrimitiveValuesConversions
+        with domain.l0.TypeLevelLongValuesShiftOperators
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.TheProject
+        with domain.TheMethod
+        with domain.RecordReturnedValuesInfrastructure {
 
         type ReturnedValue = DomainValue
 
@@ -126,13 +125,13 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
                 if method.returnType.isReferenceType
                 ai = new InterruptableAI[Domain]
                 domain = new AnalysisDomain(theProject, ai, method)
-                result = ai(classFile, method, domain)
+                result = ai(method, domain)
                 if !result.wasAborted
                 returnedValue = domain.returnedValue
                 if returnedValue.isEmpty ||
                     returnedValue.get.asDomainReferenceValue.upperTypeBound != UIDSet(originalType)
             } yield {
-                RefinedReturnType(classFile, method, domain.returnedValue)
+                RefinedReturnType(method, domain.returnedValue)
             }
         } { ns ⇒ println(s"the analysis took ${ns.toSeconds}") }
 
@@ -145,17 +144,12 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
 }
 
-case class RefinedReturnType(
-        classFile:   ClassFile,
-        method:      Method,
-        refinedType: Option[Domain#DomainValue]
-) {
+case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
     override def toString(): String = {
         import Console._
-        "Refined the return type of "+BOLD + BLUE + method.toJava(classFile)+" => "+
+        "Refined the return type of "+BOLD + BLUE + method.toJava+" => "+
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }
 
 }
-

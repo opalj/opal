@@ -32,10 +32,10 @@ package tac
 import scala.collection.concurrent.TrieMap
 
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 
@@ -51,11 +51,6 @@ import org.opalj.ai.Domain
  * @author Michael Eichberg
  */
 object SimpleTACAIKey extends TACAIKey {
-
-    @volatile var domainFactory: (SomeProject, ClassFile, Method) ⇒ Domain with RecordDefUse =
-        (p: SomeProject, cf: ClassFile, m: Method) ⇒ {
-            new ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, cf, m)
-        }
 
     /**
      * TACAI code has no special prerequisites.
@@ -74,8 +69,22 @@ object SimpleTACAIKey extends TACAIKey {
     override protected def compute(
         project: SomeProject
     ): Method ⇒ TACode[TACMethodParameter, DUVar[_ <: (Domain with RecordDefUse)#DomainValue]] = {
-        val domainFactory = this.domainFactory
+        val domainFactory = project.
+            getProjectInformationKeyInitializationData(this).
+            getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
+
         val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
+
+        def computeAndCacheTAC(m: Method) = {
+            val domain = domainFactory(m)
+            val aiResult = BaseAI(m, domain)
+            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
+            // well... the following cast safe is safe, because the underlying
+            // datastructure is actually, conceptually immutable
+            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
+            taCodes.put(m, taCode)
+            taCode
+        }
 
         (m: Method) ⇒ taCodes.get(m) match {
             case Some(taCode) ⇒ taCode
@@ -86,16 +95,7 @@ object SimpleTACAIKey extends TACAIKey {
                 brCode.synchronized {
                     taCodes.get(m) match {
                         case Some(taCode) ⇒ taCode
-                        case None ⇒
-                            val cf = project.classFile(m)
-                            val domain = domainFactory(project, cf, m)
-                            val aiResult = BaseAI(cf, m, domain)
-                            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
-                            // well... the following cast safe is safe, because the underlying
-                            // datastructure is actually, conceptually immutable
-                            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
-                            taCodes.put(m, taCode)
-                            taCode
+                        case None         ⇒ computeAndCacheTAC(m)
                     }
                 }
 

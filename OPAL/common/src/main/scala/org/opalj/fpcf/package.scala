@@ -119,7 +119,7 @@ package object fpcf {
      * The type of the observers that can be associated with a specific property
      * and element.
      */
-    private[fpcf]type Observers = mutable.ListBuffer[PropertyObserver]
+    private[fpcf] type Observers = mutable.ListBuffer[PropertyObserver]
 
     /**
      * The type of the properties data structure that is associated with each
@@ -131,6 +131,6 @@ package object fpcf {
      * The underlying assumption is that not every property key is actually associated
      * with a property value for each element.
      */
-    private[fpcf]type Properties = OArrayMap[PropertyAndObservers]
+    private[fpcf] type Properties = OArrayMap[PropertyAndObservers]
 
 }

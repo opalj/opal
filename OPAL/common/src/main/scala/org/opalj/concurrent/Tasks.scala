@@ -26,14 +26,54 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.concurrent
+package org.opalj
+package concurrent
 
-import java.util.concurrent.atomic.AtomicInteger
+// OLD import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.Condition
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
+// OLD import scala.concurrent.Future
+// OLD import scala.util.Failure
 import scala.collection.JavaConverters._
+
+import org.opalj.concurrent.Locking.withLock
+
+sealed trait Tasks[T] {
+
+    def submit(t: T): Unit
+
+    def join(): Iterable[Throwable]
+
+}
+
+final class SequentialTasks[T](
+        val process:   (Tasks[T], T) ⇒ Unit,
+        isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
+) extends Tasks[T] {
+
+    private val tasksQueue = scala.collection.mutable.Queue.empty[T]
+
+    def submit(t: T): Unit = {
+        if (isInterrupted())
+            return ;
+
+        tasksQueue += t
+    }
+
+    def join(): Iterable[Throwable] = {
+        var throwables = List.empty[Throwable]
+        while (tasksQueue.nonEmpty) {
+            try {
+                process(this, tasksQueue.dequeue)
+            } catch {
+                case t: Throwable ⇒ throwables ::= t
+            }
+        }
+        throwables
+    }
+}
 
 /**
  * Executes the given function `process` for each submitted value of
@@ -53,22 +93,51 @@ import scala.collection.JavaConverters._
  *
  * @author Michael Eichberg
  */
-class Tasks[T](
+final class ConcurrentTasks[T](
         val process:   (Tasks[T], T) ⇒ Unit,
         isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
 )(
         implicit
         val executionContext: ExecutionContext
-) {
+) extends Tasks[T] { self ⇒
 
-    private[this] final val tasksLock = new Object
-    private[this] val tasksCount = new AtomicInteger(0)
-    private[this] var exceptions: ConcurrentLinkedQueue[Throwable] = null
+    private[this] var tasksCount = 0
+    private[this] val tasksLock: ReentrantLock = new ReentrantLock()
+    private[this] val isFinished: Condition = tasksLock.newCondition()
+    // OLD private[this] final val tasksLock = new Object
+    // OLD private[this] val tasksCount = new AtomicInteger(0)
+    private[this] val exceptions = new ConcurrentLinkedQueue[Throwable]()
 
     def submit(t: T): Unit = {
         if (isInterrupted())
             return ;
-
+        val runnable = new Runnable {
+            def run(): Unit = {
+                try {
+                    process(self, t)
+                } catch {
+                    case cause: Throwable ⇒ exceptions.add(cause)
+                } finally {
+                    withLock(tasksLock) {
+                        val newTasksCount = tasksCount - 1
+                        tasksCount = newTasksCount
+                        if (newTasksCount == 0) { isFinished.signalAll() }
+                    }
+                }
+            }
+        }
+        withLock(tasksLock) { tasksCount += 1 }
+        try {
+            executionContext.execute(runnable)
+        } catch {
+            case t: Throwable ⇒
+                withLock(tasksLock) {
+                    val newTasksCount = tasksCount - 1
+                    tasksCount = newTasksCount
+                    if (newTasksCount == 0) { isFinished.signalAll() }
+                }
+        }
+        /* OLD using synchronized
         tasksCount.incrementAndGet()
         val future = Future[Unit] { process(this, t) }(executionContext)
         future.onComplete { result ⇒
@@ -86,12 +155,26 @@ class Tasks[T](
                 tasksLock.synchronized { tasksLock.notifyAll() }
             }
         }(executionContext)
+        */
     }
 
     /**
      * Blocks the calling thread until all sbumitted tasks as well as those tasks
      * that are created while processing tasks have been processed.
+     *
+     * '''`join` must not be called by a thread that actually executes a task!'''
      */
+    def join(): Iterable[Throwable] = {
+        withLock(tasksLock) {
+            while (tasksCount > 0) {
+                // if tasksCount is zero we may already be finished or there were never any tasks...
+                isFinished.await()
+            }
+            exceptions.asScala
+        }
+    }
+
+    /* OLD - USING synchronized
     def join(): List[Throwable] = {
         tasksLock.synchronized {
             while (tasksCount.get != 0) {
@@ -106,11 +189,13 @@ class Tasks[T](
             }
         }
     }
+    */
 }
+
 /**
  * Factory to create [[Tasks]] objects to process value oriented tasks.
  *
- * @author Michael Eichber
+ * @author Michael Eichberg
  */
 object Tasks {
 
@@ -121,7 +206,11 @@ object Tasks {
         implicit
         executionContext: ExecutionContext
     ): Tasks[T] = {
-        new Tasks[T](process, isInterrupted)(executionContext)
+        if (executionContext eq null) {
+            new SequentialTasks[T](process, isInterrupted)
+        } else {
+            new ConcurrentTasks[T](process, isInterrupted)(executionContext)
+        }
     }
 
 }

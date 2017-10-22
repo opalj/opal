@@ -45,9 +45,9 @@ import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.mutable.IntQueue
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSet1
-import org.opalj.collection.immutable.IntSetBuilder
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySet1
+import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.br.instructions._
@@ -73,15 +73,15 @@ import org.opalj.br.cfg.CFGFactory
  * @author Michael Eichberg
  */
 final class Code private (
-    val maxStack:          Int,
-    val maxLocals:         Int,
-    val instructions:      Array[Instruction],
-    val exceptionHandlers: ExceptionHandlers,
-    val attributes:        Attributes
+        val maxStack:          Int,
+        val maxLocals:         Int,
+        val instructions:      Array[Instruction],
+        val exceptionHandlers: ExceptionHandlers,
+        val attributes:        Attributes
 ) extends Attribute
-        with CommonAttributes
-        with InstructionsContainer
-        with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
+    with CommonAttributes
+    with InstructionsContainer
+    with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
@@ -129,7 +129,7 @@ final class Code private (
      * is used to process the code.
      */
     class FilteredCode( final val p: ((PC, Instruction)) ⇒ Boolean)
-            extends FilterMonadic[(PC, Instruction), Nothing] {
+        extends FilterMonadic[(PC, Instruction), Nothing] {
 
         def map[B, That](
             f: ((PC, Instruction)) ⇒ B
@@ -350,7 +350,7 @@ final class Code private (
      *     5: goto 10
      *     6: ...
      *     9: iload_1
-     *  10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     *    10: return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
@@ -477,8 +477,8 @@ final class Code private (
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
-        allPredecessorPCs(0) = IntSet.empty // initialization for the start node
-        var exitPCs = IntSet.empty
+        allPredecessorPCs(0) = IntArraySet.empty // initialization for the start node
+        var exitPCs = IntArraySet.empty
 
         val cfJoins = new mutable.BitSet(instructionsLength)
         val isReached = new mutable.BitSet(instructionsLength)
@@ -508,7 +508,7 @@ final class Code private (
                         // compute predecessors
                         val predecessorPCs = allPredecessorPCs(nextPC)
                         if (predecessorPCs eq null) {
-                            allPredecessorPCs(nextPC) = new IntSet1(pc)
+                            allPredecessorPCs(nextPC) = new IntArraySet1(pc)
                         } else {
                             allPredecessorPCs(nextPC) = predecessorPCs + pc
                         }
@@ -542,7 +542,7 @@ final class Code private (
      * Performs a live variable analysis restricted to a method's locals.
      *
      * @return  For each instruction (identified by its pc) the set of variables (register values)
-     *          which are live (identified by their index.) is determined.
+     *          which are live (identified by their index) is determined.
      *          I.e., if you need to know if the variable with the index 5 is
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
@@ -625,7 +625,7 @@ final class Code private (
      *  5: goto 10
      *  6: ...
      *  9: iload_1
-     * 10:return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
+     * 10: return // <= PATH JOIN: the predecessors are the instructions 5 and 9.
      * }}}
      *
      * In case of exception handlers the sound overapproximation is made that
@@ -639,13 +639,13 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = BasicClassHierarchy
-    ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[IntSet] /*forkTargetPCs*/ ) = {
+    ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[IntArraySet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
         val cfJoins = new mutable.BitSet(instructionsLength)
         val cfForks = new mutable.BitSet(instructionsLength)
-        var cfForkTargets = IntMap.empty[IntSet]
+        var cfForkTargets = IntMap.empty[IntArraySet]
 
         val isReached = new mutable.BitSet(instructionsLength)
         isReached += 0 // the first instruction is always reached!
@@ -681,7 +681,7 @@ final class Code private (
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
                         cfForks += pc
-                        cfForkTargets += ((pc, IntSetBuilder(nextInstructions).result()))
+                        cfForkTargets += ((pc, IntArraySetBuilder(nextInstructions).result()))
                     }
             }
 
@@ -1174,6 +1174,17 @@ final class Code private (
             pc = pcOfNextInstruction(pc)
         }
         vs.result()
+    }
+
+    def foldLeft[T](start: T)(f: (T, PC, Instruction) ⇒ T): T = {
+        val max_pc = instructions.length
+        var pc = 0
+        var vs = start
+        while (pc < max_pc) {
+            vs = f(vs, pc, instructions(pc))
+            pc = pcOfNextInstruction(pc)
+        }
+        vs
     }
 
     /**
@@ -1679,7 +1690,7 @@ object Code {
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
         val instructionsLength = instructions.length
         var pc = 0
-        var maxRegisters = 0
+        var maxRegisterIndex = -1
         var modifiedByWide = false
         do {
             val i: Instruction = instructions(pc)
@@ -1687,14 +1698,23 @@ object Code {
                 modifiedByWide = true
                 pc += 1
             } else {
-                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters) {
-                    maxRegisters = i.indexOfWrittenLocal
+                if (i.writesLocal) {
+                    var lastRegisterIndex = i.indexOfWrittenLocal
+                    if (i.isStoreLocalVariableInstruction &&
+                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2) {
+                        // i.e., not IINC...
+                        lastRegisterIndex += 1
+                    }
+                    if (lastRegisterIndex > maxRegisterIndex) {
+                        maxRegisterIndex = lastRegisterIndex
+                    }
                 }
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
         } while (pc < instructionsLength)
-        maxRegisters
+
+        maxRegisterIndex + 1 /* the first register has index 0 */
     }
 
     def computeMaxLocals(

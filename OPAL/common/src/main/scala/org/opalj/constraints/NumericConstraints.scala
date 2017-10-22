@@ -29,6 +29,8 @@
 package org.opalj
 package constraints
 
+import scala.annotation.switch
+
 /**
  * Enumeration of all possible relations/constraints between two arbitrary numeric values.
  *
@@ -59,7 +61,7 @@ object NumericConstraints extends Enumeration(1) {
      * E.g., `inverse(&gt;) = &lt;`; `x < y === y > x`.
      */
     def inverse(relation: Value): Value = {
-        (relation.id: @scala.annotation.switch) match {
+        (relation.id: @switch) match {
             case LT ⇒ >
             case LE ⇒ >=
             case GT ⇒ <
@@ -81,9 +83,9 @@ object NumericConstraints extends Enumeration(1) {
      */
     @throws[IncompatibleNumericConstraints]("if the combination doesn't make sense")
     def combine(c1: Value, c2: Value): Value = {
-        (c1.id: @scala.annotation.switch) match {
+        (c1.id: @switch) match {
             case LT ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ <
                     case LE ⇒ <
                     case NE ⇒ <
@@ -95,7 +97,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case LE ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ <
                     case LE ⇒ <=
                     case GE ⇒ ==
@@ -109,7 +111,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case GT ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case GT ⇒ >
                     case GE ⇒ >
                     case NE ⇒ >
@@ -121,7 +123,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case GE ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LE ⇒ ==
                     case GT ⇒ >
                     case GE ⇒ >=
@@ -135,7 +137,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case EQ ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LE ⇒ ==
                     case GE ⇒ ==
                     case EQ ⇒ ==
@@ -147,7 +149,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case NE ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ <
                     case LE ⇒ <
                     case GT ⇒ >
@@ -170,9 +172,9 @@ object NumericConstraints extends Enumeration(1) {
      * @note This is a '''widening''' operation.
      */
     def join(c1: Value, c2: Value): Option[Value] = {
-        (c1.id: @scala.annotation.switch) match {
+        (c1.id: @switch) match {
             case LT ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ Some(<)
                     case LE ⇒ Some(<=)
                     case GT ⇒ Some(!=)
@@ -182,7 +184,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case LE ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ Some(<=)
                     case LE ⇒ Some(<=)
                     case GT ⇒ None
@@ -192,7 +194,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case GT ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ Some(!=)
                     case LE ⇒ None
                     case GT ⇒ Some(>)
@@ -202,7 +204,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case GE ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ None
                     case LE ⇒ None
                     case GT ⇒ Some(>=)
@@ -212,7 +214,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case EQ ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ Some(<=)
                     case LE ⇒ Some(<=)
                     case GT ⇒ Some(>=)
@@ -222,7 +224,7 @@ object NumericConstraints extends Enumeration(1) {
                 }
 
             case NE ⇒
-                (c2.id: @scala.annotation.switch) match {
+                (c2.id: @switch) match {
                     case LT ⇒ Some(!=)
                     case LE ⇒ None
                     case GT ⇒ Some(!=)
@@ -233,4 +235,3 @@ object NumericConstraints extends Enumeration(1) {
         }
     }
 }
-

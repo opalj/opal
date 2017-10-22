@@ -69,7 +69,7 @@ object FieldTypesAnalysis extends DefaultOneStepAnalysis {
         BasicReport(
             refinedFieldValues.seq.map { info ⇒
                 val (field, fieldValue) = info
-                val classFile = theProject.classFile(field)
+                val classFile = field.classFile
                 classFile.thisType.toJava+
                     "{ "+
                     field.name+":"+fieldValue+
@@ -81,4 +81,3 @@ object FieldTypesAnalysis extends DefaultOneStepAnalysis {
         )
     }
 }
-

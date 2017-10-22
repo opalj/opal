@@ -71,5 +71,5 @@ package object analyses {
         def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
     }
 
-    type EntityDerivationFunction = SomeProject ⇒ (Traversable[AnyRef] /*Entities*/ , ScalaReflectType /*Context Key*/ , AnyRef /* Context Value*/ )
+    type EntityDerivationFunction = () ⇒ (Traversable[AnyRef] /*Entities*/ , ScalaReflectType /*Context Key*/ , AnyRef /* Context Value*/ )
 }

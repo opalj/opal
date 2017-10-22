@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -86,42 +86,31 @@ sealed trait CallGraphDifferenceReport {
     val callTargets: Iterable[Method]
 
     final override def toString: String = {
-        val thisClassType = project.classFile(method).thisType
+        val thisClassType = method.classFile.thisType
         differenceClassifier+" "+
             project.source(thisClassType).getOrElse("<Source File Not Available>")+": "+
-            method.toJava(thisClassType)+
+            method.toJava+
             "pc="+pc+"(line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
-            (
-                callTargets map { method ⇒
-                    BLUE + project.classFile(method).thisType.toJava+"{ "+
-                        CYAN + method.descriptor.toJava(method.name) + RESET+
-                        " }"
-                }
-            ).mkString(BOLD+"; "+RESET)+" } }"
+            callTargets.map(method ⇒ BLUE + method.toJava + RESET).mkString(BOLD+"; "+RESET)
     }
 }
 
 case class AdditionalCallTargets(
-    project:     SomeProject,
-    method:      Method,
-    pc:          PC,
-    callTargets: Iterable[Method]
-)
-        extends CallGraphDifferenceReport {
+        project:     SomeProject,
+        method:      Method,
+        pc:          PC,
+        callTargets: Iterable[Method]
+) extends CallGraphDifferenceReport {
 
     final val differenceClassifier = BLUE+"[Additional]"+RESET
 }
 
-/**
- *
- */
 case class UnexpectedCallTargets(
-    project:     SomeProject,
-    method:      Method,
-    pc:          PC,
-    callTargets: Iterable[Method]
-)
-        extends CallGraphDifferenceReport {
+        project:     SomeProject,
+        method:      Method,
+        pc:          PC,
+        callTargets: Iterable[Method]
+) extends CallGraphDifferenceReport {
 
     final val differenceClassifier = RED+"[Unexpected]"+RESET
 }

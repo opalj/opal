@@ -71,8 +71,10 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
     }
 
     override def hashCode: Int = {
+        var hash = this.hash
         if (hash == 0) {
             hash = identityHashCode(_1) * 113 + identityHashCode(_2)
+            this.hash = hash
         }
         hash
     }

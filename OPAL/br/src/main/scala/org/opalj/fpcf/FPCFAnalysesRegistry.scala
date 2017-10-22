@@ -30,15 +30,14 @@ package org.opalj
 package fpcf
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import com.typesafe.config.ConfigObject
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
- * framework ('''fpcf''').
+ * framework ('''FPCF''').
  *
  * The registry primarily serves as a central container that can be queried
  * by subsequent tools.
@@ -75,13 +74,13 @@ object FPCFAnalysesRegistry {
         if (analysisRunner.nonEmpty) {
             idToFactory += ((analysisID, analysisRunner.get))
             idToDescription += ((analysisID, analysisDescription))
+            OPALLogger.info(
+                "OPAL Setup", s"registered analysis: $analysisID ($analysisDescription)"
+            )(GlobalLogContext)
         } else {
             OPALLogger.error(
-                "setup",
-                s"Unknown fix-point analysis. Analysis runner could not be instantiated: $analysisFactory"
-            )(
-                    GlobalLogContext
-                )
+                "OPAL Setup", s"unknown analysis implementation: $analysisFactory"
+            )(GlobalLogContext)
         }
     }
 
@@ -99,32 +98,36 @@ object FPCFAnalysesRegistry {
         result
     }
 
-    private[this] case class AnalysisFactory(val id: String, val description: String, val factory: String)
+    private[this] case class AnalysisFactory(id: String, description: String, factory: String)
 
     def registerFromConfig(): Unit = {
-        val config = ConfigFactory.load().as[Config]("org.opalj.fpcf.registry.analyses")
+        val config = ConfigFactory.load()
         try {
-
-            val entries = config.entrySet()
-            val itr = entries.iterator()
-            while (itr.hasNext) {
-                val confMap = itr.next()
-                val configuredAnalyses = config.as[List[AnalysisFactory]](confMap.getKey)
-                configuredAnalyses foreach { a ⇒
-                    println(a)
-                    register(a.id, a.description, a.factory)
-                }
+            /* HANDLING FOR AN ARRAY OF ANALYSES... analyses = [ {},...,{}]
+            //import com.typesafe.config.Config
+            //import net.ceedubs.ficus.Ficus._
+            //import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+            val key = "org.opalj.fpcf.registry.analyses"
+            val registeredAnalyses = config.as[List[AnalysisFactory]](key)
+            registeredAnalyses foreach { a ⇒
+                register(a.id, a.description, a.factory)
+            }
+            */
+            val registeredAnalyses = config.getObject("org.opalj.fpcf.registry.analyses")
+            val entriesIterator = registeredAnalyses.entrySet.iterator
+            while (entriesIterator.hasNext) {
+                val entry = entriesIterator.next
+                val id = entry.getKey
+                val metaData = entry.getValue.asInstanceOf[ConfigObject]
+                val description = metaData.getOrDefault("description", null).unwrapped.toString
+                val factory = metaData.getOrDefault("factory", null).unwrapped.toString
+                register(id, description, factory)
             }
         } catch {
             case e: Exception ⇒ OPALLogger.error(
-                "setup",
-                "Error creating the FixpointRegistry. Invalid config. (org.opalj.fcpf.registry.analyses)"
+                "OPAL Setup", "initialization of the FPCF Analysis Registry failed", e
             )(GlobalLogContext)
         }
-    }
-
-    def main(args: Array[String]): Unit = {
-
     }
 
     /**
@@ -158,4 +161,8 @@ object FPCFAnalysesRegistry {
 
     //initialize the registry with the known default analyses
     registerFromConfig()
+
+    def main(args: Array[String]): Unit = {
+        println(idToDescription.mkString("FPCF Analysis Registry\n\t", "\n\t", "\n"))
+    }
 }

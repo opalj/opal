@@ -58,11 +58,11 @@ class ClassFileTest extends FunSuite with Matchers {
     test("test that it can find the second constructor") {
         assert(
             immutableList.findMethod(
-            "<init>",
-            MethodDescriptor(
-                IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
-            )
-        ).isDefined
+                "<init>",
+                MethodDescriptor(
+                    IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
+                )
+            ).isDefined
         )
     }
 
@@ -73,26 +73,26 @@ class ClassFileTest extends FunSuite with Matchers {
     test("test that it can find all other methods") {
         assert(
             immutableList.findMethod(
-            "getNext", MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
-        ).isDefined
+                "getNext", MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+            ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-            "prepend", MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
-        ).isDefined
+                "prepend", MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+            ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-            "getIterator", MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
-        ).isDefined
+                "getIterator", MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+            ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-            "get", MethodDescriptor(IndexedSeq(), ObjectType.Object)
-        ).isDefined
+                "get", MethodDescriptor(IndexedSeq(), ObjectType.Object)
+            ).isDefined
         )
 
         assert(immutableList.instanceMethods.size.toInt == 4)
@@ -125,11 +125,10 @@ class ClassFileTest extends FunSuite with Matchers {
         boundedBuffer.findField("AnumberInBuffers") should be(Naught)
     }
 
-    val innerclassesJARFile = locateTestResources("innerclasses.jar", "bi")
-    val innerclassesProject = analyses.Project(innerclassesJARFile)
-    val outerClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass.class").head
-    val innerPrinterOfXClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$InnerPrinterOfX.class").head
-    val formatterClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$Formatter.class").head
+    val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
+    val outerClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass")).get
+    val innerPrinterOfXClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
+    val formatterClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$Formatter")).get
 
     test("that all direct nested classes of a top-level class are correctly identified") {
         outerClass.nestedClasses(innerclassesProject).toSet should be(Set(

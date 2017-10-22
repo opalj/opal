@@ -71,28 +71,28 @@ class ClassValuesTest extends FlatSpec with Matchers {
     it should ("be able to trace static class values") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m ⇒ m.name == "staticClassValue").get
-        BaseAI(classFile, method, domain)
+        BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(0, ObjectType("java/lang/String"))))
     }
 
     it should ("be able to handle the case that we are not able to resolve the class") in {
         val method = classFile.methods.find(m ⇒ m.name == "noLiteralStringInClassForName").get
         val domain = new RecordingDomain
-        BaseAI(classFile, method, domain)
+        BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ObjectValue(9, Unknown, false, ObjectType.Class)))
     }
 
     it should ("be able to trace literal strings in Class.forName(String) calls") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m ⇒ m.name == "literalStringInClassForName").get
-        BaseAI(classFile, method, domain)
+        BaseAI(method, domain)
         domain.returnedValue should be(Some(domain.ClassValue(2, ObjectType("java/lang/Integer"))))
     }
 
     it should ("be able to trace literal strings in Class.forName(String,boolean,ClassLoader) calls") in {
         val method = classFile.methods.find(m ⇒ m.name == "literalStringInLongClassForName").get
         val domain = new RecordingDomain
-        BaseAI(classFile, method, domain)
+        BaseAI(method, domain)
         val classType = domain.returnedValue
         classType should be(Some(domain.ClassValue(10, ObjectType("java/lang/Integer"))))
     }
@@ -100,7 +100,7 @@ class ClassValuesTest extends FlatSpec with Matchers {
     it should ("be able to trace known string variables in Class.forName calls") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m ⇒ m.name == "stringVariableInClassForName").get
-        BaseAI(classFile, method, domain)
+        BaseAI(method, domain)
         val classType = domain.returnedValue
         classType should be(Some(domain.ClassValue(4, ObjectType("java/lang/Integer"))))
     }
@@ -116,7 +116,7 @@ class ClassValuesTest extends FlatSpec with Matchers {
     it should ("be able to trace static class values of primitves") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m ⇒ m.name == "staticPrimitveClassValue").get
-        BaseAI(classFile, method, domain)
+        BaseAI(method, domain)
         domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(IntegerType))
     }
 }
@@ -124,23 +124,23 @@ class ClassValuesTest extends FlatSpec with Matchers {
 object PlainClassesTest {
 
     class RecordingDomain
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with DefaultHandlingForReturnInstructions
-            with DefaultHandlingOfVoidReturns
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultClassValuesBinding {
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with DefaultHandlingForReturnInstructions
+        with DefaultHandlingOfVoidReturns
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultClassValuesBinding {
 
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {

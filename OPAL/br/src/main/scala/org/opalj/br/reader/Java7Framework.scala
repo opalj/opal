@@ -52,6 +52,7 @@ trait Java7Framework
     with LocalVariableTypeTable_attributeBinding
     with Exceptions_attributeBinding
     with BytecodeReaderAndBinding
+    with BytecodeOptimizer
     with CodeReader
 
 object Java7Framework extends Java7Framework {

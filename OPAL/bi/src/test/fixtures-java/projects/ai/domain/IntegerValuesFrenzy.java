@@ -665,7 +665,7 @@ public class IntegerValuesFrenzy {
             doIt(-1);
         else if (a == b)
             doIt(0);
-        else if (b > a) // <== "BUG"
+        else if (b > a) // <== "BUG" - no longer possible
             doIt(1);
     }
 
@@ -677,7 +677,7 @@ public class IntegerValuesFrenzy {
 
         doIt(Integer.MAX_VALUE);
 
-        if (b > a) // <== "BUG"
+        if (b > a) // <== "BUG" - already tested above...
             return (1);
         else
             throw new Error();

@@ -71,9 +71,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
-            info("project configuration", "Java 8 invokedynamics are rewritten")
+            info("class file reader", "Java 8 invokedynamics are rewritten")
         } else {
-            info("project configuration", "Java 8 invokedynamics are not rewritten")
+            info("class file reader", "Java 8 invokedynamics are not rewritten")
         }
         rewrite
     }
@@ -82,9 +82,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
-            info("project configuration", "Java 8 invokedynamic rewrites are logged")
+            info("class file reader", "Java 8 invokedynamic rewrites are logged")
         } else {
-            info("project configuration", "Java 8 invokedynamic rewrites are not logged")
+            info("class file reader", "Java 8 invokedynamic rewrites are not logged")
         }
         logRewrites
     }
@@ -93,9 +93,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
         val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logUnknownInvokeDynamics) {
-            info("project configuration", "unknown invokedynamics are logged")
+            info("class file reader", "unknown invokedynamics are logged")
         } else {
-            info("project configuration", "unknown invokedynamics are not logged")
+            info("class file reader", "unknown invokedynamics are not logged")
         }
         logUnknownInvokeDynamics
     }
@@ -104,7 +104,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * Counter to ensure that the generated types have unique names.
      */
     private final val jreLikeLambdaTypeIdGenerator = new AtomicInteger(0)
-    private final val scalaLambdaDeserializeTypeIdGenerator = new AtomicInteger(0)
 
     /**
      * Generates a new, internal name for a lambda expression found in the given
@@ -120,22 +119,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
         s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
-    }
-
-    /**
-     * Generates a new, internal name for a scala lambda deserialize found in the given
-     * `surroundingType`.
-     *
-     * It follows the pattern: `LambdaDeserialize${surroundingType.id}:{uniqueId}`, where
-     * `uniqueId` is simply a run-on counter. For example: `LambdaDeserialize$$17:4` would refer to
-     * the fourth Lambda Deserialize INVOKEDYNAMIC parsed during the analysis of the project, which
-     * is defined in the [[ClassFile]] with the type id `17`.
-     *
-     * @param surroundingType the type in which the Lambda Deserialize expression has been found
-     */
-    private def newScalaLambdaDeserializeTypeName(surroundingType: ObjectType): String = {
-        val nextId = scalaLambdaDeserializeTypeIdGenerator.getAndIncrement()
-        s"LambdaDeserialize$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -259,7 +242,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newScalaLambdaDeserializeTypeName(classFile.thisType)),
+            ObjectType(newLambdaTypeName(classFile.thisType)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
             superInterfaceTypes
@@ -444,19 +427,25 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
          */
         val receiverIsInterface =
             invokeTargetMethodHandle match {
+
+                case _: InvokeInterfaceMethodHandle    ⇒ true
+                case _: InvokeVirtualMethodHandle      ⇒ false
+                case _: NewInvokeSpecialMethodHandle   ⇒ false
+                case handle: InvokeSpecialMethodHandle ⇒ handle.isInterface
+
                 case handle: InvokeStaticMethodHandle ⇒
                     // The following test was added to handle a case where the Scala
                     // compiler generated invalid bytecode (the Scala compiler generated
                     // a MethodRef instead of an InterfaceMethodRef which led to the
                     // wrong kind of InvokeStaticMethodHandle).
-                    // See https://github.com/scala/bug/issues/10429 for further deatails-
+                    // See https://github.com/scala/bug/issues/10429 for further details.
                     if (invokeTargetMethodHandle.receiverType eq classFile.thisType) {
                         classFile.isInterfaceDeclaration
                     } else {
                         handle.isInterface
                     }
-                case _ ⇒
-                    classFile.isInterfaceDeclaration
+
+                case other ⇒ throw new UnknownError("unexpected handle: "+other)
             }
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
@@ -593,4 +582,3 @@ object Java8LambdaExpressionsRewriting {
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }
-

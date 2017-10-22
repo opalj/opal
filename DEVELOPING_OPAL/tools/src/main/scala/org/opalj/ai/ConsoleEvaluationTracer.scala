@@ -145,8 +145,10 @@ trait ConsoleEvaluationTracer extends AITracer {
     def abruptSubroutineTermination(
         domain: Domain
     )(
+        details:  String,
         sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
         terminatedSubroutinesCount: Int,
+        forceScheduling:            Boolean,
         oldWorklist:                List[PC],
         newWorklist:                List[PC]
     ): Unit = { /* EMPTY */ }
@@ -178,4 +180,8 @@ trait ConsoleEvaluationTracer extends AITracer {
         source: Class[_], typeID: String,
         pc: Option[PC], message: ⇒ String
     ): Unit = { /*EMPTY*/ }
+
+    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = { /*EMPTY*/ }
+
+    override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = { /*EMPTY*/ }
 }

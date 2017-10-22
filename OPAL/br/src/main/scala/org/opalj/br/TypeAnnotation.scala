@@ -74,11 +74,11 @@ sealed abstract class TypeAnnotationPathElement {
  * @author Michael Eichberg
  */
 case class TypeAnnotation(
-    target:            TypeAnnotationTarget,
-    path:              TypeAnnotationPath,
-    annotationType:    FieldType,
-    elementValuePairs: ElementValuePairs
-)
+        target:            TypeAnnotationTarget,
+        path:              TypeAnnotationPath,
+        annotationType:    FieldType,
+        elementValuePairs: ElementValuePairs
+) extends AnnotationLike
 
 case class TAOfCastExpression(
         offset:              Int,
@@ -130,9 +130,9 @@ case class TAOfResourcevarDecl(
 }
 
 case class LocalvarTableEntry(
-    startPC: Int,
-    length:  Int,
-    index:   Int
+        startPC: Int,
+        length:  Int,
+        index:   Int
 )
 
 case class TAOfMethodInMethodReferenceExpression(

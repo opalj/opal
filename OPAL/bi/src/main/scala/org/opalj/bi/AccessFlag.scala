@@ -29,6 +29,8 @@
 package org.opalj
 package bi
 
+import scala.annotation.switch
+
 /**
  * A class, field or method declaration's access flags. An access flag (e.g., `public`
  * or `static`) is basically just a specific bit that can be combined with other
@@ -101,16 +103,41 @@ object VisibilityModifier {
      * Returns the specified visibility modifier.
      *
      * @param accessFlags The access flags of a class or a member thereof.
-     * @return The visibility modifier of the respective element or `None` if the
-     *      element has default visibility.
+     * @return  The visibility modifier of the respective element or `None` if the
+     *          element has default visibility.
      */
-    def get(accessFlags: Int): Option[VisibilityModifier] =
-        ((accessFlags & VisibilityModifier.mask): @scala.annotation.switch) match {
+    def get(accessFlags: Int): Option[VisibilityModifier] = {
+        ((accessFlags & VisibilityModifier.mask): @switch) match {
             case 1 /*ACC_PUBLIC.mask*/    ⇒ SOME_PUBLIC
             case 2 /*ACC_PRIVATE.mask*/   ⇒ SOME_PRIVATE
             case 4 /*ACC_PROTECTED.mask*/ ⇒ SOME_PROTECTED
             case _                        ⇒ None /*DEFAULT VISIBILITY*/
         }
+    }
+
+    /**
+     * `true` if `a` is at least as visible as `b`; for example, true if `a` is public and
+     * `b` is just protected.
+     */
+    def isAtLeastAsVisibleAs(
+        a: Option[VisibilityModifier],
+        b: Option[VisibilityModifier]
+    ): Boolean = {
+        a match {
+            case a @ Some(ACC_PUBLIC)  ⇒ true
+            case Some(ACC_PROTECTED)   ⇒ b.isEmpty || b.get != ACC_PUBLIC
+            case None                  ⇒ b.isEmpty || b.get == ACC_PRIVATE
+            case a @ Some(ACC_PRIVATE) ⇒ b == a
+
+        }
+    }
+
+    def isLessVisibleAs(
+        a: Option[VisibilityModifier],
+        b: Option[VisibilityModifier]
+    ): Boolean = {
+        !isAtLeastAsVisibleAs(b, a)
+    }
 
     def unapply(accessFlags: Int): Option[VisibilityModifier] = get(accessFlags)
 }
@@ -251,7 +278,7 @@ object ACC_MANDATED extends AccessFlag {
  * dependence on the module indicated by this entry.
  */
 object ACC_TRANSITIVE extends AccessFlag {
-    final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen 
+    final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen
     final override val mask = 0x0010
     override def toString: String = "TRANSITIVE"
 }

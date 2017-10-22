@@ -56,14 +56,14 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze a simple static, recursive method") in {
         val method = StaticCalls.findMethod("simpleRecursion").head
         val domain = new InvocationDomain(project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        val result = BaseAI(method, domain)
         result.domain.returnedNormally should be(true)
     }
 
     it should ("be able to analyze a method that is self-recursive and which will never abort") in {
         val method = StaticCalls.findMethod("endless").head
         val domain = new InvocationDomain(project, method)
-        BaseAI(StaticCalls, method, domain)
+        BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
             fail("the method never returns, but the following result was produced: "+
                 domain.allReturnedValues)
@@ -75,7 +75,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze a method that is self-recursive and which will never abort due to exception handling") in {
         val method = StaticCalls.findMethod("endlessDueToExceptionHandling").head
         val domain = new InvocationDomain(project, method)
-        BaseAI(StaticCalls, method, domain)
+        BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
             fail("the method never returns, but the following result was produced: "+
                 domain.allReturnedValues)
@@ -87,7 +87,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze some methods with mutual recursion") in {
         val method = StaticCalls.findMethod("mutualRecursionA").head
         val domain = new InvocationDomain(project, method)
-        BaseAI(StaticCalls, method, domain)
+        BaseAI(method, domain)
 
         domain.returnedNormally should be(true) // because we work at the type level at some point..
     }
@@ -95,9 +95,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("be able to analyze a static method that uses recursion to calculate the factorial of a small concrete number") in {
         val method = StaticCalls.findMethod("fak").head
         val domain = new InvocationDomain(project, method)
-        BaseAI.perform(StaticCalls, method, domain)(
-            Some(IndexedSeq(domain.IntegerValue(-1, 3)))
-        )
+        BaseAI.perform(method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 3))))
         domain.returnedNormally should be(true)
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(6))
     }
@@ -105,9 +103,7 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
     it should ("issue a warning if a method is called very often using different operands") in {
         val method = StaticCalls.findMethod("fak").head
         val domain = new InvocationDomain(project, method, 1)
-        BaseAI.perform(StaticCalls, method, domain)(
-            Some(IndexedSeq(domain.IntegerValue(-1, 11)))
-        )
+        BaseAI.perform(method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 11))))
         val theCalledMethodsStore = domain.calledMethodsStore
         if (!domain.returnedNormally) fail("domain didn't return normally")
 
@@ -121,41 +117,41 @@ class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matcher
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
     abstract class BaseDomain(val project: Project[java.net.URL])
-            extends CorrelationalDomain
-            with ValuesDomain
-            with DefaultDomainValueBinding
-            with TheProject
-            with TypedValuesFactory
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l1.DefaultReferenceValuesBinding
-            with li.DefaultPreciseIntegerValues {
+        extends CorrelationalDomain
+        with ValuesDomain
+        with DefaultDomainValueBinding
+        with TheProject
+        with TypedValuesFactory
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultReferenceValuesBinding
+        with li.DefaultPreciseIntegerValues {
         domain: Configuration ⇒
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
     abstract class SharedInvocationDomain(
-        project:    Project[java.net.URL],
-        val method: Method
+            project:    Project[java.net.URL],
+            val method: Method
     ) extends BaseDomain(project) with Domain
-            with TheMethod
-            with l0.TypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with IgnoreSynchronization
-            //with DefaultHandlingOfMethodResults
-            with l0.DefaultTypeLevelHandlingOfMethodResults
-            with PerformInvocationsWithRecursionDetection
-            with DefaultRecordMethodCallResults {
+        with TheMethod
+        with l0.TypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with IgnoreSynchronization
+        //with DefaultHandlingOfMethodResults
+        with l0.DefaultTypeLevelHandlingOfMethodResults
+        with PerformInvocationsWithRecursionDetection
+        with DefaultRecordMethodCallResults {
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
         }
 
-        def shouldInvocationBePerformed(definingClass: ClassFile, method: Method): Boolean = true
+        def shouldInvocationBePerformed(method: Method): Boolean = true
 
         type CalledMethodDomain = ChildInvocationDomain
 
@@ -185,10 +181,9 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
                 var warningIssued = false
 
-                override def frequentEvalution(
-                    definingClass: ClassFile,
-                    method:        Method,
-                    operandsSet:   List[Array[domain.DomainValue]]
+                override def frequentEvaluation(
+                    method:      Method,
+                    operandsSet: List[Array[domain.DomainValue]]
                 ): Unit = {
                     //super.frequentEvalution(definingClass, method, operandsSet)
                     warningIssued = true
@@ -196,7 +191,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
             }
         }
-        override def calledMethodDomain(classFile: ClassFile, method: Method) =
+        override def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, this)
 
         def calledMethodAI = BaseAI
@@ -204,15 +199,15 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class ChildInvocationDomain(
-        project:          Project[java.net.URL],
-        method:           Method,
-        val callerDomain: SharedInvocationDomain
+            project:          Project[java.net.URL],
+            method:           Method,
+            val callerDomain: SharedInvocationDomain
     ) extends SharedInvocationDomain(project, method)
-            with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
+        with ChildPerformInvocationsWithRecursionDetection { callingDomain ⇒
 
         final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
 
-        def calledMethodDomain(classFile: ClassFile, method: Method) =
+        def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, callingDomain)
 
     }

@@ -30,8 +30,8 @@ package org.opalj
 
 /**
  * Represents the result of some expression that either (a) succeeded and encapsulates some value,
- * or (b) finished, but has no value - because it was not possible to compute a value using the given
- * information - or (c) that failed.
+ * or (b) finished, but has no value - because it was not possible to compute a value using the
+ * given/available information - or (c) that failed.
  *
  * @note    Depending on the context, it may be useful to distinguish between a success that returns
  *          an empty collection and a success that has no further information.
@@ -63,6 +63,13 @@ object Result {
         result match {
             case Some(value) ⇒ Success(value)
             case _ /*None*/  ⇒ Empty
+        }
+    }
+
+    def successOrFailure[T](result: Option[T]): Result[T] = {
+        result match {
+            case Some(value) ⇒ Success(value)
+            case _ /*None*/  ⇒ Failure
         }
     }
 }
@@ -97,13 +104,13 @@ case class Success[@specialized(Int) +T](value: T) extends Result[T] {
 }
 
 sealed trait NoResult extends Result[Nothing] {
-    def hasValue: Boolean = false
-    def value: Nothing = throw new UnsupportedOperationException("this result has no value")
-    def foreach[U](f: (Nothing) ⇒ U): Unit = {}
-    def map[B](f: (Nothing) ⇒ B): this.type = this
-    def flatMap[B](f: (Nothing) ⇒ Result[B]): this.type = this
-    def withFilter(q: (Nothing) ⇒ Boolean): this.type = this
-    def toSet[X >: Nothing]: Set[X] = Set.empty
+    final def hasValue: Boolean = false
+    final def value: Nothing = throw new UnsupportedOperationException("this result has no value")
+    final def foreach[U](f: (Nothing) ⇒ U): Unit = {}
+    final def map[B](f: (Nothing) ⇒ B): this.type = this
+    final def flatMap[B](f: (Nothing) ⇒ Result[B]): this.type = this
+    final def withFilter(q: (Nothing) ⇒ Boolean): this.type = this
+    final def toSet[X >: Nothing]: Set[X] = Set.empty
 }
 
 object NoResult {

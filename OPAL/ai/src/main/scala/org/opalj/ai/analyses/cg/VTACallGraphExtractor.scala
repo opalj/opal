@@ -31,13 +31,15 @@ package ai
 package analyses
 package cg
 
+import scala.annotation.switch
+
 import scala.collection.Set
 import scala.collection.Map
 import scala.collection.mutable.HashSet
+
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br._
 import org.opalj.ai.domain.TheProject
-import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -53,96 +55,107 @@ import org.opalj.br.instructions.VirtualMethodInvocationInstruction
  *
  * @author Michael Eichberg
  */
-class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
+class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheMethod](
         val cache: CallGraphCache[MethodSignature, Set[Method]],
-        Domain:    (ClassFile, Method) ⇒ TheDomain
+        Domain:    Method ⇒ TheDomain
 ) extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(val domain: TheDomain) extends super.AnalysisContext {
 
-        val project = domain.project
-        val classHierarchy = project.classHierarchy
-        val classFile = domain.classFile
-        val method = domain.method
+        def project = domain.project
+        def classHierarchy = project.classHierarchy
+        def classFile = domain.classFile
+        def method = domain.method
 
         def staticCall(
             pc:                 PC,
             declaringClassType: ObjectType,
+            isInterface:        Boolean,
             name:               String,
             descriptor:         MethodDescriptor,
             operands:           domain.Operands
         ): Unit = {
 
-            def handleUnresolvedMethodCall() = {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
-            }
-            project.lookupMethodDefinition(declaringClassType, name, descriptor) match {
-                case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
-                case None         ⇒ handleUnresolvedMethodCall()
+            project.staticCall(declaringClassType, isInterface, name, descriptor) match {
+                case Success(callee) ⇒
+                    addCallEdge(pc, HashSet(callee))
+                case _ ⇒
+                    addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             }
         }
 
-        /**
-         * @note The receiver is either not null or it is unknown whether the receiver
-         *      is null. However, appropriate edges are already added to the call graph.
-         */
-        def doNonVirtualCall(
+        def nonNullInstanceCall(
             pc:                 PC,
             declaringClassType: ObjectType,
             name:               String,
             descriptor:         MethodDescriptor,
             operands:           domain.Operands
         ): Unit = {
-
-            def handleUnresolvedMethodCall(): Unit = {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
-            }
-            project.lookupMethodDefinition(declaringClassType, name, descriptor) match {
-                case Some(callee) ⇒ addCallEdge(pc, HashSet(callee))
-                case None         ⇒ handleUnresolvedMethodCall()
+            val callerType = domain.method.classFile.thisType
+            project.instanceCall(callerType, declaringClassType, name, descriptor) match {
+                case Success(callee) ⇒
+                    addCallEdge(pc, HashSet(callee))
+                case _ ⇒
+                    addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             }
         }
 
-        /**
-         * @param receiverIsNull The parameter is `false` if:
-         *      - a static method is called,
-         *      - this is an invokespecial call (in this case the receiver is `this`),
-         *      - the receiver is known not to be null and the type is known to be precise.
-         */
-        def nonVirtualCall(
+        def specialCall(
             pc:                 PC,
             declaringClassType: ObjectType,
-            name:               String,
-            descriptor:         MethodDescriptor,
-            receiverIsNull:     Answer,
-            operands:           domain.Operands
-        ): Unit = {
-
-            if (receiverIsNull.isYesOrUnknown) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
-            }
-
-            doNonVirtualCall(
-                pc, declaringClassType, name, descriptor, /*receiverIsNull,*/ operands
-            )
-        }
-
-        def doVirtualCall(
-            pc:                 PC,
-            declaringClassType: ObjectType,
+            isInterface:        Boolean,
             name:               String,
             descriptor:         MethodDescriptor,
             operands:           domain.Operands
         ): Unit = {
-            val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
+
+            project.specialCall(declaringClassType, isInterface, name, descriptor) match {
+                case Success(callee) ⇒
+                    val callees = HashSet(callee)
+                    addCallEdge(pc, callees)
+                case _ ⇒
+                    addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
+            }
+        }
+
+        def arrayCall(
+            pc:         PC,
+            arrayType:  ArrayType,
+            name:       String,
+            descriptor: MethodDescriptor,
+            operands:   domain.Operands
+        ): Unit = {
+
+            val isNull = domain.refIsNull(pc, operands(descriptor.parametersCount))
+
+            if (isNull.isYesOrUnknown) {
+                addCallToNullPointerExceptionConstructor(method, pc)
+            }
+
+            if (isNull.isNoOrUnknown) {
+                val callerType = domain.method.classFile.thisType
+                project.instanceCall(callerType, ObjectType.Object, name, descriptor) match {
+                    case Success(callee) ⇒
+                        addCallEdge(pc, HashSet(callee))
+                    case _ ⇒
+                        addUnresolvedMethodCall(method, pc, arrayType, name, descriptor)
+                }
+            }
+        }
+
+        protected[this] def doVirtualCall(
+            pc:                 PC,
+            declaringClassType: ObjectType,
+            isInterface:        Boolean,
+            name:               String,
+            descriptor:         MethodDescriptor,
+            operands:           domain.Operands
+        ): Unit = {
+            // the nullness of the receiver is already checked for
+
+            val callees: Set[Method] = this.callees(domain.method, declaringClassType, isInterface, name, descriptor)
             if (callees.isEmpty) {
-                addUnresolvedMethodCall(
-                    classFile.thisType, method, pc, declaringClassType, name, descriptor
-                )
+                addUnresolvedMethodCall(method, pc, declaringClassType, name, descriptor)
             } else {
                 addCallEdge(pc, callees)
             }
@@ -151,6 +164,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         def virtualCall(
             pc:                 PC,
             declaringClassType: ObjectType,
+            isInterface:        Boolean,
             name:               String,
             descriptor:         MethodDescriptor,
             operands:           domain.Operands
@@ -158,6 +172,14 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             // MODIFIED CHA - we used the type information that is readily available
             val domain.DomainReferenceValue(receiver) = operands(descriptor.parametersCount)
             val receiverIsNull = receiver.isNull
+
+            assert(
+                classHierarchy.isInterface(declaringClassType).isUnknown ||
+                    classHierarchy.isInterface(declaringClassType) == Answer(isInterface),
+                "virtual call - inconsistent isInterface information ("+
+                    s"${classHierarchy.isInterface(declaringClassType)} vs. "+
+                    s"${Answer(isInterface)}) for $declaringClassType"
+            )
 
             // Possible Cases:
             //  - the value is precise and has a single type => non-virtual call
@@ -172,12 +194,12 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             //    the central factory method already "handles" this issue - hence, we don't care
 
             if (receiverIsNull.isYes) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+                addCallToNullPointerExceptionConstructor(method, pc)
                 return ;
             }
 
             if (receiverIsNull.isUnknown) {
-                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+                addCallToNullPointerExceptionConstructor(method, pc)
                 // ... and continue!
             }
 
@@ -191,38 +213,63 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 if (upperTypeBound.isSingletonSet) {
                     val theType = upperTypeBound.head
                     if (theType.isArrayType)
-                        doNonVirtualCall(
-                            pc, ObjectType.Object, name, descriptor,
-                            //receiverIsNull,
+                        arrayCall(
+                            pc, theType.asArrayType, name, descriptor,
                             operands
                         )
                     else if (receiverIsPrecise)
-                        doNonVirtualCall(
+                        nonNullInstanceCall(
                             pc, theType.asObjectType, name, descriptor,
-                            //receiverIsNull,
-                            operands.asInstanceOf[domain.Operands]
-                        )
-                    else {
-                        doVirtualCall(
-                            pc, theType.asObjectType, name, descriptor,
-                            //receiverIsNull,
                             operands
                         )
+                    else {
+                        val receiverType = theType.asObjectType
+                        classHierarchy.isInterface(receiverType) match {
+                            case Yes ⇒
+                                doVirtualCall(
+                                    pc, receiverType, true, name, descriptor, operands
+                                )
+                            case No ⇒
+                                doVirtualCall(
+                                    pc, receiverType, false, name, descriptor, operands
+                                )
+                            case _ ⇒
+                                addUnresolvedMethodCall(method, pc, receiverType, name, descriptor)
+                        }
+
                     }
                 } else {
                     // Recall that the types defining the upper type bound are not in an
                     // inheritance relationship; however, they still may define
                     // the respective method.
 
+                    def fallback() = {
+                        doVirtualCall(
+                            pc, declaringClassType, isInterface, name, descriptor, operands
+                        )
+                    }
+
                     val potentialRuntimeTypes =
                         classHierarchy.directSubtypesOf(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
 
                     val allCallees =
                         if (potentialRuntimeTypes.nonEmpty) {
-                            val potentialRuntimeType = potentialRuntimeTypes.head.asObjectType
-                            val callees = this.callees(potentialRuntimeType, name, descriptor)
+                            val t = potentialRuntimeTypes.head.asObjectType
+
+                            val isInterface = classHierarchy.isInterface(t) match {
+                                case Yes ⇒ true
+                                case No  ⇒ false
+                                case _   ⇒ fallback(); return ;
+                            }
+                            val callees = this.callees(method, t, isInterface, name, descriptor)
                             potentialRuntimeTypes.tail.foldLeft(callees) { (r, nextUpperTypeBound) ⇒
-                                r ++ this.callees(nextUpperTypeBound.asObjectType, name, descriptor)
+                                val t = nextUpperTypeBound.asObjectType
+                                val isInterface = classHierarchy.isInterface(t) match {
+                                    case Yes ⇒ true
+                                    case No  ⇒ false
+                                    case _   ⇒ fallback(); return ;
+                                }
+                                r ++ this.callees(method, t, isInterface, name, descriptor)
                             }
                         } else {
                             Set.empty[Method]
@@ -232,11 +279,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                         // Fallback to ensure that the call graph does not miss an
                         // edge; it may be the case that the (unknown) subtypes actually
                         // just inherit one of the methods of the (known) supertype.
-                        doVirtualCall(
-                            pc, declaringClassType, name, descriptor,
-                            ///receiverIsNull,
-                            operands
-                        )
+                        fallback()
                     } else {
                         addCallEdge(pc, allCallees)
                     }
@@ -312,8 +355,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     private[this] val chaCallGraphExtractor = new CHACallGraphExtractor(cache /*it should not be used...*/ )
 
     def extract(
-        classFile: ClassFile,
-        method:    Method
+        method: Method
     )(
         implicit
         project: SomeProject
@@ -328,68 +370,66 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 i.isInstanceOf[VirtualMethodInvocationInstruction]
             }
         if (!hasVirtualMethodCalls)
-            return chaCallGraphExtractor.extract(classFile, method)
+            return chaCallGraphExtractor.extract(method)
 
         // There are virtual calls, hence, we now do the call graph extraction using
         // variable type analysis
 
-        val result = BaseAI(classFile, method, Domain(classFile, method))
+        val result = BaseAI(method, Domain(method))
         val context = AnalysisContext(result.domain)
-
-        result.domain.code iterate { (pc, instruction) ⇒
-            (instruction.opcode: @scala.annotation.switch) match {
-                case INVOKEVIRTUAL.opcode ⇒
-                    val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
-                    val operands = result.operandsArray(pc)
-                    if (operands != null) {
-                        if (declaringClass.isArrayType) {
-                            context.nonVirtualCall(
-                                pc, ObjectType.Object, name, descriptor,
-                                result.domain.refIsNull(pc, operands(descriptor.parametersCount)),
-                                operands.asInstanceOf[context.domain.Operands]
-                            )
-                        } else {
+        try {
+            result.domain.code iterate { (pc, instruction) ⇒
+                (instruction.opcode: @switch) match {
+                    case INVOKEVIRTUAL.opcode ⇒
+                        val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
+                        val operands = result.operandsArray(pc)
+                        if (operands != null) {
+                            if (declaringClass.isArrayType) {
+                                context.arrayCall(
+                                    pc, declaringClass.asArrayType, name, descriptor,
+                                    operands.asInstanceOf[context.domain.Operands]
+                                )
+                            } else {
+                                context.virtualCall(
+                                    pc, declaringClass.asObjectType, isInterface = false, name, descriptor,
+                                    operands.asInstanceOf[context.domain.Operands]
+                                )
+                            }
+                        }
+                    case INVOKEINTERFACE.opcode ⇒
+                        val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
+                        val operands = result.operandsArray(pc)
+                        if (operands != null) {
                             context.virtualCall(
-                                pc, declaringClass.asObjectType, name, descriptor,
+                                pc, declaringClass, isInterface = true, name, descriptor,
                                 operands.asInstanceOf[context.domain.Operands]
                             )
                         }
-                    }
-                case INVOKEINTERFACE.opcode ⇒
-                    val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
-                    val operands = result.operandsArray(pc)
-                    if (operands != null) {
-                        context.virtualCall(
-                            pc, declaringClass, name, descriptor,
-                            operands.asInstanceOf[context.domain.Operands]
-                        )
-                    }
 
-                case INVOKESPECIAL.opcode ⇒
-                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
-                    val operands = result.operandsArray(pc)
-                    // for invokespecial the dynamic type is not "relevant" (even for Java 8)
-                    if (operands != null) {
-                        context.nonVirtualCall(
-                            pc, declaringClass, name, descriptor,
-                            receiverIsNull = No /*the receiver is "this" object*/ ,
-                            operands.asInstanceOf[context.domain.Operands]
-                        )
-                    }
+                    case INVOKESPECIAL.opcode ⇒
+                        val INVOKESPECIAL(declaringClass, isInterface, name, descriptor) = instruction
+                        val operands = result.operandsArray(pc)
+                        if (operands != null) {
+                            context.specialCall(
+                                pc, declaringClass, isInterface, name, descriptor,
+                                operands.asInstanceOf[context.domain.Operands]
+                            )
+                        }
 
-                case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(declaringClass, _, name, descriptor) = instruction
-                    val operands = result.operandsArray(pc)
-                    if (operands != null) {
-                        context.staticCall(
-                            pc, declaringClass, name, descriptor,
-                            operands.asInstanceOf[context.domain.Operands]
-                        )
-                    }
-                case _ ⇒
-                // Nothing to do...
+                    case INVOKESTATIC.opcode ⇒
+                        val INVOKESTATIC(declaringClass, isInterface, name, descriptor) = instruction
+                        val operands = result.operandsArray(pc)
+                        if (operands != null) {
+                            context.staticCall(
+                                pc, declaringClass, isInterface, name, descriptor,
+                                operands.asInstanceOf[context.domain.Operands]
+                            )
+                        }
+                    case _ ⇒
+                    // Nothing to do...
+                }
             }
-        }
+        } catch { case t: Throwable ⇒ println("\n\nFailed for: "+method.toJava); t.printStackTrace; throw t }
 
         (context.allCallEdges, context.unresolvableMethodCalls)
     }

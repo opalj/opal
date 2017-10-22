@@ -55,7 +55,7 @@ import org.opalj.br.ComputationalTypeReturnAddress
 object ToTxt {
 
     def callToTxt[V <: Var[V]](name: String, params: Seq[Expr[V]]): String = {
-        params.reverse map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
+        params map { toTxtExpr[V] } mkString (s".$name(", ", ", ")")
     }
 
     @inline final def toTxtExpr[V <: Var[V]](expr: Expr[V]): String = {
@@ -124,9 +124,6 @@ object ToTxt {
             case GetField(_, declaringClass, name, _, receiver) ⇒
                 s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
 
-            case e @ CaughtException(_, exceptionType, _) ⇒
-                val t = { exceptionType.map(_.toJava).getOrElse("<ANY>") }
-                s"caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
         }
     }
 
@@ -157,8 +154,8 @@ object ToTxt {
                 val Goto(_, target) = stmt
                 s"$pc goto $target"
 
-            case JumpToSubroutine.ASTID ⇒
-                val JumpToSubroutine(_, target) = stmt
+            case JSR.ASTID ⇒
+                val JSR(_, target) = stmt
                 s"$pc jsr $target"
             case Ret.ASTID ⇒
                 val Ret(_, targets) = stmt
@@ -210,13 +207,14 @@ object ToTxt {
                 val Checkcast(_, value, tpe) = stmt
                 s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
+            case CaughtException.ASTID ⇒
+                val e = stmt.asCaughtException
+                val t = { e.exceptionType.map(_.toJava).getOrElse("<ANY>") }
+                s"$pc caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
+
             case ExprStmt.ASTID ⇒
                 val ExprStmt(_, expr) = stmt
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
-
-            case FailingExpr.ASTID ⇒
-                val FailingExpr(_, fExpr) = stmt
-                s"$pc expression evaluation will throw exception: ${toTxtExpr(fExpr)}"
 
         }
     }
@@ -265,10 +263,12 @@ object ToTxt {
                 params.parameters.zipWithIndex foreach { paramWithIndex ⇒
                     val (param, index) = paramWithIndex
                     if (param ne null) {
-                        val paramTxt = indention+"   param"+index+": "+param.toString()
+                        val paramTxt = indention+"   param"+index.toHexString+": "+param.toString()
                         javaLikeCode += (param match {
-                            case v: DVar[_] ⇒ v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
-                            case _          ⇒ paramTxt
+                            case v: DVar[_] ⇒
+                                v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
+                            case _ ⇒
+                                paramTxt
                         })
                     }
                 }
@@ -297,7 +297,7 @@ object ToTxt {
                         predecessors.map {
                             case bb: BasicBlock ⇒ bb.endPC.toString
                             case cn: CatchNode  ⇒ catchTypeToString(cn.catchType)
-                        }.mkString(
+                        }.toList.sorted.mkString(
                             indention+"// "+(if (index == 0) "<start>, " else ""),
                             ", ",
                             " →"

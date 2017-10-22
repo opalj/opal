@@ -41,14 +41,15 @@ import org.opalj.br.LiveVariables
 import org.opalj.constraints.NumericConstraints
 
 /**
- * Domain that traces the relationship between integer values.
+ * Domain that traces the relationship between integer values; currently, the domain only
+ * works in an unbelievable small number of cases... it is basically useless at the moment.
  *
  * @author Michael Eichberg
  */
 trait ConstraintsBetweenIntegerValues
-        extends CoreDomainFunctionality
-        with IntegerRangeValues // IMRPOVE [ConstraintsBetweenIntegerValues] Define a common trait that specifies that the values support aliasing analyses
-        with TheCodeStructure {
+    extends CoreDomainFunctionality
+    with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
+    with TheCodeStructure {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     type Constraint = NumericConstraints.Value
@@ -71,7 +72,7 @@ trait ConstraintsBetweenIntegerValues
     ): Unit = {
         super.setCodeStructure(theInstructions, theCFJoins, liveVariables)
 
-        constraints = new Array[ConstraintsStore](theInstructions.size)
+        constraints = new Array[ConstraintsStore](theInstructions.length)
     }
 
     private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = {
@@ -436,8 +437,7 @@ trait ConstraintsBetweenIntegerValues
         locals:   Locals
     ): (Operands, Locals) = {
 
-        val result =
-            super.intEstablishIsLessThanOrEqualTo(pc, left, right, operands, locals)
+        val result = super.intEstablishIsLessThanOrEqualTo(pc, left, right, operands, locals)
 
         addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<=)
 

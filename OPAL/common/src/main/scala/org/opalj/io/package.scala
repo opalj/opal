@@ -37,7 +37,6 @@ import java.awt.Desktop
 
 import scala.io.Source
 import scala.xml.Node
-import scala.util.control.ControlThrowable
 
 /**
  * Various io-related helper methods and classes.
@@ -127,8 +126,7 @@ package object io {
         try {
             Desktop.getDesktop.open(file)
         } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable         ⇒ throw OpeningFileFailedException(file, t)
+            case t: Throwable ⇒ throw OpeningFileFailedException(file, t)
         }
     }
 

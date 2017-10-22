@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,6 +32,9 @@ package reader
 
 import java.io.DataInputStream
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+
 /**
  * Template method to skip an unknown attribute. I.e., the information will
  * not be represented at runtime.
@@ -39,8 +42,9 @@ import java.io.DataInputStream
  * @author Michael Eichberg
  */
 trait SkipUnknown_attributeReader
-        extends Constant_PoolAbstractions
-        with Unknown_attributeAbstractions {
+    extends Constant_PoolAbstractions
+    with Unknown_attributeAbstractions {
+    this: Constant_PoolReader ⇒
 
     type Unknown_attribute = Null
 
@@ -54,11 +58,19 @@ trait SkipUnknown_attributeReader
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Null = {
-        val size: Long = in.readInt.toLong
-        var skipped: Long = 0
+        val size: Int = in.readInt
+        var skipped: Int = 0
         while (skipped < size) {
-            val t: Long = in skip (size - skipped) // skip returns a long value...
-            if (t > 0) skipped = skipped + t
+            val actuallySkipped = in skipBytes (size - skipped) // skip returns a long value...
+            if (actuallySkipped > 0)
+                skipped += actuallySkipped
+            else {
+                OPALLogger.error(
+                    "class file reader",
+                    s"skipping over unknown attribute ${cp(attribute_name_index).asString} failed"
+                )(GlobalLogContext)
+                return null;
+            }
         }
         null
     }

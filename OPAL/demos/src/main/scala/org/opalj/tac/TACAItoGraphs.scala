@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.BasicReport
 
 /**
@@ -59,6 +58,8 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
         if (parameters.size == 1 && parameters.head.startsWith("-o="))
             Seq.empty
+        else if (parameters.isEmpty)
+            Seq("output folder is missing")
         else
             parameters.filterNot(_.startsWith("-o=")).map("unknown parameter: "+_)
     }
@@ -79,8 +80,8 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
         val tacs = theProject.get(DefaultTACAIKey)
 
         val errors = theProject.parForeachMethodWithBody() { mi ⇒
-            val MethodInfo(_, cf, m) = mi
-            val methodName = m.toJava(cf)
+            val m = mi.method
+            val methodName = m.toJava
             val outputFileName = pathName + org.opalj.io.sanitizeFileName(methodName)
 
             // 1. create the def/use graphs
@@ -112,7 +113,7 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
 
             methodCount.incrementAndGet()
         }
-        if (errors.nonEmpty) errors.foreach(e ⇒ e.printStackTrace)
+        errors.foreach(e ⇒ e.printStackTrace)
 
         BasicReport(s"Created ${methodCount.get} def/use and control-flow graphs in: $folder.")
     }

@@ -41,20 +41,22 @@ import annotations.property.EP;
 /**
  * @author Florian Kuebler
  */
-@Retention(RUNTIME) @Target({ TYPE_USE,
-        PARAMETER }) @Repeatable(EscapeProperties.class) public @interface Escapes {
+@Retention(RUNTIME)
+@Target({ TYPE_USE, PARAMETER })
+@Repeatable(EscapeProperties.class)
+public @interface Escapes {
 
-    EscapeKeys value() default EscapeKeys.No;
+    EscapeKeys value();
 
     /**
      * The algorithms, if only specific algorithms will compute this result
-     *
+     * <p>
      * TODO Add example to clarify how to specify the algorithm.
      */
     String[] algorithms() default {};
 
     /**
-     * Other entities that must have the given property for this annotation to be correct
+     * Other entities that must have the specified property for this annotation to be correct.
      */
     EP[] eps() default {};
 }

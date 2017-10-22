@@ -46,7 +46,7 @@ import br.analyses._
  * @author Michael Eichberg
  * @author Daniel Klauer
  */
-object SyncSetUnsyncGet  {
+object SyncSetUnsyncGet {
 
     override def description: String =
         "Reports getters that are unsynchronized while the setter is synchronized."
@@ -60,7 +60,7 @@ object SyncSetUnsyncGet  {
      */
     def apply(
         project:       SomeProject,
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String]  = List.empty,
         isInterrupted: () ⇒ Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
@@ -72,9 +72,9 @@ object SyncSetUnsyncGet  {
             classFile ← project.allProjectClassFiles
             if !classFile.isInterfaceDeclaration
             method ← classFile.methods
-            if !method.isAbstract 
-            if !method.isStatic 
-            if !method.isNative 
+            if !method.isAbstract
+            if !method.isStatic
+            if !method.isNative
             if !method.isPrivate
         } {
             if (method.name.startsWith("get") &&
@@ -82,7 +82,8 @@ object SyncSetUnsyncGet  {
                 method.parameterTypes.length == 0 &&
                 method.returnType != VoidType) {
                 unSyncedGetters += ((classFile.thisType.fqn+"."+method.name.substring(3),
-                    method))
+                    method
+                ))
             } else if (method.name.startsWith("set") &&
                 method.isSynchronized &&
                 method.parameterTypes.length == 1 &&

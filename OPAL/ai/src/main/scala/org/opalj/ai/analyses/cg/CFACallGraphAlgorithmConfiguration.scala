@@ -32,7 +32,6 @@ package analyses
 package cg
 
 import org.opalj.log.OPALLogger
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 
@@ -58,12 +57,12 @@ class CFACallGraphAlgorithmConfiguration(
 
     OPALLogger.info("progress", s"constructing a $k-CFA call graph")
 
-    def Domain(classFile: ClassFile, method: Method) = {
+    def Domain(method: Method) = {
         new CFACallGraphDomain(
             k,
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
-            classFile, method
+            method
         )
     }
 }

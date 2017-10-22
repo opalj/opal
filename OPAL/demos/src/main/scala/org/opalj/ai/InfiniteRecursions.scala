@@ -37,7 +37,6 @@ import scala.Console.RESET
 import scala.language.existentials
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
@@ -93,11 +92,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                     case (pc, INVOKEINTERFACE(`classType`, `name`, `descriptor`))  ⇒ pc
                 }
                 if pcs.nonEmpty
-                result ← inifiniteRecursions(
-                    maxRecursionDepth,
-                    project, classFile, method,
-                    pcs
-                )
+                result ← inifiniteRecursions(maxRecursionDepth, project, method, pcs)
             } yield { result }
 
         BasicReport(result.map(_.toString).mkString("\n"))
@@ -113,7 +108,6 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
     def inifiniteRecursions(
         maxRecursionDepth: Int,
         project:           SomeProject,
-        classFile:         ClassFile,
         method:            Method,
         pcs:               Chain[PC]
     ): Option[InfiniteRecursion] = {
@@ -121,7 +115,6 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
         assert(maxRecursionDepth > 1)
         assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
 
-        val strictfp = method.isStrict
         val body = method.body.get
         val parametersCount =
             method.descriptor.parametersCount + (if (method.isStatic) 0 else 1)
@@ -148,7 +141,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
         }
 
         // initialize callOperandsList by doing a first abstract interpretation
-        val initialOperandsArray = BaseAI(classFile, method, domain).operandsArray
+        val initialOperandsArray = BaseAI(method, domain).operandsArray
         previousCallOperandsList = reduceCallOperands(initialOperandsArray)
 
         def analyze(depth: Int, callOperands: Operands): Option[InfiniteRecursion] = {
@@ -156,12 +149,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 return None;
 
             val parameters = mapOperandsToParameters(callOperands, method, domain)
-            val aiResult =
-                BaseAI.performInterpretation(
-                    strictfp, body, domain
-                )(
-                    Chain.empty, parameters
-                )
+            val aiResult = BaseAI.performInterpretation(body, domain)(Chain.empty, parameters)
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
             val callOperandsList =
@@ -195,7 +183,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                             case _: domain.IntegerRange ⇒ true
                             case _                      ⇒ false
                         })
-                            return Some(InfiniteRecursion(classFile, method, callOperands));
+                            return Some(InfiniteRecursion(method, callOperands));
 
                         // these operands are not relevant...
                         false
@@ -244,17 +232,13 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     with domain.TheProject
     with domain.TheMethod
 
-case class InfiniteRecursion(
-        classFile: ClassFile,
-        method:    Method,
-        operands:  Chain[_ <: AnyRef]
-) {
+case class InfiniteRecursion(method: Method, operands: Chain[_ <: AnyRef]) {
 
     override def toString: String = {
-        val declaringClassOfMethod = classFile.thisType.toJava
+        val declaringClassOfMethod = method.classFile.thisType.toJava
 
         "infinite recursion in "+BOLD + BLUE +
             declaringClassOfMethod + RESET +
-            operands.mkString(s"{ ${method.toJava(classFile)}{ ", ", ", " }}")
+            operands.mkString(s"{ ${method.signatureToJava()}{ ", ", ", " }}")
     }
 }

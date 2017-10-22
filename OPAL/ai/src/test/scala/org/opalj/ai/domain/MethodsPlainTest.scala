@@ -34,6 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -60,7 +61,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that does nothing" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "nop").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(None)
     }
@@ -69,7 +70,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iOne").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -78,7 +79,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lOne").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -87,7 +88,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dOne").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -96,7 +97,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fOne").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -106,7 +107,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that returns a fixed string value" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "sLDC").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
     }
@@ -114,7 +115,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that returns a fixed class value" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "cLDC").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType.Class) should be(Yes)
 
@@ -126,14 +127,14 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "identity").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
     it should "be able to analyze a method that just returns a parameter string" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "sOne").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
     }
@@ -144,7 +145,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iAdd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -152,7 +153,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "iAnd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -161,7 +162,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "iDiv").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -169,7 +170,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iMul").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -178,7 +179,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iOr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -187,7 +188,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iShl").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -196,7 +197,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iShr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -204,7 +205,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iRem").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -212,7 +213,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iSub").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -221,7 +222,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iushr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -230,7 +231,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iushr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -241,7 +242,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lAdd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -249,7 +250,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lAnd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -258,7 +259,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lDiv").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -266,7 +267,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lMul").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -275,7 +276,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lOr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -284,7 +285,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lShl").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -293,7 +294,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lShr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -301,7 +302,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lRem").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -309,7 +310,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lSub").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -318,7 +319,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lushr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -327,7 +328,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lushr").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -338,7 +339,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dAdd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -347,7 +348,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dDiv").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -355,7 +356,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dMul").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -364,7 +365,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dRem").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -372,7 +373,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dSub").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -383,7 +384,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fAdd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -392,7 +393,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fDiv").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -400,7 +401,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fMul").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -409,7 +410,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fRem").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -417,7 +418,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fSub").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -428,7 +429,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iToByte").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AByteValue))
     }
@@ -436,7 +437,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iToChar").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ACharValue))
     }
@@ -444,7 +445,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iToDouble").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -452,7 +453,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iToFloat").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -460,7 +461,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iToLong").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -469,7 +470,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iToShort").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AShortValue))
     }
@@ -480,7 +481,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lToDouble").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -488,7 +489,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lToFloat").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -496,7 +497,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lToInt").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -508,7 +509,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dToFloat").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -516,7 +517,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dToInt").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -524,7 +525,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dToLong").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -534,7 +535,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fToDouble").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -542,7 +543,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fToInt").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -550,7 +551,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fToLong").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -561,7 +562,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "fNeg").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -570,7 +571,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "dNeg").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -579,7 +580,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "lNeg").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -588,7 +589,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "iNeg").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -598,7 +599,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to correctly handle casts" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "asSimpleMethods").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
     }
@@ -607,7 +608,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "asSimpleMethodsInstance").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ABooleanValue))
     }
@@ -617,7 +618,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a classical setter method" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "setValue").get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         result should not be (null)
         domain.returnedValue should be(None)
@@ -627,7 +628,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "getValue").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -637,7 +638,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a classical static setter method" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "setSValue").get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
         result should not be (null)
         domain.returnedValue should be(None)
     }
@@ -646,7 +647,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "getSValue").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -656,7 +657,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "localInt").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -665,7 +666,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "localLongOdd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -674,7 +675,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "localLongEven").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -683,7 +684,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "localDoubleOdd").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -692,7 +693,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "localDoubleEven").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -701,7 +702,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "localFloat").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -709,7 +710,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze object load and store commands" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
         domain.refIsNull(-1, domain.returnedValue.get) should not be (No)
@@ -720,7 +721,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a push of null value" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "pushNull").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         assert(
             domain.refIsNull(-1, domain.returnedValue.get).isYes,
@@ -731,7 +732,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushBipush").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AByteValue))
     }
@@ -739,7 +740,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushSipush").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AShortValue))
     }
@@ -747,7 +748,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushDoubleConst0").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -755,7 +756,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushDoubleConst1").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -763,7 +764,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushFloatConst0").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -771,7 +772,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushFloatConst1").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -779,7 +780,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushFloatConst2").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -787,7 +788,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConstn1").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -795,7 +796,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConst0").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -803,7 +804,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConst1").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -811,7 +812,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConst2").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -819,7 +820,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConst3").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -827,7 +828,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConst4").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -835,7 +836,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushIntConst5").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -843,7 +844,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushLongConst0").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -851,7 +852,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "pushLongConst1").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -861,7 +862,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a new boolean array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewBooleanArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -872,7 +873,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a new char array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewCharArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -883,7 +884,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a new float array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewFloatArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -894,7 +895,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a new double array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewDoubleArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -906,7 +907,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a new byte array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewByteArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -917,7 +918,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a new short array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewShortArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -928,7 +929,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze the creation of a new int array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewIntArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -939,7 +940,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze the creation of a new long array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewLongArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -951,7 +952,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze the creation of a new Object array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -962,7 +963,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze the creation of a new multidimensional Object array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -975,7 +976,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze loads and stores of an object in an array" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "objectArray").get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             domain.isValueSubtypeOf(
@@ -989,7 +990,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain
         import domain._
         val method = classFile.methods.find(_.name == "byteArray").get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             domain.returnedValue should be(Some(AByteValue))
@@ -1000,7 +1001,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "charArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ACharValue))
     }
@@ -1009,7 +1010,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "doubleArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -1018,7 +1019,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "floatArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
@@ -1027,7 +1028,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "intArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
@@ -1035,7 +1036,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "longArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
@@ -1043,7 +1044,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "shortArray").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AShortValue))
     }
@@ -1054,7 +1055,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "twice").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
@@ -1067,15 +1068,14 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val locals = new Array[Value](1)
         val theObject = TypedValue(-1, t)
         locals(0) = theObject
-        BaseAI.perform(classFile, method, domain)(Some(locals))
-
+        BaseAI.perform(method, domain)(Some(locals))
         domain.returnedValue should be(Some(theObject))
     }
 
     it should "be able to analyze a method that creates an instance of an object using reflection" in {
         val domain = new RecordingDomain;
         val method = classFile.methods.find(_.name == "create").get
-        /*val result =*/ BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -1086,7 +1086,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that creates an object and which calls multiple methods of the new object" in {
         val domain = new RecordingDomain;
         val method = classFile.methods.find(_.name == "multipleCalls").get
-        /*val result = */ BaseAI(classFile, method, domain)
+        /*val result = */ BaseAI(method, domain)
 
         domain.returnedValue should be(None)
     }
@@ -1095,27 +1095,23 @@ class MethodsPlainTest extends FlatSpec with Matchers {
 private object MethodsPlainTest {
 
     class RecordingDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with DefaultHandlingForReturnInstructions
-            with DefaultHandlingOfVoidReturns
-            with DefaultReferenceValuesBinding
-            with DefaultTypeLevelIntegerValues
-            with DefaultTypeLevelLongValues
-            with DefaultTypeLevelFloatValues
-            with DefaultTypeLevelDoubleValues
-            with TypeLevelPrimitiveValuesConversions
-            with TypeLevelLongValuesShiftOperators
-            with TypeLevelFieldAccessInstructions
-            with SimpleTypeLevelInvokeInstructions
-            with ThrowAllPotentialExceptionsConfiguration
-            with IgnoreSynchronization
-            with DefaultHandlingForThrownExceptions
-            with PredefinedClassHierarchy {
-
-        type Id = String
-
-        def id = "SimpleRecordingDomain"
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultHandlingForReturnInstructions
+        with DefaultHandlingOfVoidReturns
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelFieldAccessInstructions
+        with SimpleTypeLevelInvokeInstructions
+        with ThrowAllPotentialExceptionsConfiguration
+        with IgnoreSynchronization
+        with DefaultHandlingForThrownExceptions
+        with PredefinedClassHierarchy {
 
         var returnedValue: Option[DomainValue] = _
 

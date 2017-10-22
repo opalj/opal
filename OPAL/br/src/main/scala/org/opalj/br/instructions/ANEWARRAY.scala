@@ -43,6 +43,8 @@ case class ANEWARRAY(componentType: ReferenceType) extends CreateNewOneDimension
 
     final def length: Int = 3
 
+    final def arrayType: ArrayType = ArrayType(componentType)
+
 }
 
 /**

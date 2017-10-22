@@ -78,6 +78,8 @@ class CatchNode(
 
     final override def isBasicBlock: Boolean = false
     final override def isExitNode: Boolean = false
+    final override def isAbnormalReturnExitNode: Boolean = false
+    final override def isNormalReturnExitNode: Boolean = false
     final override def isStartOfSubroutine: Boolean = false
 
     final override def isCatchNode: Boolean = true

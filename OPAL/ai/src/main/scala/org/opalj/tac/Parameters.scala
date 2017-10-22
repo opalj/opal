@@ -41,7 +41,7 @@ import org.opalj.ai.ValueOrigin
  * @author Michael Eichberg
  */
 class Parameters[P <: AnyRef](
-        val parameters: Array[P] // CONST // TODO Define and check an @const annotation.
+        val parameters: Array[P] // EVENTUALLY CONST
 ) {
 
     /**

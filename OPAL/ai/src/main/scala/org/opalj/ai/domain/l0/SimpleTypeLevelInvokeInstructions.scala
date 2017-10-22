@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -57,19 +57,17 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         pc:               PC,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         refIsNull(pc, operands.last) match {
             case Yes ⇒
                 justThrows(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒
                 val returnType = methodDescriptor.returnType
+                val exceptionValue = Set(VMNullPointerException(pc))
                 if (returnType.isVoidType)
-                    ComputationWithSideEffectOrException(Set(VMNullPointerException(pc)))
+                    ComputationWithSideEffectOrException(exceptionValue)
                 else
-                    ComputedValueOrException(
-                        TypedValue(pc, returnType),
-                        Set(NullPointerException(pc))
-                    )
+                    ComputedValueOrException(TypedValue(pc, returnType), exceptionValue)
             case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
                 val returnType = methodDescriptor.returnType
                 if (returnType.isVoidType)
@@ -77,6 +75,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
                 else
                     ComputedValue(TypedValue(pc, returnType))
         }
+    }
 
     /*override*/ def invokevirtual(
         pc:               PC,
@@ -84,8 +83,9 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokeinterface(
         pc:               PC,
@@ -93,21 +93,25 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokespecial(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
-    ): MethodCallResult =
+    ): MethodCallResult = {
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+    }
 
     /*override*/ def invokestatic(
         pc:               PC,
         declaringClass:   ObjectType,
+        isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -133,4 +137,3 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
             ComputedValue(TypedValue(pc, returnType))
     }
 }
-

@@ -39,16 +39,18 @@ import org.opalj.collection.immutable.Chain
  */
 abstract class CreateNewArrayInstruction extends Instruction with ConstantLengthInstruction {
 
-    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def asCreateNewArrayInstruction: this.type = this
+
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || (this == other)
     }
 
-    override final def jvmExceptions: List[ObjectType] = {
+    final override def jvmExceptions: List[ObjectType] = {
         CreateNewArrayInstruction.jvmExceptionsAndErrors
     }
 
-    override final def nextInstructions(
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
@@ -64,8 +66,9 @@ abstract class CreateNewArrayInstruction extends Instruction with ConstantLength
             )
     }
 
-    override final def expressionResult: Stack.type = Stack
+    final override def expressionResult: Stack.type = Stack
 
+    def arrayType: ArrayType
 }
 
 object CreateNewArrayInstruction {

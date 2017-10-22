@@ -36,7 +36,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br._
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
@@ -54,24 +54,24 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     import MethodsWithExceptionsTest._
 
     class DefaultRecordingDomain(val id: String)
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding
-            /* => */ with RecordLastReturnedValues
-            /* => */ with RecordAllThrownExceptions
-            /* => */ with RecordVoidReturns {
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultReferenceValuesBinding
+        /* => */ with RecordLastReturnedValues
+        /* => */ with RecordAllThrownExceptions
+        /* => */ with RecordVoidReturns {
 
         override def throwIllegalMonitorStateException: Boolean = false
 
@@ -83,7 +83,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
@@ -104,7 +104,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(IntSet(7)) // <= void return
+            allReturnVoidInstructions should be(IntArraySet(7)) // <= void return
         }
     }
 
@@ -124,14 +124,14 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
             allThrownExceptions should be(Map.empty)
-            allReturnVoidInstructions should be(IntSet(39)) // <= void return
+            allReturnVoidInstructions should be(IntArraySet(39)) // <= void return
         }
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(IntSet(38)) // <= void return
+            allReturnVoidInstructions should be(IntArraySet(38)) // <= void return
             allThrownExceptions should be(Map())
             // Due to the simplicity of the domain (the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception

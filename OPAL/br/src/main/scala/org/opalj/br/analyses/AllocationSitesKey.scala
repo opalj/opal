@@ -33,25 +33,11 @@ package analyses
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.log.OPALLogger
-
-/**
- * A set of all allocation sites.
- *
- * To initialize the set of allocation sites for an entire project use the respective
- * project information key: [[AllocationSitesKey]]. The key also provides further
- * information regarding the concrete allocation site objects and their relation
- * to the underlying method.
- *
- * @author Michael Eichberg
- */
-class AllocationSites private[analyses] (val data: Map[Method, Map[PC, AllocationSite]]) {
-
-    def apply(m: Method): Map[PC, AllocationSite] = data.getOrElse(m, Map.empty)
-
-    def allocationSites: Iterable[AllocationSite] = data.values.flatMap(_.values)
-}
+import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to collect all allocation sites in a project. If the library methods
@@ -60,7 +46,7 @@ class AllocationSites private[analyses] (val data: Map[Method, Map[PC, Allocatio
  * @note    An allocation site object is created for each `NEW` instruction found in a
  *          method's body. However, this does not guarantee that the allocation site
  *          will ever be reached or is found in code derived from the method's bytecode.
- *          In particular the JDK is known for containing a lot of dead code
+ *          In particular, the JDK is known for containing a lot of dead code
  *          [[http://dl.acm.org/citation.cfm?id=2786865 Hidden Truths in Dead Software Paths]]
  *          and this code is automatically filtered when OPAL creates the 3-address code
  *          representation. The default analysis done when creating the 3-address code is
@@ -71,6 +57,7 @@ class AllocationSites private[analyses] (val data: Map[Method, Map[PC, Allocatio
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
  * @author Michael Eichberg
+ * @author Florian Kübler
  */
 object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing] {
 
@@ -89,22 +76,47 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
      */
     override protected def compute(p: SomeProject): AllocationSites = {
         implicit val logContext = p.logContext
-        val sites = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
+        val sitesPerMethod = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
+        val sitesByType = new ConcurrentLinkedQueue[(ReferenceType, AllocationSite)]
 
         val errors = p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val m = methodInfo.method
             val code = m.body.get
-            val as = code.collectWithIndex {
-                case (pc, instructions.NEW(_)) ⇒ (pc, new AllocationSite(m, pc))
-            }.toMap
-            if (as.nonEmpty) sites.add((m, as))
+            val as = code.foldLeft(Map.empty[PC, AllocationSite]) { (as, pc, instruction) ⇒
+                instruction.opcode match {
+
+                    case instructions.NEW.opcode ⇒
+                        val ot = instruction.asNEW.objectType
+                        val nas = new ObjectAllocationSite(m, pc)
+                        sitesByType.add((ot, nas))
+                        as + ((pc, nas))
+
+                    case instructions.NEWARRAY.opcode |
+                        instructions.ANEWARRAY.opcode |
+                        instructions.MULTIANEWARRAY.opcode ⇒
+                        val ot = instruction.asCreateNewArrayInstruction.arrayType
+                        val nas = new ArrayAllocationSite(m, pc)
+                        sitesByType.add((ot, nas))
+                        as + ((pc, nas))
+
+                    case _ ⇒
+                        as
+                }
+            }
+            if (as.nonEmpty) sitesPerMethod.add((m, as))
         }
 
-        errors foreach { e ⇒
-            OPALLogger.error("allocation sites", "collecting all allocation sites failed", e)
-        }
+        errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
-        new AllocationSites(Map.empty ++ sites.asScala)
+        val initialMap: Map[ReferenceType, ArrayBuffer[AllocationSite]] =
+            Map.empty.withDefault(rt ⇒ new ArrayBuffer(8))
+        new AllocationSites(
+            sitesPerMethod.asScala.toMap,
+            sitesByType.asScala.foldLeft(initialMap) { (c, n) ⇒
+                val (rt, as) = n
+                c + ((rt, c(rt) += as))
+            }.map { e ⇒ val (rt, ass) = e; (rt, ConstArray.from(ass.toArray)) }
+        )
     }
 
     //
@@ -116,6 +128,6 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
         (p: SomeProject) ⇒ {
             // this will collect the allocations sites of the project if not yet collected...
             val allocationsSites = p.get(AllocationSitesKey)
-            (allocationsSites.data.values.flatMap(_.values), allocationsSites)
+            (allocationsSites, allocationsSites)
         }
 }

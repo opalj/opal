@@ -35,6 +35,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.br._
@@ -51,23 +52,23 @@ class PropertyTracingTest extends FlatSpec with Matchers {
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy
-            with SimpleBooleanPropertyTracing
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l1.DefaultIntegerRangeValues
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with l1.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
-            with TheMethod {
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with SimpleBooleanPropertyTracing
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l1.DefaultIntegerRangeValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l1.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with TheMethod {
 
         override def maxCardinalityOfIntegerRanges: Long = 16L
 
@@ -80,11 +81,12 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         override def propertyName = "isSanitized"
 
         override def invokestatic(
-            pc:               Int,
-            declaringClass:   ObjectType,
-            name:             String,
-            methodDescriptor: MethodDescriptor,
-            operands:         Operands
+            pc:             Int,
+            declaringClass: ObjectType,
+            isInterface:    Boolean,
+            name:           String,
+            descriptor:     MethodDescriptor,
+            operands:       Operands
         ): MethodCallResult = {
 
             // let's check if the first parameter (_ == -2) passed to a method is
@@ -92,7 +94,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
             if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
                 updateProperty(pc, true)
             }
-            super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
         }
 
         def isSanitized(): Boolean = hasPropertyOnExit
@@ -107,7 +109,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         val method = classFile.findMethod(name).head
         val domain = new AnalysisDomain(method)
         val code = method.body.get
-        val result = BaseAI(classFile, method, domain)
+        val result = BaseAI(method, domain)
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 

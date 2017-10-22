@@ -66,7 +66,6 @@ object FieldAccessStatistics extends DefaultFeatureQuery {
         val fieldAccessInformation = project.get(FieldAccessInformationKey)
         import fieldAccessInformation.isAccessed
         import fieldAccessInformation.allAccesses
-        import project.classFile
 
         for {
             cf ← project.allProjectClassFiles
@@ -85,7 +84,7 @@ object FieldAccessStatistics extends DefaultFeatureQuery {
                         case Some(ACC_PROTECTED) ⇒ 2
                         case Some(ACC_PUBLIC)    ⇒ 3
                     }
-                } else if (!field.isPrivate && allAccesses(field).forall(mi ⇒ classFile(mi._1) eq cf)) {
+                } else if (!field.isPrivate && allAccesses(field).forall(mi ⇒ mi._1.classFile eq cf)) {
                     field.visibilityModifier match {
                         case None                ⇒ 4
                         case Some(ACC_PROTECTED) ⇒ 5

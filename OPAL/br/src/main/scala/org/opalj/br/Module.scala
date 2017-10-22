@@ -57,8 +57,8 @@ object Module {
  * @param requires The name of a required module.
  */
 case class Requires(
-    requires:      String,
-    requiresFlags: Int
+        requires:      String,
+        requiresFlags: Int
 )
 
 /**
@@ -67,11 +67,11 @@ case class Requires(
  *          public types in this exported package (in internal form).
  */
 case class Exports(
-    exports:   String,
-    exportsTo: IndexedSeq[String]
+        exports:   String,
+        exportsTo: IndexedSeq[String]
 )
 
 case class Provides(
-    provides:      ObjectType,
-    withInterface: ObjectType
+        provides:      ObjectType,
+        withInterface: ObjectType
 )

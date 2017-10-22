@@ -33,16 +33,17 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 import org.opalj.ai.domain.ValuesCoordinatingDomain
+import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.PredefinedClassHierarchy
 import org.opalj.ai.domain.l0.DefaultReferenceValuesBinding
 import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelLongValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
-import org.opalj.ai.domain.DefaultDomainValueBinding
-import org.opalj.ai.domain.PredefinedClassHierarchy
-import org.opalj.collection.immutable.Naught
 
 /**
  * Tests the utility methods.

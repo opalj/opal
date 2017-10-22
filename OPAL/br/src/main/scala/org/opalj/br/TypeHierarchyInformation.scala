@@ -31,6 +31,11 @@ package br
 
 import org.opalj.collection.immutable.UIDSet
 
+/**
+ * Represents the results of a type hierarchy related query.
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class TypeHierarchyInformation {
 
     def typeInformationType: String
@@ -44,7 +49,23 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foreach(f)
     }
 
-    def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
+    def forall(f: ObjectType ⇒ Boolean): Boolean = {
+        classTypes.forall(f) && interfaceTypes.forall(f)
+    }
+
+    def exists(f: ObjectType ⇒ Boolean): Boolean = {
+        classTypes.exists(f) || interfaceTypes.exists(f)
+    }
+
+    def foldLeft[B](z: B)(op: (B, ObjectType) ⇒ B): B = {
+        interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
+    }
+
+    /**
+     * The set of all supertypes. The set is computed on demand and NOT cached; in generally
+     * the higher-order methods should be used!
+     */
+    def all: UIDSet[ObjectType]
 
     override def toString: String = {
         val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
@@ -65,9 +86,10 @@ sealed abstract class SubtypeInformation extends TypeHierarchyInformation {
 
 object SubtypeInformation {
 
-    final val empty = new SubtypeInformation {
+    final val None = new SubtypeInformation {
         def classTypes: UIDSet[ObjectType] = UIDSet.empty
         def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        def all: UIDSet[ObjectType] = UIDSet.empty
     }
 
     def apply(
@@ -76,21 +98,24 @@ object SubtypeInformation {
     ): SubtypeInformation = {
         if (theClassTypes.isEmpty) {
             if (theInterfaceTypes.isEmpty)
-                empty
+                None
             else
                 new SubtypeInformation {
                     def classTypes: UIDSet[ObjectType] = UIDSet.empty
                     val interfaceTypes = theInterfaceTypes
+                    def all: UIDSet[ObjectType] = interfaceTypes
                 }
         } else if (theInterfaceTypes.isEmpty) {
             new SubtypeInformation {
                 val classTypes = theClassTypes
                 def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+                def all: UIDSet[ObjectType] = classTypes
             }
         } else {
             new SubtypeInformation {
                 val classTypes = theClassTypes
                 val interfaceTypes = theInterfaceTypes
+                def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
             }
         }
     }
@@ -107,37 +132,54 @@ sealed abstract class SupertypeInformation extends TypeHierarchyInformation {
 
 object SupertypeInformation {
 
-    def none = new SupertypeInformationForClasses(UIDSet.empty, UIDSet.empty)
+    final val JustObject = new SupertypeInformation {
+        final def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
+        final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        final def all: UIDSet[ObjectType] = ClassHierarchy.JustObject
+    }
+
+    final val None = new SupertypeInformation {
+        final def classTypes: UIDSet[ObjectType] = UIDSet.empty
+        final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        final def all: UIDSet[ObjectType] = UIDSet.empty
+    }
 
     def apply(
-        classTypes:     UIDSet[ObjectType],
-        interfaceTypes: UIDSet[ObjectType]
+        theClassTypes:     UIDSet[ObjectType],
+        theInterfaceTypes: UIDSet[ObjectType]
     ): SupertypeInformation = {
-        new SupertypeInformationForClasses(classTypes, interfaceTypes)
-    }
-}
-
-private[br] final class SupertypeInformationForClasses(
-    val classTypes:     UIDSet[ObjectType],
-    val interfaceTypes: UIDSet[ObjectType]
-) extends SupertypeInformation
-
-private[br] object NoSpecificSupertypeInformationForInterfaces extends SupertypeInformation {
-    def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-    def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-}
-
-private[br] final class SupertypeInformationForInterfaces private (
-        val interfaceTypes: UIDSet[ObjectType]
-) extends SupertypeInformation {
-    def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-}
-
-object SupertypeInformationForInterfaces {
-    def apply(interfaceTypes: UIDSet[ObjectType]): SupertypeInformation = {
-        if (interfaceTypes.isEmpty)
-            NoSpecificSupertypeInformationForInterfaces
-        else
-            new SupertypeInformationForInterfaces(interfaceTypes)
+        if (theInterfaceTypes.isEmpty) {
+            if (theClassTypes.isEmpty) {
+                None
+            } else if (theClassTypes.isSingletonSet && (theClassTypes.head eq ObjectType.Object)) {
+                JustObject
+            } else {
+                new SupertypeInformation {
+                    final val classTypes: UIDSet[ObjectType] = theClassTypes
+                    final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+                    final def all: UIDSet[ObjectType] = classTypes
+                }
+            }
+        } else {
+            if (theClassTypes.isEmpty) {
+                new SupertypeInformation {
+                    final def classTypes: UIDSet[ObjectType] = UIDSet.empty
+                    final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final def all: UIDSet[ObjectType] = theInterfaceTypes
+                }
+            } else if (theClassTypes.isSingletonSet && (theClassTypes.head eq ObjectType.Object)) {
+                new SupertypeInformation {
+                    final def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
+                    final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final def all: UIDSet[ObjectType] = theInterfaceTypes + ObjectType.Object
+                }
+            } else {
+                new SupertypeInformation {
+                    final val classTypes: UIDSet[ObjectType] = theClassTypes
+                    final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
+                }
+            }
+        }
     }
 }

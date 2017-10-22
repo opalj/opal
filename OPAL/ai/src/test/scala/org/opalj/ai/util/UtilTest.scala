@@ -34,6 +34,7 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
 import org.opalj.collection.immutable.Chain
 
 /**

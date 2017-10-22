@@ -96,6 +96,7 @@ package object util {
         }
     }
 
+    // IMPROVE Add an unsafe insertBefore! to chain that actually mutates the list.
     /**
      * Inserts the given `pc` before `prefixEnd` in the list. If the list does not contain
      * `prefixEnd`, `pc` is appended to the list.

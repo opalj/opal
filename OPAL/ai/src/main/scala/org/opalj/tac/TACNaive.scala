@@ -39,7 +39,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 
 /**
  * Converts the bytecode of a method into a three address representation using a very naive
@@ -374,7 +374,7 @@ object TACNaive {
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
                     IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
-                    val ifInstr = as[IFICMPInstruction](instruction)
+                    val ifInstr = instruction.asIFICMPInstruction
                     val value2 :: value1 :: rest = stack
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
@@ -386,7 +386,7 @@ object TACNaive {
                 case IFEQ.opcode | IFNE.opcode |
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode ⇒
-                    val ifInstr = as[IF0Instruction](instruction)
+                    val ifInstr = instruction.asIF0Instruction
                     val value :: rest = stack
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
@@ -396,7 +396,7 @@ object TACNaive {
                     statements(pc) = List(stmt)
 
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
-                    val ifInstr = as[IFACMPInstruction](instruction)
+                    val ifInstr = instruction.asIFACMPInstruction
                     val value2 :: value1 :: rest = stack
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
@@ -406,7 +406,7 @@ object TACNaive {
                     schedule(targetPC, rest)
 
                 case IFNONNULL.opcode | IFNULL.opcode ⇒
-                    val ifInstr = as[IFXNullInstruction](instruction)
+                    val ifInstr = instruction.asIFXNullInstruction
                     val value :: rest = stack
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
@@ -505,7 +505,8 @@ object TACNaive {
                     val invoke = as[MethodInvocationInstruction](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
-                    val (params, List(receiver)) = operands.splitAt(numOps - 1)
+                    val (paramsInOperandsOrder, List(receiver)) = operands.splitAt(numOps - 1)
+                    val params = paramsInOperandsOrder.reverse
                     import invoke.{methodDescriptor, declaringClass, isInterfaceCall, name}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
@@ -544,7 +545,8 @@ object TACNaive {
                 case INVOKESTATIC.opcode ⇒
                     val invoke = as[INVOKESTATIC](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
-                    val (params, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
+                    val params = paramsInOperandsOrder.reverse
                     import invoke.{declaringClass, methodDescriptor, name, isInterface}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
@@ -571,9 +573,11 @@ object TACNaive {
                 case INVOKEDYNAMIC.opcode ⇒
                     val call @ INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
                     val numOps = call.numberOfPoppedOperands(x ⇒ stack.drop(x).head.cTpe.category)
-                    val (operands, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
+                    val params = paramsInOperandsOrder.reverse
+
                     val returnType = methodDescriptor.returnType
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, operands)
+                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
                     val newVar = OperandVar(returnType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVar, expr))
                     schedule(pcOfNextInstruction(pc), newVar :: rest)
@@ -633,14 +637,14 @@ object TACNaive {
                     statements(pc) = List(Goto(pc, targetPC))
                     schedule(targetPC, stack)
 
-                case JSR.opcode | JSR_W.opcode ⇒
+                case br.instructions.JSR.opcode | JSR_W.opcode ⇒
                     val targetPC = pc + as[JSRInstruction](instruction).branchoffset
                     val retVar = OperandVar(ComputationalTypeReturnAddress, stack)
-                    statements(pc) = List(JumpToSubroutine(pc, targetPC))
+                    statements(pc) = List(JSR(pc, targetPC))
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒
-                    var successors = IntSet.empty
+                    var successors = IntArraySet.empty
                     cfg.bb(pc).successors foreach { successorNode ⇒
                         val successor = successorNode match {
                             case cn: CatchNode  ⇒ cn.handlerPC

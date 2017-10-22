@@ -48,9 +48,9 @@ import scala.collection.mutable.ArrayStack
  * faster.
  */
 sealed abstract class UIDSet[T <: UID]
-        //extends scala.collection.AbstractSet[T]
-        extends scala.collection.immutable.Set[T]
-        with scala.collection.SetLike[T, UIDSet[T]] {
+    //extends scala.collection.AbstractSet[T]
+    extends scala.collection.immutable.Set[T]
+    with scala.collection.SetLike[T, UIDSet[T]] {
 
     final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
 

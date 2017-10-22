@@ -31,39 +31,36 @@ package ai
 package domain
 package l2
 
-import org.opalj.br.{ClassFile, Method}
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  * Performs a simple invocation of the immediately called methods.
  */
 class DefaultPerformInvocationsDomain[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends SharedDefaultDomain[Source](project, classFile, method)
-        with PerformInvocations {
+        project: Project[Source],
+        method:  Method
+) extends SharedDefaultDomain[Source](project, method) with PerformInvocations {
 
-    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean = {
-        !method.returnType.isVoidType
-    }
+    def shouldInvocationBePerformed(method: Method): Boolean = !method.returnType.isVoidType
 
     type CalledMethodDomain = SharedDefaultDomain[Source] with DefaultRecordMethodCallResults
 
-    def calledMethodDomain(classFile: ClassFile, method: Method) =
-        new SharedDefaultDomain(
-            project,
-            project.classFile(method),
-            method
-        ) with DefaultRecordMethodCallResults
+    def calledMethodDomain(method: Method) = {
+        new SharedDefaultDomain(project, method) with DefaultRecordMethodCallResults
+    }
 
     def calledMethodAI = BaseAI
 
 }
 
 class DefaultPerformInvocationsDomainWithCFG[Source](
-    project:   Project[Source],
-    classFile: ClassFile,
-    method:    Method
-) extends DefaultPerformInvocationsDomain[Source](project, classFile, method) with RecordCFG
+        project: Project[Source],
+        method:  Method
+) extends DefaultPerformInvocationsDomain[Source](project, method) with RecordCFG
+
+class DefaultPerformInvocationsDomainWithCFGAndDefUse[Source](
+        project: Project[Source],
+        method:  Method
+) extends DefaultPerformInvocationsDomainWithCFG[Source](project, method)
+    with RefineDefUseUsingOrigins

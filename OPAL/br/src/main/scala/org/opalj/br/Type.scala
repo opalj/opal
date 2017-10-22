@@ -962,6 +962,10 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         final val fqn: String
 ) extends ReferenceType {
 
+    assert(fqn.indexOf('.') == -1, s"invalid object type name: $fqn")
+
+    final val packageName: String = ObjectType.packageName(fqn).intern()
+
     override def isObjectType: Boolean = true
 
     override def asObjectType: ObjectType = this
@@ -975,8 +979,6 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         isPrimitiveTypeWrapper && (ObjectType.primitiveType(this).get eq baseType)
 
     def simpleName: String = ObjectType.simpleName(fqn)
-
-    final val packageName: String = ObjectType.packageName(fqn).intern()
 
     override def toJava: String = fqn.replace('/', '.')
 
@@ -1161,6 +1163,7 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
     // Types related to the invokedynamic instruction
+    final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
     final val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
     final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")

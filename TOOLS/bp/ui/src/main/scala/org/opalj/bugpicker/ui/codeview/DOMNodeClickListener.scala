@@ -134,10 +134,11 @@ class DOMNodeClickListener(
             focus(sourceWebview)
         }
 
-        val classFile = decompileClassFile(project, sourceType)
-        if (classFile.isDefined)
-            bytecodeWebview.engine.loadContent(classFile.get.toXHTML().toString)
-        else
+        val classFileOption = decompileClassFile(project, sourceType)
+        if (classFileOption.isDefined) {
+            val classFile = classFileOption.get
+            bytecodeWebview.engine.loadContent(classFile.toXHTML(project.source(sourceType)).toString)
+        } else
             bytecodeWebview.engine.loadContent(Messages.NO_BYTECODE_FOUND)
         new JumpToProblemListener(
             webview = bytecodeWebview,

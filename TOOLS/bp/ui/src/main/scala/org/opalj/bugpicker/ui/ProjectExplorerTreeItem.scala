@@ -50,12 +50,12 @@ import scalafx.scene.image.ImageView
  * @author David Becker
  */
 class ProjectExplorerTreeItem(
-    p:                  ProjectExplorerData,
-    iv:                 ImageView,
-    childrenNodes:      ObservableBuffer[ProjectExplorerTreeItem]                 = ObservableBuffer.empty,
-    classFileStructure: Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = Map.empty
+        p:                  ProjectExplorerData,
+        iv:                 ImageView,
+        childrenNodes:      ObservableBuffer[ProjectExplorerTreeItem]                 = ObservableBuffer.empty,
+        classFileStructure: Map[ProjectExplorerTreeItem, ObservableBuffer[ClassFile]] = Map.empty
 )
-        extends TreeItem[ProjectExplorerData](p, iv) {
+    extends TreeItem[ProjectExplorerData](p, iv) {
 
     // We cache whether the ProjectExplorerData is a leaf or not. A ProjectExplorerData
     // is a leaf if it is a field or method. We cache this as isLeafValue is called often
@@ -72,7 +72,7 @@ class ProjectExplorerTreeItem(
     override def getChildren: ObservableList[TreeItem[ProjectExplorerData]] = {
         if (isFirstTimeChildren) {
             isFirstTimeChildren = false;
-            // First children call, so we actually go off and 
+            // First children call, so we actually go off and
             // determine the children of the ProjectExplorerData
             // contained in this TreeItem.
             super.getChildren.setAll(buildChildren(this))

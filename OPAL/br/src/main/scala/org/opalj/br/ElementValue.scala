@@ -46,6 +46,12 @@ sealed trait ElementValue extends Attribute {
      */
     def toJava: String
 
+    def asEnumValue: EnumValue = throw new ClassCastException()
+    def asAnnotationValue: AnnotationValue = throw new ClassCastException()
+    def asStringValue: StringValue = throw new ClassCastException()
+    def asArrayValue: ArrayValue = throw new ClassCastException()
+    def asClassValue: ClassValue = throw new ClassCastException()
+
 }
 object ElementValue {
     final val minKindId = ByteValue.KindId
@@ -201,7 +207,11 @@ case class StringValue(value: String) extends ElementValue {
 
     override def kindId: Int = StringValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
+
+    final override def asStringValue: StringValue = this
 
 }
 object StringValue {
@@ -218,7 +228,11 @@ case class ClassValue(value: Type) extends ElementValue {
 
     override def kindId: Int = ClassValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
+
+    final override def asClassValue: ClassValue = this
 
 }
 object ClassValue {
@@ -235,7 +249,11 @@ case class EnumValue(enumType: ObjectType, constName: String) extends ElementVal
 
     override def kindId: Int = EnumValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
+
+    final override def asEnumValue: EnumValue = this
 
 }
 object EnumValue {
@@ -253,7 +271,11 @@ case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
 
     override def kindId: Int = ArrayValue.KindId
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
+
+    final override def asArrayValue: ArrayValue = this
 
 }
 object ArrayValue {
@@ -272,13 +294,12 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case AnnotationValue(thatAnnotation) ⇒
-                this.annotation.similar(thatAnnotation)
-            case _ ⇒
-                false
+            case AnnotationValue(thatAnnotation) ⇒ this.annotation.similar(thatAnnotation)
+            case _                               ⇒ false
         }
     }
 
+    final override def asAnnotationValue: AnnotationValue = this
 }
 object AnnotationValue {
 

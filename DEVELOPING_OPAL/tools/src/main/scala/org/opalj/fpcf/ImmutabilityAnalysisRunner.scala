@@ -37,13 +37,11 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
-import org.opalj.fpcf.analysis.FieldMutabilityAnalysis
-import org.opalj.fpcf.properties.ExtensibleType
-import org.opalj.fpcf.analysis.TypeExtensibilityAnalysis
-import org.opalj.fpcf.properties.ObjectImmutability
-import org.opalj.fpcf.analysis.ObjectImmutabilityAnalysis
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.analysis.TypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -72,21 +70,15 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
         //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        manager.run(TypeExtensibilityAnalysis)
         manager.run(FieldMutabilityAnalysis)
         time {
-            manager.runAll(ObjectImmutabilityAnalysis, TypeImmutabilityAnalysis)
+            manager.runAll(ClassImmutabilityAnalysis, TypeImmutabilityAnalysis)
         } { r ⇒ t += r.toSeconds }
 
         projectStore.validate(None)
 
-        val extensibleClasses =
-            projectStore.entities(ExtensibleType).
-                map(_.asInstanceOf[ClassFile].thisType.toJava).toList.sorted.
-                mkString("\n\t\t\t", "\n\t\t\t", "\n")
-
         val immutableClasses =
-            projectStore.entities(ObjectImmutability.key).
+            projectStore.entities(ClassImmutability.key).
                 filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
                 groupBy { _.p }.map { kv ⇒
                     (
@@ -120,7 +112,6 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
 
         BasicReport(
             "Details:\n"+
-                extensibleClasses.mkString("\tExtensible Classes:\n\t\t", "\n\t\t", "\n") +
                 immutableClassesInfo+
                 "\nSummary (w.r.t classes):\n"+
                 "\tObject Immutability:\n"+

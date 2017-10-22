@@ -43,8 +43,8 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelReferenceValues
-        extends DefaultDomainValueBinding
-        with TypeLevelReferenceValues {
+    extends DefaultDomainValueBinding
+    with TypeLevelReferenceValues {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     // -----------------------------------------------------------------------------------
@@ -307,9 +307,9 @@ trait DefaultTypeLevelReferenceValues
                         ) ⇒
                     No
                 case _ if isPrecise &&
-                    // Note "reflexivity is already captured by the first isSubtypeOf call
+                    // Note "reflexivity" is already captured by the first isSubtypeOf call
                     domain.isSubtypeOf(supertype, theUpperTypeBound).isYes ⇒
-                    Yes
+                    No
                 case _ ⇒
                     Unknown
             }

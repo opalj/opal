@@ -29,14 +29,15 @@
 package org.opalj.br
 package cfg
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
-import org.opalj.collection.immutable.IntSet
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.MethodInfo
 
 /**
  * Just reads a lot of classfiles and builds CFGs for all methods with a body to
@@ -54,11 +55,11 @@ class CFGFactoryTest extends CFGTests {
     def doAnalyzeProject(name: String, project: SomeProject): Unit = {
         implicit val classHierarchy = project.classHierarchy
         val methodsWithBodyCount = project.allMethodsWithBody.size
-        val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
-        val executionTime = new java.util.concurrent.atomic.AtomicLong(0L)
+        val methodsCount = new AtomicInteger(0)
+        val executionTime = new AtomicLong(0L)
 
-        val errors = project.parForeachMethodWithBody() { m ⇒
-            val MethodInfo(_, classFile, method) = m
+        val errors = project.parForeachMethodWithBody() { mi ⇒
+            val method = mi.method
             implicit val code = method.body.get
 
             val cfg = time { CFGFactory(code) } { t ⇒ executionTime.addAndGet(t.timeSpan) }
@@ -91,7 +92,7 @@ class CFGFactoryTest extends CFGTests {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(method.toJava(classFile), code, cfg, classHierarchy)
+            cfgNodesCheck(method.toJava, code, cfg, classHierarchy)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒
@@ -110,7 +111,7 @@ class CFGFactoryTest extends CFGTests {
             // check the correspondence of "instruction.nextInstruction" and the information
             // contained in the cfg
             code.iterate { (pc, instruction) ⇒
-                val nextInstructions = instruction.nextInstructions(pc).toIntSet
+                val nextInstructions = instruction.nextInstructions(pc).toIntArraySet
                 if (nextInstructions.isEmpty) {
                     if (!cfg.bb(pc).successors.forall { succBB ⇒ !succBB.isBasicBlock })
                         fail(
@@ -133,7 +134,7 @@ class CFGFactoryTest extends CFGTests {
             code.iterate { (pc, instruction) ⇒
                 {
                     val cfgSuccessors = cfg.successors(pc)
-                    var cfgForeachSuccessors = IntSet.empty
+                    var cfgForeachSuccessors = IntArraySet.empty
                     var cfgForeachSuccessorCount = 0
                     cfg.foreachSuccessor(pc) { cfgForeachSuccessor ⇒
                         cfgForeachSuccessors += cfgForeachSuccessor
@@ -145,7 +146,7 @@ class CFGFactoryTest extends CFGTests {
 
                 {
                     val cfgPredecessors = cfg.predecessors(pc)
-                    var cfgForeachPredecessors = IntSet.empty
+                    var cfgForeachPredecessors = IntArraySet.empty
                     var cfgForeachPredecessorCount = 0
                     cfg.foreachPredecessor(pc) { cfgForeachPredecessor ⇒
                         cfgForeachPredecessors += cfgForeachPredecessor

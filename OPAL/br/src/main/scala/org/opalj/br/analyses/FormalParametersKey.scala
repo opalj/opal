@@ -86,8 +86,27 @@ object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothi
      */
     override protected def compute(p: SomeProject): FormalParameters = {
         implicit val logContext = p.logContext
+
         val sites = new ConcurrentLinkedQueue[(Method, ConstArray[FormalParameter])]
 
+        val errors = p.parForeachMethod() { m ⇒
+            val md = m.descriptor
+            val parametersCount = md.parametersCount
+            if (m.isStatic && parametersCount == 0) {
+                sites.add(m → ConstArray.empty)
+            } else {
+                val formalParameters = new Array[FormalParameter](parametersCount + 1)
+                if (!m.isStatic) formalParameters(0) = new FormalParameter(m, -1)
+                var p = 1
+                while (p <= parametersCount) {
+                    formalParameters(p) = new FormalParameter(m, -p - 1)
+                    p += 1
+                }
+                sites.add(m → ConstArray(formalParameters))
+            }
+        }
+        errors.foreach { e ⇒ error("formal parameters", "collecting formal parameters failed", e) }
+        /*
         p.allMethods.par foreach { m ⇒
             try {
                 val md = m.descriptor
@@ -109,6 +128,7 @@ object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothi
                     error("formal parameters", "collecting formal parameters failed", e)
             }
         }
+        */
 
         new FormalParameters(sites.asScala.toMap)
     }

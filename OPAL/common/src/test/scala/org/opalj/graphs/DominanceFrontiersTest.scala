@@ -30,12 +30,14 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
-import org.opalj.collection.immutable.EmptyIntSet
-import org.opalj.collection.immutable.IntSet
-import org.opalj.collection.immutable.IntSetBuilder
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
+import org.opalj.io.writeAndOpen
+import org.opalj.collection.immutable.EmptyIntArraySet
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntArraySetBuilder
 
 /**
  * Tests the [[DominanceFrontiers]] implementation.
@@ -54,59 +56,63 @@ import org.scalatest.junit.JUnitRunner
 class DominanceFrontiersTest extends FlatSpec with Matchers {
 
     private def setUpDominanceFrontiers(
-        startNode:                 Int,
-        g:                         Graph[Int],
-        maxNode:                   Int,
-        startNodeHasPredecesssors: Boolean    = false
+        startNode:                Int,
+        g:                        Graph[Int],
+        maxNode:                  Int,
+        startNodeHasPredecessors: Boolean    = false
     ): DominanceFrontiers = {
         setUpDominanceFrontiers(
             startNode,
             g,
             maxNode,
             (n: Int) ⇒ n >= startNode && n <= maxNode,
-            startNodeHasPredecesssors
+            startNodeHasPredecessors
         )
     }
 
     private def setUpDominanceFrontiers(
-        startNode:                 Int,
-        g:                         Graph[Int],
-        maxNode:                   Int,
-        isValidNode:               Int ⇒ Boolean,
-        startNodeHasPredecesssors: Boolean
+        startNode:                Int,
+        g:                        Graph[Int],
+        maxNode:                  Int,
+        isValidNode:              Int ⇒ Boolean,
+        startNodeHasPredecessors: Boolean
     ): DominanceFrontiers = {
-        val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-        val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
+        val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
         val isValidNode = (n: Int) ⇒ n >= startNode && n <= maxNode
-        val dominatorTreeFactory =
-            DominatorTreeFactory(
-                startNode, startNodeHasPredecesssors,
-                foreachSuccessor, foreachPredecessor,
+        val dominatorTree =
+            DominatorTree(
+                startNode, startNodeHasPredecessors,
+                foreachSuccessorOf, foreachPredecessorOf,
                 maxNode
             )
-
-        DominanceFrontiers(dominatorTreeFactory, isValidNode)
-
+        try {
+            DominanceFrontiers(dominatorTree, isValidNode)
+        } catch {
+            case t: Throwable ⇒
+                writeAndOpen(dominatorTree.toDot(), "FailedComputingDominaceFrontierFor", ".dt.gv")
+                throw t
+        }
     }
 
-    "a dominance tree with a single node" should "result in no dominance frontiers" in {
+    "a graph with a single node" should "result in no dominance frontiers" in {
         val graph = Graph.empty[Int] += 0
         val df = setUpDominanceFrontiers(0, graph, 0)
 
-        df.df(0) should be(EmptyIntSet)
+        df.df(0) should be(EmptyIntArraySet)
     }
 
-    "a dominance tree with a single cyclic node" should "result in a reflexive dominance frontier" in {
+    "a graph a single cyclic node" should "result in a reflexive dominance frontier" in {
         val graph = Graph.empty[Int] += (0 → 0)
-        val df = setUpDominanceFrontiers(0, graph, 0, true)
+        val df = setUpDominanceFrontiers(0, graph, 0, startNodeHasPredecessors = true)
 
-        //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
+        //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
-        df.df(0) should be(IntSet(0))
+        df.df(0) should be(IntArraySet(0))
     }
 
-    "a degenerated dominance tree (path)" should "result in no dominance frontiers" in {
+    "a graph with a single graph" should "result in no dominance frontiers" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (3 → 4)
 
         val df = setUpDominanceFrontiers(0, graph, 4)
@@ -114,14 +120,14 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
-        df.df(0) should be(EmptyIntSet)
-        df.df(1) should be(EmptyIntSet)
-        df.df(2) should be(EmptyIntSet)
-        df.df(3) should be(EmptyIntSet)
-        df.df(4) should be(EmptyIntSet)
+        df.df(0) should be(EmptyIntArraySet)
+        df.df(1) should be(EmptyIntArraySet)
+        df.df(2) should be(EmptyIntArraySet)
+        df.df(3) should be(EmptyIntArraySet)
+        df.df(4) should be(EmptyIntArraySet)
     }
 
-    "a dominance tree from an if-statement" should "be handled properly" in {
+    "a diamond-shaped graph (e.g., from an if statement)" should "be handled properly" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4) += (3 → 4)
 
         val df = setUpDominanceFrontiers(0, graph, 4)
@@ -129,23 +135,24 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
-        df.df(1) should be(EmptyIntSet)
-        df.df(2) should be(IntSet(4))
-        df.df(3) should be(IntSet(4))
-        df.df(4) should be(EmptyIntSet)
+        df.df(1) should be(EmptyIntArraySet)
+        df.df(2) should be(IntArraySet(4))
+        df.df(3) should be(IntArraySet(4))
+        df.df(4) should be(EmptyIntArraySet)
     }
 
-    "a domiance tree that captures a guard" should "reflect the corresponding dominance frontiers" in {
-        val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (1 → 3)
+    "a graph modeling a simple if" should
+        "result in a dominance frontier grpah which correctly represents the if-block" in {
+            val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (1 → 3)
 
-        val df = setUpDominanceFrontiers(0, graph, 3)
+            val df = setUpDominanceFrontiers(0, graph, 3)
 
-        df.df(1) should be(EmptyIntSet)
-        df.df(2) should be(IntSetBuilder(3).result())
-        df.df(3) should be(EmptyIntSet)
-    }
+            df.df(1) should be(EmptyIntArraySet)
+            df.df(2) should be(IntArraySetBuilder(3).result())
+            df.df(3) should be(EmptyIntArraySet)
+        }
 
-    "a dominance tree from an nested if-statement" should "be handled properly" in {
+    "a graph which models nested if-statements" should "be handled properly" in {
         val graph =
             Graph.empty[Int] +=
                 (0 → 1) += (1 → 2) += (1 → 6) += (2 → 3) += (2 → 4) += (3 → 5) +=
@@ -153,56 +160,58 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
         val df = setUpDominanceFrontiers(0, graph, 7)
 
-        df.df(0) should be(EmptyIntSet)
-        df.df(1) should be(EmptyIntSet)
-        df.df(2) should be(IntSet(7))
-        df.df(3) should be(IntSet(5))
-        df.df(4) should be(IntSet(5))
-        df.df(5) should be(IntSet(7))
-        df.df(6) should be(IntSet(7))
-        df.df(7) should be(EmptyIntSet)
+        df.df(0) should be(EmptyIntArraySet)
+        df.df(1) should be(EmptyIntArraySet)
+        df.df(2) should be(IntArraySet(7))
+        df.df(3) should be(IntArraySet(5))
+        df.df(4) should be(IntArraySet(5))
+        df.df(5) should be(IntArraySet(7))
+        df.df(6) should be(IntArraySet(7))
+        df.df(7) should be(EmptyIntArraySet)
     }
 
-    " a dominance tree that captures a cycle" should "be handled properly" in {
+    "a non-trivial, cyclic graph" should "be handled properly" in {
         val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 0)
 
-        val df = setUpDominanceFrontiers(0, graph, 2, true)
+        val df = setUpDominanceFrontiers(0, graph, 2, startNodeHasPredecessors = true)
 
-        df.df(2) should be(IntSetBuilder(0).result())
+        df.df(2) should be(IntArraySetBuilder(0).result())
     }
 
-    /* refered paper:  Efficiently Computing Static Single Assignment Form and the Control Dependence Graph */
-    "a dominance tree derived from the paper's graph" should "result in the correct dominance frontiers" in {
+    // Referenced paper:
+    // Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
+    "analyzing the graph from Efficiently Computing SSA-Form and the CDG" should
+        "result in the respective dominance frontiers" in {
 
-        val graph =
-            org.opalj.graphs.Graph.empty[Int] +=
-                (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3 → 5) += (5 → 6) +=
-                (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) +=
-                (11 → 9) += (11 → 12) += (12 → 13) += (12 → 2) += (0 → 13)
+            val graph =
+                org.opalj.graphs.Graph.empty[Int] +=
+                    (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3 → 5) += (5 → 6) +=
+                    (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) +=
+                    (11 → 9) += (11 → 12) += (12 → 13) += (12 → 2) += (0 → 13)
 
-        val df = setUpDominanceFrontiers(0, graph, 13)
+            val df = setUpDominanceFrontiers(0, graph, 13)
 
-        //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
-        //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
+            //        org.opalj.io.writeAndOpen(dt.toDot(), "graph", ".dt.gv")
+            //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".df.gv")
 
-        df.df(0) should be(EmptyIntSet)
-        df.df(1) should be(IntSetBuilder(13).result())
-        df.df(2) should be(IntSetBuilder(2, 13).result())
-        df.df(3) should be(IntSetBuilder(8).result())
-        df.df(4) should be(IntSetBuilder(6).result())
-        df.df(5) should be(IntSetBuilder(6).result())
-        df.df(6) should be(IntSetBuilder(8).result())
-        df.df(7) should be(IntSetBuilder(8).result())
-        df.df(8) should be(IntSetBuilder(2, 13).result())
-        df.df(9) should be(IntSetBuilder(2, 9, 13).result())
-        df.df(10) should be(IntSetBuilder(11).result())
-        df.df(11) should be(IntSetBuilder(2, 9, 13).result())
-        df.df(12) should be(IntSetBuilder(2, 13).result())
-        df.df(13) should be(EmptyIntSet)
+            df.df(0) should be(EmptyIntArraySet)
+            df.df(1) should be(IntArraySetBuilder(13).result())
+            df.df(2) should be(IntArraySetBuilder(2, 13).result())
+            df.df(3) should be(IntArraySetBuilder(8).result())
+            df.df(4) should be(IntArraySetBuilder(6).result())
+            df.df(5) should be(IntArraySetBuilder(6).result())
+            df.df(6) should be(IntArraySetBuilder(8).result())
+            df.df(7) should be(IntArraySetBuilder(8).result())
+            df.df(8) should be(IntArraySetBuilder(2, 13).result())
+            df.df(9) should be(IntArraySetBuilder(2, 9, 13).result())
+            df.df(10) should be(IntArraySetBuilder(11).result())
+            df.df(11) should be(IntArraySetBuilder(2, 9, 13).result())
+            df.df(12) should be(IntArraySetBuilder(2, 13).result())
+            df.df(13) should be(EmptyIntArraySet)
 
-    }
+        }
 
-    "a dominance tree with randomly named nodes" should "result in the correct dominance frontiers" in {
+    "a graph with randomly named nodes" should "result in the correct dominance frontiers" in {
 
         val graph =
             org.opalj.graphs.Graph.empty[Int] +=
@@ -214,20 +223,20 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
 
         val df = setUpDominanceFrontiers(0, graph, 77, isValidNode, false)
 
-        df.df(0) should be(EmptyIntSet)
-        df.df(1) should be(IntSetBuilder(22).result())
-        df.df(2) should be(IntSetBuilder(2, 22).result())
-        df.df(77) should be(IntSetBuilder(8).result())
-        df.df(4) should be(IntSetBuilder(6).result())
-        df.df(55) should be(IntSetBuilder(6).result())
-        df.df(6) should be(IntSetBuilder(8).result())
-        df.df(7) should be(IntSetBuilder(8).result())
-        df.df(8) should be(IntSetBuilder(2, 22).result())
-        df.df(9) should be(IntSetBuilder(2, 9, 22).result())
-        df.df(10) should be(IntSetBuilder(11).result())
-        df.df(11) should be(IntSetBuilder(2, 9, 22).result())
-        df.df(12) should be(IntSetBuilder(2, 22).result())
-        df.df(22) should be(EmptyIntSet)
+        df.df(0) should be(EmptyIntArraySet)
+        df.df(1) should be(IntArraySetBuilder(22).result())
+        df.df(2) should be(IntArraySetBuilder(2, 22).result())
+        df.df(77) should be(IntArraySetBuilder(8).result())
+        df.df(4) should be(IntArraySetBuilder(6).result())
+        df.df(55) should be(IntArraySetBuilder(6).result())
+        df.df(6) should be(IntArraySetBuilder(8).result())
+        df.df(7) should be(IntArraySetBuilder(8).result())
+        df.df(8) should be(IntArraySetBuilder(2, 22).result())
+        df.df(9) should be(IntArraySetBuilder(2, 9, 22).result())
+        df.df(10) should be(IntArraySetBuilder(11).result())
+        df.df(11) should be(IntArraySetBuilder(2, 9, 22).result())
+        df.df(12) should be(IntArraySetBuilder(2, 22).result())
+        df.df(22) should be(EmptyIntArraySet)
     }
 
 }
