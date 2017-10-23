@@ -79,14 +79,18 @@ trait Instruction extends InstructionLike {
     //
     // ---------------------------------------------------------------------------------------------
 
+    def isReturnInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
     def isStackManagementInstruction: Boolean = false
     def isLoadLocalVariableInstruction: Boolean = false
     def isStoreLocalVariableInstruction: Boolean = false
     def isCheckcast: Boolean = false
     def isInvocationInstruction: Boolean = false
+    def isMethodInvocationInstruction: Boolean = false
     def isAthrow: Boolean = false
     def isIINC: Boolean = false
+
+    def asReturnInstruction: ReturnInstruction = throw new ClassCastException();
 
     def asATHROW: ATHROW.type = throw new ClassCastException();
     def asIINC: IINC = throw new ClassCastException();

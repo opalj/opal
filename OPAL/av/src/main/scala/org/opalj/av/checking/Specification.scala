@@ -461,21 +461,24 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 sourceElement ← sourceEnsembleElements
                 classFile ← project.classFile(sourceElement.classType.asObjectType)
                 annotations = sourceElement match {
-                    case s: VirtualClass ⇒ classFile.annotations
-                    case s: VirtualField ⇒
+                    case _: VirtualClass ⇒ classFile.annotations
+
+                    case vf: VirtualField ⇒
                         classFile.fields collectFirst {
-                            case field if field.asVirtualField(classFile).compareTo(s) == 0 ⇒ field
+                            case f if f.asVirtualField(classFile).compareTo(vf) == 0 ⇒ f
                         } match {
                             case Some(f) ⇒ f.annotations
                             case _       ⇒ IndexedSeq.empty
                         }
-                    case s: VirtualMethod ⇒
+
+                    case vm: VirtualMethod ⇒
                         classFile.methods collectFirst {
-                            case m if m.asVirtualMethod(classFile.thisType).compareTo(s) == 0 ⇒ m
+                            case m if m.asVirtualMethod(classFile.thisType).compareTo(vm) == 0 ⇒ m
                         } match {
                             case Some(m) ⇒ m.annotations
                             case _       ⇒ IndexedSeq.empty
                         }
+
                     case _ ⇒ IndexedSeq.empty
                 }
 
@@ -909,12 +912,9 @@ object Specification {
      * regular expression from the given list of paths.
      */
     def PathToJARs(paths: Iterable[String], jarName: Regex): Iterable[String] = {
-        val matchedPaths = paths.collect {
-            case p @ (jarName(m)) ⇒ p
-        }
-        if (matchedPaths.isEmpty) {
-            throw SpecificationError(s"no path is matched by: $jarName.")
-        }
+        val matchedPaths = paths.collect { case p @ (jarName(_)) ⇒ p }
+        if (matchedPaths.isEmpty)
+            throw SpecificationError(s"no path is matched by: $jarName.");
         matchedPaths
     }
 

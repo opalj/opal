@@ -713,7 +713,7 @@ object Assembler {
         val out = new DataOutputStream(data)
         serialize(classFile)(RichClassFile, out, segmentInformation)
         out.flush()
-        data.toByteArray()
+        data.toByteArray
     }
 
 }

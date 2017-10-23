@@ -49,10 +49,9 @@ trait UnpackedLineNumberTable_attributeBinding
 
     type LineNumberTable_attribute = br.UnpackedLineNumberTable
 
-    def LineNumberTable_attribute(
+    override def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        attribute_length:     Int,
         line_number_table:    LineNumbers
     ): UnpackedLineNumberTable = {
         new UnpackedLineNumberTable(line_number_table)
@@ -78,7 +77,7 @@ trait CompactLineNumberTable_attributeBinding
 
     type LineNumberTable_attribute = br.CompactLineNumberTable
 
-    def LineNumberTable_attribute(
+    override def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    Array[Byte]
@@ -92,8 +91,8 @@ trait CompactLineNumberTable_attributeBinding
     registerAttributesPostProcessor { attributes ⇒
         val (lineNumberTables, _ /*otherAttributes*/ ) =
             attributes partition {
-                case lnt: CompactLineNumberTable ⇒ true
-                case _                           ⇒ false
+                case _: CompactLineNumberTable ⇒ true
+                case _                         ⇒ false
             }
         if (lineNumberTables.isEmpty || lineNumberTables.tail.isEmpty)
             // we have at most one line number table

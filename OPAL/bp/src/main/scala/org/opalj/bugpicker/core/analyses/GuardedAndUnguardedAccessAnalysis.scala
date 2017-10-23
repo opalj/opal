@@ -134,7 +134,7 @@ object GuardedAndUnguardedAccessAnalysis {
 
         val unguardedAccesses =
             for {
-                (pc, receiver: domain.ReferenceValue) ← code collectWithIndex {
+                (pc, domain.AReferenceValue(receiver)) ← code.collectWithIndex {
                     case (pc, ARRAYLENGTH | MONITORENTER) if operandsArray(pc) != null ⇒
                         (pc, operandsArray(pc).head)
 

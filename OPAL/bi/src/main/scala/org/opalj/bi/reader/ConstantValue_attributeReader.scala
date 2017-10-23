@@ -64,15 +64,15 @@ trait ConstantValue_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ) = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt
         ConstantValue_attribute(cp, attribute_name_index, in.readUnsignedShort)
     }
 
-    registerAttributeReader(ConstantValueAttribute.Name → parser)
+    registerAttributeReader(ConstantValueAttribute.Name → parserFactory())
 }

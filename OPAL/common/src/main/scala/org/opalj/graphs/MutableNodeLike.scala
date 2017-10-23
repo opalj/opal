@@ -70,34 +70,32 @@ class MutableNodeLike[I, N <: Node](
 
     def children: List[N] = this.synchronized(theChildren)
 
-    def updateIdentifier(newIdentifier: I): Unit = this.synchronized(theIdentifier = newIdentifier)
+    def updateIdentifier(newIdentifier: I): Unit = this.synchronized {
+        theIdentifier = newIdentifier
+    }
 
     override def toHRR: Option[String] = Some(identifierToString(identifier))
 
     override def nodeId: Int = identifier.hashCode()
 
-    def addChild(node: N): Unit = this.synchronized(theChildren = node :: children)
+    def addChild(node: N): Unit = this.synchronized { theChildren = node :: children }
 
-    def addChildren(furtherChildren: List[N]): Unit = {
-        this.synchronized(theChildren = theChildren ::: furtherChildren)
+    def addChildren(furtherChildren: List[N]): Unit = this.synchronized {
+        theChildren = theChildren ::: furtherChildren
     }
 
     def hasOneChild: Boolean = this.synchronized(children.nonEmpty && children.tail.isEmpty)
 
     def firstChild: N = this.synchronized(children.head)
 
-    def removeLastAddedChild(): Unit = {
-        this.synchronized(theChildren = theChildren.tail)
+    def removeLastAddedChild(): Unit = this.synchronized { theChildren = theChildren.tail }
+
+    def removeChild(node: N): Unit = this.synchronized {
+        theChildren = theChildren.filterNot(_ == node)
     }
 
-    def removeChild(node: N): Unit = {
-        this.synchronized(theChildren = theChildren.filterNot(_ == node))
-    }
+    override def foreachSuccessor(f: Node ⇒ Unit): Unit = this.synchronized { children.foreach(f) }
 
-    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
-        this.synchronized(children.foreach(f))
-    }
-
-    override def hasSuccessors: Boolean = this.synchronized(children.nonEmpty)
+    override def hasSuccessors: Boolean = this.synchronized { children.nonEmpty }
 
 }

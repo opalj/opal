@@ -49,7 +49,6 @@ import org.opalj.graphs.DominanceFrontiers
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
-import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
@@ -848,11 +847,13 @@ trait RecordCFG
                 var endRunningBB: Boolean = false
                 var connectedWithNextBBs = false
 
-                if (theExitPCs.contains(pc)) {
-                    val successorNode = code.instructions(pc) match {
-                        case r: ReturnInstruction ⇒ normalReturnNode
-                        case _                    ⇒ abnormalReturnNode
-                    }
+                if (exitPCs.contains(pc)) {
+                    val successorNode =
+                        if (code.instructions(pc).isReturnInstruction)
+                            normalReturnNode
+                        else
+                            abnormalReturnNode
+
                     runningBB.addSuccessor(successorNode)
                     successorNode.addPredecessor(runningBB)
                     endRunningBB = true
@@ -1031,7 +1032,7 @@ trait RecordCFG
             nodes(pc) = {
                 var visualProperties = Map("shape" → "box", "labelloc" → "l")
 
-                if (instructions(pc).isInstanceOf[ReturnInstruction]) {
+                if (instructions(pc).isReturnInstruction) {
                     visualProperties += "fillcolor" → "green"
                     visualProperties += "style" → "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {

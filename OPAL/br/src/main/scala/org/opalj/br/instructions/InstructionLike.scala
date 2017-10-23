@@ -217,6 +217,6 @@ trait InstructionLike {
      * @param   currentPC The program counter of this instruction. Used to resolve relative
      *          jump targets.
      */
-    def toString(currentPC: Int): String = toString()
+    def toString(currentPC: Int): String
 
 }
