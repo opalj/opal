@@ -556,7 +556,9 @@ object ChainProperties extends Properties("Chain") {
 
     property("mapConserve") = forAll { (l: List[String], c: Int) ⇒
         var alwaysTrue = true
-        def transform(s: String): String = { if (s.length < c) s else { alwaysTrue = false; s + c } }
+        def transform(s: String): String = {
+            if (s.length < c) s else { alwaysTrue = false; s + c }
+        }
         val fl = Chain(l: _*)
         classify(l.forall(s ⇒ transform(s) eq s), "all strings remain the same") {
             val mappedFL = fl.mapConserve(transform)
