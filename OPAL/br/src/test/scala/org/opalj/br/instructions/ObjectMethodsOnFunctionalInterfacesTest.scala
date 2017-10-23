@@ -63,8 +63,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
     private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
             method ← classFile.findMethod(name)
-            if method.body.isDefined
-            body = method.body.get
+            body ← method.body
             invokevirtual ← body.instructions.view.collect { case i: INVOKEVIRTUAL ⇒ i }
             annotations = method.runtimeVisibleAnnotations
         } {

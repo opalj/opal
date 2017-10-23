@@ -143,8 +143,8 @@ class EscapeAnalysis(val debug: Boolean) {
         // This method performs a thorough data-flow analysis to determine if the self reference
         // (`this`) is eventually leaked.
         def leaksSelfReference(method: Method): Boolean = {
-            //    AI()
-            return method ne null; // always true... just done to shut up the compiler w.r.t. method is unused
+            // AI()...
+            return true;
         }
 
         val doesLeakSelfReference =
@@ -156,15 +156,11 @@ class EscapeAnalysis(val debug: Boolean) {
                         leaksSelfReference(m)
                     )) {
                     if (debug)
-                        OPALLogger.debug(
-                            "analysis result", s"${m.toJava} leaks its self reference"
-                        )
+                        OPALLogger.debug("analysis result", m.toJava("leaks self reference"))
                     true
                 } else {
                     if (debug)
-                        OPALLogger.debug(
-                            "analysis result", s"${m.toJava} does not leak its self reference"
-                        )
+                        OPALLogger.debug("analysis result", m.toJava("conceales self reference"))
                     false
                 }
 

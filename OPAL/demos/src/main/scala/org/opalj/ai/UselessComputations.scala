@@ -32,6 +32,7 @@ package ai
 import java.net.URL
 
 import org.opalj.br.Method
+import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IF0Instruction
 import org.opalj.br.instructions.IFICMPInstruction
@@ -84,8 +85,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
         val results = {
             val results = for {
                 classFile ← theProject.allProjectClassFiles.par
-                method ← classFile.methods
-                body ← method.body.toSeq
+                method @ MethodWithBody(body) ← classFile.methods
                 result = BaseAI(method, new AnalysisDomain(theProject, method))
             } yield {
                 import result._

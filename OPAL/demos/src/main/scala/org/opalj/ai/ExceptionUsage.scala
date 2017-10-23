@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
@@ -61,8 +62,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
 
         val usages = (for {
             classFile ← theProject.allProjectClassFiles.par
-            method ← classFile.methods
-            body ← method.body.toSeq
+            method @ MethodWithBody(body) ← classFile.methods
             result = BaseAI(method, new ExceptionUsageAnalysisDomain(theProject, method))
         } yield {
             import scala.collection.mutable._

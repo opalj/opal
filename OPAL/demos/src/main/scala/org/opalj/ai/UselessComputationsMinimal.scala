@@ -41,8 +41,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IFICMPInstruction
 
 /**
- * A shallow analysis that tries to identify useless computations; herec, if that are based
- * on constant values.
+ * A shallow analysis that tries to identify useless computations; here, "ifs" where the condition
+ * is constant.
  *
  * @author Michael Eichberg
  */

@@ -30,9 +30,11 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, Project}
-import org.opalj.br.instructions.INVOKESTATIC
+
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.instructions.INVOKESTATIC
 
 /**
  * Counts the number of `Class.forName` calls.
@@ -60,8 +62,7 @@ object CountClassForNameCalls extends DefaultOneStepAnalysis {
                 // Let's traverse all methods of all class files that have a
                 // concrete (non-native) implementation.
                 classFile ← project.allProjectClassFiles.par
-                method ← classFile.methods
-                code ← method.body.toSeq
+                method @ MethodWithBody(code) ← classFile.methods
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>
                 (pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code
