@@ -142,14 +142,14 @@ sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyName
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        other match {
-            case p: EscapeProperty ⇒
-                if (p lessOrEqualRestrictive this)
+    def isValidSuccessorOf(old: OrderedProperty): Option[String] = {
+        old match {
+            case oldP: EscapeProperty ⇒
+                if ((this lessOrEqualRestrictive oldP) || (this lessOrEqualRestrictive oldP.atMost))
                     None
                 else
-                    Some(s"non-monotonic refinement from $this to $p")
-            case p ⇒ Some(s"illegal refinement of escape property $this to $p")
+                    Some(s"non-monotonic refinement from $oldP to $this")
+            case p ⇒ Some(s"illegal refinement of escape property $p to $this")
         }
     }
 
@@ -187,7 +187,9 @@ sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyName
 
     def isTop: Boolean
 
-    val flags: Int
+    def atMost: EscapeProperty
+
+    protected val flags: Int
 
 }
 
@@ -276,6 +278,8 @@ case object NoEscape extends EscapeProperty {
 
     override def isTop: Boolean = true
 
+    override def atMost: EscapeProperty = this
+
     final val flags = EscapeProperty.EMPTY_FLAGS
 }
 
@@ -320,6 +324,8 @@ case object EscapeInCallee extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = this
 
     final val flags = EscapeProperty.IN_CALLEE
 }
@@ -366,6 +372,8 @@ case object EscapeViaParameter extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = this
 
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER
 }
@@ -415,6 +423,8 @@ case object EscapeViaReturn extends EscapeProperty {
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = this
+
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN
 }
 
@@ -438,6 +448,8 @@ case object EscapeViaAbnormalReturn extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = this
 
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN
 }
@@ -464,6 +476,8 @@ case object EscapeViaParameterAndReturn extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = this
 
     final val flags =
         EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
@@ -492,6 +506,8 @@ case object EscapeViaParameterAndAbnormalReturn extends EscapeProperty {
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = this
+
     final val flags =
         EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
 }
@@ -518,6 +534,8 @@ case object EscapeViaNormalAndAbnormalReturn extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = this
 
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.VIA_RETURN
 }
@@ -549,6 +567,8 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProperty 
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = this
+
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
@@ -574,6 +594,8 @@ case object MaybeNoEscape extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = true
+
+    override def atMost: EscapeProperty = NoEscape
 
     final val flags = EscapeProperty.MAYBE
 }
@@ -607,6 +629,8 @@ case object MaybeEscapeInCallee extends EscapeProperty {
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = EscapeInCallee
+
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE
 }
 
@@ -633,6 +657,8 @@ case object MaybeEscapeViaParameter extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = EscapeViaParameter
 
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER
 }
@@ -661,6 +687,8 @@ case object MaybeEscapeViaReturn extends EscapeProperty {
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = EscapeViaReturn
+
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN
 }
 
@@ -687,6 +715,8 @@ case object MaybeEscapeViaAbnormalReturn extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = EscapeViaAbnormalReturn
 
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN
 }
@@ -719,6 +749,8 @@ case object MaybeEscapeViaParameterAndReturn extends EscapeProperty {
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = EscapeViaParameterAndReturn
+
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
 }
 
@@ -749,6 +781,8 @@ case object MaybeEscapeViaParameterAndAbnormalReturn extends EscapeProperty {
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = EscapeViaParameterAndAbnormalReturn
 
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
 }
@@ -781,6 +815,8 @@ case object MaybeEscapeViaNormalAndAbnormalReturn extends EscapeProperty {
 
     override def isTop: Boolean = false
 
+    override def atMost: EscapeProperty = EscapeViaNormalAndAbnormalReturn
+
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
@@ -798,6 +834,8 @@ case object MaybeEscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProp
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = false
+
+    override def atMost: EscapeProperty = EscapeViaParameterAndNormalAndAbnormalReturn
 
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
 }
@@ -845,6 +883,8 @@ trait GlobalEscape extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.GLOBAL
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
+
+    override def atMost: EscapeProperty = this
 }
 
 case object GlobalEscape extends GlobalEscape {
