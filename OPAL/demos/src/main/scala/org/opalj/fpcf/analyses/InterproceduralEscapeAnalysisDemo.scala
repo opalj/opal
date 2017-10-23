@@ -60,6 +60,7 @@ import org.opalj.fpcf.properties.MaybeEscapeViaParameter
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndReturn
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
@@ -122,14 +123,15 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 |# of escaping objects via static field: ${countAS(propertyStore.entities(EscapeViaStaticField))}
                 |# of escaping objects via heap objects: ${countAS(propertyStore.entities(EscapeViaHeapObject))}
                 |# of global escaping objects: ${countAS(propertyStore.entities(GlobalEscape))}
-                |# of objects escaping in a callee: ${countAS(propertyStore.entities(MaybeEscapeInCallee))}
-                |# of escaping objects via return: ${countAS(propertyStore.entities(MaybeEscapeViaReturn))}
-                |# of escaping objects via abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaAbnormalReturn))}
-                |# of escaping objects via parameter: ${countAS(propertyStore.entities(MaybeEscapeViaParameter))}
-                |# of escaping objects via normal and abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaNormalAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal return: ${countAS(propertyStore.entities(MaybeEscapeViaParameterAndReturn))}
-                |# of escaping objects via parameter and abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaParameterAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal and abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaParameterAndNormalAndAbnormalReturn))}
+                |# of maybe local objects: ${countAS(propertyStore.entities(MaybeNoEscape))}
+                |# of objects maybe escaping in a callee: ${countAS(propertyStore.entities(EscapeInCallee))}
+                |# of maybe escaping objects via return: ${countAS(propertyStore.entities(MaybeEscapeViaReturn))}
+                |# of maybe escaping objects via abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaAbnormalReturn))}
+                |# of maybe escaping objects via parameter: ${countAS(propertyStore.entities(MaybeEscapeViaParameter))}
+                |# of maybe escaping objects via normal and abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaNormalAndAbnormalReturn))}
+                |# of maybe escaping objects via parameter and normal return: ${countAS(propertyStore.entities(MaybeEscapeViaParameterAndReturn))}
+                |# of maybe escaping objects via parameter and abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaParameterAndAbnormalReturn))}
+                |# of maybe escaping objects via parameter and normal and abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaParameterAndNormalAndAbnormalReturn))}
                 |
                 |FORMAL PARAMETERS:
                 |# of local objects: ${countFP(propertyStore.entities(NoEscape))}
@@ -144,14 +146,15 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 |# of escaping objects via static field: ${countFP(propertyStore.entities(EscapeViaStaticField))}
                 |# of escaping objects via heap objects: ${countFP(propertyStore.entities(EscapeViaHeapObject))}
                 |# of global escaping objects: ${countFP(propertyStore.entities(GlobalEscape))}
-                |# of objects escaping in a callee: ${countFP(propertyStore.entities(MaybeEscapeInCallee))}
-                |# of escaping objects via return: ${countFP(propertyStore.entities(MaybeEscapeViaReturn))}
-                |# of escaping objects via abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaAbnormalReturn))}
-                |# of escaping objects via parameter: ${countFP(propertyStore.entities(MaybeEscapeViaParameter))}
-                |# of escaping objects via normal and abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaNormalAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal return: ${countFP(propertyStore.entities(MaybeEscapeViaParameterAndReturn))}
-                |# of escaping objects via parameter and abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaParameterAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal and abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaParameterAndNormalAndAbnormalReturn))}"""
+                |# of maybe local objects: ${countFP(propertyStore.entities(MaybeNoEscape))}
+                |# of maybe objects escaping in a callee: ${countFP(propertyStore.entities(MaybeEscapeInCallee))}
+                |# of maybe escaping objects via return: ${countFP(propertyStore.entities(MaybeEscapeViaReturn))}
+                |# of maybe escaping objects via abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaAbnormalReturn))}
+                |# of maybe escaping objects via parameter: ${countFP(propertyStore.entities(MaybeEscapeViaParameter))}
+                |# of maybe escaping objects via normal and abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaNormalAndAbnormalReturn))}
+                |# of maybe escaping objects via parameter and normal return: ${countFP(propertyStore.entities(MaybeEscapeViaParameterAndReturn))}
+                |# of maybe escaping objects via parameter and abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaParameterAndAbnormalReturn))}
+                |# of maybe escaping objects via parameter and normal and abnormal return: ${countFP(propertyStore.entities(MaybeEscapeViaParameterAndNormalAndAbnormalReturn))}"""
 
         BasicReport(message.stripMargin('|'))
     }
