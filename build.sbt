@@ -31,7 +31,7 @@ scalacOptions in ThisBuild ++= Seq(
     "-deprecation", "-feature", "-unchecked",
     "-Xlint", "-Xfuture", "-Xfatal-warnings",
     "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-    "-Ywarn-unused:imports,-patvars,privates,locals,implicits",
+    "-Ywarn-unused:imports,privates,locals,implicits",
     //"-Ywarn-unused:-params", "-Ywarn-unused-import",
     "-Ywarn-infer-any", "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
