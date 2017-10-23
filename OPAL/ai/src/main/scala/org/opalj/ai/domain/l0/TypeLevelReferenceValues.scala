@@ -63,7 +63,7 @@ import org.opalj.br.UpperTypeBound
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues extends GeneralizedArrayHandling with BaseAsJavaObject {
+trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
     domain: IntegerValuesDomain with Configuration with TheClassHierarchy ⇒
 
     /**

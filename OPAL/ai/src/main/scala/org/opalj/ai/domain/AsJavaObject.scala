@@ -76,11 +76,6 @@ trait AsJavaObject { domain: ReferenceValuesDomain ⇒
      *         Default: `None` unless the `value` is null. In the latter case `Some(null)`
      *         is returned.
      */
-    def toJavaObject(pc: PC, value: DomainValue): Option[Object]
+    def toJavaObject(pc: PC, value: DomainValue): Option[Object] = None
 
-}
-
-trait BaseAsJavaObject extends AsJavaObject { domain: ReferenceValuesDomain ⇒
-
-    override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = None
 }
