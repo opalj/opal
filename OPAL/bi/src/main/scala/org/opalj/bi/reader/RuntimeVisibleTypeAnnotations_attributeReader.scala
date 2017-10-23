@@ -65,12 +65,12 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
      * }
      * <pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): RuntimeVisibleTypeAnnotations_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length = */ in.readInt()
         val annotations = TypeAnnotations(cp, in)
         if (annotations.nonEmpty || reifyEmptyAttributes) {
@@ -82,6 +82,5 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(RuntimeVisibleTypeAnnotationsAttribute.Name → parser)
+    registerAttributeReader(RuntimeVisibleTypeAnnotationsAttribute.Name → parserFactory())
 }
-

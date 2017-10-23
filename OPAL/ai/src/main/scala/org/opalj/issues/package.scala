@@ -126,11 +126,14 @@ package object issues {
 
     def typeToIDL(t: Type): JsValue = {
         t match {
-            case bt: BaseType   ⇒ Json.obj("bt" → bt.toJava)
-            case vt: VoidType   ⇒ Json.obj("vt" → "void")
-            case ot: ObjectType ⇒ Json.obj("ot" → ot.toJava, "simpleName" → ot.simpleName)
+            case bt: BaseType ⇒ Json.obj("bt" → bt.toJava)
+
+            case ot: ObjectType ⇒
+                Json.obj("ot" → ot.toJava, "simpleName" → ot.simpleName)
             case at: ArrayType ⇒
                 Json.obj("at" → typeToIDL(at.elementType), "dimensions" → at.dimensions)
+
+            case VoidType ⇒ Json.obj("vt" → "void")
 
         }
     }

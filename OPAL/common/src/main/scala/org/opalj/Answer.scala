@@ -130,7 +130,7 @@ sealed trait Answer {
      * If this answer is unknown the given function is evaluated and that
      * result is returned, otherwise `this` answer is returned.
      */
-    def ifUnknown(f: ⇒ Answer): Answer = this
+    def ifUnknown(f: ⇒ Answer): Answer
 }
 
 /**
@@ -162,9 +162,9 @@ final case object Yes extends Answer {
     override def isNotNo: Boolean = true
     override def isNotYes: Boolean = false
     override def isYesOrNo: Boolean = true
+    override def ifUnknown(f: ⇒ Answer): Answer = this
 
     override def join(other: Answer): Answer = if (other eq this) this else Unknown
-
     override def negate: No.type = No
     override def &&(other: Answer): Answer = {
         other match {
@@ -189,6 +189,7 @@ final case object No extends Answer {
     override def isNotNo: Boolean = false
     override def isNotYes: Boolean = true
     override def isYesOrNo: Boolean = true
+    override def ifUnknown(f: ⇒ Answer): Answer = this
 
     override def join(other: Answer): Answer = if (other eq this) this else Unknown
 

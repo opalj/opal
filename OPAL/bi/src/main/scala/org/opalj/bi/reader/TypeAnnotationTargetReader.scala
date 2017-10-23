@@ -180,7 +180,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      *  } target_info;
      * </pre>
      */
-    def TypeAnnotationTarget(cp: Constant_Pool, in: DataInputStream): TypeAnnotationTarget = {
+    def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget = {
         val target_type = in.readUnsignedByte()
         (target_type: @scala.annotation.switch) match {
             case 0x00 ⇒ ParameterDeclarationOfClassOrInterface(in.readUnsignedByte())

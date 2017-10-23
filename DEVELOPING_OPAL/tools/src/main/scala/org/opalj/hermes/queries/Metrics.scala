@@ -30,7 +30,6 @@ package org.opalj
 package hermes
 package queries
 
-import scala.collection.JavaConversions._
 import scala.collection.mutable
 import org.opalj.br.analyses.Project
 import org.opalj.br.cfg.CFGFactory
@@ -126,7 +125,7 @@ object Metrics extends FeatureQuery {
             }
         }
 
-        packagesInfo.values().foreach { pi ⇒
+        packagesInfo.values.foreach { pi ⇒
             pi.classesCount match {
                 case x if x <= 3  ⇒ classLocations(8) += pi.location
                 case x if x <= 10 ⇒ classLocations(9) += pi.location

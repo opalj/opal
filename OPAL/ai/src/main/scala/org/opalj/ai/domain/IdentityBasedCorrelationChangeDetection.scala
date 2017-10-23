@@ -101,8 +101,6 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
         newLocals:   Locals
     ): Update[(Operands, Locals)] = {
 
-        def liftUpdateType(v1Index: Int, v2Index: Int) = StructuralUpdate((newOperands, newLocals))
-
         if (updateType.isMetaInformationUpdate) {
             val aliasInformation = new IdentityHashMap[DomainValue, Integer]()
 
@@ -115,7 +113,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                     // let's check if we can no-longer find the same alias
                     // relation in the new operands
                     if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
-                        return liftUpdateType(previousLocation, opi);
+                        return StructuralUpdate((newOperands, newLocals));
                 }
                 opi -= 1;
             }
@@ -132,14 +130,14 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                             val v2 = newLocals(li)
                             if ((newOperands(-previousLocation - 1) ne v2) &&
                                 (v2 ne TheIllegalValue))
-                                return liftUpdateType(previousLocation, li);
+                                return StructuralUpdate((newOperands, newLocals));
                         } else /*previousLocation >= 0*/ {
                             val v1 = newLocals(previousLocation)
                             val v2 = newLocals(li)
                             if ((v1 ne v2) /* <=> the alias no longer exists */ &&
                                 // but, does it matter?
                                 (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue))
-                                return liftUpdateType(previousLocation, li);
+                                return StructuralUpdate((newOperands, newLocals));
                         }
                     }
                 }

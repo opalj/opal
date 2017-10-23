@@ -47,12 +47,10 @@ case class LineNumberTable_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
             <summary>LineNumberTable</summary>
-            { line_number_tableToXHTML(cp) }
+            { line_number_tableToXHTML() }
         </details>
     }
 
-    def line_number_tableToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
-        line_number_table.map(_.toXHTML(cp))
-    }
+    def line_number_tableToXHTML(): Seq[Node] = line_number_table.map(_.toXHTML())
 
 }

@@ -30,12 +30,21 @@ package org.opalj
 package bi
 package reader
 
+import java.io.DataInputStream
+
 /**
  *
  * @author Michael Eichberg
  */
-trait Unknown_attributeAbstractions extends AttributesAbstractions {
+trait Unknown_attributeAbstractions extends Constant_PoolAbstractions with AttributesAbstractions {
 
     type Unknown_attribute <: Attribute
+
+    def Unknown_attribute(
+        ap:                   AttributeParent,
+        cp:                   Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in:                   DataInputStream
+    ): Unknown_attribute
 
 }

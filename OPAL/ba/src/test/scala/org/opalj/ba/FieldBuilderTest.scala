@@ -68,28 +68,31 @@ class FieldBuilderTest extends FlatSpec {
                 FIELD(PRIVATE, "privateField", "Z")
             ),
             methods = METHODS(
-                METHOD(PUBLIC, "<init>", "()V", CODE(
-                    ALOAD_0,
-                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                    ALOAD_0,
-                    ICONST_3,
-                    PUTFIELD("org/example/FieldClass", "publicField", "I"),
-                    ALOAD_0,
-                    ICONST_1,
-                    PUTFIELD("org/example/FieldClass", "privateField", "Z"),
-                    RETURN
-                )),
-                METHOD(PUBLIC, "packageField", "()Z", CODE(
-                    ALOAD_0,
-                    GETFIELD("org/example/FieldClass", "privateField", "Z"),
-                    IRETURN
-                )),
+                METHOD(PUBLIC, "<init>", "()V",
+                    CODE(
+                        ALOAD_0,
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        ALOAD_0,
+                        ICONST_3,
+                        PUTFIELD("org/example/FieldClass", "publicField", "I"),
+                        ALOAD_0,
+                        ICONST_1,
+                        PUTFIELD("org/example/FieldClass", "privateField", "Z"),
+                        RETURN
+                    )),
+                METHOD(PUBLIC, "packageField", "()Z",
+                    CODE(
+                        ALOAD_0,
+                        GETFIELD("org/example/FieldClass", "privateField", "Z"),
+                        IRETURN
+                    )),
                 METHOD(
-                    PUBLIC, "publicField", "()I", CODE(
-                    ALOAD_0,
-                    GETFIELD("org/example/FieldClass", "publicField", "I"),
-                    IRETURN
-                )
+                    PUBLIC, "publicField", "()I",
+                    CODE(
+                        ALOAD_0,
+                        GETFIELD("org/example/FieldClass", "publicField", "I"),
+                        IRETURN
+                    )
                 )
             )
         ).toDA()

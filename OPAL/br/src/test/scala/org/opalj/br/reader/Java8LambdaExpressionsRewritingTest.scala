@@ -66,8 +66,9 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         info(s"Testing $name")
         var successFull = false
         for {
-            method @ MethodWithBody(body) ← classFile.findMethod(name)
-            (_, factoryCall @ INVOKESTATIC(_, _, _, _)) ← body
+            method ← classFile.findMethod(name)
+            body ← method.body
+            factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
             if factoryCall.declaringClass.fqn.matches("^Lambda\\$[A-Fa-f0-9]+:[A-Fa-f0-9]+$")
             annotations = method.runtimeVisibleAnnotations
         } {

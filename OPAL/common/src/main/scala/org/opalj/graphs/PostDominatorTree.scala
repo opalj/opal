@@ -186,7 +186,7 @@ object PostDominatorTree {
 
             val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
                 if (n == startNode) {
-                    DominatorTree.fornone
+                    DominatorTree.fornone // (_: (Int ⇒ Unit)) ⇒ {}
                 } else if (isExitNode(n) || additionalExitNodes.contains(n)) {
                     // a function that expects a function that will be called for all successors
                     (f: Int ⇒ Unit) ⇒ { f(startNode); foreachSuccessorOf(n)(f) }

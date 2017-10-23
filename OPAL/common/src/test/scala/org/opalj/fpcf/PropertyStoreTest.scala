@@ -704,31 +704,23 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     // 2. we create the store
                     val store = PropertyStore(allNodes, () ⇒ false)(GlobalLogContext)
 
-                    // 3. lets add the analysis
-                    def onUpdate(
-                        node: Node
-                    )(e: Entity, p: Property, u: UserUpdateType): PropertyComputationResult = {
-                        purityAnalysis(node)
-                    }
+                    def c(node: Node) =
+                        new OnUpdateContinuation { c ⇒
+                            def apply(
+                                e: Entity, p: Property, ut: UserUpdateType
+                            ): PropertyComputationResult = {
+                                purityAnalysis(node)
+                            }
+                        }
                     def purityAnalysis(node: Node): PropertyComputationResult = {
                         val nextNode = node.targets.head // HERE: we always have only one successor
                         store(nextNode, PurityKey) match {
                             case epk: EPK[_, _] ⇒
-                                IntermediateResult(
-                                    node,
-                                    ConditionallyPure,
-                                    Iterable(epk),
-                                    onUpdate(node)
-                                )
+                                IntermediateResult(node, ConditionallyPure, Iterable(epk), c(node))
                             case EP(_, Pure)   ⇒ Result(node, Pure)
                             case EP(_, Impure) ⇒ Result(node, Impure)
                             case ep @ EP(_, ConditionallyPure) ⇒
-                                IntermediateResult(
-                                    node,
-                                    ConditionallyPure,
-                                    Iterable(ep),
-                                    onUpdate(node)
-                                )
+                                IntermediateResult(node, ConditionallyPure, Iterable(ep), c(node))
                         }
                     }
                     // 4. execute analysis
@@ -864,43 +856,47 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                             return ImmediateResult(n, NoReachableNodes);
 
                         val remainingDependees: mutable.Set[Node] = nTargets.clone - n
-                        def c(
-                            dependeeE:  Entity,
-                            dependeeP:  Property,
-                            updateType: UpdateType
-                        ): PropertyComputationResult = {
-                            // Get the set of currently reachable nodes.
-                            val alreadyReachableNodes: SomeSet[Node] =
-                                ps(n, ReachableNodesKey) match {
-                                    case EP(_, ReachableNodes(reachableNodes)) ⇒ reachableNodes
-                                    case _                                     ⇒ Set.empty
-                                }
-                            // Whenever we continue a computation we have have to query
-                            // all relevant entities about their "current" properties.
-                            // This is strictly necessary to ensure termination because the
-                            // property store uses this information to decide whether to immediately
-                            // continue the computation or not.
-                            val dependeePs = ps(remainingDependees, ReachableNodesKey)
-                            val dependeesReachableNodes =
-                                dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
-                                    if (dependee.hasProperty)
-                                        reachableNodes ++ dependee.p.nodes
+                        val c = new Function3[Entity, Property, UpdateType, PropertyComputationResult] {
+                            def apply(
+                                dependeeE:  Entity,
+                                dependeeP:  Property,
+                                updateType: UpdateType
+                            ): PropertyComputationResult = {
+                                // Get the set of currently reachable nodes.
+                                val alreadyReachableNodes: SomeSet[Node] =
+                                    ps(n, ReachableNodesKey) match {
+                                        case EP(_, ReachableNodes(reachableNodes)) ⇒ reachableNodes
+                                        case _                                     ⇒ Set.empty
+                                    }
+                                // Whenever we continue a computation we have have to query
+                                // all relevant entities about their "current" properties.
+                                // This is strictly necessary to ensure termination because the
+                                // property store uses this information to decide whether to immediately
+                                // continue the computation or not.
+                                val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                                val dependeesReachableNodes =
+                                    dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
+                                        if (dependee.hasProperty)
+                                            reachableNodes ++ dependee.p.nodes
+                                        else
+                                            reachableNodes
+                                    }
+
+                                val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
+                                val newP = ReachableNodes(newReachableNodes)
+
+                                if (updateType == FinalUpdate) {
+                                    remainingDependees -= dependeeE.asInstanceOf[Node]
+                                    val filteredDependeePs = dependeePs.filter {
+                                        _.e ne dependeeE
+                                    }
+                                    if (filteredDependeePs.nonEmpty)
+                                        IntermediateResult(n, newP, filteredDependeePs, this)
                                     else
-                                        reachableNodes
+                                        Result(n, newP)
+                                } else {
+                                    IntermediateResult(n, newP, dependeePs, this)
                                 }
-
-                            val newReachableNodes = alreadyReachableNodes ++ dependeesReachableNodes
-                            val newP = ReachableNodes(newReachableNodes)
-
-                            if (updateType == FinalUpdate) {
-                                remainingDependees -= dependeeE.asInstanceOf[Node]
-                                val filteredDependeePs = dependeePs.filter { _.e ne dependeeE }
-                                if (filteredDependeePs.nonEmpty)
-                                    IntermediateResult(n, newP, filteredDependeePs, c)
-                                else
-                                    Result(n, newP)
-                            } else {
-                                IntermediateResult(n, newP, dependeePs, c)
                             }
                         }
 
