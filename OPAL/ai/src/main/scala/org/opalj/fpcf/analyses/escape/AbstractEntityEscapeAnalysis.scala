@@ -32,7 +32,6 @@ package analyses
 package escape
 
 import scala.annotation.switch
-import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
@@ -112,7 +111,6 @@ trait AbstractEntityEscapeAnalysis {
     val cfg: CFG
 
     val e: Entity
-    val defSite: ValueOrigin
     val uses: IntArraySet
 
     var workset: IntArraySet = uses
@@ -121,13 +119,17 @@ trait AbstractEntityEscapeAnalysis {
     //
     // STATE MUTATED WHILE ANALYZING THE METHOD
     //
+
+    protected[this] var defSite: IntArraySet
     protected[this] var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
+    protected[this] var dependeeToStmt = Map.empty[Entity, Option[Assignment[V]]]
     private[this] var mostRestrictiveProperty: EscapeProperty = NoEscape
 
     def doDetermineEscape(): PropertyComputationResult = {
         // for every use-site, check its escape state
         while (workset.nonEmpty) {
-            val use = workset.head; workset = workset - use; seen = seen + use
+
+            val use = workset.head; workset -= use; seen += use
             checkStmtForEscape(code(use))
         }
 
@@ -158,7 +160,7 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected final def usesDefSite(expr: Expr[V]): Boolean = {
         assert(expr.isVar)
-        expr.asVar.definedBy contains defSite
+        expr.asVar.definedBy.exists(defSite.contains)
     }
 
     /**
@@ -166,7 +168,7 @@ trait AbstractEntityEscapeAnalysis {
      * current entity's defsite return true.
      */
     protected final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
-        params.exists { case UVar(_, defSites) ⇒ defSites contains defSite }
+        params.exists { case UVar(_, defSites) ⇒ defSites.exists(defSite.contains) }
     }
 
     /**
@@ -182,7 +184,6 @@ trait AbstractEntityEscapeAnalysis {
             case ReturnValue.ASTID ⇒
                 if (usesDefSite(stmt.asReturnValue.expr))
                     calcMostRestrictive(EscapeViaReturn)
-
             case PutField.ASTID ⇒
                 handlePutField(stmt.asPutField)
             case ArrayStore.ASTID ⇒
@@ -279,14 +280,14 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.tac.ExprStmt]] can contain function calls, so they have to handle them.
      */
     protected def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
-        handleExpression(exprStmt.expr)
+        handleExpression(exprStmt.expr, None)
     }
 
     /**
      * [[org.opalj.tac.Assignment]]s can contain function calls, so they have to handle them.
      */
     protected def handleAssignment(assignment: Assignment[V]): Unit = {
-        handleExpression(assignment.expr)
+        handleExpression(assignment.expr, Some(assignment))
     }
 
     /**
@@ -295,16 +296,16 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.handleOtherKindsOfExpressions]]
      * will be called.
      */
-    protected def handleExpression(expr: Expr[V]): Unit = {
+    protected def handleExpression(expr: Expr[V], assignment: Option[Assignment[V]]): Unit = {
         (expr.astID: @switch) match {
             case NonVirtualFunctionCall.ASTID ⇒
-                handleNonVirtualFunctionCall(expr.asNonVirtualFunctionCall)
+                handleNonVirtualFunctionCall(expr.asNonVirtualFunctionCall, assignment)
             case VirtualFunctionCall.ASTID ⇒
-                handleVirtualFunctionCall(expr.asVirtualFunctionCall)
+                handleVirtualFunctionCall(expr.asVirtualFunctionCall, assignment)
             case StaticFunctionCall.ASTID ⇒
-                handleStaticFunctionCall(expr.asStaticFunctionCall)
+                handleStaticFunctionCall(expr.asStaticFunctionCall, assignment)
             case Invokedynamic.ASTID ⇒
-                handleInvokeDynamic(expr.asInvokedynamic)
+                handleInvokeDynamic(expr.asInvokedynamic, assignment)
 
             case _ ⇒ handleOtherKindsOfExpressions(expr)
         }
@@ -316,7 +317,9 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected def handleNonVirtualFunctionCall(call: NonVirtualFunctionCall[V]): Unit = {
+    protected def handleNonVirtualFunctionCall(
+        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
             calcMostRestrictive(MaybeEscapeInCallee)
     }
@@ -327,7 +330,9 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected def handleVirtualFunctionCall(call: VirtualFunctionCall[V]): Unit = {
+    protected def handleVirtualFunctionCall(
+        call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
             calcMostRestrictive(MaybeEscapeInCallee)
     }
@@ -338,7 +343,9 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleStaticFunctionCall(call: StaticFunctionCall[V]): Unit = {
+    protected[this] def handleStaticFunctionCall(
+        call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         if (anyParameterUsesDefSite(call.params))
             calcMostRestrictive(MaybeEscapeInCallee)
     }
@@ -349,7 +356,9 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleInvokeDynamic(call: Invokedynamic[V]): Unit = {
+    protected[this] def handleInvokeDynamic(
+        call: Invokedynamic[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         if (anyParameterUsesDefSite(call.params))
             calcMostRestrictive(MaybeEscapeInCallee)
     }
@@ -462,7 +471,20 @@ trait AbstractEntityEscapeAnalysis {
 
                 case EscapeViaReturn ⇒
                     // IMPROVE we do not further track the return value of the callee
-                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+                    val stmt = dependeeToStmt(other)
+                    stmt match {
+                        case Some(Assignment(_, tgt, _)) ⇒
+                            for (use ← tgt.usedBy) {
+                                if (!seen.contains(use)) {
+                                    workset += use
+                                }
+                            }
+                            defSite += code.indexOf(stmt)
+                            dependees = dependees filter (_.e ne other)
+                            doDetermineEscape()
+                        case _ ⇒ //TODO
+                            removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+                    }
 
                 case EscapeViaParameterAndAbnormalReturn | EscapeViaNormalAndAbnormalReturn |
                     EscapeViaParameterAndAbnormalReturn | EscapeViaParameterAndReturn |

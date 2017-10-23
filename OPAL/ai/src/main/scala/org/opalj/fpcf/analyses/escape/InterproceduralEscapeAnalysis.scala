@@ -77,7 +77,7 @@ class InterproceduralEscapeAnalysis private (
         handlers: ExceptionHandlers,
         m:        Method
     ): AbstractEntityEscapeAnalysis =
-        new InterproceduralEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, m, propertyStore, project)
+        new InterproceduralEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, m, propertyStore, project)
 
     /**
      * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes

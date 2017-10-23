@@ -31,7 +31,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ReferenceType
@@ -52,6 +51,7 @@ import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.EscapeViaHeapObject
+import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.Parameters
@@ -62,6 +62,7 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.Assignment
 
 trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEscapeAnalysis {
 
@@ -69,13 +70,15 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 
     override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         handleStaticCall(
-            call.declaringClass, call.isInterface, call.name, call.descriptor, call.params
+            call.declaringClass, call.isInterface, call.name, call.descriptor, call.params, None
         )
     }
 
-    override def handleStaticFunctionCall(call: StaticFunctionCall[V]): Unit = {
+    override def handleStaticFunctionCall(
+        call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         handleStaticCall(
-            call.declaringClass, call.isInterface, call.name, call.descriptor, call.params
+            call.declaringClass, call.isInterface, call.name, call.descriptor, call.params, assignment
         )
     }
 
@@ -86,18 +89,22 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             call.name,
             call.descriptor,
             call.receiver,
-            call.params
+            call.params,
+            None
         )
     }
 
-    override def handleVirtualFunctionCall(call: VirtualFunctionCall[V]): Unit = {
+    override def handleVirtualFunctionCall(
+        call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         handleVirtualCall(
             call.declaringClass,
             call.isInterface,
             call.name,
             call.descriptor,
             call.receiver,
-            call.params
+            call.params,
+            assignment
         )
     }
 
@@ -108,7 +115,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             call.name,
             call.descriptor
         )
-        checkParams(methodO, call.params)
+        checkParams(methodO, call.params, None)
     }
 
     override def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
@@ -118,40 +125,44 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             call.name,
             call.descriptor
         )
-        checkParams(methodO, call.params)
+        checkParams(methodO, call.params, None)
         if (usesDefSite(call.receiver))
-            handleCall(methodO, 0)
+            handleCall(methodO, 0, None)
     }
 
-    override def handleNonVirtualFunctionCall(call: NonVirtualFunctionCall[V]): Unit = {
+    override def handleNonVirtualFunctionCall(
+        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
         val methodO = project.specialCall(
             call.declaringClass.asObjectType,
             call.isInterface,
             call.name,
             call.descriptor
         )
-        checkParams(methodO, call.params)
+        checkParams(methodO, call.params, assignment)
         if (usesDefSite(call.receiver))
-            handleCall(methodO, 0)
+            handleCall(methodO, 0, assignment)
     }
 
     def handleStaticCall(
-        dc:     ReferenceType,
-        isI:    Boolean,
-        name:   String,
-        descr:  MethodDescriptor,
-        params: Seq[Expr[V]]
+        dc:         ReferenceType,
+        isI:        Boolean,
+        name:       String,
+        descr:      MethodDescriptor,
+        params:     Seq[Expr[V]],
+        assignment: Option[Assignment[V]]
     ): Unit = {
-        checkParams(project.staticCall(dc.asObjectType, isI, name, descr), params)
+        checkParams(project.staticCall(dc.asObjectType, isI, name, descr), params, assignment)
     }
 
     def handleVirtualCall(
-        dc:       ReferenceType,
-        isI:      Boolean,
-        name:     String,
-        descr:    MethodDescriptor,
-        receiver: Expr[V],
-        params:   Seq[Expr[V]]
+        dc:         ReferenceType,
+        isI:        Boolean,
+        name:       String,
+        descr:      MethodDescriptor,
+        receiver:   Expr[V],
+        params:     Seq[Expr[V]],
+        assignment: Option[Assignment[V]]
     ): Unit = {
         assert(receiver.isVar)
         val value = receiver.asVar.value.asDomainReferenceValue
@@ -159,38 +170,44 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             if (value.isNull.isNoOrUnknown) {
                 val valueType = value.valueType.get
                 val methodO = project.instanceCall(m.classFile.thisType, valueType, name, descr)
-                checkParams(methodO, params)
-                if (usesDefSite(receiver)) handleCall(methodO, 0)
+                checkParams(methodO, params, assignment)
+                if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
 
             } else {
                 // todo throw new NullPointerException()
             }
-        } else if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo) {
-            calcMostRestrictive(MaybeEscapeInCallee)
         } else {
             //TODO
-            val packageName = m.classFile.thisType.packageName
-            val methods =
-                if (isI) project.interfaceCall(dc.asObjectType, name, descr)
-                else project.virtualCall(packageName, dc, name, descr)
-            for (method ← methods) {
-                checkParams(Success(method), params)
-                if (usesDefSite(receiver))
-                    handleCall(Success(method), 0)
+            if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo) {
+                calcMostRestrictive(MaybeEscapeInCallee)
+            } else {
+                val packageName = m.classFile.thisType.packageName
+                val methods =
+                    if (isI) project.interfaceCall(dc.asObjectType, name, descr)
+                    else project.virtualCall(packageName, dc, name, descr)
+                for (method ← methods) {
+                    checkParams(Success(method), params, assignment)
+                    if (usesDefSite(receiver))
+                        handleCall(Success(method), 0, assignment)
+                }
             }
         }
     }
 
-    def checkParams(methodO: org.opalj.Result[Method], params: Seq[Expr[V]]): Unit = {
+    def checkParams(
+        methodO: org.opalj.Result[Method], params: Seq[Expr[V]], assignment: Option[Assignment[V]]
+    ): Unit = {
         for (i ← params.indices) {
             if (usesDefSite(params(i)))
-                handleCall(methodO, i + 1)
+                handleCall(methodO, i + 1, assignment)
         }
     }
 
-    def handleCall(methodO: org.opalj.Result[Method], param: Int): Unit = {
+    def handleCall(
+        methodO: org.opalj.Result[Method], param: Int, assignment: Option[Assignment[V]]
+    ): Unit = {
         methodO match {
-            case Success(method) ⇒ {
+            case Success(method) ⇒
                 // handle signature polymorphic methods
                 if (method.isNativeAndVarargs &&
                     method.descriptor.parametersCount == 1 &&
@@ -210,30 +227,42 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                             case EP(_, GlobalEscape)              ⇒ calcMostRestrictive(GlobalEscape)
                             case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
                             case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, p) if p.isFinal            ⇒ calcMostRestrictive(MaybeEscapeInCallee)
+                            case EP(_, EscapeViaReturn) ⇒
+                                calcMostRestrictive(EscapeInCallee)
+                                assignment match {
+                                    case Some(a @ Assignment(_, tgt, _)) ⇒
+                                        for (use ← tgt.usedBy) {
+                                            if (!seen.contains(use)) {
+                                                workset += use
+                                            }
+                                        }
+                                        defSite += code.indexOf(a)
+                                    case None ⇒
+                                }
+                            case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(MaybeEscapeInCallee)
                             case epk ⇒
                                 dependees += epk
+                                dependeeToStmt += ((fp, assignment))
                                 calcMostRestrictive(EscapeInCallee)
                         }
                     }
                 }
-            }
             case _ ⇒ calcMostRestrictive(MaybeEscapeInCallee)
         }
     }
 }
 
 class InterproceduralEntityEscapeAnalysis(
-        val e:             Entity,
-        val defSite:       ValueOrigin,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val m:             Method,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    var defSite:       IntArraySet,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val cfg:           CFG,
+    val handlers:      ExceptionHandlers,
+    val m:             Method,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntitiyEscapeAnalysis

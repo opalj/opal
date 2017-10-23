@@ -82,7 +82,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         handlers: ExceptionHandlers,
         m:        Method
     ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, m, propertyStore, project)
+        new SimpleEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, m, propertyStore, project)
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the

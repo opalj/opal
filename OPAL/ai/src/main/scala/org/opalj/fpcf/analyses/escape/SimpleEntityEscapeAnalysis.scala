@@ -31,7 +31,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
@@ -81,7 +80,7 @@ import org.opalj.tac.Throw
  */
 class SimpleEntityEscapeAnalysis(
         val e:             Entity,
-        val defSite:       ValueOrigin,
+        var defSite:       IntArraySet,
         val uses:          IntArraySet,
         val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         val params:        Parameters[TACMethodParameter],
@@ -150,7 +149,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
 
             // do not check the escape state of the entity (defSite) whose escape state we are
             // currently computing to avoid endless loops
-            if (referenceDefSite != defSite) {
+            if (!defSite.contains(referenceDefSite)) {
                 // is the object/array reference of the field a local
                 if (referenceDefSite >= 0) {
                     code(referenceDefSite) match {

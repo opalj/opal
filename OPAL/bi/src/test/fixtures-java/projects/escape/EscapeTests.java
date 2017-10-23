@@ -41,6 +41,22 @@ public class EscapeTests {
         return new @Escapes(ViaReturn) Object();
     }
 
+    public static int handlingReturnNoEscape() {
+        Object o = new @Escapes(InCallee) Object();
+        Object x = formalParamReturnEscape(o);
+        if (x == null) {
+            return -1;
+        }
+        return 0;
+    }
+    public static void handlingReturnGlobalEscape() {
+        Object o = new @Escapes(ViaStaticField) Object();
+        Object x = formalParamReturnEscape(o);
+        if (x != null) {
+            ClassWithFields.global = x;
+        }
+    }
+
     public static Object multipleEscapes(ClassWithFields param) {
         ClassWithFields.global = new @Escapes(ViaStaticField) Object();
         if (param == null) {
@@ -276,6 +292,14 @@ public class EscapeTests {
                     Object param
     ) {
         ClassWithFields.global = param;
+    }
+
+    public static Object formalParamReturnEscape(
+            @Escapes(ViaReturn)
+            @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
+                    Object param
+    ) {
+        return param;
     }
 
     public static void formalParamNoEscape(
