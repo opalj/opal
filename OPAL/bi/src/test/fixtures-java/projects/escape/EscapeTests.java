@@ -46,7 +46,7 @@ public class EscapeTests {
         if (param == null) {
             throw new
                     @Escapes(ViaReturn)
-                    @Escapes(value = MaybeNo,
+                    @Escapes(value = MaybeViaAbnormalReturn,
                             algorithms = { "SimpleEscapeAnalysis",
                                     "InterproceduralEscapeAnalysis" })
                             RuntimeException();
@@ -54,7 +54,7 @@ public class EscapeTests {
         param.f =
                 new
                         @Escapes(ViaParameter)
-                        @Escapes(value = MaybeMethod,
+                        @Escapes(value = MaybeViaParameter,
                                 algorithms = { "SimpleEscapeAnalysis",
                                         "InterproceduralEscapeAnalysis" })
                                 Object();
@@ -62,7 +62,7 @@ public class EscapeTests {
         Object noLocal =
                 new
                         @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeArg, algorithms = "SimpleEscapeAnalysis")
+                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
                                 Object();
         if (local != null) {
             formalParamEscape(noLocal);
@@ -75,7 +75,7 @@ public class EscapeTests {
     }
 
     public static void parameterFieldGlobalEscape(ClassWithFields param) {
-        param.f = new @Escapes(ViaHeapObject) @Escapes(value = MaybeMethod,
+        param.f = new @Escapes(ViaHeapObject) @Escapes(value = MaybeViaParameter,
                 algorithms = { "SimpleEscapeAnalysis", "InterproceduralEscapeAnalysis" }) Object();
         ClassWithFields.global = param;
     }
@@ -109,8 +109,8 @@ public class EscapeTests {
 
     public static void instanceFieldFlowNoEscape() {
         ClassWithFields x = new
-                @Escapes(Arg)
-                @Escapes(value = MaybeArg,
+                @Escapes(InCallee)
+                @Escapes(value = MaybeInCallee,
                         algorithms = { "SimpleEscapeAnalysis" })
                         ClassWithFields();
         formalParamNoEscape(x);
@@ -146,7 +146,7 @@ public class EscapeTests {
         if (param.length > 0)
             param[0] = new
                     @Escapes(ViaParameter)
-                    @Escapes(value = MaybeMethod,
+                    @Escapes(value = MaybeViaParameter,
                             algorithms = { "SimpleEscapeAnalysis",
                                     "InterproceduralEscapeAnalysis" })
                             Object();
@@ -156,18 +156,26 @@ public class EscapeTests {
         param.f =
                 new
                         @Escapes(ViaParameter)
-                        @Escapes(value = MaybeMethod, algorithms = { "SimpleEscapeAnalysis",
+                        @Escapes(value = MaybeViaParameter, algorithms = { "SimpleEscapeAnalysis",
                                 "InterproceduralEscapeAnalysis" })
                                 Object();
     }
 
     public static void exceptionEscape() {
-        throw new @Escapes(ViaReturn) RuntimeException();
+        throw new
+                @Escapes(ViaAbnormalReturn)
+                @Escapes(value = MaybeViaAbnormalReturn, algorithms = { "SimpleEscapeAnalysis",
+                        "InterproceduralEscapeAnalysis" })
+                        RuntimeException();
     }
 
     public static void exceptionNoEscape() {
         try {
-            throw new @Escapes(No) RuntimeException();
+            throw new
+                    @Escapes(No)
+                    @Escapes(value = MaybeNo, algorithms = { "SimpleEscapeAnalysis",
+                            "InterproceduralEscapeAnalysis" })
+                            RuntimeException();
         } catch (Exception e) {
             System.out.println("catched the error");
         }
@@ -177,9 +185,19 @@ public class EscapeTests {
         Exception e = null;
         try {
             if (b)
-                e = new @Escapes(No) ArrayIndexOutOfBoundsException("");
+                e = new
+                        @Escapes(No)
+                        @Escapes(value = MaybeNo,
+                                algorithms = { "SimpleEscapeAnalysis",
+                                        "InterproceduralEscapeAnalysis" })
+                                ArrayIndexOutOfBoundsException("");
             else
-                e = new @Escapes(No) IllegalArgumentException("");
+                e = new
+                        @Escapes(No)
+                        @Escapes(value = MaybeNo,
+                                algorithms = { "SimpleEscapeAnalysis",
+                                        "InterproceduralEscapeAnalysis" })
+                                IllegalArgumentException("");
             throw e;
         } catch (ArrayIndexOutOfBoundsException ex) {
             return 1;
@@ -192,7 +210,7 @@ public class EscapeTests {
         formalParamEscape(
                 new
                         @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeArg, algorithms = "SimpleEscapeAnalysis")
+                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
                                 Object());
     }
 
@@ -200,7 +218,7 @@ public class EscapeTests {
         formalNonStaticParamEscape(
                 new
                         @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeArg, algorithms = "SimpleEscapeAnalysis")
+                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
                                 Object());
     }
 
@@ -208,11 +226,11 @@ public class EscapeTests {
         formalNonStaticParamEscapeWithReturn(
                 new
                         @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeArg, algorithms = "SimpleEscapeAnalysis")
+                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
                                 Object(),
                 new
-                        @Escapes(Arg)
-                        @Escapes(value = MaybeArg, algorithms = { "SimpleEscapeAnalysis",
+                        @Escapes(InCallee)
+                        @Escapes(value = MaybeInCallee, algorithms = { "SimpleEscapeAnalysis",
                                 "InterproceduralEscapeAnalysis" })
                                 ClassWithFields()
         );
@@ -271,7 +289,7 @@ public class EscapeTests {
     }
 
     public static void argEscape() {
-        formalParamNoEscape(new @Escapes(Arg) @Escapes(value = MaybeArg,
+        formalParamNoEscape(new @Escapes(InCallee) @Escapes(value = MaybeInCallee,
                 algorithms = "SimpleEscapeAnalysis") Object());
     }
 
