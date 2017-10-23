@@ -13,8 +13,7 @@ organization	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de/"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 version 		in ThisBuild := "1.3.0-Snapshot"
-scalaVersion 	in ThisBuild := "2.12.2"
-
+scalaVersion 	in ThisBuild := "2.12.4"
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.ManagedClasses
 EclipseKeys.eclipseOutput := Some(".target")
@@ -70,7 +69,5 @@ lazy val ui = Project(
 		) ++
 		Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
 		Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.144-R12") ++
-		Seq(
-			resourceGenerators in Compile += resGenerator.taskValue
-		)
+		Seq(resourceGenerators in Compile += resGenerator.taskValue)
 )
