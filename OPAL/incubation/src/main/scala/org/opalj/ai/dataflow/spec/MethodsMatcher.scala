@@ -33,8 +33,6 @@ package spec
 
 import scala.collection.{Map, Set}
 import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses._
 import org.opalj.br.analyses.SomeProject
 
 case class MethodsMatcher(
@@ -47,9 +45,9 @@ case class MethodsMatcher(
             classFile ← project.allProjectClassFiles
             method ← classFile.methods
             if method.body.isDefined
+            if matcher.isDefinedAt(method)
         } {
-            if (matcher.isDefinedAt(method))
-                map.update(method, matcher(method))
+            map.update(method, matcher(method))
         }
         map
     }

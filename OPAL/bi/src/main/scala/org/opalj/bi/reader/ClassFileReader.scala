@@ -589,7 +589,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 val parClassFiles = classFiles.par
                 parClassFiles.tasksupport = OPALExecutionContextTaskSupport
                 parClassFiles.foreach { classFile ⇒
-                    theClassFiles.addAll(processClassFile(classFile).asJava)
+                    theClassFiles.addAll(processClassFile(classFile, exceptionHandler).asJava)
                 }
                 allClassFiles ++= theClassFiles.asScala
             }

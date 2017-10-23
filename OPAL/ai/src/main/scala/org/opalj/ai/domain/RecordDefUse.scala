@@ -439,7 +439,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         successorPC:        PC
     )(
         implicit
-        cfJoins:       BitSet,
+        // cfJoins:       BitSet,
         operandsArray: OperandsArray
     ): Chain[ValueOrigins] = {
         // The stack only contains the exception (which was created before
@@ -480,9 +480,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         usedValues:               Int, pushesValue: Boolean
     )(
         implicit
-        cfJoins:                 BitSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean,
-        operandsArray:           OperandsArray
+        cfJoins: BitSet,
+        // isSubroutineInstruction: (PC) ⇒ Boolean,
+        operandsArray: OperandsArray
     ): Boolean = {
         val currentDefOps = defOps(currentPC)
         currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
@@ -507,9 +507,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         index:       Int
     )(
         implicit
-        cfJoins:                 BitSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean,
-        localsArray:             LocalsArray
+        cfJoins: BitSet,
+        // isSubroutineInstruction: (PC) ⇒ Boolean,
+        localsArray: LocalsArray
     ): Boolean = {
         val currentDefLocals = defLocals(currentPC)
         updateUsageInformation(currentDefLocals(index), currentPC)
@@ -528,10 +528,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         isExceptionalControlFlow: Boolean
     )(
         implicit
-        cfJoins:                 BitSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean,
-        operandsArray:           OperandsArray,
-        localsArray:             LocalsArray
+        cfJoins: BitSet,
+        // isSubroutineInstruction: (PC) ⇒ Boolean,
+        operandsArray: OperandsArray,
+        localsArray:   LocalsArray
     ): Boolean = {
 
         val currentInstruction = code.instructions(currentPC)
@@ -965,7 +965,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow
                     )(
-                        cfJoins, aiResult.subroutineInstructions.contains,
+                        cfJoins, // aiResult.subroutineInstructions.contains,
                         operandsArray, localsArray
                     )
                 } catch {

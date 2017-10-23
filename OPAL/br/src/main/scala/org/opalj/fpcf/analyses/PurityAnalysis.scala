@@ -32,16 +32,6 @@ package analyses
 
 import scala.annotation.switch
 
-import org.opalj.log.OPALLogger
-
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EP
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.OnUpdateContinuation
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.UserUpdateType
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.Impure
@@ -231,7 +221,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
             return ImmediateResult(method, Pure);
 
         val c = new OnUpdateContinuation { c ⇒
-            def apply(e: Entity, p: Property, ut: UserUpdateType) = {
+            def apply(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
                 p match {
                     case Impure | MaybePure ⇒
                         Result(method, Impure)

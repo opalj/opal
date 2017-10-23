@@ -92,7 +92,7 @@ class CFGFactoryTest extends CFGTests {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(method.toJava, code, cfg, classHierarchy)
+            cfgNodesCheck(method, code, cfg, classHierarchy)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒
@@ -179,12 +179,12 @@ class CFGFactoryTest extends CFGTests {
     describe("computing the cfg") {
 
         it(s"it should be possible for all methods of the JDK ($JRELibraryFolder)") {
-            analyzeProject( TestSupport.createJREProject)
+            analyzeProject(TestSupport.createJREProject)
         }
 
         allBITestJARs() foreach { jarFile ⇒
             it(s"it should be possible for all methods of ${jarFile.getName}") {
-                analyzeProject( Project(jarFile))
+                analyzeProject(Project(jarFile))
             }
         }
     }

@@ -60,7 +60,7 @@ import org.opalj.issues.Relevance
 object CollectionsUsage {
 
     final val Collection = ObjectType("java/util/Collection")
-    final val unmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
+    final val UnmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
     final val Collections = ObjectType("java/util/Collections")
 
     def apply(
@@ -85,7 +85,12 @@ object CollectionsUsage {
         code iterate { (pc, instruction) ⇒
             instruction match {
 
-                case INVOKESTATIC(Collections, false, "unmodifiableCollection", UnmodifiableCollectionMethodDescriptor) ⇒
+                case INVOKESTATIC(
+                    Collections,
+                    false,
+                    "unmodifiableCollection",
+                    UnmodifiableCollectionMethodDescriptor
+                    ) ⇒
                     val origins = domain.operandOrigin(pc, 0)
                     if ((origins ne null) && // the instruction is not dead
                         origins.size == 1 &&

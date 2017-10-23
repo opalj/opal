@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.Date
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConversions
+import scala.collection.JavaConverters._
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -238,7 +238,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                             true
                     }
                 }
-                filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
+                filteredResults.addAll(filteredIssues.asJavaCollection)
             }
         }
 
@@ -456,7 +456,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     progressManagement.end(stepId)
                 }
             }
-            JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
+            filteredResults.asScala.toSeq
         } { t ⇒ analysisTime = t }
 
         OPALLogger.info(

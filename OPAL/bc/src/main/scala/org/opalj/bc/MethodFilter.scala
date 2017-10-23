@@ -64,9 +64,9 @@ object MethodFilter {
         val keepMethod = args(2).charAt(0) == '+'
         val classFiles = ClassFileReader.ClassFiles(new File(jarName)).map(_._1)
         if (classFiles.isEmpty) {
-            OPALLogger.error("setup", s"no classfiles found in ${args(0)}")
+            OPALLogger.error("setup", s"no class files found in ${args(0)}")
         } else {
-            classFiles.filter(_.thisType == className) foreach { cf ⇒
+            classFiles.filter(_.thisType.asJVMType == className) foreach { cf ⇒
                 val filteredMethods = cf.methods.filter { m ⇒
                     implicit val cp = cf.constant_pool
                     val matches = m.name == methodName

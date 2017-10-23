@@ -31,11 +31,11 @@ package br
 package analyses
 
 import java.net.URL
-import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheAnalysis}
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.MethodWithBody
 import java.util.concurrent.atomic.AtomicInteger
+
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheAnalysis}
 
 /**
  * A shallow analysis that identifies methods that do not perform virtual method

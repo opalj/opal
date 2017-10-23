@@ -347,11 +347,9 @@ package object graphs {
 
                             case someCSCCId ⇒
                                 /*nothing to do*/
-                                <<<<<<< HEAD
-                                    assert(nDFSNum == 0 || someCSCCId == cSCCId(path.last))
-                                =======
                                 assert(
-                                    nDFSNum == initialDFSNum || nCSCCId == cSCCId(path.last),
+                                    // nDFSNum == 0 ???
+                                    nDFSNum == initialDFSNum || someCSCCId == cSCCId(path.last),
                                     s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; "+
                                         s"cSCCId(path.last)=${cSCCId(path.last)}\n"+
                                         s"(n=$n; initialDFSNum=$initialDFSNum; "+
@@ -359,7 +357,6 @@ package object graphs {
                                         cSCCs.map(_.map(_.toString)).
                                         mkString("found csccs:\n\t", "\n\t", "\n")
                                 )
-                                >>>>>>> develop
 
                         }
                     } else {

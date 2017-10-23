@@ -41,7 +41,7 @@ import org.opalj.io.writeAndOpen
  */
 trait CFGTests extends FunSpec with Matchers {
 
-    def cfgNodesCheck(code: Code, cfg: CFG, classHierarchy: ClassHierarchy): Unit = {
+    def cfgNodesCheck(m: Method, code: Code, cfg: CFG, classHierarchy: ClassHierarchy): Unit = {
         // validate that cfPCs returns the same information as the CFG
         val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
         val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs(classHierarchy)
@@ -55,13 +55,13 @@ trait CFGTests extends FunSpec with Matchers {
         cfJoins foreach { pc ⇒
             assert(
                 cfg.bb(pc).startPC == pc,
-                s"; the join PC $pc is not at the beginning of a BasicBlock node"
+                m.toJava(s"; the join PC $pc is not at the beginning of a BasicBlock node")
             )
         }
         cfForks foreach { pc ⇒
             assert(
                 cfg.bb(pc).endPC == pc,
-                s"; the fork PC $pc is not at the end of a BasicBlock node"
+                m.toJava(s"; the fork PC $pc is not at the end of a BasicBlock node")
             )
             assert(
                 forkTargetPCs(pc).nonEmpty
@@ -73,7 +73,7 @@ trait CFGTests extends FunSpec with Matchers {
                 if (bb.predecessors.size > 1) {
                     assert(
                         cfJoins.contains(bb.startPC),
-                        s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC"
+                        m.toJava(s"; a basic block's start PC (${bb.startPC} predecessors ${bb.predecessors}) is not a join PC")
                     )
                     allPredecessorPCs(bb.startPC).hasMultipleElements
                 }
@@ -82,7 +82,7 @@ trait CFGTests extends FunSpec with Matchers {
             if (bb.successors.count(!_.isExitNode) > 1) {
                 assert(
                     cfForks.contains(bb.endPC),
-                    s"; a basic block's end PC(${bb.endPC}}) is not a fork PC"
+                    m.toJava(s"; a basic block's end PC(${bb.endPC}}) is not a fork PC")
                 )
             }
 
@@ -92,7 +92,7 @@ trait CFGTests extends FunSpec with Matchers {
     }
 
     def testCFGProperties(
-        methodName:     String,
+        method:         Method,
         code:           Code,
         cfg:            CFG,
         classHierarchy: ClassHierarchy
@@ -100,10 +100,10 @@ trait CFGTests extends FunSpec with Matchers {
         f: ⇒ Unit
     ): Unit = {
         try {
-            cfgNodesCheck(code, cfg, classHierarchy)
+            cfgNodesCheck(method, code, cfg, classHierarchy)
             f
         } catch {
-            case t: Throwable ⇒ writeAndOpen(cfg.toDot, methodName+"-CFG", ".gv"); throw t
+            case t: Throwable ⇒ writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv"); throw t
         }
     }
 

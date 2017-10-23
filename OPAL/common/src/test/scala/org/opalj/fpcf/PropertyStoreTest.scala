@@ -704,30 +704,23 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     // 2. we create the store
                     val store = PropertyStore(allNodes, () ⇒ false)(GlobalLogContext)
 
-                    def onUpdate(
-                        node: Node
-                    )(_: Entity, _: Property, _: UserUpdateType): PropertyComputationResult = {
-                        purityAnalysis(node)
-                    }
+                    def c(node: Node) =
+                        new OnUpdateContinuation { c ⇒
+                            def apply(
+                                e: Entity, p: Property, ut: UserUpdateType
+                            ): PropertyComputationResult = {
+                                purityAnalysis(node)
+                            }
+                        }
                     def purityAnalysis(node: Node): PropertyComputationResult = {
                         val nextNode = node.targets.head // HERE: we always have only one successor
                         store(nextNode, PurityKey) match {
                             case epk: EPK[_, _] ⇒
-                                IntermediateResult(
-                                    node,
-                                    ConditionallyPure,
-                                    Iterable(epk),
-                                    onUpdate(node)
-                                )
+                                IntermediateResult(node, ConditionallyPure, Iterable(epk), c(node))
                             case EP(_, Pure)   ⇒ Result(node, Pure)
                             case EP(_, Impure) ⇒ Result(node, Impure)
                             case ep @ EP(_, ConditionallyPure) ⇒
-                                IntermediateResult(
-                                    node,
-                                    ConditionallyPure,
-                                    Iterable(ep),
-                                    onUpdate(node)
-                                )
+                                IntermediateResult(node, ConditionallyPure, Iterable(ep), c(node))
                         }
                     }
                     // 4. execute analysis

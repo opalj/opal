@@ -77,8 +77,7 @@ object ManualGarbageCollection {
             return Seq.empty;
 
         for {
-            method ← classFile.methods
-            body ← method.body.toSeq
+            method @ MethodWithBody(body) ← classFile.methods
             (pc, gcCall) ← body.collectWithIndex {
                 case (pc, INVOKESTATIC(ObjectType.System, false, "gc", NoArgsAndReturnVoid)) ⇒
                     (pc, "System.gc()")

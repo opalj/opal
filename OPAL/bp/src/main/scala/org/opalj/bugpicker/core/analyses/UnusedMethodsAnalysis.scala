@@ -35,7 +35,6 @@ import org.opalj.bi.VisibilityModifier
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.ComputedCallGraph
-import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.VoidType
 import org.opalj.issues.Issue
@@ -141,7 +140,7 @@ object UnusedMethodsAnalysis {
             val instructions = body.instructions
             def justThrowsException: Boolean = {
                 !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
-                    ReturnInstruction.isReturnInstruction(i)
+                    i.isReturnInstruction
                 }
             }
             if (instructions.size == 5 /* <= default empty constructor */ )

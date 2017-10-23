@@ -470,7 +470,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                             case Some(f) ⇒ f.annotations
                             case _       ⇒ IndexedSeq.empty
                         }
-                        
+
                     case vm: VirtualMethod ⇒
                         classFile.methods collectFirst {
                             case m if m.asVirtualMethod(classFile.thisType).compareTo(vm) == 0 ⇒ m

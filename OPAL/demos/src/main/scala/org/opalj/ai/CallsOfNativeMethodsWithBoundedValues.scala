@@ -125,7 +125,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             result = BaseAI(caller, domain)
         } {
             val pcs: org.opalj.collection.immutable.IntArraySet = callerPCs //.iterable.toSeq
-            for { pc: Int ← pcs } {
+            for { pc ← pcs } {
                 val operands = result.operandsArray(pc)
                 if (operands != null)
                     for {

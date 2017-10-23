@@ -115,8 +115,8 @@ class Graph[@specialized(Int) N: ClassTag] private (
         val nToIndex = new HashMap[N, Int] { override def initialSize = size }
         for {
             e ← vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
-            (n, index) = e
         } {
+            val (n, index) = e
             indexToN(index) = n
             nToIndex += e
         }

@@ -518,7 +518,7 @@ object ClassFileFactory {
 
         val code =
             createProxyMethodBytecode(
-                definingType, methodName, methodDescriptor, staticParameters,
+                definingType, methodDescriptor, staticParameters,
                 receiverType, receiverIsInterface, receiverMethodName, receiverMethodDescriptor,
                 invocationInstruction
             )
@@ -537,7 +537,6 @@ object ClassFileFactory {
      */
     private def createProxyMethodBytecode(
         definingType:             ObjectType, // type of "this"
-        methodName:               String,
         methodDescriptor:         MethodDescriptor, // the parameters of the current method
         staticParameters:         Seq[FieldTemplate],
         receiverType:             ObjectType,

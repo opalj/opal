@@ -43,7 +43,6 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.br.instructions.ReturnInstruction
 
 /**
  * Simple analysis that identifies unused and passed through parameters; i.e., those that are
@@ -89,7 +88,7 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
                             unusedParameters.add(methodSignature + use)
                         } else {
                             usedBy.foreach { usage ⇒
-                                if (ReturnInstruction.isReturnInstruction(instructions(usage))) {
+                                if (instructions(usage).isReturnInstruction) {
                                     val use = s" the argument with origin $valueOrigin is returned by $usage"
                                     returnedParameters.add(methodSignature + use)
                                 }

@@ -62,7 +62,7 @@ package object bi {
             assert(false)
             info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
-            case ae: AssertionError ⇒
+            case _: AssertionError ⇒
                 info("OPAL Bytecode Infrastructure", "Development Build with Assertions")
         }
     }

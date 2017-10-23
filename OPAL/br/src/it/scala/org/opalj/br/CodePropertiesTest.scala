@@ -47,7 +47,7 @@ import org.opalj.br.instructions.LocalVariableAccess
  */
 class CodePropertiesTest extends FunSuite {
 
-    def analyzeProject( project: SomeProject): String = {
+    def analyzeProject(project: SomeProject): String = {
         val (t, analyzedMethodsCount) = timed { doAnalyzeProject(project) }
         s"the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
     }

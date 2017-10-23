@@ -53,9 +53,9 @@ object ProjectAccessibility {
     final val fallback: (PropertyStore, Entity) ⇒ ProjectAccessibility = (ps, e) ⇒ {
         // IMPROVE Query the project's Method/Type extensibility/the defining module to compute the scope in which the entity is accessible.
         e match {
-            case m: Method     ⇒ if (m.isPrivate) ClassLocal else Global
-            case cf: ClassFile ⇒ Global
-            case f: Field      ⇒ if (f.isPrivate) ClassLocal else Global
+            case _: ClassFile ⇒ Global
+            case m: Method    ⇒ if (m.isPrivate) ClassLocal else Global
+            case f: Field     ⇒ if (f.isPrivate) ClassLocal else Global
         }
     }
 

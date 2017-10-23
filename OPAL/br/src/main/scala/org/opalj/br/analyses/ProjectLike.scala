@@ -673,7 +673,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     }
 
     def specialCall(i: INVOKESPECIAL): Result[Method] = {
-        specialCall(i.declaringClass /*, i.isInterface*/ , i.name, i.methodDescriptor)
+        specialCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
     def nonVirtualCall(i: NonVirtualMethodInvocationInstruction): Result[Method] = {
@@ -711,21 +711,25 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClassType) match {
             case Some(classFile) ⇒
-                classFile.findMethod(name, descriptor) match {
-                    case Some(method)             ⇒ Success(method)
-                    case None if name == "<init>" ⇒ Failure // initializer not found...
-                    case _ ⇒
-                        // We have to find the (maximally specific) super method, which is,
-                        // unless we have an inconsistent code base, unique (compared to
-                        // an invokevirtual based call, we don't have to care about the
-                        // visiblity of the target method; a corresponding check has to be done
-                        // by the caller, if necessary)
-                        Result(
-                            find(instanceMethods(declaringClassType)) { definedMethodContext ⇒
-                                val definedMethod = definedMethodContext.method
-                                definedMethod.compare(name, descriptor)
-                            } map { mdc ⇒ mdc.method }
-                        )
+                if (classFile.isInterfaceDeclaration != isInterface)
+                    Failure
+                else {
+                    classFile.findMethod(name, descriptor) match {
+                        case Some(method)             ⇒ Success(method)
+                        case None if name == "<init>" ⇒ Failure // initializer not found...
+                        case _ ⇒
+                            // We have to find the (maximally specific) super method, which is,
+                            // unless we have an inconsistent code base, unique (compared to
+                            // an invokevirtual based call, we don't have to care about the
+                            // visiblity of the target method; a corresponding check has to be done
+                            // by the caller, if necessary)
+                            Result(
+                                find(instanceMethods(declaringClassType)) { definedMethodContext ⇒
+                                    val definedMethod = definedMethodContext.method
+                                    definedMethod.compare(name, descriptor)
+                                } map { mdc ⇒ mdc.method }
+                            )
+                    }
                 }
             case None ⇒ Empty
         }

@@ -24,15 +24,16 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 
 // [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
-scalaVersion  in ThisBuild := "2.12.3"
+scalaVersion  in ThisBuild := "2.12.4"
 
 scalacOptions in ThisBuild ++= Seq(
     "-target:jvm-1.8",
     "-deprecation", "-feature", "-unchecked",
     "-Xlint", "-Xfuture", "-Xfatal-warnings",
     "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-    "-Ywarn-unused:-params,_", "-Ywarn-unused-import", "-Ywarn-infer-any",
-    "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
+    "-Ywarn-unused:imports,-patvars,privates,locals,implicits",
+    //"-Ywarn-unused:-params", "-Ywarn-unused-import",
+    "-Ywarn-infer-any", "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
 scalacOptions in ThisBuild += "-Xdisable-assertions"
 
@@ -144,7 +145,7 @@ lazy val common = Project(
         libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
         libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.6",
-        libraryDependencies += "com.iheart" %% "ficus" % "1.4.2"
+        libraryDependencies += "com.iheart" %% "ficus" % "1.4.3"
     ))
     .configs(IntegrationTest)
 

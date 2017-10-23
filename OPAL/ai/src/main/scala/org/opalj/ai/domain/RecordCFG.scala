@@ -48,7 +48,6 @@ import org.opalj.graphs.DominanceFrontiers
 
 import org.opalj.br.PC
 import org.opalj.br.Code
-import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.cfg.CFG

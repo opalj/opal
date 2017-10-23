@@ -33,7 +33,6 @@ import scala.annotation.tailrec
 
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -773,9 +772,6 @@ final class ClassFile private (
         visibility:  Option[VisibilityModifier],
         name:        String,
         descriptor:  MethodDescriptor
-    )(
-        implicit
-        logContext: LogContext
     ): Result[Method] = {
         assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
@@ -798,9 +794,6 @@ final class ClassFile private (
     final def findDirectlyOverridingMethod(
         packageName: String,
         method:      Method
-    )(
-        implicit
-        logContext: LogContext
     ): Result[Method] = {
         findDirectlyOverridingMethod(
             packageName,

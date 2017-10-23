@@ -60,7 +60,7 @@ object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
                 classFile ← project.allClassFiles
                 method ← classFile.methods
                 code ← method.body
-                instruction: MethodInvocationInstruction ← code.instructions
+                instruction ← code.instructions.collect { case mii: MethodInvocationInstruction ⇒ mii }
             } {
                 if (instruction.isVirtualMethodCall)
                     virtualCalls += 1

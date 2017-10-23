@@ -148,13 +148,8 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             }
 
             val usages =
-<<<<<<< HEAD
                 for { ((pc, typeName), exceptionUsage) ← exceptionUsages }
-                    yield ExceptionUsage(classFile, method, pc, typeName, exceptionUsage)
-=======
-                for { (key @ (pc, typeName), exceptionUsage) ← exceptionUsages }
                     yield ExceptionUsage(method, pc, typeName, exceptionUsage)
->>>>>>> develop
 
             if (usages.isEmpty)
                 None

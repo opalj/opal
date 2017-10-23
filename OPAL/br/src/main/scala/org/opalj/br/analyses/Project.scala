@@ -709,8 +709,7 @@ class Project[Source] private (
      * are analyzed sequentially..
      */
     def parForeachMethod[T](
-        isInterrupted:        () ⇒ Boolean = defaultIsInterrupted,
-        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: Method ⇒ T
     ): Iterable[Throwable] = {

@@ -106,7 +106,7 @@ class CallBySignatureResolution private (
  */
 object CallBySignatureResolution {
 
-    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
+    def apply(project: SomeProject): CallBySignatureResolution = {
         new CallBySignatureResolution(project, project.get(PropertyStoreKey))
     }
 }

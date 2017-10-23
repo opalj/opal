@@ -360,23 +360,24 @@ sealed trait Chain[@specialized(Int) +T]
      * If this list is empty, the last element is null.
      */
     private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
-        val Nil = Naught
+        val Nil: Chain[X] = Naught
         if (isEmpty)
             return (this, null);
 
-        val result = new :&:[T](head, Nil)
+        val result = new :&:[X](head, Nil)
         var last = result
-        var rest: Chain[T] = this.tail
+        var rest: Chain[X] = this.tail
         while (rest.nonEmpty) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, Nil)
+            val newLast = new :&:[X](x, Nil)
             last.rest = newLast
             last = newLast
         }
-        (result, last.asInstanceOf[:&:[X]])
+        (result, last)
     }
 
+    // TODO Manually specialize Chain!
     def ++[X >: T](that: Chain[X]): Chain[X] = {
         if (that.isEmpty)
             return this;
@@ -388,15 +389,16 @@ sealed trait Chain[@specialized(Int) +T]
         head
     }
 
-    def ++[X >: T <: AnyRef](other: Traversable[X]): Chain[X] = {
+    // TODO Manually specialize Chain!
+    def ++[X >: T](other: Traversable[X]): Chain[X] = {
         if (other.isEmpty)
             return this;
 
-        val that = other.to[Chain]
+        val that = other.foldLeft(new Chain.ChainBuilder[X])(_ += _).result
         if (this.isEmpty)
             that
         else {
-            val (head, last) = copy[X]
+            val (head, last) = copy[X]()
             last.rest = that
             head
         }

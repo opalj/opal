@@ -38,7 +38,6 @@ import scala.language.existentials
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
