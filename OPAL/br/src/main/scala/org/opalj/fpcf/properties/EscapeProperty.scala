@@ -183,12 +183,35 @@ sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyName
         case _                        ⇒ EscapeProperty(flags | that.flags)
     }
 
+    /**
+     * Is this the bottom value of the lattice, i.e. [[GlobalEscape]], [[EscapeViaHeapObject]] or
+     * [[EscapeViaStaticField]].
+     */
     def isBottom: Boolean
 
+    /**
+     * Is this the top value of the lattice, i.e. [[NoEscape]].
+     */
     def isTop: Boolean
 
+    /**
+     * [[isRefineable]] properties can be at most refined to the property returned by this method.
+     * E.g. [[MaybeEscapeInCallee]] can be at most refined to [[EscapeInCallee]].
+     * For [[isFinal]] property, it simply returns the property itself.
+     */
     def atMost: EscapeProperty
 
+    /**
+     * The flags that characterizes the property. Used in the [[meet]] method.
+     * @see
+     *      [[EscapeProperty.EMPTY_FLAGS]]
+     *      [[EscapeProperty.IN_CALLEE]]
+     *      [[EscapeProperty.VIA_PARAMETER]]
+     *      [[EscapeProperty.VIA_ABNORMAL_RETURN]]
+     *      [[EscapeProperty.VIA_RETURN]]
+     *      [[EscapeProperty.GLOBAL]]
+     *      [[EscapeProperty.MAYBE]]
+     */
     protected val flags: Int
 
 }
@@ -199,7 +222,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
         Iterable(
             Result(
                 epks.head.e,
-                epks.foldLeft(MaybeNoEscape: EscapeProperty) {
+                epks.foldLeft(NoEscape: EscapeProperty) {
                     (escapeState, epk) ⇒
                         epk match {
                             case EPK(e, `key`) ⇒
@@ -257,6 +280,24 @@ object EscapeProperty extends EscapePropertyMetaInformation {
 /**
  * The object is accessible only from within the method of creation. Objects with this
  * escape level are also referred to as being method-local.
+ *
+ *  * @example
+ * Given the following code:
+ * {{{
+ * public class Circle{
+ *  public int area;
+ *  public final static int PI = 3;
+ *
+ *  public Circle(int radius){
+ *   this.area = PI*radius*radius;
+ *  }
+ *
+ *  public static int areaOfCircle(int r) {
+ *   Circle c = new Circle(3);        // ALLOCATION SITE
+ *   return c.area;
+ *  }
+ * }
+ * }}}
  *
  * @see [[EscapeProperty]] for further details.
  */
@@ -331,10 +372,12 @@ case object EscapeInCallee extends EscapeProperty {
 }
 
 /**
- * Characterizes escapes via an assignment to a field of a method parameter, where no caller let
- * this field escape globally. (It may additionally escape by other means too, but this property
- * was derived first. It must not be the case that an additional escape has the
- * property [[GlobalEscape]].)
+ * Characterizes escapes via an assignment to a field of a method parameter. It may also escape
+ * [[EscapeInCallee]].
+ * For a given entity this characterizes only the escape state within its method of creation (M),
+ * i.e. it could escape globally in a caller of M. As the actual parameter could escaped globally
+ * before the call of M, the entity could also be global within M. Analyses are expected to be
+ * context insensitive and do not check all callers of M.
  *
  * @example
  * Given the following code:
@@ -344,13 +387,8 @@ case object EscapeInCallee extends EscapeProperty {
  *  private void foo(X param) {
  *   param.f = new Object();        // ALLOCATION SITE
  *  }
- *  public void bar() {
- *   foo(new X());
- *  }
  * }
  * }}}
- * An analysis is only expected to return [[EscapeViaParameter]] for the object o
- * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object EscapeViaParameter extends EscapeProperty {
     final val isRefineable = false
@@ -379,28 +417,21 @@ case object EscapeViaParameter extends EscapeProperty {
 }
 
 /**
- * Characterizes escapes via a return statement, where no caller let this return value escape
- * globally. (It may additionally escape by other means too, but this property
- * was derived first. It must not be the case that an additional escape has the
- * property [[GlobalEscape]].)
+ * Characterizes escapes via a return statement. It may also escape [[EscapeInCallee]].
+ * For a given entity this characterizes only the escape state within its method of creation (M),
+ * i.e. it could escape globally in a caller of M.
  *
- * @note For escape characterization, a 'throw' statements is seen as a 'return' statement.
  * @example
  * Given the following code:
  * {{{
  * public class X{
  *  public Object f;
- *  private Object foo() {
+ *  public Object foo() {
  *   Object o = new Object();        // ALLOCATION SITE
  *   return o;
  *  }
- *  public void bar() {
- *   foo(); // do not use the return
- *  }
  * }
  * }}}
- * An analysis is only expected to return [[EscapeViaReturn]] for the object o
- * instantiated in foo, if the analyses knows(!) that foo is called only from bar.
  */
 case object EscapeViaReturn extends EscapeProperty {
     final val isRefineable = false
@@ -428,6 +459,26 @@ case object EscapeViaReturn extends EscapeProperty {
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN
 }
 
+/**
+ * Characterizes escapes via a throw statement. It may also escape [[EscapeInCallee]].
+ * For a given entity this characterizes only the escape state within its method of creation (M),
+ * i.e. it could escape globally in a caller of M.
+ *
+ * @example
+ * Given the following code:
+ * {{{
+ * public class X{
+ *  public Object f;
+ *  private Object foo() {
+ *   RuntimeException o = new RuntimeException();        // ALLOCATION SITE
+ *   throw o;
+ *  }
+ *  public void bar() {
+ *   foo();
+ *  }
+ * }
+ * }}}
+ */
 case object EscapeViaAbnormalReturn extends EscapeProperty {
     final val isRefineable = false
 
@@ -454,6 +505,9 @@ case object EscapeViaAbnormalReturn extends EscapeProperty {
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * Characterizes escapes that are [[EscapeViaParameter]] and [[EscapeViaReturn]].
+ */
 case object EscapeViaParameterAndReturn extends EscapeProperty {
     final val isRefineable = false
 
@@ -483,6 +537,9 @@ case object EscapeViaParameterAndReturn extends EscapeProperty {
         EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
 }
 
+/**
+ * Characterizes escapes that are [[EscapeViaParameter]] and [[EscapeViaAbnormalReturn]].
+ */
 case object EscapeViaParameterAndAbnormalReturn extends EscapeProperty {
     final val isRefineable = false
 
@@ -512,6 +569,9 @@ case object EscapeViaParameterAndAbnormalReturn extends EscapeProperty {
         EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * Characterizes escapes that are [[EscapeViaAbnormalReturn]] and [[EscapeViaReturn]].
+ */
 case object EscapeViaNormalAndAbnormalReturn extends EscapeProperty {
     final val isRefineable = false
 
@@ -540,6 +600,10 @@ case object EscapeViaNormalAndAbnormalReturn extends EscapeProperty {
     final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.VIA_RETURN
 }
 
+/**
+ * Characterizes escapes that are [[EscapeViaParameter]], [[EscapeViaAbnormalReturn]] and
+ * [[EscapeViaReturn]].
+ */
 case object EscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProperty {
     final val isRefineable = false
 
@@ -602,7 +666,7 @@ case object MaybeNoEscape extends EscapeProperty {
 
 /**
  * Used when the respective object instance definitively escapes, but the final –
- * not yet available – escape level may just be [[EscapeInCallee]].
+ * not yet available – escape level may just at most [[EscapeInCallee]].
  *
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
@@ -634,6 +698,13 @@ case object MaybeEscapeInCallee extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaParameter]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaParameter extends EscapeProperty {
     final val isRefineable = true
 
@@ -663,6 +734,13 @@ case object MaybeEscapeViaParameter extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaReturn]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaReturn extends EscapeProperty {
     final val isRefineable = true
 
@@ -692,6 +770,13 @@ case object MaybeEscapeViaReturn extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaAbnormalReturn]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaAbnormalReturn extends EscapeProperty {
     final val isRefineable = true
 
@@ -721,6 +806,13 @@ case object MaybeEscapeViaAbnormalReturn extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaParameterAndReturn]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaParameterAndReturn extends EscapeProperty {
     final val isRefineable = true
 
@@ -754,6 +846,13 @@ case object MaybeEscapeViaParameterAndReturn extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaParameterAndAbnormalReturn]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaParameterAndAbnormalReturn extends EscapeProperty {
     final val isRefineable = true
 
@@ -787,6 +886,13 @@ case object MaybeEscapeViaParameterAndAbnormalReturn extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaNormalAndAbnormalReturn]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaNormalAndAbnormalReturn extends EscapeProperty {
     final val isRefineable = true
 
@@ -820,6 +926,13 @@ case object MaybeEscapeViaNormalAndAbnormalReturn extends EscapeProperty {
     final val flags = EscapeProperty.MAYBE | EscapeProperty.IN_CALLEE | EscapeProperty.VIA_RETURN | EscapeProperty.VIA_ABNORMAL_RETURN
 }
 
+/**
+ * Used when the respective object instance definitively escapes, but the final –
+ * not yet available – escape level may just at most [[EscapeViaParameterAndNormalAndAbnormalReturn]].
+ *
+ * @see [[EscapeProperty]] for further details.
+ * @author Florian Kuebler
+ */
 case object MaybeEscapeViaParameterAndNormalAndAbnormalReturn extends EscapeProperty {
     final val isRefineable = true
 
@@ -887,6 +1000,10 @@ trait GlobalEscape extends EscapeProperty {
     override def atMost: EscapeProperty = this
 }
 
+/**
+ * The object escapes globally but the reason for this is not further specified, e.g. because it
+ * escapes via static field and a heap object.
+ */
 case object GlobalEscape extends GlobalEscape {
 
     final val PID = 18
@@ -899,8 +1016,7 @@ case object GlobalEscape extends GlobalEscape {
 }
 
 /**
- * The object is assigned to a (global) heap object. (It may additionally escape by other
- * means too, but this property was derived first.)
+ * The object is assigned to a (global) heap object.
  *
  * @example
  * Given the following code:
@@ -935,8 +1051,7 @@ case object EscapeViaHeapObject extends GlobalEscape {
 }
 
 /**
- * Characterizes escapes via the write to a static field. (It may additionally escape by other
- * means too, but this property was derived first.)
+ * Characterizes escapes via the write to a static field. (
  *
  * @example
  * Given the following code:
