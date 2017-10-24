@@ -206,7 +206,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         for {
             m ← FixtureProject.allMethodsWithBody
             (pc, as) ← allocationSites(m)
-            annotations = m.runtimeVisibleTypeAnnotations.filter { ta ⇒
+            annotations = m.runtimeInvisibleTypeAnnotations.filter { ta ⇒
                 ta.target match {
                     case TAOfNew(`pc`) ⇒ true
                     case _             ⇒ false
