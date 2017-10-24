@@ -1,6 +1,7 @@
 # Major Changes
 
 ## Upcomming
+ - we are now using Scala 2.12.4
  - added a method to reset a Project to its initial state (all information derived by analyses is thrown away)
  - added several type test/cast methods to Instruction to support cases where the type of an instruction is known from the context
  - added a new framework for testing properties derived using the `PropertiesStore`
@@ -15,6 +16,7 @@
  - fixed an infinite loop if a class file contains a "too small" unknown attribute and the reader (infinitely) waits for the next byte(s)
  - updated dependencies
  - removed support for setting the "isStrict" mode from AI (nowadays all VMs etc. perform all computations with asStrict semantics; we are now assuming everything is strict)
+ 
 
 ## 0.8.15 - Released Sep. 7th 2017
 **General**

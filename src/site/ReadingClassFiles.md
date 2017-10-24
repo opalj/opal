@@ -13,7 +13,7 @@ OPAL provides multiple different representations for Java class files to support
     import java.io.{DataInputStream, FileInputStream}
     import org.opalj.io.process
     import org.opalj.da.ClassFile
-    val classFileName = "OPAL/ai/target/scala-2.11/classes/org/opalj/ai/AI.class"
+    val classFileName = "OPAL/ai/target/scala-2.12/classes/org/opalj/ai/AI.class"
     val cfs : List[ClassFile] =
         process(new DataInputStream(new FileInputStream(classFileName))){ in =>
             org.opalj.da.ClassFileReader.ClassFile(in)
@@ -31,7 +31,7 @@ In most cases, an explicit representation of the constant pool actually complica
     import java.io.{DataInputStream, FileInputStream}
     import org.opalj.io.process
     import org.opalj.br.ClassFile // "br" instead of "da"
-    val classFileName = "OPAL/ai/target/scala-2.11/classes/org/opalj/ai/AI.class"
+    val classFileName = "OPAL/ai/target/scala-2.12/classes/org/opalj/ai/AI.class"
     val cfs : List[ClassFile] =
         process(new DataInputStream(new FileInputStream(classFileName))){ in =>
             org.opalj.br.reader.Java8Framework.ClassFile(in)
