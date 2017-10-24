@@ -86,6 +86,13 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
         implicit val logContext = project.logContext
 
+        val propertyStore = time {
+
+            PropertyStoreKey.makeAllocationSitesAvailable(project)
+            PropertyStoreKey.makeFormalParametersAvailable(project)
+            project.get(PropertyStoreKey)
+        } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
+
         // Get the TAC code for all methods to make it possible to measure the time for
         // the analysis itself.
         time {
@@ -95,9 +102,6 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             errors.foreach { e ⇒ error("progress", "generating 3-address code failed", e) }
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
-        PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeFormalParametersAvailable(project)
-        val propertyStore = project.get(PropertyStoreKey)
         time {
             SimpleEscapeAnalysis.start(project)
             propertyStore.waitOnPropertyComputationCompletion(
@@ -125,7 +129,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 |# of escaping objects via heap objects: ${countAS(propertyStore.entities(EscapeViaHeapObject))}
                 |# of global escaping objects: ${countAS(propertyStore.entities(GlobalEscape))}
                 |# of maybe local objects: ${countAS(propertyStore.entities(MaybeNoEscape))}
-                |# of objects maybe escaping in a callee: ${countAS(propertyStore.entities(EscapeInCallee))}
+                |# of objects maybe escaping in a callee: ${countAS(propertyStore.entities(MaybeEscapeInCallee))}
                 |# of maybe escaping objects via return: ${countAS(propertyStore.entities(MaybeEscapeViaReturn))}
                 |# of maybe escaping objects via abnormal return: ${countAS(propertyStore.entities(MaybeEscapeViaAbnormalReturn))}
                 |# of maybe escaping objects via parameter: ${countAS(propertyStore.entities(MaybeEscapeViaParameter))}
