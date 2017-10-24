@@ -105,10 +105,20 @@ def getScalariformPreferences(dir: File) = {
     PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
 }
 
+val localSbtFile = file("local.sbt")
+val rootSettingSets =
+    Seq(sbt.AddSettings.allDefaults) ++ (
+      if (localSbtFile.exists)
+          Seq(sbt.AddSettings.sbtFiles(localSbtFile))
+      else
+          Seq.empty
+      )
+
 lazy val opal = Project(
     id = "OPAL",
     base = file("."),
     settings = Defaults.coreDefaultSettings ++ Seq(publishArtifact := false))
+    .settingSets(rootSettingSets:_*)
     .enablePlugins(ScalaUnidocPlugin)
     .aggregate(
         common,
