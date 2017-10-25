@@ -33,6 +33,7 @@ package escape
 
 import scala.annotation.switch
 import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -92,7 +93,6 @@ import org.opalj.tac.StaticFunctionCall
  *
  * @define JustIntraProcedural ''This analysis only uses intra-procedural knowledge and does not
  *                             take the behavior of the called method into consideration.''
- *
  * @author Florian Kuebler
  */
 trait AbstractEntityEscapeAnalysis {
@@ -107,14 +107,12 @@ trait AbstractEntityEscapeAnalysis {
     val propertyStore: PropertyStore
     val m: Method
     val params: Parameters[TACMethodParameter]
-    val code: Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]]
+    val code: Array[Stmt[V]]
     val cfg: CFG
+    val aiResult: AIResult
 
     val e: Entity
     val uses: IntArraySet
-
-    var workset: IntArraySet = uses
-    var seen: IntArraySet = IntArraySet.empty
 
     //
     // STATE MUTATED WHILE ANALYZING THE METHOD
@@ -127,9 +125,7 @@ trait AbstractEntityEscapeAnalysis {
 
     def doDetermineEscape(): PropertyComputationResult = {
         // for every use-site, check its escape state
-        while (workset.nonEmpty) {
-
-            val use = workset.head; workset -= use; seen += use
+        for (use ← uses) {
             checkStmtForEscape(code(use))
         }
 
@@ -230,7 +226,7 @@ trait AbstractEntityEscapeAnalysis {
      * This analysis does not check whether the exception is caught or not.
      *
      * @see [[org.opalj.fpcf.analyses.escape.ExceptionAwareEntitiyEscapeAnalysis]] which overrides
-     *     this very simple behavior.
+     *      this very simple behavior.
      */
     protected def handleThrow(aThrow: Throw[V]): Unit = {
         if (usesDefSite(aThrow.exception))
@@ -268,9 +264,9 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit =
         /*
-         * In java bytecode we always have the pattern: X x = new X; x.init(...);
-         * So if the receiver is a use of our def site, NoEscape is still possible.
-         */
+     * In java bytecode we always have the pattern: X x = new X; x.init(...);
+     * So if the receiver is a use of our def site, NoEscape is still possible.
+     */
         if (anyParameterUsesDefSite(call.params))
             calcMostRestrictive(MaybeEscapeInCallee)
         else if (usesDefSite(call.receiver))
@@ -391,6 +387,14 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected[this] def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
         other match {
+            /*
+            case AllocationSite(_, _, _) ⇒ p match {
+                case GlobalEscape         ⇒ Result(e, GlobalEscape)
+                case EscapeViaStaticField ⇒ Result(e, EscapeViaHeapObject)
+                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
+                case NoEscape             ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
+                case _                    ⇒ removeFromDependeesAndComputeResult(other, MaybeNoEscape)
+            }*/
 
             // special handling for the this local of the constructor
             case FormalParameter(method, -1) if method.isConstructor ⇒ p match {
@@ -472,18 +476,23 @@ trait AbstractEntityEscapeAnalysis {
                 case EscapeViaReturn ⇒
                     // IMPROVE we do not further track the return value of the callee
                     val stmt = dependeeToStmt(other)
-                    stmt match {
-                        case Some(Assignment(_, tgt, _)) ⇒
-                            for (use ← tgt.usedBy) {
-                                if (!seen.contains(use)) {
-                                    workset += use
-                                }
+                    aiResult.domain match {
+                        case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
+                            stmt match {
+                                case Some(a) ⇒
+                                    //IMPROVE further track the value
+                                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+                                case None ⇒
+                                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
                             }
-                            defSite += code.indexOf(stmt)
-                            dependees = dependees filter (_.e ne other)
-                            doDetermineEscape()
-                        case _ ⇒ //TODO
-                            removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+                        case _: org.opalj.ai.domain.l1.ReferenceValues ⇒
+                            stmt match {
+                                case Some(a) ⇒
+                                    removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
+                                case None ⇒
+                                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                            }
+
                     }
 
                 case EscapeViaParameterAndAbnormalReturn | EscapeViaNormalAndAbnormalReturn |

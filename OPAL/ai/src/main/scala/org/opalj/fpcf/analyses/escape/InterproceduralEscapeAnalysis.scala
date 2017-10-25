@@ -34,6 +34,7 @@ package escape
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.AIResult
 import org.opalj.br.AllocationSite
 import org.opalj.br.Method
 import org.opalj.br.ExceptionHandlers
@@ -65,8 +66,6 @@ class InterproceduralEscapeAnalysis private (
         final val project: SomeProject
 ) extends AbstractEscapeAnalysis {
 
-    private[this] val tacaiProvider = project.get(DefaultTACAIKey)
-
     override def entityEscapeAnalysis(
         e:        Entity,
         defSite:  ValueOrigin,
@@ -75,9 +74,10 @@ class InterproceduralEscapeAnalysis private (
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
         handlers: ExceptionHandlers,
+        aiResult: AIResult,
         m:        Method
     ): AbstractEntityEscapeAnalysis =
-        new InterproceduralEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, m, propertyStore, project)
+        new InterproceduralEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
     /**
      * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes
@@ -93,7 +93,7 @@ class InterproceduralEscapeAnalysis private (
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, m)
+                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m)
                         case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
                             ImmediateResult(e, NoEscape)
                         case stmt ⇒
@@ -105,13 +105,13 @@ class InterproceduralEscapeAnalysis private (
             case FormalParameter(m, -1) ⇒
                 val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
-                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, m)
+                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, aiProvider(m), m)
             case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
                 Result(e, MaybeNoEscape)
             case FormalParameter(m, i) ⇒
                 val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, m)
+                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, aiProvider(m), m)
         }
     }
 }

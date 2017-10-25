@@ -33,6 +33,7 @@ package escape
 
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.TACMethodParameter
 import org.opalj.br.Method
@@ -80,9 +81,10 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
         handlers: ExceptionHandlers,
+        aiResult: AIResult,
         m:        Method
     ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, m, propertyStore, project)
+        new SimpleEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the
@@ -98,7 +100,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         e match {
             // for allocation sites, find the code containing the allocation site
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, cfg, handlers, _) = tacai(m)
+                val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
@@ -106,7 +108,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, m)
+                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m)
                         case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
                             ImmediateResult(e, NoEscape)
                         case stmt ⇒
@@ -115,9 +117,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, MaybeNoEscape)
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
-                val TACode(params, code, cfg, handlers, _) = tacai(m)
+                val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, m)
+                doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, aiProvider(m), m)
             case FormalParameter(_, _) ⇒ ImmediateResult(e, MaybeNoEscape)
         }
     }

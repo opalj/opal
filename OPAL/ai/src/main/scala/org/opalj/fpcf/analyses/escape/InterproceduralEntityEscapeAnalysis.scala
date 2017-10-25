@@ -32,6 +32,7 @@ package analyses
 package escape
 
 import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ReferenceType
 import org.opalj.br.Method
@@ -172,25 +173,25 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                 val methodO = project.instanceCall(m.classFile.thisType, valueType, name, descr)
                 checkParams(methodO, params, assignment)
                 if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
-
             } else {
-                // todo throw new NullPointerException()
+                // the receiver is null, the method is not invoked and the object does not escape
             }
+        } else if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo && AnalysisModes.isLibraryLike(project.analysisMode)) {
+            // the type of the virtual call is extensible and the analysis mode is library like
+            // therefore the method could be overriden and we do not know if the object escapes
+            // TODO: to optimize performance, we do not let the analysis run against the existing methods
+            calcMostRestrictive(MaybeEscapeInCallee)
         } else {
-            //TODO
-            if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo) {
-                calcMostRestrictive(MaybeEscapeInCallee)
-            } else {
-                val packageName = m.classFile.thisType.packageName
-                val methods =
-                    if (isI) project.interfaceCall(dc.asObjectType, name, descr)
-                    else project.virtualCall(packageName, dc, name, descr)
-                for (method ← methods) {
-                    checkParams(Success(method), params, assignment)
-                    if (usesDefSite(receiver))
-                        handleCall(Success(method), 0, assignment)
-                }
+            val packageName = m.classFile.thisType.packageName
+            val methods =
+                if (isI) project.interfaceCall(dc.asObjectType, name, descr)
+                else project.virtualCall(packageName, dc, name, descr)
+            for (method ← methods) {
+                checkParams(Success(method), params, assignment)
+                if (usesDefSite(receiver))
+                    handleCall(Success(method), 0, assignment)
             }
+
         }
     }
 
@@ -228,16 +229,23 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                             case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
                             case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
                             case EP(_, EscapeViaReturn) ⇒
-                                calcMostRestrictive(EscapeInCallee)
-                                assignment match {
-                                    case Some(a @ Assignment(_, tgt, _)) ⇒
-                                        for (use ← tgt.usedBy) {
-                                            if (!seen.contains(use)) {
-                                                workset += use
-                                            }
+                                aiResult.domain match {
+                                    case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
+                                        assignment match {
+                                            case Some(a) ⇒
+                                                //TODO further track the value
+                                                calcMostRestrictive(MaybeEscapeInCallee)
+                                            case None ⇒
+                                                calcMostRestrictive(EscapeInCallee)
                                         }
-                                        defSite += code.indexOf(a)
-                                    case None ⇒
+                                    case _: org.opalj.ai.domain.l1.ReferenceValues ⇒
+                                        assignment match {
+                                            case Some(a) ⇒
+                                                calcMostRestrictive(MaybeEscapeInCallee)
+                                            case None ⇒
+                                                calcMostRestrictive(EscapeInCallee)
+                                        }
+
                                 }
                             case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(MaybeEscapeInCallee)
                             case epk ⇒
@@ -253,16 +261,17 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
 }
 
 class InterproceduralEntityEscapeAnalysis(
-    val e:             Entity,
-    var defSite:       IntArraySet,
-    val uses:          IntArraySet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val cfg:           CFG,
-    val handlers:      ExceptionHandlers,
-    val m:             Method,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
+        val e:             Entity,
+        var defSite:       IntArraySet,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val cfg:           CFG,
+        val handlers:      ExceptionHandlers,
+        val aiResult:      AIResult,
+        val m:             Method,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
 ) extends InterproceduralEntityEscapeAnalysis1
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntitiyEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntitiyEscapeAnalysis

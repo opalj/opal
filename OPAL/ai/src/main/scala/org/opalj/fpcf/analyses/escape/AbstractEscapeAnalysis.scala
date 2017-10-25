@@ -33,6 +33,8 @@ package escape
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.AIResult
+import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ExceptionHandlers
@@ -72,6 +74,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
         handlers: ExceptionHandlers,
+        aiResult: AIResult,
         m:        Method
     ): AbstractEntityEscapeAnalysis
 
@@ -88,9 +91,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
         handlers: ExceptionHandlers,
+        aiResult: AIResult,
         m:        Method
     ): PropertyComputationResult = {
-        entityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, m).doDetermineEscape()
+        entityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m).doDetermineEscape()
     }
 
     /**
@@ -99,5 +103,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      */
     def determineEscape(e: Entity): PropertyComputationResult
 
-    val tacai: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
+    protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
+    protected[this] val aiProvider = project.get(SimpleAIKey)
 }

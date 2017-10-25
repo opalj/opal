@@ -32,12 +32,15 @@ package analyses
 package escape
 
 import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.AllocationSite
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.EmptyIntArraySet
@@ -79,20 +82,21 @@ import org.opalj.tac.Throw
  * @author Florian Kuebler
  */
 class SimpleEntityEscapeAnalysis(
-        val e:             Entity,
-        var defSite:       IntArraySet,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val m:             Method,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    var defSite:       IntArraySet,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val cfg:           CFG,
+    val handlers:      ExceptionHandlers,
+    val aiResult:      AIResult,
+    val m:             Method,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends AbstractEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntitiyEscapeAnalysis
 
 /**
  * Handling for exceptions, that are allocated within the current method.
@@ -178,15 +182,17 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                             /* as may alias information are not easily available we cannot simply
                             check for escape information of the base object */
                             calcMostRestrictive(MaybeNoEscape)
-                        /* val allocationSites =
+                        /*val allocationSites =
                                 propertyStore.context[AllocationSites]
                             val allocationSite = allocationSites(m)(pc)
                             val escapeState = propertyStore(allocationSite, EscapeProperty.key)
                             escapeState match {
-                                case EP(_, GlobalEscapeViaStaticFieldAssignment) ⇒ calcLeastRestrictive(GlobalEscapeViaHeapObjectAssignment)
-                                case EP(_, MethodEscapeViaReturn)                ⇒ calcLeastRestrictive(MethodEscapeViaReturnAssignment)
-                                case EP(_, p) if p.isFinal                       ⇒ calcLeastRestrictive(p)
-                                case _                                           ⇒ dependees += escapeState
+                                case EP(_, EscapeViaStaticField) ⇒ calcMostRestrictive(EscapeViaHeapObject)
+                                case EP(_, EscapeViaHeapObject)  ⇒ calcMostRestrictive(EscapeViaStaticField)
+                                case EP(_, GlobalEscape)         ⇒ calcMostRestrictive(GlobalEscape)
+                                case EP(_, NoEscape)             ⇒ calcMostRestrictive(NoEscape)
+                                case EP(_, p) if p.isFinal       ⇒ calcMostRestrictive(MaybeNoEscape)
+                                case _                           ⇒ dependees += escapeState
 
                             }*/
                         /* if the base object came from a static field, the value assigned to it
@@ -259,7 +265,7 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
         assert(usesDefSite(call.receiver))
 
         // the object constructor will not escape the this local
-        if (call.declaringClass != ObjectType.Object) {
+        if (call.declaringClass != ObjectType.Object && call.declaringClass != ObjectType.Throwable) {
 
             // resolve the constructor
             project.specialCall(
