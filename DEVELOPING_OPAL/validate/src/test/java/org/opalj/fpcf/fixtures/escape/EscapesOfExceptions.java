@@ -30,6 +30,7 @@ package org.opalj.fpcf.fixtures.escape;
 
 import org.opalj.fpcf.properties.escape.EscapeViaAbnormalReturn;
 import org.opalj.fpcf.properties.escape.EscapeViaStaticField;
+import org.opalj.fpcf.properties.escape.MaybeNoEscape;
 import org.opalj.fpcf.properties.escape.NoEscape;
 import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
@@ -51,11 +52,11 @@ public class EscapesOfExceptions {
     }
 
     public static int multipleExceptionsAllCatched(boolean b) throws Exception {
-        Exception e = null;
+        Exception e;
         if (b) {
             e = new @NoEscape("the exception is catched") IllegalArgumentException();
         } else {
-            e = new @NoEscape("the exception is catched") IllegalStateException();
+            e = new @NoEscape("the exception is also catched") IllegalStateException();
         }
         try {
             throw e;
@@ -100,7 +101,10 @@ public class EscapesOfExceptions {
     }
 
     public static void isThrownInConstructor() throws AnException{
-        new @EscapeViaAbnormalReturn("the exception is thrown in its constructor") AnException(true);
+        new
+                @MaybeNoEscape(value = "analyses do not track the abnormal return any further")
+                @EscapeViaAbnormalReturn(value = "the exception is thrown in its constructor", analyses = {})
+                        AnException(true);
     }
 
     static class AnException extends Exception {

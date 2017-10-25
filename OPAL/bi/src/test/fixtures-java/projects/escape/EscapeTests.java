@@ -42,19 +42,42 @@ public class EscapeTests {
     }
 
     public static int handlingReturnNoEscape() {
-        Object o = new @Escapes(InCallee) Object();
+        Object o = new
+                @Escapes(InCallee)
+                @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
+                        Object();
         Object x = formalParamReturnEscape(o);
         if (x == null) {
             return -1;
         }
         return 0;
     }
+
     public static void handlingReturnGlobalEscape() {
-        Object o = new @Escapes(ViaStaticField) Object();
+        Object o = new
+                @Escapes(ViaStaticField)
+                @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
+                        Object();
         Object x = formalParamReturnEscape(o);
         if (x != null) {
             ClassWithFields.global = x;
         }
+    }
+
+    public static void handlingReturnNotFurtherTracked() {
+        Object o = new
+                @Escapes(InCallee)
+                @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
+                        Object();
+        formalParamReturnEscape(o);
+    }
+
+    public static void handlingSometimesReturnGlobalEscape(boolean p) {
+        Object o = new @Escapes(ViaStaticField)
+        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
+                Object();
+        Object x = formalParamSometimesReturnEscape(p, o);
+        ClassWithFields.global = x;
     }
 
     public static Object multipleEscapes(ClassWithFields param) {
@@ -158,6 +181,17 @@ public class EscapeTests {
                         Object();
     }
 
+    public static void arrayGlobalEscape(int i) {
+        Object[] array = new Object[i + 1];
+        array[0] = new
+                @Escapes(ViaStaticField)
+                @Escapes(value = MaybeNo,
+                        algorithms = { "SimpleEscapeAnalysis",
+                                "InterproceduralEscapeAnalysis" })
+                        Object();
+        ClassWithFields.global = array[i];
+    }
+
     public static void arrayEscape(Object[] param) {
         if (param.length > 0)
             param[0] = new
@@ -234,7 +268,8 @@ public class EscapeTests {
         formalNonStaticParamEscape(
                 new
                         @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
+                        @Escapes(value = MaybeInCallee, algorithms = { "SimpleEscapeAnalysis",
+                                "InterproceduralEscapeAnalysis" })
                                 Object());
     }
 
@@ -242,7 +277,8 @@ public class EscapeTests {
         formalNonStaticParamEscapeWithReturn(
                 new
                         @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
+                        @Escapes(value = MaybeInCallee, algorithms = { "SimpleEscapeAnalysis",
+                                "InterproceduralEscapeAnalysis" })
                                 Object(),
                 new
                         @Escapes(InCallee)
@@ -300,6 +336,19 @@ public class EscapeTests {
                     Object param
     ) {
         return param;
+    }
+
+    public static Object formalParamSometimesReturnEscape(
+            boolean p,
+            @Escapes(ViaReturn)
+            @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
+                    Object param
+    ) {
+        if (p) {
+            return param;
+        } else {
+            return null;
+        }
     }
 
     public static void formalParamNoEscape(
