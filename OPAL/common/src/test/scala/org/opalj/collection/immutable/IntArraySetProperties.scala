@@ -202,10 +202,10 @@ object IntArraySetProperties extends Properties("IntArraySet") {
         (setHashCode == arraysHashCode) :| s"$setHashCode vs. $arraysHashCode ($fl1)"
     }
 
-    property("toIntIterator") = forAll { s1: Set[Int] ⇒
+    property("intIterator") = forAll { s1: Set[Int] ⇒
         val fl1 = IntArraySetBuilder(s1).result
         val flIt = fl1.iterator
-        val flIntIt = fl1.toIntIterator
+        val flIntIt = fl1.intIterator
         flIntIt.forall(i ⇒ flIt.next == i)
     }
 

@@ -55,6 +55,7 @@ sealed abstract class IntTrieSet
     private[immutable] def contains(value: Int, key: Int): Boolean = this.contains(value)
 }
 
+/** The (potential) leaves of an IntTrie. */
 private[immutable] abstract class IntTrieSetL extends IntTrieSet {
 
     final override private[immutable] def -(i: Int, key: Int): IntTrieSet = this.-(i)
@@ -78,7 +79,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def subsetOf(other: IntTrieSet): Boolean = true
     override def +(i: Int): IntTrieSet1 = new IntTrieSet1(i)
     override def iterator: Iterator[Int] = Iterator.empty
-    override def toIntIterator: IntIterator = IntIterator.empty
+    override def intIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
     override def exists(p: Int ⇒ Boolean): Boolean = false
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
@@ -118,7 +119,7 @@ case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override def -(i: Int): IntTrieSet = if (this.i != i) this else EmptyIntTrieSet
     override def +(i: Int): IntTrieSet = if (this.i == i) this else IntTrieSet2.from(this.i, i)
     override def iterator: Iterator[Int] = Iterator.single(i)
-    override def toIntIterator: IntIterator = IntIterator(i)
+    override def intIterator: IntIterator = IntIterator(i)
     override def subsetOf(other: IntTrieSet): Boolean = other.contains(i)
     override def contains(value: Int): Boolean = value == i
     override def exists(p: Int ⇒ Boolean): Boolean = p(i)
@@ -140,7 +141,7 @@ case class IntTrieSet1(i: Int) extends IntTrieSetL {
 }
 
 /**
- * Represents an orderd set of two values where i1 has to be smaller than i2.
+ * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] class IntTrieSet2 private[immutable] (
         i1: Int, i2: Int
@@ -166,7 +167,7 @@ private[immutable] class IntTrieSet2 private[immutable] (
             }
         }
     }
-    override def toIntIterator: IntIterator = IntIterator(i1, i2)
+    override def intIterator: IntIterator = IntIterator(i1, i2)
 
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = {
@@ -244,7 +245,7 @@ object IntTrieSet2 {
 }
 
 /**
- * Represents an orderd set of three int values: i1 < i2 < i3.
+ * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] class IntTrieSet3 private[immutable] (
         i1: Int, i2: Int, i3: Int
@@ -271,7 +272,7 @@ private[immutable] class IntTrieSet3 private[immutable] (
             }
         }
     }
-    override def toIntIterator: IntIterator = IntIterator(i1, i2, i3)
+    override def intIterator: IntIterator = IntIterator(i1, i2, i3)
 
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = {
@@ -499,14 +500,14 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     def -(i: Int): IntTrieSet = this.-(i, i)
 
-    def toIntIterator: IntIterator = {
+    def intIterator: IntIterator = {
         new IntIterator {
-            private[this] var it: IntIterator = left.toIntIterator
+            private[this] var it: IntIterator = left.intIterator
             private[this] var isRightIterator: Boolean = false
             private[this] def checkIterator(): Unit = {
                 if (!it.hasNext && !isRightIterator) {
                     isRightIterator = true
-                    it = right.toIntIterator
+                    it = right.intIterator
                 }
             }
 
@@ -519,7 +520,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     def iterator: Iterator[Int] = {
         new AbstractIterator[Int] {
-            private[this] val it = toIntIterator
+            private[this] val it = intIterator
             override def hasNext = it.hasNext
             override def next() = it.next
         }

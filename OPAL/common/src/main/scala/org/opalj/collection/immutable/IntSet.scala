@@ -41,8 +41,15 @@ trait IntSet[T <: IntSet[T]] { this: T ⇒
 
     def isEmpty: Boolean
     def nonEmpty: Boolean = !isEmpty
+    /** Tests if this set exactly one element (complexity: O(1)). */
     def isSingletonSet: Boolean
+    /** Tests if this set has more than one element (complexity: O(1)). */
     def hasMultipleElements: Boolean
+
+    /**
+     * The size of the set; may not be a constant operation; if possible use isEmpty, nonEmpty,
+     * etc.
+     */
     def size: Int
 
     def foreach[U](f: Int ⇒ U): Unit
@@ -79,16 +86,16 @@ trait IntSet[T <: IntSet[T]] { this: T ⇒
     }
 
     def iterator: Iterator[Int]
+    def intIterator: IntIterator
+    def toChain: Chain[Int]
     final def transform[B, To](f: Int ⇒ B, b: Builder[B, To]): To = {
         foreach(i ⇒ b += f(i))
         b.result()
     }
-    def toIntIterator: IntIterator
-    def toChain: Chain[Int]
 
     final def mkString(pre: String, in: String, post: String): String = {
         val sb = new StringBuilder(pre)
-        val it = toIntIterator
+        val it = intIterator
         var hasNext = it.hasNext
         while (hasNext) {
             sb.append(it.next.toString)

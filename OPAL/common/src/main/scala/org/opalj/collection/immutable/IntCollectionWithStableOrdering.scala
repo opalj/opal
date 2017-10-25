@@ -40,8 +40,8 @@ package immutable
 trait IntCollectionWithStableOrdering[T <: IntSet[T]] { this: T ⇒
 
     def subsetOf(other: T): Boolean = {
-        val thisIt = this.toIntIterator
-        val otherIt = other.toIntIterator
+        val thisIt = this.intIterator
+        val otherIt = other.intIterator
         while (thisIt.hasNext && otherIt.hasNext) {
             val thisV = thisIt.next()
             var otherV = otherIt.next()

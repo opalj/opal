@@ -76,7 +76,7 @@ case object EmptyIntArraySet extends IntArraySet {
     override def subsetOf(other: IntArraySet): Boolean = true
     override def +(i: Int): IntArraySet1 = new IntArraySet1(i)
     override def iterator: Iterator[Int] = Iterator.empty
-    override def toIntIterator: IntIterator = IntIterator.empty
+    override def intIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
     override def exists(p: Int ⇒ Boolean): Boolean = false
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
@@ -127,7 +127,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
             new IntArraySet2(i, thisI)
     }
     override def iterator: Iterator[Int] = Iterator.single(i)
-    override def toIntIterator: IntIterator = IntIterator(i)
+    override def intIterator: IntIterator = IntIterator(i)
     override def size: Int = 1
 
     override def contains(value: Int): Boolean = value == i
@@ -182,7 +182,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
             }
         }
     }
-    override def toIntIterator: IntIterator = {
+    override def intIterator: IntIterator = {
         new IntIterator {
             private[this] var i = 0
             def hasNext: Boolean = i < 2
@@ -288,7 +288,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
             }
         }
     }
-    override def toIntIterator: IntIterator = {
+    override def intIterator: IntIterator = {
         new IntIterator {
             private[this] var i = 0
             def hasNext: Boolean = i < 3
@@ -520,7 +520,7 @@ case class IntArraySetN private[immutable] (
     }
 
     override def iterator: Iterator[Int] = is.iterator
-    override def toIntIterator: IntIterator = {
+    override def intIterator: IntIterator = {
         new IntIterator {
             private[this] var i = 0
             def hasNext: Boolean = i < is.length
@@ -596,11 +596,11 @@ private[immutable] class FilteredIntArraySet(
         }
     }
 
-    override def toIntIterator: IntIterator = {
+    override def intIterator: IntIterator = {
         if (filteredS ne null) {
-            filteredS.toIntIterator
+            filteredS.intIterator
         } else {
-            origS.toIntIterator.filter(p)
+            origS.intIterator.filter(p)
         }
     }
 
@@ -629,9 +629,9 @@ private[immutable] class FilteredIntArraySet(
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = getFiltered.foreachPair(f)
 
     override def contains(value: Int): Boolean = p(value) && origS.contains(value)
-    override def exists(p: Int ⇒ Boolean): Boolean = toIntIterator.exists(p)
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = toIntIterator.foldLeft(z)(f)
-    override def forall(p: Int ⇒ Boolean): Boolean = toIntIterator.forall(p)
+    override def exists(p: Int ⇒ Boolean): Boolean = intIterator.exists(p)
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = intIterator.foldLeft(z)(f)
+    override def forall(p: Int ⇒ Boolean): Boolean = intIterator.forall(p)
 
     override def size: Int = getFiltered.size
     override def isSingletonSet: Boolean = getFiltered.isSingletonSet
@@ -644,7 +644,7 @@ private[immutable] class FilteredIntArraySet(
     override def getAndRemove: (Int, IntArraySet) = getFiltered.getAndRemove // TODO remove
     override def -(i: Int): IntArraySet = getFiltered - i
     override def +(i: Int): IntArraySet = getFiltered + 1
-    override def toChain: Chain[Int] = toIntIterator.toChain
+    override def toChain: Chain[Int] = intIterator.toChain
     override def equals(other: Any): Boolean = getFiltered.equals(other)
     override def hashCode: Int = getFiltered.hashCode
 }
