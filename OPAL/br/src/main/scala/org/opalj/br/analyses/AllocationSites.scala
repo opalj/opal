@@ -44,6 +44,9 @@ import org.opalj.log.OPALLogger
  * information regarding the concrete allocation site objects and their relation
  * to the underlying method.
  *
+ * @param  allocationsByType All allocation site of a specific reference type. Note, that
+ *         the value is effectively an array which does not support an efficient contains check!
+ *
  * @author Michael Eichberg
  * @author Florian Kübler
  */
@@ -56,13 +59,14 @@ class AllocationSites private[analyses] (
 ) extends AbstractIterable[AllocationSite] {
 
     // let's check if the data is as expected
-    assert(allocationsByType.values.forall(_.nonEmpty))
-    // let's check the inner consistency of the data
-    assert(
-        allocationsPerMethod.values.forall(_.values.forall { as ⇒
-            allocationsByType(as.allocatedType).contains(as)
-        })
-    )
+    assert(allocationsByType.valuesIterator.forall(_.nonEmpty))
+    assert(allocationsPerMethod.valuesIterator.forall(_.nonEmpty))
+    // let's check the inner consistency of the data ... it works, but it takes ages(!!!)
+    // assert(
+    //     allocationsPerMethod.values.forall(_.values.forall { as ⇒
+    //        allocationsByType(as.allocatedType).contains(as)
+    //    })
+    // )
 
     OPALLogger.info(
         "project",
@@ -96,6 +100,5 @@ class AllocationSites private[analyses] (
                 siteBasedIterator.next
             }
         }
-
     }
 }
