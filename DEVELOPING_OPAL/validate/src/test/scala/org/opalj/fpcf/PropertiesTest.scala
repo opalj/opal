@@ -48,6 +48,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.AllocationSite
 import org.opalj.br.TAOfNew
 import org.opalj.br.MethodWithBody
+import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
@@ -81,7 +82,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
-        val libraryClassFiles = /*ClassFiles(RTJar) ++*/ propertiesClassFiles
+        val libraryClassFiles = ClassFiles(RTJar) ++ propertiesClassFiles
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -198,7 +199,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             if annotations.nonEmpty
         } yield {
             val fp = formalParameters(m)(i + 1)
-            (fp, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+            (fp, (a: String) ⇒ s"FormalParameter: (${fp.origin} in ${m.toJava(s"@$a").substring(24)})", annotations)
         }
     }
 
@@ -216,7 +217,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             }
             if annotations.nonEmpty
         } yield {
-            (as, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+            (as, (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in ${m.toJava(s"@$a").substring(24)})", annotations)
         }
     }
 
