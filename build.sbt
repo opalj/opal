@@ -95,10 +95,7 @@ lazy val buildSettings =
         Seq(scalacOptions in(Compile, console) := Seq("-deprecation"))
 
 lazy val scalariformSettings = scalariformItSettings ++
-    Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
-    Seq(sourceDirectories.in(Compile, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
-    Seq(sourceDirectories.in(Test, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
-    Seq(sourceDirectories.in(IntegrationTest, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value)
+    Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
 
 def getScalariformPreferences(dir: File) = {
     val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
