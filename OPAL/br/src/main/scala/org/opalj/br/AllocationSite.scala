@@ -88,7 +88,7 @@ sealed abstract class AllocationSite {
         }
     }
 
-    final override def hashCode(): Int = method.hashCode() * 111 + pc
+    final override def hashCode: Int = method.hashCode * 111 + pc
 
     final override def toString: String = s"${kind.name}AllocationSite(${method.toJava("pc="+pc)})"
 
