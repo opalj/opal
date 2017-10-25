@@ -41,9 +41,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
-    def tag: Int = {
-        throw new UnknownError("the method \"def tag:Int\" needs to be implemented by subtypes")
-    }
+    def tag: Int = throw new UnknownError("tag not available")
 
     def asString: String = {
         throw new BytecodeProcessingFailedException(s"$this cannot be converted to string")

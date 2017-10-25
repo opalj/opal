@@ -43,6 +43,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
+import org.opalj.br.MethodAttributeBuilder
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is
@@ -63,7 +64,7 @@ class MethodBuilderTest extends FlatSpec {
                 METHOD(
                     FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                     CODE(ACONST_NULL, ARETURN),
-                    Seq(EXCEPTIONS("java/lang/Exception"), br.Deprecated)
+                    Seq[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
                 )
             )
         ).toDA()
@@ -124,51 +125,53 @@ class MethodBuilderTest extends FlatSpec {
             thisType = "AttributeMethodClass",
             methods = METHODS(
                 METHOD(
-                    PUBLIC, "<init>", "()V", CODE(
-                    LINENUMBER(0),
-                    ALOAD_0,
-                    LINENUMBER(1),
-                    INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                    'return,
-                    LINENUMBER(2),
-                    RETURN
-                ) MAXSTACK 2 MAXLOCALS 3
+                    PUBLIC, "<init>", "()V",
+                    CODE(
+                        LINENUMBER(0),
+                        ALOAD_0,
+                        LINENUMBER(1),
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        'return,
+                        LINENUMBER(2),
+                        RETURN
+                    ) MAXSTACK 2 MAXLOCALS 3
                 ),
                 METHOD(
-                    PUBLIC, "tryCatchFinallyTest", "(I)I", CODE(
-                    ICONST_1,
-                    ISTORE_2,
-                    TRY('Try1),
-                    TRY('FinallyTry2),
-                    TRY('LastPCTry3),
-                    ILOAD_1,
-                    IFGE('tryEnd),
-                    NEW("java/lang/Exception"),
-                    DUP,
-                    INVOKESPECIAL("java/lang/Exception", false, "<init>", "()V"),
-                    ATHROW,
-                    'tryEnd,
-                    TRYEND('Try1),
-                    GOTO('finally),
-                    CATCH('Try1, "java/lang/Exception"),
-                    POP,
-                    ICONST_0,
-                    ISTORE_2,
-                    TRYEND('FinallyTry2),
-                    GOTO('finally),
-                    CATCH('FinallyTry2),
-                    CATCH('LastPCTry3),
-                    POP,
-                    'finally,
-                    ILOAD_1,
-                    IFLE('return),
-                    ICONST_2,
-                    ISTORE_2,
-                    'return,
-                    ILOAD_2,
-                    IRETURN,
-                    TRYEND('LastPCTry3)
-                ) MAXLOCALS 3
+                    PUBLIC, "tryCatchFinallyTest", "(I)I",
+                    CODE(
+                        ICONST_1,
+                        ISTORE_2,
+                        TRY('Try1),
+                        TRY('FinallyTry2),
+                        TRY('LastPCTry3),
+                        ILOAD_1,
+                        IFGE('tryEnd),
+                        NEW("java/lang/Exception"),
+                        DUP,
+                        INVOKESPECIAL("java/lang/Exception", false, "<init>", "()V"),
+                        ATHROW,
+                        'tryEnd,
+                        TRYEND('Try1),
+                        GOTO('finally),
+                        CATCH('Try1, "java/lang/Exception"),
+                        POP,
+                        ICONST_0,
+                        ISTORE_2,
+                        TRYEND('FinallyTry2),
+                        GOTO('finally),
+                        CATCH('FinallyTry2),
+                        CATCH('LastPCTry3),
+                        POP,
+                        'finally,
+                        ILOAD_1,
+                        IFLE('return),
+                        ICONST_2,
+                        ISTORE_2,
+                        'return,
+                        ILOAD_2,
+                        IRETURN,
+                        TRYEND('LastPCTry3)
+                    ) MAXLOCALS 3
                 )
             )
         ).toDA()

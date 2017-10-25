@@ -77,8 +77,8 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: AnIntegerValue ⇒ true
-                case _                    ⇒ false
+                case _: AnIntegerValue ⇒ true
+                case _                 ⇒ false
             }
         }
 
@@ -114,7 +114,7 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
 
-                case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+                case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
 
                 case IntegerRange(otherLB, otherUB) ⇒
                     val thisLB = this.lowerBound

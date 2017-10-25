@@ -153,12 +153,10 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML: Seq[Node] = {
-        fields map { field ⇒ field.toXHTML(thisType) }
-    }
+    def fieldsToXHTML: Seq[Node] = fields.map { field ⇒ field.toXHTML }
 
     def methodsToXHTML: Seq[Node] = {
-        methods.zipWithIndex map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
+        methods.zipWithIndex.map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
     }
 
     protected def accessFlags: Node = {

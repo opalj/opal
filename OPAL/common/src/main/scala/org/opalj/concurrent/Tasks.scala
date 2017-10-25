@@ -130,7 +130,7 @@ final class ConcurrentTasks[T](
         try {
             executionContext.execute(runnable)
         } catch {
-            case t: Throwable ⇒
+            case _: Throwable ⇒
                 withLock(tasksLock) {
                     val newTasksCount = tasksCount - 1
                     tasksCount = newTasksCount

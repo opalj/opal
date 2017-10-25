@@ -74,8 +74,7 @@ case class Code(instructions: Array[Byte]) {
                     if (exceptionTable.nonEmpty)
                         Seq(
                             <th class="exception_header">Exceptions</th>
-                        ) ++ exceptionTable.tail.map(_ ⇒
-                                <th class="exception_header"></th>)
+                        ) ++ exceptionTable.tail.map(_ ⇒ <th class="exception_header"></th>)
                     else
                         scala.xml.NodeSeq.Empty
                 }

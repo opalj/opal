@@ -42,6 +42,10 @@ import org.opalj.collection.immutable.IntArraySet
  */
 abstract class ReturnInstruction extends Instruction with ConstantLengthInstruction {
 
+    final override def isReturnInstruction: Boolean = true
+
+    final override def asReturnInstruction: ReturnInstruction = this
+
     /**
      * @see [[ReturnInstruction$.jvmExceptions]]
      */
@@ -81,6 +85,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
 
     final def expressionResult: NoExpression.type = NoExpression
 
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**
@@ -93,18 +98,6 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
 object ReturnInstruction {
 
     val jvmExceptions = List(ObjectType.IllegalMonitorStateException)
-
-    @inline final def isReturnInstruction(instruction: Instruction): Boolean = {
-        (instruction.opcode: @switch) match {
-            case RETURN.opcode |
-                IRETURN.opcode |
-                LRETURN.opcode |
-                FRETURN.opcode |
-                DRETURN.opcode |
-                ARETURN.opcode ⇒ true
-            case _ ⇒ false
-        }
-    }
 
     def apply(theType: Type): ReturnInstruction = {
         (theType.id: @switch) match {
@@ -152,7 +145,7 @@ object ReturnInstructions {
         var returnPCs = IntArraySet.empty
         while (pc < max) {
             val instruction = instructions(pc)
-            if (ReturnInstruction.isReturnInstruction(instruction))
+            if (instruction.isReturnInstruction)
                 returnPCs += pc
             pc = instruction.indexOfNextInstruction(pc)(code)
         }

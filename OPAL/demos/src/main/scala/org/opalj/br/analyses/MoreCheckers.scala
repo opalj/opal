@@ -69,25 +69,25 @@ object MoreCheckers {
         println("Usage: java …Main <JAR file containing class files>+")
     }
 
-    val results = scala.collection.mutable.Map[String, List[Nanoseconds]]();
+    val results = scala.collection.mutable.Map[String, List[Nanoseconds]]()
 
     def collect(id: String, ns: Nanoseconds): Unit = {
-        print(id+", "+ns);
-        results.update(id, ns :: results.getOrElse(id, List()));
+        print(id+", "+ns)
+        results.update(id, ns :: results.getOrElse(id, List()))
     }
 
     def main(args: Array[String]): Unit = {
 
         if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".jar"))) {
-            printUsage
+            printUsage()
             sys.exit(1)
         }
 
         for (arg ← args) {
             val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println("The file: "+file+" cannot be read.");
-                printUsage
+            if (!file.canRead || file.isDirectory) {
+                println("The file: "+file+" cannot be read.")
+                printUsage()
                 sys.exit(1)
             }
         }

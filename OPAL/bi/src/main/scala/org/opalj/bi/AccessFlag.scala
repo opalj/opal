@@ -124,7 +124,7 @@ object VisibilityModifier {
         b: Option[VisibilityModifier]
     ): Boolean = {
         a match {
-            case a @ Some(ACC_PUBLIC)  ⇒ true
+            case Some(ACC_PUBLIC)      ⇒ true
             case Some(ACC_PROTECTED)   ⇒ b.isEmpty || b.get != ACC_PUBLIC
             case None                  ⇒ b.isEmpty || b.get == ACC_PRIVATE
             case a @ Some(ACC_PRIVATE) ⇒ b == a

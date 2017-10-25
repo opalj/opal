@@ -236,7 +236,7 @@ case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
 
 case class LocalvarTableEntry(start_pc: Int, length: Int, index: Int) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
+    def toXHTML(): Node = {
         <span>(start pc: { start_pc }, length: { length }, variable index: { index })</span>
     }
 
@@ -258,7 +258,12 @@ trait TATLocalvar extends TypeAnnotationTarget {
     def description: String
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(local variable occurences: { localvarTable.map(_.toXHTML(cp)) })</span>
+        <span class="type_annotation_target">
+            <i>{ description }[0x{ tag.toHexString }]</i>
+            (local variable occurences:
+            { localvarTable.map(_.toXHTML()) }
+            )
+        </span>
     }
 
 }

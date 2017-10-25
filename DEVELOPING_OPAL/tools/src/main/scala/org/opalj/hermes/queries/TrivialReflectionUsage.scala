@@ -60,15 +60,14 @@ object TrivialReflectionUsage extends FeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
         val Class = ObjectType.Class
-        val ForName1MD =
-            MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
+        val ForName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
         val ForName3MD =
             MethodDescriptor("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;")
 
         val trivialLocations = new LocationsContainer[S]
         val nontrivialLocations = new LocationsContainer[S]
 
-        val errors = project.parForeachMethodWithBody(isInterrupted = this.isInterrupted) { mi ⇒
+        val errors = project.parForeachMethodWithBody(isInterrupted = this.isInterrupted _) { mi ⇒
             val MethodInfo(source, m @ MethodWithBody(code)) = mi
             val classForNameCalls = code.collect {
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) ⇒ i

@@ -58,9 +58,9 @@ trait StructureIdentifier {
 
 case class TypeIdentifier(t: Type) extends StructureIdentifier {
 
-    def toHRR = t.toJava
+    def toHRR: String = t.toJava
 
-    def declaringPackage =
+    def declaringPackage: Option[String] =
         t match {
             case o: ObjectType ⇒ Some(o.packageName);
             case _             ⇒ None
@@ -74,14 +74,14 @@ case class MethodIdentifier(
 )
     extends StructureIdentifier {
 
-    def toHRR =
+    def toHRR: String =
         declaringReferenceType.toJava+"."+methodName+""+methodDescriptor.toUMLNotation
 
-    def declaringPackage =
+    def declaringPackage: Option[String] =
         declaringReferenceType match {
             case o: ObjectType            ⇒ Some(o.packageName);
             case ArrayType(o: ObjectType) ⇒ Some(o.packageName);
-            case a: ArrayType             ⇒ Some("java/lang"); // handles calls on Arrays of primitives
+            case _: ArrayType             ⇒ Some("java/lang"); // handles Arrays of primitives
             case _                        ⇒ None
         }
 }
@@ -92,7 +92,7 @@ case class FieldIdentifier(
 )
     extends StructureIdentifier {
 
-    def toHRR = declaringObjectType.toJava+"."+fieldName
+    def toHRR: String = declaringObjectType.toJava+"."+fieldName
 
     def declaringPackage = Some(declaringObjectType.packageName)
 }

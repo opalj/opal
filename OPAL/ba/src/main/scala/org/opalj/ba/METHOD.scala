@@ -71,10 +71,20 @@ object METHOD {
         accessModifiers: AccessModifier,
         name:            String,
         descriptor:      String,
-        code:            Option[br.CodeAttributeBuilder[T]] = None,
-        attributes:      Seq[br.MethodAttributeBuilder]     = Seq.empty
+        code:            Option[br.CodeAttributeBuilder[T]],
+        attributes:      Seq[br.MethodAttributeBuilder]
     ): METHOD[T] = {
         new METHOD(accessModifiers, name, descriptor, code, attributes)
+    }
+
+    def apply[T](
+        accessModifiers: AccessModifier,
+        name:            String,
+        descriptor:      String,
+        code:            br.CodeAttributeBuilder[T],
+        attributes:      Seq[br.MethodAttributeBuilder] = Seq.empty
+    ): METHOD[T] = {
+        new METHOD(accessModifiers, name, descriptor, Some(code), attributes)
     }
 
 }

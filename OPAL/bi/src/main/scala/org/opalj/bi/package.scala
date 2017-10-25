@@ -62,7 +62,7 @@ package object bi {
             assert(false)
             info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
-            case ae: AssertionError ⇒
+            case _: AssertionError ⇒
                 info("OPAL Bytecode Infrastructure", "Development Build with Assertions")
         }
     }
@@ -122,7 +122,7 @@ package object bi {
             }
         } catch {
             case t: Throwable ⇒
-                error("system configuration", s"could not interpret JRE version: $versionString")
+                error("system configuration", s"could not interpret JRE version: $versionString", t)
                 false
         }
     }

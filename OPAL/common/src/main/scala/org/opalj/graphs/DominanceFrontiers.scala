@@ -265,8 +265,9 @@ object DominanceFrontiers {
                             e
                     }
 
-                case dt: DominatorTree ⇒
+                case _: DominatorTree ⇒
                 //nothing special to do
+
                 case dt ⇒
                     org.opalj.log.OPALLogger.warn(
                         "computing dominance frontier",

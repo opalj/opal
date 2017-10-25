@@ -59,7 +59,8 @@ final class DominatorTree private (
  */
 object DominatorTree {
 
-    def fornone(g: Int ⇒ Unit): Unit = { /*nothing to do*/ }
+    // def fornone(g: Int ⇒ Unit): Unit = { /*nothing to do*/ }
+    final val fornone: (Int ⇒ Unit) ⇒ Unit = (_: Int ⇒ Unit) ⇒ {}
 
     /**
      * Convenience factory method for dominator trees; see

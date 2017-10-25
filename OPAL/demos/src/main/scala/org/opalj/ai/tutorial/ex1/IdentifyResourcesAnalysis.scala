@@ -78,7 +78,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         val callSites = time {
             (for {
                 cf ← theProject.allClassFiles.par
-                m @ MethodWithBody(body) ← cf.methods
+                (m, body) ← cf.methodsWithBody
             } yield {
                 val pcs =
                     body.collectWithIndex {

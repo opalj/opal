@@ -1823,7 +1823,7 @@ class ClassHierarchy private (
                     case (GenericTypeWithClassSuffix(containerType, elements, _), GenericType(superContainerType, superElements)) ⇒
                         compareSharedTypeArguments(containerType, elements, superContainerType, superElements)
 
-                    case (GenericTypeWithClassSuffix(containerType, typeArguments, suffix), GenericTypeWithClassSuffix(superContainerType, supertypeArguments, superSuffix)) ⇒ {
+                    case (GenericTypeWithClassSuffix(containerType, _ /*typeArguments*/ , suffix), GenericTypeWithClassSuffix(superContainerType, _ /*supertypeArguments*/ , superSuffix)) ⇒ {
                         compareSharedTypeArguments(containerType, subtype.classTypeSignatureSuffix.last.typeArguments,
                             superContainerType, supertype.classTypeSignatureSuffix.last.typeArguments) match {
                             case Yes ⇒ compareTypeArgumentsOfClassSuffixes(suffix.dropRight(1), superSuffix.dropRight(1)) match {

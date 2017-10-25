@@ -709,8 +709,7 @@ class Project[Source] private (
      * are analyzed sequentially..
      */
     def parForeachMethod[T](
-        isInterrupted:        () ⇒ Boolean = defaultIsInterrupted,
-        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
+        isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: Method ⇒ T
     ): Iterable[Throwable] = {
@@ -1623,7 +1622,7 @@ object Project {
             import scala.collection.mutable.Set
             import scala.concurrent.{Future, Await, ExecutionContext}
             import scala.concurrent.duration.Duration
-            import ExecutionContext.Implicits.global
+            import ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 time {
@@ -1640,7 +1639,6 @@ object Project {
                             info("project configuration", "JDK classes not found "+alternative)
                             ClassHierarchy.defaultTypeHierarchyDefinitions
                         }
-
                     ClassHierarchy(
                         projectClassFilesWithSources.view.map(_._1) ++
                             libraryClassFilesWithSources.view.map(_._1) ++
@@ -1650,7 +1648,7 @@ object Project {
                 } { t ⇒
                     info("project setup", s"computing type hierarchy took ${t.toSeconds}")
                 }
-            }
+            }(ScalaExecutionContext)
 
             var projectClassFiles = List.empty[ClassFile]
             val projectTypes = Set.empty[ObjectType]
@@ -1668,10 +1666,7 @@ object Project {
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
             val sources = OpenHashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
 
-            def processProjectClassFile(
-                classFile: ClassFile,
-                source:    Option[Source]
-            ): Unit = {
+            def processProjectClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
                 val projectType = classFile.thisType
                 if (projectTypes.contains(projectType)) {
                     handleInconsistentProject(
@@ -1722,7 +1717,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${libraryType.toJava} is defined by the project and a library: "+
-                                sources.get(libraryType).getOrElse("<VIRTUAL>")+" and "+
+                                sources.getOrElse(libraryType, "<VIRTUAL>")+" and "+
                                 source.toString+"; keeping the project class file."
                         )
                     )

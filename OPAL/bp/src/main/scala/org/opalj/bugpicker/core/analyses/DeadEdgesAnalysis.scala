@@ -31,28 +31,32 @@ package bugpicker
 package core
 package analyses
 
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
-import org.opalj.ai.BaseAI
-import org.opalj.ai.Domain
 import org.opalj.br.Code
-import org.opalj.ai.domain.l0.ZeroDomain
 import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.RET
-import org.opalj.ai.AIResult
-import org.opalj.ai.domain.RecordCFG
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.ReturnInstruction
-import org.opalj.br.PC
-import org.opalj.br.instructions.GotoInstruction
-import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW
-import org.opalj.ai.domain.Origin
-import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.PopInstruction
+import org.opalj.br.instructions.GotoInstruction
+import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
+import org.opalj.ai.domain.l0.ZeroDomain
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
+import org.opalj.ai.domain.Origin
+import org.opalj.ai.analyses.cg.Callees
 import org.opalj.issues.Issue
 import org.opalj.issues.InstructionLocation
 import org.opalj.issues.IssueOrdering
@@ -63,10 +67,6 @@ import org.opalj.issues.LocalVariables
 import org.opalj.issues.Relevance
 import org.opalj.issues.MethodReturnValues
 import org.opalj.issues.FieldValues
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.analyses.cg.Callees
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.Chain
 
 /**
  * Identifies dead edges in code.
@@ -113,7 +113,7 @@ object DeadEdgesAnalysis {
                     //     /*return|athrow*/ handleException(e);
                     // }
                     callees.head.body.map(code ⇒ !code.exists { (pc, i) ⇒
-                        ReturnInstruction.isReturnInstruction(i)
+                        i.isReturnInstruction
                     }).getOrElse(false)
 
                 case _ ⇒
@@ -189,7 +189,7 @@ object DeadEdgesAnalysis {
             if opcode != ATHROW.opcode
 
             // Let's check if a path is never taken:
-            (nextPC: PC) ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
+            nextPC ← instruction.nextInstructions(pc, regularSuccessorsOnly = true).toIterator
             if !regularSuccessorsOf(pc).contains(nextPC)
 
             // If we are in a subroutine, we don't have sufficient information
@@ -220,7 +220,7 @@ object DeadEdgesAnalysis {
                 val finallyHandler = mostSpecificFinallyHandlerOfPC(pc)
                 val lvIndex = lvIndexOption.get
                 val correspondingPCs = body.collectWithIndex {
-                    case (otherPC, cbi: ConditionalBranchInstruction) if otherPC != pc &&
+                    case (otherPC, _: ConditionalBranchInstruction) if otherPC != pc &&
                         (operandsArray(otherPC) ne null) &&
                         (operandsArray(otherPC).head eq localsArray(otherPC)(lvIndex)) &&
                         body.haveSameLineNumber(pc, otherPC).getOrElse(true) &&

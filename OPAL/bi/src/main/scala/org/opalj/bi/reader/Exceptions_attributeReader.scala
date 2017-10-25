@@ -68,12 +68,12 @@ trait Exceptions_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Exceptions_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt()
         val number_of_exceptions = in.readUnsignedShort
         if (number_of_exceptions > 0 || reifyEmptyAttributes) {
@@ -86,6 +86,5 @@ trait Exceptions_attributeReader extends AttributeReader {
             null
     }
 
-    registerAttributeReader(ExceptionsAttribute.Name → parser)
+    registerAttributeReader(ExceptionsAttribute.Name → parserFactory())
 }
-

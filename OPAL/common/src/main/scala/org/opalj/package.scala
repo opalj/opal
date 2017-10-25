@@ -95,7 +95,7 @@ package object opalj {
             // when we reach this point assertions are turned off
             info("OPAL Common", "Production Build")
         } catch {
-            case ae: AssertionError ⇒ info("OPAL Common", "Development Build with Assertions")
+            case _: AssertionError ⇒ info("OPAL Common", "Development Build with Assertions")
         }
     }
 

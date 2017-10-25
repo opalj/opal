@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
 import scala.xml.Node
 
 import org.opalj.collection.immutable.{Chain ⇒ List}

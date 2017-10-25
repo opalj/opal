@@ -1,7 +1,7 @@
 reset_minion: true
 language: scala
 scala:
-   - 2.11.11
+   - 2.12.2
 jdk:
   - oraclejdk8
 
@@ -17,7 +17,7 @@ script:
 
 after_script:
   - mkdir -p shippable/codecoverage
-  - mv target/scala-2.11/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
+  - mv target/scala-2.12/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
 
 notifications:
   email:

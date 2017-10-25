@@ -81,12 +81,12 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): InnerClasses_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt()
         val number_of_classes = in.readUnsignedShort
         if (number_of_classes > 0 || reifyEmptyAttributes) {
@@ -106,5 +106,5 @@ trait InnerClasses_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(InnerClassesAttribute.Name → parser)
+    registerAttributeReader(InnerClassesAttribute.Name → parserFactory())
 }

@@ -80,7 +80,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+                case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
 
                 case that: BaseTypesBasedSet ⇒
                     // every base types based set is necessarily larger, because the
@@ -161,7 +161,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             other match {
-                case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+                case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
 
                 case that: BaseTypesBasedSet ⇒
                     val thisLB = this.lb
