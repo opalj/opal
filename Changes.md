@@ -1,6 +1,9 @@
 # Major Changes
 
 ## Upcomming
+
+## 1.0.0 - Released Oct. 25th 2017
+ - *we are now using Scala 2.12.x*
  - added a method to reset a Project to its initial state (all information derived by analyses is thrown away)
  - added several type test/cast methods to Instruction to support cases where the type of an instruction is known from the context
  - added a new framework for testing properties derived using the `PropertiesStore`
@@ -8,7 +11,7 @@
  - improved handling of exceptions in TACAI
  - improved the framework for computing control-dependency information
  - improved the precision and soundness of the FieldMutabilityAnalysis
- - fixed an off-by-one-error in computeMaxLocals 
+ - fixed an off-by-one-error in computeMaxLocals
  - fixed the recording of def-use information when the execution of a regular instruction (not `athrow`) *always* results in an exception (This also affected the generation of the 3-address code; in the 3-address code this resulted in local variable usage which had no definition site.)
  - fixed the handling of exceptions by the data-flow framework if the exceptions hierarchy is not completely known
  - fixed an issue related to cyclic jumps; i.e. goto instructions which form a loop (notably x: goto x;)
