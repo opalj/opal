@@ -31,7 +31,10 @@ package org.opalj.fpcf.analyses
 import java.net.URL
 
 import org.opalj.AnalysisModes
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.ObjectType
+import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
@@ -61,6 +64,12 @@ class InterproceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
      * stores created with the PropertyStoreKey.
      */
     override def init(): Unit = {
+        project.getOrCreateProjectInformationKeyInitializationData(
+            SimpleAIKey,
+            (m: Method) ⇒ {
+                new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding
+            }
+        )
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
     }
