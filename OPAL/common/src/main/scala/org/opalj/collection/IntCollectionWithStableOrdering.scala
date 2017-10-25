@@ -28,7 +28,6 @@
  */
 package org.opalj
 package collection
-package immutable
 
 /**
  * Can be mixed in if the iteration order of the underlying data-structure is independent
@@ -45,7 +44,7 @@ trait IntCollectionWithStableOrdering[T <: IntSet[T]] { this: T ⇒
         while (thisIt.hasNext && otherIt.hasNext) {
             val thisV = thisIt.next()
             var otherV = otherIt.next()
-            while (otherV != thisV && otherIt.hasNext) { otherV = otherIt.next() };
+            while (otherV != thisV && otherIt.hasNext) { otherV = otherIt.next() }
             if (thisV != otherV)
                 return false;
         }

@@ -28,9 +28,10 @@
  */
 package org.opalj
 package collection
-package immutable
 
 import scala.collection.mutable.Builder
+
+import org.opalj.collection.immutable.Chain
 
 /**
  * A set of integer values.
