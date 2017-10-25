@@ -863,9 +863,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     checkPrecisionAndNullness(that) &&
                         isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound).isYes
 
-                case that: NullValue ⇒
-                    this.isNull.isUnknown
-
                 case that: ArrayValue ⇒
                     checkPrecisionAndNullness(that) &&
                         isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound).isYes
@@ -880,8 +877,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     checkPrecisionAndNullness(that) &&
                         classHierarchy.isSubtypeOf(thatUTB, thisUTB).isYes
 
-                case _ ⇒
-                    false
+                case _: NullValue ⇒ this.isNull.isUnknown
+
+                case _            ⇒ false
             }
         }
 

@@ -67,6 +67,8 @@ trait ArithmeticInstruction extends Instruction {
      * not all bits are taken into account.
      */
     def isShiftInstruction: Boolean
+
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**

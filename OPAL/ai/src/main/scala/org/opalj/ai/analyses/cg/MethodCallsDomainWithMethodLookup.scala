@@ -189,7 +189,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() = {
+        def fallback(): MethodCallResult = {
             super.invokevirtual(pc, declaringType, name, descriptor, operands)
         }
 
@@ -197,7 +197,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
             fallback()
         else
             doVirtualInvoke(
-                pc, declaringType.asObjectType, false, name, descriptor, operands, fallback
+                pc, declaringType.asObjectType, false, name, descriptor, operands, fallback _
             )
     }
 
@@ -209,11 +209,11 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() = {
+        def fallback(): MethodCallResult = {
             super.invokeinterface(pc, declaringType, name, descriptor, operands)
         }
 
-        doVirtualInvoke(pc, declaringType, true, name, descriptor, operands, fallback)
+        doVirtualInvoke(pc, declaringType, true, name, descriptor, operands, fallback _)
     }
 
     abstract override def invokespecial(
@@ -225,7 +225,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() = {
+        def fallback(): MethodCallResult = {
             super.invokespecial(
                 pc,
                 declaringType, isInterface, name, descriptor,
@@ -234,7 +234,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         }
 
         doNonVirtualInvoke(
-            pc, declaringType, isInterface, name, descriptor, operands, fallback
+            pc, declaringType, isInterface, name, descriptor, operands, fallback _
         )
     }
 
@@ -252,7 +252,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands:      Operands
     ): MethodCallResult = {
 
-        def fallback() = {
+        def fallback(): MethodCallResult = {
             super.invokestatic(
                 pc,
                 declaringType, isInterface, name, descriptor,
@@ -260,7 +260,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
             )
         }
 
-        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback)
+        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback _)
     }
 
 }

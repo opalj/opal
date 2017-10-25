@@ -30,7 +30,6 @@ package org.opalj
 package av
 package checking
 
-import scala.language.existentials
 import scala.Console.{RED, BLUE, RESET, BOLD}
 import org.opalj.br._
 import org.opalj.de._

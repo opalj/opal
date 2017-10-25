@@ -129,7 +129,7 @@ class BaseFieldValuesAnalysisDomain(
         val refinedFields =
             for {
                 field ← classFile.fields
-                Some(fieldValue: ReferenceValue) ← fieldInformation.get(field.name)
+                Some(DomainReferenceValue(fieldValue)) ← fieldInformation.get(field.name)
                 upperTypeBound = fieldValue.upperTypeBound
                 // we filter those fields that are known to be "null" (the upper
                 // type bound is empty), because some of them

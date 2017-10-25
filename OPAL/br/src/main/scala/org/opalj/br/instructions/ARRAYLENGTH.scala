@@ -83,4 +83,5 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final def expressionResult: Stack.type = Stack
 
+    final override def toString(currentPC: Int): String = toString()
 }

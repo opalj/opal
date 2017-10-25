@@ -13,8 +13,7 @@ organization	in ThisBuild := "de.opal-project"
 homepage 		in ThisBuild := Some(url("http://www.opal-project.de/"))
 licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 version 		in ThisBuild := "1.3.0-Snapshot"
-scalaVersion 	in ThisBuild := "2.11.11"
-
+scalaVersion 	in ThisBuild := "2.12.4"
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.ManagedClasses
 EclipseKeys.eclipseOutput := Some(".target")
@@ -43,10 +42,7 @@ lazy val buildSettings = Defaults.coreDefaultSettings ++
 	scalariformItSettings ++
 	Seq(ScalariformKeys.preferences := baseDirectory.apply(getScalariformPreferences).value) ++
 	Seq(Defaults.itSettings : _*) ++
-	Seq(libraryDependencies ++= Seq(
-		"de.opal-project" %% "bugpicker-core" % "0.9.0-SNAPSHOT",
-		"de.opal-project" %% "bytecode-disassembler" % "0.9.0-SNAPSHOT"
-	)) ++
+	Seq(libraryDependencies ++= Dependencies.buildlevel) ++
 	Seq(resolvers ++= Seq(
 		"Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 	))
@@ -69,7 +65,7 @@ lazy val ui = Project(
 			JFX.addJfxrtToClasspath := true
 		) ++
 		Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
-		Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.144-R12") ++
+		Seq(libraryDependencies ++= Dependencies.ui) ++
 		Seq(
 			resourceGenerators in Compile += resGenerator.taskValue
 		)

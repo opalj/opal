@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.Date
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConversions
+import scala.collection.JavaConverters._
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -51,7 +51,6 @@ import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
@@ -217,7 +216,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
+        val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted _
 
         val filteredResults = new ConcurrentLinkedQueue[Issue]()
         val issuesPackageFilterString = config.as[String]("org.opalj.bugpicker.issues.packages")
@@ -239,7 +238,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                             true
                     }
                 }
-                filteredResults.addAll(JavaConversions.asJavaCollection(filteredIssues))
+                filteredResults.addAll(filteredIssues.asJavaCollection)
             }
         }
 
@@ -430,7 +429,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     // Analyses of the methods
                     // ---------------------------------------------------------------------------
 
-                    for (method @ MethodWithBody(body) ← classFile.methods) {
+                    for (method ← classFile.methods; body ← method.body) {
                         try {
                             analyzeMethod(method, body)
                         } catch {
@@ -457,7 +456,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     progressManagement.end(stepId)
                 }
             }
-            JavaConversions.collectionAsScalaIterable(filteredResults).toSeq
+            filteredResults.asScala.toSeq
         } { t ⇒ analysisTime = t }
 
         OPALLogger.info(

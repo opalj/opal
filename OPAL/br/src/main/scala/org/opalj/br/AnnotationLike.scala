@@ -27,52 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bi
-package reader
-
-import java.io.DataInputStream
+package br
 
 /**
- * Defines a template method to read in a constant value attribute.
+ * An annotation of a code entity.
  *
- * '''From the Specification'''
- *
- * The ConstantValue attribute is a fixed-length attribute in the attributes
- * table of a field_info structure.
- *
- * <pre>
- * ConstantValue_attribute {
- *  u2 attribute_name_index;
- *  u4 attribute_length;
- *  u2 constantvalue_index;
- * }
- * </pre>
+ * Annotations are associated with a class, field, method, type etc. using the respective
+ * attributes.
  *
  * @author Michael Eichberg
  */
-trait ConstantValue_attributeReader extends AttributeReader {
+abstract class AnnotationLike {
 
-    type ConstantValue_attribute <: Attribute
+    def annotationType: FieldType
 
-    def ConstantValue_attribute(
-        constant_pool:        Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        constantvalue_index:  Constant_Pool_Index
-    ): ConstantValue_attribute
+    def elementValuePairs: ElementValuePairs
 
-    //
-    // IMPLEMENTATION
-    //
-
-    private[this] def parserFactory() = (
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) ⇒ {
-        /*val attribute_length =*/ in.readInt
-        ConstantValue_attribute(cp, attribute_name_index, in.readUnsignedShort)
-    }
-
-    registerAttributeReader(ConstantValueAttribute.Name → parserFactory())
 }

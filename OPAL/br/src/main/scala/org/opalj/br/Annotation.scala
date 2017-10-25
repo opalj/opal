@@ -46,7 +46,7 @@ package br
 case class Annotation(
         annotationType:    FieldType,
         elementValuePairs: ElementValuePairs = IndexedSeq.empty
-) {
+) extends AnnotationLike {
 
     def similar(other: Annotation): Boolean = {
         (this.annotationType eq other.annotationType) &&

@@ -145,7 +145,9 @@ object PropertyStoreKey
             getProjectInformationKeyInitializationData(this).
             getOrElse(defaultEntityDerivationFunctions(project))
 
-        var context: List[PropertyStoreContext[AnyRef]] = Nil
+        var context: List[PropertyStoreContext[AnyRef]] = List(
+            PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
+        )
         val entities = entityDerivationFunctions.asScala.flatMap { edf ⇒
             val (entities, ctxKey, ctxValue) = edf()
             if (ctxKey != typeOf[Nothing]) {

@@ -265,12 +265,18 @@ object Hermes extends JFXApp with HermesCore {
                     None
                 }
             }
-            solution onSuccess {
-                case Some(result) ⇒
+            solution.onComplete {
+                case scala.util.Success(Some(result)) ⇒
                     Platform.runLater { solutionTextArea.text = result }
                     if (!aborted) computeSolutions()
-                case None ⇒
+                case scala.util.Success(None) ⇒
                     Platform.runLater { contentNode.getChildren.remove(solverProgressBar) }
+
+                case scala.util.Failure(e) ⇒
+                    Platform.runLater {
+                        solutionTextArea.text = "Computation failed:\n"+e.getMessage
+                        contentNode.getChildren.remove(solverProgressBar)
+                    }
             }
         }
         computeSolutions()

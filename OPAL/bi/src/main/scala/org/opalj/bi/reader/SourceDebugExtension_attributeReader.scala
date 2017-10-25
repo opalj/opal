@@ -65,12 +65,12 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): SourceDebugExtension_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         val attribute_length = in.readInt
         val data = new Array[Byte](attribute_length)
         in.readFully(data)
@@ -78,7 +78,6 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         SourceDebugExtension_attribute(cp, attribute_name_index, data)
     }
 
-    registerAttributeReader(SourceDebugExtensionAttribute.Name → parser)
+    registerAttributeReader(SourceDebugExtensionAttribute.Name → parserFactory())
 
 }
-

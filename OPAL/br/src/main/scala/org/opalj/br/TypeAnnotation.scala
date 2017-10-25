@@ -78,7 +78,7 @@ case class TypeAnnotation(
         path:              TypeAnnotationPath,
         annotationType:    FieldType,
         elementValuePairs: ElementValuePairs
-)
+) extends AnnotationLike
 
 case class TAOfCastExpression(
         offset:              Int,
