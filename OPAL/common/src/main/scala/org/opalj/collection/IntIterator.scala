@@ -137,6 +137,18 @@ trait IntIterator { self ⇒
         b.result
     }
 
+    def mkString(pre: String, in: String, post: String): String = {
+        val sb = new StringBuilder(pre)
+        var hasNext = this.hasNext
+        while (hasNext) {
+            sb.append(this.next().toString)
+            hasNext = this.hasNext
+            if (hasNext) sb.append(in)
+        }
+        sb.append(post)
+        sb.toString()
+    }
+
 }
 
 object IntIterator {
