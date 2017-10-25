@@ -47,6 +47,7 @@ import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
 import org.opalj.br.AllocationSite
 import org.opalj.br.TAOfNew
+import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
@@ -204,9 +205,10 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def allocationSitesWithAnnotations: Traversable[(AllocationSite, String ⇒ String, Traversable[AnnotationLike])] = {
         val allocationSites: AllocationSites = FixtureProject.get(AllocationSitesKey)
         for {
-            m ← FixtureProject.allMethodsWithBody
+            cf ← FixtureProject.allClassFiles
+            m @ MethodWithBody(code) ← cf.methods
             (pc, as) ← allocationSites(m)
-            annotations = m.runtimeInvisibleTypeAnnotations.filter { ta ⇒
+            annotations = code.runtimeInvisibleTypeAnnotations filter { ta ⇒
                 ta.target match {
                     case TAOfNew(`pc`) ⇒ true
                     case _             ⇒ false
