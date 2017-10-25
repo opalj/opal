@@ -30,12 +30,11 @@
 import sbt._
 
 /**
-  * Manages the library dependencies of the subprojects of OPAL.
-  *
-  * @author Simon Leischnig
-  */
+ * Manages the library dependencies of the subprojects of OPAL.
+ *
+ * @author Simon Leischnig
+ */
 object Dependencies {
-
 
     lazy val version = new {
         val junit = "4.12"
@@ -45,9 +44,8 @@ object Dependencies {
         val scalaxml = "1.0.6"
         val playjson = "2.6.6"
         val ficus = "1.4.2"
-
-        val apachetext = "1.1"
-        val parsercombinators = "1.0.6"
+        val commonstext = "1.1"
+        val scalaparsercombinators = "1.0.6"
 
         val scalafx = "8.0.144-R12"
         val controlsfx = "8.40.14"
@@ -56,7 +54,7 @@ object Dependencies {
         val chocosolver = "4.0.5"
     }
 
-    lazy val library = new  {
+    lazy val library = new {
 
         // --- test libraries
 
@@ -71,17 +69,16 @@ object Dependencies {
         val playjson = "com.typesafe.play" %% "play-json" % version.playjson
         val ficus = "com.iheart" %% "ficus" % version.ficus
 
-        val commonstext = "org.apache.commons" % "commons-text" % version.apachetext
-        val scalaparsercombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % version.parsercombinators
+        val commonstext = "org.apache.commons" % "commons-text" % version.commonstext
+        val scalaparsercombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % version.scalaparsercombinators
 
         // --- developer tools dependencies
 
-        val scalafx = "org.scalafx" %% "scalafx" % version.scalafx withSources() withJavadoc()
-        val controlsfx = "org.controlsfx" % "controlsfx" % version.controlsfx withJavadoc()
-        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withJavadoc()
-        val jacksonDF = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withJavadoc()
-        val chocosolver = "org.choco-solver" % "choco-solver" % version.chocosolver withSources() withJavadoc()
-
+        val scalafx = "org.scalafx" %% "scalafx" % version.scalafx withSources () withJavadoc ()
+        val controlsfx = "org.controlsfx" % "controlsfx" % version.controlsfx withJavadoc ()
+        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withJavadoc ()
+        val jacksonDF = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withJavadoc ()
+        val chocosolver = "org.choco-solver" % "choco-solver" % version.chocosolver withSources () withJavadoc ()
 
     }
 
