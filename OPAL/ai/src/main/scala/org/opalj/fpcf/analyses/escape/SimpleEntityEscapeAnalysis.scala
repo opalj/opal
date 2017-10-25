@@ -105,10 +105,31 @@ trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
         if (usesDefSite(aThrow.exception)) {
             val index = code indexWhere { _ == aThrow }
             val successors = cfg.bb(index).successors
+
+            var isCatched = false
+            var abnormalReturned = false
             for (pc ← successors) {
-                if (pc.isAbnormalReturnExitNode) {
-                    calcMostRestrictive(EscapeViaAbnormalReturn)
+                if (pc.isCatchNode) {
+                    val exceptionType = e match {
+                        case as: AllocationSite ⇒ as.allocatedType
+                        case FormalParameter(m, -1) ⇒
+                            m.classFile.thisType
+                        case FormalParameter(m, origin) ⇒
+                            // we would not end in this case if the parameter is not an object
+                            m.parameterTypes(-1 - origin).asObjectType
+                    }
+                    pc.asCatchNode.catchType match {
+                        case Some(catchType) ⇒
+                            if (project.classHierarchy.isSubtypeOf(exceptionType, catchType).isYes)
+                                isCatched = true
+                        case None ⇒
+                    }
+                } else if (pc.isAbnormalReturnExitNode) {
+                    abnormalReturned = true
                 }
+            }
+            if (abnormalReturned && !isCatched) {
+                calcMostRestrictive(EscapeViaAbnormalReturn)
             }
         }
     }
