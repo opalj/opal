@@ -34,18 +34,16 @@ import java.lang.ref.{SoftReference ⇒ SRef}
 
 import scala.collection.BitSet
 import scala.collection.mutable
-
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
-
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
-
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
@@ -140,7 +138,7 @@ trait RecordCFG
      */
     abstract override def initProperties(
         code:          Code,
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.length

@@ -55,6 +55,11 @@ sealed abstract class IntTrieSet
     private[immutable] def contains(value: Int, key: Int): Boolean = this.contains(value)
 }
 
+object IntTrieSet {
+
+    def empty: IntTrieSet = EmptyIntTrieSet
+}
+
 /** The (potential) leaves of an IntTrie. */
 private[immutable] abstract class IntTrieSetL extends IntTrieSet {
 
@@ -450,6 +455,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     override def contains(value: Int): Boolean = this.contains(value, value)
 
+    /** Ensures that the IntTrieSet does not contain paths to empty leaf nodes. */
     override private[immutable] def constringe(): IntTrieSet = {
         assert(size <= 1)
         if (left.isEmpty)

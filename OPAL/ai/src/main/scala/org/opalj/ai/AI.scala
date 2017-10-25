@@ -30,13 +30,12 @@ package org.opalj
 package ai
 
 import scala.language.existentials
-
 import scala.util.control.ControlThrowable
-import scala.collection.BitSet
 
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
@@ -398,7 +397,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     protected[this] def preInterpretationInitialization(
         code:          Code,
         instructions:  Array[Instruction],
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         liveVariables: LiveVariables,
         theDomain:     D
     )(
@@ -494,7 +493,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        code: Code, cfJoins: BitSet, liveVariables: LiveVariables,
+        code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
         theDomain: D
     )(
         initialWorkList:                     List[PC],

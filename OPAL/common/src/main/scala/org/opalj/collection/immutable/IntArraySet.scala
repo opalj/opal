@@ -274,17 +274,19 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def max: Int = this.i3
     override def getAndRemove: (Int, IntArraySet) = (i3, new IntArraySet2(i1, i2)) // TODO Remove
 
-    override def iterator: Iterator[Int] = new AbstractIterator[Int] {
-        var i = 0
-        def hasNext: Boolean = i < 3
-        def next: Int = {
-            val v = i
-            i += 1
-            v match {
-                case 0 ⇒ i1
-                case 1 ⇒ i2
-                case 2 ⇒ i3
-                case _ ⇒ throw new IllegalStateException()
+    override def iterator: Iterator[Int] = {
+        new AbstractIterator[Int] {
+            var i = 0
+            def hasNext: Boolean = i < 3
+            def next: Int = {
+                val v = i
+                i += 1
+                v match {
+                    case 0 ⇒ i1
+                    case 1 ⇒ i2
+                    case 2 ⇒ i3
+                    case _ ⇒ throw new IllegalStateException()
+                }
             }
         }
     }

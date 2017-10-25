@@ -35,6 +35,7 @@ import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Code
 import org.opalj.br.LiveVariables
 
@@ -61,7 +62,7 @@ sealed abstract class AIResult {
      * @note   This information could be recomputed on-demand but is stored for performance
      *         reasons.
      */
-    val cfJoins: BitSet
+    val cfJoins: IntTrieSet
 
     /**
      * The set of statically known live Variables.
@@ -89,6 +90,7 @@ sealed abstract class AIResult {
      * Returns the information whether an instruction with a specific PC was evaluated
      * at least once.
      */
+    // IMPROVE Use opalj.collection.mutable.BitSet
     lazy val evaluatedInstructions: BitSet = {
         val evaluatedInstructions = new mutable.BitSet(code.instructions.length)
         evaluated.foreach(pc ⇒ if (pc >= 0) evaluatedInstructions += pc)
@@ -250,7 +252,7 @@ object AIResultBuilder {
      */
     def aborted(
         theCode:          Code,
-        theCFJoins:       BitSet,
+        theCFJoins:       IntTrieSet,
         theLiveVariables: LiveVariables,
         theDomain:        Domain
     )(
@@ -265,7 +267,7 @@ object AIResultBuilder {
 
         new AIAborted {
             val code: Code = theCode
-            val cfJoins: BitSet = theCFJoins
+            val cfJoins: IntTrieSet = theCFJoins
             val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
@@ -295,7 +297,7 @@ object AIResultBuilder {
      */
     def completed(
         theCode:          Code,
-        theCFJoins:       BitSet,
+        theCFJoins:       IntTrieSet,
         theLiveVariables: LiveVariables,
         theDomain:        Domain
     )(
@@ -306,7 +308,7 @@ object AIResultBuilder {
 
         new AICompleted {
             val code: Code = theCode
-            val cfJoins: BitSet = theCFJoins
+            val cfJoins: IntTrieSet = theCFJoins
             val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
