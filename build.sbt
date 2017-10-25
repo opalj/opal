@@ -87,7 +87,7 @@ lazy val IntegrationTest = config("it") extend Test
 // Default settings without scoverage
 lazy val buildSettings =
     Defaults.coreDefaultSettings ++ scalariformSettings ++
-        Seq(libraryDependencies ++= Dependencies.opalDefaultDependencies) ++
+        Seq(libraryDependencies ++= Dependencies.testlibs) ++
         Seq(Defaults.itSettings: _*) ++
         Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
         Seq(unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil) ++
@@ -152,10 +152,7 @@ lazy val common = Project(
         // we publish the projects.)
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL-Common"),
         //library dependencies
-        libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-        libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-        libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.6",
-        libraryDependencies += "com.iheart" %% "ficus" % "1.4.3"
+        libraryDependencies ++= Dependencies.common(scalaVersion.value)
     ))
     .configs(IntegrationTest)
 
@@ -167,8 +164,7 @@ lazy val bi = Project(
     settings = buildSettings ++ Seq(
         name := "Bytecode Infrastructure",
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-        //library dependencies
-        libraryDependencies += "org.apache.commons" % "commons-text" % "1.1"
+        libraryDependencies ++= Dependencies.bi
     ))
     .dependsOn(common % "it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -212,7 +208,7 @@ lazy val br = Project(
         // standard compiler settings!
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
         //library dependencies
-        libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
+        libraryDependencies ++= Dependencies.br
     ))
     .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -306,11 +302,7 @@ lazy val DeveloperTools = Project(
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Developer Tools"),
         scalacOptions in(Compile, console) := Seq("-deprecation"),
         //library dependencies
-        libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.144-R12" withSources() withJavadoc(),
-        libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.14" withJavadoc(),
-        libraryDependencies += "es.nitaur.markdown" % "txtmark" % "0.16" withJavadoc(),
-        libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.9.2" withJavadoc(),
-        libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.5" withSources() withJavadoc(),
+        libraryDependencies ++= Dependencies.developertools,
         // Required by Java/ScalaFX
         fork := true
     ))

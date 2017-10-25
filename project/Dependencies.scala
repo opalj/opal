@@ -26,22 +26,72 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 import sbt._
 
 /**
- * This sbt-imported object organizes the libraries on which every
- * OPAL subproject depends by default
- *
- * @author Michael Eichberg
- * @author Simon Leischnig
- */
+  * Manages the library dependencies of the subprojects of OPAL.
+  *
+  * @author Simon Leischnig
+  */
 object Dependencies {
 
-    // Libraries
-    val junit = "junit" % "junit" % "4.12" % "test,it"
-    val scalatest = "org.scalatest" %% "scalatest" % "3.0.4" % "test,it"
-    val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5" % "test,it"
 
-    // centralized dependency sequences
-    val opalDefaultDependencies = Seq(junit, scalatest, scalacheck)
+    lazy val version = new {
+        val junit = "4.12"
+        val scalatest = "3.0.4"
+        val scalacheck = "1.13.5"
+
+        val scalaxml = "1.0.6"
+        val playjson = "2.6.6"
+        val ficus = "1.4.2"
+
+        val apachetext = "1.1"
+        val parsercombinators = "1.0.6"
+
+        val scalafx = "8.0.144-R12"
+        val controlsfx = "8.40.14"
+        val txtmark = "0.16"
+        val jacksonDF = "2.9.2"
+        val chocosolver = "4.0.5"
+    }
+
+    lazy val library = new  {
+
+        // --- test libraries
+
+        val junit = "junit" % "junit" % version.junit % "test,it"
+        val scalatest = "org.scalatest" %% "scalatest" % version.scalatest % "test,it"
+        val scalacheck = "org.scalacheck" %% "scalacheck" % version.scalacheck % "test,it"
+
+        // --- general dependencies
+
+        def reflect(scalaVersion: String) = "org.scala-lang" % "scala-reflect" % scalaVersion
+        val scalaxml = "org.scala-lang.modules" %% "scala-xml" % version.scalaxml
+        val playjson = "com.typesafe.play" %% "play-json" % version.playjson
+        val ficus = "com.iheart" %% "ficus" % version.ficus
+
+        val commonstext = "org.apache.commons" % "commons-text" % version.apachetext
+        val scalaparsercombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % version.parsercombinators
+
+        // --- developer tools dependencies
+
+        val scalafx = "org.scalafx" %% "scalafx" % version.scalafx withSources() withJavadoc()
+        val controlsfx = "org.controlsfx" % "controlsfx" % version.controlsfx withJavadoc()
+        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withJavadoc()
+        val jacksonDF = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withJavadoc()
+        val chocosolver = "org.choco-solver" % "choco-solver" % version.chocosolver withSources() withJavadoc()
+
+
+    }
+
+    import library._
+
+    val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalacheck)
+
+    def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus)
+    val bi = Seq(commonstext)
+    val br = Seq(scalaparsercombinators)
+    val developertools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
+
 }
