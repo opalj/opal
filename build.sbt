@@ -8,8 +8,8 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-// version in ThisBuild := "1.1.0-SNAPSHOT"
-version 		in ThisBuild := "1.0.0"
+version in ThisBuild := "1.1.0-SNAPSHOT"
+// RELEASED version 		in ThisBuild := "1.0.0" // October 25th, 2017
 // RELEASED version 		in ThisBuild := "0.8.15" // September 7th, 2017
 // RELEASED version 		in ThisBuild := "0.8.14" // June 23rd, 2017
 // RELEASED version 		in ThisBuild := "0.8.13" // MAY 19th, 2017
@@ -32,7 +32,7 @@ scalacOptions in ThisBuild ++= Seq(
     "-Xlint", "-Xfuture", "-Xfatal-warnings",
     "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
     "-Ywarn-unused:imports,privates,locals,implicits",
-    //"-Ywarn-unused:-params", "-Ywarn-unused-import",
+    // Buggy (Scala 2.12.4) "-Ywarn-unused:params,patvars"
     "-Ywarn-infer-any", "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
 scalacOptions in ThisBuild += "-Xdisable-assertions"
