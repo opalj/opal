@@ -51,6 +51,7 @@ import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.util.ScalaMajorVersion
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -65,7 +66,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
-        val fixtureFiles = new File("DEVELOPING_OPAL/validate/target/scala-2.11/test-classes")
+        val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
         val fixtureClassFiles = ClassFiles(fixtureFiles)
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
