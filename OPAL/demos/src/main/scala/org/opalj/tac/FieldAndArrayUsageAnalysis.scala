@@ -31,15 +31,23 @@ package org.opalj.tac
 import org.opalj.br.analyses.Project
 import java.net.URL
 
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.fpcf.EP
+import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
+import org.opalj.fpcf.properties.MaybeNoEscape
+import org.opalj.fpcf.properties.MaybeEscapeInCallee
+import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
-object FieldUsageAnalysis extends DefaultOneStepAnalysis {
+object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String = ""
 
@@ -60,23 +68,42 @@ object FieldUsageAnalysis extends DefaultOneStepAnalysis {
         var arrayStores = 0
         var arrayStoresOfAllocation = 0
         var arrayLoads = 0
+        var maybeNoEscapingArrays = 0
+        var maybeInCalleeArrays = 0
+        var maybeInCallerArrays = 0
+        var globalArrays = 0
         var allocations = 0
         var nonDeadAllocations = 0
-        val tacai = time {
+
+        val tacaiProvider = time {
             val tacai = project.get(DefaultTACAIKey)
-            // parallelization is more efficient using parForeachMethodWithBody
             val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
             errors.foreach { e ⇒ error("progress", "generating 3-address code failed", e) }
             tacai
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
+
         val ass = time {
             project.get(AllocationSitesKey)
         } { t ⇒ info("progress", s"allocationSites took ${t.toSeconds}") }
+
+        val propertyStore = time {
+
+            PropertyStoreKey.makeAllocationSitesAvailable(project)
+            PropertyStoreKey.makeFormalParametersAvailable(project)
+            project.get(PropertyStoreKey)
+        } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
+        time {
+            SimpleEscapeAnalysis.start(project, propertyStore)
+            propertyStore.waitOnPropertyComputationCompletion(
+                resolveCycles = true,
+                useFallbacksForIncomputableProperties = false
+            )
+        } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
             m ← project.allMethodsWithBody
             (pc, as) ← ass(m)
-            code = tacai(m).stmts
-            lineNumbers = tacai(m).lineNumberTable
+            code = tacaiProvider(m).stmts
+            lineNumbers = tacaiProvider(m).lineNumberTable
             index = code indexWhere { stmt ⇒ stmt.pc == pc }
             if index != -1
         } {
@@ -114,28 +141,52 @@ object FieldUsageAnalysis extends DefaultOneStepAnalysis {
                                         }
                                     }
                                 }
-                            case ArrayStore(_, arrayRef, _, value) ⇒
+                            case arrayStore @ ArrayStore(pcOfStore, arrayRef, _, value) ⇒
                                 if (value.isVar && value.asVar.definedBy.contains(index)) {
                                     arrayStores += 1
 
                                     if (arrayRef.isVar) {
                                         val defSitesOfArray = arrayRef.asVar.definedBy
-                                        if (defSitesOfArray.exists { defSite ⇒
-                                            if (defSite > 0) {
-                                                code(defSite) match {
-                                                    case Assignment(_, _, NewArray(_, _, _)) ⇒ true
-                                                    case _                                   ⇒ false
-                                                }
-                                            } else false
 
-                                        }) {
+                                        // nesting filter and map as collect is not available
+                                        val pcsOfNewArrays = defSitesOfArray withFilter { defSite ⇒
+                                            defSite > 0 && (code(defSite) match {
+                                                case Assignment(_, _, NewArray(_, _, _)) ⇒ true
+                                                case _                                   ⇒ false
+                                            })
+                                        } map {
+                                            code(_) match {
+                                                case Assignment(pc, _, _) ⇒ pc
+                                                case _                    ⇒ throw new RuntimeException()
+                                            }
+                                        }
+
+                                        if (pcsOfNewArrays.nonEmpty) {
                                             arrayStoresOfAllocation += 1
+                                            for (pc ← pcsOfNewArrays) {
+                                                val as = ass(m)(pc)
+                                                propertyStore(as, EscapeProperty.key) match {
+                                                    case EP(_, NoEscape | MaybeNoEscape) ⇒
+                                                        maybeNoEscapingArrays += 1
+                                                    case EP(_, EscapeInCallee | MaybeEscapeInCallee) ⇒
+                                                        maybeInCalleeArrays += 1
+                                                    case EP(_, p) if p.isBottom ⇒ globalArrays += 1
+                                                    case _                      ⇒ maybeInCallerArrays += 1
+                                                }
+                                            }
+
                                             for (stmt ← code) {
                                                 stmt match {
                                                     case Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) if arrayRef2.isVar ⇒
                                                         if (arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)) {
                                                             arrayLoads += 1
-                                                            //println(s"${m.toJava} ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} ${as.allocatedType}")
+                                                            println(
+                                                                s"""
+                                                                    |${m.toJava}:
+                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} new ${as.allocatedType}
+                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(pcOfStore)} $arrayStore}
+                                                                 """.stripMargin
+                                                            )
                                                         }
                                                     case _ ⇒
                                                 }
@@ -158,7 +209,11 @@ object FieldUsageAnalysis extends DefaultOneStepAnalysis {
                |# of putfields on new fields $putFieldsOfAllocation
                |# of getfields after puts: $getFields
                |# of arraystores: $arrayStores
-               |# of arraystores on new fields $arrayStoresOfAllocation
+               |# of arraystores on new array $arrayStoresOfAllocation
+               |# of no escaping new arrays: $maybeNoEscapingArrays
+               |# of escape in callee new arrays: $maybeInCalleeArrays
+               |# of escape in caller new arrays: $maybeInCallerArrays
+               |# of global new arrays: $globalArrays
                |# of arrayloads after store: $arrayLoads"""
 
         BasicReport(message.stripMargin('|'))
