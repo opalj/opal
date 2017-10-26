@@ -31,10 +31,10 @@ package ai
 package analyses
 package cg
 
-import scala.language.existentials
+import Console._
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import Console._
 
 /**
  * Helper functionality to compare two call graphs.

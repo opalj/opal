@@ -26,53 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bi
-package reader
-
-import java.io.DataInputStream
+import sbt._
 
 /**
- * Defines a template method to read in a constant value attribute.
+ * Manages the library dependencies of the Bugpicker project.
  *
- * '''From the Specification'''
- *
- * The ConstantValue attribute is a fixed-length attribute in the attributes
- * table of a field_info structure.
- *
- * <pre>
- * ConstantValue_attribute {
- *  u2 attribute_name_index;
- *  u4 attribute_length;
- *  u2 constantvalue_index;
- * }
- * </pre>
- *
- * @author Michael Eichberg
+ * @author Simon Leischnig
  */
-trait ConstantValue_attributeReader extends AttributeReader {
+object Dependencies {
 
-    type ConstantValue_attribute <: Attribute
-
-    def ConstantValue_attribute(
-        constant_pool:        Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        constantvalue_index:  Constant_Pool_Index
-    ): ConstantValue_attribute
-
-    //
-    // IMPLEMENTATION
-    //
-
-    private[this] def parserFactory() = (
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) ⇒ {
-        /*val attribute_length =*/ in.readInt
-        ConstantValue_attribute(cp, attribute_name_index, in.readUnsignedShort)
+    lazy val version = new {
+        val opal = "0.9.0-SNAPSHOT"
+        val scalafx = "8.0.144-R12"
     }
 
-    registerAttributeReader(ConstantValueAttribute.Name → parserFactory())
+    lazy val library = new {
+        val bugpickerCore = "de.opal-project" %% "bugpicker-core" % version.opal
+        val ba = "de.opal-project" %% "bytecode-disassembler" % version.opal
+
+        val scalafx = "org.scalafx" %% "scalafx" % version.scalafx
+    }
+
+    import library._
+
+    val buildlevel = Seq(bugpickerCore, ba)
+    val ui = Seq(scalafx)
+
 }

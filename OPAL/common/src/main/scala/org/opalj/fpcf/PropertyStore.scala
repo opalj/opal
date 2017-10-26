@@ -2053,7 +2053,8 @@ class PropertyStore private (
                                 }
                             }
 
-                            for (dependeeEPK @ EPK(dependeeE, dependeePK) ← dependeeEPKs) {
+                            for { dependeeEPK ← dependeeEPKs } {
+                                val EPK(dependeeE, dependeePK) = dependeeEPK
                                 val dependeeCurrentEPs = data.get(dependeeE)
                                 val dependeeCurrentPs = dependeeCurrentEPs.ps
                                 val dependeePKId = dependeePK.id

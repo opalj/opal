@@ -48,11 +48,11 @@ import org.opalj.br.analyses.Project
  */
 class CFGFactoryTest extends CFGTests {
 
-    def analyzeProject(name: String, project: SomeProject): Unit = {
-        time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+    def analyzeProject(project: SomeProject): Unit = {
+        time { doAnalyzeProject(project) } { t ⇒ info("the analysis took "+t.toSeconds) }
     }
 
-    def doAnalyzeProject(name: String, project: SomeProject): Unit = {
+    def doAnalyzeProject(project: SomeProject): Unit = {
         implicit val classHierarchy = project.classHierarchy
         val methodsWithBodyCount = project.allMethodsWithBody.size
         val methodsCount = new AtomicInteger(0)
@@ -92,7 +92,7 @@ class CFGFactoryTest extends CFGTests {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(method.toJava, code, cfg, classHierarchy)
+            cfgNodesCheck(method, code, cfg, classHierarchy)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒
@@ -179,12 +179,12 @@ class CFGFactoryTest extends CFGTests {
     describe("computing the cfg") {
 
         it(s"it should be possible for all methods of the JDK ($JRELibraryFolder)") {
-            analyzeProject("JDK", TestSupport.createJREProject)
+            analyzeProject(TestSupport.createJREProject)
         }
 
         allBITestJARs() foreach { jarFile ⇒
-            it(s"it should be possible for all methods of $jarFile") {
-                analyzeProject(jarFile.getName(), Project(jarFile))
+            it(s"it should be possible for all methods of ${jarFile.getName}") {
+                analyzeProject(Project(jarFile))
             }
         }
     }

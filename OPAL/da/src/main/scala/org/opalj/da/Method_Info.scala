@@ -65,6 +65,10 @@ case class Method_Info(
      */
     def descriptor(implicit cp: Constant_Pool): String = cp(descriptor_index).asString
 
+    /**
+     * @param methodIndex The index of the method in the methods table. Required to create unique
+     *                    ids/anchors.
+     */
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, METHOD)
 

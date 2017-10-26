@@ -327,7 +327,8 @@ final class Code private (
 
             remainingExceptionHandlers =
                 for {
-                    eh @ ExceptionHandler(startPC, endPC, handlerPC, _) ← remainingExceptionHandlers
+                    eh ← remainingExceptionHandlers
+                    ExceptionHandler(startPC, endPC, handlerPC, _) = eh
                     if subroutineIds(handlerPC) == -1 // we did not already analyze the handler
                     if !belongsToCurrentSubroutine(startPC, endPC, handlerPC)
                 } yield {
@@ -1005,8 +1006,8 @@ final class Code private (
                     case lv @ LocalVariable(
                         startPC,
                         length,
-                        name,
-                        fieldType,
+                        _ /*name*/ ,
+                        _ /*fieldType*/ ,
                         index
                         ) if startPC <= pc && startPC + length > pc ⇒
                         (index, lv)
@@ -1058,6 +1059,18 @@ final class Code private (
      * @param pc A valid index in the code array.
      */
     @inline def isModifiedByWide(pc: PC): Boolean = pc > 0 && instructions(pc - 1) == WIDE
+
+    def iterator: Iterator[Instruction] = {
+        new AbstractIterator[Instruction] {
+            private[this] var pc = 0
+            def hasNext: Boolean = pc < instructions.length
+            def next(): Instruction = {
+                val i = instructions(pc)
+                pc = i.indexOfNextInstruction(pc)(code)
+                i
+            }
+        }
+    }
 
     /**
      * Collects all instructions for which the given function is defined.

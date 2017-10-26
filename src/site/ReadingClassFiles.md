@@ -13,7 +13,7 @@ OPAL provides multiple different representations for Java class files to support
     import java.io.{DataInputStream, FileInputStream}
     import org.opalj.io.process
     import org.opalj.da.ClassFile
-    val classFileName = "OPAL/ai/target/scala-2.11/classes/org/opalj/ai/AI.class"
+    val classFileName = "OPAL/ai/target/scala-2.12/classes/org/opalj/ai/AI.class"
     val cfs : List[ClassFile] =
         process(new DataInputStream(new FileInputStream(classFileName))){ in =>
             org.opalj.da.ClassFileReader.ClassFile(in)
@@ -31,14 +31,14 @@ In most cases, an explicit representation of the constant pool actually complica
     import java.io.{DataInputStream, FileInputStream}
     import org.opalj.io.process
     import org.opalj.br.ClassFile // "br" instead of "da"
-    val classFileName = "OPAL/ai/target/scala-2.11/classes/org/opalj/ai/AI.class"
+    val classFileName = "OPAL/ai/target/scala-2.12/classes/org/opalj/ai/AI.class"
     val cfs : List[ClassFile] =
         process(new DataInputStream(new FileInputStream(classFileName))){ in =>
             org.opalj.br.reader.Java8Framework.ClassFile(in)
         }
 
 ### Representing entire Java Projects
-Instead of reading the class files on your own it is also possible to directly create a `Project` which also directly makes the class hierarchy available and offers many methods related to resolving method calls and the like. A `Project` is usually at the core of implementing static analyses on top of OPAL. To read more about it go [here](Projects.html).
+Instead of reading the class files on your own, it is also possible to directly create a `Project` which also directly makes the class hierarchy available and offers many methods related to resolving method calls and the like. A `Project` is usually at the core of implementing static analyses on top of OPAL. To read more about it go [here](Projects.html).
 
 ### 3-Address Code Representation
 On top/based on the object oriented representation OPAL provides a third representation based on 3-address code/quadruples in single static assignment (SSA) form. This representation is directly made available by a `Project` on-demand. To read more about it go [here](TAC.html).

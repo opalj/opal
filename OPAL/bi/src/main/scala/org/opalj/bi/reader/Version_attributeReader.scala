@@ -60,17 +60,19 @@ trait Version_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        _: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt
         Version_attribute(cp, attribute_name_index, in.readUnsignedShort())
     }
 
-    registerAttributeReader(VersionAttribute.Name → parser)
+    registerAttributeReader(
+        VersionAttribute.Name → parserFactory()
+    )
 }
 
 object VersionAttribute {

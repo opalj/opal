@@ -87,11 +87,11 @@ case class Code_attribute(
 
     /** Can only be called if the exception table is non-emtpy! */
     def exception_handlersAsXHTML(implicit cp: Constant_Pool): NodeSeq = {
-        if (exceptionTable.length > 0)
+        if (exceptionTable.nonEmpty)
             <details class="exception_table">
                 <summary>Exception Table:</summary>
                 <ol class="exception_table">
-                    { exceptionTable.map(_.toXHTML(cp, code)) }
+                    { exceptionTable.map(_.toXHTML) }
                 </ol>
             </details>
         else

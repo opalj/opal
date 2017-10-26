@@ -92,8 +92,10 @@ object FPCFAnalysesRegistry {
             val module = mirror.staticModule(fqn)
             result = Some(mirror.reflectModule(module).instance.asInstanceOf[FPCFAnalysisRunner])
         } catch {
-            case e: ScalaReflectionException ⇒
-            case c: ClassCastException       ⇒
+            case sre: ScalaReflectionException ⇒
+                OPALLogger.error("FPCF registry", "resolve failed", sre)(GlobalLogContext)
+            case cce: ClassCastException ⇒
+                OPALLogger.error("FPCF registry", "resolve failed", cce)(GlobalLogContext)
         }
         result
     }
@@ -124,9 +126,10 @@ object FPCFAnalysesRegistry {
                 register(id, description, factory)
             }
         } catch {
-            case e: Exception ⇒ OPALLogger.error(
-                "OPAL Setup", "initialization of the FPCF Analysis Registry failed", e
-            )(GlobalLogContext)
+            case e: Exception ⇒
+                OPALLogger.error(
+                    "OPAL Setup", "initialization of the FPCF Analysis Registry failed", e
+                )(GlobalLogContext)
         }
     }
 
@@ -162,7 +165,8 @@ object FPCFAnalysesRegistry {
     //initialize the registry with the known default analyses
     registerFromConfig()
 
-    def main(args: Array[String]): Unit = {
-        println(idToDescription.mkString("FPCF Analysis Registry\n\t", "\n\t", "\n"))
-    }
+    // def main(args: Array[String]): Unit = {
+    // println(idToDescription.mkString("FPCF Analysis Registry\n\t", "\n\t", "\n"))
+    // }
+
 }

@@ -78,7 +78,7 @@ trait DefaultLongSetValues
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case that: ALongValue ⇒ StructuralUpdate(LongValue(pc))
+                case _: ALongValue ⇒ StructuralUpdate(LongValue(pc))
                 case LongSet(thatValues) ⇒
                     val thisValues = this.values
                     val newValues = thisValues ++ thatValues
@@ -143,4 +143,3 @@ trait DefaultLongSetValues
     }
 
 }
-

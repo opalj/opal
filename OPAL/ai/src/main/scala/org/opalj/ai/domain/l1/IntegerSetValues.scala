@@ -535,7 +535,7 @@ trait IntegerSetValues
                         val (os1, ls1) = updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, os1, ls1)
 
-                    case is: IntegerSet ⇒
+                    case _: IntegerSet ⇒
                         // value2 is unchanged
                         updateMemoryLayout(oldValue = value1, value2, operands, locals)
 

@@ -68,15 +68,15 @@ trait SourceFile_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): SourceFile_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt
         SourceFile_attribute(cp, attribute_name_index, in.readUnsignedShort)
     }
 
-    registerAttributeReader(SourceFileAttribute.Name → parser)
+    registerAttributeReader(SourceFileAttribute.Name → parserFactory())
 }

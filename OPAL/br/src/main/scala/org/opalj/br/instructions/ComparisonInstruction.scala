@@ -45,4 +45,5 @@ abstract class ComparisonInstruction extends AlwaysSucceedingStackBasedBinaryAri
     }
 
     final def isShiftInstruction: Boolean = false
+
 }
