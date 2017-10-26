@@ -69,7 +69,7 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
 
     it(s"it should be able to run the analysis with the JDK") {
         time {
-            checkProject(createJREProject)
+            checkProject(() ⇒ createJREProject())
         } { t ⇒ info(s"analysis took ${t.toSeconds}") }
     }
 }
