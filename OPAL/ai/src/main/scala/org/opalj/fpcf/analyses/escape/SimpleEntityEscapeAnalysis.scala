@@ -31,6 +31,7 @@ package fpcf
 package analyses
 package escape
 
+
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
@@ -237,6 +238,22 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
  */
 trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
+
+    private[this] case class PredefinedResult(object_type: String, escape_state: String)
+
+
+    import net.ceedubs.ficus.Ficus._
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+    val ConfigKey = "org.opalj.fpcf.analyses.escape.constructors"
+    val constructors = BaseConfig.as[List[PredefinedResult]](ConfigKey).map { r =>
+        import scala.reflect.runtime._
+        val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
+        val module = rootMirror.staticModule(r.escape_state)
+        val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
+            (ObjectType(r.object_type), property)
+    }.toMap
+
     /**
      * Special handling for constructor calls, as the receiver of an constructor is always an
      * allocation site.
@@ -265,8 +282,11 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
         assert(usesDefSite(call.receiver))
 
         // the object constructor will not escape the this local
-        if (call.declaringClass != ObjectType.Object && call.declaringClass != ObjectType.Throwable) {
+        if (constructors.contains(call.declaringClass.asObjectType)) {
 
+            val property = constructors(call.declaringClass.asObjectType)
+            calcMostRestrictive(property)
+        } else {
             // resolve the constructor
             project.specialCall(
                 call.declaringClass.asObjectType,
