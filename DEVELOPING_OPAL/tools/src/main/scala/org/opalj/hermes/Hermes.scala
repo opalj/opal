@@ -573,6 +573,10 @@ object Hermes extends JFXApp with HermesCore {
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
             onAction = handle { analysisTimesStage.show() }
         }
+        val showQueryResultViz = new MenuItem("Visualize Query Results...") {
+            disable <== analysesFinished.not
+            onAction = handle { Visualization.display(stage, featureMatrix).show() }
+        }
         val showProjectStatistics = new MenuItem("Project Statistics...") {
             // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
 
@@ -660,6 +664,7 @@ object Hermes extends JFXApp with HermesCore {
         }
         List(
             showConfig,
+            showQueryResultViz,
             showAnalysisTimes, showProjectStatistics,
             fileExport,
             computeProjectsForCorpus
