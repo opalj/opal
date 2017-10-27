@@ -64,7 +64,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * called method.
      *
      * In general, explicit support is required to identify recursive calls
-     * if the domain also follows method invocations,
+     * if the domain also follows method invocations.
      */
     protected[this] def calledMethodDomain(method: Method): CalledMethodDomain
 
