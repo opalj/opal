@@ -409,7 +409,7 @@ object Visualization {
     }
 
     private def loadScript(file: String): String = {
-        processSource(Source.fromFile(file)) { s ⇒ s.mkString("\n") }
+        processSource(Source.fromFile(file)) { s ⇒ s.getLines().mkString("\n") }
     }
 
     private def factoryCheckBoxTreeItem(
