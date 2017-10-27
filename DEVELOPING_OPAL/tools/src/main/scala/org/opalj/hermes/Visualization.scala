@@ -28,9 +28,10 @@
  */
 package org.opalj.hermes
 
-import java.io.BufferedReader
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 import java.io.File
-import java.io.FileReader
 import java.io.PrintWriter
 import java.net.URL
 import javafx.event.EventHandler
@@ -40,8 +41,10 @@ import javafx.beans.value.ObservableValue
 import javafx.concurrent.Worker.State
 
 import netscape.javascript.JSObject
+import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 
-import scala.collection.mutable
+import scala.io.Source
 import scalafx.Includes._
 import scalafx.collections.ObservableBuffer
 import scalafx.scene.Scene
@@ -65,39 +68,157 @@ import scalafx.stage.FileChooser
 import scalafx.stage.Screen
 import scalafx.stage.Stage
 
+import org.opalj.io.process
+import org.opalj.io.processSource
+
 /**
- * Implements a WebView for javascript-based visualizations of feature query results
+ * Uses a WebView for javascript-based visualizations of feature query results.
  *
  * @author Alexander Appel
  */
 object Visualization {
 
-    private val scripts = new collection.mutable.HashMap[String, String] {
-        put("BubbleChart", getClass.getResource("d3js/bubbleChart.js").getPath)
-        put("BubblePieChart", getClass.getResource("d3js/bubblePieChart.js").getPath)
+    class SelectionOption(val name: String) {
+
+        private[this] val options: ListBuffer[SelectionOption] = new ListBuffer[SelectionOption]
+
+        def +=(name: String): ListBuffer[SelectionOption] = options += new SelectionOption(name)
+
+        def +=(other: SelectionOption): ListBuffer[SelectionOption] = options += other
+
+        def -=(name: String): ListBuffer[SelectionOption] = options -= find(name).get
+
+        def find(name: String): Option[SelectionOption] = options.find(_.name == name)
     }
+
+    class D3DataProvider(
+            val featureMatrix:   ObservableBuffer[ProjectFeatures[URL]],
+            val selection:       SelectionOption,
+            val optionSelection: mutable.HashMap[String, Boolean]
+    ) {
+
+        def getSelectedProjects(
+            accCountThreshold:  Int,
+            accSingleDisplayed: Double,
+            accTotalDisplayed:  Double
+        ): JsObject = {
+            val projectSelection: SelectionOption = selection.find("projects").get
+            val statisticSelection: SelectionOption = selection.find("statistics").get
+            val featureSelection: SelectionOption = selection.find("features").get
+            val projects = ArrayBuffer.empty[JsObject]
+            featureMatrix.filter(p ⇒ projectSelection.find(p.id.value).isDefined).foreach { project ⇒
+                // reformat for sorting
+                val statistics: Seq[(String, Double)] = project.projectConfiguration.statistics.toSeq
+                val features: Seq[(String, Double)] = project.features.map(f ⇒ {
+                    (f.value.id, f.value.count.asInstanceOf[Double])
+                })
+                val selectedValues = (statistics ++ features)
+                    .filter(f ⇒ statisticSelection.find(f._1).isDefined
+                        || featureSelection.find(f._1).isDefined)
+                    .sortBy(_._2).reverse
+
+                val children = ArrayBuffer.empty[JsObject]
+                val total: Double = selectedValues.map(_._2).sum
+
+                if (accCountThreshold > 0 && selectedValues.length > accCountThreshold) {
+                    var sum: Double = 0d
+                    var rest: Double = 0d
+                    val restData = ArrayBuffer.empty[JsObject]
+                    selectedValues foreach { value ⇒
+                        if ((children.length < 2) || (value._2 >= total * accSingleDisplayed)
+                            && (sum + value._2 <= total * accTotalDisplayed)) {
+                            children += Json.obj(
+                                "id" → value._1,
+                                "value" → value._2
+                            )
+                            sum += value._2
+                        } else {
+                            restData += Json.obj(
+                                "id" → value._1.replace('\n', ' '),
+                                "value" → value._2
+                            )
+                        }
+                    }
+                    rest = total - sum
+                    if (rest > 0) {
+                        children += Json.obj(
+                            "id" → "<rest>",
+                            "value" → rest,
+                            "metrics" → Json.toJson(restData.toSeq)
+                        )
+                    }
+                } else {
+                    selectedValues foreach { value ⇒
+                        children += Json.obj(
+                            "id" → value._1,
+                            "value" → value._2
+                        )
+                    }
+                }
+
+                projects += Json.obj(
+                    "id" → project.id.value,
+                    "value" → total,
+                    "metrics" → Json.toJson(children.toSeq)
+                )
+            }
+            Json.obj(
+                "id" → "flare",
+                "options" → Json.toJson(optionSelection),
+                "children" → Json.toJson(projects.toSeq)
+            )
+        }
+
+        def getSingleProject(projectName: String): JsObject = {
+            val statisticSelection: SelectionOption = selection.find("statistics").get
+            val featureSelection: SelectionOption = selection.find("features").get
+            val project = featureMatrix.find(_.id.value == projectName).get
+            val statistics: Seq[(String, Double)] = project.projectConfiguration.statistics.toSeq
+            val features: Seq[(String, Double)] = project.features.map(f ⇒ {
+                (f.value.id, f.value.count.asInstanceOf[Double])
+            })
+            val selectedValues = (statistics ++ features)
+                .filter(f ⇒ statisticSelection.find(f._1).isDefined
+                    || featureSelection.find(f._1).isDefined)
+
+            val children = ArrayBuffer.empty[JsObject]
+            selectedValues foreach { value ⇒
+                children += Json.obj(
+                    "id" → value._1,
+                    "value" → value._2
+                )
+            }
+            Json.obj(
+                "id" → projectName,
+                "options" → Json.toJson(optionSelection),
+                "children" → Json.toJson(children.toSeq)
+            )
+        }
+    }
+
+    private val scripts = Map[String, String](
+        "BubbleChart" -> getClass.getResource("d3js/bubbleChart.js").getPath,
+        "BubblePieChart" -> getClass.getResource("d3js/bubblePieChart.js").getPath
+    )
 
     private class OptionDetails(val description: String, val selected: Boolean)
 
-    private val options = new collection.mutable.HashMap[String, OptionDetails] {
-        put("Bubbles", new OptionDetails("Show Bubble Labels", true))
-        put("Pies", new OptionDetails("Show Pie Labels", true))
-    }
+    private val options = Map[String, OptionDetails](
+        "Bubbles" -> new OptionDetails("Show Bubble Labels", true),
+        "Pies" -> new OptionDetails("Show Pie Labels", true)
+    )
 
     def display(
         mainStage:     Stage,
         featureMatrix: ObservableBuffer[ProjectFeatures[URL]]
-    ): Stage = new Stage() {
-        val stageTitleBase = "Query Result Visualization"
-        title = stageTitleBase
-        val screenBounds = Screen.primary.visualBounds
-        val scaling = 0.67
+    ): Stage = new Stage() { stage ⇒
+        title = "Query Result Visualization"
+        private val screenBounds = Screen.primary.visualBounds
+        private val scaling = 0.67
         scene = new Scene(screenBounds.width * scaling, screenBounds.height * scaling) {
             root = new VBox {
                 // setup WebView
-                val webView: WebView = new WebView {
-                    contextMenuEnabled = false
-                }
+                val webView: WebView = new WebView { contextMenuEnabled = false }
                 val webEngine: WebEngine = webView.engine
                 val stackRight = new StackPane
                 stackRight.children.add(webView)
@@ -129,12 +250,8 @@ object Visualization {
                 webEngine.load(getClass.getResource("d3js/canvas.html").toExternalForm)
 
                 // build tree items for filter options
-                val rootQueries = new CheckBoxTreeItem[String]("root") {
-                    setExpanded(true)
-                }
-                val filterItems = new CheckBoxTreeItem[String]("Filter") {
-                    setExpanded(true)
-                }
+                val rootQueries = new CheckBoxTreeItem[String]("root") { setExpanded(true) }
+                val filterItems = new CheckBoxTreeItem[String]("Filter") { setExpanded(true) }
                 rootQueries.getChildren.add(filterItems)
 
                 // statistics
@@ -199,11 +316,9 @@ object Visualization {
                 projectStatistic.setSelected(true)
 
                 // apply button
-                val applyButton = new Button("Show Visualization") {
+                val applyButton = new Button("Apply Filter") {
                     maxWidth = Double.MaxValue
-                    onAction = handle {
-                        webEngine.executeScript("display();")
-                    }
+                    onAction = handle { webEngine.executeScript("display();") }
                 }
 
                 // setup menu bar
@@ -239,39 +354,39 @@ object Visualization {
                 menuFile.items.addAll(svgExport)
 
                 // label options
-                menuOptions.items = options.map(item ⇒ {
-                    new CheckMenuItem(item._2.description) {
+                menuOptions.items = options.map { item ⇒
+                    val (name, options) = item
+                    new CheckMenuItem(options.description) {
                         onAction = handle {
-                            labelOptions += (item._1 → selected.value)
+                            labelOptions += (name → selected.value)
                             webEngine.executeScript("display();")
                         }
-                        if (item._2.selected) {
-                            selected = item._2.selected
+                        if (options.selected) {
+                            selected = options.selected
                             // manually add to labelOptions if default
-                            labelOptions += (item._1 → selected.value)
+                            labelOptions += (name → selected.value)
                         }
                     }
-                })(collection.breakOut): List[CheckMenuItem]
+                }(collection.breakOut): List[CheckMenuItem]
 
                 // view options
                 val viewToggle = new ToggleGroup
-                menuView.items = scripts.map(item ⇒ {
-                    new RadioMenuItem(item._1) {
+                menuView.items = scripts.map { item ⇒
+                    val (name, path) = item
+                    new RadioMenuItem(name) {
                         toggleGroup = viewToggle
                         onAction = handle {
-                            webEngine.executeScript(loadScript(item._2))
+                            webEngine.executeScript(loadScript(path))
                             // re-init on view change
                             webEngine.executeScript("init();")
                             webEngine.executeScript("display();")
-                            title = stageTitleBase+" - "+text.value
+                            title = stage.title.value+" - "+text.value
                         }
                     }
-                })(collection.breakOut): List[RadioMenuItem]
+                }(collection.breakOut): List[RadioMenuItem]
                 viewToggle.toggles.get(0).setSelected(true)
 
-                val menuBar = new MenuBar {
-                    menus.addAll(menuFile, menuOptions, menuView)
-                }
+                val menuBar = new MenuBar { menus.addAll(menuFile, menuOptions, menuView) }
 
                 // build GUI
                 val vBoxLeft = new VBox
@@ -290,14 +405,11 @@ object Visualization {
     }
 
     private def exportSVG(file: File, svg: String): Unit = {
-        new PrintWriter(file) { write(svg); close() }
+        process(new PrintWriter(file)) { _.write(svg) }
     }
 
     private def loadScript(file: String): String = {
-        val br: BufferedReader = new BufferedReader(new FileReader(file))
-        val str = Stream.continually(br.readLine()).takeWhile(_ != null).mkString("\n")
-        br.close()
-        str
+        processSource(Source.fromFile(file)) { s ⇒ s.mkString("\n") }
     }
 
     private def factoryCheckBoxTreeItem(
