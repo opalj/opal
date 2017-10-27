@@ -93,7 +93,6 @@ trait RecordMethodCallResults
             // where some refer to parameters and some to local variables, then we should map back
             // the information regarding the parameters and summarize only w.r.t. the
             // local variables.
-            allReturnedValues.
             val summarizedValue = summarize(callerPC, allReturnedValues.values)
 
             val nthParameter = passedParameters.nthValue { _ eq summarizedValue }
