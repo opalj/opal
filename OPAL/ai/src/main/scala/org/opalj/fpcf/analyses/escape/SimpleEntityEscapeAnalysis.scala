@@ -31,7 +31,6 @@ package fpcf
 package analyses
 package escape
 
-
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
@@ -121,7 +120,7 @@ trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
                             m.classFile.thisType
                         case FormalParameter(m, origin) ⇒
                             // we would not end in this case if the parameter is not an object
-                            m.parameterTypes(-1 - origin).asObjectType
+                            m.parameterTypes(-2 - origin).asObjectType
                     }
                     pc.asCatchNode.catchType match {
                         case Some(catchType) ⇒
@@ -238,20 +237,18 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
  */
 trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
-
     private[this] case class PredefinedResult(object_type: String, escape_state: String)
-
 
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
     val ConfigKey = "org.opalj.fpcf.analyses.escape.constructors"
-    val constructors = BaseConfig.as[List[PredefinedResult]](ConfigKey).map { r =>
+    val constructors = BaseConfig.as[List[PredefinedResult]](ConfigKey).map { r ⇒
         import scala.reflect.runtime._
         val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
         val module = rootMirror.staticModule(r.escape_state)
         val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
-            (ObjectType(r.object_type), property)
+        (ObjectType(r.object_type), property)
     }.toMap
 
     /**
