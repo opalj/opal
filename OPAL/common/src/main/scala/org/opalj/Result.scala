@@ -114,7 +114,7 @@ sealed trait NoResult extends Result[Nothing] {
 }
 
 object NoResult {
-    def unapply(noResult: NoResult): Boolean = true
+    def unapply(result: Result[_]): Boolean = !result.hasValue
 }
 
 /**

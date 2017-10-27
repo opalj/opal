@@ -42,23 +42,66 @@ package ai
  * If you need to adapt a setting just override the respective method in your domain.
  *
  * In general, the [[org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration]]
- * should be used as it generates all exceptions that may be thrown.
+ * should be used as a foundation as it generates all exceptions that may be thrown; however,
+ * configuring the behavior of method calls may be worth while.
  *
  * @author Michael Eichberg
  */
 trait Configuration {
 
+    //
+    //
+    // CONFIGURATION OF THE AI ITSELF
+    //
+    //
+
     /**
-     * Determines the behavior how method calls are handled where the exceptions that the
-     * called method may throw are unknown.
+     * If `true` a `ClassCastException` is thrown by `CHECKCAST` instructions if it
+     * cannot be verified that no `ClassCastException` will be thrown.
+     *
+     * @note Directly used by the [[AI]] itself.
      */
-    def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod
+    def throwClassCastException: Boolean
 
     /**
      * If `true` a `NullPointerExceptions` is thrown if the exception that is to be
      * thrown is not not known to be null.
+     *
+     * @note Directly used by the [[AI]] itself.
      */
     def throwNullPointerExceptionOnThrow: Boolean
+
+    /**
+     * If `true` the processing of the exception handlers related to an invoke statement will
+     * be aborted if the relation between the type of the thrown exception and the caught type
+     * is unknown.
+     *
+     * @note Directly used by the [[AI]] itself.
+     */
+    def abortProcessingExceptionsOfCalledMethodsOnUnknownException: Boolean
+
+    /**
+     * If `true` the processing of the exception handlers related to an athrow statement will
+     * be aborted if the relation between the type of the thrown exception and the caught type
+     * is unknown.
+     *
+     * @note Directly used by the [[AI]] itself.
+     */
+    def abortProcessingThrownExceptionsOnUnknownException: Boolean
+
+    //
+    //
+    // DOMAIN SPECIFIC CONFIGURATION
+    //
+    //
+
+    /**
+     * Determines the behavior how method calls are handled when the exceptions that the
+     * called method may throw are unknown.
+     *
+     * @note Used by domains which handle method invokations.
+     */
+    def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod
 
     /**
      * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
@@ -72,6 +115,8 @@ trait Configuration {
      *                  // - If "false" the operation will "just" succeed
      * }
      * }}}
+     *
+     * @note Used by domains which handle method invokations.
      */
     def throwNullPointerExceptionOnMethodCall: Boolean
 
@@ -105,7 +150,7 @@ trait Configuration {
     /**
      * If `true` then `monitorexit` and the `(XXX)return` instructions will throw
      * `IllegalMonitorStateException`s unless the analysis is able to determine that
-     * the exception is guaranteed to be raised.
+     * the exception is guaranteed not to be raised.
      */
     def throwIllegalMonitorStateException: Boolean
 
@@ -134,12 +179,6 @@ trait Configuration {
      * verified to be positive.
      */
     def throwNegativeArraySizeException: Boolean
-
-    /**
-     * If `true` a `ClassCastException` is thrown by `CHECKCAST` instructions if it
-     * cannot be verified that no `ClassCastException` will be thrown.
-     */
-    def throwClassCastException: Boolean
 
     /**
      * Throw a `ClassNotFoundException` if the a specific reference type is not

@@ -146,7 +146,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             try {
                 ReferenceType(className.replace('.', '/'))
             } catch {
-                case iae: IllegalArgumentException ⇒
+                case _: IllegalArgumentException ⇒
                     // if "className" is not a valid descriptor
                     return justThrows(ClassNotFoundException(pc));
             }

@@ -31,7 +31,9 @@ package ai
 package domain
 package l1
 
-import br._
+import java.lang.reflect.InvocationTargetException
+
+import org.opalj.br._
 
 /**
  * Support the invocation of methods (using Java reflection) of Java objects that
@@ -103,7 +105,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                                 Console.RESET
                         )
                     return None; /* <------- EARLY RETURN FROM METHOD */
-                case e: NoSuchMethodException ⇒
+                case _: NoSuchMethodException ⇒
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
                             Console.YELLOW+
@@ -166,10 +168,8 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
         } catch {
             // The exception happens as part of the execution of the underlying method;
             // hence, we want to capture it and use it in the following!
-            case npe: NullPointerException ⇒
-                Some(justThrows(NullPointerException(pc)))
-            case ite: java.lang.reflect.InvocationTargetException ⇒
-                Some(justThrows(toDomainValue(pc, ite.getCause())))
+            case _: NullPointerException      ⇒ Some(justThrows(NullPointerException(pc)))
+            case e: InvocationTargetException ⇒ Some(justThrows(toDomainValue(pc, e.getCause())))
         }
     }
 }

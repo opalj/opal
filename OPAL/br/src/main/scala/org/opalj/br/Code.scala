@@ -327,7 +327,8 @@ final class Code private (
 
             remainingExceptionHandlers =
                 for {
-                    eh @ ExceptionHandler(startPC, endPC, handlerPC, _) ← remainingExceptionHandlers
+                    eh ← remainingExceptionHandlers
+                    ExceptionHandler(startPC, endPC, handlerPC, _) = eh
                     if subroutineIds(handlerPC) == -1 // we did not already analyze the handler
                     if !belongsToCurrentSubroutine(startPC, endPC, handlerPC)
                 } yield {
@@ -542,7 +543,7 @@ final class Code private (
      * Performs a live variable analysis restricted to a method's locals.
      *
      * @return  For each instruction (identified by its pc) the set of variables (register values)
-     *          which are live (identified by their index.) is determined.
+     *          which are live (identified by their index) is determined.
      *          I.e., if you need to know if the variable with the index 5 is
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
@@ -1005,8 +1006,8 @@ final class Code private (
                     case lv @ LocalVariable(
                         startPC,
                         length,
-                        name,
-                        fieldType,
+                        _ /*name*/ ,
+                        _ /*fieldType*/ ,
                         index
                         ) if startPC <= pc && startPC + length > pc ⇒
                         (index, lv)
@@ -1058,6 +1059,18 @@ final class Code private (
      * @param pc A valid index in the code array.
      */
     @inline def isModifiedByWide(pc: PC): Boolean = pc > 0 && instructions(pc - 1) == WIDE
+
+    def iterator: Iterator[Instruction] = {
+        new AbstractIterator[Instruction] {
+            private[this] var pc = 0
+            def hasNext: Boolean = pc < instructions.length
+            def next(): Instruction = {
+                val i = instructions(pc)
+                pc = i.indexOfNextInstruction(pc)(code)
+                i
+            }
+        }
+    }
 
     /**
      * Collects all instructions for which the given function is defined.
@@ -1690,7 +1703,7 @@ object Code {
     def computeMaxLocalsRequiredByCode(instructions: Array[Instruction]): Int = {
         val instructionsLength = instructions.length
         var pc = 0
-        var maxRegisters = 0
+        var maxRegisterIndex = -1
         var modifiedByWide = false
         do {
             val i: Instruction = instructions(pc)
@@ -1698,14 +1711,23 @@ object Code {
                 modifiedByWide = true
                 pc += 1
             } else {
-                if (i.writesLocal && i.indexOfWrittenLocal > maxRegisters) {
-                    maxRegisters = i.indexOfWrittenLocal
+                if (i.writesLocal) {
+                    var lastRegisterIndex = i.indexOfWrittenLocal
+                    if (i.isStoreLocalVariableInstruction &&
+                        i.asStoreLocalVariableInstruction.computationalType.operandSize == 2) {
+                        // i.e., not IINC...
+                        lastRegisterIndex += 1
+                    }
+                    if (lastRegisterIndex > maxRegisterIndex) {
+                        maxRegisterIndex = lastRegisterIndex
+                    }
                 }
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
         } while (pc < instructionsLength)
-        maxRegisters
+
+        maxRegisterIndex + 1 /* the first register has index 0 */
     }
 
     def computeMaxLocals(

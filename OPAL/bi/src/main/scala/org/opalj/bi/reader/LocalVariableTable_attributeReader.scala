@@ -86,12 +86,12 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): LocalVariableTable_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt()
         val entriesCount = in.readUnsignedShort()
         if (entriesCount > 0 || reifyEmptyAttributes) {
@@ -116,6 +116,5 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(LocalVariableTableAttribute.Name → parser)
+    registerAttributeReader(LocalVariableTableAttribute.Name → parserFactory())
 }
-

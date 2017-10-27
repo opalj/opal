@@ -76,17 +76,19 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
         if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
-            def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-                p match {
-                    case UnknownClassImmutability ⇒
-                        val dependees = Traversable(EP(e, p))
-                        IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
-                    case AtLeastConditionallyImmutableObject ⇒
-                        val dependees = Traversable(EP(e, p))
-                        IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
-                    case p: ClassImmutability ⇒
-                        assert(p.isFinal)
-                        Result(cf, p.correspondingTypeImmutability)
+            val c = new OnUpdateContinuation { c ⇒
+                def apply(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                    p match {
+                        case UnknownClassImmutability ⇒
+                            val dependees = Traversable(EP(e, p))
+                            IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
+                        case AtLeastConditionallyImmutableObject ⇒
+                            val dependees = Traversable(EP(e, p))
+                            IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
+                        case p: ClassImmutability ⇒
+                            assert(p.isFinal)
+                            Result(cf, p.correspondingTypeImmutability)
+                    }
                 }
             }
 
@@ -242,10 +244,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             nextResult()
                         case AtLeastConditionallyImmutableType ⇒
                             dependencies = dependencies map {
-                                case EPK(dependeeE, _) if dependeeE eq e ⇒
-                                    EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
-                                case EP(dependeeE, _) if dependeeE eq e ⇒
-                                    EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
+                                case EPK(dependeeE: ClassFile, _) if dependeeE eq e ⇒
+                                    EP(dependeeE, AtLeastConditionallyImmutableType)
+                                case EP(dependeeE: ClassFile, _) if dependeeE eq e ⇒
+                                    EP(dependeeE, AtLeastConditionallyImmutableType)
                                 case d ⇒
                                     d
                             }

@@ -42,7 +42,13 @@ import org.opalj.ai.ValueOrigin
  */
 class Parameters[P <: AnyRef](
         val parameters: Array[P] // EVENTUALLY CONST
-) {
+) extends (Int ⇒ P) {
+
+    /**
+     * Returns the parameter with the specified index; the first (declared) parameter has the
+     * index 1. The (implicit) this parameter has the index 0, if it exists.
+     */
+    def apply(index: Int): P = this.parameters(index)
 
     /**
      * Returns the parameter with the respective value origin.
@@ -75,4 +81,3 @@ class Parameters[P <: AnyRef](
         parametersTxt.mkString(s"Parameters(\n\t", ",\n\t", "\n)")
     }
 }
-

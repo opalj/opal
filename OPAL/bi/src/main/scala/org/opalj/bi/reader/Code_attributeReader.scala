@@ -107,12 +107,12 @@ trait Code_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Code_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length = */ in.readInt()
         Code_attribute(
             cp,
@@ -131,7 +131,6 @@ trait Code_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(CodeAttribute.Name → parser)
+    registerAttributeReader(CodeAttribute.Name → parserFactory())
 
 }
-

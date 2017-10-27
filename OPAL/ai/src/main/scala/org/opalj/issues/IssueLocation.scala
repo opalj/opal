@@ -77,11 +77,11 @@ abstract class ProjectLocation(
 
     def compareTo(other: IssueLocation): Int = {
         other match {
-            case that: InstructionLocation ⇒ 1
-            case that: MethodLocation      ⇒ 1
-            case that: FieldLocation       ⇒ 1
-            case that: ClassLocation       ⇒ 1
-            case that: PackageLocation     ⇒ 1
+            case _: InstructionLocation ⇒ 1
+            case _: MethodLocation      ⇒ 1
+            case _: FieldLocation       ⇒ 1
+            case _: ClassLocation       ⇒ 1
+            case _: PackageLocation     ⇒ 1
             case that: ProjectLocation ⇒
                 that.theProject.hashCode() compare this.theProject.hashCode() match {
                     case 0 ⇒

@@ -30,10 +30,9 @@ package org.opalj
 package ai
 
 import java.net.URL
-
-import scala.collection.JavaConversions._
-
 import java.util.concurrent.ConcurrentLinkedQueue
+
+import scala.collection.JavaConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
@@ -42,7 +41,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IFICMPInstruction
 
 /**
- * A shallow analysis that tries to identify useless computations.
+ * A shallow analysis that tries to identify useless computations; here, "ifs" where the condition
+ * is constant.
  *
  * @author Michael Eichberg
  */
@@ -89,6 +89,6 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
             }
         }
 
-        BasicReport(results.mkString(s"${results.size} Useless computations:\n", "\n", "\n"))
+        BasicReport(results.asScala.mkString(s"${results.size} useless computations:\n", "\n", "\n"))
     }
 }

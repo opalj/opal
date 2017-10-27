@@ -154,9 +154,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         (c1, c2) match {
             case (ComputationWithException(e1), ComputationWithException(e2)) ⇒
                 ComputationWithSideEffectOrException(mergeMultipleExceptionValues(pc, e1, e2))
-            case (ComputationWithException(e1), _ /*ComputationWithoutException*/ ) ⇒
+            case (ComputationWithException(_), _ /*ComputationWithoutException*/ ) ⇒
                 c1
-            case (_ /*ComputationWithoutException*/ , ComputationWithException(e2)) ⇒
+            case (_ /*ComputationWithoutException*/ , ComputationWithException(_)) ⇒
                 c2
             case _ ⇒
                 ComputationWithSideEffectOnly
@@ -281,7 +281,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     /**
      * A reference value with a single (upper) type (bound).
      */
-    protected[this] trait SReferenceValue[T <: ReferenceType] { this: AReferenceValue ⇒
+    protected[this] trait SReferenceValue[T <: ReferenceType] extends ReferenceValue {
+        this: AReferenceValue ⇒
 
         val theUpperTypeBound: T
 

@@ -947,7 +947,7 @@ object TACAI {
                     val newUseSites = useSites - pcToIndex(useSite)
                     tacParams.parameters(-defSite - 1) = new TACMethodParameter(origin, newUseSites)
                 } else {
-                    /* IMPROVE Add support tracking def->use information for exceptions (currently we only have use->def.)
+                    /* IMPROVE Support tracking def->use information for exceptions (currently we only have use->def.)
                     val useSiteIndex = pcToIndex(useSite)
                     val defSitePC = ai.pcOfVMLevelValue(defSite)
                     // we have an obsolete exception usage; see

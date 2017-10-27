@@ -80,7 +80,8 @@ package object reader {
     ): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         val exceptionsMutex = new Object
         var exceptions: List[Throwable] = Nil
-        def handleException(source: Source, e: Throwable): Unit = {
+        def handleException(source: Source, t: Throwable): Unit = {
+            val e = new RuntimeException(s"exception while processing: $source", t)
             exceptionsMutex.synchronized { exceptions = e :: exceptions }
         }
 

@@ -49,25 +49,38 @@ object HermesCLI {
         println("OPAL - Hermes")
         println("Parameters:")
         println("   -config <FileName> the configuration which lists a corpus' projects")
-        println("   -csv <FileName> the file to which the results should be exported")
+        println("   -statistics <FileName> the csv file to which the results should be exported")
+        println("   -mapping <FileName> the properties file with the mapping between the feature")
+        println("                       queries and the extracted features; format:")
+        println("                       <FeatureQueryClass>=<FeatureID>(,<FeatureID>)*")
+        println("                       where in FeatureIDs every \\ is replaced by \\\\")
+        println("                                             ... new line ('\\n') is replaced by \\n")
+        println("                                             ... , is replaced by \\,")
         println("   [-noProjectStatistics project statistics are not exported]")
         println()
-        println("java org.opalj.hermes.HermesCLI -config <ConfigFile.json> -csv <FileName>")
+        println("java org.opalj.hermes.HermesCLI -config <ConfigFile.json> -statistics <FileName>")
     }
 
     def main(args: Array[String]): Unit = {
         var configFile: String = null
-        var csvFile: String = null
+        var statisticsFile: String = null
+        var mappingFile: Option[String] = None
         var noProjectStatistics: Boolean = false
 
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-csv" ⇒
-                    i += 1; csvFile = args(i)
                 case "-config" ⇒
                     i += 1; configFile = args(i)
-                case "-noProjectStatistics" ⇒ noProjectStatistics = true
+
+                case "-statistics" ⇒
+                    i += 1; statisticsFile = args(i)
+
+                case "-mapping" ⇒
+                    i += 1; mappingFile = Some(args(i))
+
+                case "-noProjectStatistics" ⇒
+                    noProjectStatistics = true
 
                 case arg ⇒
                     Console.err.println(s"Unknown parameter $arg.")
@@ -76,17 +89,24 @@ object HermesCLI {
             }
             i += 1
         }
-        if (configFile == null || csvFile == null) {
-            Console.err.println("Missing config file and/or csv file.")
+        if (configFile == null || statisticsFile == null) {
+            Console.err.println("Missing config file and/or statistics file.")
             showUsage()
             System.exit(1)
         }
 
         Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
-                val exportFile = new File(csvFile).getAbsoluteFile()
-                Hermes.exportCSV(exportFile, !noProjectStatistics)
-                println("Wrote: "+exportFile)
+                val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
+                Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
+                println("Wrote statistics: "+theStatisticsFile)
+
+                mappingFile.foreach { mappingFile ⇒
+                    val theMappingFile = new File(mappingFile).getAbsoluteFile()
+                    Hermes.exportMapping(theMappingFile)
+                    println("Wrote mapping: "+theMappingFile)
+                }
+
                 System.exit(0)
             }
         }

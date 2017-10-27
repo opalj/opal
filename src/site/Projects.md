@@ -7,7 +7,7 @@ Reading in a project is generally straight forward using [`org.oalj.br.analyses.
 
     import org.opalj.br.analyses.Project
 
-    val projectJAR = "OPAL/bi/target/scala-2.11/resource_managed/test/method_types.jar"
+    val projectJAR = "OPAL/bi/target/scala-2.12/resource_managed/test/method_types.jar"
     implicit val p = Project(
         new java.io.File(projectJAR), // path to the JAR files/directories containing the project
         org.opalj.bytecode.RTJar // predefined path(s) to the used libraries

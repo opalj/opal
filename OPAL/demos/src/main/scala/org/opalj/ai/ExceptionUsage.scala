@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
@@ -134,7 +135,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
                             if (i.isVirtualMethodCall) {
                                 updateUsageKind(operands.drop(parametersCount).head, UsageKind.UsedAsReceiver)
                             }
-                        case i: FieldWriteAccess ⇒
+                        case _: FieldWriteAccess ⇒
                             updateUsageKind(operands.head, UsageKind.StoredInField)
                         case ARETURN ⇒
                             updateUsageKind(operands.head, UsageKind.IsReturned)
@@ -147,7 +148,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             }
 
             val usages =
-                for { (key @ (pc, typeName), exceptionUsage) ← exceptionUsages }
+                for { ((pc, typeName), exceptionUsage) ← exceptionUsages }
                     yield ExceptionUsage(method, pc, typeName, exceptionUsage)
 
             if (usages.isEmpty)
@@ -211,6 +212,9 @@ class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val metho
     with domain.IgnoreSynchronization
     with domain.TheProject
     with domain.TheMethod {
+
+    def abortProcessingExceptionsOfCalledMethodsOnUnknownException: Boolean = false
+    def abortProcessingThrownExceptionsOnUnknownException: Boolean = false
 
     def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethods.Value = {
         ExceptionsRaisedByCalledMethods.Any

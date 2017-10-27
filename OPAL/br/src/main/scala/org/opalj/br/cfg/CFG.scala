@@ -551,7 +551,7 @@ case class CFG(
 
 object CFG {
 
-    val CheckConsistencyKey = "org.opalj.br.debug.cfg.CFG.consistency"
+    final val CheckConsistencyKey = "org.opalj.br.debug.cfg.CFG.consistency"
 
     final val CheckConsistency: Boolean = {
         implicit val logContext = GlobalLogContext

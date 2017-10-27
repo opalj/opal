@@ -32,7 +32,6 @@ package br
 import java.net.URL
 import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
 import org.opalj.fpcf.properties.AllThrownExceptions
 import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract
@@ -52,7 +51,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         val ps = project.get(PropertyStoreKey)
-        ps.scheduleForCollected(PropertyStore.entitySelector[Method])(new ThrownExceptionsFallbackAnalysis(ps))
+        ps.scheduleForEntities(project.allMethods)(new ThrownExceptionsFallbackAnalysis(ps))
         ps.waitOnPropertyComputationCompletion(true)
 
         val methodsWithCompleteThrownExceptionsInfo = ps.collect {
@@ -62,10 +61,10 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
             case e @ (m: Method, ts: AllThrownExceptions) if ts.types.isEmpty ⇒ e
         }
 
-        val methodsWithCompleteThrownExceptionsInfoCount = methodsWithCompleteThrownExceptionsInfo.size
-        val privateMethodsWithCompleteThrownExceptionsInfoCount = {
+        val methodsWithCompleteThrownExceptionsInfoCount =
+            methodsWithCompleteThrownExceptionsInfo.size
+        val privateMethodsWithCompleteThrownExceptionsInfoCount =
             methodsWithCompleteThrownExceptionsInfo.view.filter(_._1.isPrivate).size
-        }
         val methodsWhichDoNotThrowExceptionsCount =
             methodsWhichDoNotThrowExceptions.view.filter(_._1.isPrivate).size
 
@@ -78,7 +77,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 "\n\nNumber of methods for which the set of thrown exceptions is known: "+
                 methodsWithCompleteThrownExceptionsInfoCount+"\n"+
                 s" ... private methods: ${privateMethodsWithCompleteThrownExceptionsInfoCount}\n"+
-                s" ... number of methods which throw no exceptions: ${methodsWhichDoNotThrowExceptions.size}\n"+
+                s" ... which throw no exceptions: ${methodsWhichDoNotThrowExceptions.size}\n"+
                 s" ... ... private methods: $methodsWhichDoNotThrowExceptionsCount"
         )
     }

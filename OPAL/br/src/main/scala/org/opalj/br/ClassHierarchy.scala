@@ -34,8 +34,8 @@ import scala.annotation.tailrec
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.collection.AbstractIterator
 import scala.io.BufferedSource
+import scala.collection.AbstractIterator
 import scala.collection.mutable
 import scala.collection.generic.Growable
 import scala.concurrent.Future
@@ -58,7 +58,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.CompleteCollection
 import org.opalj.collection.IncompleteCollection
@@ -1215,7 +1214,7 @@ class ClassHierarchy private (
         if (theSupertype eq Object)
             return Yes;
 
-        if (subtype eq Object /* && theSupertype != ObjectType.Object*/ )
+        if (subtype eq Object /* && theSupertype != ObjectType.Object is already handled */ )
             return No;
 
         if (isUnknown(subtype)) {
@@ -1257,7 +1256,6 @@ class ClassHierarchy private (
                 No
             } else {
                 var answer: Answer = No
-                // TODO Use/Implement something like "foldLeftWhile for UIDSets"
                 val supertypesIterator = superinterfaceTypes.toIterator
                 while (supertypesIterator.hasNext) {
                     val intermediateType = supertypesIterator.next()
@@ -1825,7 +1823,7 @@ class ClassHierarchy private (
                     case (GenericTypeWithClassSuffix(containerType, elements, _), GenericType(superContainerType, superElements)) ⇒
                         compareSharedTypeArguments(containerType, elements, superContainerType, superElements)
 
-                    case (GenericTypeWithClassSuffix(containerType, typeArguments, suffix), GenericTypeWithClassSuffix(superContainerType, supertypeArguments, superSuffix)) ⇒ {
+                    case (GenericTypeWithClassSuffix(containerType, _ /*typeArguments*/ , suffix), GenericTypeWithClassSuffix(superContainerType, _ /*supertypeArguments*/ , superSuffix)) ⇒ {
                         compareSharedTypeArguments(containerType, subtype.classTypeSignatureSuffix.last.typeArguments,
                             superContainerType, supertype.classTypeSignatureSuffix.last.typeArguments) match {
                             case Yes ⇒ compareTypeArgumentsOfClassSuffixes(suffix.dropRight(1), superSuffix.dropRight(1)) match {
@@ -2530,7 +2528,7 @@ object ClassHierarchy {
                         "internal - class hierarchy",
                         "loading the predefined class hierarchy failed; "+
                             "make sure that all resources are found in the correct folders and "+
-                            "try to rebuild the project using \"sbt copy-resources\""
+                            "try to rebuild the project using \"sbt copyResources\""
                     )
                     return Iterator.empty;
                 }
@@ -2554,7 +2552,7 @@ object ClassHierarchy {
         }
         // We have to make sure that we have seen all types before we can generate
         // the arrays to store the information about the types!
-        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition(_))
+        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition)
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
@@ -2702,13 +2700,13 @@ object ClassHierarchy {
         assert(knownTypesMap.length == subclassTypesMap.length)
         assert(knownTypesMap.length == subinterfaceTypesMap.length)
         assert(
-            (0 until knownTypesMap.length) forall { i ⇒
+            knownTypesMap.indices forall { i ⇒
                 (knownTypesMap(i) ne null) ||
                     ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))
             }
         )
         assert(
-            (0 until knownTypesMap.length) forall { i ⇒
+            knownTypesMap.indices forall { i ⇒
                 (knownTypesMap(i) eq null) ||
                     ((subclassTypesMap(i) ne null) && (subinterfaceTypesMap(i) ne null))
             }

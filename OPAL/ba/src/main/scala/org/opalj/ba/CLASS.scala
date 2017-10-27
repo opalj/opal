@@ -108,9 +108,9 @@ class CLASS[T](
             for {
                 m ← classFile.methods
                 ms = m.signature
-                Some(a: T @unchecked) ← annotationsMap.get(ms)
+                Some(a) ← annotationsMap.get(ms)
             } yield {
-                (m, a)
+                (m, a: T @unchecked)
             }
         val brAnnotationsMap = brAnnotations.toMap
 

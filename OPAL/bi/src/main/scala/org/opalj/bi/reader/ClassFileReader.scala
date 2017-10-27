@@ -423,14 +423,14 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         exceptionHandler: ExceptionHandler
     ): Unit = {
 
-        import scala.collection.JavaConversions._
+        import scala.collection.JavaConverters._
 
         // First let's collect all inner Jar Entries, then do the processing.
         // Otherwise - if the OPALExecutionContextTaskSupport uses a fixed
         // sized thread pool - we may run out of threads... to process anything.
         val innerJarEntries = new ConcurrentLinkedQueue[ZipEntry]
 
-        val jarEntries = jarFile.entries.toArray
+        val jarEntries = jarFile.entries.asScala.toArray
         val nextEntryIndex = new AtomicInteger(jarEntries.length - 1)
         val parallelismLevel = NumberOfThreadsForIOBoundTasks
         val futures: Array[Future[Unit]] = new Array(parallelismLevel)
@@ -463,7 +463,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             Await.ready(futures(futureIndex), Duration.Inf)
         }
 
-        for (jarEntry ← innerJarEntries.iterator()) {
+        innerJarEntries.iterator().forEachRemaining { jarEntry ⇒
             val nextJarFileURL = s"${jarFileURL}jar:${jarEntry.getName}!/"
             try {
                 val jarData = new Array[Byte](jarEntry.getSize.toInt)
@@ -589,7 +589,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 val parClassFiles = classFiles.par
                 parClassFiles.tasksupport = OPALExecutionContextTaskSupport
                 parClassFiles.foreach { classFile ⇒
-                    theClassFiles.addAll(processClassFile(classFile).asJava)
+                    theClassFiles.addAll(processClassFile(classFile, exceptionHandler).asJava)
                 }
                 allClassFiles ++= theClassFiles.asScala
             }

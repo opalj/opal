@@ -165,7 +165,7 @@ object EntryPointKey extends ProjectInformationKey[EntryPointInformation, Nothin
                                         "entry point ignored"
                                 )
                         } catch {
-                            case e: IllegalArgumentException ⇒
+                            case _: IllegalArgumentException ⇒
                                 OPALLogger.warn(
                                     "project configuration",
                                     s"illegal: $declClass or $name or $jvmDescriptor"

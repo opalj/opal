@@ -46,7 +46,7 @@ case class Query(query: String, activate: Boolean = true) {
 
     def isEnabled: Boolean = activate
 
-    def reify: Option[FeatureQuery] = {
+    lazy val reify: Option[FeatureQuery] = {
         try {
             val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = runtimeMirror.staticModule(query)
