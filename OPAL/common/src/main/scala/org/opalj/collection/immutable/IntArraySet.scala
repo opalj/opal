@@ -573,6 +573,7 @@ private[immutable] class FilteredIntArraySet(
                             case 0 ⇒ EmptyIntArraySet
                             case 1 ⇒ new IntArraySet1(targetIs(0))
                             case 2 ⇒ new IntArraySet2(targetIs(0), targetIs(1))
+                            case 3 ⇒ new IntArraySet3(targetIs(0), targetIs(1), targetIs(2))
                             case _ ⇒
                                 if (targetIsIndex == max) // no value was filtered...
                                     origS

@@ -57,7 +57,8 @@ class DefaultPerformInvocationsDomain[Source](
 class DefaultPerformInvocationsDomainWithCFG[Source](
         project: Project[Source],
         method:  Method
-) extends DefaultPerformInvocationsDomain[Source](project, method) with RecordCFG
+) extends DefaultPerformInvocationsDomain[Source](project, method)
+    with RecordCFG
 
 class DefaultPerformInvocationsDomainWithCFGAndDefUse[Source](
         project: Project[Source],
