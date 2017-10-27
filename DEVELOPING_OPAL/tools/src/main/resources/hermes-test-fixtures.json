@@ -76,7 +76,7 @@
                     },
                     {
                         "id": "innerclasses",
-                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/innerclasses.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/innerclasses-1.8-g-parameters-genericsignature.jar"
                     },
                     {
                         "id": "java8methodresolution",
@@ -112,7 +112,7 @@
                     },
                     {
                         "id": "pureness",
-                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/pureness.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/pureness-1.8-g-parameters-genericsignature.jar"
                     },
                     {
                         "id": "signatures",
