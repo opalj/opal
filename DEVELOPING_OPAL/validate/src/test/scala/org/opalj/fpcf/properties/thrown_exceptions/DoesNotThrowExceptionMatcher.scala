@@ -26,46 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package strings;
+package org.opalj.fpcf.properties.thrown_exceptions
+
+import org.opalj.br.{AnnotationLike, ObjectType}
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.{Entity, Property}
+import org.opalj.fpcf.properties.{AbstractPropertyMatcher, NoExceptionsAreThrown, ThrownExceptions}
 
 /**
- * Test methods for the ThrownExecption analysis
+ * Matches a methods's `ThrowsException` property.
  *
  * @author Andreas Muttscheller
  */
-public class ThrownExceptions {
+class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
 
-    public static int staticDoesNotThrowException() {
-        return 1;
+    def validateProperty(
+        p:          SomeProject,
+        as:         Set[ObjectType],
+        entity:     Entity,
+        a:          AnnotationLike,
+        properties: List[Property]
+    ): Option[String] = {
+        if (properties.forall(p ⇒ p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key))
+            None
+        else {
+            Some(a.elementValuePairs.head.value.toString)
+        }
     }
 
-    public static int staticThrowsException() {
-        throw new NullPointerException();
-    }
-
-    public static int staticCallDoesNotThrowException() {
-        staticCallDoesNotThrowException();
-        return 1337;
-    }
-
-    public static int staticCallThrowsException() {
-        staticThrowsException();
-        return 42;
-    }
-
-    public int doesNotThrowException() {
-        return 2;
-    }
-
-    public int throwException() {
-        throw new NullPointerException();
-    }
-
-    public int callDoesNotThrowException() {
-        return doesNotThrowException();
-    }
-
-    public int callThrowException() {
-        return throwException();
-    }
 }
