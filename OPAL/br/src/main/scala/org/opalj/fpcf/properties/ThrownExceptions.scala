@@ -30,7 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyComputation
+import scala.reflect.runtime.universe.typeOf
+
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.PC
@@ -64,6 +65,7 @@ import org.opalj.br.instructions._
  * }}}
  *
  * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
 sealed abstract class ThrownExceptions extends Property {
 
@@ -168,22 +170,36 @@ object ThrownExceptionsAreUnknown {
  * to '''never throw exceptions'''.
  */
 object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ ThrownExceptions) {
-
-    final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
-
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
         e match { case m: Method ⇒ this(ps, m) }
     }
 
     def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
+        val analysis = new ThrownExceptionsFallbackAnalysis(ps)
+        analysis.apply(m).asInstanceOf[Result].p.asInstanceOf[ThrownExceptions]
+    }
+}
+
+class ThrownExceptionsFallbackAnalysis(ps: PropertyStore) extends PropertyComputation[Method] {
+    final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
+
+    def apply(m: Method): PropertyComputationResult = {
+        this(m, Set.empty[EOptionP[Method, ThrownExceptions]])
+    }
+
+    def apply(
+        m:                Method,
+        initialDependees: Set[EOptionP[Method, ThrownExceptions]]
+    ): PropertyComputationResult = {
         if (m.isNative)
-            return ThrownExceptionsAreUnknown.MethodIsNative;
+            return ImmediateResult(m, ThrownExceptionsAreUnknown.MethodIsNative);
         if (m.isAbstract)
-            return NoExceptionsAreThrown.MethodIsAbstract;
+            return ImmediateResult(m, NoExceptionsAreThrown.MethodIsAbstract);
         val body = m.body
         if (body.isEmpty)
-            return ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable;
+            return ImmediateResult(m, ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable);
 
+        val project = ps.ctx.get(typeOf[SomeProject]).get.asInstanceOf[SomeProject]
         //
         //... when we reach this point the method is non-empty
         //
@@ -202,6 +218,8 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
         var fieldAccessMayThrowNullPointerException = false
         var isFieldAccessed = false
 
+        var dependees = initialDependees
+
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
@@ -212,8 +230,8 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                 case ATHROW.opcode ⇒
                     result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
                     false
-                case INVOKESPECIAL.opcode ⇒
-                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
+                case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
+                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) = instruction
                     if ((declaringClass eq ObjectType.Object) && (
                         (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                         (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
@@ -222,14 +240,81 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     )) {
                         true
                     } else {
+                        instruction match {
+                            case mii: NonVirtualMethodInvocationInstruction ⇒
+                                project.nonVirtualCall(mii) match {
+                                    case Success(callee) ⇒
+                                        val thrownExceptions = ps(callee, ThrownExceptions.Key)
+
+                                        thrownExceptions match {
+                                            case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
+                                                true
+                                            case EP(_, e: ThrownExceptionsAreUnknown) ⇒
+                                                result = e
+                                                false
+                                            // Handling cyclic computations
+                                            case epk ⇒
+                                                dependees += epk
+                                                true
+                                        }
+                                    case _ ⇒
+                                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                                        false
+                                }
+                            case _ ⇒
+                                result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                                false
+                        }
+                    }
+
+                case INVOKEDYNAMIC.opcode ⇒
+                    result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                    false
+
+                case INVOKEINTERFACE.opcode ⇒
+                    val ii = instruction.asInstanceOf[INVOKEINTERFACE]
+                    val callees = project.interfaceCall(ii)
+                    if (callees.nonEmpty) {
+                        val thrownExceptions = ps(callees.head, ThrownExceptions.Key)
+
+                        thrownExceptions match {
+                            case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
+                                true
+                            case EP(_, e: ThrownExceptionsAreUnknown) ⇒
+                                result = e
+                                false
+                            // Handling cyclic computations
+                            case epk ⇒
+                                dependees += epk
+                                true
+                        }
+                    } else {
                         result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
                         false
                     }
-                case INVOKEDYNAMIC.opcode |
-                    INVOKESTATIC.opcode |
-                    INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
-                    false
+
+                case INVOKEVIRTUAL.opcode ⇒
+                    val iv = instruction.asInstanceOf[INVOKEVIRTUAL]
+                    val callerPackage = m.classFile.fqn.substring(0, m.classFile.fqn.lastIndexOf("/"))
+                    val callees = project.virtualCall(callerPackage, iv)
+                    if (callees.nonEmpty) {
+                        val thrownExceptions = ps(callees.head, ThrownExceptions.Key)
+
+                        thrownExceptions match {
+                            case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
+                                true
+                            case EP(_, e: ThrownExceptionsAreUnknown) ⇒
+                                result = e
+                                false
+                            // Handling cyclic computations
+                            case epk ⇒
+                                dependees += epk
+                                true
+                        }
+                    } else {
+                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                        false
+                    }
 
                 // let's determine if the register 0 is updated (i.e., if the register which
                 // stores the this reference in case of instance methods is updated)
@@ -324,10 +409,11 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     true
             }
         }
+
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
         if (!areAllExceptionsCollected) {
             assert(result ne null)
-            return result;
+            return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
             (isFieldAccessed && isLocalVariable0Updated)) {
@@ -337,18 +423,31 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        if (exceptions.isEmpty)
-            NoExceptionsAreThrown.NoInstructionThrowsExceptions
-        else
-            new AllThrownExceptions(exceptions, false)
-    }
+        def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+            p match {
+                case NoExceptionsAreThrown.NoInstructionThrowsExceptions ⇒
+                    Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
 
-}
+                case thrownExceptions: ThrownExceptionsAreUnknown ⇒
+                    dependees = dependees.filter { _.e ne e }
+                    if (dependees.isEmpty)
+                        Result(m, thrownExceptions)
+                    else
+                        IntermediateResult(m, thrownExceptions, dependees, c)
+            }
+        }
 
-class ThrownExceptionsFallbackAnalysis(ps: PropertyStore) extends PropertyComputation[Method] {
-
-    def apply(m: Method): PropertyComputationResult = {
-        ImmediateResult(m, ThrownExceptionsFallbackAnalysis(ps, m))
+        if (dependees.isEmpty) {
+            if (exceptions.isEmpty)
+                Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
+            else
+                Result(m, new AllThrownExceptions(exceptions, false))
+        } else {
+            if (exceptions.isEmpty)
+                IntermediateResult(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions, dependees, c)
+            else
+                IntermediateResult(m, new AllThrownExceptions(exceptions, false), dependees, c)
+        }
     }
 
 }
