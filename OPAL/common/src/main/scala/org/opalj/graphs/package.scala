@@ -302,7 +302,7 @@ package object graphs {
             var nextDFSNum = thisPathFirstDFSNum
             var nextCSCCId = 1
             val path = mutable.ArrayBuffer.empty[N]
-            val worklist = mutable.Stack.empty[N]
+            val worklist = mutable.Stack.empty[N] // IMPROVE replace by AnyRefArrayStack
 
             // HELPER METHODS
             def addToPath(n: N): DFSNum = {
