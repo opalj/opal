@@ -86,6 +86,8 @@ trait IntSet[T <: IntSet[T]] { this: T ⇒
             this.foldLeft(that)(_ + _) // we expand `that`
     }
 
+    final def ++(that: TraversableOnce[Int]): T = that.foldLeft(this)(_ + _)
+
     def iterator: Iterator[Int]
     def intIterator: IntIterator
     def toChain: Chain[Int]
