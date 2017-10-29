@@ -57,6 +57,8 @@ testOptions in ThisBuild := {
     ).value
 }
 
+testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "2")
+
 testOptions in ThisBuild += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
