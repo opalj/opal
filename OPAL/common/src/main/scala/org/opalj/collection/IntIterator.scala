@@ -29,6 +29,8 @@
 package org.opalj
 package collection
 
+import scala.collection.AbstractIterator
+
 import org.opalj.collection.immutable.Chain
 
 /**
@@ -49,6 +51,10 @@ trait IntIterator { self ⇒
      */
     def next(): Int
     def hasNext: Boolean
+
+    def nonEmpty: Boolean = hasNext
+
+    def isEmpty: Boolean = !hasNext
 
     def exists(p: Int ⇒ Boolean): Boolean = {
         while (this.hasNext) { if (p(this.next)) return true; }
@@ -97,7 +103,7 @@ trait IntIterator { self ⇒
             private[this] var v: Int = 0
             private[this] def goToNextValue(): Unit = {
                 while (self.hasNext) {
-                    v = next
+                    v = self.next()
                     if (p(v)) return ;
                 }
                 hasNextValue = false
@@ -113,12 +119,11 @@ trait IntIterator { self ⇒
     def filter(p: Int ⇒ Boolean): IntIterator = withFilter(p)
 
     def toArray: Array[Int] = {
-        var asLength = 32
+        var asLength = 8
         var as = new Array[Int](asLength)
 
-        var i = -1
+        var i = 0
         while (hasNext) {
-            i += 1
             if (i == asLength) {
                 val newAS = new Array[Int](Math.min(asLength * 2, asLength + 512))
                 Array.copy(as, 0, newAS, 0, asLength)
@@ -127,8 +132,15 @@ trait IntIterator { self ⇒
             }
             val v = next
             as(i) = v
+            i += 1
         }
-        as
+        if (i == asLength)
+            as
+        else {
+            val resultAs = new Array[Int](i)
+            Array.copy(as, 0, resultAs, 0, i)
+            resultAs
+        }
     }
 
     def toChain: Chain[Int] = {
@@ -147,6 +159,15 @@ trait IntIterator { self ⇒
         }
         sb.append(post)
         sb.toString()
+    }
+
+    /**
+     * Converts this iterator to Scala Iterator (which potentially will (un)box
+     * the returned values.)
+     */
+    def iterator: Iterator[Int] = new AbstractIterator[Int] {
+        def hasNext: Boolean = self.hasNext
+        def next: Int = self.next
     }
 
 }
