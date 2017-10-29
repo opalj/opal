@@ -32,12 +32,10 @@ package immutable
 
 import org.junit.runner.RunWith
 
-//import scala.collection.immutable.SortedSet
-
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
-//import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
@@ -51,7 +49,27 @@ import org.scalacheck.Arbitrary
 @RunWith(classOf[JUnitRunner])
 object IntTrieSetProperties extends Properties("IntTrieSet") {
 
+    val r = new java.util.Random()
+
     val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
+
+    implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
+        Gen.sized { l ⇒
+            (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100000) - 50000 }
+        }
+    }
+
+    // NOT TO BE USED BY TESTS THAT TEST THE CORRECT CONSTRUCTION!
+    implicit val arbIntTrieSet: Arbitrary[IntTrieSet] = Arbitrary {
+        Gen.sized { l ⇒
+            (0 until l).foldLeft(IntTrieSet.empty) { (c, n) ⇒ c + r.nextInt(100000) - 50000 }
+        }
+    }
+
+    // NOT TO BE USED BY TESTS THAT TEST THE CORRECT CONSTRUCTION!
+    implicit val arbListOfIntArraySet: Arbitrary[List[IntArraySet]] = Arbitrary {
+        Gen.sized { s ⇒ Gen.listOfN(s, Arbitrary.arbitrary[IntArraySet]) }
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
@@ -74,7 +92,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (its.nonEmpty == s.nonEmpty) &&
             (its.hasMultipleElements == (s.size > 1)) &&
             (its.isSingletonSet == (s.size == 1)) &&
-            (its.iterator.toSet.toList.sorted == s.toList.sorted) :| "same content"
+            (its.iterator.toList.sorted == s.toList.sorted) :| "same content"
     }
 
     property("create IntTrieSet from List (i.e., with duplicates)") = forAll { l: List[Int] ⇒
@@ -95,18 +113,88 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val itsString = its.mkString(pre, in, post)
         val sString = its.iterator.mkString(pre, in, post)
-        (itsString == sString) :| s"$itsString vs $sString"
+        val lString = s.mkString(pre, in, post)
+        ((itsString.length == sString.length) :| s"$itsString vs. s=$sString") &&
+            ((itsString.length == lString.length) :| s"$itsString vs. l=$lString") &&
+            itsString.startsWith(pre) && itsString.endsWith(post)
     }
 
-    /*
+    property("contains") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
+        val its = s1.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        s1.forall(its.contains) :| s"$its does not contain expected value" &&
+            s2.forall(v ⇒ s1.contains(v) == its.contains(v))
+    }
 
-    property("foreach") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        var newS = Set.empty[Int]
-        fl1.foreach(newS += _)
+    property("foreach") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        var newS = IntArraySet.empty
+        its.foreach { newS += _ } // use foreach to compute a new set
         s == newS
     }
 
+    property("map") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        val mappedIts = its.map(_ * 2)
+        val mappedS = s.map(_ * 2)
+        classify(mappedIts.size > 3, "using trie") {
+            mappedS.size == mappedIts.size &&
+                (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
+        }
+    }
+
+    property("exists") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        s.forall(v ⇒ its.exists(_ == v)) &&
+            s.forall(v ⇒ its.exists(_ != v) == s.exists(_ != v))
+    }
+
+    property("forall") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        its.forall(s.contains) &&
+            its.forall(v ⇒ s.contains(-v)) == s.forall(v ⇒ s.contains(-v))
+    }
+
+    property("foldLeft") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        its.foldLeft(0)(_ + _) == s.foldLeft(0)(_ + _)
+    }
+
+    property("toChain") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        its.toChain.toIterator.toList.sorted == s.iterator.toList.sorted
+    }
+
+    property("getAndRemove") = forAll { s: IntArraySet ⇒
+        var its = EmptyIntTrieSet ++ s.iterator
+        var removed = Chain.empty[Int]
+        while (its.nonEmpty) {
+            val (v, newIts) = its.getAndRemove
+            removed :&:= v
+            its = newIts
+        }
+        (removed.toIterator.toSet.size == s.size) :| "no value is returned more than once" &&
+            (removed.size == s.size) :| "all values are returned"
+    }
+
+    property("flatMap") = forAll { listOfSets: List[IntArraySet] ⇒
+        listOfSets.nonEmpty ==> {
+            val arrayOfSets = listOfSets.toArray
+            val arrayOfITSets = arrayOfSets.map(s ⇒ IntTrieSet.empty ++ s.iterator)
+            val l = arrayOfSets.length
+
+            val flatMappedITSet = arrayOfITSets(0).flatMap(v ⇒ arrayOfITSets(v % l))
+            val flatMappedSSet = arrayOfSets(0).flatMap(v ⇒ arrayOfSets(v % l))
+
+            classify(flatMappedSSet.size > 50, "set with more than 50 elements") {
+                classify(flatMappedSSet.size < listOfSets.map(_.size).sum, "flat map is not the join of all sets") {
+                    flatMappedSSet.forall(flatMappedITSet.contains) &&
+                        flatMappedSSet.size == flatMappedITSet.size
+                }
+            }
+        }
+    }
+
+    /*
     property("withFilter -> iterator (does not force evaluation)") = forAll { s: Set[Int] ⇒
         val fl1 = IntArraySetBuilder(s).result
         var newS = Set.empty[Int]
@@ -134,121 +222,5 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             (newFLS.isEmpty || newS.min == newFLS.min && newS.max == newFLS.max)
     }
 
-    property("map") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        val result = fl1.map(_ * 2 / 3)
-        result.iterator.toList == s.map(_ * 2 / 3).toList.sorted &&
-            result.isInstanceOf[IntArraySet]
-    }
-
-    property("map (identity)") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        (fl1.map(i ⇒ i) eq fl1)
-    }
-
-    property("flatMap") = forAll { s: Seq[Set[Int]] ⇒
-        val fl1: IntArraySet = IntArraySetBuilder(s.flatten: _*).result
-        val indicesSet = IntArraySetBuilder(s.toIndexedSeq.indices.toSet).result
-        val result = indicesSet.flatMap(i ⇒ IntArraySetBuilder(s(i)).result)
-        (fl1 == result) :| "construction independent results" &&
-            (fl1.iterator.toList == s.flatten.toSet.toList.sorted) :| s"equal results (${fl1.iterator.toList} vs ${s.flatten.toList.sorted})"
-    }
-
-    property("-") = forAll { (s: Set[Int], v: Int) ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        (s - v).toList.sorted == (fl1 - v).iterator.toList
-    }
-
-    property("+ (based on set)") = forAll { (s: Set[Int], v: Int) ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        (s + v).toList.sorted == (fl1 + v).iterator.toList
-    }
-
-    property("+ (based on list)") = forAll { (l: List[Int], v: Int) ⇒
-        val ias1 = IntArraySetBuilder(l: _*).result
-        val s = l.toSet
-        classify(s.size < l.size, "list with redundant values") {
-            ias1.iterator.toList == s.toList.sorted
-        }
-    }
-
-    property("subsetOf") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val fl2 = IntArraySetBuilder(s2).result
-        s1.subsetOf(s2) == fl1.subsetOf(fl2)
-    }
-
-    property("iterator") = forAll { s1: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val ss1 = SortedSet.empty[Int] ++ s1
-        ss1.iterator.toList == fl1.iterator.toList
-    }
-
-    property("apply") = forAll { s1: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val ss1 = (SortedSet.empty[Int] ++ s1).toList
-        (0 until ss1.size).forall(i ⇒ fl1(i) == ss1(i))
-    }
-
-    property("equals") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
-        val ias1 = IntArraySetBuilder(s1).result
-        val ias2 = IntArraySetBuilder(s2).result
-        val s1AndS2AreEqual = s1 == s2
-        classify(s1AndS2AreEqual, s"s1 and s2 are equal") {
-            (ias1 == ias2) == s1AndS2AreEqual
-        }
-    }
-
-    property("hashCode") = forAll { s1: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val setHashCode = fl1.hashCode
-        val arraysHashCode = java.util.Arrays.hashCode(s1.toList.sorted.toArray)
-        (setHashCode == arraysHashCode) :| s"$setHashCode vs. $arraysHashCode ($fl1)"
-    }
-
-    property("toIntIterator") = forAll { s1: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val flIt = fl1.iterator
-        val flIntIt = fl1.toIntIterator
-        flIntIt.forall(i ⇒ flIt.next == i)
-    }
-
-    property("toChain") = forAll { s1: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val iasBasedChaing = fl1.toChain
-        val sBasedChain = Chain(s1.toList.sorted: _*)
-        (iasBasedChaing == sBasedChain) :| s"$iasBasedChaing vs. $sBasedChain ($s1)"
-    }
-
-    property("contains") = forAll { (s: Set[Int], v: Int) ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        (s.contains(v) == fl1.contains(v)) :| "is contained in"
-    }
-
-    property("exists") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        s.exists(_ / 3 == 0) == fl1.exists(_ / 3 == 0)
-    }
-
-    property("foldLeft") = forAll { (s: Set[Int], v: String) ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        (s).toList.sorted.foldLeft(v)(_ + _) == fl1.foldLeft(v)(_ + _)
-    }
-
-    property("forall") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        s.forall(_ >= 0) == fl1.forall(_ >= 0)
-    }
-
-    property("++") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
-        val fl1 = IntArraySetBuilder(s1).result
-        val fl2 = IntArraySetBuilder(s2).result
-        (s1 ++ s2).toList.sorted == (fl1 ++ fl2).iterator.toList
-    }
-
-    property("mkString") = forAll { (s: Set[Int], pre: String, in: String, post: String) ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        s.toList.sorted.mkString(pre, in, post) == fl1.mkString(pre, in, post)
-    }
-*/
+    */
 }
