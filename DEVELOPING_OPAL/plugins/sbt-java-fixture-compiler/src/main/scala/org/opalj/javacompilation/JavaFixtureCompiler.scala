@@ -187,7 +187,7 @@ object JavaFixtureCompiler extends AutoPlugin {
                 log.debug("All class files were already packaged.")
             } else {
                 val ratio = notSkipped.size+"/"+results.size
-                log.info(s"Packaged classed of $ratio Java fixture projects.");
+                log.info(s"Packaged classes of $ratio Java fixture projects.");
             }
 
             results

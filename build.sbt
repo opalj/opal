@@ -8,8 +8,8 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "0.9.0-SNAPSHOT"
-// NEXT version 		in ThisBuild := "0.8.16"
+version in ThisBuild := "1.1.0-SNAPSHOT"
+// RELEASED version 		in ThisBuild := "1.0.0" // October 25th, 2017
 // RELEASED version 		in ThisBuild := "0.8.15" // September 7th, 2017
 // RELEASED version 		in ThisBuild := "0.8.14" // June 23rd, 2017
 // RELEASED version 		in ThisBuild := "0.8.13" // MAY 19th, 2017
@@ -32,7 +32,7 @@ scalacOptions in ThisBuild ++= Seq(
     "-Xlint", "-Xfuture", "-Xfatal-warnings",
     "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
     "-Ywarn-unused:imports,privates,locals,implicits",
-    //"-Ywarn-unused:-params", "-Ywarn-unused-import",
+    // Buggy (Scala 2.12.4) "-Ywarn-unused:params,patvars"
     "-Ywarn-infer-any", "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
 scalacOptions in ThisBuild += "-Xdisable-assertions"
@@ -87,7 +87,7 @@ lazy val IntegrationTest = config("it") extend Test
 // Default settings without scoverage
 lazy val buildSettings =
     Defaults.coreDefaultSettings ++ scalariformSettings ++
-        Seq(libraryDependencies ++= Dependencies.opalDefaultDependencies) ++
+        Seq(libraryDependencies ++= Dependencies.testlibs) ++
         Seq(Defaults.itSettings: _*) ++
         Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
         Seq(unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil) ++
@@ -95,20 +95,27 @@ lazy val buildSettings =
         Seq(scalacOptions in(Compile, console) := Seq("-deprecation"))
 
 lazy val scalariformSettings = scalariformItSettings ++
-    Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value) ++
-    Seq(sourceDirectories.in(Compile, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
-    Seq(sourceDirectories.in(Test, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value) ++
-    Seq(sourceDirectories.in(IntegrationTest, ScalariformKeys.format) -= baseDirectory.in(LocalRootProject).value)
+    Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
 
 def getScalariformPreferences(dir: File) = {
     val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
     PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
 }
 
+val localSbtFile = file("local.sbt")
+val rootSettingSets =
+    Seq(sbt.AddSettings.allDefaults) ++ (
+      if (localSbtFile.exists)
+          Seq(sbt.AddSettings.sbtFiles(localSbtFile))
+      else
+          Seq.empty
+      )
+
 lazy val opal = Project(
     id = "OPAL",
     base = file("."),
     settings = Defaults.coreDefaultSettings ++ Seq(publishArtifact := false))
+    .settingSets(rootSettingSets:_*)
     .enablePlugins(ScalaUnidocPlugin)
     .aggregate(
         common,
@@ -142,10 +149,7 @@ lazy val common = Project(
         // we publish the projects.)
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL-Common"),
         //library dependencies
-        libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-        libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-        libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.6",
-        libraryDependencies += "com.iheart" %% "ficus" % "1.4.3"
+        libraryDependencies ++= Dependencies.common(scalaVersion.value)
     ))
     .configs(IntegrationTest)
 
@@ -157,8 +161,7 @@ lazy val bi = Project(
     settings = buildSettings ++ Seq(
         name := "Bytecode Infrastructure",
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-        //library dependencies
-        libraryDependencies += "org.apache.commons" % "commons-text" % "1.1"
+        libraryDependencies ++= Dependencies.bi
     ))
     .dependsOn(common % "it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -202,7 +205,7 @@ lazy val br = Project(
         // standard compiler settings!
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
         //library dependencies
-        libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6"
+        libraryDependencies ++= Dependencies.br
     ))
     .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -296,11 +299,7 @@ lazy val DeveloperTools = Project(
         scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Developer Tools"),
         scalacOptions in(Compile, console) := Seq("-deprecation"),
         //library dependencies
-        libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.144-R12" withSources() withJavadoc(),
-        libraryDependencies += "org.controlsfx" % "controlsfx" % "8.40.14" withJavadoc(),
-        libraryDependencies += "es.nitaur.markdown" % "txtmark" % "0.16" withJavadoc(),
-        libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % "2.9.2" withJavadoc(),
-        libraryDependencies += "org.choco-solver" % "choco-solver" % "4.0.5" withSources() withJavadoc(),
+        libraryDependencies ++= Dependencies.developertools,
         // Required by Java/ScalaFX
         fork := true
     ))

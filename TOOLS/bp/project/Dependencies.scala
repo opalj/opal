@@ -26,42 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
-package l2
-
-import org.opalj.br.Method
-import org.opalj.br.analyses.Project
+import sbt._
 
 /**
- * Performs a simple invocation of the immediately called methods.
+ * Manages the library dependencies of the Bugpicker project.
+ *
+ * @author Simon Leischnig
  */
-class DefaultPerformInvocationsDomain[Source](
-        project: Project[Source],
-        method:  Method
-) extends SharedDefaultDomain[Source](project, method) with PerformInvocations {
+object Dependencies {
 
-    def shouldInvocationBePerformed(method: Method): Boolean = !method.returnType.isVoidType
-
-    type CalledMethodDomain = SharedDefaultDomain[Source] with DefaultRecordMethodCallResults
-
-    def calledMethodDomain(method: Method) = {
-        new SharedDefaultDomain(project, method) with DefaultRecordMethodCallResults
+    lazy val version = new {
+        val opal = "0.9.0-SNAPSHOT"
+        val scalafx = "8.0.144-R12"
     }
 
-    def calledMethodAI = BaseAI
+    lazy val library = new {
+        val bugpickerCore = "de.opal-project" %% "bugpicker-core" % version.opal
+        val ba = "de.opal-project" %% "bytecode-disassembler" % version.opal
+
+        val scalafx = "org.scalafx" %% "scalafx" % version.scalafx
+    }
+
+    import library._
+
+    val buildlevel = Seq(bugpickerCore, ba)
+    val ui = Seq(scalafx)
 
 }
-
-class DefaultPerformInvocationsDomainWithCFG[Source](
-        project: Project[Source],
-        method:  Method
-) extends DefaultPerformInvocationsDomain[Source](project, method)
-    with RecordCFG
-
-class DefaultPerformInvocationsDomainWithCFGAndDefUse[Source](
-        project: Project[Source],
-        method:  Method
-) extends DefaultPerformInvocationsDomainWithCFG[Source](project, method)
-    with RefineDefUseUsingOrigins
