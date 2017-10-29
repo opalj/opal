@@ -452,7 +452,7 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ Iterator[Int],
+        es:               Int ⇒ Iterator[Int], // IMPROVE Use IntIterator
         filterSingletons: Boolean             = false
     ): Chain[Chain[Int]] = {
 
