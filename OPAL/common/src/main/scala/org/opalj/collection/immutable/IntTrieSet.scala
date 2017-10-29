@@ -52,12 +52,7 @@ sealed abstract class IntTrieSet
     private[immutable] def +(i: Int, level: Int): IntTrieSet
     private[immutable] def -(i: Int, key: Int): IntTrieSet
     private[immutable] def constringe(): IntTrieSet
-    private[immutable] def contains(value: Int, key: Int): Boolean = this.contains(value)
-}
-
-object IntTrieSet {
-
-    def empty: IntTrieSet = EmptyIntTrieSet
+    private[immutable] def contains(value: Int, key: Int): Boolean
 }
 
 /** The (potential) leaves of an IntTrie. */
@@ -81,8 +76,8 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = this
     override def map(f: Int ⇒ Int): IntTrieSet = this
     override def -(i: Int): this.type = this
-    override def subsetOf(other: IntTrieSet): Boolean = true
     override def +(i: Int): IntTrieSet1 = new IntTrieSet1(i)
+    override def subsetOf(other: IntTrieSet): Boolean = true
     override def iterator: Iterator[Int] = Iterator.empty
     override def intIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
@@ -122,7 +117,7 @@ case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = f(i)
     override def head: Int = i
     override def -(i: Int): IntTrieSet = if (this.i != i) this else EmptyIntTrieSet
-    override def +(i: Int): IntTrieSet = if (this.i == i) this else IntTrieSet2.from(this.i, i)
+    override def +(i: Int): IntTrieSet = if (this.i == i) this else IntTrieSet.from(this.i, i)
     override def iterator: Iterator[Int] = Iterator.single(i)
     override def intIterator: IntIterator = IntIterator(i)
     override def subsetOf(other: IntTrieSet): Boolean = other.contains(i)
@@ -194,7 +189,7 @@ private[immutable] class IntTrieSet2 private[immutable] (
         val i2 = this.i2
         val newI2 = f(i2)
         if (newI1 != i1 || newI2 != i2)
-            IntTrieSet2(newI1, newI2)
+            IntTrieSet(newI1, newI2)
         else
             this
     }
@@ -205,7 +200,7 @@ private[immutable] class IntTrieSet2 private[immutable] (
         else if (i == i2) new IntTrieSet1(i1)
         else this
     }
-    override def +(i: Int): IntTrieSet = if (i1 == i | i2 == i) this else IntTrieSet3.from(i1, i2, i)
+    override def +(i: Int): IntTrieSet = if (i1 == i | i2 == i) this else IntTrieSet.from(i1, i2, i)
     override def contains(value: Int): Boolean = value == i1 || value == i2
     override def exists(p: Int ⇒ Boolean): Boolean = p(i1) || p(i2)
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(f(z, i1), i2)
@@ -223,30 +218,6 @@ private[immutable] class IntTrieSet2 private[immutable] (
     override def hashCode: Int = 31 * (31 + i1) + i2 // compatible to Arrays.hashCode
 
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = this.+(i)
-}
-
-object IntTrieSet2 {
-
-    def apply(i1: Int, i2: Int): IntTrieSet = {
-        if (i1 == i2)
-            new IntTrieSet1(i1)
-        else {
-            from(i1, i2)
-        }
-    }
-
-    /** Constructs a new IntTrie from the two distinct(!) values. */
-    private[immutable] def from(i1: Int, i2: Int): IntTrieSet = {
-        assert(i1 != i2)
-        // we have to ensure the same ordering as used when the values are
-        // stored in the trie
-        if ((Integer.lowestOneBit(i1 ^ i2) & i1) == 0) {
-            // ... i2 is the value with a 0 at the bit position where both values differ
-            new IntTrieSet2(i1, i2)
-        } else {
-            new IntTrieSet2(i2, i1)
-        }
-    }
 }
 
 /**
@@ -315,7 +286,7 @@ private[immutable] class IntTrieSet3 private[immutable] (
         val i3 = this.i3
         val newI3 = f(i3)
         if (newI1 != i1 || newI2 != i2 || newI3 != i3)
-            IntTrieSet3(newI1, newI2, newI3) // ensures invariant
+            IntTrieSet(newI1, newI2, newI3) // ensures invariant
         else
             this
     }
@@ -347,49 +318,7 @@ private[immutable] class IntTrieSet3 private[immutable] (
         if (i == i1 || i == i2 || i == i3)
             this
         else
-            IntTrieSetN.from(i, i1, i2, i3, level)
-    }
-}
-
-object IntTrieSet3 {
-
-    def apply(i1: Int, i2: Int, i3: Int): IntTrieSet = {
-        if (i1 == i2)
-            IntTrieSet2(i1, i3) // this also handles the case i1 == i3
-        else if (i1 == i3 || i2 == i3) { // we have i1 =!= i2
-            IntTrieSet2.from(i1, i2)
-        } else { // i1 =!= i2 && i2 =!= i3 && i1 =!= i3
-            IntTrieSet3.from(i1, i2, i3)
-        }
-    }
-
-    /** Constructs a new IntTrie from the two distinct(!) values! */
-    private[immutable] def from(i1: Int, i2: Int, i3: Int): IntTrieSet = {
-        // We have to ensure the same ordering as used when the values are stored in the trie...
-        var v1, v2, v3 = 0
-        if ((Integer.lowestOneBit(i1 ^ i2) & i1) == 0) {
-            // ... i1 is the value with a 0 at the lowest one bit position...
-            v1 = i1
-            v2 = i2
-        } else {
-            v1 = i2
-            v2 = i1
-        }
-
-        if ((Integer.lowestOneBit(v2 ^ i3) & v2) == 0) {
-            // v2 is the value with the 0 and the distinguishing position...
-            v3 = i3
-        } else {
-            v3 = v2
-            if ((Integer.lowestOneBit(v1 ^ i3) & v1) == 0) {
-                v2 = i3
-            } else {
-                v2 = v1
-                v1 = i3
-            }
-        }
-
-        new IntTrieSet3(v1, v2, v3)
+            IntTrieSet.from(i, i1, i2, i3, level)
     }
 }
 
@@ -416,7 +345,9 @@ private[immutable] final class IntTrieSetN private[immutable] (
         right.foreach(f)
     }
 
-    override def map(f: Int ⇒ Int): IntTrieSet = foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + f(_))
+    override def map(f: Int ⇒ Int): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + f(_))
+    }
 
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
         foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++ f(_))
@@ -446,7 +377,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     override def +(i: Int): IntTrieSet = this.+(i, 0)
 
-    override private[this] def contains(value: Int, key: Int): Boolean = {
+    override private[immutable] def contains(value: Int, key: Int): Boolean = {
         if ((key & 1) == 0)
             left.contains(value, key >>> 1)
         else
@@ -581,17 +512,81 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
 }
 
-object IntTrieSetN {
+object IntTrieSet {
+
+    def empty: IntTrieSet = EmptyIntTrieSet
+
+    def apply(i1: Int): IntTrieSet = new IntTrieSet1(i1)
+
+    def apply(i1: Int, i2: Int): IntTrieSet = {
+        if (i1 == i2)
+            new IntTrieSet1(i1)
+        else {
+            from(i1, i2)
+        }
+    }
+
+    /** Constructs a new IntTrie from the two distinct(!) values. */
+    private[immutable] def from(i1: Int, i2: Int): IntTrieSet = {
+        assert(i1 != i2)
+        // we have to ensure the same ordering as used when the values are
+        // stored in the trie
+        if ((Integer.lowestOneBit(i1 ^ i2) & i1) == 0) {
+            // ... i2 is the value with a 0 at the bit position where both values differ
+            new IntTrieSet2(i1, i2)
+        } else {
+            new IntTrieSet2(i2, i1)
+        }
+    }
+
+    def apply(i1: Int, i2: Int, i3: Int): IntTrieSet = {
+        if (i1 == i2)
+            IntTrieSet(i1, i3) // this also handles the case i1 == i3
+        else if (i1 == i3 || i2 == i3) { // we have i1 =!= i2
+            IntTrieSet.from(i1, i2)
+        } else { // i1 =!= i2 && i2 =!= i3 && i1 =!= i3
+            IntTrieSet.from(i1, i2, i3)
+        }
+    }
+
+    /** Constructs a new IntTrie from the two distinct(!) values! */
+    private[immutable] def from(i1: Int, i2: Int, i3: Int): IntTrieSet = {
+        // We have to ensure the same ordering as used when the values are stored in the trie...
+        var v1, v2, v3 = 0
+        if ((Integer.lowestOneBit(i1 ^ i2) & i1) == 0) {
+            // ... i1 is the value with a 0 at the lowest one bit position...
+            v1 = i1
+            v2 = i2
+        } else {
+            v1 = i2
+            v2 = i1
+        }
+
+        if ((Integer.lowestOneBit(v2 ^ i3) & v2) == 0) {
+            // v2 is the value with the 0 and the distinguishing position...
+            v3 = i3
+        } else {
+            v3 = v2
+            if ((Integer.lowestOneBit(v1 ^ i3) & v1) == 0) {
+                v2 = i3
+            } else {
+                v2 = v1
+                v1 = i3
+            }
+        }
+
+        new IntTrieSet3(v1, v2, v3)
+    }
 
     def apply(i1: Int, i2: Int, i3: Int, i4: Int): IntTrieSet = {
         if (i1 == i2)
-            IntTrieSet3(i2, i3, i4)
+            IntTrieSet(i2, i3, i4)
         else if (i1 == i3 || i2 == i3 || i3 == i4) { // we have i1 =!= i2
-            IntTrieSet3(i1, i2, i4)
+            IntTrieSet(i1, i2, i4)
         } else if (i1 == i4 || i2 == i4) {
-            IntTrieSet3(i1, i2, i3)
+            IntTrieSet(i1, i2, i3)
         }
-        IntTrieSetN.from(i1, i2, i3, i4, 0)
+        IntTrieSet.from(i1, i2, i3, i4, 0)
     }
 
     /**
@@ -607,4 +602,5 @@ object IntTrieSetN {
 
         root + (i2, level) + (i3, level) + (i4, level)
     }
+
 }
