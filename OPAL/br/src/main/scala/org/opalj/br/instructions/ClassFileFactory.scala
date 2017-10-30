@@ -418,23 +418,6 @@ object ClassFileFactory {
                             ), null, null
                         )
                     }
-
-                    // Call to lookup.findStatic
-                    a ++= Array(
-                        INVOKEVIRTUAL( // Call to lookup.findStatic
-                            ObjectType.MethodHandles$Lookup,
-                            "findStatic",
-                            MethodDescriptor(
-                                IndexedSeq(
-                                    ObjectType.Class,
-                                    ObjectType.String,
-                                    ObjectType.MethodType
-                                ),
-                                ObjectType.MethodHandle
-                            )
-                        ), null, null,
-                        AASTORE
-                    )
                 }
 
                 a
@@ -462,7 +445,7 @@ object ClassFileFactory {
                     ), null, null,
                     ASTORE_3,
                     ALOAD_2,
-                    ALOAD_1,
+                    ALOAD_0,
                     INVOKEVIRTUAL(
                         ObjectType.SerializedLambda,
                         "getImplMethodName",
@@ -502,7 +485,7 @@ object ClassFileFactory {
                             "getTarget",
                             MethodDescriptor.withNoArgs(ObjectType.MethodHandle)
                         ), null, null,
-                        ALOAD_1,
+                        ALOAD_0,
                         INVOKEVIRTUAL(
                             ObjectType.MethodHandle,
                             "invoke",
