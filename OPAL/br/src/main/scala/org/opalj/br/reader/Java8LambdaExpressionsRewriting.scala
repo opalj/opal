@@ -240,6 +240,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             ) = invokedynamic
         val bootstrapArguments = bootstrapMethod.arguments
 
+        if (bootstrapArguments.nonEmpty)
+            assert(bootstrapArguments.head.isInstanceOf[InvokeStaticMethodHandle])
+
         val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
             ObjectType(newLambdaTypeName(classFile.thisType)),
