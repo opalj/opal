@@ -28,13 +28,12 @@
  */
 package org.opalj
 
-import scala.collection.BitSet
-
 import scala.xml.Node
 import scala.xml.Text
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.UIDSet

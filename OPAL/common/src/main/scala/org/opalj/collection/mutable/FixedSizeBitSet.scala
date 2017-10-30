@@ -33,12 +33,19 @@ package mutable
 import scala.collection.AbstractIterator
 
 /**
- * A bit set with a given, fixed maximum size. If values are added to the set that are larger
- * than the specified size the behavior is undefined!
+ * A bit set with a given upper bound for the largest value that can be stored in the set.
+ * The upper bound is only used to create an optimal underlying representation. It has no
+ * impact on equals and/or hashcode computations. I.e., two sets with two different upper bounds
+ * which contain the same values, are equal and have the same hashcode.
+ *
+ * Conceptually, the an array of long values is used to store the values.
+ *
+ * If values are added to the set that are larger than the specified size the behavior is
+ * undefined!
  *
  * @author Michael Eichberg
  */
-sealed abstract class BitSet {
+sealed abstract class FixedSizeBitSet {
 
     def +=(i: Int): this.type
 
@@ -54,147 +61,166 @@ sealed abstract class BitSet {
         def next(): Int = it.next()
     }
 
-    override def equals(other: scala.Any): Boolean = {
-        other match {
-            case that: BitSet ⇒
-                val thatIt = that.intIterator
-                val thisIt = this.intIterator
-                while (thisIt.hasNext && thatIt.hasNext) {
-                    if (thisIt.next != thatIt.next)
-                        return false;
-                }
-                thisIt.hasNext == thatIt.hasNext // ... i.e., if both are false the sets are equal
-            case _ ⇒
-                false
-        }
-    }
-
     def mkString(pre: String, in: String, post: String): String = {
         intIterator.mkString(pre, in, post)
     }
 
-    override def toString: String = mkString("BitSet(", ", ", ")")
+    override def toString: String = mkString("FixedSizeBitSet(", ", ", ")")
 }
 
-private[mutable] final class BitSet64 extends BitSet { bitSet ⇒
+private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {
+    override def +=(i: Int): this.type = throw new UnsupportedOperationException("fixed size is 0")
+    override def -=(i: Int): this.type = this
+    override def contains(i: Int): Boolean = false
+    override def intIterator: IntIterator = IntIterator.empty
+    override def equals(other: Any): Boolean = {
+        other match {
+            case ZeroLengthBitSet         ⇒ true
+            case that: FixedSizeBitSet64  ⇒ that.set == 0
+            case that: FixedSizeBitSet128 ⇒ that.set1 == 0 && that.set2 == 0
+            case that: FixedSizeBitSetN   ⇒ that.equals(this)
+            case _                        ⇒ false
+        }
+    }
+    override def hashCode: Int = 1 // same as Arrays.hashCode(empty long array)
+}
 
-    private var set: Long = 0l
+private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet ⇒
 
-    def +=(i: Int): this.type = { set |= 1l << i; this }
-    def -=(i: Int): this.type = { set &= (-1l & ~(1l << i)); this }
-    def contains(i: Int): Boolean = (set & (1l << i)) != 0l
+    private[mutable] var set: Long = 0L
 
-    def intIterator: IntIterator = new IntIterator {
+    override def +=(i: Int): this.type = { set |= 1L << i; this }
+    override def -=(i: Int): this.type = { set &= (-1L & ~(1L << i)); this }
+    override def contains(i: Int): Boolean = (set & (1L << i)) != 0L
+
+    override def intIterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {
-            do {
-                i += 1
-            } while (i < 64 && !bitSet.contains(i))
+            do { i += 1 } while (i < 64 && !thisSet.contains(i))
         }
         getNextValue()
         def hasNext: Boolean = i < 64
         def next(): Int = { val i = this.i; getNextValue(); i }
     }
 
-    override def equals(other: scala.Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
-            case that: BitSet64 ⇒
-                this.set == that.set
-            case _ ⇒
-                super.equals(other)
+            case that: FixedSizeBitSet64  ⇒ this.set == that.set
+            case ZeroLengthBitSet         ⇒ this.set == 0L
+            case that: FixedSizeBitSet128 ⇒ that.set2 == 0L && that.set1 == this.set
+            case that: FixedSizeBitSetN   ⇒ that.equals(this)
+            case _                        ⇒ false
         }
     }
 
-    override def hashCode: Int = java.lang.Long.hashCode(set)
+    override def hashCode: Int = 31 * (set ^ (set >>> 32)).toInt
 }
 
-private[mutable] final class BitSet128 extends BitSet { bitSet ⇒
+private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSet ⇒
 
-    private var set1: Long = 0l
-    private var set2: Long = 0l
+    private[mutable] var set1: Long = 0L
+    private[mutable] var set2: Long = 0L
 
-    def +=(i: Int): this.type = {
+    override def +=(i: Int): this.type = {
         if (i <= 63)
-            set1 |= 1l << i
+            set1 |= 1L << i
         else {
-            set2 |= 1l << (i - 64)
+            set2 |= 1L << (i - 64)
         }
         this
     }
-    def -=(i: Int): this.type = {
+    override def -=(i: Int): this.type = {
         if (i <= 63)
-            set1 &= (-1l & ~(1l << i))
+            set1 &= (-1L & ~(1L << i))
         else
-            set2 &= (-1l & ~(1l << (i - 64)))
+            set2 &= (-1L & ~(1L << (i - 64)))
         this
     }
-    def contains(i: Int): Boolean = {
+    override def contains(i: Int): Boolean = {
         if (i <= 63)
-            (set1 & (1l << i)) != 0l
+            (set1 & (1L << i)) != 0L
         else
-            (set2 & (1l << (i - 64))) != 0l
+            (set2 & (1L << (i - 64))) != 0L
     }
 
-    def intIterator: IntIterator = new IntIterator {
+    override def intIterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {
-            do {
-                i += 1
-            } while (i < 128 && !bitSet.contains(i))
+            do { i += 1 } while (i < 128 && !thisSet.contains(i))
         }
         getNextValue()
         def hasNext: Boolean = i < 128
         def next(): Int = { val i = this.i; getNextValue(); i }
     }
 
-    override def equals(other: scala.Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
-            case that: BitSet128 ⇒
-                this.set1 == that.set1 && this.set2 == that.set2
-            case _ ⇒
-                super.equals(other)
+            case that: FixedSizeBitSet128 ⇒ this.set1 == that.set1 && this.set2 == that.set2
+            case ZeroLengthBitSet         ⇒ this.set1 == 0L && this.set2 == 0L
+            case that: FixedSizeBitSet64  ⇒ this.set2 == 0L && this.set1 == that.set
+            case that: FixedSizeBitSetN   ⇒ that.equals(this)
+            case _                        ⇒ false
         }
     }
 
     override def hashCode: Int = java.lang.Long.hashCode(set1 ^ set2)
 }
 
-private[mutable] final class BitSetN private[mutable] (
-        private val set: Array[Int]
-) extends BitSet { bitSet ⇒
+private[mutable] final class FixedSizeBitSetN private[mutable] (
+        private val set: Array[Long]
+) extends FixedSizeBitSet { thisSet ⇒
 
-    def +=(i: Int): this.type = {
-        val bucket = i / 32
-        set(bucket) = set(bucket) | (1 << (i - 32 * bucket))
+    assert(set.length > 2)
+
+    override def +=(i: Int): this.type = {
+        val bucket = i / 64
+        set(bucket) = set(bucket) | (1L << (i - 64 * bucket))
         this
     }
-    def -=(i: Int): this.type = {
-        val bucket = i / 32
-        set(bucket) = set(bucket) & ((-1 & ~(1 << (i - 32 * bucket))))
+    override def -=(i: Int): this.type = {
+        val bucket = i / 64
+        set(bucket) = set(bucket) & ((-1L & ~(1L << (i - 64 * bucket))))
         this
     }
-    def contains(i: Int): Boolean = {
-        val bucket = i / 32
-        (set(bucket) & (1 << (i - 32 * bucket))) != 0
+    override def contains(i: Int): Boolean = {
+        val bucket = i / 64
+        (set(bucket) & (1L << (i - 64 * bucket))) != 0L
     }
 
-    def intIterator: IntIterator = new IntIterator {
-        private[this] val max: Int = set.length * 32
+    override def intIterator: IntIterator = new IntIterator {
+        private[this] val max: Int = set.length * 64
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {
-            do {
-                i += 1
-            } while (i < max && !bitSet.contains(i))
+            do { i += 1 } while (i < max && !thisSet.contains(i))
         }
         getNextValue()
         def hasNext: Boolean = i < max
         def next(): Int = { val i = this.i; getNextValue(); i }
     }
 
-    override def equals(other: scala.Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
-            case that: BitSetN if this.set.length == that.set.length ⇒
+            case that: FixedSizeBitSetN if this.set.length == that.set.length ⇒
                 java.util.Arrays.equals(this.set, that.set)
+
+            case ZeroLengthBitSet ⇒
+                var i = 0
+                val length = set.length
+                while (i < length) { if (set(i) != 0) return false; i += 1 }
+                true
+
+            case that: FixedSizeBitSet64 ⇒
+                var i = 1
+                val length = set.length
+                while (i < length) { if (set(i) != 0) return false; i += 1 }
+                set(0) == that.set
+
+            case that: FixedSizeBitSet128 ⇒
+                var i = 2
+                val length = set.length
+                while (i < length) { if (set(i) != 0) return false; i += 1 }
+                set(0) == that.set1 && set(1) == that.set2
+
             case _ ⇒
                 super.equals(other)
         }
@@ -203,21 +229,17 @@ private[mutable] final class BitSetN private[mutable] (
     override def hashCode: Int = java.util.Arrays.hashCode(set)
 }
 
+/** Factory to create fixed size bit arrays. */
 object FixedSizeBitSet {
 
-    final val empty = new BitSet {
-        def +=(i: Int): this.type = throw new UnsupportedOperationException("fixed size is 0")
-        def -=(i: Int): this.type = this
-        def contains(i: Int): Boolean = false
-        def intIterator: IntIterator = IntIterator.empty
-    }
+    final val empty: FixedSizeBitSet = ZeroLengthBitSet
 
     /** @param max The maximum value you may want to store in the set. */
-    def apply(max: Int): BitSet = {
+    def create(max: Int): FixedSizeBitSet = {
         if (max == 0) empty
-        else if (max < 64) new BitSet64
-        else if (max < 128) new BitSet128
-        else new BitSetN(new Array[Int]((max / 32) + 1))
+        else if (max < 64) new FixedSizeBitSet64
+        else if (max < 128) new FixedSizeBitSet128
+        else new FixedSizeBitSetN(new Array[Long]((max / 64) + 1))
     }
 
 }

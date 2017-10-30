@@ -85,36 +85,15 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     property("+= (subsequently: intIterator and contains)") = forAll { (e: (IntArraySet, Int)) ⇒
         val (ias, max) = e
         //classify(ias.size == 0, "empty", s"#entries=${ias.size}; max=$max") {
-        val bs = ias.foldLeft(FixedSizeBitSet(max))(_ += _)
+        val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         bs.intIterator.forall(ias.contains) && ias.forall(bs.contains)
         //}
-    }
-
-    property("equals and hashCode") = forAll { (e: (IntArraySet, Int)) ⇒
-        val (ias, max) = e
-        val bs1 = ias.foldLeft(FixedSizeBitSet(max))(_ += _)
-        val bs2 = ias.toChain.reverse.foldLeft(FixedSizeBitSet(max))(_ += _)
-        bs1.hashCode == bs2.hashCode && bs1 == bs2
-    }
-
-    property("mkString") = forAll { (e: (IntArraySet, Int), x: String, y: String, z: String) ⇒
-        val (ias, max) = e
-        val bs1 = ias.foldLeft(FixedSizeBitSet(max))(_ += _)
-        bs1.mkString(x, y, z) == ias.mkString(x, y, z)
-    }
-
-    property("iterator") = forAll { (e: (IntArraySet, Int)) ⇒
-        val (ias, max) = e
-        val bs1 = ias.foldLeft(FixedSizeBitSet(max))(_ += _)
-        val bs1It = bs1.iterator
-        ias.iterator.forall { i ⇒ bs1It.hasNext && bs1It.next() == i } &&
-            !bs1It.hasNext
     }
 
     property("-=") = forAll { (e1: (IntArraySet, Int)) ⇒
         val (initialIas, max) = e1
         initialIas.nonEmpty ==> {
-            val bs = initialIas.foldLeft(FixedSizeBitSet(max))(_ += _)
+            val bs = initialIas.foldLeft(FixedSizeBitSet.create(max))(_ += _)
             if (bs.mkString("", ",", "") != initialIas.mkString("", ",", ""))
                 throw new UnknownError("initialization failed")
 
@@ -127,5 +106,26 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
                 bs.intIterator.forall(ias.contains) && ias.forall(bs.contains)
             } :| s"$ias vs $bs"
         }
+    }
+
+    property("equals and hashCode") = forAll { (e: (IntArraySet, Int)) ⇒
+        val (ias, max) = e
+        val bs1 = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        val bs2 = ias.toChain.reverse.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        bs1.hashCode == bs2.hashCode && bs1 == bs2
+    }
+
+    property("mkString") = forAll { (e: (IntArraySet, Int), x: String, y: String, z: String) ⇒
+        val (ias, max) = e
+        val bs1 = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        bs1.mkString(x, y, z) == ias.mkString(x, y, z)
+    }
+
+    property("iterator") = forAll { (e: (IntArraySet, Int)) ⇒
+        val (ias, max) = e
+        val bs1 = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        val bs1It = bs1.iterator
+        ias.iterator.forall { i ⇒ bs1It.hasNext && bs1It.next() == i } &&
+            !bs1It.hasNext
     }
 }
