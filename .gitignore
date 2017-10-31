@@ -40,3 +40,4 @@ Test.class
 temp
 /ensime.sbt
 .vscode/settings.json
+/project/eclipse.sbt
