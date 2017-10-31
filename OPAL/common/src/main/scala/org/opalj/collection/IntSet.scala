@@ -38,7 +38,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-trait IntSet[T <: IntSet[T]] { this: T ⇒
+trait IntSet[T <: IntSet[T]] { intSet: T ⇒
 
     def isEmpty: Boolean
     def nonEmpty: Boolean = !isEmpty
@@ -68,7 +68,7 @@ trait IntSet[T <: IntSet[T]] { this: T ⇒
     def -(i: Int): T
     def +(i: Int): T
 
-    final def --(is: Traversable[Int]): T = {
+    final def --(is: TraversableOnce[Int]): T = {
         var r = this
         is.foreach { i ⇒ r -= i }
         r

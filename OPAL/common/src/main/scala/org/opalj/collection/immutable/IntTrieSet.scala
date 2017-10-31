@@ -42,7 +42,7 @@ import scala.collection.AbstractIterator
 sealed abstract class IntTrieSet
     extends IntSet[IntTrieSet]
     with IntCollectionWithStableOrdering[IntTrieSet]
-    with IntWorkSet[IntTrieSet] {
+    with IntWorkSet[IntTrieSet] { intSet ⇒
 
     /** Returns some value and removes it from this set. */
     def getAndRemove: (Int, IntTrieSet)

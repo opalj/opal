@@ -36,7 +36,7 @@ package collection
  *
  * @author Michael Eichberg
  */
-trait IntCollectionWithStableOrdering[T <: IntSet[T]] { this: T ⇒
+trait IntCollectionWithStableOrdering[T <: IntSet[T]] { intSet: T ⇒
 
     def subsetOf(other: T): Boolean = {
         val thisIt = this.intIterator
