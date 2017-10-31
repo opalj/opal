@@ -38,6 +38,8 @@ import java.util.prefs.Preferences
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.io.Source
+
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import org.chocosolver.solver.Model
@@ -94,28 +96,31 @@ import scalafx.scene.control.Menu
 
 import org.opalj.da.ClassFileReader
 import org.opalj.util.Nanoseconds
+import org.opalj.io.processSource
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
+ *
+ * ([[https://bitbucket.org/delors/opal/src/HEAD/DEVELOPING_OPAL/tools/src/main/resources/org/opalj/hermes/Hermes.txt?at=develop see Hermes.txt for further details]]).
  *
  * @author Michael Eichberg
  * @author Christian Schaarschmidt (JavaFX Data Visualization)
  */
 object Hermes extends JFXApp with HermesCore {
 
+    final val usage = {
+        processSource(Source.fromInputStream(this.getClass.getResourceAsStream("Hermes.txt"))) { s ⇒
+            s.getLines().mkString("\n")
+        }
+    }
+
     if (parameters.unnamed.size != 1 ||
         parameters.named.size > 1 || (
             parameters.named.size == 1 && parameters.named.get("csv").isEmpty
         )) {
         import Console.err
-        err.println("OPAL - Hermes")
         err.println("Invalid parameters: "+parameters.named.mkString("{", ",", "}"))
-        err.println("The parameter has to be the configuration which lists a corpus' projects and,")
-        err.println("optionally, the file to which the results should be exported ")
-        err.println("(\"--csv=<FileName>\"). If such a file is specified the application will")
-        err.println("close automatically after running all analyses.")
-        err.println()
-        err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
+        err.println(usage)
         System.exit(1)
     }
 
