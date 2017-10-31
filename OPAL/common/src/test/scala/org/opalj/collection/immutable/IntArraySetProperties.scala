@@ -147,7 +147,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
         val indicesSet = IntArraySetBuilder(s.toIndexedSeq.indices.toSet).result
         val result = indicesSet.flatMap(i ⇒ IntArraySetBuilder(s(i)).result)
         (fl1 == result) :| "construction independent results" &&
-            (fl1.iterator.toList == s.flatten.toSet.toList.sorted) :| s"equal results (${fl1.iterator.toList} vs ${s.flatten.toList.sorted})"
+            (fl1.iterator.toList == s.flatten.toSet.toList.sorted) :| "results are equal"
     }
 
     property("-") = forAll { (s: Set[Int], v: Int) ⇒
@@ -199,7 +199,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
         val fl1 = IntArraySetBuilder(s1).result
         val setHashCode = fl1.hashCode
         val arraysHashCode = java.util.Arrays.hashCode(s1.toList.sorted.toArray)
-        (setHashCode == arraysHashCode) :| s"$setHashCode vs. $arraysHashCode ($fl1)"
+        (setHashCode == arraysHashCode) :| "hashCode equality"
     }
 
     property("intIterator") = forAll { s1: Set[Int] ⇒
@@ -213,7 +213,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
         val fl1 = IntArraySetBuilder(s1).result
         val iasBasedChaing = fl1.toChain
         val sBasedChain = Chain(s1.toList.sorted: _*)
-        (iasBasedChaing == sBasedChain) :| s"$iasBasedChaing vs. $sBasedChain ($s1)"
+        (iasBasedChaing == sBasedChain) :| "equality of chains"
     }
 
     property("contains") = forAll { (s: Set[Int], v: Int) ⇒

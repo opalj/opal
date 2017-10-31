@@ -87,7 +87,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("create IntTrieSet from Set (i.e., no duplicates)") = forAll { s: Set[Int] ⇒
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
-        (its.size == s.size) :| s"size mismatch ${its.size} vs. ${s.size}" &&
+        (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
             (its.nonEmpty == s.nonEmpty) &&
             (its.hasMultipleElements == (s.size > 1)) &&
@@ -98,7 +98,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     property("create IntTrieSet from List (i.e., with duplicates)") = forAll { l: List[Int] ⇒
         val its = l.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val lWithoutDuplicates = l.toSet.toList
-        (its.size == lWithoutDuplicates.size) :| s"size mismatch ${its.size} vs. ${lWithoutDuplicates.size}" &&
+        (its.size == lWithoutDuplicates.size) :| "matching size" &&
             its.iterator.toSet.toList.sorted == lWithoutDuplicates.sorted
     }
 
@@ -114,14 +114,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val itsString = its.mkString(pre, in, post)
         val sString = its.iterator.mkString(pre, in, post)
         val lString = s.mkString(pre, in, post)
-        ((itsString.length == sString.length) :| s"$itsString vs. s=$sString") &&
-            ((itsString.length == lString.length) :| s"$itsString vs. l=$lString") &&
+        ((itsString.length == sString.length) :| "length of generated string (its vs s)") &&
+            ((itsString.length == lString.length) :| "length of generated string (its vs l)") &&
             itsString.startsWith(pre) && itsString.endsWith(post)
     }
 
     property("contains") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
         val its = s1.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
-        s1.forall(its.contains) :| s"$its does not contain expected value" &&
+        s1.forall(its.contains) :| "contains expected value" &&
             s2.forall(v ⇒ s1.contains(v) == its.contains(v))
     }
 
