@@ -29,8 +29,10 @@
 package org.opalj
 package tac
 
-import scala.collection.mutable.BitSet
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -39,7 +41,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.collection.immutable.IntArraySet
+
 
 /**
  * Converts the bytecode of a method into a three address representation using a very naive
@@ -101,7 +103,7 @@ object TACNaive {
         val cfg = CFGFactory(code, classHierarchy)
 
         // Used to determine if we have already transformed the respective instruction.
-        val processed = new BitSet(codeSize)
+        val processed = FixedSizeBitSet.create(codeSize)
 
         // In a few cases, such as swap and dup instructions, we have to
         // create multiple three-address instructions. In this case
@@ -112,7 +114,7 @@ object TACNaive {
         // However, no transformation creates new control structures.
         val statements = new Array[List[Stmt[IdBasedVar]]](codeSize)
 
-        processed(0) = true
+        processed += 0
         var worklist: List[(PC, Stack)] = List((0, Nil))
         for (exceptionHandler ← code.exceptionHandlers) {
             worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException)))
@@ -126,8 +128,8 @@ object TACNaive {
 
             // Schedules the execution of the instruction using the given stack.
             def schedule(nextPC: PC, newStack: Stack): Unit = {
-                if (!processed(nextPC)) {
-                    processed.add(nextPC)
+                if (!processed.contains(nextPC)) {
+                    processed += nextPC
                     worklist ::= ((nextPC, newStack))
                 }
             }

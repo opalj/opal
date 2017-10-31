@@ -58,12 +58,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     implicit val arbIntArraySetWithMax: Arbitrary[(IntArraySet, Int)] = Arbitrary {
         Gen.sized { s ⇒
             Gen.frequency(frequencies: _*).map { max ⇒
-                (
-                    (0 until s).foldLeft(IntArraySet.empty) { (c, n) ⇒
-                        c + r.nextInt(max)
-                    },
-                    max
-                )
+                ((0 until s).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(max) }, max)
             }
         }
     }
@@ -72,22 +67,20 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
         val r = new java.util.Random()
         Gen.sized { s ⇒
             Gen.frequency(frequencies: _*).map { max ⇒
-                (
-                    (0 until s * 2).foldLeft(List.empty[Int]) { (c, n) ⇒
-                        r.nextInt(max) :: c
-                    },
-                    max
-                )
+                ((0 until s * 2).foldLeft(List.empty[Int]) { (c, n) ⇒ r.nextInt(max) :: c }, max)
             }
         }
     }
 
-    property("+= (subsequently: intIterator and contains)") = forAll { (e: (IntArraySet, Int)) ⇒
+    //
+    // --------------------------------- TESTS ---------------------------------
+    //
+
+    property("+= (implicitly intIterator and contains)") = forAll { (e: (IntArraySet, Int)) ⇒
         val (ias, max) = e
-        //classify(ias.size == 0, "empty", s"#entries=${ias.size}; max=$max") {
         val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        bs.isEmpty == ias.isEmpty
         bs.intIterator.forall(ias.contains) && ias.forall(bs.contains)
-        //}
     }
 
     property("-=") = forAll { (e1: (IntArraySet, Int)) ⇒
@@ -103,16 +96,73 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
                 val v = as(r.nextInt(as.length))
                 ias -= v
                 bs -= v
-                bs.intIterator.forall(ias.contains) && ias.forall(bs.contains)
-            } :| s"$ias vs $bs"
+                ias.forall(bs.contains) && !bs.contains(v)
+            }
         }
     }
 
-    property("equals and hashCode") = forAll { (e: (IntArraySet, Int)) ⇒
+    property("equals and hashCode of two identical sets") = forAll { (e: (IntArraySet, Int)) ⇒
         val (ias, max) = e
         val bs1 = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         val bs2 = ias.toChain.reverse.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         bs1.hashCode == bs2.hashCode && bs1 == bs2
+    }
+
+    property("equals and hashCode with empty set") = forAll { (e: (IntArraySet, Int)) ⇒
+        val (ias, max) = e
+        val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        val isEmpty = ias.isEmpty
+        (isEmpty && (bs == ZeroLengthBitSet) && (ZeroLengthBitSet == bs)) ||
+            (!isEmpty && (bs != ZeroLengthBitSet) && (ZeroLengthBitSet != bs))
+    }
+
+    property("equals and hashCode of two arbitrary sets") = forAll { e1: (IntArraySet, Int) ⇒
+        val (ias1, e1max) = e1
+        val (ias2, e2max) = Arbitrary.arbitrary[(IntArraySet, Int)].sample.get
+        val iasAreEqual = ias1 == ias2
+        val bs1 = ias1.foldLeft(FixedSizeBitSet.create(e1max))(_ += _)
+        val bs2 = ias2.foldLeft(FixedSizeBitSet.create(e2max))(_ += _)
+        val bsAreEqual = bs1 == bs2
+        iasAreEqual == bsAreEqual && (!bsAreEqual || bs1.hashCode == bs2.hashCode)
+    }
+
+    property("equals and hashCode of different sized sets with one value") =
+        forAll(Gen.choose(1, 63)) { v ⇒
+            val bs1 = FixedSizeBitSet.create(63) += v
+            val bs2 = FixedSizeBitSet.create(127) += v
+            val bs3 = FixedSizeBitSet.create(20000) += v
+            (bs1.hashCode == bs2.hashCode) :| "bs1 & bs2 hashCodes" &&
+                (bs2.hashCode == bs3.hashCode) :| "bs2 & bs3 hashCodes" &&
+                (bs1 == bs2 && bs2 == bs3 && bs1 == bs3) :| "left to right" &&
+                (bs2 == bs1 && bs3 == bs2 && bs3 == bs1) :| "right to left"
+        }
+
+    property("equals and hashCode of different sized, empty sets") =
+        forAll(Gen.choose(0, 63)) { v ⇒
+            val bs0 = FixedSizeBitSet.empty
+            val bs1 = FixedSizeBitSet.create(63)
+            val bs2 = FixedSizeBitSet.create(127)
+            val bs3 = FixedSizeBitSet.create(20000)
+            (bs0.hashCode == bs1.hashCode) :| "bs0 & bs1 hashCodes" &&
+                (bs1.hashCode == bs2.hashCode) :| "bs1 & bs2 hashCodes" &&
+                (bs2.hashCode == bs3.hashCode) :| "bs2 & bs3 hashCodes" &&
+                (bs1 == bs2 && bs2 == bs3 && bs1 == bs3) :| "left to right" &&
+                (bs2 == bs1 && bs3 == bs2 && bs3 == bs1) :| "right to left"
+        }
+
+    property("equals and hashCode of different sized, larger sets") =
+        forAll(Gen.choose(64, 127)) { v ⇒
+            val bs2 = FixedSizeBitSet.create(127)
+            val bs3 = FixedSizeBitSet.create(20000)
+            (bs2.hashCode == bs3.hashCode) :| "bs2 & bs3 hashCodes" &&
+                (bs2 == bs3) :| "left to right" &&
+                (bs3 == bs2) :| "right to left"
+        }
+
+    property("equals and hashCode with something else") = forAll { e: (IntArraySet, Int) ⇒
+        val (ias, max) = e
+        val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        (bs == new Object) == false
     }
 
     property("mkString") = forAll { (e: (IntArraySet, Int), x: String, y: String, z: String) ⇒

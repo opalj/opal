@@ -29,8 +29,7 @@
 package org.opalj
 package graphs
 
-import scala.collection.mutable.BitSet
-
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.IntArrayStack
@@ -79,8 +78,8 @@ final class DominanceFrontiers private (
     def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
         val maxNodeId = maxNode
 
-        // IMPROVE Evaluate if a typed chain or an IntArraySet is more efficient...
-        val seen = new BitSet(maxNodeId)
+        // IMPROVE Evaluate if a typed chain or an Int(Array|Trie)Set is more efficient...
+        val seen = FixedSizeBitSet.create(maxNodeId)
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 

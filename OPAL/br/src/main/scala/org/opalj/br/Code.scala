@@ -35,10 +35,8 @@ import scala.reflect.ClassTag
 
 import java.util.Arrays.fill
 
-import scala.collection.BitSet
 import scala.collection.AbstractIterator
 import scala.collection.mutable
-import scala.collection.immutable
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
@@ -47,6 +45,7 @@ import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.mutable.FixedSizeBitSet
+import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.IntArraySetBuilder
@@ -432,7 +431,7 @@ final class Code private (
 
         var cfJoins = IntTrieSet.empty
 
-        val isReached = FixedSizeBitSet(instructionsLength)
+        val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
 
         var pc = 0
@@ -487,7 +486,7 @@ final class Code private (
         var exitPCs = IntArraySet.empty
 
         var cfJoins = IntTrieSet.empty
-        val isReached = FixedSizeBitSet(instructionsLength)
+        val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
         @inline def runtimeSuccessor(successorPC: PC): Unit = {
             if (isReached.contains(successorPC))
@@ -560,9 +559,9 @@ final class Code private (
     ): LiveVariables = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
-        val liveVariables = new Array[BitSet](instructionsLength)
+        val liveVariables = new Array[BitArraySet](instructionsLength)
         val workqueue = IntQueue.empty
-        val AllDead = immutable.BitSet.empty
+        val AllDead = BitArraySet.empty
         finalPCs foreach { pc ⇒ liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
         // required to handle endless loops!
         cfJoins foreach { pc ⇒
@@ -657,7 +656,7 @@ final class Code private (
         var cfForks = IntTrieSet.empty
         var cfForkTargets = IntMap.empty[IntArraySet]
 
-        val isReached = FixedSizeBitSet(instructionsLength)
+        val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
 
         lazy val cfg = CFGFactory(this, classHierarchy)

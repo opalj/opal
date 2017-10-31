@@ -30,14 +30,12 @@ package org.opalj
 package collection
 package immutable
 
-import scala.collection.AbstractIterator
-
 /**
  * An immutable bit set which uses an array to store the underlying values.
  *
  * @author Michael Eichberg
  */
-sealed abstract class BitArraySet { thisSet ⇒
+sealed abstract class BitArraySet extends BitSet { thisSet ⇒
 
     def isEmpty: Boolean
 
@@ -49,24 +47,8 @@ sealed abstract class BitArraySet { thisSet ⇒
 
     final def |(that: BitArraySet): BitArraySet = this ++ that
 
-    def contains(i: Int): Boolean
-
-    def intIterator: IntIterator
-
-    /**
-     * Standard Scala iterator provided for interoperability purposes only; if possible use `intIterator`.
-     */
-    final def iterator: Iterator[Int] = new AbstractIterator[Int] {
-        private[this] val it = thisSet.intIterator
-        def hasNext: Boolean = it.hasNext
-        def next(): Int = it.next()
-    }
-
-    final def mkString(pre: String, in: String, post: String): String = intIterator.mkString(pre, in, post)
-
     final override def toString: String = mkString("BitArraySet(", ",", ")")
 
-    // + equals and hashCode
 }
 
 private[immutable] final object EmptyBitArraySet extends BitArraySet { thisSet ⇒

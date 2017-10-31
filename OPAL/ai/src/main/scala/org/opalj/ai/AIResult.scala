@@ -31,11 +31,12 @@ package ai
 
 import scala.annotation.switch
 import scala.collection.mutable
-import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.FixedSizeBitSet
+import org.opalj.collection.BitSet
 import org.opalj.br.Code
 import org.opalj.br.LiveVariables
 
@@ -90,9 +91,8 @@ sealed abstract class AIResult {
      * Returns the information whether an instruction with a specific PC was evaluated
      * at least once.
      */
-    // IMPROVE Use opalj.collection.mutable.BitSet
     lazy val evaluatedInstructions: BitSet = {
-        val evaluatedInstructions = new mutable.BitSet(code.instructions.length)
+        val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
         evaluated.foreach(pc ⇒ if (pc >= 0) evaluatedInstructions += pc)
         evaluatedInstructions
     }
