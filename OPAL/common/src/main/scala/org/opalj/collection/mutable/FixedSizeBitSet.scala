@@ -49,7 +49,7 @@ sealed abstract class FixedSizeBitSet extends BitSet {
 
     def -=(i: Int): this.type
 
-    override def toString: String = mkString("FixedSizeBitSet(", ", ", ")")
+    override def toString: String = mkString("FixedSizeBitSet(", ",", ")")
 }
 
 private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {

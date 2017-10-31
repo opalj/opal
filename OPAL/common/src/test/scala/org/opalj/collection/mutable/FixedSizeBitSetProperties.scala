@@ -178,4 +178,14 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
         ias.iterator.forall { i ⇒ bs1It.hasNext && bs1It.next() == i } &&
             !bs1It.hasNext
     }
+
+    property("toString") = forAll { e: (IntArraySet, Int) ⇒
+        val (ias, max) = e
+        val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
+        val bsToString = bs.toString.substring(12)
+        val iasToString = ias.toString.substring(8)
+        val comparison = bsToString == iasToString
+        if (!comparison) println(s""""$bsToString" vs. "$iasToString"""")
+        comparison
+    }
 }
