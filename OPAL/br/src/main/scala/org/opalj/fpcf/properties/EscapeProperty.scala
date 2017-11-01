@@ -218,6 +218,15 @@ sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyName
 
 object EscapeProperty extends EscapePropertyMetaInformation {
 
+    /**
+     * This is the default cycle resolution strategy. It is always sound. The resulting property is
+     * the meet of all properties in the cycle. There is potential for improvement, as e.g. a
+     * Cycle of [[MaybeEscapeInCallee]] -> [[MaybeEscapeInCallee]] can be resolved to
+     * [[EscapeInCallee]] if we know that the [[MaybeEscapeInCallee]] is only a `mabye` value
+     * because of the unresolved dependency.
+     *
+     * @see The inter-procedural escape analysis in the ai package.
+     */
     def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
         Iterable(
             Result(
@@ -225,9 +234,8 @@ object EscapeProperty extends EscapePropertyMetaInformation {
                 epks.foldLeft(NoEscape: EscapeProperty) {
                     (escapeState, epk) ⇒
                         epk match {
-                            case EPK(e, `key`) ⇒
-                                ps(e, key).p meet escapeState
-                            case _ ⇒ MaybeNoEscape
+                            case EPK(e, `key`) ⇒ ps(e, key).p meet escapeState
+                            case _             ⇒ MaybeNoEscape
                         }
                 }
             )

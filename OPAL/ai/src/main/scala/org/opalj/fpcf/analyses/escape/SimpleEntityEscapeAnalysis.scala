@@ -93,8 +93,9 @@ class SimpleEntityEscapeAnalysis(
         val m:             Method,
         val propertyStore: PropertyStore,
         val project:       SomeProject
-) extends AbstractEntityEscapeAnalysis
+) extends DefaultEntityEscapeAnalysis
     with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
     with ExceptionAwareEntitiyEscapeAnalysis
 
@@ -105,9 +106,11 @@ class SimpleEntityEscapeAnalysis(
  * the escape state remains the same.
  */
 trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
-    override protected def handleThrow(aThrow: Throw[V]): Unit = {
+    override protected[this] def handleThrow(aThrow: Throw[V]): Unit = {
         if (usesDefSite(aThrow.exception)) {
-            val index = code indexWhere { _ == aThrow }
+            val index = code indexWhere {
+                _ == aThrow
+            }
             val successors = cfg.bb(index).successors
 
             var isCatched = false
@@ -146,12 +149,12 @@ trait ExceptionAwareEntitiyEscapeAnalysis extends AbstractEntityEscapeAnalysis {
  */
 trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
-    override protected def handlePutField(putField: PutField[V]): Unit = {
+    override protected[this] def handlePutField(putField: PutField[V]): Unit = {
         if (usesDefSite(putField.value))
             handleFieldLike(putField.objRef.asVar.definedBy)
     }
 
-    override protected def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
+    override protected[this] def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
         if (usesDefSite(arrayStore.value))
             handleFieldLike(arrayStore.arrayRef.asVar.definedBy)
     }
@@ -160,7 +163,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
      * A worklist algorithm, check the def sites of the reference of the field, or array, to which
      * the current entity was assigned.
      */
-    private def handleFieldLike(referenceDefSites: IntArraySet): Unit = {
+    private[this] def handleFieldLike(referenceDefSites: IntArraySet): Unit = {
         // the definition sites to handle
         var worklist = referenceDefSites
 
@@ -233,57 +236,72 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
 }
 
 /**
- * Simple inter-procedural handling for the `this` local of a constructor call.
+ * In the configuration system it is possible to define escape information for the this local in the
+ * constructors of a specific class. This analysis sets the [[FormalParameter]] of the this local
+ * to the defined value.
  */
-trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    abstract protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+        assert(call.name == "<init>")
+        assert(usesDefSite(call.receiver))
+        assert(call.declaringClass.isObjectType)
 
-    private[this] case class PredefinedResult(object_type: String, escape_state: String)
+        val propertyOption = ConfigurationBasedConstructorEscapeAnalysis.constructors.get(
+            call.declaringClass.asObjectType
+        )
+
+        // the object constructor will not escape the this local
+        if (propertyOption.nonEmpty) {
+            calcMostRestrictive(propertyOption.get)
+        } else {
+            super.handleThisLocalOfConstructor(call)
+        }
+    }
+}
+
+/**
+ * The companion object of the [[ConfigurationBasedConstructorEscapeAnalysis]] that statically
+ * loads the configuration and gets the escape property objects via reflection.
+ *
+ * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
+ */
+object ConfigurationBasedConstructorEscapeAnalysis {
+
+    private[this] case class PredefinedResult(object_type: String, escape_of_this: String)
 
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
     val ConfigKey = "org.opalj.fpcf.analyses.escape.constructors"
-    val constructors = BaseConfig.as[List[PredefinedResult]](ConfigKey).map { r ⇒
-        import scala.reflect.runtime._
-        val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-        val module = rootMirror.staticModule(r.escape_state)
-        val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
-        (ObjectType(r.object_type), property)
-    }.toMap
+    val constructors: Map[ObjectType, EscapeProperty] =
+        BaseConfig.as[List[PredefinedResult]](ConfigKey).map { r ⇒
+            import scala.reflect.runtime._
+            val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
+            val module = rootMirror.staticModule(r.escape_of_this)
+            val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
+            (ObjectType(r.object_type), property)
+        }.toMap
+}
 
-    /**
-     * Special handling for constructor calls, as the receiver of an constructor is always an
-     * allocation site.
-     * The constructor of Object does not escape the self reference by definition. For other
-     * constructors, the inter-procedural chain will be processed until it reaches the Object
-     * constructor or escapes. Is this the case, leastRestrictiveProperty will be set to the lower bound
-     * of the current value and the calculated escape state.
-     *
-     * For non constructor calls, [[org.opalj.fpcf.properties.MaybeEscapeInCallee]] of e will be returned
-     * whenever the receiver or a parameter is a use of defSite.
-     */
-    override protected def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit = {
-        // we only allow special (inter-procedural) handling for constructors
-        if (call.name == "<init>") {
-            if (usesDefSite(call.receiver)) {
-                handleThisLocalOfConstructor(call)
-            }
-            handleParameterOfConstructor(call)
-        } else {
-            handleNonVirtualAndNonConstructorCall(call)
-        }
-    }
+/**
+ * Special handling for constructor calls, as the receiver of an constructor is always an
+ * allocation site.
+ * The constructor of Object does not escape the self reference by definition. For other
+ * constructors, the inter-procedural chain will be processed until it reaches the Object
+ * constructor or escapes. Is this the case, leastRestrictiveProperty will be set to the lower bound
+ * of the current value and the calculated escape state.
+ *
+ * For non constructor calls, [[org.opalj.fpcf.properties.MaybeEscapeInCallee]] of e will be returned
+ * whenever the receiver or a parameter is a use of defSite.
+ */
+trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
-    protected def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+    abstract protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         assert(call.name == "<init>")
         assert(usesDefSite(call.receiver))
 
         // the object constructor will not escape the this local
-        if (constructors.contains(call.declaringClass.asObjectType)) {
-
-            val property = constructors(call.declaringClass.asObjectType)
-            calcMostRestrictive(property)
-        } else {
+        if (call.declaringClass.asObjectType != ObjectType.Object) {
             // resolve the constructor
             project.specialCall(
                 call.declaringClass.asObjectType,
@@ -319,15 +337,5 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                     case /* unknown method */ _ ⇒ calcMostRestrictive(MaybeNoEscape)
                 }
         }
-    }
-
-    protected def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
-
-    protected def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
-        assert(call.name != "<init>")
-        super.handleNonVirtualMethodCall(call)
     }
 }

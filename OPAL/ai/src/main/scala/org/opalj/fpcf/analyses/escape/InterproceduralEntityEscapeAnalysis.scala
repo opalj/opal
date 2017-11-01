@@ -53,6 +53,7 @@ import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.Parameters
@@ -65,17 +66,56 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Assignment
 
-trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEscapeAnalysis {
+trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructorEscapeAnalysis {
 
+    //TODO Move to non entity based analysis
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
-    override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
+    /**
+     * This method is called, after the entity has been analyzed. If there is no dependee left or
+     * the entity escapes globally, the result is returned directly. If the current escape state of
+     * the entity is a `maybe`, we have to lift it down to [[GlobalEscape]], to make the less
+     * conservative cycle resolution sound.
+     * In any other case, the `maybe` version of the current escape state is returned as
+     * [[IntermediateResult]].
+     *
+     * @see [[EscapeProperty]]
+     */
+    protected[this] override def returnResult: PropertyComputationResult = {
+        // if we do not depend on other entities, or are globally escaping, return the result
+        if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
+            Result(e, mostRestrictiveProperty)
+        else {
+            if (mostRestrictiveProperty.isRefineable) {
+                Result(e, GlobalEscape)
+            }
+            // The refineable escape properties are the `maybe` ones.
+            // So a meet between the currently most restrictive property and MaybeNoEscape
+            // will lead to the maybe version of it
+            IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
+        }
+    }
+
+    /**
+     * If the current escape state of
+     * the entity is a `maybe`, we have to lift it down to [[GlobalEscape]], to make the less
+     * conservative cycle resolution sound.
+     * Otherwise [[AbstractEntityEscapeAnalysis.performIntermediateUpdate]] is called.
+     */
+    protected[this] override def performIntermediateUpdate(other: Entity, p: Property, x: EscapeProperty): IntermediateResult = {
+        if (mostRestrictiveProperty.isRefineable) {
+            Result(e, GlobalEscape)
+        }
+        super.performIntermediateUpdate(other, p, x)
+    }
+
+    protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         handleStaticCall(
             call.declaringClass, call.isInterface, call.name, call.descriptor, call.params, None
         )
     }
 
-    override def handleStaticFunctionCall(
+    protected[this] override def handleStaticFunctionCall(
         call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         handleStaticCall(
@@ -83,7 +123,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         )
     }
 
-    override def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
+    protected[this] override def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
         handleVirtualCall(
             call.declaringClass,
             call.isInterface,
@@ -95,7 +135,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         )
     }
 
-    override def handleVirtualFunctionCall(
+    protected[this] override def handleVirtualFunctionCall(
         call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         handleVirtualCall(
@@ -109,7 +149,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         )
     }
 
-    override def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+    protected[this] override def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         val methodO = project.specialCall(
             call.declaringClass.asObjectType,
             call.isInterface,
@@ -119,7 +159,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         checkParams(methodO, call.params, None)
     }
 
-    override def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
+    protected[this] override def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
         val methodO = project.specialCall(
             call.declaringClass.asObjectType,
             call.isInterface,
@@ -131,7 +171,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             handleCall(methodO, 0, None)
     }
 
-    override def handleNonVirtualFunctionCall(
+    protected[this] override def handleNonVirtualFunctionCall(
         call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         val methodO = project.specialCall(
@@ -145,7 +185,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             handleCall(methodO, 0, assignment)
     }
 
-    def handleStaticCall(
+    private[this] def handleStaticCall(
         dc:         ReferenceType,
         isI:        Boolean,
         name:       String,
@@ -156,7 +196,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         checkParams(project.staticCall(dc.asObjectType, isI, name, descr), params, assignment)
     }
 
-    def handleVirtualCall(
+    private[this] def handleVirtualCall(
         dc:         ReferenceType,
         isI:        Boolean,
         name:       String,
@@ -182,6 +222,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
             // TODO: to optimize performance, we do not let the analysis run against the existing methods
             calcMostRestrictive(MaybeEscapeInCallee)
         } else {
+            //TODO project.resolveMethodReference()
             val packageName = m.classFile.thisType.packageName
             val methods =
                 if (isI) project.interfaceCall(dc.asObjectType, name, descr)
@@ -195,7 +236,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         }
     }
 
-    def checkParams(
+    private[this] def checkParams(
         methodO: org.opalj.Result[Method], params: Seq[Expr[V]], assignment: Option[Assignment[V]]
     ): Unit = {
         for (i ← params.indices) {
@@ -204,7 +245,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
         }
     }
 
-    def handleCall(
+    private[this] def handleCall(
         methodO: org.opalj.Result[Method], param: Int, assignment: Option[Assignment[V]]
     ): Unit = {
         methodO match {
@@ -233,7 +274,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConstructorSensitiveEntityEsc
                                     case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
                                         assignment match {
                                             case Some(a) ⇒
-                                                //TODO further track the value
+                                                //IMPROVE further track the value
                                                 calcMostRestrictive(MaybeEscapeInCallee)
                                             case None ⇒
                                                 calcMostRestrictive(EscapeInCallee)
@@ -272,6 +313,9 @@ class InterproceduralEntityEscapeAnalysis(
         val m:             Method,
         val propertyStore: PropertyStore,
         val project:       SomeProject
-) extends InterproceduralEntityEscapeAnalysis1
+) extends DefaultEntityEscapeAnalysis
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
     with ExceptionAwareEntitiyEscapeAnalysis
+    with InterproceduralEntityEscapeAnalysis1

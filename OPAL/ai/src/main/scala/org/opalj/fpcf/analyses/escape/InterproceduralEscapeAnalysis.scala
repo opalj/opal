@@ -45,6 +45,8 @@ import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
+import org.opalj.fpcf.PropertyKey.SomeEPKs
+import org.opalj.fpcf.properties.EscapeProperty.key
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.DVar
@@ -130,6 +132,25 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
     override def usedProperties: Set[PropertyKind] = Set.empty
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
+            Iterable(
+                Result(
+                    epks.head.e,
+                    epks.foldLeft(NoEscape: EscapeProperty) {
+                        (escapeState, epk) ⇒
+                            epk match {
+                                case EPK(e, `key`) ⇒
+                                    ps(e, key).p.atMost meet escapeState
+                                case _ ⇒
+                                    throw new RuntimeException() //escapeState meet MaybeNoEscape
+                            }
+                    }
+                )
+            )
+        }
+
+        PropertyKey.updateCycleResolutionStrategy(EscapeProperty.key, cycleResolutionStrategy)
+
         val analysis = new InterproceduralEscapeAnalysis(project)
 
         val fps = FormalParametersKey.entityDerivationFunction(project)._1

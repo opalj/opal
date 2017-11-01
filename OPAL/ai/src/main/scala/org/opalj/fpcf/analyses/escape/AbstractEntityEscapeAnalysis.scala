@@ -117,11 +117,10 @@ trait AbstractEntityEscapeAnalysis {
     //
     // STATE MUTATED WHILE ANALYZING THE METHOD
     //
-
     protected[this] var defSite: IntArraySet
     protected[this] var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
     protected[this] var dependeeToStmt = Map.empty[Entity, Option[Assignment[V]]]
-    private[this] var mostRestrictiveProperty: EscapeProperty = NoEscape
+    protected[this] var mostRestrictiveProperty: EscapeProperty = NoEscape
 
     def doDetermineEscape(): PropertyComputationResult = {
         // for every use-site, check its escape state
@@ -129,22 +128,14 @@ trait AbstractEntityEscapeAnalysis {
             checkStmtForEscape(code(use))
         }
 
-        // if we do not depend on other entities, or are globally escaping, return the result
-        if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
-            ImmediateResult(e, mostRestrictiveProperty)
-        else {
-            // The refineable escape properties are the `maybe` ones.
-            // So a meet between the currently most restrictive property and MaybeNoEscape
-            // will lead to the maybe version of it
-            IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
-        }
+        returnResult
     }
 
     /**
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
      * given one.
      */
-    @inline protected final def calcMostRestrictive(prop: EscapeProperty): Unit = {
+    @inline protected[this] final def calcMostRestrictive(prop: EscapeProperty): Unit = {
         assert((mostRestrictiveProperty meet prop).lessOrEqualRestrictive(mostRestrictiveProperty))
         mostRestrictiveProperty = mostRestrictiveProperty meet prop
     }
@@ -154,7 +145,7 @@ trait AbstractEntityEscapeAnalysis {
      * This method is called on expressions within tac statements. We assume a flat hierarchy, so
      * the expression is expected to be a [[org.opalj.tac.Var]].
      */
-    protected final def usesDefSite(expr: Expr[V]): Boolean = {
+    protected[this] final def usesDefSite(expr: Expr[V]): Boolean = {
         assert(expr.isVar)
         expr.asVar.definedBy.exists(defSite.contains)
     }
@@ -163,7 +154,7 @@ trait AbstractEntityEscapeAnalysis {
      * If there exists a [[org.opalj.tac.UVar]] in the params of a method call that is a use of the
      * current entity's defsite return true.
      */
-    protected final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
+    protected[this] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
         params.exists { case UVar(_, defSites) ⇒ defSites.exists(defSite.contains) }
     }
 
@@ -172,7 +163,7 @@ trait AbstractEntityEscapeAnalysis {
      * with definition site defSite.
      * It might set the mostRestrictiveProperty.
      */
-    private def checkStmtForEscape(stmt: Stmt[V]): Unit = {
+    private[this] def checkStmtForEscape(stmt: Stmt[V]): Unit = {
         (stmt.astID: @switch) match {
             case PutStatic.ASTID ⇒
                 val value = stmt.asPutStatic.value
@@ -207,18 +198,12 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected def handlePutField(putField: PutField[V]): Unit = {
-        if (usesDefSite(putField.value))
-            calcMostRestrictive(MaybeNoEscape)
-    }
+    protected[this] def handlePutField(putField: PutField[V]): Unit
 
     /**
      * Same as [[handlePutField]].
      */
-    protected def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
-        if (usesDefSite(arrayStore.value))
-            calcMostRestrictive(MaybeNoEscape)
-    }
+    protected[this] def handleArrayStore(arrayStore: ArrayStore[V]): Unit
 
     /**
      * Thrown exceptions that are not caught would lead to a
@@ -228,10 +213,7 @@ trait AbstractEntityEscapeAnalysis {
      * @see [[org.opalj.fpcf.analyses.escape.ExceptionAwareEntitiyEscapeAnalysis]] which overrides
      *      this very simple behavior.
      */
-    protected def handleThrow(aThrow: Throw[V]): Unit = {
-        if (usesDefSite(aThrow.exception))
-            calcMostRestrictive(MaybeNoEscape)
-    }
+    protected[this] def handleThrow(aThrow: Throw[V]): Unit
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
@@ -239,10 +221,7 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
+    protected[this] def handleStaticMethodCall(call: StaticMethodCall[V]): Unit
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
@@ -250,39 +229,43 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
+    protected[this] def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.EscapeInCallee]]. An exception for this are the receiver objects of a
-     * constructor. Here [[org.opalj.fpcf.properties.NoEscape]] is still possible.
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
      *
      * $JustIntraProcedural
      */
-    protected def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit =
-        /*
-     * In java bytecode we always have the pattern: X x = new X; x.init(...);
-     * So if the receiver is a use of our def site, NoEscape is still possible.
-     */
-        if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-        else if (usesDefSite(call.receiver))
-            calcMostRestrictive(MaybeNoEscape)
+    protected[this] def handleNonVirtualMethodCall(call: NonVirtualMethodCall[V]): Unit = {
+        // we only allow special (inter-procedural) handling for constructors
+        if (call.name == "<init>") {
+            if (usesDefSite(call.receiver)) {
+                handleThisLocalOfConstructor(call)
+            }
+            handleParameterOfConstructor(call)
+        } else {
+            handleNonVirtualAndNonConstructorCall(call)
+        }
+    }
+
+    protected[this] def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit
+
+    protected[this] def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit
+
+    protected[this] def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit
 
     /**
      * [[org.opalj.tac.ExprStmt]] can contain function calls, so they have to handle them.
      */
-    protected def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
+    protected[this] def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
         handleExpression(exprStmt.expr, None)
     }
 
     /**
      * [[org.opalj.tac.Assignment]]s can contain function calls, so they have to handle them.
      */
-    protected def handleAssignment(assignment: Assignment[V]): Unit = {
+    protected[this] def handleAssignment(assignment: Assignment[V]): Unit = {
         handleExpression(assignment.expr, Some(assignment))
     }
 
@@ -292,7 +275,7 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.handleOtherKindsOfExpressions]]
      * will be called.
      */
-    protected def handleExpression(expr: Expr[V], assignment: Option[Assignment[V]]): Unit = {
+    protected[this] def handleExpression(expr: Expr[V], assignment: Option[Assignment[V]]): Unit = {
         (expr.astID: @switch) match {
             case NonVirtualFunctionCall.ASTID ⇒
                 handleNonVirtualFunctionCall(expr.asNonVirtualFunctionCall, assignment)
@@ -313,25 +296,9 @@ trait AbstractEntityEscapeAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
-    ): Unit = {
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
-
-    /**
-     * Passing an entity as argument to a call, will make the entity at most
-     * [[org.opalj.fpcf.properties.EscapeInCallee]].
-     *
-     * $JustIntraProcedural
-     */
-    protected def handleVirtualFunctionCall(
+    protected[this] def handleVirtualFunctionCall(
         call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
-    ): Unit = {
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
+    ): Unit
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
@@ -341,10 +308,17 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected[this] def handleStaticFunctionCall(
         call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
-    ): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
+    ): Unit
+
+    /**
+     * Passing an entity as argument to a call, will make the entity at most
+     * [[org.opalj.fpcf.properties.EscapeInCallee]].
+     *
+     * $JustIntraProcedural
+     */
+    protected[this] def handleNonVirtualFunctionCall(
+        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit
 
     /**
      * Passing an entity as argument to a call, will make the entity at most
@@ -354,17 +328,14 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected[this] def handleInvokeDynamic(
         call: Invokedynamic[V], assignment: Option[Assignment[V]]
-    ): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(MaybeEscapeInCallee)
-    }
+    ): Unit
 
     /**
      * All basic analyses only care about function calls for [[org.opalj.tac.Assignment]] or
      * [[org.opalj.tac.ExprStmt]], but if a future analysis requires handling other expressions, it
      * can override this method.
      */
-    protected[this] def handleOtherKindsOfExpressions(expr: Expr[V]): Unit = {}
+    protected[this] def handleOtherKindsOfExpressions(expr: Expr[V]): Unit
 
     /**
      * Sets mostRestrictiveProperty to the lower bound of p and the current most restrictive and
@@ -376,10 +347,37 @@ trait AbstractEntityEscapeAnalysis {
     ): PropertyComputationResult = {
         calcMostRestrictive(p)
         dependees = dependees filter (_.e ne other)
+        returnResult
+    }
+
+    /**
+     * This method is called, after the entity has been analyzed. If there is no dependee left or
+     * the entity escapes globally, the result is returned directly.
+     * Otherwise, the `maybe` version of the current escape state is returned as
+     * [[IntermediateResult]].
+     */
+    protected[this] def returnResult: PropertyComputationResult = {
+        // if we do not depend on other entities, or are globally escaping, return the result
         if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
             Result(e, mostRestrictiveProperty)
-        else
+        else {
+            // The refineable escape properties are the `maybe` ones.
+            // So a meet between the currently most restrictive property and MaybeNoEscape
+            // will lead to the maybe version of it
             IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
+        }
+    }
+
+    /**
+     * In the list of dependees the result of `other` is updated with the new property `p`.
+     * The current escape state is updated to the `non-maybe` version of `newProp` and
+     * the intermediate result is returned.
+     */
+    protected[this] def performIntermediateUpdate(other: Entity, p: Property, newProp /*TODO find a better name*/ : EscapeProperty): IntermediateResult = {
+        val newEP = EP(other, p.asInstanceOf[EscapeProperty])
+        dependees = dependees.filter(_.e ne other) + newEP
+        calcMostRestrictive(newProp.atMost)
+        IntermediateResult(e, newProp meet mostRestrictiveProperty, dependees, c)
     }
 
     /**
@@ -432,19 +430,14 @@ trait AbstractEntityEscapeAnalysis {
                 case MaybeNoEscape | MaybeEscapeViaParameter | MaybeEscapeViaAbnormalReturn |
                     MaybeEscapeViaParameterAndAbnormalReturn ⇒ u match {
                     case IntermediateUpdate ⇒
-                        val newEP = EP(other, p.asInstanceOf[EscapeProperty])
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
+                        performIntermediateUpdate(other, p, MaybeNoEscape)
                     case _ ⇒
                         removeFromDependeesAndComputeResult(other, MaybeNoEscape)
                 }
 
                 case MaybeEscapeInCallee ⇒ u match {
                     case IntermediateUpdate ⇒
-                        val newEP = EP(other, p.asInstanceOf[EscapeProperty])
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        calcMostRestrictive(EscapeInCallee)
-                        IntermediateResult(e, MaybeEscapeInCallee meet mostRestrictiveProperty, dependees, c)
+                        performIntermediateUpdate(other, p, MaybeEscapeInCallee)
                     case _ ⇒
                         removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
                 }
@@ -474,20 +467,24 @@ trait AbstractEntityEscapeAnalysis {
                     removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
 
                 case EscapeViaReturn ⇒
-                    // IMPROVE we do not further track the return value of the callee
-                    val stmt = dependeeToStmt(other)
+                    /*
+                     * IMPROVE we do not further track the return value of the callee.
+                     * But the org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+                     * eliminates the assignments, if the function called is identity-like
+                     */
+                    val assignemnt = dependeeToStmt(other)
                     aiResult.domain match {
                         case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
-                            stmt match {
-                                case Some(a) ⇒
+                            assignemnt match {
+                                case Some(_) ⇒
                                     //IMPROVE further track the value
                                     removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
                                 case None ⇒
                                     removeFromDependeesAndComputeResult(other, EscapeInCallee)
                             }
                         case _: org.opalj.ai.domain.l1.ReferenceValues ⇒
-                            stmt match {
-                                case Some(a) ⇒
+                            assignemnt match {
+                                case Some(_) ⇒
                                     removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
                                 case None ⇒
                                     removeFromDependeesAndComputeResult(other, EscapeInCallee)
@@ -507,10 +504,7 @@ trait AbstractEntityEscapeAnalysis {
                     MaybeEscapeViaNormalAndAbnormalReturn |
                     MaybeEscapeViaParameterAndNormalAndAbnormalReturn ⇒ u match {
                     case IntermediateUpdate ⇒
-                        val newEP = EP(other, p.asInstanceOf[EscapeProperty])
-                        dependees = dependees.filter(_.e ne other) + newEP
-                        calcMostRestrictive(EscapeInCallee)
-                        IntermediateResult(e, MaybeEscapeInCallee meet mostRestrictiveProperty, dependees, c)
+                        performIntermediateUpdate(other, p, MaybeEscapeInCallee)
                     case _ ⇒
                         removeFromDependeesAndComputeResult(other, MaybeEscapeInCallee)
                 }
@@ -521,4 +515,86 @@ trait AbstractEntityEscapeAnalysis {
 
         }
     }
+}
+
+trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    protected[this] override def handlePutField(putField: PutField[V]): Unit = {
+        if (usesDefSite(putField.value))
+            calcMostRestrictive(MaybeNoEscape)
+    }
+
+    protected[this] override def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
+        if (usesDefSite(arrayStore.value))
+            calcMostRestrictive(MaybeNoEscape)
+    }
+
+    protected[this] override def handleThrow(aThrow: Throw[V]): Unit = {
+        if (usesDefSite(aThrow.exception))
+            calcMostRestrictive(MaybeNoEscape)
+    }
+
+    protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
+        if (anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
+        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
+        handleExpression(exprStmt.expr, None)
+    }
+
+    protected[this] override def handleAssignment(assignment: Assignment[V]): Unit = {
+        handleExpression(assignment.expr, Some(assignment))
+    }
+
+    protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+        assert(call.name == "<init>")
+        if (usesDefSite(call.receiver))
+            calcMostRestrictive(MaybeNoEscape)
+    }
+
+    protected[this] override def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+        if (anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
+        assert(call.name != "<init>")
+        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleVirtualFunctionCall(
+        call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
+        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleNonVirtualFunctionCall(
+        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
+        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleStaticFunctionCall(
+        call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
+    ): Unit = {
+        if (anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleInvokeDynamic(
+        call: Invokedynamic[V], assignment: Option[Assignment[V]]
+    ): Unit = {
+        if (anyParameterUsesDefSite(call.params))
+            calcMostRestrictive(MaybeEscapeInCallee)
+    }
+
+    protected[this] override def handleOtherKindsOfExpressions(expr: Expr[V]): Unit = {}
 }
