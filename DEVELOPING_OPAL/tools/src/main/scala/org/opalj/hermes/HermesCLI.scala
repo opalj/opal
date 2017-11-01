@@ -31,8 +31,13 @@ package hermes
 
 import java.io.File
 
+import scala.io.Source
+
+import org.opalj.io.processSource
+
 /**
- * Executes all analyses to determine the representativeness of the given projects.
+ * Executes all analyses to determine the representativeness of the given projects
+ * ([[https://bitbucket.org/delors/opal/src/HEAD/DEVELOPING_OPAL/tools/src/main/resources/org/opalj/hermes/HermesCLI.txt?at=develop see HermesCLI.txt for further details]]).
  *
  * @author Michael Eichberg
  */
@@ -45,21 +50,13 @@ object HermesCLI {
         override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
     }
 
-    private def showUsage(): Unit = {
-        println("OPAL - Hermes")
-        println("Parameters:")
-        println("   -config <FileName> the configuration which lists a corpus' projects")
-        println("   -statistics <FileName> the csv file to which the results should be exported")
-        println("   -mapping <FileName> the properties file with the mapping between the feature")
-        println("                       queries and the extracted features; format:")
-        println("                       <FeatureQueryClass>=<FeatureID>(,<FeatureID>)*")
-        println("                       where in FeatureIDs every \\ is replaced by \\\\")
-        println("                                             ... new line ('\\n') is replaced by \\n")
-        println("                                             ... , is replaced by \\,")
-        println("   [-noProjectStatistics project statistics are not exported]")
-        println()
-        println("java org.opalj.hermes.HermesCLI -config <ConfigFile.json> -statistics <FileName>")
+    final val usage = {
+        processSource(Source.fromInputStream(this.getClass.getResourceAsStream("HermesCLI.txt"))) { s ⇒
+            s.getLines().mkString("\n")
+        }
     }
+
+    private def showUsage(): Unit = println(usage)
 
     def main(args: Array[String]): Unit = {
         var configFile: String = null
@@ -71,13 +68,16 @@ object HermesCLI {
         while (i < args.length) {
             args(i) match {
                 case "-config" ⇒
-                    i += 1; configFile = args(i)
+                    i += 1
+                    configFile = args(i)
 
                 case "-statistics" ⇒
-                    i += 1; statisticsFile = args(i)
+                    i += 1
+                    statisticsFile = args(i)
 
                 case "-mapping" ⇒
-                    i += 1; mappingFile = Some(args(i))
+                    i += 1
+                    mappingFile = Some(args(i))
 
                 case "-noProjectStatistics" ⇒
                     noProjectStatistics = true

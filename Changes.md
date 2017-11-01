@@ -1,6 +1,7 @@
 # Major Changes
 
 ## Upcomming
+ - Hermes now has extended visualization capabilities to make it even easire to comprehend the differences between projects
 
 ## 1.0.0 - Released Oct. 25th 2017
  - *we are now using Scala 2.12.x*

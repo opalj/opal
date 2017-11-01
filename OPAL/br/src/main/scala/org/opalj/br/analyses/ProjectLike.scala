@@ -740,7 +740,19 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * the given receiver type. I.e., using this method is suitable only when the runtime
      * type, which is the receiver of the method call, is precisely known!
      *
-     * This method supports default methods and signature polymorphic calls.
+     * == Examples ==
+     * {{{
+     * class A {def foo() = {} }
+     * class B extends A {/*inherits, but does not override foo()*/}
+     * class C extends B { def foo() = {} }
+     * val b = new B();
+     * b.foo() // <= in this case the method defined by A will be returned.
+     * val c = new C();
+     * c.foo() // <= in this case the method defined by C will be returned.
+     * }}}
+     *
+     * This method supports default methods and signature polymorphic calls; i.e., the
+     * descriptor of the retuned methods may not be equal to the given method descriptor.
      *
      * @param   callerType The object type which defines the method which performs the call.
      *          This information is required if the call target has (potentially) default
