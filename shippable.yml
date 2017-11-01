@@ -11,7 +11,8 @@ branches:
 
 script:
   - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled"
-  - sbt coverage AbstractInterpretationFramework/test coverageAggregate
+  - sbt coverage AbstractInterpretationFramework/test
+  - sbt coverageReport coverageAggregate
 
 after_script:
   - mkdir -p shippable/codecoverage
