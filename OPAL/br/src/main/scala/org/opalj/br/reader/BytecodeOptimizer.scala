@@ -151,7 +151,27 @@ trait BytecodeOptimizer extends MethodsBinding {
             // IMPROVE Use a "real IntTrieSet"...
             exceptionsHandlers.foldLeft(Set.empty[PC]) { (c, eh) ⇒ c + eh.handlerPC }
 
+        // CONFUSED IF
+        // A "confused if" is an if statement where the next instruction
+        // is a goto instruction that is only reached by the if instruction:
+        //
+        //  i1: if a op b => goto i3
+        //  i2: goto in
+        //  i3: <REST>
+        //
+        // can be replaced by (if the branchoffset is small enough!)
+        //  i1: if !(a op b) => goto in
+        //  i2: NOP
+        //  i3: <REST>
         var confusedIfs = Set.empty[PC]
+
+        // TOTALLY CONFUSED IF
+        // A totally confused "if" is an "if" which is directly succeeded by
+        // two goto instructions and which jumps to the second goto and
+        // both goto statements are only reached via the if...
+        // In this case, we want to ensure that we jump back
+        // in case of a jump (if possible...).
+        // E.g., ..,IFLT(6),GOTO(6),GOTO(-201),...
         var totallyConfusedIfs = Set.empty[PC]
 
         /*
@@ -235,27 +255,8 @@ trait BytecodeOptimizer extends MethodsBinding {
                                 simplified = true
                                 // IMPROVE log the removal of the totally USELESS IF instruction
                             } else if (jumpTargetInstruction.isGotoInstruction) {
-                                // TOTALLY CONFUSED IF
-                                // A totally confused if, is an if which is directly succeeded by
-                                // two goto instructions and which jumps to the second goto and
-                                // both goto statements are only reached via the if...
-                                // In this case, we want to ensure that we jump back
-                                // in case of a jump (if possible...).
-                                // E.g., ..,IFLT(6),GOTO(6),GOTO(-201),...
                                 totallyConfusedIfs += pc
                             } else {
-                                // CONFUSED IF
-                                // A "confused if" is an if statement where the next instruction
-                                // is a goto instruction that is only reached by the if instruction:
-                                //
-                                //  i1: if a op b => goto i3
-                                //  i2: goto in
-                                //  i3: <REST>
-                                //
-                                // can be replaced by (if the branchoffset is small enough!)
-                                //  i1: if !(a op b) => goto in
-                                //  i2: NOP
-                                //  i3: <REST>
                                 confusedIfs += pc
                             }
                         } else if (jumpTargetInstruction.isGotoInstruction) {
@@ -403,15 +404,19 @@ trait BytecodeOptimizer extends MethodsBinding {
             //
             // Recall that the next goto is already rewritten and will point to the final
             // jump target.
-            val newBranchoffset = instructions(cIfPC + 3).asGotoInstruction.branchoffset + 3
-            if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
-                val oldIf = instructions(cIfPC).asSimpleConditionalBranchInstruction
-                val newIf = oldIf.negate(newBranchoffset)
-                instructions(cIfPC) = newIf
-                instructions(cIfPC + 3) = NOP
-                instructions(cIfPC + 4) = NOP
-                instructions(cIfPC + 5) = NOP
-                simplified = true
+            val nextInstruction = instructions(cIfPC + 3)
+            // if the next goto was a goto 3 then it was NOPified already...
+            if (nextInstruction.isGotoInstruction) {
+                val newBranchoffset = nextInstruction.asGotoInstruction.branchoffset + 3
+                if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
+                    val oldIf = instructions(cIfPC).asSimpleConditionalBranchInstruction
+                    val newIf = oldIf.negate(newBranchoffset)
+                    instructions(cIfPC) = newIf
+                    instructions(cIfPC + 3) = NOP
+                    instructions(cIfPC + 4) = NOP
+                    instructions(cIfPC + 5) = NOP
+                    simplified = true
+                }
             }
         }
 
@@ -436,50 +441,54 @@ trait BytecodeOptimizer extends MethodsBinding {
             // =>   pc=347: IF_ICMPEQ(3-79), NOP*3, GOTO(179)
 
             val ifInstruction = instructions(cIfPC).asSimpleConditionalBranchInstruction
-            val firstGotoInstruction = instructions(cIfPC + 3).asGotoInstruction
-            val secondGotoInstruction = instructions(cIfPC + 6).asGotoInstruction
+            val nextInstruction = instructions(cIfPC + 3)
+            val jumpTargetInstruction = instructions(cIfPC + 6)
+            if (nextInstruction.isGotoInstruction && jumpTargetInstruction.isGotoInstruction) {
+                val firstGotoInstruction = nextInstruction.asGotoInstruction
+                val secondGotoInstruction = jumpTargetInstruction.asGotoInstruction
 
-            if (firstGotoInstruction.branchoffset == 6) {
-                val newBranchoffset = secondGotoInstruction.branchoffset + 6
-                if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
-                    instructions(cIfPC) = ifInstruction.copy(newBranchoffset)
-                    instructions(cIfPC + 3) = NOP
-                    instructions(cIfPC + 4) = NOP
-                    instructions(cIfPC + 5) = NOP
-                    instructions(cIfPC + 6) = NOP
-                    instructions(cIfPC + 7) = NOP
-                    instructions(cIfPC + 8) = NOP
-                    simplified = true
-                }
-            } else {
-                // 1. determine which jump target has a lower pc
-                val firstAdjustedBranchoffset = firstGotoInstruction.branchoffset + 3
-                val secondAdjustedBranchoffset = secondGotoInstruction.branchoffset + 6
-                if (firstAdjustedBranchoffset < secondAdjustedBranchoffset) {
-                    // ... CASE II
-                    val newBranchoffset = firstAdjustedBranchoffset
+                if (firstGotoInstruction.branchoffset == 6) {
+                    val newBranchoffset = secondGotoInstruction.branchoffset + 6
                     if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
-                        instructions(cIfPC) = ifInstruction.negate(firstAdjustedBranchoffset)
+                        instructions(cIfPC) = ifInstruction.copy(newBranchoffset)
                         instructions(cIfPC + 3) = NOP
                         instructions(cIfPC + 4) = NOP
                         instructions(cIfPC + 5) = NOP
+                        instructions(cIfPC + 6) = NOP
+                        instructions(cIfPC + 7) = NOP
+                        instructions(cIfPC + 8) = NOP
                         simplified = true
                     }
-
                 } else {
-                    // ... CASE I
-                    val newIfBranchoffset = secondAdjustedBranchoffset
-                    val newGotoBranchoffset = firstAdjustedBranchoffset - 6
-                    if (newIfBranchoffset >= Short.MinValue &&
-                        newIfBranchoffset <= Short.MaxValue &&
-                        newGotoBranchoffset >= Short.MinValue &&
-                        newGotoBranchoffset <= Short.MaxValue) {
-                        instructions(cIfPC) = ifInstruction.negate(firstAdjustedBranchoffset)
-                        instructions(cIfPC + 3) = NOP
-                        instructions(cIfPC + 4) = NOP
-                        instructions(cIfPC + 5) = NOP
-                        instructions(cIfPC + 6) = GOTO(newGotoBranchoffset)
-                        simplified = true
+                    // 1. determine which jump target has a lower pc
+                    val firstAdjustedBranchoffset = firstGotoInstruction.branchoffset + 3
+                    val secondAdjustedBranchoffset = secondGotoInstruction.branchoffset + 6
+                    if (firstAdjustedBranchoffset < secondAdjustedBranchoffset) {
+                        // ... CASE II
+                        val newBranchoffset = firstAdjustedBranchoffset
+                        if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
+                            instructions(cIfPC) = ifInstruction.negate(firstAdjustedBranchoffset)
+                            instructions(cIfPC + 3) = NOP
+                            instructions(cIfPC + 4) = NOP
+                            instructions(cIfPC + 5) = NOP
+                            simplified = true
+                        }
+
+                    } else {
+                        // ... CASE I
+                        val newIfBranchoffset = secondAdjustedBranchoffset
+                        val newGotoBranchoffset = firstAdjustedBranchoffset - 6
+                        if (newIfBranchoffset >= Short.MinValue &&
+                            newIfBranchoffset <= Short.MaxValue &&
+                            newGotoBranchoffset >= Short.MinValue &&
+                            newGotoBranchoffset <= Short.MaxValue) {
+                            instructions(cIfPC) = ifInstruction.negate(firstAdjustedBranchoffset)
+                            instructions(cIfPC + 3) = NOP
+                            instructions(cIfPC + 4) = NOP
+                            instructions(cIfPC + 5) = NOP
+                            instructions(cIfPC + 6) = GOTO(newGotoBranchoffset)
+                            simplified = true
+                        }
                     }
                 }
             }
