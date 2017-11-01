@@ -38,6 +38,9 @@ abstract class EscapeMatcher(val property: EscapeProperty) extends AbstractPrope
     override def isRelevant(p: Project[_], as: Set[ObjectType], a: AnnotationLike): Boolean = {
         val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
+        //val domainsElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "domains").asArrayValue.values
+        //val domains = domainsElementValues map { _.asClassValue.value.asObjectType }
+        //val provider = p.get(SimpleAIKey)
         analyses.exists(as.contains)
     }
 

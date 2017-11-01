@@ -30,8 +30,14 @@ package org.opalj.fpcf
 
 import java.net.URL
 
+import org.opalj.AnalysisModes
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -45,14 +51,15 @@ class EscapeAnalysisTests extends PropertiesTest {
     override def executeAnalyses(
         analysisRunners: Set[FPCFAnalysisRunner]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
+        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
+        val p = Project.recreate(FixtureProject, testConfig)
 
-        /*p.getOrCreateProjectInformationKeyInitializationData(
+        p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
             (m: Method) ⇒ {
-                new DefaultDomainWithCFGAndDefUse(p, m) with org.opalj.ai.domain.l1.DefaultArrayValuesBinding
+                new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m) // with DefaultArrayValuesBinding
             }
-        )*/
+        )
         org.opalj.br.analyses.PropertyStoreKey.makeAllocationSitesAvailable(p)
         org.opalj.br.analyses.PropertyStoreKey.makeFormalParametersAvailable(p)
         val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
@@ -79,13 +86,13 @@ class EscapeAnalysisTests extends PropertiesTest {
         )
     }
 
-    /*describe("the org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis is executed") {
+    describe("the org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(Set(InterproceduralEscapeAnalysis))
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
             Set("EscapeProperty")
         )
-    }*/
+    }
 
 }

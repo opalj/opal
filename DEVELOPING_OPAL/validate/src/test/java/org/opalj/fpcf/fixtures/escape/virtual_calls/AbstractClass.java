@@ -1,0 +1,39 @@
+package org.opalj.fpcf.fixtures.escape.virtual_calls;
+
+import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
+import org.opalj.fpcf.fixtures.escape.Circle;
+import org.opalj.fpcf.properties.escape.*;
+
+public abstract class AbstractClass implements Interface {
+
+    @Override
+    public Circle copyCircle(
+            @NoEscape(value = "a new circle is created",
+                    analyses = InterproceduralEscapeAnalysis.class)
+            @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
+                    analyses = SimpleEscapeAnalysis.class)
+                    Circle aCircle
+    ) {
+        return new Circle(aCircle.radius);
+    }
+
+    @Override
+    public Circle cyclicFunction(
+            @MaybeEscapeInCallee(value = "it is passed to an extensible function",
+                    analyses = InterproceduralEscapeAnalysis.class)
+            @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
+                    analyses = SimpleEscapeAnalysis.class) Circle aCircle,
+            int count
+    ) {
+        if (count == 0) {
+            return new @EscapeViaReturn("returned") Circle(aCircle.radius);
+        } else if (count < 0) {
+            return cyclicFunction(aCircle, -1);
+        } else {
+            return cyclicFunction(new
+                    @MaybeEscapeInCallee("the function is extensible")
+                            Circle(), 0);
+        }
+    }
+}

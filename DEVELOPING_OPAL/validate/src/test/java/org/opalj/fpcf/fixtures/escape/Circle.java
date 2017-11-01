@@ -18,4 +18,8 @@ public class Circle {
     public String toString() {
         return "r: "+radius;
     }
+
+    public int getArea() {
+        return area;
+    }
 }
