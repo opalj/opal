@@ -307,7 +307,7 @@ object ClassFileFactory {
             8   |     invokestatic java.lang.invoke.MethodType { java.lang.invoke.MethodType methodType (java.lang.Class, java.lang.Class) }
             11  |     astore_3
             12  42    aload_2
-            13  43    aload_1
+            13  43    aload_0
             14  |     invokevirtual java.lang.invoke.SerializedLambda { java.lang.String getImplMethodName () }
             17  44    aload_3
             18  |     iconst_1
@@ -320,13 +320,14 @@ object ClassFileFactory {
             29  |     astore 4
             31  59    aload 4
             33  |     invokevirtual java.lang.invoke.CallSite { java.lang.invoke.MethodHandle getTarget () }
-            36  |     aload_1
+            36  |     aload_0
             37  |     invokevirtual java.lang.invoke.MethodHandle { java.lang.Object invoke (java.lang.invoke.SerializedLambda) }
             40  |     areturn
              */
 
             def buildMethodType(): Array[Instruction] = {
-                var a: Array[Instruction] = Array()
+                // val a = new ArrayBuffer[Object](100)
+                var a: Array[Instruction] = Array() // IMPROVE: Use ArrayBuffer
 
                 bootstrapArguments.foreach { arg ⇒
                     val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
@@ -337,12 +338,22 @@ object ClassFileFactory {
                             Array(
                                 LDC(ConstantClass(t.asReferenceType)), null
                             )
-                        } else {
+                        } else if (t.isBaseType) {
+                            // Primitive type handling
                             Array(
                                 GETSTATIC(
-                                    "java/lang/" + t.toJava.charAt(0).toUpper + t.toJava.tail,
+                                    t.asBaseType.WrapperType,
                                     "TYPE",
-                                    "L"+ObjectType.Class.fqn+"_" // FieldType.apply has substring from 1 to ft.length - 1, therefore add an extra char
+                                    ObjectType.Class
+                                ), null, null
+                            )
+                        } else {
+                            // Handling for void type
+                            Array(
+                                GETSTATIC(
+                                    VoidType.WrapperType,
+                                    "TYPE",
+                                    ObjectType.Class
                                 ), null, null
                             )
                         }
@@ -355,6 +366,7 @@ object ClassFileFactory {
 
                     if (staticHandle.methodDescriptor.parametersCount == 0) {
                         // We have ZERO parameters, call MethodType.methodType with return parameter only
+                        // IMPROVE: check if LDC method type can be used
                         a ++= Array(
                             INVOKESTATIC(
                                 ObjectType.MethodType,
@@ -496,7 +508,7 @@ object ClassFileFactory {
                         ), null, null,
                         ARETURN
                     )
-            val maxStack = 15
+            val maxStack = Code.computeMaxStack(instructions)
             val maxLocals = 5
 
             Method(

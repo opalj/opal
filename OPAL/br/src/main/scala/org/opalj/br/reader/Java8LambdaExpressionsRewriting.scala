@@ -191,11 +191,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             )
 
         if (logJava8LambdaExpressionsRewrites) {
-            info(
-                "load-time transformation",
-                s"rewriting Scala Symbols related invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-            )
+            info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
+
         instructions(pc) = LDC(bootstrapArguments.head.asInstanceOf[ConstantString])
         instructions(pc + 2) = newInvokestatic
 
@@ -235,13 +233,13 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         pc:            PC,
         invokedynamic: INVOKEDYNAMIC
     ): ClassFile = {
-        val INVOKEDYNAMIC(
-            bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
-            ) = invokedynamic
-        val bootstrapArguments = bootstrapMethod.arguments
+        val bootstrapArguments = invokedynamic.bootstrapMethod.arguments
 
-        if (bootstrapArguments.nonEmpty)
-            assert(bootstrapArguments.head.isInstanceOf[InvokeStaticMethodHandle])
+        assert(
+            bootstrapArguments.isEmpty || bootstrapArguments.head
+                .isInstanceOf[InvokeStaticMethodHandle],
+            "ensures that the test isScalaLambdaDeserialize was executed"
+        )
 
         val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
@@ -270,10 +268,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         )
 
         if (logJava8LambdaExpressionsRewrites) {
-            info(
-                "load-time transformation",
-                s"rewriting Java 8 like invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-            )
+            info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
 
         instructions(pc) = newInvokestatic
@@ -481,8 +476,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         )
 
         if (logJava8LambdaExpressionsRewrites) {
-            val m = s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-            info("analysis", m)
+            info("rewriting invokedynamic", s"Java: $invokedynamic ⇒ $newInvokestatic")
         }
 
         instructions(pc) = newInvokestatic
