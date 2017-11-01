@@ -140,7 +140,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
             val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
-            if (matcher.isRelevant(p, ats, annotation)) {
+            if (matcher.isRelevant(p, ats, e, annotation)) {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val properties = ps.properties(e)
