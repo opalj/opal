@@ -48,571 +48,239 @@ class EscapePropertyTest extends FlatSpec with Matchers {
 
     behavior of "the meet operator"
 
-    for (prop1 ← allProperties) {
-        for (prop2 ← allProperties) {
-            val meet12 = prop1 meet prop2
-            val meet21 = prop2 meet prop1
-            it should s"be symmetric for $prop1 and $prop2" in {
-                meet12 should be(meet21)
-            }
-            it should s"less or equal restrictive with respect to $prop1 and $prop2" in {
-                meet12 lessOrEqualRestrictive prop1 should be(true)
-                meet12 lessOrEqualRestrictive prop2 should be(true)
+    it should "be symmetric in its arguments, the result should be less or equal" in {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
+                val meet12 = prop1 meet prop2
+                val meet21 = prop2 meet prop1
+                assert(meet12 eq meet21, s"meet should be symmetric for $prop1 and $prop2")
+                assert(meet12 lessOrEqualRestrictive prop1, s"$prop1 meet $prop2 ($meet12) should be lessOrEqualRestrictive than $prop1")
+                assert(meet12 lessOrEqualRestrictive prop2, s"$prop1 meet $prop2 ($meet12) should be lessOrEqualRestrictive than $prop2")
             }
         }
-        it should s"evaluate to $prop1 for $prop1 meet $prop1" in {
-            prop1 meet prop1 should be(prop1)
+    }
+
+    it should "be the identity if both arguments are the same" in {
+        for (prop ← allProperties) {
+            val m = prop meet prop
+            assert(prop meet prop eq prop, s"$prop meet $prop should be $prop but was $m")
         }
+    }
+
+    it should "evaluate to the correct result" in {
+
+
+        assert(NoEscape meet EscapeInCallee eq EscapeInCallee, s"$NoEscape meet $EscapeInCallee should be $EscapeInCallee")
+        assert(NoEscape meet EscapeViaReturn eq EscapeViaReturn, s"$NoEscape meet $EscapeViaReturn should be$EscapeViaReturn")
+        assert(NoEscape meet EscapeViaParameter eq EscapeViaParameter, s"$NoEscape meet $EscapeViaParameter should be$EscapeViaParameter")
+        assert(NoEscape meet EscapeViaAbnormalReturn eq EscapeViaAbnormalReturn, s"$NoEscape meet $EscapeViaAbnormalReturn should be$EscapeViaAbnormalReturn")
+        assert(NoEscape meet EscapeViaParameterAndReturn eq EscapeViaParameterAndReturn, s"$NoEscape meet $EscapeViaParameterAndReturn should be$EscapeViaParameterAndReturn")
+        assert(NoEscape meet EscapeViaParameterAndAbnormalReturn eq EscapeViaParameterAndAbnormalReturn, s"$NoEscape meet $EscapeViaParameterAndAbnormalReturn should be$EscapeViaParameterAndAbnormalReturn")
+        assert(NoEscape meet EscapeViaNormalAndAbnormalReturn eq EscapeViaNormalAndAbnormalReturn, s"$NoEscape meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaNormalAndAbnormalReturn")
+        assert(NoEscape meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$NoEscape meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(NoEscape meet MaybeEscapeInCallee eq MaybeEscapeInCallee, s"$NoEscape meet $MaybeEscapeInCallee should be$MaybeEscapeInCallee")
+        assert(NoEscape meet MaybeEscapeViaReturn eq MaybeEscapeViaReturn, s"$NoEscape meet $MaybeEscapeViaReturn should be$MaybeEscapeViaReturn")
+        assert(NoEscape meet MaybeEscapeViaParameter eq MaybeEscapeViaParameter, s"$NoEscape meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameter")
+        assert(NoEscape meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$NoEscape meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(NoEscape meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$NoEscape meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(NoEscape meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$NoEscape meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(NoEscape meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$NoEscape meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(NoEscape meet GlobalEscape eq GlobalEscape, s"$NoEscape meet $GlobalEscape should be$GlobalEscape")
+        assert(NoEscape meet EscapeViaStaticField eq EscapeViaStaticField, s"$NoEscape meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(NoEscape meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$NoEscape meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeInCallee meet EscapeViaReturn eq EscapeViaReturn, s"$EscapeInCallee meet $EscapeViaReturn should be$EscapeViaReturn")
+        assert(EscapeInCallee meet EscapeViaParameter eq EscapeViaParameter, s"$EscapeInCallee meet $EscapeViaParameter should be$EscapeViaParameter")
+        assert(EscapeInCallee meet EscapeViaAbnormalReturn eq EscapeViaAbnormalReturn, s"$EscapeInCallee meet $EscapeViaAbnormalReturn should be$EscapeViaAbnormalReturn")
+        assert(EscapeInCallee meet EscapeViaParameterAndReturn eq EscapeViaParameterAndReturn, s"$EscapeInCallee meet $EscapeViaParameterAndReturn should be$EscapeViaParameterAndReturn")
+        assert(EscapeInCallee meet EscapeViaParameterAndAbnormalReturn eq EscapeViaParameterAndAbnormalReturn, s"$EscapeInCallee meet $EscapeViaParameterAndAbnormalReturn should be$EscapeViaParameterAndAbnormalReturn")
+        assert(EscapeInCallee meet EscapeViaNormalAndAbnormalReturn eq EscapeViaNormalAndAbnormalReturn, s"$EscapeInCallee meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaNormalAndAbnormalReturn")
+        assert(EscapeInCallee meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeInCallee meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeInCallee meet MaybeEscapeInCallee eq MaybeEscapeInCallee, s"$EscapeInCallee meet $MaybeEscapeInCallee should be$MaybeEscapeInCallee")
+        assert(EscapeInCallee meet MaybeEscapeViaReturn eq MaybeEscapeViaReturn, s"$EscapeInCallee meet $MaybeEscapeViaReturn should be$MaybeEscapeViaReturn")
+        assert(EscapeInCallee meet MaybeEscapeViaParameter eq MaybeEscapeViaParameter, s"$EscapeInCallee meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameter")
+        assert(EscapeInCallee meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$EscapeInCallee meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeInCallee meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeInCallee meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeInCallee meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeInCallee meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeInCallee meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeInCallee meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeInCallee meet GlobalEscape eq GlobalEscape, s"$EscapeInCallee meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeInCallee meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeInCallee meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeInCallee meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeInCallee meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaReturn meet EscapeViaParameter eq EscapeViaParameterAndReturn, s"$EscapeViaReturn meet $EscapeViaParameter should be$EscapeViaParameterAndReturn")
+        assert(EscapeViaReturn meet EscapeViaAbnormalReturn eq EscapeViaNormalAndAbnormalReturn, s"$EscapeViaReturn meet $EscapeViaAbnormalReturn should be$EscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet EscapeViaParameterAndReturn eq EscapeViaParameterAndReturn, s"$EscapeViaReturn meet $EscapeViaParameterAndReturn should be$EscapeViaParameterAndReturn")
+        assert(EscapeViaReturn meet EscapeViaParameterAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaReturn meet $EscapeViaParameterAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet EscapeViaNormalAndAbnormalReturn eq EscapeViaNormalAndAbnormalReturn, s"$EscapeViaReturn meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet MaybeEscapeInCallee eq MaybeEscapeViaReturn, s"$EscapeViaReturn meet $MaybeEscapeInCallee should be$MaybeEscapeViaReturn")
+        assert(EscapeViaReturn meet MaybeEscapeViaReturn eq MaybeEscapeViaReturn, s"$EscapeViaReturn meet $MaybeEscapeViaReturn should be$MaybeEscapeViaReturn")
+        assert(EscapeViaReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeViaReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaReturn meet GlobalEscape eq GlobalEscape, s"$EscapeViaReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaParameter meet EscapeViaAbnormalReturn eq EscapeViaParameterAndAbnormalReturn, s"$EscapeViaParameter meet $EscapeViaAbnormalReturn should be$EscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaParameter meet EscapeViaParameterAndReturn eq EscapeViaParameterAndReturn, s"$EscapeViaParameter meet $EscapeViaParameterAndReturn should be$EscapeViaParameterAndReturn")
+        assert(EscapeViaParameter meet EscapeViaParameterAndAbnormalReturn eq EscapeViaParameterAndAbnormalReturn, s"$EscapeViaParameter meet $EscapeViaParameterAndAbnormalReturn should be$EscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaParameter meet EscapeViaNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameter meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameter meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameter meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameter meet MaybeEscapeInCallee eq MaybeEscapeViaParameter, s"$EscapeViaParameter meet $MaybeEscapeInCallee should be$MaybeEscapeViaParameter")
+        assert(EscapeViaParameter meet MaybeEscapeViaReturn eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaParameter meet $MaybeEscapeViaReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaParameter meet MaybeEscapeViaParameter eq MaybeEscapeViaParameter, s"$EscapeViaParameter meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameter")
+        assert(EscapeViaParameter meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaParameter meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaParameter meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeViaParameter meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaParameter meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameter meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameter meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameter meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameter meet GlobalEscape eq GlobalEscape, s"$EscapeViaParameter meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaParameter meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaParameter meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaParameter meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaParameter meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaAbnormalReturn meet EscapeViaParameterAndReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet EscapeViaParameterAndAbnormalReturn eq EscapeViaParameterAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndAbnormalReturn should be$EscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet EscapeViaNormalAndAbnormalReturn eq EscapeViaNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeInCallee eq MaybeEscapeViaAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeInCallee should be$MaybeEscapeViaAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeViaReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$EscapeViaAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaParameterAndReturn meet EscapeViaParameterAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndReturn meet $EscapeViaParameterAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndReturn meet EscapeViaNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndReturn meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndReturn meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeInCallee eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeInCallee should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeViaReturn eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndReturn meet GlobalEscape eq GlobalEscape, s"$EscapeViaParameterAndReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaParameterAndReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaParameterAndReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaParameterAndReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaParameterAndReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaParameterAndAbnormalReturn meet EscapeViaNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeInCallee eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeInCallee should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$EscapeViaParameterAndAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaParameterAndAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaParameterAndAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaNormalAndAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn eq EscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn should be$EscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeInCallee eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeInCallee should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaNormalAndAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$EscapeViaNormalAndAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaNormalAndAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaNormalAndAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeInCallee eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeInCallee should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(EscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeInCallee meet MaybeEscapeViaReturn eq MaybeEscapeViaReturn, s"$MaybeEscapeInCallee meet $MaybeEscapeViaReturn should be$MaybeEscapeViaReturn")
+        assert(MaybeEscapeInCallee meet MaybeEscapeViaParameter eq MaybeEscapeViaParameter, s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameter")
+        assert(MaybeEscapeInCallee meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(MaybeEscapeInCallee meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(MaybeEscapeInCallee meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$MaybeEscapeInCallee meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(MaybeEscapeInCallee meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeInCallee meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeInCallee meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeInCallee meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeInCallee meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeInCallee meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeInCallee meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeViaReturn meet MaybeEscapeViaParameter eq MaybeEscapeViaParameterAndReturn, s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameter should be$MaybeEscapeViaParameterAndReturn")
+        assert(MaybeEscapeViaReturn meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(MaybeEscapeViaReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaNormalAndAbnormalReturn, s"$MaybeEscapeViaReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaReturn meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeViaReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeViaReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeViaReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeViaReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeViaReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndReturn eq MaybeEscapeViaParameterAndReturn, s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndReturn should be$MaybeEscapeViaParameterAndReturn")
+        assert(MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndAbnormalReturn, s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndAbnormalReturn")
+        assert(MaybeEscapeViaParameter meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameter meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameter meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeViaParameter meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeViaParameter meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeViaParameter meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeViaParameter meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeViaParameter meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameterAndReturn meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeViaParameterAndReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeViaParameterAndReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeViaParameterAndReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeViaParameterAndReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeViaParameterAndReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaParameterAndAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeViaParameterAndAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeViaParameterAndAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeViaParameterAndAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeViaParameterAndAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeViaParameterAndAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn eq MaybeEscapeViaParameterAndNormalAndAbnormalReturn, s"$MaybeEscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be$MaybeEscapeViaParameterAndNormalAndAbnormalReturn")
+        assert(MaybeEscapeViaNormalAndAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeViaNormalAndAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeViaNormalAndAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeViaNormalAndAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeViaNormalAndAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeViaNormalAndAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet GlobalEscape eq GlobalEscape, s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $GlobalEscape should be$GlobalEscape")
+        assert(MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaStaticField eq EscapeViaStaticField, s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaStaticField should be$EscapeViaStaticField")
+        assert(MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaHeapObject eq EscapeViaHeapObject, s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaHeapObject should be$EscapeViaHeapObject")
+
+        assert(GlobalEscape meet EscapeViaStaticField eq GlobalEscape, s"$GlobalEscape meet $EscapeViaStaticField should be$GlobalEscape")
+        assert(GlobalEscape meet EscapeViaHeapObject eq GlobalEscape, s"$GlobalEscape meet $EscapeViaHeapObject should be$GlobalEscape")
+
+        assert(EscapeViaStaticField meet EscapeViaHeapObject eq GlobalEscape, s"$EscapeViaStaticField meet $EscapeViaHeapObject should be$GlobalEscape")
     }
 
     behavior of "the less or equal restrictive relation"
-    for (prop1 ← allProperties) {
-        for (prop2 ← allProperties) {
-            it should s"be antisymmetric for $prop1 and $prop2" in {
+    it should "be antisymmetric" in {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
                 if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop1)) {
                     if (prop1.isBottom)
-                        prop1.isBottom should be(true)
+                        assert(prop2.isBottom, s"$prop1 <= $prop2 and $prop2 <= $prop1 and $prop1 is bottom, so $prop2 should be bottom")
                     else
-                        prop1 should be(prop2)
-                }
-            }
-            for (prop3 ← allProperties) {
-                it should s"be transitive for $prop1, $prop2 and $prop3" in {
-                    if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop3))
-                        prop1 lessOrEqualRestrictive prop3 should be(true)
+                        assert(prop1 eq prop2, s"$prop1 <= $prop2 and $prop2 <= $prop1, so they should be equal")
                 }
             }
         }
     }
-
-    s"$NoEscape meet $EscapeInCallee" should s"be $EscapeInCallee" in {
-        NoEscape meet EscapeInCallee should be(EscapeInCallee)
-    }
-    s"$NoEscape meet $EscapeViaReturn" should s"be $EscapeViaReturn" in {
-        NoEscape meet EscapeViaReturn should be(EscapeViaReturn)
-    }
-    s"$NoEscape meet $EscapeViaParameter" should s"be $EscapeViaParameter" in {
-        NoEscape meet EscapeViaParameter should be(EscapeViaParameter)
-    }
-    s"$NoEscape meet $EscapeViaAbnormalReturn" should s"be $EscapeViaAbnormalReturn" in {
-        NoEscape meet EscapeViaAbnormalReturn should be(EscapeViaAbnormalReturn)
-    }
-    s"$NoEscape meet $EscapeViaParameterAndReturn" should s"be $EscapeViaParameterAndReturn" in {
-        NoEscape meet EscapeViaParameterAndReturn should be(EscapeViaParameterAndReturn)
-    }
-    s"$NoEscape meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndAbnormalReturn" in {
-        NoEscape meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndAbnormalReturn)
-    }
-    s"$NoEscape meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaNormalAndAbnormalReturn" in {
-        NoEscape meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaNormalAndAbnormalReturn)
-    }
-    s"$NoEscape meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        NoEscape meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$NoEscape meet $MaybeEscapeInCallee" should s"be $MaybeEscapeInCallee" in {
-        NoEscape meet MaybeEscapeInCallee should be(MaybeEscapeInCallee)
-    }
-    s"$NoEscape meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaReturn" in {
-        NoEscape meet MaybeEscapeViaReturn should be(MaybeEscapeViaReturn)
-    }
-    s"$NoEscape meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameter" in {
-        NoEscape meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameter)
-    }
-    s"$NoEscape meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        NoEscape meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$NoEscape meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        NoEscape meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$NoEscape meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        NoEscape meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$NoEscape meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        NoEscape meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$NoEscape meet $GlobalEscape" should s"be $GlobalEscape" in {
-        NoEscape meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$NoEscape meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        NoEscape meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$NoEscape meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        NoEscape meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeInCallee meet $EscapeViaReturn" should s"be $EscapeViaReturn" in {
-        EscapeInCallee meet EscapeViaReturn should be(EscapeViaReturn)
-    }
-    s"$EscapeInCallee meet $EscapeViaParameter" should s"be $EscapeViaParameter" in {
-        EscapeInCallee meet EscapeViaParameter should be(EscapeViaParameter)
-    }
-    s"$EscapeInCallee meet $EscapeViaAbnormalReturn" should s"be $EscapeViaAbnormalReturn" in {
-        EscapeInCallee meet EscapeViaAbnormalReturn should be(EscapeViaAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $EscapeViaParameterAndReturn" should s"be $EscapeViaParameterAndReturn" in {
-        EscapeInCallee meet EscapeViaParameterAndReturn should be(EscapeViaParameterAndReturn)
-    }
-    s"$EscapeInCallee meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndAbnormalReturn" in {
-        EscapeInCallee meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaNormalAndAbnormalReturn" in {
-        EscapeInCallee meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeInCallee meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeInCallee" should s"be $MaybeEscapeInCallee" in {
-        EscapeInCallee meet MaybeEscapeInCallee should be(MaybeEscapeInCallee)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaReturn" in {
-        EscapeInCallee meet MaybeEscapeViaReturn should be(MaybeEscapeViaReturn)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameter" in {
-        EscapeInCallee meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameter)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeInCallee meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeInCallee meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeInCallee meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeInCallee meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeInCallee meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeInCallee meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeInCallee meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeInCallee meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeInCallee meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeInCallee meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaReturn meet $EscapeViaParameter" should s"be $EscapeViaParameterAndReturn" in {
-        EscapeViaReturn meet EscapeViaParameter should be(EscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaReturn meet $EscapeViaAbnormalReturn" should s"be $EscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet EscapeViaAbnormalReturn should be(EscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $EscapeViaParameterAndReturn" should s"be $EscapeViaParameterAndReturn" in {
-        EscapeViaReturn meet EscapeViaParameterAndReturn should be(EscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaReturn meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaReturn" in {
-        EscapeViaReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaReturn" in {
-        EscapeViaReturn meet MaybeEscapeViaReturn should be(MaybeEscapeViaReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaParameter meet $EscapeViaAbnormalReturn" should s"be $EscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaParameter meet EscapeViaAbnormalReturn should be(EscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $EscapeViaParameterAndReturn" should s"be $EscapeViaParameterAndReturn" in {
-        EscapeViaParameter meet EscapeViaParameterAndReturn should be(EscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameter meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaParameter meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameter meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameter meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaParameter" in {
-        EscapeViaParameter meet MaybeEscapeInCallee should be(MaybeEscapeViaParameter)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaParameter meet MaybeEscapeViaReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameter" in {
-        EscapeViaParameter meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameter)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaParameter meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaParameter meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameter meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameter meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameter meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaParameter meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaParameter meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaParameter meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaParameter meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaParameter meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet EscapeViaParameterAndReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeViaReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaParameterAndReturn meet $EscapeViaParameterAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndReturn meet EscapeViaParameterAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndReturn meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndReturn meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeViaReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaParameterAndReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaParameterAndReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaParameterAndReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaParameterAndReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaParameterAndReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet EscapeViaNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaParameterAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaParameterAndAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaParameterAndAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaParameterAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaParameterAndNormalAndAbnormalReturn" should s"be $EscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet EscapeViaParameterAndNormalAndAbnormalReturn should be(EscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaNormalAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaNormalAndAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaNormalAndAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeInCallee" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeInCallee should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$EscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        EscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeInCallee meet $MaybeEscapeViaReturn" should s"be $MaybeEscapeViaReturn" in {
-        MaybeEscapeInCallee meet MaybeEscapeViaReturn should be(MaybeEscapeViaReturn)
-    }
-    s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameter" in {
-        MaybeEscapeInCallee meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameter)
-    }
-    s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        MaybeEscapeInCallee meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        MaybeEscapeInCallee meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$MaybeEscapeInCallee meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        MaybeEscapeInCallee meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeInCallee meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeInCallee meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeInCallee meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeInCallee meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeInCallee meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeInCallee meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeInCallee meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeInCallee meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameter" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        MaybeEscapeViaReturn meet MaybeEscapeViaParameter should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        MaybeEscapeViaReturn meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaNormalAndAbnormalReturn" in {
-        MaybeEscapeViaReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeViaReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeViaReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeViaReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeViaReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeViaReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndReturn" should s"be $MaybeEscapeViaParameterAndReturn" in {
-        MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndReturn should be(MaybeEscapeViaParameterAndReturn)
-    }
-    s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndAbnormalReturn" in {
-        MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameter meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameter meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameter meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameter meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameter meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeViaParameter meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeViaParameter meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeViaParameter meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeViaParameter meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeViaParameter meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameterAndReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameterAndReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameterAndReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeViaParameterAndReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeViaParameterAndReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeViaParameterAndReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeViaParameterAndReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeViaParameterAndReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameterAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaParameterAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaParameterAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeViaParameterAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeViaParameterAndAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeViaParameterAndAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeViaParameterAndAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeViaParameterAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeViaNormalAndAbnormalReturn meet $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" should s"be $MaybeEscapeViaParameterAndNormalAndAbnormalReturn" in {
-        MaybeEscapeViaNormalAndAbnormalReturn meet MaybeEscapeViaParameterAndNormalAndAbnormalReturn should be(MaybeEscapeViaParameterAndNormalAndAbnormalReturn)
-    }
-    s"$MaybeEscapeViaNormalAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeViaNormalAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeViaNormalAndAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeViaNormalAndAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeViaNormalAndAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeViaNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $GlobalEscape" should s"be $GlobalEscape" in {
-        MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet GlobalEscape should be(GlobalEscape)
-    }
-    s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaStaticField" should s"be $EscapeViaStaticField" in {
-        MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaStaticField should be(EscapeViaStaticField)
-    }
-    s"$MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet $EscapeViaHeapObject" should s"be $EscapeViaHeapObject" in {
-        MaybeEscapeViaParameterAndNormalAndAbnormalReturn meet EscapeViaHeapObject should be(EscapeViaHeapObject)
-    }
-
-    s"$GlobalEscape meet $EscapeViaStaticField" should s"be $GlobalEscape" in {
-        GlobalEscape meet EscapeViaStaticField should be(GlobalEscape)
-    }
-    s"$GlobalEscape meet $EscapeViaHeapObject" should s"be $GlobalEscape" in {
-        GlobalEscape meet EscapeViaHeapObject should be(GlobalEscape)
-    }
-
-    s"$EscapeViaStaticField meet $EscapeViaHeapObject" should s"be $GlobalEscape" in {
-        EscapeViaStaticField meet EscapeViaHeapObject should be(GlobalEscape)
+    it should "be transitive" in {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
+                for (prop3 ← allProperties) {
+                    if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop3))
+                        assert(prop1 lessOrEqualRestrictive prop3, s"$prop1 <= $prop2 and $prop2 <= $prop3, so $prop1 should be <= $prop3")
+                }
+            }
+        }
     }
 }
