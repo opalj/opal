@@ -69,7 +69,6 @@ class EscapePropertyTest extends FlatSpec with Matchers {
 
     it should "evaluate to the correct result" in {
 
-
         assert(NoEscape meet EscapeInCallee eq EscapeInCallee, s"$NoEscape meet $EscapeInCallee should be $EscapeInCallee")
         assert(NoEscape meet EscapeViaReturn eq EscapeViaReturn, s"$NoEscape meet $EscapeViaReturn should be$EscapeViaReturn")
         assert(NoEscape meet EscapeViaParameter eq EscapeViaParameter, s"$NoEscape meet $EscapeViaParameter should be$EscapeViaParameter")
@@ -280,6 +279,47 @@ class EscapePropertyTest extends FlatSpec with Matchers {
                     if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop3))
                         assert(prop1 lessOrEqualRestrictive prop3, s"$prop1 <= $prop2 and $prop2 <= $prop3, so $prop1 should be <= $prop3")
                 }
+            }
+        }
+    }
+
+    behavior of "the property value id"
+    it should "be unique" in {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
+                assert((prop1.propertyValueID != prop2.propertyValueID) || (prop1 eq prop2), s"$prop1 and $prop2 should not have the same property id")
+            }
+        }
+    }
+
+    behavior of "the atMost function"
+    it should "be the identity for final elements and should always be final" in {
+        for (prop <- allProperties) {
+            if(prop.isFinal)
+                assert(prop eq prop.atMost)
+            assert(prop.atMost.isFinal)
+        }
+    }
+    it should "be the non-maybe version of itself" in {
+        assert(MaybeNoEscape.atMost eq NoEscape)
+        assert(MaybeEscapeInCallee.atMost eq EscapeInCallee)
+        assert(MaybeEscapeViaParameter.atMost eq EscapeViaParameter)
+        assert(MaybeEscapeViaAbnormalReturn.atMost eq EscapeViaAbnormalReturn)
+        assert(MaybeEscapeViaReturn.atMost eq EscapeViaReturn)
+        assert(MaybeEscapeViaNormalAndAbnormalReturn.atMost eq EscapeViaNormalAndAbnormalReturn)
+        assert(MaybeEscapeViaParameterAndAbnormalReturn.atMost eq EscapeViaParameterAndAbnormalReturn)
+        assert(MaybeEscapeViaParameterAndReturn.atMost eq EscapeViaParameterAndReturn)
+        assert(MaybeEscapeViaParameterAndNormalAndAbnormalReturn.atMost eq EscapeViaParameterAndNormalAndAbnormalReturn)
+    }
+
+    behavior of  "isValidSuccessor"
+    it should "be either less or equal or the at most value" in {
+        for (oldP <- allProperties) {
+            for (newP <- allProperties) {
+                if ((newP lessOrEqualRestrictive oldP) || (newP lessOrEqualRestrictive oldP.atMost))
+                    assert(newP.isValidSuccessorOf(oldP).isEmpty, s"$oldP refined to $newP")
+                else
+                    assert(newP.isValidSuccessorOf(oldP).nonEmpty, s"$oldP refined to $newP")
             }
         }
     }
