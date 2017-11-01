@@ -30,6 +30,8 @@ package org.opalj
 package collection
 package mutable
 
+import java.io.Serializable
+
 /**
  * A bit set with a given upper bound for the largest value that can be stored in the set.
  * The upper bound is only used to create an optimal underlying representation. It has no
@@ -43,7 +45,7 @@ package mutable
  *
  * @author Michael Eichberg
  */
-sealed abstract class FixedSizeBitSet extends BitSet {
+sealed abstract class FixedSizeBitSet extends BitSet with Serializable {
 
     def +=(i: Int): this.type
 
