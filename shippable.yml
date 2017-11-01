@@ -8,12 +8,10 @@ jdk:
 branches:
   only:
     - develop
-    - feature/Hermes
 
 script:
   - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled"
-  - sbt clean coverage test
-  - sbt coverageAggregate
+  - sbt coverage AbstractInterpretationFramework/test coverageAggregate
 
 after_script:
   - mkdir -p shippable/codecoverage
