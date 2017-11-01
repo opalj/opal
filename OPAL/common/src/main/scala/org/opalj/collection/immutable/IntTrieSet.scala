@@ -144,7 +144,7 @@ case class IntTrieSet1(i: Int) extends IntTrieSetL {
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] class IntTrieSet2 private[immutable] (
-        i1: Int, i2: Int
+        val i1: Int, val i2: Int
 ) extends IntTrieSetL {
 
     override def isEmpty: Boolean = false
@@ -224,7 +224,7 @@ private[immutable] class IntTrieSet2 private[immutable] (
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] class IntTrieSet3 private[immutable] (
-        i1: Int, i2: Int, i3: Int
+        val i1: Int, val i2: Int, val i3: Int
 ) extends IntTrieSetL {
 
     override def isEmpty: Boolean = false
