@@ -42,7 +42,6 @@ import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
 
-
 /**
  * Converts the bytecode of a method into a three address representation using a very naive
  * approach where each each operand stack value is stored in a local variable based on the
