@@ -56,7 +56,7 @@ sealed abstract class IntTrieSet
 }
 
 /** The (potential) leaves of an IntTrie. */
-private[immutable] abstract class IntTrieSetL extends IntTrieSet {
+private[immutable] sealed abstract class IntTrieSetL extends IntTrieSet {
 
     final override private[immutable] def -(i: Int, key: Int): IntTrieSet = this.-(i)
     final override private[immutable] def constringe(): IntTrieSet = this
@@ -99,7 +99,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = this.+(i)
 }
 
-case class IntTrieSet1(i: Int) extends IntTrieSetL {
+final case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
@@ -143,7 +143,7 @@ case class IntTrieSet1(i: Int) extends IntTrieSetL {
 /**
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
-private[immutable] class IntTrieSet2 private[immutable] (
+private[immutable] final class IntTrieSet2 private[immutable] (
         val i1: Int, val i2: Int
 ) extends IntTrieSetL {
 
@@ -223,7 +223,7 @@ private[immutable] class IntTrieSet2 private[immutable] (
 /**
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
-private[immutable] class IntTrieSet3 private[immutable] (
+private[immutable] final class IntTrieSet3 private[immutable] (
         val i1: Int, val i2: Int, val i3: Int
 ) extends IntTrieSetL {
 
@@ -512,6 +512,9 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
 }
 
+/**
+ * Factory to create IntTrieSets.
+ */
 object IntTrieSet {
 
     def empty: IntTrieSet = EmptyIntTrieSet
@@ -590,8 +593,9 @@ object IntTrieSet {
     }
 
     /**
-     * Constructs a new IntTrie from the distinct values!
-     * If level is > 0 then all values have to have the same level least significant bits!
+     * Constructs a new IntTrie from the given distinct values.
+     *
+     * If level is > 0 then all values have to have the least significant bits up until level!
      */
     private[immutable] def from(i1: Int, i2: Int, i3: Int, i4: Int, level: Int): IntTrieSet = {
         val root =

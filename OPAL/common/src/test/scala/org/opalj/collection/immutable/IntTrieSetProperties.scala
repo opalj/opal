@@ -79,30 +79,33 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val directITS = new IntTrieSet1(v)
         val viaEmptyITS = EmptyIntTrieSet + v
         factoryITS.size == 1 &&
+            factoryITS.isSingletonSet &&
+            !factoryITS.isEmpty &&
+            !factoryITS.hasMultipleElements &&
             factoryITS.head == v &&
             factoryITS == directITS &&
             directITS == viaEmptyITS &&
-            factoryITS.isSingletonSet
+            directITS.hashCode == viaEmptyITS.hashCode
     }
 
-    property("create IntTrieSet from Set (i.e., no duplicates)") = forAll { s: Set[Int] ⇒
+    property("create IntTrieSet from Set (i.e., no duplicates)") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
             (its.nonEmpty == s.nonEmpty) &&
             (its.hasMultipleElements == (s.size > 1)) &&
             (its.isSingletonSet == (s.size == 1)) &&
-            (its.iterator.toList.sorted == s.toList.sorted) :| "same content"
+            (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
     property("create IntTrieSet from List (i.e., with duplicates)") = forAll { l: List[Int] ⇒
         val its = l.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val lWithoutDuplicates = l.toSet.toList
         (its.size == lWithoutDuplicates.size) :| "matching size" &&
-            its.iterator.toSet.toList.sorted == lWithoutDuplicates.sorted
+            its.iterator.toList.sorted == lWithoutDuplicates.sorted
     }
 
-    property("head") = forAll { s: Set[Int] ⇒
+    property("head") = forAll { s: IntArraySet ⇒
         s.nonEmpty ==> {
             val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
             s.contains(its.head)
@@ -119,7 +122,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             itsString.startsWith(pre) && itsString.endsWith(post)
     }
 
-    property("contains") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
+    property("contains") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
         val its = s1.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         s1.forall(its.contains) :| "contains expected value" &&
             s2.forall(v ⇒ s1.contains(v) == its.contains(v))
@@ -138,6 +141,17 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val mappedS = s.map(_ * 2)
         classify(mappedIts.size > 3, "using trie") {
             mappedS.size == mappedIts.size &&
+                (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
+        }
+    }
+
+    property("map (identity)") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        val mappedIts = its.map(_ * 1)
+        val mappedS = s.map(_ * 1)
+        classify(mappedIts.size > 3, "using trie") {
+            (mappedIts eq its) &&
+                mappedS.size == mappedIts.size &&
                 (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
         }
     }
@@ -192,6 +206,25 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
                 }
             }
         }
+    }
+
+    property("not equals") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        its != (new Object)
+    }
+
+    property("toString") = forAll { s: IntArraySet ⇒
+        val its = s.foldLeft(IntTrieSet.empty)(_ + _)
+        val itsToString = its.toString
+        itsToString.startsWith("IntTrieSet(") && itsToString.endsWith(")")
+        // IMPROVE add content based test
+    }
+
+    property("subsetOf") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+        val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
+        val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
+        val mergedIts = its1 ++ its2
+        its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
     }
 
     /*
