@@ -50,7 +50,7 @@ import org.opalj.collection.immutable.Chain
 class UnidirectionalGraph(
         val verticesCount: Int
 )( // a graph which contains the nodes with the ids: [0...vertices-1]
-        private val successors: Array[Set[Int]] = new Array[Set[Int]](verticesCount)
+        private val successors: Array[Set[Int]] = new Array[Set[Int]](verticesCount) // IMPROVE use IntTrieSet
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = (0 until this.verticesCount)
@@ -68,7 +68,7 @@ class UnidirectionalGraph(
             sSuccessors
     }
 
-    def edges: Int ⇒ Iterator[Int] = (n: Int) ⇒ { this(n).toIterator }
+    def edges: Int ⇒ Iterator[Int] = (n: Int) ⇒ { this(n).toIterator } // IMPROVE use intIterator
 
     /**
      * Adds a new edge between the given vertices.
