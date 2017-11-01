@@ -36,9 +36,9 @@ import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.TACMethodParameter
-import org.opalj.br.Method
 import org.opalj.br.AllocationSite
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
@@ -82,7 +82,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         cfg:      CFG,
         handlers: ExceptionHandlers,
         aiResult: AIResult,
-        m:        Method
+        m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
         new SimpleEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
@@ -108,7 +108,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 if (index != -1)
                     code(index) match {
                         case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m)
+                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
                         case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
                             ImmediateResult(e, NoEscape)
                         case stmt ⇒
@@ -119,7 +119,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
                 val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, aiProvider(m), m)
+                doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
             case FormalParameter(_, _) ⇒ ImmediateResult(e, MaybeNoEscape)
         }
     }

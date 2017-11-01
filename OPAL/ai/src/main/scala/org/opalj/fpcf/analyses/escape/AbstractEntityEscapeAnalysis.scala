@@ -35,7 +35,7 @@ import scala.annotation.switch
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
+import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
@@ -105,7 +105,7 @@ trait AbstractEntityEscapeAnalysis {
     //
     val project: SomeProject
     val propertyStore: PropertyStore
-    val m: Method
+    val m: VirtualMethod
     val params: Parameters[TACMethodParameter]
     val code: Array[Stmt[V]]
     val cfg: CFG

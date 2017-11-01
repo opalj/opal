@@ -34,10 +34,10 @@ package escape
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.AllocationSite
+import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
@@ -90,7 +90,7 @@ class SimpleEntityEscapeAnalysis(
         val cfg:           CFG,
         val handlers:      ExceptionHandlers,
         val aiResult:      AIResult,
-        val m:             Method,
+        val m:             VirtualMethod,
         val propertyStore: PropertyStore,
         val project:       SomeProject
 ) extends DefaultEntityEscapeAnalysis

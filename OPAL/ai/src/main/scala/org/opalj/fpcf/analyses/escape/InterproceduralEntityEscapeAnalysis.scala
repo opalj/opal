@@ -35,10 +35,11 @@ import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ReferenceType
-import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.VirtualMethod
+import org.opalj.br.Method
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.TypeExtensibilityKey
@@ -210,7 +211,8 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
         if (value.isPrecise) {
             if (value.isNull.isNoOrUnknown) {
                 val valueType = value.valueType.get
-                val methodO = project.instanceCall(m.classFile.thisType, valueType, name, descr)
+                assert(m.declaringClassType.isObjectType)
+                val methodO = project.instanceCall(m.declaringClassType.asObjectType, valueType, name, descr)
                 checkParams(methodO, params, assignment)
                 if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
             } else {
@@ -223,7 +225,8 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
             calcMostRestrictive(MaybeEscapeInCallee)
         } else {
             //TODO project.resolveMethodReference()
-            val packageName = m.classFile.thisType.packageName
+            assert(m.declaringClassType.isObjectType)
+            val packageName = m.declaringClassType.asObjectType.packageName
             val methods =
                 if (isI) project.interfaceCall(dc.asObjectType, name, descr)
                 else project.virtualCall(packageName, dc, name, descr)
@@ -310,7 +313,7 @@ class InterproceduralEntityEscapeAnalysis(
         val cfg:           CFG,
         val handlers:      ExceptionHandlers,
         val aiResult:      AIResult,
-        val m:             Method,
+        val m:             VirtualMethod,
         val propertyStore: PropertyStore,
         val project:       SomeProject
 ) extends DefaultEntityEscapeAnalysis

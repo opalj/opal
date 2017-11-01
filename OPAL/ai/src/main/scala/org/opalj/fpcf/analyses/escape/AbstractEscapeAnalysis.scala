@@ -36,8 +36,9 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.AIResult
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
 import org.opalj.br.ExceptionHandlers
+import org.opalj.br.VirtualMethod
+import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.tac.DUVar
@@ -75,7 +76,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         cfg:      CFG,
         handlers: ExceptionHandlers,
         aiResult: AIResult,
-        m:        Method
+        m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis
 
     /**
@@ -92,7 +93,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         cfg:      CFG,
         handlers: ExceptionHandlers,
         aiResult: AIResult,
-        m:        Method
+        m:        VirtualMethod
     ): PropertyComputationResult = {
         entityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m).doDetermineEscape()
     }
