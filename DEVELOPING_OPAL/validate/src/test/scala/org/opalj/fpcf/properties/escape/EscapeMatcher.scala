@@ -35,7 +35,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.AnnotationLike
 
 abstract class EscapeMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
-    override def isRelevant(p: Project[_], as: Set[ObjectType], a: AnnotationLike): Boolean = {
+    override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
         val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
         //val domainsElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "domains").asArrayValue.values
