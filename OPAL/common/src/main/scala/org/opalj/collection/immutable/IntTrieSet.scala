@@ -44,6 +44,8 @@ sealed abstract class IntTrieSet
     with IntCollectionWithStableOrdering[IntTrieSet]
     with IntWorkSet[IntTrieSet] { intSet ⇒
 
+    def foreachPair[U](f: (Int, Int) ⇒ U): Unit
+
     /** Returns some value and removes it from this set. */
     def getAndRemove: (Int, IntTrieSet)
 
@@ -86,6 +88,7 @@ class FilteredIntTrieSet(private val s: IntTrieSet, private val p: Int ⇒ Boole
 
     private[this] lazy val filtered: IntTrieSet = s.filter(p)
 
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = filtered.foreachPair(f)
     override def filter(p: Int ⇒ Boolean): IntTrieSet = filtered.filter(p)
     override def isSingletonSet: Boolean = filtered.isSingletonSet
     override def hasMultipleElements: Boolean = filtered.hasMultipleElements
@@ -127,6 +130,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def head: Int = throw new UnsupportedOperationException("empty")
     override def getAndRemove: (Int, IntTrieSet) = throw new UnsupportedOperationException("empty")
     override def foreach[U](f: Int ⇒ U): Unit = {}
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = this
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = this
     override def map(f: Int ⇒ Int): IntTrieSet = this
@@ -160,6 +164,7 @@ final case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override def hasMultipleElements: Boolean = false
     override def size: Int = 1
     override def foreach[U](f: Int ⇒ U): Unit = { f(i) }
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def getAndRemove: (Int, IntTrieSet) = (i, EmptyIntTrieSet)
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = if (p(i)) this else EmptyIntTrieSet
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
@@ -217,6 +222,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def intIterator: IntIterator = IntIterator(i1, i2)
 
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2) }
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
         if (p(i1)) {
             if (p(i2))
@@ -299,6 +305,8 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     override def intIterator: IntIterator = IntIterator(i1, i2, i3)
 
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
+
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
         if (p(i1)) {
             if (p(i2)) {
@@ -393,7 +401,19 @@ private[immutable] final class IntTrieSetN private[immutable] (
         left.foreach(f)
         right.foreach(f)
     }
-
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {
+        val is = intIterator.toArray(size = size)
+        val max = size
+        var i = 0
+        while (i < max) {
+            var j = i + 1
+            while (j < max) {
+                f(is(i), is(j))
+                j += 1
+            }
+            i += 1
+        }
+    }
     override def map(f: Int ⇒ Int): IntTrieSet = {
         foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + f(_))
     }
@@ -592,6 +612,13 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     override def hashCode: Int = foldLeft(1)(31 * _ + _)
 
+}
+
+class IntTrieSetBuilder extends scala.collection.mutable.Builder[Int, IntTrieSet] {
+    private[this] var s: IntTrieSet = EmptyIntTrieSet
+    def +=(i: Int): this.type = { s += i; this }
+    def clear(): Unit = s = EmptyIntTrieSet
+    def result(): IntTrieSet = s
 }
 
 /**

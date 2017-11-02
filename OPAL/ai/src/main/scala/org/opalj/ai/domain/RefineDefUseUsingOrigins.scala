@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.IntArraySet
-
 /**
  * Collects/refines the abstract interpretation time definition/use information using the domain
  * values' origin information if available.
@@ -49,7 +47,7 @@ trait RefineDefUseUsingOrigins extends RecordDefUse {
         defaultOrigins: ValueOrigins
     ): ValueOrigins = {
         domainValue match {
-            case vo: ValueWithOriginInformation ⇒ vo.origins.foldLeft(IntArraySet.empty)(_ + _)
+            case vo: ValueWithOriginInformation ⇒ vo.origins.foldLeft(NoPCs)(_ + _)
             case _                              ⇒ defaultOrigins
         }
     }

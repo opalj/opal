@@ -213,7 +213,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("equals") = forAll { s: IntTrieSet ⇒
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
-        val newS =  (s + i - i)
+        val newS = (s + i - i)
         s == newS && s.hashCode == newS.hashCode
     }
 
@@ -276,11 +276,12 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         var evaluated = false
         val newits = its1.withFilter(i ⇒ { evaluated = true; !its2.contains(i) })
         val news = s1.withFilter(!s2.contains(_))
-        !evaluated &&
-            news.forall(i => newits.exists(newi=> newi == i)) &&
-            news.forall(newits.contains) && newits.forall(news.contains) &&
-            news.forall(newits.intIterator.contains) && newits.intIterator.forall(news.contains)  &&
-            news.forall(newits.iterator.contains) && newits.iterator.forall(news.contains)
+        !evaluated :| "not eagerly evaluated" &&
+            news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
+            (news.forall(newits.contains) && newits.forall(news.contains)) :| "contains check" &&
+            news.forall(newits.intIterator.contains) :| "IntIterator.contains" &&
+            newits.intIterator.forall(news.contains) :| "IntIterator.forall" &&
+            news.forall(newits.iterator.contains) && newits.iterator.forall(news.contains) :| "Iterator[Int]"
     }
 
 }
@@ -371,7 +372,7 @@ class IntTrieSetTest extends FunSpec with Matchers {
         }
 
         it("should create the canonical representation as soon as we just have one value left in each branch ") {
-            val its = IntTrieSet(0,8,12,4)
+            val its = IntTrieSet(0, 8, 12, 4)
             val filteredIts = its.filter(i ⇒ i == 8 || i == 12)
             filteredIts.size should be(2)
             filteredIts shouldBe an[IntTrieSet2]
@@ -386,14 +387,14 @@ class IntTrieSetTest extends FunSpec with Matchers {
     }
 
     describe("an identity mapping of a small IntTrieSet results in the same set") {
-val is0 = IntTrieSet.empty
-val is1 = IntTrieSet(1)
-val is2 = IntTrieSet(3, 4)
+        val is0 = IntTrieSet.empty
+        val is1 = IntTrieSet(1)
+        val is2 = IntTrieSet(3, 4)
         val is3 = IntTrieSet(256, 512, 1037)
 
-        assert(is0.map(i => i) eq is0)
-        assert(is1.map(i => i) eq is1)
-        assert(is2.map(i => i) eq is2)
-        assert(is3.map(i => i) eq is3)
+        assert(is0.map(i ⇒ i) eq is0)
+        assert(is1.map(i ⇒ i) eq is1)
+        assert(is2.map(i ⇒ i) eq is2)
+        assert(is3.map(i ⇒ i) eq is3)
     }
 }

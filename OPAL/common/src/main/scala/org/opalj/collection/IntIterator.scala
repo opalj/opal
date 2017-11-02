@@ -130,7 +130,7 @@ trait IntIterator { self ⇒
                 as = newAS
                 asLength = as.length
             }
-            val v = next
+            val v = next()
             as(i) = v
             i += 1
         }
@@ -143,10 +143,21 @@ trait IntIterator { self ⇒
         }
     }
 
+    private[opalj] def toArray(size: Int): Array[Int] = {
+        val as = new Array[Int](size)
+        var i = 0
+        while (hasNext) {
+            val v = next()
+            as(i) = v
+            i += 1
+        }
+        as
+    }
+
     def toChain: Chain[Int] = {
         val b = Chain.newBuilder[Int]
         while (hasNext) b += next()
-        b.result
+        b.result()
     }
 
     def mkString(pre: String, in: String, post: String): String = {
@@ -167,7 +178,7 @@ trait IntIterator { self ⇒
      */
     def iterator: Iterator[Int] = new AbstractIterator[Int] {
         def hasNext: Boolean = self.hasNext
-        def next: Int = self.next
+        def next: Int = self.next()
     }
 
 }
@@ -200,7 +211,7 @@ object IntIterator {
     }
 
     def apply(i1: Int, i2: Int, i3: Int): IntIterator = new IntIterator {
-        private[this] var next = 0
+        private[this] var next: Int = 0
         def hasNext: Boolean = next < 3
         def next(): Int = { next += 1; if (next == 1) i1 else if (next == 2) i2 else i3 }
         override def toArray: Array[Int] = {

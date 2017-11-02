@@ -31,8 +31,8 @@ package tac
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.FixedSizeBitSet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -645,7 +645,7 @@ object TACNaive {
                     schedule(targetPC, retVar :: stack)
 
                 case RET.opcode ⇒
-                    var successors = IntArraySet.empty
+                    var successors = IntTrieSet.empty
                     cfg.bb(pc).successors foreach { successorNode ⇒
                         val successor = successorNode match {
                             case cn: CatchNode  ⇒ cn.handlerPC

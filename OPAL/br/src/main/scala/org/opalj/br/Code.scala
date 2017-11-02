@@ -43,12 +43,10 @@ import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.br.instructions._
@@ -482,8 +480,8 @@ final class Code private (
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
-        allPredecessorPCs(0) = IntArraySet.empty // initialization for the start node
-        var exitPCs = IntArraySet.empty
+        allPredecessorPCs(0) = IntTrieSet.empty // initialization for the start node
+        var exitPCs = IntTrieSet.empty
 
         var cfJoins = IntTrieSet.empty
         val isReached = FixedSizeBitSet.create(instructionsLength)
@@ -513,7 +511,7 @@ final class Code private (
                         // compute predecessors
                         val predecessorPCs = allPredecessorPCs(nextPC)
                         if (predecessorPCs eq null) {
-                            allPredecessorPCs(nextPC) = new IntArraySet1(pc)
+                            allPredecessorPCs(nextPC) = new IntTrieSet1(pc)
                         } else {
                             allPredecessorPCs(nextPC) = predecessorPCs + pc
                         }
@@ -648,13 +646,13 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = BasicClassHierarchy
-    ): (IntTrieSet /*joins*/ , IntTrieSet /*forks*/ , IntMap[IntArraySet] /*forkTargetPCs*/ ) = {
+    ): (IntTrieSet /*joins*/ , IntTrieSet /*forks*/ , IntMap[IntTrieSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
         var cfJoins = IntTrieSet.empty
         var cfForks = IntTrieSet.empty
-        var cfForkTargets = IntMap.empty[IntArraySet]
+        var cfForkTargets = IntMap.empty[IntTrieSet]
 
         val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
@@ -690,7 +688,7 @@ final class Code private (
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
                         cfForks += pc
-                        cfForkTargets += ((pc, IntArraySetBuilder(nextInstructions).result()))
+                        cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ + _)))
                     }
             }
 

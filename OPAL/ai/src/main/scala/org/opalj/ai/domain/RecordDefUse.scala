@@ -32,21 +32,19 @@ package domain
 
 import scala.annotation.tailrec
 import scala.annotation.switch
-
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
 import scala.collection.mutable
-
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -104,8 +102,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    type ValueOrigins = IntArraySet
-    @inline final def ValueOrigins(vo: Int): IntArraySet = new IntArraySet1(vo)
+    type ValueOrigins = IntTrieSet
+    @inline final def ValueOrigins(vo: Int): IntTrieSet = new IntTrieSet1(vo)
+    final def NoValueOrigins: IntTrieSet = EmptyIntTrieSet
 
     // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
@@ -199,7 +198,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def safeUsedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         val usedBy = this.usedBy(valueOrigin)
         if (usedBy eq null)
-            IntArraySet.empty
+            NoValueOrigins
         else
             usedBy
     }
@@ -209,7 +208,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * compute a value that is not used in the following.
      */
     def unused(): ValueOrigins = {
-        var unused = IntArraySet.empty
+        var unused = NoValueOrigins
 
         // 1. check if the parameters are used...
         val parametersOffset = this.parametersOffset
@@ -452,7 +451,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // the VM generated NullPointerException.
             val thrownValue = operandsArray(currentPC).head
             val exceptionIsNull = refIsNull(currentPC, thrownValue)
-            var newDefOps = IntArraySet.empty
+            var newDefOps = NoValueOrigins
             if (exceptionIsNull.isYesOrUnknown) newDefOps += ValueOriginForVMLevelValue(currentPC)
             if (exceptionIsNull.isNoOrUnknown) newDefOps ++= defOps(currentPC).head
             newDefOps
