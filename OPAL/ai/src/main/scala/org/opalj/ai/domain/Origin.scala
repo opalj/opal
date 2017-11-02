@@ -57,6 +57,12 @@ import org.opalj.br.ComputationalType
  */
 trait Origin { domain: ValuesDomain ⇒
 
+    /**
+     * Implementers are expected to "abstract override" this method to make it possible to
+     * stack several domain implementations which provide origin information.
+     */
+    def providesOriginInformationFor(ctc: ComputationalType): Boolean = false
+
     implicit object SingleOriginValueOrdering extends Ordering[SingleOriginValue] {
         def compare(x: SingleOriginValue, y: SingleOriginValue): Int = x.origin - y.origin
     }
@@ -65,7 +71,7 @@ trait Origin { domain: ValuesDomain ⇒
      *  Common supertrait of all domain values which provide comprehensive origin information.
      */
     trait ValueWithOriginInformation {
-        def origins: Iterable[ValueOrigin]
+        def origins: Iterator[ValueOrigin] // IMPROVE Use IntIterator!!!!
     }
 
     /**
@@ -73,14 +79,8 @@ trait Origin { domain: ValuesDomain ⇒
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
-        final def origins: Iterable[ValueOrigin] = Iterable(origin)
+        final def origins: Iterator[ValueOrigin] = Iterator(origin)
     }
-
-    /**
-     * Implementers are expected to "abstract override" this method to make it possible to
-     * stack several domain implementations which provide origin information.
-     */
-    def providesOriginInformationFor(ctc: ComputationalType): Boolean = false
 
     /**
      * Marker trait which should be mixed in by `DomainValue` classes that capture information
@@ -98,10 +98,10 @@ trait Origin { domain: ValuesDomain ⇒
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    def origin(value: DomainValue): Iterable[ValueOrigin] = {
+    def origin(value: DomainValue): Iterator[ValueOrigin] = {
         value match {
             case vo: ValueWithOriginInformation ⇒ vo.origins
-            case _                              ⇒ Iterable.empty
+            case _                              ⇒ Iterator.empty
         }
     }
 
@@ -120,7 +120,7 @@ object Origin {
 }
 
 object Origins {
-    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] = {
+    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterator[ValueOrigin]] = {
         Some(value.origins)
     }
 }
