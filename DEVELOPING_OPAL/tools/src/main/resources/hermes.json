@@ -41,8 +41,12 @@
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-SNAPSHOT-0.3.jar"
                     },
                     {
-                        "id": "OPAL-AllProjects-MultiJar-SNAPSHOT-08-14-2014.jar",
-                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-AllProjects-MultiJar-SNAPSHOT-08-14-2014.jar"
+                        "id": "OPAL-MultiJar-SNAPSHOT-08-14-2014.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-08-14-2014.jar"
+                    },
+                    {
+                        "id": "OPAL-MultiJar-SNAPSHOT-11-01-2017.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar"
                     },
                     {
                         "id": "Multithreaded RPN Calculator ",

@@ -248,6 +248,20 @@ case class ConcurrentResult[E <: Entity, P <: Property](
 
 private[fpcf] object ConcurrentResult { private[fpcf] final val id = 9 }
 
+/**
+ * If an analysis is finished and will not return more precise results, but a subsequent
+ * analysis may refine the results, a ```RefineableResult``` has to be used.
+ *
+ * @note If the given property is not refineable a (Immediate)Result has to be used.
+ *
+ */
+case class RefineableResult(e: Entity, p: Property) extends PropertyComputationResult {
+
+    private[fpcf] final def id = RefineableResult.id
+
+}
+private[fpcf] object RefineableResult { private[fpcf] final val id = 10 }
+
 //
 //
 // PropertyStore PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
@@ -287,7 +301,7 @@ abstract class SuspendedPC[DependeeP <: Property] private[fpcf] (
  */
 private[fpcf] object SuspendedPC {
 
-    private[fpcf] final val id = 10
+    private[fpcf] final val id = 11
 
     def unapply[DependeeP <: Property](
         c: SuspendedPC[DependeeP]

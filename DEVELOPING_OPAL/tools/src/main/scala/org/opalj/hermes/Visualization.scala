@@ -109,9 +109,9 @@ object Visualization {
             featureMatrix.filter(p ⇒ projectSelection.find(p.id.value).isDefined).foreach { project ⇒
                 // reformat for sorting
                 val statistics: Seq[(String, Double)] = project.projectConfiguration.statistics.toSeq
-                val features: Seq[(String, Double)] = project.features.map(f ⇒ {
+                val features: Seq[(String, Double)] = project.features.map { f ⇒
                     (f.value.id, f.value.count.asInstanceOf[Double])
-                })
+                }
                 val selectedValues = (statistics ++ features)
                     .filter(f ⇒ statisticSelection.find(f._1).isDefined
                         || featureSelection.find(f._1).isDefined)
