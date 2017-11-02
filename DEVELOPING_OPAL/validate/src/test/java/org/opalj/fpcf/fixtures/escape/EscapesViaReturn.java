@@ -28,6 +28,7 @@ public class EscapesViaReturn {
                 @MaybeEscapeViaReturn(
                         value = "intra-procedural analyses don't track the call but the domain does",
                         analyses = SimpleEscapeAnalysis.class)
+                @MaybeEscapeInCallee(value = "the domain does not recognize the identity", performInvokationsDomain = false)
                         Object();
         Object x = identity(o);
         return x;

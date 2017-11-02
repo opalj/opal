@@ -30,18 +30,49 @@ package org.opalj
 package fpcf
 package properties
 package escape
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l1.DefaultArrayValuesBinding
+import org.opalj.ai.domain.l2.PerformInvocations
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 import org.opalj.br.AnnotationLike
+import org.opalj.br.AllocationSite
+import org.opalj.br.BooleanValue
+import org.opalj.br.analyses.FormalParameter
 
 abstract class EscapeMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
     override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
+        // check whether the analyses specified in the annotation are present
         val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
-        //val domainsElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "domains").asArrayValue.values
-        //val domains = domainsElementValues map { _.asClassValue.value.asObjectType }
-        //val provider = p.get(SimpleAIKey)
-        analyses.exists(as.contains)
+        val analysisRelevant = analyses.exists(as.contains)
+
+        // check whether the PerformInvokations domain or the ArrayValuesBinding domain are required
+        val requiresPerformInvokationsDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain").asInstanceOf[BooleanValue].value
+        val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
+
+        // retrieve the current method and using this the domain used for the TAC
+        val m = entity match {
+            case FormalParameter(m, _)   ⇒ m
+            case AllocationSite(m, _, _) ⇒ m
+            case _                       ⇒ throw new RuntimeException(s"unsuported entity $entity")
+        }
+        if (as.nonEmpty && m.body.isDefined) {
+            val domain = p.get(SimpleAIKey)(m).domain
+
+            val performInvokationDomainRelevant =
+                if (requiresPerformInvokationsDomain) domain.isInstanceOf[PerformInvocations]
+                else !domain.isInstanceOf[PerformInvocations]
+
+            val arrayDomainRelevant =
+                if (requiresArrayDomain) domain.isInstanceOf[DefaultArrayValuesBinding]
+                else !domain.isInstanceOf[DefaultArrayValuesBinding]
+
+            analysisRelevant && performInvokationDomainRelevant && arrayDomainRelevant
+        } else {
+            analysisRelevant
+        }
+
     }
 
     override def validateProperty(

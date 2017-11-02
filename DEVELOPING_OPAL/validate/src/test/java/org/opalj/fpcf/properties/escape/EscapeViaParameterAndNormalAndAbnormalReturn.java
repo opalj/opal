@@ -13,11 +13,13 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
-@PropertyValidator(key = "EscapeProperty",validator = EscapeViaParameterAndNormalAndAbnormalReturnMatcher.class)
+@PropertyValidator(key = "EscapeProperty",
+        validator = EscapeViaParameterAndNormalAndAbnormalReturnMatcher.class)
 @Target({ TYPE_USE, PARAMETER })
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface EscapeViaParameterAndNormalAndAbnormalReturn {
+
     /**
      * A short reasoning of this property.
      */
@@ -25,4 +27,8 @@ public @interface EscapeViaParameterAndNormalAndAbnormalReturn {
 
     Class<? extends FPCFAnalysis>[] analyses() default { SimpleEscapeAnalysis.class,
             InterproceduralEscapeAnalysis.class };
+
+    boolean performInvokationsDomain() default true;
+
+    boolean arrayDomain() default false;
 }

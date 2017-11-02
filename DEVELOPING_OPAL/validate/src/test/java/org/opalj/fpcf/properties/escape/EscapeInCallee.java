@@ -26,4 +26,8 @@ public @interface EscapeInCallee {
 
     Class<? extends FPCFAnalysis>[] analyses() default { SimpleEscapeAnalysis.class,
             InterproceduralEscapeAnalysis.class };
+
+    boolean performInvokationsDomain() default true;
+
+    boolean arrayDomain() default false;
 }
