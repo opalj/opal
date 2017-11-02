@@ -66,7 +66,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
-		val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes"
+        val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes"
         val fixtureFiles = new File(sourceFolder)
         val fixtureClassFiles = ClassFiles(fixtureFiles)
         if (fixtureClassFiles.isEmpty) fail(s"no class files at $fixtureFiles")

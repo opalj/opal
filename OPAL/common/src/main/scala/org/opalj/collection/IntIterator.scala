@@ -190,7 +190,7 @@ object IntIterator {
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {
         private[this] var next = 0
         def hasNext: Boolean = next < 2
-        def next(): Int = { next += 1; if (next == 1) i1 else i2 }
+        def next(): Int = { if (next == 0) { next = 1; i1 } else { next = 2; i2 } }
         override def toArray: Array[Int] = {
             val as = new Array[Int](2)
             as(0) = i1

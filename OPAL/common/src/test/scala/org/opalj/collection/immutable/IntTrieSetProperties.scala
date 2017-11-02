@@ -31,7 +31,6 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
@@ -39,6 +38,8 @@ import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
+import org.scalatest.Matchers
+import org.scalatest.FunSpec
 
 /**
  * Tests `IntTrieSet` by creating a standard Scala Set and comparing
@@ -59,6 +60,10 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
+    implicit val arbListOfIntArraySet: Arbitrary[List[IntArraySet]] = Arbitrary {
+        Gen.sized { s ⇒ Gen.listOfN(s, Arbitrary.arbitrary[IntArraySet]) }
+    }
+
     // NOT TO BE USED BY TESTS THAT TEST THE CORRECT CONSTRUCTION!
     implicit val arbIntTrieSet: Arbitrary[IntTrieSet] = Arbitrary {
         Gen.sized { l ⇒
@@ -66,9 +71,13 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    // NOT TO BE USED BY TESTS THAT TEST THE CORRECT CONSTRUCTION!
-    implicit val arbListOfIntArraySet: Arbitrary[List[IntArraySet]] = Arbitrary {
-        Gen.sized { s ⇒ Gen.listOfN(s, Arbitrary.arbitrary[IntArraySet]) }
+    implicit val arbPairOfIntArraySet: Arbitrary[(IntArraySet, IntArraySet)] = Arbitrary {
+        Gen.sized { l ⇒
+            (
+                (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 },
+                (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 }
+            )
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,17 +154,6 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("map (identity)") = forAll { s: IntArraySet ⇒
-        val its = EmptyIntTrieSet ++ s.iterator
-        val mappedIts = its.map(_ * 1)
-        val mappedS = s.map(_ * 1)
-        classify(mappedIts.size > 3, "using trie") {
-            (mappedIts eq its) &&
-                mappedS.size == mappedIts.size &&
-                (EmptyIntTrieSet ++ mappedS.iterator) == mappedIts
-        }
-    }
-
     property("exists") = forAll { s: IntArraySet ⇒
         val its = EmptyIntTrieSet ++ s.iterator
         s.forall(v ⇒ its.exists(_ == v)) &&
@@ -213,6 +211,12 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         its != (new Object)
     }
 
+    property("equals") = forAll { s: IntTrieSet ⇒
+        val i = { var i = 0; while (s.contains(i)) i += 1; i }
+        val newS =  (s + i - i)
+        s == newS && s.hashCode == newS.hashCode
+    }
+
     property("toString") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val itsToString = its.toString
@@ -227,33 +231,169 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
     }
 
-    /*
-    property("withFilter -> iterator (does not force evaluation)") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        var newS = Set.empty[Int]
-        s.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newS += _)
-        fl1.withFilter(_ >= 0).withFilter(_ <= 1000).iterator.toList == newS.toList.sorted
+    property("filter (identity if no value is filtered)") = forAll { s: IntTrieSet ⇒
+        val i = { var i = 0; while (s.contains(i)) i += 1; i }
+        s.filter(_ != i) eq s
     }
 
-    property("withFilter -> foreach (does not force evaluation)") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        var newS = Set.empty[Int]
-        var newFLS = Set.empty[Int]
-        s.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newS += _)
-        fl1.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newFLS += _)
-        newS == newFLS
+    property("filter") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+        val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
+        val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
+        val newits = its1.filter(!its2.contains(_))
+        val news = s1.withFilter(!s2.contains(_))
+        classify(news.size < s1.size, "filtered something") {
+            news.forall(newits.contains) && newits.forall(news.contains)
+        }
     }
 
-    property("withFilter -> size|empty|hasMultipleElements (does not force evaluation)") = forAll { s: Set[Int] ⇒
-        val fl1 = IntArraySetBuilder(s).result
-        var newS = Set.empty[Int]
-        s.withFilter(_ >= 0).withFilter(_ <= 1000).foreach(newS += _)
-        val newFLS = fl1.withFilter(_ >= 0).withFilter(_ <= 1000)
-        newS.size == newFLS.size &&
-            newS.isEmpty == newFLS.isEmpty &&
-            (newS.size >= 2) == newFLS.hasMultipleElements &&
-            (newFLS.isEmpty || newS.min == newFLS.min && newS.max == newFLS.max)
+    property("-") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
+        val (s, other) = ps
+        val its = s.foldLeft(IntTrieSet.empty)(_ + _)
+        val newits = other.foldLeft(its)(_ - _)
+        val news = other.foldLeft(s)(_ - _)
+        classify(news.size < s.size, "removed something") {
+            (its.size == s.size) :| "the original set is unmodified" &&
+                news.forall(newits.contains) && newits.forall(news.contains)
+        }
     }
 
-    */
+    property("- (all elements)") = forAll { s: IntArraySet ⇒
+        val its = s.foldLeft(IntTrieSet.empty)(_ + _)
+        val newits = s.foldLeft(its)(_ - _)
+        newits.size == 0 && newits.isEmpty &&
+            newits == EmptyIntTrieSet
+    }
+
+    property("filter (all elements)") = forAll { (s: IntArraySet) ⇒
+        val its = s.foldLeft(IntTrieSet.empty)(_ + _)
+        its.filter(i ⇒ false) eq EmptyIntTrieSet
+    }
+
+    property("withFilter") = forAll { (ss: (IntArraySet, IntArraySet)) ⇒
+        val (s1: IntArraySet, s2: IntArraySet) = ss
+        val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
+        val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
+        var evaluated = false
+        val newits = its1.withFilter(i ⇒ { evaluated = true; !its2.contains(i) })
+        val news = s1.withFilter(!s2.contains(_))
+        !evaluated &&
+            news.forall(i => newits.exists(newi=> newi == i)) &&
+            news.forall(newits.contains) && newits.forall(news.contains) &&
+            news.forall(newits.intIterator.contains) && newits.intIterator.forall(news.contains)  &&
+            news.forall(newits.iterator.contains) && newits.iterator.forall(news.contains)
+    }
+
+}
+
+@RunWith(classOf[JUnitRunner])
+class IntTrieSetTest extends FunSpec with Matchers {
+
+    describe("create an IntTrieSet from four values") {
+
+        it("should contain all values if the values are distinct") {
+            assert(IntTrieSet(1, 2, 3, 4).size == 4)
+            assert(IntTrieSet(256, 512, 1024, 2048).size == 4)
+            assert(IntTrieSet(0, 1, 10, 1000000).size == 4)
+            assert(IntTrieSet(1110, 11, 10, 1).size == 4)
+        }
+
+        it("should contain only three values if two values are equal") {
+            assert(IntTrieSet(1, 2, 3, 2).size == 3)
+            assert(IntTrieSet(1, 1, 3, 2).size == 3)
+            assert(IntTrieSet(1, 2, 3, 3).size == 3)
+            assert(IntTrieSet(1, 2, 3, 1).size == 3)
+        }
+
+        it("should contain only two values if three values are equal") {
+            assert(IntTrieSet(1, 2, 2, 2).size == 2)
+            assert(IntTrieSet(1, 1, 2, 1).size == 2)
+            assert(IntTrieSet(1, 2, 2, 2).size == 2)
+            assert(IntTrieSet(2, 2, 2, 1).size == 2)
+            assert(IntTrieSet(2, 2, 1, 2).size == 2)
+        }
+
+        it("should contain only one value if all values are equal") {
+            assert(IntTrieSet(2, 2, 2, 2).size == 1)
+        }
+    }
+
+    describe("create an IntTrieSet from three values") {
+
+        it("should contain all values if the values are distinct") {
+            assert(IntTrieSet(1, 2, 4).size == 3)
+            assert(IntTrieSet(256, 1024, 2048).size == 3)
+            assert(IntTrieSet(0, 1, 1000000).size == 3)
+            assert(IntTrieSet(1110, 11, 1).size == 3)
+        }
+
+        it("should contain only two values if two values are equal") {
+            assert(IntTrieSet(1, 2, 2).size == 2)
+            assert(IntTrieSet(1, 1, 2).size == 2)
+            assert(IntTrieSet(1, 2, 2).size == 2)
+            assert(IntTrieSet(2, 1, 2).size == 2)
+            assert(IntTrieSet(2, 2, 1).size == 2)
+        }
+
+        it("should contain only one value if all values are equal") {
+            assert(IntTrieSet(2, 2, 2).size == 1)
+        }
+    }
+
+    describe("create an IntTrieSet from two values") {
+
+        it("should contain all values if the values are distinct") {
+            assert(IntTrieSet(1, 2).size == 2)
+            assert(IntTrieSet(256, 2048).size == 2)
+            assert(IntTrieSet(0, 1000000).size == 2)
+            assert(IntTrieSet(1110, 11).size == 2)
+        }
+
+        it("should contain only one value if all values are equal") {
+            assert(IntTrieSet(2, 2).size == 1)
+        }
+    }
+
+    describe("create an IntTrieSet from one value") {
+
+        it("should contain the value") {
+            assert(IntTrieSet(1).head == 1)
+        }
+
+    }
+
+    describe("filtering an IntTrieSet where the values share a very long prefix path") {
+
+        it("should create the canonical representation as soon as we just have two values left") {
+            val its = IntTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
+            val filteredIts = its.filter(i ⇒ i == 8192 || i == 8192 + 2048 + 16384)
+            filteredIts.size should be(2)
+            filteredIts shouldBe an[IntTrieSet2]
+        }
+
+        it("should create the canonical representation as soon as we just have one value left in each branch ") {
+            val its = IntTrieSet(0,8,12,4)
+            val filteredIts = its.filter(i ⇒ i == 8 || i == 12)
+            filteredIts.size should be(2)
+            filteredIts shouldBe an[IntTrieSet2]
+        }
+
+        it("should create the canonical representation as soon as we just have one value left") {
+            val its = IntTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
+            val filteredIts = its.filter(i ⇒ i == 8192 + 2048 + 16384)
+            filteredIts.size should be(1)
+            filteredIts shouldBe an[IntTrieSet1]
+        }
+    }
+
+    describe("an identity mapping of a small IntTrieSet results in the same set") {
+val is0 = IntTrieSet.empty
+val is1 = IntTrieSet(1)
+val is2 = IntTrieSet(3, 4)
+        val is3 = IntTrieSet(256, 512, 1037)
+
+        assert(is0.map(i => i) eq is0)
+        assert(is1.map(i => i) eq is1)
+        assert(is2.map(i => i) eq is2)
+        assert(is3.map(i => i) eq is3)
+    }
 }
