@@ -294,8 +294,8 @@ class EscapePropertyTest extends FlatSpec with Matchers {
 
     behavior of "the atMost function"
     it should "be the identity for final elements and should always be final" in {
-        for (prop <- allProperties) {
-            if(prop.isFinal)
+        for (prop ← allProperties) {
+            if (prop.isFinal)
                 assert(prop eq prop.atMost)
             assert(prop.atMost.isFinal)
         }
@@ -312,10 +312,10 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         assert(MaybeEscapeViaParameterAndNormalAndAbnormalReturn.atMost eq EscapeViaParameterAndNormalAndAbnormalReturn)
     }
 
-    behavior of  "isValidSuccessor"
+    behavior of "isValidSuccessor"
     it should "be either less or equal or the at most value" in {
-        for (oldP <- allProperties) {
-            for (newP <- allProperties) {
+        for (oldP ← allProperties) {
+            for (newP ← allProperties) {
                 if ((newP lessOrEqualRestrictive oldP) || (newP lessOrEqualRestrictive oldP.atMost))
                     assert(newP.isValidSuccessorOf(oldP).isEmpty, s"$oldP refined to $newP")
                 else
