@@ -76,7 +76,7 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
 
     private[mutable] var set: Long = 0L
 
-    override def isEmpty: Boolean = set == 0l
+    override def isEmpty: Boolean = set == 0L
     override def +=(i: Int): this.type = { set |= 1L << i; this }
     override def -=(i: Int): this.type = { set &= (-1L & ~(1L << i)); this }
     override def contains(i: Int): Boolean = (set & (1L << i)) != 0L
