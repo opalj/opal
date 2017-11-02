@@ -33,7 +33,8 @@ package domain
 import scala.annotation.tailrec
 import scala.annotation.switch
 
-import java.io.{ByteArrayOutputStream, PrintStream}
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 
 import scala.xml.Node
 import scala.collection.BitSet
