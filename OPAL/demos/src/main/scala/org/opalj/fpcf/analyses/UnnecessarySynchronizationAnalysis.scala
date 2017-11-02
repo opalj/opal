@@ -41,6 +41,7 @@ import org.opalj.br.analyses.AllocationSites
 import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
@@ -68,7 +69,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val propertyStore = time {
 
@@ -87,7 +88,6 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         time {
             InterproceduralEscapeAnalysis.start(project)
             propertyStore.waitOnPropertyComputationCompletion(
-                resolveCycles = true,
                 useFallbacksForIncomputableProperties = false
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
@@ -99,7 +99,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
                 (_, as) ← allocationSites(method)
                 EP(_, escape) = propertyStore(as, EscapeProperty.key)
                 code = tacai(method).stmts
-                if (EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape)
+                if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
                 defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)
                 if defSite != -1
                 stmt = code(defSite)
