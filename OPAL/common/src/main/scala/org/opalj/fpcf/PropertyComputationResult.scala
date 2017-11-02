@@ -257,8 +257,6 @@ private[fpcf] object ConcurrentResult { private[fpcf] final val id = 9 }
  */
 case class RefineableResult(e: Entity, p: Property) extends PropertyComputationResult {
 
-    assert(p.isRefineable)
-
     private[fpcf] final def id = RefineableResult.id
 
 }
