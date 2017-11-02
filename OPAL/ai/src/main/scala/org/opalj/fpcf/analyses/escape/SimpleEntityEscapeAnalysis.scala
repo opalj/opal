@@ -241,7 +241,9 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
  * to the defined value.
  */
 trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEntityEscapeAnalysis {
-    abstract protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
+    protected[this] abstract  override def handleThisLocalOfConstructor(
+                                                                           call: NonVirtualMethodCall[V]
+                                                                       ): Unit = {
         assert(call.name == "<init>")
         assert(usesDefSite(call.receiver))
         assert(call.declaringClass.isObjectType)

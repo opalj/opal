@@ -30,9 +30,9 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyKey.SomeEPKs
-
 import scala.annotation.switch
+
+import org.opalj.fpcf.PropertyKey.SomeEPKs
 
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 
@@ -42,9 +42,10 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 /**
  * Specifies the lifetime of object instance. This is classically used for compiler optimizations
  * such as scalar replacement, stack allocation or removal of synchronization.
- * However, other usages such as finding bugs, identifying pure methods or helping to
- * identify immutable data-structures are also supported.
+ * However, other usages such as finding bugs or helping to identify immutable data-structures
+ * are also supported.
  *
+ * == Definitions in the Literature ==
  * Choi et al. [1] describe two predicates that can be used to describe the properties relevant
  * to escape information.
  *
@@ -59,10 +60,13 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  *
  * In contrast to this, Kotzmann and Mössenböck [2] describe the escape of an object with the access
  * to this object from other methods or threads.
- * This EscapeProperty combines both concepts and furthermore tries to be more specific about the
- * reason why an object escapes.
  *
- * In the following we provide further details about the different escape properties:
+ *
+ * == Definition ==
+ * This EscapeProperty combines both concepts and is more specific about the reason why an object
+ * escapes to facilitate comprehension of the results.
+ *
+ * In the following, we provide further details about the different escape properties:
  *
  * [[NoEscape]] refers to the property of an object instance O created in method M for that
  * !Escapes(O, M) holds and no other method than M has access to O. This implies that there is no
@@ -77,11 +81,11 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * be allocated on the stack.
  *
  * For objects O, created in method M and thread T, whose lifetime exceeds its method of creation M
- * and (therefore) accessible by other methods, we provide seven different properties. For all of
+ * and is (therefore) accessible by other methods, we provide seven different properties. For all of
  * them we assume that O M and all methods called by M do not let O escape T. But it is not
- * guarantied that O will not escape T via a caller of M.
+ * guaranteed that O will not escape T via a caller of M.
  * The properties differ in the reason why the lifetime of O exceeds the lifetime of M.
- * [[EscapeViaReturn]] describes the case that, O is returned by M. If O has an exception type and
+ * In case of [[EscapeViaReturn]] O is returned by M. If O has an exception type and
  * is thrown in M, it has the property [[EscapeViaAbnormalReturn]].
  * For both of them it has no consequences if O escapes T via a caller of M. This is, because
  * the execution ends with the (abnormal) return of O. All synchronization mechanisms inside of M
@@ -95,9 +99,8 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * [[EscapeViaParameterAndAbnormalReturn]], [[EscapeViaParameterAndReturn]],
  * [[EscapeViaNormalAndAbnormalReturn]] and [[EscapeViaParameterAndNormalAndAbnormalReturn]].
  *
- *
  * An object instance O created in method M and thread T has the property [[GlobalEscape]], if it
- * holds that Escapes(O, M) and Escapes(O, T). For example this is the case if O gets assigned to
+ * holds that Escapes(O, M) and Escapes(O, T). For example, this is the case if O gets assigned to
  * a static field ([[EscapeViaStaticField]] but also if assigned to a field of an
  * object that has also [[GlobalEscape]] as property ([[EscapeViaHeapObject]]).
  * Objects that have the property  [[GlobalEscape]] have to be allocated on the heap and
@@ -117,13 +120,12 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * words, P' is less restrictive than P).
  *
  * If they simply don't know the actual property they should use [[MaybeNoEscape]].
- * If we know that the actual property is at most [[EscapeInCallee]] (i.e. not [[NoEscape]],
+ * If we know that the actual property is at most [[EscapeInCallee]] (i.e. not [[NoEscape]]),
  * [[MaybeEscapeInCallee]] should be used.
  * The same holds for every other non-bottom property.
  * E.g. [[MaybeEscapeViaParameter]] should be used if we know that the actual property is at most
  * [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
- *
- *
+  *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
  *
@@ -138,7 +140,10 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  *
  * @author Florian Kuebler
  */
-sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyNamedProperty with EscapePropertyMetaInformation {
+sealed abstract class EscapeProperty
+    extends OrderedProperty
+        with ExplicitlyNamedProperty
+        with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -175,12 +180,14 @@ sealed abstract class EscapeProperty extends OrderedProperty with ExplicitlyName
      * @return the most restrictive escape that is less or equal restrictive than `this` and `that`.
      * @see [[EscapeProperty.lessOrEqualRestrictive]]
      */
-    def meet(that: EscapeProperty): EscapeProperty = (that.propertyValueID: @switch) match {
-        case NoEscape.PID             ⇒ this
-        case GlobalEscape.PID         ⇒ GlobalEscape
-        case EscapeViaHeapObject.PID  ⇒ EscapeViaHeapObject
-        case EscapeViaStaticField.PID ⇒ EscapeViaStaticField
-        case _                        ⇒ EscapeProperty(flags | that.flags)
+    def meet(that: EscapeProperty): EscapeProperty = {
+        (that.propertyValueID: @switch) match {
+            case NoEscape.PID             ⇒ this
+            case GlobalEscape.PID         ⇒ GlobalEscape
+            case EscapeViaHeapObject.PID  ⇒ EscapeViaHeapObject
+            case EscapeViaStaticField.PID ⇒ EscapeViaStaticField
+            case _                        ⇒ EscapeProperty(flags | that.flags)
+        }
     }
 
     /**
@@ -227,7 +234,8 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      *
      * @see The inter-procedural escape analysis in the ai package.
      */
-    def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
+    val cycleResolutionStrategy :(PropertyStore,SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
+        (ps: PropertyStore, epks: SomeEPKs) ⇒ {
         Iterable(
             Result(
                 epks.head.e,
@@ -248,7 +256,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
         // fallback value
         MaybeNoEscape,
         // cycle-resolution strategy
-        cycleResolutionStrategy _
+        cycleResolutionStrategy
     )
 
     final val EMPTY_FLAGS = 0x0
@@ -359,6 +367,7 @@ case object NoEscape extends EscapeProperty {
  * @author Florian Kuebler
  */
 case object EscapeInCallee extends EscapeProperty {
+
     final val isRefineable = false
 
     final val PID = 1
@@ -399,6 +408,7 @@ case object EscapeInCallee extends EscapeProperty {
  * }}}
  */
 case object EscapeViaParameter extends EscapeProperty {
+
     final val isRefineable = false
 
     final val PID = 2
@@ -442,6 +452,7 @@ case object EscapeViaParameter extends EscapeProperty {
  * }}}
  */
 case object EscapeViaReturn extends EscapeProperty {
+
     final val isRefineable = false
 
     final val PID = 3
@@ -541,8 +552,9 @@ case object EscapeViaParameterAndReturn extends EscapeProperty {
 
     override def atMost: EscapeProperty = this
 
-    final val flags =
+    final val flags = {
         EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_RETURN
+    }
 }
 
 /**
@@ -573,8 +585,9 @@ case object EscapeViaParameterAndAbnormalReturn extends EscapeProperty {
 
     override def atMost: EscapeProperty = this
 
-    final val flags =
+    final val flags = {
         EscapeProperty.IN_CALLEE | EscapeProperty.VIA_PARAMETER | EscapeProperty.VIA_ABNORMAL_RETURN
+    }
 }
 
 /**
@@ -605,7 +618,9 @@ case object EscapeViaNormalAndAbnormalReturn extends EscapeProperty {
 
     override def atMost: EscapeProperty = this
 
-    final val flags = EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.VIA_RETURN
+    final val flags = {
+        EscapeProperty.IN_CALLEE | EscapeProperty.VIA_ABNORMAL_RETURN | EscapeProperty.VIA_RETURN
+    }
 }
 
 /**
@@ -660,8 +675,9 @@ case object MaybeNoEscape extends EscapeProperty {
 
     override def propertyName: String = "MaybeNo"
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean ={
         that.propertyValueID == PID || that.propertyValueID == NoEscape.PID
+    }
 
     override def isBottom: Boolean = false
 
@@ -680,6 +696,7 @@ case object MaybeNoEscape extends EscapeProperty {
  * @author Florian Kuebler
  */
 case object MaybeEscapeInCallee extends EscapeProperty {
+
     final val isRefineable = true
 
     final val PID = 10
@@ -750,6 +767,7 @@ case object MaybeEscapeViaParameter extends EscapeProperty {
  * @author Florian Kuebler
  */
 case object MaybeEscapeViaReturn extends EscapeProperty {
+
     final val isRefineable = true
 
     final val PID = 12
@@ -936,7 +954,7 @@ case object MaybeEscapeViaNormalAndAbnormalReturn extends EscapeProperty {
 
 /**
  * Used when the respective object instance definitively escapes, but the final –
- * not yet available – escape level may just at most [[EscapeViaParameterAndNormalAndAbnormalReturn]].
+ * not yet available – escape level may just be at most [[EscapeViaParameterAndNormalAndAbnormalReturn]].
  *
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler

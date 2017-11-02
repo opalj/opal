@@ -31,9 +31,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.Domain
-import org.opalj.ai.AIResult
-import org.opalj.ai.domain.RecordDefUse
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -45,8 +43,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.tac.Expr
+import org.opalj.ai.Domain
+import org.opalj.ai.AIResult
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.NoEscape
@@ -56,6 +55,7 @@ import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.MaybeNoEscape
+import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.Parameters
@@ -68,7 +68,7 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Assignment
 
-trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructorEscapeAnalysis {
+trait AbstractInterproceduralEntityEscapeAnalysis extends ConfigurationBasedConstructorEscapeAnalysis {
 
     //TODO Move to non entity based analysis
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
@@ -111,9 +111,13 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
      * conservative cycle resolution sound.
      * Otherwise [[AbstractEntityEscapeAnalysis.performIntermediateUpdate]] is called.
      */
-    protected[this] override def performIntermediateUpdate(other: Entity, p: Property, x: EscapeProperty): IntermediateResult = {
+    protected[this] override def performIntermediateUpdate(
+                                                              other: Entity,
+                                                              p: Property,
+                                                              x: EscapeProperty
+                                                          ): IntermediateResult = {
         if (mostRestrictiveProperty.isRefineable) {
-            ImmediateResult(e, GlobalEscape)
+            ImmediateResult(e, GlobalEscape) // FIXME XXXX return or?
         }
         super.performIntermediateUpdate(other, p, x)
     }
@@ -279,6 +283,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
                          * that multiple queries to the property store result in either an EP or an
                          * EPK. Therefore we cache the result to have it consistent.
                          */
+                        // TODO use mutable map and getOrElseUpdate ... makes the code nicer
                         val escapeState = if (dependeeCache.contains(fp)) dependeeCache(fp)
                         else {
                             val es = propertyStore(fp, EscapeProperty.key)
@@ -339,4 +344,4 @@ class InterproceduralEntityEscapeAnalysis(
     with ConfigurationBasedConstructorEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
     with ExceptionAwareEntitiyEscapeAnalysis
-    with InterproceduralEntityEscapeAnalysis1
+    with AbstractInterproceduralEntityEscapeAnalysis
