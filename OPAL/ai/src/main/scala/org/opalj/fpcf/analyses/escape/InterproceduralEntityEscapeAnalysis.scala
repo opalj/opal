@@ -43,6 +43,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.TypeExtensibilityKey
+import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.tac.Expr
@@ -71,6 +72,8 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
 
     //TODO Move to non entity based analysis
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
+
+    var dependeeCache: Map[FormalParameter, EOptionP[FormalParameter, EscapeProperty]] = Map.empty
 
     /**
      * This method is called, after the entity has been analyzed. If there is no dependee left or
@@ -266,7 +269,17 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
                     val fps = propertyStore.context[FormalParameters]
                     val fp = fps(method)(param)
                     if (fp != e) {
-                        val escapeState = propertyStore(fp, EscapeProperty.key)
+                        /* This is crucial for the analysis. the dependees set is not allowed to
+                         * contain duplicates. Due to very long target methods it could be the case
+                         * that multiple queries to the property store result in either an EP or an
+                         * EPK. Therefore we cache the result to have it consistent.
+                         */
+                        val escapeState = if (dependeeCache.contains(fp)) dependeeCache(fp)
+                        else {
+                            val es = propertyStore(fp, EscapeProperty.key)
+                            dependeeCache += ((fp, es))
+                            es
+                        }
                         escapeState match {
                             case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
                             case EP(_, GlobalEscape)              ⇒ calcMostRestrictive(GlobalEscape)
@@ -305,20 +318,20 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
 }
 
 class InterproceduralEntityEscapeAnalysis(
-        val e:             Entity,
-        var defSite:       IntArraySet,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val aiResult:      AIResult,
-        val m:             VirtualMethod,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    var defSite:       IntArraySet,
+    val uses:          IntArraySet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val cfg:           CFG,
+    val handlers:      ExceptionHandlers,
+    val aiResult:      AIResult,
+    val m:             VirtualMethod,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
-    with InterproceduralEntityEscapeAnalysis1
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntitiyEscapeAnalysis
+        with InterproceduralEntityEscapeAnalysis1
