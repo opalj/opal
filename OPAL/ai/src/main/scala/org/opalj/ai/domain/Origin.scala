@@ -77,7 +77,8 @@ trait Origin { domain: ValuesDomain ⇒
     }
 
     /**
-     * Implementers are expected to "abstract override" this method to make it possible to
+     * Implementers are expected to "override" this method and to call
+     * `super.providesOriginInformationFor` to make it possible to
      * stack several domain implementations which provide origin information.
      */
     def providesOriginInformationFor(ctc: ComputationalType): Boolean = false
