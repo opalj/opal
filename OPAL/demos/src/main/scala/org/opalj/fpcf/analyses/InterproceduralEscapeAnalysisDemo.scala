@@ -112,7 +112,7 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             InterproceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion()
+            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
