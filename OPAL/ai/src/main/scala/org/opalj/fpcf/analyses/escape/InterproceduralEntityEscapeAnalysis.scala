@@ -87,16 +87,21 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
      */
     protected[this] override def returnResult: PropertyComputationResult = {
         // if we do not depend on other entities, or are globally escaping, return the result
-        if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
-            Result(e, mostRestrictiveProperty)
-        else {
+        if (dependees.isEmpty || mostRestrictiveProperty.isBottom) {
             if (mostRestrictiveProperty.isRefineable) {
-                Result(e, GlobalEscape)
+                RefineableResult(e, mostRestrictiveProperty)
+            } else {
+                ImmediateResult(e, mostRestrictiveProperty)
             }
-            // The refineable escape properties are the `maybe` ones.
-            // So a meet between the currently most restrictive property and MaybeNoEscape
-            // will lead to the maybe version of it
-            IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
+        } else {
+            if (mostRestrictiveProperty.isRefineable) {
+                ImmediateResult(e, GlobalEscape)
+            } else {
+                // The refineable escape properties are the `maybe` ones.
+                // So a meet between the currently most restrictive property and MaybeNoEscape
+                // will lead to the maybe version of it
+                IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
+            }
         }
     }
 
@@ -108,7 +113,7 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
      */
     protected[this] override def performIntermediateUpdate(other: Entity, p: Property, x: EscapeProperty): IntermediateResult = {
         if (mostRestrictiveProperty.isRefineable) {
-            Result(e, GlobalEscape)
+            ImmediateResult(e, GlobalEscape)
         }
         super.performIntermediateUpdate(other, p, x)
     }

@@ -358,9 +358,13 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected[this] def returnResult: PropertyComputationResult = {
         // if we do not depend on other entities, or are globally escaping, return the result
-        if (dependees.isEmpty || mostRestrictiveProperty.isBottom)
-            Result(e, mostRestrictiveProperty)
-        else {
+        if (dependees.isEmpty || mostRestrictiveProperty.isBottom) {
+            if (mostRestrictiveProperty.isRefineable) {
+                RefineableResult(e, mostRestrictiveProperty)
+            } else {
+                ImmediateResult(e, mostRestrictiveProperty)
+            }
+        } else {
             // The refineable escape properties are the `maybe` ones.
             // So a meet between the currently most restrictive property and MaybeNoEscape
             // will lead to the maybe version of it

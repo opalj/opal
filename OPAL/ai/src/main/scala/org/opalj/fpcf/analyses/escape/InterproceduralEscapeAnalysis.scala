@@ -40,8 +40,8 @@ import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
@@ -58,6 +58,8 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.Parameters
 import org.opalj.tac.TACMethodParameter
+//import org.opalj.util.PerformanceEvaluation.time
+//import org.opalj.log.OPALLogger.info
 
 /**
  * A very simple flow-sensitive inter-procedural escape analysis.
@@ -122,30 +124,36 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
 
     type V = DUVar[Domain#DomainValue]
 
-    def entitySelector(propertyStore: PropertyStore): PartialFunction[Entity, Entity] = {
-        case as: AllocationSite /*if !propertyStore(as, EscapeProperty.key).isPropertyFinal */  ⇒ as
-        case fp: FormalParameter /*if !propertyStore(fp, EscapeProperty.key).isPropertyFinal */ ⇒ fp
-    }
-
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set.empty
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        /*implicit val logContext = project.logContext
+        time {
+            SimpleEscapeAnalysis.start(project)
+            propertyStore.waitOnPropertyComputationCompletion(
+                resolveCycles = false,
+                useFallbacksForIncomputableProperties = false
+            )
+        } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
+
         def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
-            Iterable(
-                Result(
-                    epks.head.e,
-                    epks.foldLeft(NoEscape: EscapeProperty) {
-                        (escapeState, epk) ⇒
-                            epk match {
-                                case EPK(e, `key`) ⇒
-                                    ps(e, key).p.atMost meet escapeState
-                                case _ ⇒
-                                    throw new RuntimeException() //escapeState meet MaybeNoEscape
-                            }
+            val property = epks.foldLeft(NoEscape: EscapeProperty) {
+                (escapeState, epk) ⇒
+                    epk match {
+                        case EPK(e, `key`) ⇒
+                            ps(e, key).p.atMost meet escapeState
+                        case _ ⇒
+                            throw new RuntimeException() //escapeState meet MaybeNoEscape
                     }
-                )
+            }
+            Iterable(
+                if (property.isRefineable) {
+                    RefineableResult(epks.head.e, property)
+                } else {
+                    Result(epks.head.e, property)
+                }
             )
         }
 
@@ -153,8 +161,11 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
 
         val analysis = new InterproceduralEscapeAnalysis(project)
 
-        val fps = FormalParametersKey.entityDerivationFunction(project)._1
-        val ass = AllocationSitesKey.entityDerivationFunction(project)._1
+        //val fps = propertyStore.context[FormalParameters].formalParameters.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
+        //val ass = propertyStore.context[AllocationSites].allocationSites.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
+        val fps = project.get(FormalParametersKey).formalParameters
+        val ass = project.get(AllocationSitesKey).allocationSites
+
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
