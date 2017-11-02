@@ -1901,9 +1901,21 @@ class PropertyStore private (
 
                 case NoResult.id ⇒ /* nothing to do */
 
-                case Results.id ⇒
-                    val Results(results) = r
-                    results.foreach(handleResult(_))
+                case Result.id ⇒
+                    val Result(e, p) = r
+                    update(e, p, FinalUpdate)
+                /*internal*/ /* assert(
+                        { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                        s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                    ) */
+
+                case RefineableResult.id ⇒
+                    val RefineableResult(e, p) = r
+                    update(e, p, IntermediateUpdate)
+                /*internal*/ /* assert(
+                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                        ) */
 
                 case ImmediateResult.id ⇒
                     val ImmediateResult(e, p) = r
@@ -1913,38 +1925,6 @@ class PropertyStore private (
                         s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
                     ) */
 
-                case ImmediateMultiResult.id ⇒
-                    val ImmediateMultiResult(results) = r
-                    results foreach { ep ⇒
-                        val e = ep.e
-                        val p = ep.p
-                        update(e, p, OneStepFinalUpdate)
-                        /*internal*/ /* assert(
-                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        ) */
-                    }
-
-                case Result.id ⇒
-                    val Result(e, p) = r
-                    update(e, p, FinalUpdate)
-                /*internal*/ /* assert(
-                        { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                        s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    ) */
-
-                case MultiResult.id ⇒
-                    val MultiResult(results) = r
-                    results foreach { ep ⇒
-                        val e = ep.e
-                        val p = ep.p
-                        update(e, p, FinalUpdate)
-                        /*internal*/ /* assert(
-                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        ) */
-                    }
-
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                     handleResult(ir)
@@ -1952,7 +1932,6 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(dependerE, dependerP, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
-                    assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
                     assert(
                         dependerP.isRefineable,
                         s"intermediate result $r used to store final property $dependerP"
@@ -2161,6 +2140,35 @@ class PropertyStore private (
                         val suspendedPC = suspended.asInstanceOf[SuspendedPC[Property]]
                         handleResult(suspendedPC.continue(p))
                     }
+
+                case Results.id ⇒
+                    val Results(results) = r
+                    results.foreach(handleResult(_))
+
+                case MultiResult.id ⇒
+                    val MultiResult(results) = r
+                    results foreach { ep ⇒
+                        val e = ep.e
+                        val p = ep.p
+                        update(e, p, FinalUpdate)
+                        /*internal*/ /* assert(
+                                    { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                                    s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                                ) */
+                    }
+
+                case ImmediateMultiResult.id ⇒
+                    val ImmediateMultiResult(results) = r
+                    results foreach { ep ⇒
+                        val e = ep.e
+                        val p = ep.p
+                        update(e, p, OneStepFinalUpdate)
+                        /*internal*/ /* assert(
+                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                        ) */
+                    }
+
             }
         }
     }
