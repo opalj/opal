@@ -33,7 +33,10 @@ package analyses
 import org.opalj.br.analyses.Project
 import java.net.URL
 
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.AllocationSite
+import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
@@ -87,7 +90,12 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         implicit val logContext = project.logContext
 
         val propertyStore = time {
-
+            project.getOrCreateProjectInformationKeyInitializationData(
+                SimpleAIKey,
+                (m: Method) ⇒ {
+                    new DefaultDomainWithCFGAndDefUse(project, m) //new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding
+                }
+            )
             PropertyStoreKey.makeAllocationSitesAvailable(project)
             PropertyStoreKey.makeFormalParametersAvailable(project)
             project.get(PropertyStoreKey)
@@ -104,10 +112,7 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             InterproceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion(
-                resolveCycles = true,
-                useFallbacksForIncomputableProperties = false
-            )
+            propertyStore.waitOnPropertyComputationCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
