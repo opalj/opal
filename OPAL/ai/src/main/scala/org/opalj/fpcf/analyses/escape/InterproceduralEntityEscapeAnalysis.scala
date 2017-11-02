@@ -323,20 +323,20 @@ trait InterproceduralEntityEscapeAnalysis1 extends ConfigurationBasedConstructor
 }
 
 class InterproceduralEntityEscapeAnalysis(
-    val e:             Entity,
-    var defSite:       IntArraySet,
-    val uses:          IntArraySet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val cfg:           CFG,
-    val handlers:      ExceptionHandlers,
-    val aiResult:      AIResult,
-    val m:             VirtualMethod,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
+        val e:             Entity,
+        var defSite:       IntArraySet,
+        val uses:          IntArraySet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val cfg:           CFG,
+        val handlers:      ExceptionHandlers,
+        val aiResult:      AIResult,
+        val m:             VirtualMethod,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
 ) extends DefaultEntityEscapeAnalysis
-        with ConstructorSensitiveEntityEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntitiyEscapeAnalysis
-        with InterproceduralEntityEscapeAnalysis1
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntitiyEscapeAnalysis
+    with InterproceduralEntityEscapeAnalysis1

@@ -112,7 +112,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
                     }
                 }
             } yield as
-        } { t => info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}")}
+        } { t ⇒ info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}") }
 
         val message =
             s"""|Objects that were unnecessarily synchronized:
