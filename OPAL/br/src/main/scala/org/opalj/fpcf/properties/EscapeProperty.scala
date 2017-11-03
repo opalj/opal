@@ -125,7 +125,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * The same holds for every other non-bottom property.
  * E.g. [[MaybeEscapeViaParameter]] should be used if we know that the actual property is at most
  * [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
-  *
+ *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
  *
@@ -142,8 +142,8 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  */
 sealed abstract class EscapeProperty
     extends OrderedProperty
-        with ExplicitlyNamedProperty
-        with EscapePropertyMetaInformation {
+    with ExplicitlyNamedProperty
+    with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -234,21 +234,21 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      *
      * @see The inter-procedural escape analysis in the ai package.
      */
-    val cycleResolutionStrategy :(PropertyStore,SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
+    val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-        Iterable(
-            Result(
-                epks.head.e,
-                epks.foldLeft(NoEscape: EscapeProperty) {
-                    (escapeState, epk) ⇒
-                        epk match {
-                            case EPK(e, `key`) ⇒ ps(e, key).p meet escapeState
-                            case _             ⇒ MaybeNoEscape
-                        }
-                }
+            Iterable(
+                Result(
+                    epks.head.e,
+                    epks.foldLeft(NoEscape: EscapeProperty) {
+                        (escapeState, epk) ⇒
+                            epk match {
+                                case EPK(e, `key`) ⇒ ps(e, key).p meet escapeState
+                                case _             ⇒ MaybeNoEscape
+                            }
+                    }
+                )
             )
-        )
-    }
+        }
 
     final val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property
@@ -675,7 +675,7 @@ case object MaybeNoEscape extends EscapeProperty {
 
     override def propertyName: String = "MaybeNo"
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean ={
+    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = {
         that.propertyValueID == PID || that.propertyValueID == NoEscape.PID
     }
 
