@@ -42,6 +42,7 @@ import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.IntQueue
@@ -207,13 +208,13 @@ final class Code private (
         new IntIterator {
             var pc = 0 // there is always at least one instruction
 
-            def next() : Int = {
+            def next(): Int = {
                 val next = pc
                 pc = pcOfNextInstruction(pc)
                 next
             }
 
-            def hasNext : Boolean = pc < instructions.size
+            def hasNext: Boolean = pc < instructions.size
         }
     }
 

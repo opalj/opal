@@ -83,6 +83,13 @@ trait IntIterator { self ⇒
         }
     }
 
+    def mapToAny[A](m: Int ⇒ A): Iterator[A] = {
+        new AbstractIterator[A] {
+            def hasNext: Boolean = self.hasNext
+            def next: A = m(self.next())
+        }
+    }
+
     def foreach[U](f: Int ⇒ U): Unit = while (hasNext) f(next)
 
     def flatMap(f: Int ⇒ IntIterator): IntIterator = {
@@ -184,9 +191,11 @@ trait IntIterator { self ⇒
      * Converts this iterator to Scala Iterator (which potentially will (un)box
      * the returned values.)
      */
-    def iterator: Iterator[Int] = new AbstractIterator[Int] {
-        def hasNext: Boolean = self.hasNext
-        def next: Int = self.next()
+    def iterator: Iterator[Int] = {
+        new AbstractIterator[Int] {
+            def hasNext: Boolean = self.hasNext
+            def next: Int = self.next()
+        }
     }
 
 }
