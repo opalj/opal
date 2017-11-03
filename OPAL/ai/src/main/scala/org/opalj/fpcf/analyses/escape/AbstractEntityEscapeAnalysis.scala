@@ -39,7 +39,7 @@ import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.MaybeNoEscape
@@ -112,12 +112,12 @@ trait AbstractEntityEscapeAnalysis {
     val aiResult: AIResult
 
     val e: Entity
-    val uses: IntArraySet
+    val uses: IntTrieSet
 
     //
     // STATE MUTATED WHILE ANALYZING THE METHOD
     //
-    protected[this] var defSite: IntArraySet
+    protected[this] var defSite: IntTrieSet
     protected[this] var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
     protected[this] var dependeeToStmt = Map.empty[Entity, Option[Assignment[V]]]
     protected[this] var mostRestrictiveProperty: EscapeProperty = NoEscape

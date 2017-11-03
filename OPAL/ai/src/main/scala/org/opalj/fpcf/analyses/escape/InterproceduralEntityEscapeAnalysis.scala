@@ -31,7 +31,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -46,6 +45,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.NoEscape
@@ -329,20 +329,20 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends ConfigurationBasedCons
 }
 
 class InterproceduralEntityEscapeAnalysis(
-        val e:             Entity,
-        var defSite:       IntArraySet,
-        val uses:          IntArraySet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val aiResult:      AIResult,
-        val m:             VirtualMethod,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+    val e:             Entity,
+    var defSite:       IntTrieSet,
+    val uses:          IntTrieSet,
+    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:        Parameters[TACMethodParameter],
+    val cfg:           CFG,
+    val handlers:      ExceptionHandlers,
+    val aiResult:      AIResult,
+    val m:             VirtualMethod,
+    val propertyStore: PropertyStore,
+    val project:       SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
-    with AbstractInterproceduralEntityEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntitiyEscapeAnalysis
+        with AbstractInterproceduralEntityEscapeAnalysis

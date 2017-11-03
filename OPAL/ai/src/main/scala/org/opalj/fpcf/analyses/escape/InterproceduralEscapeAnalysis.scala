@@ -31,7 +31,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.AIResult
@@ -43,6 +42,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
 import org.opalj.fpcf.PropertyKey.SomeEPKs
@@ -73,7 +73,7 @@ class InterproceduralEscapeAnalysis private (
     override def entityEscapeAnalysis(
         e:        Entity,
         defSite:  ValueOrigin,
-        uses:     IntArraySet,
+        uses:     IntTrieSet,
         code:     Array[Stmt[V]],
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
@@ -81,7 +81,7 @@ class InterproceduralEscapeAnalysis private (
         aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
-        new InterproceduralEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
+        new InterproceduralEntityEscapeAnalysis(e, IntTrieSet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
     /**
      * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes
@@ -136,8 +136,8 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
                 resolveCycles = false,
                 useFallbacksForIncomputableProperties = false
             )
-        } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
-
+        } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }
+*/
         def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
             val property = epks.foldLeft(NoEscape: EscapeProperty) {
                 (escapeState, epk) ⇒

@@ -42,8 +42,8 @@ import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.EmptyIntArraySet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.GlobalEscape
@@ -83,8 +83,8 @@ import org.opalj.tac.Throw
  */
 class SimpleEntityEscapeAnalysis(
         val e:             Entity,
-        var defSite:       IntArraySet,
-        val uses:          IntArraySet,
+        var defSite:       IntTrieSet,
+        val uses:          IntTrieSet,
         val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         val params:        Parameters[TACMethodParameter],
         val cfg:           CFG,
@@ -163,12 +163,12 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
      * A worklist algorithm, check the def sites of the reference of the field, or array, to which
      * the current entity was assigned.
      */
-    private[this] def handleFieldLike(referenceDefSites: IntArraySet): Unit = {
+    private[this] def handleFieldLike(referenceDefSites: IntTrieSet): Unit = {
         // the definition sites to handle
         var worklist = referenceDefSites
 
         // the definition sites that were already handled
-        var seen: IntArraySet = EmptyIntArraySet
+        var seen: IntTrieSet = EmptyIntTrieSet
 
         while (worklist.nonEmpty) {
             val referenceDefSite = worklist.head

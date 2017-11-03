@@ -45,7 +45,7 @@ import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.cfg.CFG
 import org.opalj.tac.Stmt
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeProperty
@@ -76,7 +76,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
     override def entityEscapeAnalysis(
         e:        Entity,
         defSite:  ValueOrigin,
-        uses:     IntArraySet,
+        uses:     IntTrieSet,
         code:     Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
@@ -84,7 +84,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(e, IntArraySet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
+        new SimpleEntityEscapeAnalysis(e, IntTrieSet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the

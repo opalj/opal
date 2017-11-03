@@ -40,7 +40,7 @@ import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.Parameters
@@ -70,7 +70,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected def entityEscapeAnalysis(
         e:        Entity,
         defSite:  ValueOrigin,
-        uses:     IntArraySet,
+        uses:     IntTrieSet,
         code:     Array[Stmt[V]],
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
@@ -87,7 +87,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected final def doDetermineEscape(
         e:        Entity,
         defSite:  ValueOrigin,
-        uses:     IntArraySet,
+        uses:     IntTrieSet,
         code:     Array[Stmt[V]],
         params:   Parameters[TACMethodParameter],
         cfg:      CFG,
