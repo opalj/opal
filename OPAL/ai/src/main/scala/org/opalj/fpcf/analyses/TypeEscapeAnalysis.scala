@@ -36,7 +36,8 @@ import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -47,9 +48,10 @@ import org.opalj.fpcf.properties.PackageLocalType
 import org.opalj.fpcf.properties.MaybePackageLocalType
 import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.error
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
-
+//TODO bedeutung..... wie oft aus anderem package überschriebene methode aufgerufen
 class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
     /**
@@ -62,7 +64,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
             ImmediateResult(cf, GlobalType)
             // TODO abstract types are not interesting
         } else {
-            val constructorsNotAccessible = cf.constructors.forall(_.isPackagePrivate)
+            val constructorsNotAccessible = cf.constructors.forall(cs ⇒ cs.isPackagePrivate || cs.isPrivate)
             if (constructorsNotAccessible) {
                 val as = propertyStore.context[AllocationSites]
                 val allocations = as.apply(cf.thisType)
@@ -109,6 +111,7 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
     }
 
     def main(args: Array[String]): Unit = {
+
         val opaConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
         val project = Project(
             org.opalj.bytecode.JRELibraryFolder,
@@ -116,6 +119,7 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
             opaConfig.withFallback(org.opalj.ai.BaseConfig)
         )
 
+        implicit val logContext = project.logContext
         time {
             val tacai = project.get(DefaultTACAIKey)
             val exceptions = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
@@ -129,22 +133,60 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
         PropertyStoreKey.makeFormalParametersAvailable(project)
         val propertyStore = project.get(PropertyStoreKey)
         //propertyStore.debug = true
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
         time {
-            analysesManager.run(InterproceduralEscapeAnalysis)
+            SimpleEscapeAnalysis.start(project)
+            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
         time {
-            analysesManager.run(TypeEscapeAnalysis)
+            TypeEscapeAnalysis.start(project)
+            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         } { t ⇒ println(s"type escape analysis took ${t.toSeconds}") }
 
         val globalType = propertyStore.entities(GlobalType)
         val localType = propertyStore.entities(PackageLocalType)
         val maybeLocalType = propertyStore.entities(MaybePackageLocalType)
+        var counter1 = 0
+        var counter2 = 0
 
-        for (local ← localType) {
-            println(local)
-        }
+        time {
+            for {
+                local ← localType
+                cf = local.asInstanceOf[ClassFile]
+                mOfClass ← cf.methods
+                //cg = project.get(CHACallGraphKey).callGraph
+            } {
+                val errors = project.parForeachMethod() { m ⇒
+                    if (!m.isStatic && !m.isPrivate && !m.isInitializer) {
+                        val overriddenMethods = project.overriddenBy(m)
+                        if (overriddenMethods.contains(mOfClass)) {
+                            if (m.isPublic && m.classFile.isPublic) {
+                                counter1 += 1
+                            }
+                            val errors = project.parForeachMethodWithBody() { mi ⇒
+                                for (inst ← mi.method.body.get.instructions) {
+                                    inst match {
+                                        case INVOKEVIRTUAL(t, n, d) ⇒
+                                            if ((n eq m.name) && (d eq m.descriptor) &&
+                                                project.classHierarchy.isSubtypeOf(m.classFile.thisType, t).isYes &&
+                                                mi.method.classFile.thisType.packageName != cf.thisType.packageName) {
+                                                counter2 += 1
+                                            }
+                                        case _ ⇒
+                                    }
+                                }
+                            }
+                            errors.foreach { e ⇒ error("progress", "iterating over methods failed", e) }
+                        }
+                    }
+                }
+                errors.foreach { e ⇒ error("progress", "iterating over methods failed", e) }
+
+            }
+        } { t ⇒ println(s"generating numbers took ${t.toSeconds}") }
+
+        println(counter1)
+        println(counter2)
 
         println(s"# of local types: ${localType.size}")
         println(s"# of global types: ${globalType.size}")
