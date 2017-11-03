@@ -31,6 +31,7 @@ package org.opalj
 import scala.collection.mutable
 import scala.collection.mutable.ArrayStack
 
+import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -453,8 +454,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ Iterator[Int], // IMPROVE Use IntIterator
-        filterSingletons: Boolean             = false
+        es:               Int ⇒ IntIterator,
+        filterSingletons: Boolean           = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
@@ -561,7 +562,7 @@ package object graphs {
                 //              signal that the node was not yet processed.
 
                 val ws = IntArrayStack(n)
-                val wsSuccessors = ArrayStack[Iterator[Int]](null)
+                val wsSuccessors = ArrayStack[IntIterator](null)
                 // INVARIANT:
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of

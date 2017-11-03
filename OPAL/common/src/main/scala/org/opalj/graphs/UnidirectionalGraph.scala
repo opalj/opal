@@ -29,7 +29,9 @@
 package org.opalj
 package graphs
 
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Efficient representation of a mutable graph where the nodes are identified using consecutive
@@ -50,25 +52,27 @@ import org.opalj.collection.immutable.Chain
 class UnidirectionalGraph(
         val verticesCount: Int
 )( // a graph which contains the nodes with the ids: [0...vertices-1]
-        private val successors: Array[Set[Int]] = new Array[Set[Int]](verticesCount) // IMPROVE use IntTrieSet
+        private val successors: Array[IntTrieSet] = new Array[IntTrieSet](verticesCount)
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = (0 until this.verticesCount)
 
     override def nonEmpty: Boolean = verticesCount > 0
 
+    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s).iterator
+
     /**
      * Returns a node's successors.
      */
-    override def apply(s: Int): Set[Int] = {
+    def theSuccessors(s: Int): IntTrieSet = {
         val sSuccessors = successors(s)
         if (sSuccessors eq null)
-            Set.empty
+            IntTrieSet.empty
         else
             sSuccessors
     }
 
-    def edges: Int ⇒ Iterator[Int] = (n: Int) ⇒ { this(n).toIterator } // IMPROVE use intIterator
+    def edges: Int ⇒ IntIterator = (n: Int) ⇒ { theSuccessors(n).intIterator }
 
     /**
      * Adds a new edge between the given vertices.
@@ -76,7 +80,7 @@ class UnidirectionalGraph(
      * (If the vertices were not previously added, they will be added.)
      */
     def +=(s: Int, t: Int): this.type = {
-        successors(s) = apply(s) + t
+        successors(s) = theSuccessors(s) + t
         this
     }
 

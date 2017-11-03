@@ -50,6 +50,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.Chain.{CompleteEmptyChain, IncompleteEmptyChain}
+import org.opalj.collection.IntIterator
 import org.opalj.collection.StrictSubset
 import org.opalj.collection.EqualSets
 import org.opalj.collection.StrictSuperset
@@ -2820,10 +2821,15 @@ object ClassHierarchy {
                             val ns = knownTypesMap.size
                             val es = (oid: Int) ⇒ {
                                 if (knownTypesMap(oid) ne null) {
-                                    subinterfaceTypesMap(oid).map(_.id).iterator ++
-                                        subclassTypesMap(oid).map(_.id).iterator
+                                    val it =
+                                        subinterfaceTypesMap(oid).map(_.id).iterator ++
+                                            subclassTypesMap(oid).map(_.id).iterator
+                                    new IntIterator {
+                                        def hasNext = it.hasNext
+                                        def next(): Int = it.next()
+                                    }
                                 } else {
-                                    Iterator.empty
+                                    IntIterator.empty
                                 }
                             }
                             val cyclicTypeDependencies =

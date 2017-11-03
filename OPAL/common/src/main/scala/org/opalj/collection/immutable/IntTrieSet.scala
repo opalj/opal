@@ -383,7 +383,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
         private val left:  IntTrieSet, // can be empty, but never null!
         private val right: IntTrieSet, // can be empty, but never null!
         val size:          Int
-) extends IntTrieSet {
+) extends IntTrieSet { intSet ⇒
 
     assert(left.size + right.size == size)
     assert(size > 0)
@@ -521,9 +521,8 @@ private[immutable] final class IntTrieSetN private[immutable] (
                     it = right.intIterator
                 }
             }
-
+            override def toSet: IntTrieSet = intSet
             checkIterator()
-
             def hasNext: Boolean = it.hasNext
             def next(): Int = { val v = it.next(); checkIterator(); v }
         }

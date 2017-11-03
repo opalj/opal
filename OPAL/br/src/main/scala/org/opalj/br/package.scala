@@ -127,7 +127,7 @@ package object br {
      */
     type PCs = IntTrieSet
 
-    final def NoPCs: IntTrieSet = IntTrieSet.empty
+    final val NoPCs: IntTrieSet = IntTrieSet.empty
 
     /**
      * Converts a given list of annotations into a Java-like representation.

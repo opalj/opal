@@ -147,7 +147,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
-                            fail(propertiesAsStrings.mkString("actual: ", ", ", "\nerror: "+error))
+                            fail(propertiesAsStrings.mkString("actual: ", ", ", "\nexpectation: "+error))
                         case None   ⇒ /* OK */
                         case result ⇒ fail("matcher returned unexpected result: "+result)
                     }

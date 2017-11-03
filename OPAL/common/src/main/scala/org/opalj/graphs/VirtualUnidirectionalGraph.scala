@@ -30,6 +30,7 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.IntIterator
 
 /**
  * Efficient representation of a mutable graph where the nodes are identified using consecutive
@@ -56,17 +57,19 @@ import org.opalj.collection.immutable.Chain
  */
 class VirtualUnidirectionalGraph(
         val verticesCount: Int,
-        val successors:    (Int ⇒ Iterator[Int])
+        val successors:    (Int ⇒ IntIterator)
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = (0 until this.verticesCount)
 
     override def nonEmpty: Boolean = verticesCount > 0
 
+    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s).iterator
+
     /**
      * Returns a node's successors.
      */
-    def apply(s: Int): Iterator[Int] = successors(s)
+    def theSuccessors(s: Int): IntIterator = successors(s)
 
     def sccs(filterSingletons: Boolean = false): Chain[Chain[Int]] = {
         org.opalj.graphs.sccs(verticesCount, successors, filterSingletons)

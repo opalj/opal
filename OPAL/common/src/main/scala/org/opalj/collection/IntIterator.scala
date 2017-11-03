@@ -32,6 +32,8 @@ package collection
 import scala.collection.AbstractIterator
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.EmptyIntTrieSet
 
 /**
  * Iterator over a collection of ints; guaranteed to avoid (un)boxing.
@@ -141,6 +143,12 @@ trait IntIterator { self ⇒
             Array.copy(as, 0, resultAs, 0, i)
             resultAs
         }
+    }
+
+    def toSet: IntTrieSet = {
+        var s: IntTrieSet = EmptyIntTrieSet
+        while (hasNext) { s += next() }
+        s
     }
 
     private[opalj] def toArray(size: Int): Array[Int] = {

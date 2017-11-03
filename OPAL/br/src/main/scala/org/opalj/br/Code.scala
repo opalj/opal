@@ -356,9 +356,6 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    // IMPROVE Return IntTrieSet instead of BitSet (will require roughly 2-4 times less memory,
-    // because the number of joins is very small; in average less than one per method for the
-    // Java 8 SDK!)
     def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): IntTrieSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
