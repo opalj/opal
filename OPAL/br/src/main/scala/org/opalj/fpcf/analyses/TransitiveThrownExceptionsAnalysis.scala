@@ -156,6 +156,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     }
 
                 case INVOKEVIRTUAL.opcode ⇒
+                    // TODO check subtypes as well, new property type for aggregated method calls
                     val iv = instruction.asInstanceOf[INVOKEVIRTUAL]
                     var callerPackage = ""
                     if (m.classFile.fqn.contains("/")) {
@@ -171,6 +172,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                             case EP(_, e: ThrownExceptionsAreUnknown) ⇒
                                 result = e
                                 false
+                            // TODO Result with intermediate result
                             // Handling cyclic computations
                             case epk ⇒
                                 dependees += epk
@@ -291,6 +293,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
             p match {
                 case NoExceptionsAreThrown.NoInstructionThrowsExceptions ⇒
+                    // TODO Check all NoExceptionsAreThrown
                     if (exceptions.isEmpty)
                         Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
                     else {

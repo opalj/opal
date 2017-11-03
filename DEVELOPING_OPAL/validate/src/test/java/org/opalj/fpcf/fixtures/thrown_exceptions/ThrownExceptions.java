@@ -80,4 +80,6 @@ public class ThrownExceptions {
     public int callThrowException() {
         return throwException();
     }
+
+    // TODO Add tests for cycles, a->a and a->b->a
 }
