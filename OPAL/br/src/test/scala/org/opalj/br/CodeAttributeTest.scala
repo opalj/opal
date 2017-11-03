@@ -181,15 +181,15 @@ class CodeAttributeTest extends FlatSpec with Matchers {
 
     it should "be able to correctly identify the instructions where multiple paths join" in {
         codeOfPut.cfJoins.size should be(1)
-        codeOfPut.cfJoins should contain(15)
+        codeOfPut.cfJoins.contains(15) should be(true)
     }
 
     it should "be able to correctly identify the instructions where multiple paths join or fork" in {
         val (cfJoins, cfForks, forkTargetPCs) = codeOfPut.cfPCs()
         cfJoins.size should be(1)
-        cfJoins should contain(15)
+        cfJoins.contains(15) should be(true)
         cfForks.size should be(1)
-        cfForks should contain(8)
+        cfForks.contains(8) should be(true)
         forkTargetPCs.size should be(1)
         forkTargetPCs(8) should be(IntArraySet(15, 11))
     }

@@ -27,38 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
+package collection
 
 /**
- * Records the program counters of all return (void) instructions that are reached.
- *
- * ==Usage==
- * Typical usage:
- * {{{
- * class MyDomain extends ...DefaultHandlingOfVoidReturns with RecordVoidReturns
- * }}}
- *
- * This domain forwards all instruction evaluation calls to the super trait.
- *
- * ==Core Properties==
- *  - Needs to be stacked upon a base implementation of the domain
- *    [[ReturnInstructionsDomain]].
- *  - Collects information directly associated with the analyzed code block.
- *  - Not thread-safe.
- *  - Not reusable.
+ * Can be mixed in if the iteration order of the underlying data-structure is independent
+ * of the insertion order. This is generally the case if the values are (pseudo-) sorted and
+ * is never the case for, e.g., linked lists.
  *
  * @author Michael Eichberg
  */
-trait RecordVoidReturns extends ReturnInstructionsDomain {
-    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+trait IntCollectionWithStableOrdering[T <: IntSet[T]] { intSet: T ⇒
 
-    private[this] var returnVoidInstructions: PCs = NoPCs
-
-    def allReturnVoidInstructions: PCs = returnVoidInstructions
-
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
-        returnVoidInstructions += pc
-        super.returnVoid(pc)
+    def subsetOf(other: T): Boolean = {
+        val thisIt = this.intIterator
+        val otherIt = other.intIterator
+        while (thisIt.hasNext && otherIt.hasNext) {
+            val thisV = thisIt.next()
+            var otherV = otherIt.next()
+            while (otherV != thisV && otherIt.hasNext) { otherV = otherIt.next() }
+            if (thisV != otherV)
+                return false;
+        }
+        !thisIt.hasNext
     }
+
 }

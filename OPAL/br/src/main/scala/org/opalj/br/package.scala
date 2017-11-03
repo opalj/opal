@@ -28,18 +28,17 @@
  */
 package org.opalj
 
-import scala.collection.BitSet
-
 import scala.xml.Node
 import scala.xml.Text
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -78,7 +77,7 @@ package object br {
 
     final val ConfigKeyPrefix = "org.opalj.br."
 
-    type LiveVariables = Array[BitSet]
+    type LiveVariables = Array[BitArraySet]
 
     type Attributes = Seq[Attribute]
 
@@ -126,9 +125,9 @@ package object br {
      *
      * @note This type alias serves comprehension purposes.
      */
-    type PCs = org.opalj.collection.immutable.IntArraySet
+    type PCs = IntTrieSet
 
-    final def NoPCs = org.opalj.collection.immutable.EmptyIntArraySet
+    final def NoPCs: IntTrieSet = IntTrieSet.empty
 
     /**
      * Converts a given list of annotations into a Java-like representation.

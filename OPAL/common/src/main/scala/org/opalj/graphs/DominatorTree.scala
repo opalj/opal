@@ -186,7 +186,7 @@ object DominatorTree {
         val vertex = new Array[Int](max + 1)
         val label = new Array[Int](max)
         val semi = new Array[Int](max)
-        val bucket = new Array[Set[Int]](max)
+        val bucket = new Array[Set[Int]](max) // IMPROVE Use IntTrieSet ?
 
         // helper data-structure to resolve recursive methods
         val vertexStack = new IntArrayStack(initialSize = Math.max(2, (max / 4)))

@@ -27,38 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
+package collection
+
+import scala.collection.AbstractIterator
 
 /**
- * Records the program counters of all return (void) instructions that are reached.
- *
- * ==Usage==
- * Typical usage:
- * {{{
- * class MyDomain extends ...DefaultHandlingOfVoidReturns with RecordVoidReturns
- * }}}
- *
- * This domain forwards all instruction evaluation calls to the super trait.
- *
- * ==Core Properties==
- *  - Needs to be stacked upon a base implementation of the domain
- *    [[ReturnInstructionsDomain]].
- *  - Collects information directly associated with the analyzed code block.
- *  - Not thread-safe.
- *  - Not reusable.
+ * Common interface of all BitSets provided by OPAL.
  *
  * @author Michael Eichberg
  */
-trait RecordVoidReturns extends ReturnInstructionsDomain {
-    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+trait BitSet { thisSet ⇒
 
-    private[this] var returnVoidInstructions: PCs = NoPCs
+    def isEmpty: Boolean
 
-    def allReturnVoidInstructions: PCs = returnVoidInstructions
+    def contains(i: Int): Boolean
 
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
-        returnVoidInstructions += pc
-        super.returnVoid(pc)
+    def intIterator: IntIterator
+
+    /**
+     * Standard Scala iterator provided for interoperability purposes only;
+     * if possible use `intIterator`.
+     */
+    final def iterator: Iterator[Int] = new AbstractIterator[Int] {
+        private[this] val it = thisSet.intIterator
+        def hasNext: Boolean = it.hasNext
+        def next(): Int = it.next()
     }
+
+    final def mkString(pre: String, in: String, post: String): String = {
+        intIterator.mkString(pre, in, post)
+    }
+
+    // + equals and hashCode
 }

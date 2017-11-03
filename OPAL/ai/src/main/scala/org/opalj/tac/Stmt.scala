@@ -29,8 +29,8 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br._
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Super trait of all quadruple statements.
@@ -669,7 +669,7 @@ object StaticFunctionCallStatement {
 case class CaughtException[+V <: Var[V]](
         pc:                        PC,
         exceptionType:             Option[ObjectType],
-        private var throwingStmts: IntArraySet
+        private var throwingStmts: IntTrieSet
 ) extends Stmt[V] {
 
     final override def asCaughtException: CaughtException[V] = this
@@ -700,7 +700,7 @@ case class CaughtException[+V <: Var[V]](
      *    tranformed to the index of the responsible instruction using
      *    [[org.opalj.ai#pcOfVMLevelValue]].
      */
-    def origins: IntArraySet = throwingStmts
+    def origins: IntTrieSet = throwingStmts
 
     /**
      * Textual description of the sources of the caught exceptions. If the exception was

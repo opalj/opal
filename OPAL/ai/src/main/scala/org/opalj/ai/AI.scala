@@ -30,14 +30,12 @@ package org.opalj
 package ai
 
 import scala.language.existentials
-
 import scala.util.control.ControlThrowable
-import scala.collection.BitSet
 
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -398,7 +396,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     protected[this] def preInterpretationInitialization(
         code:          Code,
         instructions:  Array[Instruction],
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         liveVariables: LiveVariables,
         theDomain:     D
     )(
@@ -494,7 +492,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        code: Code, cfJoins: BitSet, liveVariables: LiveVariables,
+        code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
         theDomain: D
     )(
         initialWorkList:                     List[PC],
@@ -1388,7 +1386,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     establishNonNull: Boolean
                 ): PCs = {
 
-                    var targetPCs = IntArraySet.empty
+                    var targetPCs = IntTrieSet.empty
                     def gotoExceptionHandler(
                         pc:             PC,
                         branchTargetPC: PC,
@@ -1524,7 +1522,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                             val npe = theDomain.VMNullPointerException(pc)
                                             doHandleTheException(npe, false)
                                         } else {
-                                            IntArraySet.empty
+                                            IntTrieSet.empty
                                         }
                                     npeHandlerPC ++ doHandleTheException(exceptionValue, true)
                                 case Yes ⇒
@@ -1547,7 +1545,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     exceptions:                      Traversable[ExceptionValue],
                     testForNullnessOfExceptionValue: Boolean
                 ): PCs = {
-                    exceptions.foldLeft(IntArraySet.empty) { (pcs, e) ⇒
+                    exceptions.foldLeft(IntTrieSet.empty) { (pcs, e) ⇒
                         pcs ++ handleException(e, testForNullnessOfExceptionValue)
                     }
                 }
@@ -1589,7 +1587,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
                         handleException(exceptions, testForNullnessOfExceptionValue = false)
-                    } // else IntArraySet.empty
+                    } // else IntTrieSet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
@@ -1617,7 +1615,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
                         handleException(exceptions, testForNullnessOfExceptionValue = false)
-                    } // else IntArraySet.empty
+                    } // else IntTrieSet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
