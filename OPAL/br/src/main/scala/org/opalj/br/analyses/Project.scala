@@ -182,6 +182,8 @@ class Project[Source] private (
      * context is updated.
      */
     def recreate(): Project[Source] = {
+        val newLogContext = logContext.successor
+        val newClassHierarchy = classHierarchy.updatedLogContext(newLogContext)
         new Project(
             projectClassFiles,
             libraryClassFiles,
@@ -209,12 +211,12 @@ class Project[Source] private (
             allFields,
             allSourceElements,
             virtualMethodsCount,
-            classHierarchy,
+            newClassHierarchy,
             instanceMethods,
             overridingMethods,
             analysisMode
         )(
-            logContext.successor,
+            newLogContext,
             config
         )
     }
