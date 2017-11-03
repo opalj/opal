@@ -377,7 +377,7 @@ trait AbstractEntityEscapeAnalysis {
      * The current escape state is updated to the `non-maybe` version of `newProp` and
      * the intermediate result is returned.
      */
-    protected[this] def performIntermediateUpdate(other: Entity, p: Property, newProp /*TODO find a better name*/ : EscapeProperty): IntermediateResult = {
+    protected[this] def performIntermediateUpdate(other: Entity, p: Property, newProp /*TODO find a better name*/ : EscapeProperty): PropertyComputationResult = {
         val newEP = EP(other, p.asInstanceOf[EscapeProperty])
         dependees = dependees.filter(_.e ne other) + newEP
         calcMostRestrictive(newProp.atMost)

@@ -112,14 +112,15 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends ConfigurationBasedCons
      * Otherwise [[AbstractEntityEscapeAnalysis.performIntermediateUpdate]] is called.
      */
     protected[this] override def performIntermediateUpdate(
-                                                              other: Entity,
-                                                              p: Property,
-                                                              x: EscapeProperty
-                                                          ): IntermediateResult = {
+        other: Entity,
+        p:     Property,
+        x:     EscapeProperty
+    ): PropertyComputationResult = {
         if (mostRestrictiveProperty.isRefineable) {
-            ImmediateResult(e, GlobalEscape) // FIXME XXXX return or?
+            ImmediateResult(e, GlobalEscape)
+        } else {
+            super.performIntermediateUpdate(other, p, x)
         }
-        super.performIntermediateUpdate(other, p, x)
     }
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
