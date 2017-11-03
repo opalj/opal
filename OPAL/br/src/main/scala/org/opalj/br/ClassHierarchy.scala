@@ -153,6 +153,26 @@ class ClassHierarchy private (
         implicit
         val logContext: LogContext
 ) {
+
+    def updatedLogContext(newLogContext: LogContext): ClassHierarchy = {
+        new ClassHierarchy(
+            knownTypesMap,
+            interfaceTypesMap,
+            isKnownToBeFinalMap,
+            superclassTypeMap,
+            superinterfaceTypesMap,
+            subclassTypesMap,
+            subinterfaceTypesMap,
+            rootTypes,
+            leafTypes,
+            isSupertypeInformationCompleteMap,
+            supertypes,
+            subtypes
+        )(
+            newLogContext
+        )
+    }
+
     // TODO Use all subTypes/subclassTypes/subinterfaceTypes
     // TODO Use all supertypes/superclassTypes/superinterfaceTypes
     // TODO Precompute all subTypesCF/subclassTypesCF/subinterfaceTypesCF
