@@ -39,8 +39,8 @@ import scala.math.Ordered
  * @author Marco Torsello
  */
 sealed abstract class VirtualSourceElement
-    extends SourceElement
-    with Ordered[VirtualSourceElement] {
+        extends SourceElement
+        with Ordered[VirtualSourceElement] {
 
     override def attributes = Nil
 
@@ -272,36 +272,22 @@ object VirtualMethod {
     }
 }
 
-final class VirtualForwardingMethod(
-        declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        val target:         Method
+final case class VirtualForwardingMethod(
+        override val declaringClassType: ReferenceType,
+        override val name:               String,
+        override val descriptor:         MethodDescriptor,
+        target:                          Method
 ) extends VirtualMethod(declaringClassType, name, descriptor) {
 
     override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
-}
+    override def hashCode: Opcode = (target.hashCode() * 41) + super.hashCode
 
-object VirtualForwardingMethod {
-
-    def apply(
-        declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        target:             Method
-    ): VirtualMethod = {
-        new VirtualForwardingMethod(declaringClassType, name, descriptor, target)
+    override def equals(other: Any): Boolean = other match {
+        case that: VirtualForwardingMethod ⇒
+            (this.target == that.target) &&
+                super.equals(other)
     }
 
-    def unapply(
-        virtualMethod: VirtualForwardingMethod
-    ): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
-        Some((
-            virtualMethod.declaringClassType,
-            virtualMethod.name,
-            virtualMethod.descriptor,
-            virtualMethod.target
-        ))
-    }
 }
+
