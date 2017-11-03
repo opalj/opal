@@ -203,17 +203,17 @@ final class Code private (
      *
      * @see See the method [[foreach]] for an alternative.
      */
-    def programCounters: Iterator[PC] = {
-        new AbstractIterator[PC] {
+    def programCounters: IntIterator = {
+        new IntIterator {
             var pc = 0 // there is always at least one instruction
 
-            def next() = {
+            def next() : Int = {
                 val next = pc
                 pc = pcOfNextInstruction(pc)
                 next
             }
 
-            def hasNext = pc < instructions.size
+            def hasNext : Boolean = pc < instructions.size
         }
     }
 
