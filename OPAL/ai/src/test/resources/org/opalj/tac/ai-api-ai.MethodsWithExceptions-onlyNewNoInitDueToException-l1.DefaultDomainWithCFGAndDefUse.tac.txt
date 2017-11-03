@@ -1,5 +1,5 @@
 /* PARAMETERS:
-   param1: useSites={1,6} (origin=-2)
+   param1: useSites={6,1} (origin=-2)
 */
 0:/*pc=0:*/ lv0 = 1
 1:/*pc=3:*/ if({param1} != 0) goto 4

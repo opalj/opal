@@ -303,7 +303,7 @@ class PropertyStore private (
             dependerNode.addChildren(dependeeNodes.toList)
         }
 
-        org.opalj.graphs.toDot(epkNodes.values.toSet)
+        org.opalj.graphs.toDot(epkNodes.valuesIterator.toSet)
     }
 
     /**
@@ -794,7 +794,7 @@ class PropertyStore private (
         val l = eps.l
         val ps = eps.ps
         accessEntity {
-            withReadLock(l) { (ps.values collect ComputedProperty).toList }
+            withReadLock(l) { (ps.valuesIterator collect ComputedProperty).toList }
         }
     }
 
@@ -1221,7 +1221,7 @@ class PropertyStore private (
         accessStore {
             for {
                 (e, eps) ← entries
-                if eps.ps.values.exists { pos ⇒
+                if eps.ps.valuesIterator.exists { pos ⇒
                     val p = pos.p
                     (p ne null) && !p.isBeingComputed && propertyFilter(p)
                 }
@@ -1243,7 +1243,7 @@ class PropertyStore private (
             for {
                 (e, eps) ← entries
                 ps = eps.ps
-                pos ← ps.values
+                pos ← ps.valuesIterator
                 p = pos.p
                 if p ne null
                 if !p.isBeingComputed
@@ -1339,7 +1339,7 @@ class PropertyStore private (
                     for {
                         eps ← entitiesProperties
                         ps = eps.ps
-                        (pos, pkId) ← ps.values.zipWithIndex // the property p may (still be) null
+                        (pos, pkId) ← ps.valuesIterator.zipWithIndex // the property p may (still be) null
                         os = pos.os
                         if os ne null // if the property is final the observers are already cleared
                     } {
@@ -1400,7 +1400,7 @@ class PropertyStore private (
                             if (ValidateConsistency) {
                                 def registeredObservers: Int = {
                                     val pss = entitiesProperties.map(_.ps)
-                                    val poss = pss.flatMap(_.values)
+                                    val poss = pss.flatMap(_.valuesIterator)
                                     poss.map { pos ⇒
                                         val os = pos.os
                                         if (os eq null) 0 else os.count(_ ne null)

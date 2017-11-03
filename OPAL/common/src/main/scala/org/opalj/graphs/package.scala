@@ -216,7 +216,7 @@ package object graphs {
         es: N ⇒ Traversable[N]
     ): List[Iterable[N]] = {
 
-        case class NInfo(val dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
+        case class NInfo(dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
             override def toString: String = {
                 val cSCCId = this.cSCCId match {
                     case Undetermined ⇒ "Undetermined"
@@ -260,7 +260,8 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
-        /* The following is not a strict requirement, more an expectation:
+        /* The following is not a strict requirement, more an expectation (however, (c)sccs
+         * not reachable from a node in ns will not be detected!
         assert(
             { val allNodes = ns.toSet; allNodes.forall { n ⇒ es(n).forall(allNodes.contains) } },
             "the graph references nodes which are not in the set of all nodes"
@@ -452,7 +453,7 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ Iterator[Int],
+        es:               Int ⇒ Iterator[Int], // IMPROVE Use IntIterator
         filterSingletons: Boolean             = false
     ): Chain[Chain[Int]] = {
 

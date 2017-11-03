@@ -27,38 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
+package collection
+package immutable
 
 /**
- * Records the program counters of all return (void) instructions that are reached.
- *
- * ==Usage==
- * Typical usage:
- * {{{
- * class MyDomain extends ...DefaultHandlingOfVoidReturns with RecordVoidReturns
- * }}}
- *
- * This domain forwards all instruction evaluation calls to the super trait.
- *
- * ==Core Properties==
- *  - Needs to be stacked upon a base implementation of the domain
- *    [[ReturnInstructionsDomain]].
- *  - Collects information directly associated with the analyzed code block.
- *  - Not thread-safe.
- *  - Not reusable.
+ * A set of integers which supports (reasonable) efficient `getAndRemove` operations.
  *
  * @author Michael Eichberg
  */
-trait RecordVoidReturns extends ReturnInstructionsDomain {
-    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+trait IntWorkSet[T <: IntWorkSet[T]] { intSet: T ⇒
 
-    private[this] var returnVoidInstructions: PCs = NoPCs
+    /**
+     * Gets a value and returns the new set without that value.
+     */
+    def getAndRemove: (Int, T)
 
-    def allReturnVoidInstructions: PCs = returnVoidInstructions
-
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
-        returnVoidInstructions += pc
-        super.returnVoid(pc)
-    }
 }

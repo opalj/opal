@@ -35,19 +35,18 @@ import scala.reflect.ClassTag
 
 import java.util.Arrays.fill
 
-import scala.collection.BitSet
 import scala.collection.AbstractIterator
 import scala.collection.mutable
-import scala.collection.immutable
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.IntQueue
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
-import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.mutable.FixedSizeBitSet
+import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.br.instructions._
@@ -357,7 +356,10 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): BitSet = {
+    // IMPROVE Return IntTrieSet instead of BitSet (will require roughly 2-4 times less memory,
+    // because the number of joins is very small; in average less than one per method for the
+    // Java 8 SDK!)
+    def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): IntTrieSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -425,9 +427,9 @@ final class Code private (
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        val cfJoins = new mutable.BitSet(instructionsLength)
+        var cfJoins = IntTrieSet.empty
 
-        val isReached = new mutable.BitSet(instructionsLength)
+        val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
 
         var pc = 0
@@ -443,7 +445,7 @@ final class Code private (
             }
 
             (instruction.opcode: @switch) match {
-                case RET.opcode ⇒ // potential path joins are determined when we process jsrs
+                case RET.opcode ⇒ // potential path joins are determined when we process JSRs
 
                 case JSR.opcode | JSR_W.opcode ⇒
                     val UnconditionalBranchInstruction(branchoffset) = instruction
@@ -473,16 +475,16 @@ final class Code private (
      *          instructions than `return` and `athrow` instructions.
      *          If the code contains jsr/ret instructions the full blown CFG is computed.
      */
-    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, BitSet) = {
+    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, IntTrieSet) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
-        allPredecessorPCs(0) = IntArraySet.empty // initialization for the start node
-        var exitPCs = IntArraySet.empty
+        allPredecessorPCs(0) = IntTrieSet.empty // initialization for the start node
+        var exitPCs = IntTrieSet.empty
 
-        val cfJoins = new mutable.BitSet(instructionsLength)
-        val isReached = new mutable.BitSet(instructionsLength)
+        var cfJoins = IntTrieSet.empty
+        val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
         @inline def runtimeSuccessor(successorPC: PC): Unit = {
             if (isReached.contains(successorPC))
@@ -509,7 +511,7 @@ final class Code private (
                         // compute predecessors
                         val predecessorPCs = allPredecessorPCs(nextPC)
                         if (predecessorPCs eq null) {
-                            allPredecessorPCs(nextPC) = new IntArraySet1(pc)
+                            allPredecessorPCs(nextPC) = new IntTrieSet1(pc)
                         } else {
                             allPredecessorPCs(nextPC) = predecessorPCs + pc
                         }
@@ -548,12 +550,16 @@ final class Code private (
      *          (still) live at instruction j with pc 37 it is sufficient to test if the bit
      *          set stored at index 37 contains the value 5.
      */
-    def liveVariables(predecessorPCs: Array[PCs], finalPCs: PCs, cfJoins: BitSet): LiveVariables = {
+    def liveVariables(
+        predecessorPCs: Array[PCs],
+        finalPCs:       PCs,
+        cfJoins:        IntTrieSet
+    ): LiveVariables = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
-        val liveVariables = new Array[BitSet](instructionsLength)
+        val liveVariables = new Array[BitArraySet](instructionsLength)
         val workqueue = IntQueue.empty
-        val AllDead = immutable.BitSet.empty
+        val AllDead = BitArraySet.empty
         finalPCs foreach { pc ⇒ liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
         // required to handle endless loops!
         cfJoins foreach { pc ⇒
@@ -562,7 +568,7 @@ final class Code private (
             if (instruction.readsLocal) {
                 // This instruction is by construction "not a final instruction"
                 // because these instructions never throw any(!) exceptions and
-                // are also never "return" instructions.
+                // also never "return" instructions.
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
@@ -640,15 +646,15 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = BasicClassHierarchy
-    ): (BitSet /*joins*/ , BitSet /*forks*/ , IntMap[IntArraySet] /*forkTargetPCs*/ ) = {
+    ): (IntTrieSet /*joins*/ , IntTrieSet /*forks*/ , IntMap[IntTrieSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        val cfJoins = new mutable.BitSet(instructionsLength)
-        val cfForks = new mutable.BitSet(instructionsLength)
-        var cfForkTargets = IntMap.empty[IntArraySet]
+        var cfJoins = IntTrieSet.empty
+        var cfForks = IntTrieSet.empty
+        var cfForkTargets = IntMap.empty[IntTrieSet]
 
-        val isReached = new mutable.BitSet(instructionsLength)
+        val isReached = FixedSizeBitSet.create(instructionsLength)
         isReached += 0 // the first instruction is always reached!
 
         lazy val cfg = CFGFactory(this, classHierarchy)
@@ -682,7 +688,7 @@ final class Code private (
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
                         cfForks += pc
-                        cfForkTargets += ((pc, IntArraySetBuilder(nextInstructions).result()))
+                        cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ + _)))
                     }
             }
 
@@ -1549,7 +1555,7 @@ final class Code private (
      */
     @inline def alwaysResultsInException(
         pc:           PC,
-        cfJoins:      BitSet,
+        cfJoins:      IntTrieSet,
         anInvocation: (PC) ⇒ Boolean,
         aThrow:       (PC) ⇒ Boolean
     ): Boolean = {

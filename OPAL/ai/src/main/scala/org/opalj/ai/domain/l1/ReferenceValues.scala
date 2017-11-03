@@ -1190,7 +1190,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 MultipleReferenceValues(newValues, newIsNull, newIsPrecise, newUTB, newRefId)
         }
 
-        override def origins: Iterable[ValueOrigin] = values.view.map(_.origin)
+        override def origins: Iterator[ValueOrigin] = values.iterator.map(_.origin)
 
         override def baseValues: Traversable[DomainReferenceValue] = values
 

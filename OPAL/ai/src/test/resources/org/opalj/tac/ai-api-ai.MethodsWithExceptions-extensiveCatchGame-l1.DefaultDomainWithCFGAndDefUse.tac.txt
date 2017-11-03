@@ -1,5 +1,5 @@
 /* PARAMETERS:
-   param1: useSites={0,7,8,22} (origin=-2)
+   param1: useSites={0,8,22,7} (origin=-2)
    param2: useSites={1} (origin=-3)
 */
 0:/*pc=4:*/ lv0 = {param1}/*java.lang.Object*/.hashCode()

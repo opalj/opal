@@ -33,13 +33,13 @@ package l1
 
 import java.util.{IdentityHashMap ⇒ IDMap}
 
-import scala.collection.BitSet
 import scala.collection.JavaConverters._
 
+import org.opalj.constraints.NumericConstraints
 import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
-import org.opalj.constraints.NumericConstraints
 
 /**
  * Domain that traces the relationship between integer values; currently, the domain only
@@ -68,7 +68,7 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
-        theCFJoins:      BitSet,
+        theCFJoins:      IntTrieSet,
         liveVariables:   LiveVariables
     ): Unit = {
         super.setCodeStructure(theInstructions, theCFJoins, liveVariables)

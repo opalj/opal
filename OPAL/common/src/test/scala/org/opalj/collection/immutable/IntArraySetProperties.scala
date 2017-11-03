@@ -31,10 +31,16 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
+
+import scala.collection.immutable.SortedSet
+
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
-import org.scalacheck.Prop.forAll //, classify,
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.BooleanOperators
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
 
 /**
  * Tests `IntArraySet` by creating standard Scala Set and comparing
@@ -44,6 +50,8 @@ import org.scalacheck.Prop.BooleanOperators
  */
 @RunWith(classOf[JUnitRunner])
 object IntArraySetProperties extends Properties("IntArraySet") {
+
+    val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
@@ -129,20 +137,83 @@ object IntArraySetProperties extends Properties("IntArraySet") {
             result.isInstanceOf[IntArraySet]
     }
 
+    property("map (identity)") = forAll { s: Set[Int] ⇒
+        val fl1 = IntArraySetBuilder(s).result
+        (fl1.map(i ⇒ i) eq fl1)
+    }
+
+    property("flatMap") = forAll { s: Seq[Set[Int]] ⇒
+        val fl1: IntArraySet = IntArraySetBuilder(s.flatten: _*).result
+        val indicesSet = IntArraySetBuilder(s.toIndexedSeq.indices.toSet).result
+        val result = indicesSet.flatMap(i ⇒ IntArraySetBuilder(s(i)).result)
+        (fl1 == result) :| "construction independent results" &&
+            (fl1.iterator.toList == s.flatten.toSet.toList.sorted) :| "results are equal"
+    }
+
     property("-") = forAll { (s: Set[Int], v: Int) ⇒
         val fl1 = IntArraySetBuilder(s).result
         (s - v).toList.sorted == (fl1 - v).iterator.toList
     }
 
-    property("+") = forAll { (s: Set[Int], v: Int) ⇒
+    property("+ (based on set)") = forAll { (s: Set[Int], v: Int) ⇒
         val fl1 = IntArraySetBuilder(s).result
         (s + v).toList.sorted == (fl1 + v).iterator.toList
+    }
+
+    property("+ (based on list)") = forAll { (l: List[Int], v: Int) ⇒
+        val ias1 = IntArraySetBuilder(l: _*).result
+        val s = l.toSet
+        classify(s.size < l.size, "list with redundant values") {
+            ias1.iterator.toList == s.toList.sorted
+        }
     }
 
     property("subsetOf") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
         val fl1 = IntArraySetBuilder(s1).result
         val fl2 = IntArraySetBuilder(s2).result
         s1.subsetOf(s2) == fl1.subsetOf(fl2)
+    }
+
+    property("iterator") = forAll { s1: Set[Int] ⇒
+        val fl1 = IntArraySetBuilder(s1).result
+        val ss1 = SortedSet.empty[Int] ++ s1
+        ss1.iterator.toList == fl1.iterator.toList
+    }
+
+    property("apply") = forAll { s1: Set[Int] ⇒
+        val fl1 = IntArraySetBuilder(s1).result
+        val ss1 = (SortedSet.empty[Int] ++ s1).toList
+        (0 until ss1.size).forall(i ⇒ fl1(i) == ss1(i))
+    }
+
+    property("equals") = forAll { (s1: Set[Int], s2: Set[Int]) ⇒
+        val ias1 = IntArraySetBuilder(s1).result
+        val ias2 = IntArraySetBuilder(s2).result
+        val s1AndS2AreEqual = s1 == s2
+        classify(s1AndS2AreEqual, s"s1 and s2 are equal") {
+            (ias1 == ias2) == s1AndS2AreEqual
+        }
+    }
+
+    property("hashCode") = forAll { s1: Set[Int] ⇒
+        val fl1 = IntArraySetBuilder(s1).result
+        val setHashCode = fl1.hashCode
+        val arraysHashCode = java.util.Arrays.hashCode(s1.toList.sorted.toArray)
+        (setHashCode == arraysHashCode) :| "hashCode equality"
+    }
+
+    property("intIterator") = forAll { s1: Set[Int] ⇒
+        val fl1 = IntArraySetBuilder(s1).result
+        val flIt = fl1.iterator
+        val flIntIt = fl1.intIterator
+        flIntIt.forall(i ⇒ flIt.next == i)
+    }
+
+    property("toChain") = forAll { s1: Set[Int] ⇒
+        val fl1 = IntArraySetBuilder(s1).result
+        val iasBasedChaing = fl1.toChain
+        val sBasedChain = Chain(s1.toList.sorted: _*)
+        (iasBasedChaing == sBasedChain) :| "equality of chains"
     }
 
     property("contains") = forAll { (s: Set[Int], v: Int) ⇒

@@ -3,8 +3,9 @@
 ## Upcomming
  - Hermes now has extended visualization capabilities to make it even easire to comprehend the differences between projects
 
+
 ## 1.0.0 - Released Oct. 25th 2017
- - *we are now using Scala 2.12.x*
+ - *we are now using Scala 2.12.4*
  - added a method to reset a Project to its initial state (all information derived by analyses is thrown away)
  - added several type test/cast methods to Instruction to support cases where the type of an instruction is known from the context
  - added a new framework for testing properties derived using the `PropertiesStore`

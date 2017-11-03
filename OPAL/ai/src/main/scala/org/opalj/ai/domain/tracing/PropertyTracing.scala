@@ -31,8 +31,8 @@ package ai
 package domain
 package tracing
 
-import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
 
 /**
@@ -67,14 +67,11 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
      */
     private var propertiesArray: Array[DomainProperty] = _
 
-    abstract override def initProperties(
-        code: Code, cfJoins: BitSet,
-        locals: Locals
-    ): Unit = {
+    abstract override def initProperties(code: Code, cfJoins: IntTrieSet, locals: Locals): Unit = {
 
         super.initProperties(code, cfJoins, locals)
 
-        this.propertiesArray = new Array(code.instructions.size)
+        this.propertiesArray = new Array(code.instructions.length)
         this.propertiesArray(0) = initialPropertyValue()
     }
 
