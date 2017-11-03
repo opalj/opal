@@ -95,7 +95,7 @@ trait RecordCFG
     // ... elements are either null or non-empty
     private[this] var exceptionHandlerSuccessors: Array[IntTrieSet] = _
 
-    private[this] var theExitPCs: mutable.BitSet = _ // IMPROVE use an Int(Trie)Set
+    private[this] var theExitPCs: IntTrieSet = _
 
     private[this] var theSubroutineStartPCs: IntTrieSet = _
 
@@ -145,7 +145,7 @@ trait RecordCFG
         val codeSize = code.instructions.length
         regularSuccessors = new Array[IntTrieSet](codeSize)
         exceptionHandlerSuccessors = new Array[IntTrieSet](codeSize)
-        theExitPCs = new mutable.BitSet(codeSize)
+        theExitPCs = IntTrieSet.empty
         theSubroutineStartPCs = IntTrieSet.empty
         theJumpBackTargetPCs = IntTrieSet.empty
 
@@ -340,7 +340,7 @@ trait RecordCFG
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
      */
-    def exitPCs: BitSet = theExitPCs
+    def exitPCs: IntTrieSet = theExitPCs
 
     /**
      * Returns the PCs of the first instructions of all subroutines; that is, the instructions
@@ -708,7 +708,7 @@ trait RecordCFG
         // every potential loop header can be reached.
         val predecessors = this.predecessors
         var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
-        var nodesToVisit = theExitPCs.foldLeft(Nil: List[Int])((c, n) ⇒ n :&: c)
+        var nodesToVisit = theExitPCs.toChain
         val visitedNodes = new mutable.BitSet(code.codeSize)
         while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
@@ -936,7 +936,7 @@ trait RecordCFG
 
         val exitPCs = theExitPCs
         val uniqueExitNode =
-            if (exitPCs.size == 1 && regularSuccessorsOf(exitPCs.head).isEmpty)
+            if (exitPCs.isSingletonSet && regularSuccessorsOf(exitPCs.head).isEmpty)
                 Some(exitPCs.head)
             else
                 None
