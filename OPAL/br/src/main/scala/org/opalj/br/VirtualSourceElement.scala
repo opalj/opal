@@ -251,6 +251,10 @@ sealed class VirtualMethod(
             case _ ⇒ false
         }
     }
+
+    override def toString: String = {
+        s"VirtualMethod($declaringClassType,$name,$descriptor)"
+    }
 }
 
 object VirtualMethod {
