@@ -42,6 +42,7 @@ import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.IntQueue
@@ -203,17 +204,17 @@ final class Code private (
      *
      * @see See the method [[foreach]] for an alternative.
      */
-    def programCounters: Iterator[PC] = {
-        new AbstractIterator[PC] {
+    def programCounters: IntIterator = {
+        new IntIterator {
             var pc = 0 // there is always at least one instruction
 
-            def next() = {
+            def next(): Int = {
                 val next = pc
                 pc = pcOfNextInstruction(pc)
                 next
             }
 
-            def hasNext = pc < instructions.size
+            def hasNext: Boolean = pc < instructions.size
         }
     }
 
@@ -356,9 +357,6 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    // IMPROVE Return IntTrieSet instead of BitSet (will require roughly 2-4 times less memory,
-    // because the number of joins is very small; in average less than one per method for the
-    // Java 8 SDK!)
     def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): IntTrieSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions

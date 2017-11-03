@@ -232,7 +232,6 @@ trait PerformInvocations extends MethodCallsHandling {
         resolvedMethod match {
             case Some(method) ⇒ testAndDoInvoke(pc, method, operands, fallback)
             case _ ⇒
-                // IMPROVE Get rid of log once...
                 OPALLogger.logOnce(Warn(
                     "project configuration",
                     "method reference cannot be resolved: "+

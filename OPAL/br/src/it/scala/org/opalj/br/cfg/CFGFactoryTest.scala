@@ -70,7 +70,7 @@ class CFGFactoryTest extends CFGTests {
             }
 
             // check that allBBs returns the same bbs as a manual iterator
-            val manuallyCollectsBBs = code.programCounters.map(cfg.bb).filter(_ ne null).toSet
+            val manuallyCollectsBBs = code.programCounters.mapToAny(cfg.bb).filter(_ ne null).toSet
             assert(cfg.allBBs.toSet == manuallyCollectsBBs)
 
             // check the boundaries

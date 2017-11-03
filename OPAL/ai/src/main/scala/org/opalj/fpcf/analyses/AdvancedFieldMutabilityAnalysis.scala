@@ -94,10 +94,10 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
         // IMPROVE Implement special handling for those methods that are always (guaranteed) only called by the constructor. (Note: filtering is not possible as the reference to this object may leak!)
 
         var effectivelyFinalFields = pnfFields.toSet
-        val methodsIterator = classFile.methods.filter(m ⇒ !m.isAbstract).iterator
+        val methodsIterator = classFile.methods.iterator.filter(m ⇒ !m.isAbstract)
         // Note: we do not want to force the creation of the three address code for methods,
         // we are no longer interested in.
-        while (methodsIterator.nonEmpty && effectivelyFinalFields.nonEmpty) {
+        while (methodsIterator.hasNext && effectivelyFinalFields.nonEmpty) {
             val method = methodsIterator.next()
 
             tacai(method).stmts exists {
@@ -121,7 +121,6 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
                             if (receiver != SelfReferenceParameter) {
                                 effectivelyFinalFields -= f
                             }
-
                         } else {
                             effectivelyFinalFields -= f
                         }

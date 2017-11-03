@@ -182,6 +182,8 @@ class Project[Source] private (
      * context is updated.
      */
     def recreate(): Project[Source] = {
+        val newLogContext = logContext.successor
+        val newClassHierarchy = classHierarchy.updatedLogContext(newLogContext)
         new Project(
             projectClassFiles,
             libraryClassFiles,
@@ -209,12 +211,12 @@ class Project[Source] private (
             allFields,
             allSourceElements,
             virtualMethodsCount,
-            classHierarchy,
+            newClassHierarchy,
             instanceMethods,
             overridingMethods,
             analysisMode
         )(
-            logContext.successor,
+            newLogContext,
             config
         )
     }
@@ -1120,7 +1122,6 @@ object Project {
         OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
     }
 
-    // IMPROVE To support an efficient project reset move the initialization to an auxiliary constructor and add this field to the list of fields defined by "Project"
     def instanceMethods(
         classHierarchy:        ClassHierarchy,
         objectTypeToClassFile: Map[ObjectType, ClassFile]
@@ -1254,7 +1255,6 @@ object Project {
         result
     } { t ⇒ info("project setup", s"computing defined methods took ${t.toSeconds}") }
 
-    // IMPROVE To support an efficient project reset move the initialization to an auxiliary constructor and add this field to the list of fields defined by "Project"
     /**
      * Returns for a given virtual method the set of all non-abstract virtual methods which
      * overrides it.

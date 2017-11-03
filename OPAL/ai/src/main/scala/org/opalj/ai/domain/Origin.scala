@@ -31,6 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.ComputationalType
+import org.opalj.collection.IntIterator
 
 /**
  * Provides information about the origin (that is, def-site) of a value iff the underlying domain
@@ -72,7 +73,7 @@ trait Origin { domain: ValuesDomain ⇒
      *  Common supertrait of all domain values which provide comprehensive origin information.
      */
     trait ValueWithOriginInformation {
-        def origins: Iterator[ValueOrigin] // IMPROVE Use IntIterator!!!!
+        def origins: ValueOriginsIterator
     }
 
     /**
@@ -80,7 +81,7 @@ trait Origin { domain: ValuesDomain ⇒
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
-        final def origins: Iterator[ValueOrigin] = Iterator(origin)
+        final def origins: ValueOriginsIterator = IntIterator(origin)
     }
 
     /**
@@ -99,10 +100,10 @@ trait Origin { domain: ValuesDomain ⇒
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    def origin(value: DomainValue): Iterator[ValueOrigin] = {
+    def origin(value: DomainValue): ValueOriginsIterator = {
         value match {
             case vo: ValueWithOriginInformation ⇒ vo.origins
-            case _                              ⇒ Iterator.empty
+            case _                              ⇒ IntIterator.empty
         }
     }
 
@@ -116,12 +117,13 @@ trait Origin { domain: ValuesDomain ⇒
 
 }
 
+@deprecated("introduces unnecessary (un)boxing; use the domain's (foreach)origin", "OPAL 1.1.0")
 object Origin {
     def unapply(value: Origin#SingleOriginValue): Option[Int] = Some(value.origin)
 }
 
 object Origins {
-    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterator[ValueOrigin]] = {
+    def unapply(value: Origin#ValueWithOriginInformation): Option[ValueOriginsIterator] = {
         Some(value.origins)
     }
 }

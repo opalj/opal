@@ -32,6 +32,8 @@ package collection
 import scala.collection.AbstractIterator
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.EmptyIntTrieSet
 
 /**
  * Iterator over a collection of ints; guaranteed to avoid (un)boxing.
@@ -78,6 +80,13 @@ trait IntIterator { self ⇒
         new IntIterator {
             def hasNext: Boolean = self.hasNext
             def next(): Int = f(self.next)
+        }
+    }
+
+    def mapToAny[A](m: Int ⇒ A): Iterator[A] = {
+        new AbstractIterator[A] {
+            def hasNext: Boolean = self.hasNext
+            def next: A = m(self.next())
         }
     }
 
@@ -143,6 +152,12 @@ trait IntIterator { self ⇒
         }
     }
 
+    def toSet: IntTrieSet = {
+        var s: IntTrieSet = EmptyIntTrieSet
+        while (hasNext) { s += next() }
+        s
+    }
+
     private[opalj] def toArray(size: Int): Array[Int] = {
         val as = new Array[Int](size)
         var i = 0
@@ -176,9 +191,11 @@ trait IntIterator { self ⇒
      * Converts this iterator to Scala Iterator (which potentially will (un)box
      * the returned values.)
      */
-    def iterator: Iterator[Int] = new AbstractIterator[Int] {
-        def hasNext: Boolean = self.hasNext
-        def next: Int = self.next()
+    def iterator: Iterator[Int] = {
+        new AbstractIterator[Int] {
+            def hasNext: Boolean = self.hasNext
+            def next: Int = self.next()
+        }
     }
 
 }

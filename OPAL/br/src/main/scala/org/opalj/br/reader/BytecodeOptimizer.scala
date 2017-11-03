@@ -37,7 +37,7 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.OPALLogger.info
 
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.GOTO
@@ -148,8 +148,7 @@ trait BytecodeOptimizer extends MethodsBinding {
         // jsr/ret instructions and exception handlers.
         // It contains those instrutions which are definitive jump targets AFTER simplification.
         var jumpTargetInstructions =
-            // IMPROVE Use a "real IntTrieSet"...
-            exceptionsHandlers.foldLeft(Set.empty[PC]) { (c, eh) ⇒ c + eh.handlerPC }
+            exceptionsHandlers.foldLeft(NoPCs) { (c, eh) ⇒ c + eh.handlerPC }
 
         // CONFUSED IF
         // A "confused if" is an if statement where the next instruction
@@ -163,7 +162,7 @@ trait BytecodeOptimizer extends MethodsBinding {
         //  i1: if !(a op b) => goto in
         //  i2: NOP
         //  i3: <REST>
-        var confusedIfs = Set.empty[PC]
+        var confusedIfs = NoPCs
 
         // TOTALLY CONFUSED IF
         // A totally confused "if" is an "if" which is directly succeeded by
@@ -172,7 +171,7 @@ trait BytecodeOptimizer extends MethodsBinding {
         // In this case, we want to ensure that we jump back
         // in case of a jump (if possible...).
         // E.g., ..,IFLT(6),GOTO(6),GOTO(-201),...
-        var totallyConfusedIfs = Set.empty[PC]
+        var totallyConfusedIfs = NoPCs
 
         /*
          * Given the pc of an instruction the final jump target is determined; that is, if the
@@ -180,7 +179,7 @@ trait BytecodeOptimizer extends MethodsBinding {
          * is returned.
          */
         @tailrec def finalJumpTarget(
-            visitedPCs:            IntArraySet, // required to detect jump cycles... yes they exist!
+            visitedPCs:            PCs, // required to detect jump cycles... yes they exist!
             currentPC:             PC,
             effectiveBranchoffset: Int
         ): Int = {
@@ -281,7 +280,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         instructions(pc + 2) = NOP
                         simplified = true
                     } else {
-                        val newBranchoffset = finalJumpTarget(IntArraySet(pc), jumpTargetPC, branchoffset)
+                        val newBranchoffset = finalJumpTarget(IntTrieSet1(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset &&
                             newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                             // let's replace the original jump
@@ -305,7 +304,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         instructions(pc + 4) = NOP
                         simplified = true
                     } else {
-                        val newBranchoffset = finalJumpTarget(IntArraySet(pc), jumpTargetPC, branchoffset)
+                        val newBranchoffset = finalJumpTarget(IntTrieSet1(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset) {
                             jumpTargetInstructions += pc + newBranchoffset
                             if (newBranchoffset >= Short.MinValue &&

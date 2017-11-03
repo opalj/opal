@@ -13,5 +13,5 @@
 
 // 3, 4 →
 5:/*pc=14:*/ /*expression value is ignored:*/new HashMap
-6:/*pc=19:*/ /*expression value is ignored:*/{param1} / {lv2, lv4}
+6:/*pc=19:*/ /*expression value is ignored:*/{param1} / {lv4, lv2}
 // ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception ⇒ abnormal return>

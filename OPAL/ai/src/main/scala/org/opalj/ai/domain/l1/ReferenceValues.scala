@@ -38,9 +38,10 @@ import scala.annotation.tailrec
 
 import java.util.IdentityHashMap
 
+import org.opalj.collection.UID
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IdentityPair
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
@@ -1190,7 +1191,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 MultipleReferenceValues(newValues, newIsNull, newIsPrecise, newUTB, newRefId)
         }
 
-        override def origins: Iterator[ValueOrigin] = values.iterator.map(_.origin)
+        override def origins: IntIterator = {
+            val it = values.iterator
+            new IntIterator {
+                def hasNext: Boolean = it.hasNext
+                def next(): Int = it.next().origin
+            }
+        }
 
         override def baseValues: Traversable[DomainReferenceValue] = values
 
