@@ -162,7 +162,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     property("equals and hashCode with something else") = forAll { e: (IntArraySet, Int) ⇒
         val (ias, max) = e
         val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
-        (bs == new Object) == false
+        bs != new Object
     }
 
     property("mkString") = forAll { (e: (IntArraySet, Int), x: String, y: String, z: String) ⇒

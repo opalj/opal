@@ -279,9 +279,9 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         !evaluated :| "not eagerly evaluated" &&
             news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
             (news.forall(newits.contains) && newits.forall(news.contains)) :| "contains check" &&
-            news.forall(newits.intIterator.contains) :| "IntIterator.contains" &&
+            news.forall(i ⇒ newits.intIterator.contains(i)) :| s"IntIterator.contains $news vs. $newits" &&
             newits.intIterator.forall(news.contains) :| "IntIterator.forall" &&
-            news.forall(newits.iterator.contains) && newits.iterator.forall(news.contains) :| "Iterator[Int]"
+            news.forall(i ⇒ newits.iterator.contains(i)) && newits.iterator.forall(news.contains) :| "Iterator[Int]"
     }
 
 }
