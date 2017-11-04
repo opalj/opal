@@ -36,7 +36,9 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
-import scala.collection.mutable
+
+import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
+
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.immutable.:&:
@@ -888,7 +890,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         var subroutinePCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
         var retPCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
-        val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0) // IMPROVE Use IntTrieSet ??? 
+        // Performs poorly: val nextPCs: mutable.LinkedHashSet[PC] =mutable.LinkedHashSet(0)
+        val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
+        nextPCs.add(0)
 
         def checkAndScheduleNextSubroutine(): Boolean = {
             // When we reach this point "nextPCs" is already empty!
@@ -911,12 +915,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
              */
 
             if (retPCs.nonEmpty) {
-                nextPCs += retPCs.head
+                nextPCs.add(retPCs.head)
                 retPCs = retPCs.tail
                 true
             } else if (subroutinePCs.nonEmpty) {
                 if (subroutinePCs.size == 1) {
-                    nextPCs += subroutinePCs.head;
+                    nextPCs.add(subroutinePCs.head)
                     subroutinePCs = Set.empty
                 } else {
                     // We have to make sure that – before we schedule the evaluation of an
@@ -937,7 +941,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         //if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
                         if (aiResult.domain.dominatorTree.strictlyDominates(c, n)) c else n
                     }
-                    nextPCs += nextSubroutinePC
+                    nextPCs.add(nextSubroutinePC)
                     subroutinePCs -= nextSubroutinePC
                 }
                 true
@@ -946,9 +950,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             }
         }
 
-        while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
-            val currPC = nextPCs.head
-            nextPCs.remove(currPC)
+        while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
+            val currPC = nextPCs.removeFirstInt()
             /*
             println(
                 s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")}; "+
@@ -1009,7 +1012,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             // the subroutines only once
                             subroutinePCs += succPC
                         case RET.opcode ⇒ retPCs += succPC
-                        case _          ⇒ nextPCs += succPC
+                        case _          ⇒ nextPCs.add(succPC)
                     }
                 }
             }
