@@ -886,9 +886,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val subroutineInstructions = aiResult.subroutineInstructions
         val cfJoins = aiResult.cfJoins
 
-        var subroutinePCs: Set[PC] = Set.empty
-        var retPCs: Set[PC] = Set.empty
-        val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
+        var subroutinePCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
+        var retPCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
+        val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0) // IMPROVE Use IntTrieSet ??? 
 
         def checkAndScheduleNextSubroutine(): Boolean = {
             // When we reach this point "nextPCs" is already empty!
@@ -929,11 +929,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     // other subroutines have been completely evaluated.
                     // We check the latter condition using dominace information.
                     val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
-                        // We orignially fixed the above issued using a post-dominance related test
+                        // We originally fixed the above issue using a post-dominance related test
                         // however, due to the complexity related to post-dominator trees for
                         // methods with infinite loops, we are now using the (forwards) dominator
-                        // tree. I.e., we (hopefully) changed the implementation to avoid having to deal
-                        // with some very weird corner cases.
+                        // tree. I.e., we (hopefully) changed the implementation to avoid having to
+                        // deal with some very weird corner cases.
                         //if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
                         if (aiResult.domain.dominatorTree.strictlyDominates(c, n)) c else n
                     }
