@@ -662,7 +662,7 @@ final class ClassFile private (
             if (fieldNameComparison == 0) {
                 var theFields = Chain(field)
                 var d = mid - 1
-                while (low <= d && fields(d).name.equals(name) ) {
+                while (low <= d && fields(d).name.equals(name)) {
                     theFields :&:= fields(d)
                     d -= 1
                 }
