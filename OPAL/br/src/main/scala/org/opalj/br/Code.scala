@@ -214,7 +214,7 @@ final class Code private (
                 next
             }
 
-            def hasNext: Boolean = pc < instructions.size
+            def hasNext: Boolean = pc < instructions.length
         }
     }
 
@@ -226,7 +226,7 @@ final class Code private (
     def instructionsCount: Int = {
         var c = 0
         var pc = 0
-        val max = instructions.size
+        val max = instructions.length
         while (pc < max) {
             c += 1
             pc = pcOfNextInstruction(pc)
