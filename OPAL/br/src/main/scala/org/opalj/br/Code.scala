@@ -1003,7 +1003,7 @@ final class Code private (
      * @return A mapping of the index to the name of the local variable. The map is
      *         empty if no debug information is available.
      */
-    def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
+    def localVariablesAt(pc: PC): Map[Int, LocalVariable] = { // IMRPOVE Use IntMap for the return value.
         localVariableTable match {
             case Some(lvt) ⇒
                 lvt.collect {
