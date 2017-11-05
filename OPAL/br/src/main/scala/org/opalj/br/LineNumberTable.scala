@@ -38,9 +38,9 @@ trait LineNumberTable extends Attribute {
 
     def lineNumbers: LineNumbers
 
-    def lookupLineNumber(pc: PC): Option[Int]
+    def lookupLineNumber(pc: PC): Option[Int] // IMPROVE Define and use IntOption
 
-    def firstLineNumber(): Option[Int]
+    def firstLineNumber(): Option[Int] // IMPROVE Define and use IntOption
 
     override def kindId: Int = LineNumberTable.KindId
 
