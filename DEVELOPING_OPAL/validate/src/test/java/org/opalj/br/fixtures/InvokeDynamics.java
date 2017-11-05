@@ -26,32 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj.br.fixtures;
 
-import java.io.File
+import java.util.concurrent.Callable;
 
-import org.opalj.ba
-import org.opalj.bc.Assembler
-import org.opalj.br.analyses.SomeProject
+/**
+ * Test fixtures for invokedynamic rewriting
+ */
+public class InvokeDynamics {
 
-object ProjectSerializer {
-    // Add main, see HermesCli for arg parsing
+    public int simpleLambdaAdd(int x, int y) throws Exception {
+        Callable<Integer> c = () -> x+y;
 
-    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ) = {
-        // TODO : Overall classfile serialize them to disk
-        // BytecodeCreator Assembler.apply()
-        // Write "wrote all files to ..."
-
-        // TODO: Create small project that uses INVOKEDYNAMIC resolution -> execute project and
-        // test if it works
-        //  Into validate test/scala|java/br/fixtures
-
-        // Java Call Graph for Java project resolution test
-        // Add to test fixtures
-        p.allClassFiles.foreach(classToByte)
-    }
-
-    def classToByte(c: ClassFile): Array[Byte] = {
-        Assembler(ba.toDA(c))
+        return c.call();
     }
 }

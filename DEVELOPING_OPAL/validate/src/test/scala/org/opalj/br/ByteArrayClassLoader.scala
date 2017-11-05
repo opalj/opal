@@ -28,30 +28,27 @@
  */
 package org.opalj.br
 
-import java.io.File
-
-import org.opalj.ba
-import org.opalj.bc.Assembler
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting
 
-object ProjectSerializer {
-    // Add main, see HermesCli for arg parsing
+class ByteArrayClassLoader(project: SomeProject) extends ClassLoader {
 
-    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ) = {
-        // TODO : Overall classfile serialize them to disk
-        // BytecodeCreator Assembler.apply()
-        // Write "wrote all files to ..."
+    project
+        .allClassFiles
+        .filter(_.thisType.toJava.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx))
+        .foreach { c ⇒
+            try {
+                resolveClass(findClass(c))
+            } catch {
+                case _: Any ⇒ // Can be ignored
+            }
+        }
 
-        // TODO: Create small project that uses INVOKEDYNAMIC resolution -> execute project and
-        // test if it works
-        //  Into validate test/scala|java/br/fixtures
+    def findClass(classFile: ClassFile): Class[_] = {
+        val ba = ProjectSerializer.classToByte(
+            classFile
+        )
 
-        // Java Call Graph for Java project resolution test
-        // Add to test fixtures
-        p.allClassFiles.foreach(classToByte)
-    }
-
-    def classToByte(c: ClassFile): Array[Byte] = {
-        Assembler(ba.toDA(c))
+        defineClass(classFile.thisType.toJava, ba, 0, ba.length)
     }
 }

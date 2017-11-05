@@ -26,32 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj.br.invokedynamicrewriting
 
-import java.io.File
+import org.opalj.br.{FixturesTest, ObjectType}
 
-import org.opalj.ba
-import org.opalj.bc.Assembler
-import org.opalj.br.analyses.SomeProject
+class SimpleLambdaAddTest extends FixturesTest {
+    describe("a simple lambda add") {
+        it("should calculate 2+2 correctly") {
+            val ot = FixtureProject.classFile(ObjectType("org/opalj/br/fixtures/InvokeDynamics"))
+            val c = byteArrayClassLoader.findClass(ot.get)
+            val instance = c.newInstance()
+            val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
+            val res = m.invoke(instance, new Integer(2), new Integer(2))
 
-object ProjectSerializer {
-    // Add main, see HermesCli for arg parsing
-
-    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ) = {
-        // TODO : Overall classfile serialize them to disk
-        // BytecodeCreator Assembler.apply()
-        // Write "wrote all files to ..."
-
-        // TODO: Create small project that uses INVOKEDYNAMIC resolution -> execute project and
-        // test if it works
-        //  Into validate test/scala|java/br/fixtures
-
-        // Java Call Graph for Java project resolution test
-        // Add to test fixtures
-        p.allClassFiles.foreach(classToByte)
-    }
-
-    def classToByte(c: ClassFile): Array[Byte] = {
-        Assembler(ba.toDA(c))
+            assert(res.asInstanceOf[Integer] == 4)
+        }
     }
 }

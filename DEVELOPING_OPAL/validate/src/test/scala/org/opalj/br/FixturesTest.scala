@@ -29,29 +29,43 @@
 package org.opalj.br
 
 import java.io.File
+import java.net.URL
 
-import org.opalj.ba
-import org.opalj.bc.Assembler
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.Java8LambdaExpressionsRewriting
+import org.opalj.bytecode.RTJar
+import org.opalj.util.ScalaMajorVersion
+import org.scalatest.{FunSpec, Matchers}
 
-object ProjectSerializer {
-    // Add main, see HermesCli for arg parsing
+/**
+ * Simple trait for creating an OPAL project to test br fixtures.
+ *
+ * @author Andreas Muttscheller
+ */
+trait FixturesTest extends FunSpec with Matchers {
 
-    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ) = {
-        // TODO : Overall classfile serialize them to disk
-        // BytecodeCreator Assembler.apply()
-        // Write "wrote all files to ..."
+    final val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
 
-        // TODO: Create small project that uses INVOKEDYNAMIC resolution -> execute project and
-        // test if it works
-        //  Into validate test/scala|java/br/fixtures
+    final val FixtureProject: Project[URL] = {
+        val classFileReader = Project.JavaClassFileReader()
+        import classFileReader.ClassFiles
+        val fixtureClassFiles = ClassFiles(fixtureFiles)
 
-        // Java Call Graph for Java project resolution test
-        // Add to test fixtures
-        p.allClassFiles.foreach(classToByte)
+        val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
+            val (cf, _) = cfSrc
+            cf.thisType.packageName.startsWith("org/opalj/br/fixture") ||
+                cf.thisType.toJava.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
+        }
+
+        val libraryClassFiles = ClassFiles(RTJar)
+
+        info(s"the test fixture project consists of ${projectClassFiles.size} class files")
+        Project(
+            projectClassFiles,
+            libraryClassFiles,
+            libraryClassFilesAreInterfacesOnly = false
+        )
     }
 
-    def classToByte(c: ClassFile): Array[Byte] = {
-        Assembler(ba.toDA(c))
-    }
+    final val byteArrayClassLoader = new ByteArrayClassLoader(FixtureProject)
 }
