@@ -381,6 +381,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             potentialExceptions: ExceptionValues
         ): ArrayLoadResult
 
+        def isIndexValid(pc: PC, index: DomainValue): Answer =
+            length.map { l: Int ⇒
+                intIsSomeValueNotInRange(pc, index, 0, l - 1) match {
+                    case No ⇒ Yes
+                    case Yes ⇒
+                        intIsSomeValueInRange(pc, index, 0, l - 1) match {
+                            case No                  ⇒ No
+                            case _ /*Yes | Unknown*/ ⇒ Unknown
+                        }
+                    case Unknown ⇒ Unknown
+                }
+            }.getOrElse(if (intIsLessThan0(pc, index).isYes) No else Unknown)
+
         /**
          * @note It is in general not necessary to override this method. If you need some
          *      special handling if a value is loaded from an array, override the method
@@ -389,15 +402,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class.
-
-            val isIndexValid =
-                length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
-                    getOrElse {
-                        if (intIsLessThan0(pc, index).isYes)
-                            No
-                        else
-                            Unknown // the index may be too large...
-                    }
+            val isIndexValid = this.isIndexValid(pc, index)
             if (isIndexValid.isNo)
                 return justThrows(VMArrayIndexOutOfBoundsException(pc));
 
@@ -433,15 +438,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             // @note
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class
-
-            val isIndexValid =
-                length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
-                    getOrElse(
-                        if (intIsLessThan0(pc, index).isYes)
-                            No
-                        else
-                            Unknown
-                    )
+            val isIndexValid = this.isIndexValid(pc, index)
             if (isIndexValid.isNo)
                 return justThrows(VMArrayIndexOutOfBoundsException(pc))
 
