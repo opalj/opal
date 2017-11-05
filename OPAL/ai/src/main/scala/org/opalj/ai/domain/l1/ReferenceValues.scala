@@ -1692,8 +1692,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
-            assert(upperTypeBound.isSingletonSet, "no array type: "+this.upperTypeBound)
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
+            assert(upperTypeBound.isSingletonSet, s"$upperTypeBound is not an array type")
+            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
@@ -1714,7 +1714,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 return justThrows(VMNullPointerException(pc));
 
             assert(upperTypeBound.isSingletonSet)
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
+            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
