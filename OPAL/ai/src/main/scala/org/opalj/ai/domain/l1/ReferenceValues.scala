@@ -133,11 +133,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     def nextRefId(): RefId = { unusedRefId += 1; unusedRefId }
 
     /**
-     * Extractor for reference ids.
-     */
-    object RefId { def unapply(value: ReferenceValue): Some[RefId] = Some(value.refId) }
-
-    /**
      * Creates an update object that characterizes a reference id update.
      *
      * Basically, just a wrapper for a `MetaInformationUpdate`; the purpose is to
