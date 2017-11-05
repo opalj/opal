@@ -53,7 +53,12 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
         )
     }
 
-    override def isRelevant(p: SomeProject, as: Set[ObjectType], a: AnnotationLike): Boolean = {
+    override def isRelevant(
+        p:      SomeProject,
+        as:     Set[ObjectType],
+        entity: Object,
+        a:      AnnotationLike
+    ): Boolean = {
         as.exists(SupportedAnalyses.contains)
     }
 

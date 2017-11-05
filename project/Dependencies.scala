@@ -52,6 +52,7 @@ object Dependencies {
         val txtmark = "0.16"
         val jacksonDF = "2.9.2"
         val chocosolver = "4.0.5"
+        val fastutil = "8.1.0"
     }
 
     lazy val library = new {
@@ -75,11 +76,11 @@ object Dependencies {
         // --- developer tools dependencies
 
         val scalafx = "org.scalafx" %% "scalafx" % version.scalafx withSources () withJavadoc ()
-        val controlsfx = "org.controlsfx" % "controlsfx" % version.controlsfx withJavadoc ()
-        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withJavadoc ()
+        val controlsfx = "org.controlsfx" % "controlsfx" % version.controlsfx withSources () withJavadoc ()
+        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withSources () withJavadoc ()
         val jacksonDF = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withJavadoc ()
         val chocosolver = "org.choco-solver" % "choco-solver" % version.chocosolver withSources () withJavadoc ()
-
+        val fastutil = "it.unimi.dsi" % "fastutil" % version.fastutil withSources () withJavadoc ()
     }
 
     import library._
@@ -88,7 +89,7 @@ object Dependencies {
 
     def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus)
     val bi = Seq(commonstext)
-    val br = Seq(scalaparsercombinators)
+    val br = Seq(scalaparsercombinators, fastutil)
     val developertools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
 
 }

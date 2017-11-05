@@ -30,6 +30,8 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * A (standard) dominator tree.
@@ -186,7 +188,7 @@ object DominatorTree {
         val vertex = new Array[Int](max + 1)
         val label = new Array[Int](max)
         val semi = new Array[Int](max)
-        val bucket = new Array[Set[Int]](max)
+        val bucket = new Array[IntTrieSet](max)
 
         // helper data-structure to resolve recursive methods
         val vertexStack = new IntArrayStack(initialSize = Math.max(2, (max / 4)))
@@ -275,7 +277,7 @@ object DominatorTree {
 
             val v = vertex(semi(w))
             val b = bucket(v)
-            bucket(v) = if (b ne null) { b + w } else { Set(w) }
+            bucket(v) = if (b ne null) { b + w } else { new IntTrieSet1(w) }
 
             ancestor(w) = parent(w)
 

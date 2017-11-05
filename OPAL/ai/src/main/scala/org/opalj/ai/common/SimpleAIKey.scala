@@ -53,8 +53,8 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  *  )
  * }}}
  *
- * @note To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
- *          pass in `this` object.
+ * @note   To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
+ *         pass in `this` object.
  *
  * @author Michael Eichberg
  */

@@ -146,7 +146,16 @@ object OPALLogger extends OPALLogger {
 
     def isUnregistered(ctx: LogContext): Boolean = this.synchronized { ctx.id == -2 }
 
-    def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
+    def logger(ctx: LogContext): OPALLogger = {
+        val ctxId = ctx.id
+        if (ctxId == -2) {
+            if (GlobalLogContext eq ctx)
+                throw new UnknownError("the global log context was unregistered")
+            else
+                throw new IllegalArgumentException(s"the log context $ctx is already unregistered")
+        }
+        this.synchronized { loggers(ctxId) }
+    }
 
     def globalLogger(): OPALLogger = this.synchronized { loggers(GlobalLogContext.id) }
 

@@ -91,6 +91,9 @@ final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodD
     final def computationalType = ComputationalTypeReference
 }
 
+/**
+ * @note To match [[LoadString]] and [[LoadString_W]] instructions you can use [[LDCString]].
+ */
 final case class LoadString_W(value: String) extends LDC_W[String] {
     final def computationalType = ComputationalTypeReference
 }

@@ -49,7 +49,7 @@ lazy val buildSettings = Defaults.coreDefaultSettings ++
 
 val resGenerator = taskKey[Seq[java.io.File]]("write version file")
 resGenerator in ui := {
-	val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
+	val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.12" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
 	versionFile.getParentFile.mkdirs()
 	IO.write(versionFile, (version in Compile).value)
 	Seq(versionFile)

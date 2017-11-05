@@ -90,7 +90,11 @@ object SizeOfInheritanceTree extends FeatureQuery {
 
         projectConfiguration.addStatistic(
             "⟨SizeOfInheritanceTree⟩",
-            sumOfSizeOfInheritanceTrees.toDouble / classCount.toDouble
+            if (classCount != 0) {
+                sumOfSizeOfInheritanceTrees.toDouble / classCount.toDouble
+            } else {
+                0D
+            }
         )
 
         for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {

@@ -31,10 +31,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-
 import org.opalj.br.ArrayType
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
@@ -383,6 +381,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             potentialExceptions: ExceptionValues
         ): ArrayLoadResult
 
+        def isIndexValid(pc: PC, index: DomainValue): Answer =
+            length.map { l: Int ⇒
+                intIsSomeValueNotInRange(pc, index, 0, l - 1) match {
+                    case No ⇒ Yes
+                    case Yes ⇒
+                        intIsSomeValueInRange(pc, index, 0, l - 1) match {
+                            case No                  ⇒ No
+                            case _ /*Yes | Unknown*/ ⇒ Unknown
+                        }
+                    case Unknown ⇒ Unknown
+                }
+            }.getOrElse(if (intIsLessThan0(pc, index).isYes) No else Unknown)
+
         /**
          * @note It is in general not necessary to override this method. If you need some
          *      special handling if a value is loaded from an array, override the method
@@ -391,17 +402,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class.
-
-            val isIndexValid =
-                length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
-                    getOrElse {
-                        if (intIsLessThan0(pc, index).isYes)
-                            No
-                        else
-                            Unknown // the index may be too large...
-                    }
+            val isIndexValid = this.isIndexValid(pc, index)
             if (isIndexValid.isNo)
-                return justThrows(VMArrayIndexOutOfBoundsException(pc))
+                return justThrows(VMArrayIndexOutOfBoundsException(pc));
 
             var thrownExceptions: List[ExceptionValue] = Nil
             if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
@@ -435,15 +438,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             // @note
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class
-
-            val isIndexValid =
-                length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
-                    getOrElse(
-                        if (intIsLessThan0(pc, index).isYes)
-                            No
-                        else
-                            Unknown
-                    )
+            val isIndexValid = this.isIndexValid(pc, index)
             if (isIndexValid.isNo)
                 return justThrows(VMArrayIndexOutOfBoundsException(pc))
 
@@ -465,7 +460,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         /**
          * Returns the length of this array, if this information is available.
          */
-        def length: Option[Int] = None
+        def length: Option[Int] = None // IMPROVE Define and use IntOption
 
         final def doGetLength(pc: PC): DomainValue = {
             length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
@@ -724,7 +719,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
     override def NullValue(pc: PC): DomainNullValue
 
-    override def ReferenceValue(
+    final override def ReferenceValue(
         pc:             PC,
         upperTypeBound: ReferenceType
     ): AReferenceValue = {
@@ -754,17 +749,30 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         ObjectValue(pc, ObjectType.Class)
     }
 
-    override def InitializedArrayValue(
-        pc:        PC,
-        arrayType: ArrayType,
-        counts:    Chain[Int]
-    ): DomainArrayValue = {
-        ArrayValue(pc, arrayType)
-    }
-
     //
     // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS
     //
+
+    /**
+     * Creates a new `DomainValue` that represents an array value with unknown
+     * values and where the specified type may also just be an upper type bound
+     * (unless the component type is a primitive type or an array of primitives.)
+     *
+     * ==Typical Usage==
+     * This factory method is (typically) used to create a domain value that represents
+     * an array if we know nothing specific about the array. E.g., if you want to
+     * analyze a method that takes an array as a parameter.
+     *
+     * ==Summary==
+     * The properties of the value are:
+     *  - Type: '''Upper Bound''' (unless the elementType is a base type)
+     *  - Null: '''Unknown'''
+     *  - Size: '''Unknown'''
+     *  - Content: '''Unknown'''
+     *
+     * @note Java's arrays are co-variant. I.e., `Object[] a = new Serializable[100];` is valid.
+     */
+    def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either an class-/interface
@@ -839,27 +847,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
     }
-
-    /**
-     * Creates a new `DomainValue` that represents an array value with unknown
-     * values and where the specified type may also just be an upper type bound
-     * (unless the component type is a primitive type or an array of primitives.)
-     *
-     * ==Typical Usage==
-     * This factory method is (typically) used to create a domain value that represents
-     * an array if we know nothing specific about the array. E.g., if you want to
-     * analyze a method that takes an array as a parameter.
-     *
-     * ==Summary==
-     * The properties of the value are:
-     *  - Type: '''Upper Bound''' (unless the elementType is a base type)
-     *  - Null: '''Unknown'''
-     *  - Size: '''Unknown'''
-     *  - Content: '''Unknown'''
-     *
-     * @note Java's arrays are co-variant. I.e., `Object[] a = new Serializable[100];` is valid.
-     */
-    protected def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
 
     // -----------------------------------------------------------------------------------
     //

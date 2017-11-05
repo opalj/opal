@@ -31,7 +31,10 @@ package collection
 package mutable
 
 import scala.reflect.ClassTag
+
 import java.util.Arrays
+
+import scala.collection.AbstractIterator
 
 /**
  * Conceptually, a map where the keys are positive `Int` values and the values are
@@ -88,7 +91,6 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
             if (entry ne null)
                 return entry;
         }
-
         f
     }
 
@@ -164,11 +166,11 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         true
     }
 
-    def values: Iterator[T] = data.iterator.filter(_ ne null)
+    def valuesIterator: Iterator[T] = data.iterator.filter(_ ne null)
 
     def entries: Iterator[(Int, T)] = {
 
-        new Iterator[(Int, T)] {
+        new AbstractIterator[(Int, T)] {
 
             private[this] def getNextIndex(startIndex: Int): Int = {
                 val data = self.data

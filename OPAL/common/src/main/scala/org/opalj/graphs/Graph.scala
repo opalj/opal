@@ -37,6 +37,8 @@ import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
 import scala.collection.mutable.HashMap
 import scala.collection.{Map ⇒ AMap}
+
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 
@@ -120,10 +122,10 @@ class Graph[@specialized(Int) N: ClassTag] private (
             indexToN(index) = n
             nToIndex += e
         }
-        val es: Int ⇒ Iterator[Int] = (index: Int) ⇒ {
+        val es: Int ⇒ IntIterator = (index: Int) ⇒ {
             successors.get(indexToN(index)) match {
-                case Some(successors) ⇒ successors.toIterator.map(nToIndex)
-                case None             ⇒ Iterator.empty
+                case Some(successors) ⇒ successors.mapToIntIterator(nToIndex)
+                case None             ⇒ IntIterator.empty
             }
         }
 

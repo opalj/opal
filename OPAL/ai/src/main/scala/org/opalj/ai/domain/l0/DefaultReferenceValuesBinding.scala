@@ -84,10 +84,7 @@ trait DefaultReferenceValuesBinding
             new MObjectValue(upperTypeBound)
     }
 
-    override protected[domain] def ArrayValue(
-        origin:    ValueOrigin,
-        arrayType: ArrayType
-    ): DomainArrayValue = {
+    override def ArrayValue(origin: ValueOrigin, arrayType: ArrayType): DomainArrayValue = {
         new ArrayValue(arrayType)
     }
 
