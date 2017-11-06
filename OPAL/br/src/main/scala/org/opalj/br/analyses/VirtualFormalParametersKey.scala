@@ -35,7 +35,6 @@ import scala.collection.JavaConverters._
 import org.opalj.collection.immutable.ConstArray
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import org.opalj.log.OPALLogger.error
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -83,7 +82,6 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      *       analysis in isolation.
      */
     override protected def compute(p: SomeProject): VirtualFormalParameters = {
-        implicit val logContext = p.logContext
 
         val sites = new ConcurrentLinkedQueue[(VirtualMethod, ConstArray[VirtualFormalParameter])]
 
