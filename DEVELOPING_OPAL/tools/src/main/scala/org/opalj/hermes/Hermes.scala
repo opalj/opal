@@ -34,6 +34,7 @@ import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.prefs.Preferences
+import java.util.Comparator
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -366,6 +367,9 @@ object Hermes extends JFXApp with HermesCore {
     }
 
     var primitiveFeatureIndex = 0
+    val featureComparator = new Comparator[Feature[URL]] {
+        def compare(f1: Feature[URL], f2: Feature[URL]): Int = f1.count - f2.count
+    }
     val featureQueryColumns = featureQueries.zipWithIndex map { fqi ⇒
         val (fq, featureQueryIndex) = fqi
         val featureQueryColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]()
@@ -409,6 +413,7 @@ object Hermes extends JFXApp with HermesCore {
                     featureColumn.visible = true
                 }
             }
+            featureColumn.setComparator(featureComparator)
             featureColumn.setPrefWidth(70.0d)
             featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
             featureColumn.cellFactory = { (_) ⇒

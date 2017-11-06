@@ -57,7 +57,7 @@ class DefaultDomain[Source](
     // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
     // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
     with l1.DefaultClassValuesBinding
-    // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+    with l1.DefaultArrayValuesBinding // OPTIONAL (Tracks the length of arrays in common cases)
     with l1.MaxArrayLengthRefinement // OPTIONAL
     with l1.NullPropertyRefinement // OPTIONAL
     with l1.DefaultIntegerRangeValues
@@ -83,5 +83,6 @@ class DefaultDomainWithCFG[Source](
 class DefaultDomainWithCFGAndDefUse[Source](
         project: Project[Source],
         method:  Method
-) extends DefaultDomainWithCFG[Source](project, method) with RecordDefUse
-// IMPROVE Consider mixing in RefineDefUseUsingOrigins - it should improve the performance if the origin information is "easily" available!
+) extends DefaultDomainWithCFG[Source](project, method)
+    with RecordDefUse
+// Using with RefineDefUseUsingOrigins hampers the performance by roughly 7%

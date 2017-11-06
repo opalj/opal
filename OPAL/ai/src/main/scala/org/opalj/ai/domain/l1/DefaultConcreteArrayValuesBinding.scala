@@ -31,28 +31,32 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
+
+import org.opalj.br.ArrayType
+
 /**
- * In case that the arraylength is just an integer value, the value is refined to the
- * range [0...Int.MaxValue].
- *
  * @author Michael Eichberg
  */
-trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
-    domain: Domain with IntegerRangeValues with TheClassHierarchy ⇒
+trait DefaultConcreteArrayValuesBinding
+    extends DefaultArrayValuesBinding
+    with ConcreteArrayValues {
+    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy with LogContextProvider ⇒
 
-    abstract override def arraylength(
-        pc:       PC,
-        arrayref: DomainValue
-    ): Computation[DomainValue, ExceptionValue] = {
-        val length = super.arraylength(pc, arrayref)
-        if (length.hasResult) {
-            length.result match {
-                case _: AnIntegerValue ⇒ length.updateResult(IntegerRange(0, Int.MaxValue))
-                case _                 ⇒ length
-            }
-        } else {
-            // if the array is null..
-            length
-        }
+    type DomainConcreteArrayValue = ConcreteArrayValue
+    final val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue] = implicitly
+
+    //
+    // FACTORY METHODS
+    //
+
+    override def ArrayValue(
+        origin:  ValueOrigin,
+        theType: ArrayType,
+        values:  Array[DomainValue],
+        refId:   RefId
+    ): DomainConcreteArrayValue = {
+        new ConcreteArrayValue(origin, theType, values, refId)
     }
+
 }

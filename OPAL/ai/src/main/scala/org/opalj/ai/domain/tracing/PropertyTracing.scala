@@ -48,9 +48,7 @@ import org.opalj.br._
  */
 trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization { domain: Domain ⇒
 
-    trait Property {
-        def join(otherProperty: DomainProperty): Update[DomainProperty]
-    }
+    trait Property { def join(otherProperty: DomainProperty): Update[DomainProperty] }
 
     type DomainProperty <: Property
 

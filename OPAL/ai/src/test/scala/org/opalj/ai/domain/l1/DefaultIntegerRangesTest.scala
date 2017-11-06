@@ -36,7 +36,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
@@ -3432,7 +3431,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
-                    domain.InitializedArrayValue(2, ArrayType(IntegerType), Chain(10))
+                    domain.InitializedArrayValue(2, ArrayType(IntegerType), 10)
                 ) should be(true)
 
                 // get the loop counter at the "icmple instruction" which controls the
@@ -3665,7 +3664,7 @@ class DefaultIntegerRangesTestDomain(
     with l0.DefaultTypeLevelLongValues
     with l0.DefaultTypeLevelFloatValues
     with l0.DefaultTypeLevelDoubleValues
-    with l0.DefaultReferenceValuesBinding
+    with l1.DefaultArrayValuesBinding
     with l0.TypeLevelFieldAccessInstructions
     with l0.SimpleTypeLevelInvokeInstructions
     with l1.DefaultIntegerRangeValues // <----- The one we are going to test

@@ -214,7 +214,7 @@ final class Code private (
                 next
             }
 
-            def hasNext: Boolean = pc < instructions.size
+            def hasNext: Boolean = pc < instructions.length
         }
     }
 
@@ -226,7 +226,7 @@ final class Code private (
     def instructionsCount: Int = {
         var c = 0
         var pc = 0
-        val max = instructions.size
+        val max = instructions.length
         while (pc < max) {
             c += 1
             pc = pcOfNextInstruction(pc)
@@ -1003,7 +1003,7 @@ final class Code private (
      * @return A mapping of the index to the name of the local variable. The map is
      *         empty if no debug information is available.
      */
-    def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
+    def localVariablesAt(pc: PC): Map[Int, LocalVariable] = { // IMRPOVE Use IntMap for the return value.
         localVariableTable match {
             case Some(lvt) ⇒
                 lvt.collect {

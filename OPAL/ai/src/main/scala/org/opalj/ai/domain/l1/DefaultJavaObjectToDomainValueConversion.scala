@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 
@@ -45,9 +44,8 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
     domain: ReferenceValuesDomain ⇒
 
     /**
-     * Converts the given Java object to a corresponding
-     * `DomainValue`. By creating an `DomainValue` that represents an initialized
-     * (array/object) value.
+     * Converts the given Java object to a corresponding `DomainValue` by creating an `DomainValue`
+     * that represents an initialized (array/object) value.
      */
     override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
         if (value eq null)
@@ -56,12 +54,14 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
         val clazz = value.getClass
         val fqnInBinaryNotation = clazz.getName.replace('.', '/')
         if (clazz.isArray) {
+            val arrayType = FieldType(fqnInBinaryNotation).asArrayType
             val array: Array[_] = value.asInstanceOf[Array[_]]
-            InitializedArrayValue(
-                pc,
-                FieldType(fqnInBinaryNotation).asArrayType,
-                Chain(array.length)
-            )
+            this match {
+                case rv: ArrayValues ⇒
+                    val domainValue = rv.InitializedArrayValue(pc, arrayType, array.length)
+                    domainValue.asInstanceOf[domain.DomainReferenceValue]
+                case _ ⇒ ReferenceValue(pc, arrayType)
+            }
         } else /*if (!clazz.isPrimitive()) */ {
             InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
         }

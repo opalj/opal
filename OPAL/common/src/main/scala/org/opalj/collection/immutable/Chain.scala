@@ -31,6 +31,7 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
+
 import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
 import scala.collection.AbstractIterator
@@ -566,6 +567,10 @@ sealed trait Chain[@specialized(Int) +T]
 
     def toIntArraySet(implicit ev: T <:< Int): IntArraySet = {
         foldLeft(new IntArraySetBuilder())(_ += _).result()
+    }
+
+    def toIntTrieSet(implicit ev: T <:< Int): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
     }
 
     def toStream: Stream[T] = toTraversable.toStream
