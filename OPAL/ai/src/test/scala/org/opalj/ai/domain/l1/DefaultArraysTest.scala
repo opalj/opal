@@ -32,14 +32,16 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
 import org.opalj.collection.immutable.Chain
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.{ArrayType, ObjectType}
-import org.opalj.br.{ByteType, IntegerType, ShortType}
-import org.opalj.br.{DoubleType, FloatType, LongType}
+import org.opalj.br.{ObjectType, ArrayType}
+import org.opalj.br.{IntegerType, ByteType, ShortType}
+import org.opalj.br.{LongType, FloatType, DoubleType}
 import org.opalj.br.{BooleanType, CharType}
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
