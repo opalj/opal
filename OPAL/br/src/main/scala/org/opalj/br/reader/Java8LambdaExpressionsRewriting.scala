@@ -118,7 +118,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
-        s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
+        s"${surroundingType.packageName}/Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -130,7 +130,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
-        val updatedClassFile =
+        var updatedClassFile =
             super.deferredInvokedynamicResolution(
                 classFile,
                 cp,
@@ -141,6 +141,25 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         if (!performJava8LambdaExpressionsRewriting)
             return updatedClassFile;
+
+        // We have to rewrite the synthetic lambda methods to be accessible from the same package.
+        // This is necessary, because the java / scala compiler introduces a private synthetic
+        // method which handles primitive type handling. Since the new proxyclass is a different
+        // class, we have to make the synthetic method accessible from the proxy class.
+        val syntheticLambdaMethods: IndexedSeq[Method] = classFile.methods
+            .filter(x ⇒ bi.ACC_SYNTHETIC.isSet(x.accessFlags))
+            .filter(x ⇒ bi.ACC_PRIVATE.isSet(x.accessFlags))
+            .filter(_.name.startsWith("lambda$"))
+
+        // No access modifier means package private
+        val syntheticLambdaMethodAccessFlags =
+            bi.ACC_SYNTHETIC.mask | bi.ACC_FINAL.mask | bi.ACC_STATIC.mask
+
+        updatedClassFile = updatedClassFile.copy(
+            methods = syntheticLambdaMethods
+                .map(_.copy(accessFlags = syntheticLambdaMethodAccessFlags)) ++
+                updatedClassFile.methods.filterNot(syntheticLambdaMethods.contains(_)).map(_.copy())
+        )
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
@@ -307,7 +326,6 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
-            // ObjectType(newLambdaTypeName(targetMethodOwner)),
             ObjectType(newLambdaTypeName(classFile.thisType)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
@@ -511,9 +529,7 @@ object Java8LambdaExpressionsRewriting {
 
     final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
-    final val LambdaNameRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
-
-    final val LambdaDeserializeNameRegEx = "^LambdaDeserialize\\$[0-9a-f]+:[0-9a-f]+$"
+    final val LambdaNameRegEx = "Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
     final val Java8LambdaExpressionsConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."

@@ -33,9 +33,11 @@ import org.opalj.br.reader.Java8LambdaExpressionsRewriting
 
 class ByteArrayClassLoader(project: SomeProject) extends ClassLoader {
 
+    val lambdaRegex = Java8LambdaExpressionsRewriting.LambdaNameRegEx.r
+
     project
         .allClassFiles
-        .filter(_.thisType.toJava.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx))
+        .filter(c ⇒ lambdaRegex.findFirstIn(c.thisType.toJava).isDefined)
         .foreach { c ⇒
             try {
                 resolveClass(findClass(c))

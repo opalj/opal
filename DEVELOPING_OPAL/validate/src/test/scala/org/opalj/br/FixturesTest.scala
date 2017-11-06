@@ -32,7 +32,6 @@ import java.io.File
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting
 import org.opalj.bytecode.RTJar
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.{FunSpec, Matchers}
@@ -53,8 +52,7 @@ trait FixturesTest extends FunSpec with Matchers {
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
             val (cf, _) = cfSrc
-            cf.thisType.packageName.startsWith("org/opalj/br/fixture") ||
-                cf.thisType.toJava.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
+            cf.thisType.packageName.startsWith("org/opalj/br/fixture")
         }
 
         val libraryClassFiles = ClassFiles(RTJar)
