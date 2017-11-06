@@ -33,6 +33,7 @@ import scala.collection.AbstractIterator
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.EmptyIntTrieSet
 
 /**
@@ -158,6 +159,10 @@ trait IntIterator { self ⇒
         s
     }
 
+    /**
+     * Copies all elements to a target array of the given size. The size has to be
+     * at least the size of elements of this iterator.
+     */
     private[opalj] def toArray(size: Int): Array[Int] = {
         val as = new Array[Int](size)
         var i = 0
@@ -206,6 +211,7 @@ object IntIterator {
         def hasNext: Boolean = false
         def next(): Nothing = throw new UnsupportedOperationException
         override def toArray: Array[Int] = new Array[Int](0)
+        override def toSet: IntTrieSet = EmptyIntTrieSet
     }
 
     def apply(i: Int): IntIterator = new IntIterator {
@@ -213,6 +219,7 @@ object IntIterator {
         def hasNext: Boolean = !returned
         def next(): Int = { returned = true; i }
         override def toArray: Array[Int] = { val as = new Array[Int](1); as(0) = i; as }
+        override def toSet: IntTrieSet = new IntTrieSet1(i)
     }
 
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {
@@ -225,6 +232,7 @@ object IntIterator {
             as(1) = i2
             as
         }
+        override def toSet: IntTrieSet = IntTrieSet(i1, i2)
     }
 
     def apply(i1: Int, i2: Int, i3: Int): IntIterator = new IntIterator {
@@ -238,5 +246,7 @@ object IntIterator {
             as(2) = i3
             as
         }
+        override def toSet: IntTrieSet = IntTrieSet(i1, i2, i3)
     }
+
 }
