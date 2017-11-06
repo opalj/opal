@@ -87,36 +87,29 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
 
         val sites = new ConcurrentLinkedQueue[(VirtualMethod, ConstArray[VirtualFormalParameter])]
 
-        val errors = p.parForeachClassFile() { cf ⇒
-            for {
-                // all instance methods present in the current class file, including methods derived
-                // from any supertype that are not overriden by this type.
-                mc ← p.instanceMethods(cf.thisType)
-                m = mc.method
-                md = m.descriptor
-                vm = VirtualForwardingMethod(cf.thisType, m.name, md, m)
-                parametersCount = md.parametersCount
-            } {
-                val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
-                assert(!m.isStatic)
-                formalParameters(0) = new VirtualFormalParameter(vm, -1)
+        for {
+            vm ← p.get(VirtualForwardingMethodsKey).par
+            md = vm.descriptor
+            parametersCount = md.parametersCount
+        } {
+            val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
+            assert(!vm.target.isStatic)
+            formalParameters(0) = new VirtualFormalParameter(vm, -1)
 
-                var p = 1
-                while (p <= parametersCount) {
-                    formalParameters(p) = new VirtualFormalParameter(vm, -p - 1)
-                    p += 1
-                }
-                sites.add(vm → ConstArray(formalParameters))
+            var p = 1
+            while (p <= parametersCount) {
+                formalParameters(p) = new VirtualFormalParameter(vm, -p - 1)
+                p += 1
             }
+            sites.add(vm → ConstArray(formalParameters))
         }
-        errors.foreach { e ⇒ error("virtual formal parameters", "collecting virtual formal parameters failed", e) }
 
         new VirtualFormalParameters(sites.asScala.toMap)
     }
 
     //
     // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD VIRTUAL FORMAL PARAMETERS TO A
-    // PROPERTYSTORE AND TO ENSURE THAT FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME
+    // PROPERTYSTORE AND TO ENSURE THAT VIRTUAL FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME
     // OBJECTS!
     //
     final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], VirtualFormalParameters) = {
