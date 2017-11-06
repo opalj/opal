@@ -29,10 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.Type
 import org.opalj.br.ReferenceType
-import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
@@ -79,30 +77,6 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *  - Content: '''Unknown'''
      */
     def ReferenceValue(origin: ValueOrigin, referenceType: ReferenceType): DomainReferenceValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents ''an array''
-     * that was successfully created and which has the given type.
-     *
-     * The domain may ignore the information about the origin (`pc`) and
-     * the precise size of each dimension.
-     *
-     * ==Summary==
-     * The properties of the domain value are:
-     *  - Type: '''Precise'''
-     *  - Null: '''No'''
-     *  - Content: '''Unknown'''
-     *
-     * @param   origin Information about the origin of the value.
-     * @param   counts The size of each dimension if available. `counts` may not be empty but
-     *          may not contain information about all dimensions; the
-     *          following condition always has to hold: `counts.length <= arrayType.dimensions`.
-     */
-    def InitializedArrayValue(
-        origin:    ValueOrigin,
-        arrayType: ArrayType,
-        counts:    Chain[Int]
-    ): DomainReferenceValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.

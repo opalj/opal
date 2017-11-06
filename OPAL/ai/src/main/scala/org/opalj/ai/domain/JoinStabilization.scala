@@ -121,7 +121,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
         AnyRefMap.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
     }
 
-    /* NOT "abstract override" - this trait is by purpose not stackable! */
+    /** Classes overriding this method generally have to call it! */
     override protected[this] def joinValues(
         pc:   PC,
         left: DomainValue, right: DomainValue
@@ -130,7 +130,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
         joinedValues.getOrElseUpdate(key, super.joinValues(pc, left, right))
     }
 
-    /* NOT "abstract override" - this trait is by purpose not stackable! */
+    /** Classes overriding this method generally have to call it! */
     override protected[this] def afterBaseJoin(pc: PC): Unit = {
         super.afterBaseJoin(pc)
         joinedValues.clear()

@@ -33,58 +33,28 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.br.ArrayType
 
 /**
  * @author Michael Eichberg
  */
-trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with ArrayValues {
-    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with TheClassHierarchy with LogContextProvider ⇒
+trait DefaultArrayValuesBinding extends DefaultReferenceValuesBinding with ArrayValues {
+    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy ⇒
 
     type DomainInitializedArrayValue = InitializedArrayValue
     final val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue] = implicitly
-
-    type DomainConcreteArrayValue = ConcreteArrayValue
-    final val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue] = implicitly
 
     //
     // FACTORY METHODS
     //
 
-    final override def ArrayValue(
-        origin:  ValueOrigin,
-        theType: ArrayType,
-        values:  Array[DomainValue]
-    ): DomainConcreteArrayValue = {
-        ArrayValue(origin, theType, values, nextRefId())
-    }
-
-    override def ArrayValue(
-        origin:  ValueOrigin,
-        theType: ArrayType,
-        values:  Array[DomainValue],
-        refId:   RefId
-    ): DomainConcreteArrayValue = {
-        new ConcreteArrayValue(origin, theType, values, refId)
-    }
-
-    final override def InitializedArrayValue(
-        origin:    ValueOrigin,
-        arrayType: ArrayType,
-        counts:    Chain[Int]
-    ): DomainInitializedArrayValue = {
-        InitializedArrayValue(origin, arrayType, counts, nextRefId())
-    }
-
     override def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
-        counts:    Chain[Int],
+        counts:    Int,
         refId:     RefId
     ): DomainInitializedArrayValue = {
-        // we currently support at most two-dimensional arrays
-        new InitializedArrayValue(origin, arrayType, counts.takeUpTo(2), refId)
+        new InitializedArrayValue(origin, arrayType, counts, refId)
     }
 
 }

@@ -1,0 +1,21 @@
+/* NO PARAMETERS */
+0:/*pc=0:*/ lv0 = 3
+1:/*pc=1:*/ lv1 = new int[{lv0}]
+2:/*pc=4:*/ lv2 = 0
+3:/*pc=6:*/ goto 8
+
+// 9 →
+4:/*pc=12:*/ lv4 = 1
+5:/*pc=13:*/ lv5 = {lv2, lv7} + {lv4}
+6:/*pc=14:*/ {lv1}[{lv2, lv7}] = {lv5}
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 6 →
+7:/*pc=15:*/ lv7 = {lv2, lv7} + 1
+
+// 3, 7 →
+8:/*pc=19:*/ lv8 = 4
+9:/*pc=20:*/ if({lv2, lv7} < {lv8}) goto 4
+
+// 9 →
+10:/*pc=24:*/ return {lv1}

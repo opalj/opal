@@ -67,9 +67,9 @@ import scalafx.stage.FileChooser.ExtensionFilter
 import scalafx.stage.FileChooser
 import scalafx.stage.Screen
 import scalafx.stage.Stage
-
 import org.opalj.io.process
 import org.opalj.io.processSource
+import org.opalj.log.OPALLogger
 
 /**
  * Uses a WebView for javascript-based visualizations of feature query results.
@@ -96,6 +96,7 @@ object Visualization {
             val selection:       SelectionOption,
             val optionSelection: mutable.HashMap[String, Boolean]
     ) {
+        implicit val logContext = org.opalj.log.GlobalLogContext
 
         def getSelectedProjects(
             accCountThreshold:  Int,
@@ -117,50 +118,52 @@ object Visualization {
                         || featureSelection.find(f._1).isDefined)
                     .sortBy(_._2).reverse
 
-                val children = ArrayBuffer.empty[JsObject]
-                val total: Double = selectedValues.map(_._2).sum
+                if (validateFeatures(project.id.value, features)) {
+                    val children = ArrayBuffer.empty[JsObject]
+                    val total: Double = selectedValues.map(_._2).sum
 
-                if (accCountThreshold > 0 && selectedValues.length > accCountThreshold) {
-                    var sum: Double = 0d
-                    var rest: Double = 0d
-                    val restData = ArrayBuffer.empty[JsObject]
-                    selectedValues foreach { value ⇒
-                        if ((children.length < 2) || (value._2 >= total * accSingleDisplayed)
-                            && (sum + value._2 <= total * accTotalDisplayed)) {
+                    if (accCountThreshold > 0 && selectedValues.length > accCountThreshold) {
+                        var sum: Double = 0d
+                        var rest: Double = 0d
+                        val restData = ArrayBuffer.empty[JsObject]
+                        selectedValues foreach { value ⇒
+                            if ((children.length < 2) || (value._2 >= total * accSingleDisplayed)
+                                && (sum + value._2 <= total * accTotalDisplayed)) {
+                                children += Json.obj(
+                                    "id" → value._1,
+                                    "value" → value._2
+                                )
+                                sum += value._2
+                            } else {
+                                restData += Json.obj(
+                                    "id" → value._1.replace('\n', ' '),
+                                    "value" → value._2
+                                )
+                            }
+                        }
+                        rest = total - sum
+                        if (rest > 0) {
+                            children += Json.obj(
+                                "id" → "<rest>",
+                                "value" → rest,
+                                "metrics" → Json.toJson(restData.toSeq)
+                            )
+                        }
+                    } else {
+                        selectedValues foreach { value ⇒
                             children += Json.obj(
                                 "id" → value._1,
                                 "value" → value._2
                             )
-                            sum += value._2
-                        } else {
-                            restData += Json.obj(
-                                "id" → value._1.replace('\n', ' '),
-                                "value" → value._2
-                            )
                         }
                     }
-                    rest = total - sum
-                    if (rest > 0) {
-                        children += Json.obj(
-                            "id" → "<rest>",
-                            "value" → rest,
-                            "metrics" → Json.toJson(restData.toSeq)
-                        )
-                    }
-                } else {
-                    selectedValues foreach { value ⇒
-                        children += Json.obj(
-                            "id" → value._1,
-                            "value" → value._2
-                        )
-                    }
-                }
 
-                projects += Json.obj(
-                    "id" → project.id.value,
-                    "value" → total,
-                    "metrics" → Json.toJson(children.toSeq)
-                )
+                    projects += Json.obj(
+                        "id" → project.id.value,
+                        "value" → total,
+                        "metrics" → Json.toJson(children.toSeq)
+                    )
+                }
             }
             Json.obj(
                 "id" → "flare",
@@ -182,17 +185,27 @@ object Visualization {
                     || featureSelection.find(f._1).isDefined)
 
             val children = ArrayBuffer.empty[JsObject]
-            selectedValues foreach { value ⇒
-                children += Json.obj(
-                    "id" → value._1,
-                    "value" → value._2
-                )
+            if (validateFeatures(projectName, selectedValues)) {
+                selectedValues foreach { value ⇒
+                    children += Json.obj(
+                        "id" → value._1,
+                        "value" → value._2
+                    )
+                }
             }
             Json.obj(
                 "id" → projectName,
                 "options" → Json.toJson(optionSelection),
                 "children" → Json.toJson(children.toSeq)
             )
+        }
+
+        private def validateFeatures(project: String, features: Seq[(String, Double)]): Boolean = {
+            val result = features.find(f ⇒ f._2.isNaN)
+            if (result.isDefined) {
+                OPALLogger.info("project visualization", "removing project "+project+": found NaN value for "+result.get._1)
+            }
+            result.isEmpty
         }
     }
 

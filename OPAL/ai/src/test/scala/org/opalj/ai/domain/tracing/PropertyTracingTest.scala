@@ -113,7 +113,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
     }
 
-    behavior of "an abstract interpreter that enables the tracing of control-flow dependent properties"
+    behavior of "a domain that traces control-flow dependent properties"
 
     //
     // TESTS
