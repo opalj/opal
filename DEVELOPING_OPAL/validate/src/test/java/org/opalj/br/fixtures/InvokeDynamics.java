@@ -40,4 +40,16 @@ public class InvokeDynamics {
 
         return c.call();
     }
+
+    public static void main(String[] args) {
+        InvokeDynamics id = new InvokeDynamics();
+        int result = 0;
+        try {
+            result = id.simpleLambdaAdd(2, 2);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Result is " + result);
+    }
 }

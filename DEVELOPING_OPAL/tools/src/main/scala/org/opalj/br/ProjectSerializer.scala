@@ -28,27 +28,102 @@
  */
 package org.opalj.br
 
-import java.io.File
+import java.io.{BufferedOutputStream, File, FileOutputStream}
 
 import org.opalj.ba
 import org.opalj.bc.Assembler
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{Project, SomeProject}
+import org.opalj.bytecode.RTJar
 
+/**
+ * Program to export a project loaded with OPAL with all code rewriting, for example INVOKEDYNAMIC
+ * resolution.
+ *
+ * Example execution:
+ *     sbt "OPAL-Validate/runMain org.opalj.br.ProjectSerializer -cp DEVELOPING_OPAL/validate/target/scala-2.12/test-classes -o DEVELOPING_OPAL/validate/target"
+ *     java -cp DEVELOPING_OPAL/validate/target/OPAL-export org.opalj.br.fixtures.InvokeDynamics
+ *
+ * @author Andreas Muttscheller
+ */
 object ProjectSerializer {
-    // Add main, see HermesCli for arg parsing
 
-    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ) = {
-        // TODO : Overall classfile serialize them to disk
-        // BytecodeCreator Assembler.apply()
-        // Write "wrote all files to ..."
+    private def showUsage(): Unit = {
+        println("OPAL - Project Serializer")
+        println("Parameters:")
+        println("   -cp <Folder/jar-file> the classes to load into OPAL and export")
+        println("   -o <FileName> the folder ")
+        println()
+        println("java org.opalj.br.ProjectSerializer -cp <classpath or jar file> -o <output folder>")
+    }
 
-        // TODO: Create small project that uses INVOKEDYNAMIC resolution -> execute project and
-        // test if it works
-        //  Into validate test/scala|java/br/fixtures
+    def main(args: Array[String]): Unit = {
+        var classPath: String = null
+        var outFolder: String = "."
 
-        // Java Call Graph for Java project resolution test
-        // Add to test fixtures
-        p.allClassFiles.foreach(classToByte)
+        var i = 0
+        while (i < args.length) {
+            args(i) match {
+                case "-cp" ⇒
+                    i += 1; classPath = args(i)
+
+                case "-o" ⇒
+                    i += 1; outFolder = args(i)
+
+                case "-h" | "--help" ⇒
+                    showUsage()
+                    System.exit(0)
+
+                case arg ⇒
+                    Console.err.println(s"Unknown parameter $arg.")
+                    showUsage()
+                    System.exit(2)
+            }
+            i += 1
+        }
+        if (classPath == null) {
+            Console.err.println("Missing classpath information.")
+            showUsage()
+            System.exit(1)
+        }
+
+        val classPathFile = new File(classPath)
+        if (!classPathFile.exists()) {
+            Console.err.println("Classpath or jar file does not exists.")
+            System.exit(1)
+        }
+
+        val outFile = new File(s"$outFolder/OPAL-export")
+        if (!outFile.exists() && !outFile.mkdir()) {
+            Console.out.println("Output folder could not be created!")
+            System.exit(1)
+        }
+
+        val projectClassFiles = Project.JavaClassFileReader().ClassFiles(classPathFile)
+        val libraryClassFiles = Project.JavaClassFileReader().ClassFiles(RTJar)
+
+        val p = Project(
+            projectClassFiles,
+            libraryClassFiles,
+            libraryClassFilesAreInterfacesOnly = false
+        )
+
+        serialize(p, outFile)
+
+        Console.out.println(s"Wrote all classfiles to $outFolder")
+    }
+
+    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ): Unit = {
+        // TODO: Java Call Graph for Java project resolution test. Add to test fixtures.
+        p.allProjectClassFiles.par.foreach { c ⇒
+            val b = classToByte(c)
+            val targetPackageFolder = new File(s"${targetFolder.getAbsolutePath}/${c.thisType.packageName}")
+            targetPackageFolder.mkdirs()
+            val targetFile = new File(s"${targetFolder.getAbsolutePath}/${c.fqn}.class")
+
+            val bos = new BufferedOutputStream(new FileOutputStream(targetFile))
+            bos.write(b)
+            bos.close()
+        }
     }
 
     def classToByte(c: ClassFile): Array[Byte] = {
