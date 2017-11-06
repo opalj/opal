@@ -167,7 +167,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-abstract class Purity extends Property with PurityPropertyMetaInformation {
+sealed abstract class Purity extends Property with PurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[Purity]] property.
