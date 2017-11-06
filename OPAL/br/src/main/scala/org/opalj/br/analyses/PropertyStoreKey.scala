@@ -111,7 +111,7 @@ object PropertyStoreKey
     }
 
     /**
-     * Makes the set of [[AllocationSite]]s available to the property store that is created
+     * Makes the set of [[AllocationSites]] available to the property store that is created
      * for the respective project later on. I.e., this method must be called, before this key
      * is used to get the project's property store.
      */
@@ -120,12 +120,30 @@ object PropertyStoreKey
     }
 
     /**
-     * Makes the set of [[FormalParameters]]s available to the property store that is created
+     * Makes the set of [[FormalParameters]] available to the property store that is created
      * for the respective project later on. I.e., this method must be called, before this key
      * is used to get the project's property store.
      */
     def makeFormalParametersAvailable(p: SomeProject): Unit = {
         addEntityDerivationFunction(p) { FormalParametersKey.entityDerivationFunction(p) }
+    }
+
+    /**
+     * Makes the set of [[VirtualFormalParameters]] available to the property store that is created
+     * for the respective project later on. I.e., this method must be called, before this key
+     * is used to get the project's property store.
+     */
+    def makeVirtualFormalParametersAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p) { VirtualFormalParametersKey.entityDerivationFunction(p) }
+    }
+
+    /**
+     * Makes the set of [[org.opalj.br.VirtualForwardingMethod]] available to the property store
+     * that is created for the respective project later on. I.e., this method must be called,
+     * before this key is used to get the project's property store.
+     */
+    def makeVirtualForwardingMethodsAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p) { VirtualForwardingMethodsKey.entityDerivationFunction(p) }
     }
 
     /**
