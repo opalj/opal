@@ -73,7 +73,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
     )
 
 javaOptions in ThisBuild ++= Seq(
-    "-Xmx7G", "-Xms1024m", "-Xnoclassgc",
+    "-Xmx7G", "-Xms1024m", "-XX:ThreadStackSize=2048", "-Xnoclassgc",
     "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")
 
 addCommandAlias("compileAll", "; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
