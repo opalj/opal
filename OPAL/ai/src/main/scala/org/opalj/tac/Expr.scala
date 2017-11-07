@@ -123,10 +123,11 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asGetField: GetField[V] = throw new ClassCastException();
     def asGetStatic: GetStatic = throw new ClassCastException();
     def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
+    def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
+    def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
+    def asInstanceFunctionCall: InstanceFunctionCall[V] = throw new ClassCastException();
     def asNonVirtualFunctionCall: NonVirtualFunctionCall[V] = throw new ClassCastException();
     def asVirtualFunctionCall: VirtualFunctionCall[V] = throw new ClassCastException();
-    def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
-
 }
 
 /**
@@ -575,12 +576,13 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
     final override def isVar: Boolean = false
     final override def subExprCount: Int = params.size
     final override def subExpr(index: Int): Expr[V] = params(index)
+    final override def asFunctionCall: this.type = this
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
 
     def receiver: Expr[V]
-
+    final override def asInstanceFunctionCall: this.type = this
 }
 
 /**
