@@ -31,6 +31,7 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
+
 import org.opalj.ai.Domain
 import org.opalj.ai.isVMLevelValue
 import org.opalj.ai.pcOfVMLevelValue
@@ -114,6 +115,53 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
     val typeExtensibility = project.get(TypeExtensibilityKey)
 
     /**
+     * Checks whether the statement that is implicitly identified by the given origin, directly
+     * raises a VM-level exception. E.g., a virtual method call may rise a NullPointerException
+     * if the receiver is null.
+     */
+    def raisesImplicitExceptions(origin: ValueOrigin)(implicit code: Array[Stmt[V]]): Boolean = {
+        if (VMLevelValuesOriginOffset < origin && origin < 0)
+            return false; // Parameters aren't implicit exceptions
+
+        def directlyRaisesVMLevelException(expr: Expr[V]): Boolean = {
+            (expr.astID: @switch) match {
+
+                case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+                    val rcvr = expr.asInstanceFunctionCall.receiver
+                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+
+                case StaticFunctionCall.ASTID ⇒ false
+
+                case _                        ⇒ true
+            }
+        }
+
+        val pc = if (isVMLevelValue(origin)) pcOfVMLevelValue(origin) else origin
+        val stmt = code(pc)
+        (stmt.astID: @switch) match {
+            case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
+
+            case Throw.ASTID ⇒
+                stmt.asThrow.exception.asVar.value.asDomainReferenceValue.isNull.isNotNo
+
+            case NonVirtualMethodCall.ASTID ⇒
+                val rcvr = stmt.asNonVirtualMethodCall.receiver
+                !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+
+            case VirtualMethodCall.ASTID ⇒
+                val rcvr = stmt.asVirtualMethodCall.receiver
+                !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+
+            case Assignment.ASTID ⇒ directlyRaisesVMLevelException(stmt.asAssignment.expr)
+
+            case ExprStmt.ASTID   ⇒ directlyRaisesVMLevelException(stmt.asExprStmt.expr)
+
+            case _                ⇒ true
+        }
+
+    }
+
+    /**
      * Determins the purity of the given method. The given method must have a body!
      */
     def determinePurity(method: Method): PropertyComputationResult = {
@@ -159,62 +207,6 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 } else {
                     // In initializer methods, the receiver object is fresh
                     method.isConstructor && defSite == OriginOfThis
-                }
-            }
-        }
-
-        /**
-         * Checks whether the statement an exception originates at my raise an implicit exception.
-         */
-        def raisesImplicitExceptions(origin: ValueOrigin): Boolean = {
-            if (VMLevelValuesOriginOffset < origin && origin < 0) {
-                false // Parameters aren't implicit exceptions
-            } else {
-                val pc = if (isVMLevelValue(origin)) pcOfVMLevelValue(origin) else origin
-                val stmt = code(pc)
-                (stmt.astID: @switch) match {
-                    case Throw.ASTID | StaticMethodCall.ASTID ⇒
-                        false // We are looking for implicit exceptions only
-
-                    // For calls, we only care for NullPointerExceptions
-                    case NonVirtualMethodCall.ASTID ⇒
-                        val NonVirtualMethodCall(_, _, _, _, _, rcvr, _) = stmt
-                        !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-                    case VirtualMethodCall.ASTID ⇒
-                        val VirtualMethodCall(_, _, _, _, _, rcvr, _) = stmt
-                        !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-
-                    case Assignment.ASTID ⇒
-                        val Assignment(_, _, expr) = stmt
-                        (expr.astID: @switch) match {
-                            case StaticFunctionCall.ASTID ⇒ false
-                            case NonVirtualFunctionCall.ASTID ⇒
-                                val NonVirtualFunctionCall(_, _, _, _, _, rcvr, _) = expr
-                                !rcvr.isVar ||
-                                    rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-                            case VirtualFunctionCall.ASTID ⇒
-                                val VirtualFunctionCall(_, _, _, _, _, rcvr, _) = expr
-                                !rcvr.isVar ||
-                                    rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-                            case _ ⇒ true
-                        }
-
-                    case ExprStmt.ASTID ⇒
-                        val ExprStmt(_, expr) = stmt
-                        (expr.astID: @switch) match {
-                            case StaticFunctionCall.ASTID ⇒ false
-                            case NonVirtualFunctionCall.ASTID ⇒
-                                val NonVirtualFunctionCall(_, _, _, _, _, rcvr, _) = expr
-                                !rcvr.isVar ||
-                                    rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-                            case VirtualFunctionCall.ASTID ⇒
-                                val VirtualFunctionCall(_, _, _, _, _, rcvr, _) = expr
-                                !rcvr.isVar ||
-                                    rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-                            case _ ⇒ true
-                        }
-
-                    case _ ⇒ true
                 }
             }
         }
