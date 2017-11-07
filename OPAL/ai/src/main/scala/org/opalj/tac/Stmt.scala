@@ -77,6 +77,8 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asThrow: Throw[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
+    def asMethodCall: MethodCall[V] = throw new ClassCastException();
+    def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
     def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
@@ -485,16 +487,16 @@ object PutField {
 
 sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 
-    final override def isSideEffectFree: Boolean = {
-        // IMPROVE if the call is side-effect free...
-        false
-    }
+    final override def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
+
+    final override def asMethodCall: this.type = this
 
 }
 
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
     def receiver: Expr[V]
+    final override def asInstanceMethodCall: this.type = this
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
