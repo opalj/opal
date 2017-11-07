@@ -119,7 +119,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
     def determinePurity(method: Method): PropertyComputationResult = {
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return ImmediateResult(method, Impure)
+            return ImmediateResult(method, Impure);
 
         val declClass = method.classFile.thisType
 
