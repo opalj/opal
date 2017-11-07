@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.ai.Domain
 import org.opalj.ai.isVMLevelValue
 import org.opalj.ai.pcOfVMLevelValue
@@ -98,6 +97,7 @@ import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.TACode
+import org.opalj.tac.TACMethodParameter
 
 /**
  * A simple analysis for method purity based on the three address code representation.
@@ -111,8 +111,8 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    val tacai = project.get(DefaultTACAIKey)
-    val typeExtensibility = project.get(TypeExtensibilityKey)
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
+    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey) // IMPROVE Use MethodExtensibility once the method extensibility key is available (again)
 
     /**
      * Checks whether the statement that is implicitly identified by the given origin, directly
@@ -144,12 +144,8 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             case Throw.ASTID ⇒
                 stmt.asThrow.exception.asVar.value.asDomainReferenceValue.isNull.isNotNo
 
-            case NonVirtualMethodCall.ASTID ⇒
-                val rcvr = stmt.asNonVirtualMethodCall.receiver
-                !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
-
-            case VirtualMethodCall.ASTID ⇒
-                val rcvr = stmt.asVirtualMethodCall.receiver
+            case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+                val rcvr = stmt.asInstanceMethodCall.receiver
                 !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
 
             case Assignment.ASTID ⇒ directlyRaisesVMLevelException(stmt.asAssignment.expr)
