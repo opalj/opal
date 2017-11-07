@@ -170,7 +170,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * a specific method. If the given method is a concrete method, this method is also
      * included in the set of `overridingMethods`.
      */
-    protected[this] val overridingMethods: SomeMap[Method, Set[Method]]
+    protected[this] val overridingMethods: SomeMap[Method, SomeSet[Method]]
 
     /**
      * Returns the set of methods which directly override the given method. Note that
@@ -189,7 +189,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * }
      * }}}
      */
-    def overriddenBy(m: Method): Set[Method] = {
+    def overriddenBy(m: Method): SomeSet[Method] = {
         assert(!m.isPrivate, s"private methods $m cannot be overridden")
         assert(!m.isStatic, s"static methods $m cannot be overridden")
         assert(!m.isInitializer, s"initializers $m cannot be overridden")
@@ -519,9 +519,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 //
                 // We now have to determine the maximally specific method.
 
-                // both, the set of `currentMethods` and also the set of `methods`
+                // Both, the set of `currentMethods` and also the set of `methods`
                 // each only contains maximally specific methods w.r.t. their
-                // set
+                // set.
                 var currentMaximallySpecificMethods = currentMethods
                 var additionalMaximallySpecificMethods = Set.empty[Method]
                 methods.view.filter(!currentMethods.contains(_)) foreach { method ⇒
@@ -529,10 +529,10 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     var addNewMethod = true
                     currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒
                         val specificMethodDeclaringClassType = method.classFile.thisType
-                        if ((specificMethodDeclaringClassType isSubtyeOf newMethodDeclaringClassType).isYes) {
+                        if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
                             addNewMethod = false
                             true
-                        } else if ((newMethodDeclaringClassType isSubtyeOf specificMethodDeclaringClassType).isYes) {
+                        } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
                             false
                         } else {
                             //... we have an incomplete class hierarchy; let's keep both methods
@@ -689,8 +689,8 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *
      * @note    Virtual method call resolution is not necessary; the call target is
      *          either a constructor, a private method or a super method/constructor. However, in
-     *          the last case it may be possible that we can't find the method because
-     *          of an inconsistent or incomplete project.
+     *          the first and in the last case it may be possible that we can't find the method
+     *          because of an inconsistent or incomplete project.
      *
      * @return  One of the following three values:
      *           - [[org.opalj.Success]] `(method)` if the method was found;
@@ -700,7 +700,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      */
     def specialCall(
         declaringClassType: ObjectType, // an interface or class type to be precise
-        isInterface:        Boolean,
+        isInterface:        Boolean, // TODO is isInterface needed - isn't it contained in "instancemethods" ?
         name:               String, // an interface or class type to be precise
         descriptor:         MethodDescriptor
     ): Result[Method] = {
@@ -711,21 +711,25 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClassType) match {
             case Some(classFile) ⇒
-                classFile.findMethod(name, descriptor) match {
-                    case Some(method)             ⇒ Success(method)
-                    case None if name == "<init>" ⇒ Failure // initializer not found...
-                    case _ ⇒
-                        // We have to find the (maximally specific) super method, which is,
-                        // unless we have an inconsistent code base, unique (compared to
-                        // an invokevirtual based call, we don't have to care about the
-                        // visiblity of the target method; a corresponding check has to be done
-                        // by the caller, if necessary)
-                        Result(
-                            find(instanceMethods(declaringClassType)) { definedMethodContext ⇒
-                                val definedMethod = definedMethodContext.method
-                                definedMethod.compare(name, descriptor)
-                            } map { mdc ⇒ mdc.method }
-                        )
+                if (classFile.isInterfaceDeclaration != isInterface)
+                    Failure
+                else {
+                    classFile.findMethod(name, descriptor) match {
+                        case Some(method)             ⇒ Success(method)
+                        case None if name == "<init>" ⇒ Failure // initializer not found...
+                        case _ ⇒
+                            // We have to find the (maximally specific) super method, which is,
+                            // unless we have an inconsistent code base, unique (compared to
+                            // an invokevirtual based call, we don't have to care about the
+                            // visiblity of the target method; a corresponding check has to be done
+                            // by the caller, if necessary)
+                            Result(
+                                find(instanceMethods(declaringClassType)) { definedMethodContext ⇒
+                                    val definedMethod = definedMethodContext.method
+                                    definedMethod.compare(name, descriptor)
+                                } map { mdc ⇒ mdc.method }
+                            )
+                    }
                 }
             case None ⇒ Empty
         }
@@ -736,7 +740,19 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * the given receiver type. I.e., using this method is suitable only when the runtime
      * type, which is the receiver of the method call, is precisely known!
      *
-     * This method supports default methods and signature polymorphic calls.
+     * == Examples ==
+     * {{{
+     * class A {def foo() = {} }
+     * class B extends A {/*inherits, but does not override foo()*/}
+     * class C extends B { def foo() = {} }
+     * val b = new B();
+     * b.foo() // <= in this case the method defined by A will be returned.
+     * val c = new C();
+     * c.foo() // <= in this case the method defined by C will be returned.
+     * }}}
+     *
+     * This method supports default methods and signature polymorphic calls; i.e., the
+     * descriptor of the retuned methods may not be equal to the given method descriptor.
      *
      * @param   callerType The object type which defines the method which performs the call.
      *          This information is required if the call target has (potentially) default
@@ -815,11 +831,11 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     // This is an overapproximation, if the inherited concrete method is
                     // always overridden by all concrete subtypes and subtypeCF
                     // is an abstract class in a closed package/module
-                    methods ++= (
+                    methods ++=
                         overriddenBy(mdc.method).iterator.filter { m ⇒
-                            (m.classFile.thisType isSubtyeOf subtype).isYes
+                            (m.classFile.thisType isSubtypeOf subtype).isYes
                         }
-                    )
+
                     // for interfaces we have to continue, because we may have inherited a
                     // a concrete method from a class type which is not in the set of
                     // overriddenBy methods
@@ -831,7 +847,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         methods
     }
 
-    def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): Set[Method] = {
+    def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {
         virtualCall(callerPackageName, i.declaringClass, i.name, i.methodDescriptor)
     }
 
@@ -844,7 +860,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         declaringType:     ReferenceType, // an interface, class or array type to be precise
         name:              String,
         descriptor:        MethodDescriptor
-    ): Set[Method] = {
+    ): SomeSet[Method] = {
         if (declaringType.isArrayType) {
             return instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
         }
@@ -855,7 +871,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // of the set of methods (vs. using a very generic approach)!
 
         val declaringClassType = declaringType.asObjectType
-        var methods = Set.empty[Method]
+        var methods = SomeSet.empty[Method]
 
         val initialMethods = instanceMethods.get(declaringClassType)
         if (initialMethods.isEmpty)

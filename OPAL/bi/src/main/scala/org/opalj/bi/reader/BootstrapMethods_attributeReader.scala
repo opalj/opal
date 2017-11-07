@@ -111,12 +111,12 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): BootstrapMethods_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt
         val num_bootstrap_methods = in.readUnsignedShort
         if (num_bootstrap_methods > 0 || reifyEmptyAttributes) {
@@ -129,6 +129,5 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
             null
     }
 
-    registerAttributeReader(BootstrapMethodsAttribute.Name → parser)
+    registerAttributeReader(BootstrapMethodsAttribute.Name → parserFactory())
 }
-

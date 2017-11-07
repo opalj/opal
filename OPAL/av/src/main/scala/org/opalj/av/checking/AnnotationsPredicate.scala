@@ -30,7 +30,6 @@ package org.opalj
 package av
 package checking
 
-import scala.language.existentials
 import scala.collection.Set
 import org.opalj.br._
 

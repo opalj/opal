@@ -111,7 +111,6 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
             PropertyStoreKey.parallelismLevel = parallelismLevel
             get(PropertyStoreKey)
         } { r ⇒ setupTime = r }
-        projectStore.debug = false
 
         val manager = project.get(FPCFAnalysesManagerKey)
         manager.runAll(FieldMutabilityAnalysis)

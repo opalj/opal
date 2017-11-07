@@ -80,12 +80,12 @@ trait ConcealedPackages_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): ConcealedPackages_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length = */ in.readInt()
         val packagesCount = in.readUnsignedShort()
         if (packagesCount > 0 || reifyEmptyAttributes) {
@@ -100,7 +100,7 @@ trait ConcealedPackages_attributeReader extends AttributeReader {
             null
     }
 
-    registerAttributeReader(ConcealedPackagesAttribute.Name → parser)
+    registerAttributeReader(ConcealedPackagesAttribute.Name → parserFactory())
 }
 
 object ConcealedPackagesAttribute {
@@ -108,4 +108,3 @@ object ConcealedPackagesAttribute {
     final val Name = "ConcealedPackages"
 
 }
-

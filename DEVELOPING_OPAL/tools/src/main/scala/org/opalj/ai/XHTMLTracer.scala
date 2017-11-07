@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
 import scala.xml.Node
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
@@ -384,8 +382,10 @@ trait XHTMLTracer extends AITracer {
     override def abruptSubroutineTermination(
         domain: Domain
     )(
+        details:  String,
         sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
         terminatedSubroutinesCount: Int,
+        forceScheduling:            Boolean,
         oldWorklist:                List[PC],
         newWorklist:                List[PC]
     ): Unit = { /*ignored*/ }

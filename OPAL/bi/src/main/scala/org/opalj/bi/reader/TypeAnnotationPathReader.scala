@@ -80,7 +80,7 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    def TypeAnnotationPath(cp: Constant_Pool, in: DataInputStream): TypeAnnotationPath = {
+    def TypeAnnotationPath(in: DataInputStream): TypeAnnotationPath = {
         val path_length = in.readUnsignedByte()
         if (path_length == 0) {
             TypeAnnotationDirectlyOnType

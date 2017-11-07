@@ -26,14 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
+package br
 package cfg
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.util.Nanoseconds
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.analyses.SomeProject
@@ -48,11 +50,11 @@ import org.opalj.br.analyses.Project
  */
 class CFGFactoryTest extends CFGTests {
 
-    def analyzeProject(name: String, project: SomeProject): Unit = {
-        time { doAnalyzeProject(name, project) } { t ⇒ info("the analysis took "+t.toSeconds) }
+    def analyzeProject(project: SomeProject): Unit = {
+        time { doAnalyzeProject(project) } { t ⇒ info("the analysis took "+t.toSeconds) }
     }
 
-    def doAnalyzeProject(name: String, project: SomeProject): Unit = {
+    def doAnalyzeProject(project: SomeProject): Unit = {
         implicit val classHierarchy = project.classHierarchy
         val methodsWithBodyCount = project.allMethodsWithBody.size
         val methodsCount = new AtomicInteger(0)
@@ -70,7 +72,7 @@ class CFGFactoryTest extends CFGTests {
             }
 
             // check that allBBs returns the same bbs as a manual iterator
-            val manuallyCollectsBBs = code.programCounters.map(cfg.bb).filter(_ ne null).toSet
+            val manuallyCollectsBBs = code.programCounters.mapToAny(cfg.bb).filter(_ ne null).toSet
             assert(cfg.allBBs.toSet == manuallyCollectsBBs)
 
             // check the boundaries
@@ -92,7 +94,7 @@ class CFGFactoryTest extends CFGTests {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(method.toJava, code, cfg, classHierarchy)
+            cfgNodesCheck(method, code, cfg, classHierarchy)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒
@@ -111,7 +113,7 @@ class CFGFactoryTest extends CFGTests {
             // check the correspondence of "instruction.nextInstruction" and the information
             // contained in the cfg
             code.iterate { (pc, instruction) ⇒
-                val nextInstructions = instruction.nextInstructions(pc).toIntArraySet
+                val nextInstructions = instruction.nextInstructions(pc).toIntTrieSet
                 if (nextInstructions.isEmpty) {
                     if (!cfg.bb(pc).successors.forall { succBB ⇒ !succBB.isBasicBlock })
                         fail(
@@ -134,7 +136,7 @@ class CFGFactoryTest extends CFGTests {
             code.iterate { (pc, instruction) ⇒
                 {
                     val cfgSuccessors = cfg.successors(pc)
-                    var cfgForeachSuccessors = IntArraySet.empty
+                    var cfgForeachSuccessors = IntTrieSet.empty
                     var cfgForeachSuccessorCount = 0
                     cfg.foreachSuccessor(pc) { cfgForeachSuccessor ⇒
                         cfgForeachSuccessors += cfgForeachSuccessor
@@ -146,7 +148,7 @@ class CFGFactoryTest extends CFGTests {
 
                 {
                     val cfgPredecessors = cfg.predecessors(pc)
-                    var cfgForeachPredecessors = IntArraySet.empty
+                    var cfgForeachPredecessors = IntTrieSet.empty
                     var cfgForeachPredecessorCount = 0
                     cfg.foreachPredecessor(pc) { cfgForeachPredecessor ⇒
                         cfgForeachPredecessors += cfgForeachPredecessor
@@ -179,12 +181,12 @@ class CFGFactoryTest extends CFGTests {
     describe("computing the cfg") {
 
         it(s"it should be possible for all methods of the JDK ($JRELibraryFolder)") {
-            analyzeProject("JDK", TestSupport.createJREProject)
+            analyzeProject(TestSupport.createJREProject)
         }
 
         allBITestJARs() foreach { jarFile ⇒
-            it(s"it should be possible for all methods of $jarFile") {
-                analyzeProject(jarFile.getName(), Project(jarFile))
+            it(s"it should be possible for all methods of ${jarFile.getName}") {
+                analyzeProject(Project(jarFile))
             }
         }
     }

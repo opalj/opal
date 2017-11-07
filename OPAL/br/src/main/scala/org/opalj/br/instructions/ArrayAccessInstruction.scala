@@ -46,4 +46,5 @@ abstract class ArrayAccessInstruction extends Instruction with ConstantLengthIns
 
     def elementTypeComputationalType: ComputationalType
 
+    final override def toString(currentPC: Int): String = toString()
 }

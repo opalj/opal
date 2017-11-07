@@ -38,6 +38,8 @@ package instructions
  */
 abstract class MethodInvocationInstruction extends InvocationInstruction {
 
+    final override def isMethodInvocationInstruction: Boolean = true
+
     /* abstract */ def declaringClass: ReferenceType
 
     def isInterfaceCall: Boolean

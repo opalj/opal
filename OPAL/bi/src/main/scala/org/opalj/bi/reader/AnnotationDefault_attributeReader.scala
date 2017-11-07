@@ -71,15 +71,15 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /* val attributeLength =*/ in.readInt()
         AnnotationDefault_attribute(cp, attribute_name_index, ElementValue(cp, in))
     }
 
-    registerAttributeReader(AnnotationDefaultAttribute.Name → parser)
+    registerAttributeReader(AnnotationDefaultAttribute.Name → parserFactory())
 }

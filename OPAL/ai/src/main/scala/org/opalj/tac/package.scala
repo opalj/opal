@@ -35,6 +35,7 @@ import org.opalj.br.ExceptionHandlers
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
 
 /**
@@ -50,6 +51,8 @@ package object tac {
      * an instance method; if the method is not an instance method the origin -1 is not used.
      */
     final val OriginOfThis /*: ValueOrigin*/ = -1
+
+    final val SelfReferenceParameter = IntTrieSet(OriginOfThis)
 
     final val AllTACNaiveOptimizations: List[TACOptimization[Param, IdBasedVar]] = {
         List(SimplePropagation)

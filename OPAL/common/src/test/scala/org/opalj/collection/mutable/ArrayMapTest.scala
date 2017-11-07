@@ -177,8 +177,8 @@ class ArrayMapTest extends FlatSpec with Matchers {
         map(0) = 0
         map(2) = 2
         map(4) = 4
-        map.values.size should be(3)
-        map.values.map(_.intValue()).sum should be(6)
+        map.valuesIterator.size should be(3)
+        map.valuesIterator.map(_.intValue()).sum should be(6)
     }
 
     it should ("have a correct values iterator if the map is continuous") in {
@@ -186,14 +186,14 @@ class ArrayMapTest extends FlatSpec with Matchers {
         map(0) = 0
         map(2) = 2
         map(3) = 3
-        map.values.size should be(3)
-        map.values.map(_.intValue()).sum should be(5)
+        map.valuesIterator.size should be(3)
+        map.valuesIterator.map(_.intValue()).sum should be(5)
     }
 
     it should ("have a correct values iterator if the map is empty") in {
         val map = ArrayMap.empty[Integer]
-        map.values.size should be(0)
-        map.values.map(_.intValue()).sum should be(0)
+        map.valuesIterator.size should be(0)
+        map.valuesIterator.map(_.intValue()).sum should be(0)
     }
 
     it should ("have a useable map implementation") in {

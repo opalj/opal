@@ -30,11 +30,12 @@ package org.opalj
 package ai
 
 import scala.language.existentials
-
 import scala.util.control.ControlThrowable
-import scala.collection.BitSet
 
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.log.Warn
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -51,12 +52,12 @@ import org.opalj.br._
 import org.opalj.br.instructions._
 
 /**
- * A highly-configurable framework for the (abstract) interpretation of Java bytecode
- * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
+ * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
+ * The framework is built upon OPAL's standard representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * until an instruction is hit where multiple
- * control flows potentially join. This instruction is then only analyzed if no
+ * until an instruction is hit where multiple control flows potentially join.
+ * This instruction is then only analyzed if no
  * further instruction can be evaluated where no paths join ([[org.opalj.br.Code.cfPCs]]).
  * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
@@ -69,6 +70,7 @@ import org.opalj.br.instructions._
  * customized domain can be used, e.g., to build a call graph or to
  * do other intra-/interprocedural analyses while the code is analyzed.
  * Additionally, it is possible to analyze the result of an abstract interpretation.
+ * The latter is particularly facilitated by the 3-address code.
  *
  * ==Thread Safety==
  * This class is thread-safe. However, to make it possible to use one abstract
@@ -85,7 +87,7 @@ import org.opalj.br.instructions._
  * Subclasses '''are not required to be thread-safe and may have more complex state.'''
  *
  * @note
- *         OPAL does not make assumptions about the number of domain objects that
+ *         OPAL does not make assumptions about the number of domains that
  *         are used. However, if a single domain object is used by multiple instances
  *         of this class and the abstract interpretations are executed concurrently, then
  *         the domain has to be thread-safe.
@@ -112,7 +114,7 @@ import org.opalj.br.instructions._
  *         about 4,5%. Additionally, it also reduces the effort spent on "expensive" joins which
  *         leads to an overall(!) improvement for the l1.DefaultDomain of ~8,5%.
  *
- *         ==Dead Variables Elimination based on Definitive Paths==
+ *         TODO ==Dead Variables Elimination based on Definitive Paths==
  *         (STILL IN DESIGN!!!!)
  *         ===Idea===
  *         Given an instruction i which may result in a fork of the control-flow (e.g.,
@@ -158,10 +160,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * instruction or after the ai has completely evaluated an instruction, updated the
      * memory and stated all constraints.
      *
-     * @note When the abstract interpreter is currently waiting on the result of the
-     *    interpretation of a called method it may take some time before the
-     *    interpretation of the current method (this abstract interpreter) is actually
-     *    aborted.
+     * @note   When the abstract interpreter is currently waiting on the result of the
+     *         interpretation of a called method it may take some time before the
+     *         interpretation of the current method (this abstract interpreter) is actually
+     *         aborted.
      *
      * This method '''needs to be overridden in subclasses to identify situations
      * in which a running abstract interpretation should be interrupted'''.
@@ -185,11 +187,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     /**
      *  Performs an abstract interpretation of the given method using the given domain.
      *
-     *  @param method A non-native, non-abstract method of the given class file that
-     *      will be analyzed. All parameters are automatically initialized with sensible
-     *      default values.
-     *  @param theDomain The domain that will be used to perform computations related
-     *      to values.
+     *  @param  method The method - which has to have a body - that will be analyzed.
+     *          All parameters are automatically initialized with sensible default values.
+     *  @param  theDomain The domain that will be used to perform computations related
+     *          to values.
      */
     def apply(method: Method, theDomain: D): AIResult { val domain: theDomain.type } = {
         perform(method, theDomain)(None)
@@ -268,8 +269,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
             if (!method.isStatic) {
                 val thisType = method.classFile.thisType
-                val thisValue =
-                    domain.NonNullObjectValue(origin(localVariableIndex), thisType)
+                val thisValue = domain.NonNullObjectValue(origin(localVariableIndex), thisType)
                 locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
@@ -395,7 +395,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     protected[this] def preInterpretationInitialization(
         code:          Code,
         instructions:  Array[Instruction],
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         liveVariables: LiveVariables,
         theDomain:     D
     )(
@@ -491,7 +491,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *      a subroutine was already analyzed.
      */
     def continueInterpretation(
-        code: Code, cfJoins: BitSet, liveVariables: LiveVariables,
+        code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
         theDomain: D
     )(
         initialWorkList:                     List[PC],
@@ -564,7 +564,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
-        /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts = theMemoryLayoutBeforeSubroutineCall
+        /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts =
+            theMemoryLayoutBeforeSubroutineCall
         /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
         /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
 
@@ -612,7 +613,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 theDomain.abstractInterpretationEnded(result)
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable         ⇒ throwInterpretationFailedException(t, instructions.length)
+                case t: Throwable ⇒
+                    throwInterpretationFailedException(t, instructions.length)
             }
             if (tracer.isDefined) tracer.get.result(result)
             result
@@ -706,24 +708,22 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
              * Schedules the evaluation of the exception handler in the context of the
              * (calling) subroutine to which the handler belongs.
              *
-             * @param forceSchedule If `false` the instruction will not be scheduled if
+             * @param forceScheduling If `false` the instruction will not be scheduled if
              *      it is not already scheduled. In this case we will basically just test
              *      if the instruction was scheduled.
              *
              * @return `true` if the target instruction was (re)scheduled.
              *      Hence, if
-             *      - `doSchedule` is false and true is returned, then the
+             *      - `forceScheduling` is false and true is returned, then the
              *          instruction was already scheduled.
-             *      - `doSchedule` is false and false is returned, then the target
+             *      - `forceScheduling` is false and false is returned, then the target
              *          instruction will not be executed.
-             *      - `doSchedule` is true and false is returned, then the target
+             *      - `forceScheduling` is true and false is returned, then the target
              *          instruction was newly scheduled.
-             *      - `doSchedule` is true and true is returned, then the target
+             *      - `forceScheduling` is true and true is returned, then the target
              *          instruction was already scheduled.
              */
-            def handleAbruptSubroutineTermination(forceSchedule: Boolean): Boolean = {
-                val jumpToSubroutineId = belongsToSubroutine(targetPC)
-
+            def handleAbruptSubroutineTermination(forceScheduling: Boolean): Boolean = {
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
                 // We now know the number of subroutines that are terminated (at most
                 // all active real subroutines) now let's remove the elements of those
@@ -735,16 +735,20 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val pc = remainingWorklist.head
                     header = pc :&: header
                     remainingWorklist = remainingWorklist.tail
-                    if (pc == SUBROUTINE)
+                    if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
+                    }
                 }
 
                 if (remainingWorklist.nonEmpty && remainingWorklist.head == targetPC) {
                     // The instruction was already scheduled.
                     if (tracer.isDefined) {
                         tracer.get.abruptSubroutineTermination(theDomain)(
-                            sourcePC, targetPC, jumpToSubroutineId,
+                            "the target instruction was already scheduled",
+                            sourcePC, targetPC,
+                            belongsToSubroutine(targetPC),
                             abruptSubroutineTerminationCount,
+                            forceScheduling,
                             oldWorklist = worklist,
                             newWorklist = worklist
                         )
@@ -752,9 +756,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     return true;
                 }
 
-                val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
+                val filteredRemainingWorkList =
+                    removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
                 val rescheduled = filteredRemainingWorkList ne remainingWorklist
-                if (rescheduled || forceSchedule) {
+                if (rescheduled || forceScheduling) {
                     remainingWorklist = targetPC :&: filteredRemainingWorkList
                 }
                 while (header.nonEmpty) {
@@ -763,12 +768,28 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 if (tracer.isDefined) {
-                    tracer.get.abruptSubroutineTermination(theDomain)(
-                        sourcePC, targetPC, jumpToSubroutineId,
-                        abruptSubroutineTerminationCount,
-                        oldWorklist = worklist,
-                        newWorklist = remainingWorklist
-                    )
+                    if (rescheduled || forceScheduling)
+                        tracer.get.abruptSubroutineTermination(theDomain)(
+                            "adapted the worklist of the calling subroutine",
+                            sourcePC, targetPC,
+                            belongsToSubroutine(targetPC),
+                            abruptSubroutineTerminationCount,
+                            forceScheduling,
+                            oldWorklist = worklist,
+                            newWorklist = remainingWorklist
+                        )
+                    else {
+                        tracer.get.abruptSubroutineTermination(theDomain)(
+                            "the target instruction was already scheduled or "+
+                                "explicit scheduling was not necessary",
+                            sourcePC, targetPC,
+                            belongsToSubroutine(targetPC),
+                            abruptSubroutineTerminationCount,
+                            forceScheduling,
+                            oldWorklist = worklist,
+                            newWorklist = remainingWorklist
+                        )
+                    }
                 }
 
                 worklist = remainingWorklist
@@ -809,7 +830,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // IMPROVE Reconsider the scheduling of the next instruction; try to schedule such that inner loops are first completely evaluated before we continue scheduling the outer loop
 
                     if (abruptSubroutineTerminationCount > 0) {
-                        handleAbruptSubroutineTermination(forceSchedule = true)
+                        handleAbruptSubroutineTermination(forceScheduling = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
                         // We Try to first finish the evaluation of the body of, e.g., a loop;
                         // Recall that a typical loop has the following bytecode:
@@ -819,19 +840,22 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         //      ...
                         //      ...
                         // looptest:
-                        //      <PREPARATION>           // *<= JOIN INSTRUCTION*
+                        //      <PREPARATION>           // * <= JOIN INSTRUCTION *
                         //      if (...) goto loopbody
                         worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
                     } else {
                         worklist = targetPC :&: worklist
                     }
 
-                    if (tracer.isDefined)
+                    if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    }
 
                     /* join: */ false
 
                 } else if (!cfJoins.contains(targetPC)) {
+                    assert(abruptSubroutineTerminationCount == 0)
+
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -852,7 +876,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START)) {
                         worklist = targetPC :&: worklist
                     }
-                    if (tracer.isDefined) { // IMPROVE Replace tracer.isDefined by "tracer ne None" if it is simpler!
+                    if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     }
 
@@ -863,11 +887,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val currentLocals = targetLocalsArray(targetPC)
                     val mergeResult =
                         theDomain.join(targetPC, currentOperands, currentLocals, operands, locals)
-                    if (tracer.isDefined) tracer.get.join(theDomain)(
-                        targetPC,
-                        currentOperands, currentLocals, operands, locals,
-                        mergeResult
-                    )
+                    if (tracer.isDefined)
+                        tracer.get.join(theDomain)(
+                            targetPC,
+                            currentOperands, currentLocals, operands, locals,
+                            mergeResult
+                        )
                     mergeResult match {
                         case NoUpdate ⇒ /* nothing to do*/
                             // Keep default: isTargetScheduled = Unknown
@@ -879,8 +904,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             isTargetScheduled = Yes
                             targetOperandsArray(targetPC) = updatedOperands
                             targetLocalsArray(targetPC) = updatedLocals
+                            // We want depth-first evaluation (, but we do not want to
+                            // reschedule instructions that do not belong to the current
+                            // evaluation context/(sub-)routine.)
                             if (abruptSubroutineTerminationCount > 0) {
-                                if (handleAbruptSubroutineTermination(forceSchedule = true)) {
+                                if (handleAbruptSubroutineTermination(forceScheduling = true)) {
                                     // the instruction was just moved to the beginning
                                     if (tracer.isDefined) {
                                         tracer.get.rescheduled(theDomain)(
@@ -895,24 +923,17 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     }
                                 }
                             } else {
-                                // we want depth-first evaluation (, but we do not want to
-                                // reschedule instructions that do not belong to the current
-                                // evaluation context/(sub-)routine.)
                                 val updatedWorklist =
                                     insertBeforeIfNew(worklist, targetPC, SUBROUTINE_START)
                                 if (tracer.isDefined) {
-                                    if (updatedWorklist ne worklist)
-                                        // the instruction was not yet scheduled for
-                                        // another evaluation
+                                    if (updatedWorklist ne worklist) {
+                                        // the instruction was not yet scheduled (in the current
+                                        // context) for another evaluation
                                         tracer.get.flow(theDomain)(
                                             sourcePC, targetPC, isExceptionalControlFlow
                                         )
-                                    else {
-                                        // the instruction was just moved to the beginning
-                                        tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow,
-                                            updatedWorklist
-                                        )
+                                    } else {
+                                        tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
                                 }
                                 worklist = updatedWorklist
@@ -923,7 +944,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             targetLocalsArray(targetPC) = updatedLocals
 
                             if (abruptSubroutineTerminationCount > 0) {
-                                if (handleAbruptSubroutineTermination(forceSchedule = false)) {
+                                if (handleAbruptSubroutineTermination(forceScheduling = false)) {
                                     isTargetScheduled = Yes
                                     if (tracer.isDefined) {
                                         // the instruction was just moved to the beginning
@@ -948,11 +969,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 // instructions where multiple paths join...
                                 if (containsInPrefix(worklist, targetPC, SUBROUTINE)) {
                                     isTargetScheduled = Yes
-                                    if (tracer.isDefined) {
-                                        tracer.get.rescheduled(theDomain)(
-                                            sourcePC, targetPC, isExceptionalControlFlow, worklist
-                                        )
-                                    }
                                 } else {
                                     // keep default: isTargetScheduled = Unknown
                                     // (We just know that the instruction is not
@@ -988,11 +1004,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     tracer
                 )
 
-            // assert(
-            //   abruptSubroutineTerminationCount == 0 ||
-            //      !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
-            //   "an exception handler that handles the abrupt termination of a subroutine "+
-            //      "is scheduled to be executed as part of the abruptly terminated subroutine")
+            assert(
+                abruptSubroutineTerminationCount == 0 ||
+                    !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
+                "an exception handler that handles the abrupt termination of a subroutine "+
+                    "is scheduled to be executed as part of the abruptly terminated subroutine"
+            )
         }
 
         // THIS IS THE MAIN INTERPRETER LOOP
@@ -1368,7 +1385,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     establishNonNull: Boolean
                 ): PCs = {
 
-                    var targetPCs = IntArraySet.empty
+                    var targetPCs = IntTrieSet.empty
                     def gotoExceptionHandler(
                         pc:             PC,
                         branchTargetPC: PC,
@@ -1410,53 +1427,126 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             gotoExceptionHandler(pc, branchTarget, None)
                             true
                         } else {
-                            theDomain.isValueSubtypeOf(exceptionValue, catchTypeOption.get) match {
-                                case No ⇒
-                                    false
-                                case Yes ⇒
-                                    gotoExceptionHandler(pc, branchTarget, None)
-                                    true
-                                case Unknown ⇒
-                                    gotoExceptionHandler(pc, branchTarget, catchTypeOption)
-                                    false
+                            val caughtType = catchTypeOption.get
+                            if (caughtType eq ObjectType.Throwable) {
+                                // Special handling to improve the overall precision if the
+                                // domain is very imprecise or if the type hierarchy is incomplete.
+                                gotoExceptionHandler(pc, branchTarget, None)
+                                true
+                            } else {
+                                theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
+                                    case No ⇒ false
+                                    case Yes ⇒
+                                        gotoExceptionHandler(pc, branchTarget, None); true
+
+                                    case _ ⇒ /*Unknown*/
+                                        // In general, we have to abort the exception handling...
+                                        // otherwise we may end up executing a compile-time
+                                        // impossible handler which potentially results in an
+                                        // fatally failing analysis.
+                                        // I.e., we have to ensure to never folllow paths the
+                                        // bytecode verifier would not follow!
+                                        // However, previously identified handlers remain valid and
+                                        // in case of called methods/athrow we can still continue,
+                                        // because the VM/bytecode verifier also has to make the
+                                        // assumption that "all" exceptions are (transitively) thrown.
+
+                                        if (instruction.isInvocationInstruction &&
+                                            !theDomain.abortProcessingExceptionsOfCalledMethodsOnUnknownException
+                                            ||
+                                            instruction.isAthrow &&
+                                            !theDomain.abortProcessingThrownExceptionsOnUnknownException) {
+                                            gotoExceptionHandler(pc, branchTarget, catchTypeOption)
+                                            false
+                                        } else {
+                                            val logContext = theDomain match {
+                                                case ctx: LogContextProvider ⇒ ctx.logContext
+                                                case _                       ⇒ GlobalLogContext
+                                            }
+                                            org.opalj.bi.warnMissingLibrary(logContext)
+                                            var exceptionTypeAsJava =
+                                                exceptionValue.upperTypeBound.
+                                                    iterator.map(_.toJava).
+                                                    mkString(" & ")
+                                            if (!exceptionValue.isPrecise)
+                                                exceptionTypeAsJava = "_ <: "+exceptionTypeAsJava
+                                            val warning = Warn(
+                                                "precision and soundness",
+                                                "unknown type hierarchy relation between: "+
+                                                    s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
+                                                    "aborting exception processing"
+                                            )
+                                            OPALLogger.logOnce(warning)(logContext)
+                                            true // effectively aborts the handling..
+                                        }
+                                }
                             }
                         }
                     }
                     // If "isHandled" is true, we are sure that at least one
-                    // handler caught the exception... hence this method
+                    // handler caught the exception or that the exception handling
+                    // as a whole is inconclusive. The latter is treated as being handled
+                    // to avoid that impossible paths are taken ... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled) abruptMethodExecution(pc, exceptionValue)
 
                     targetPCs
                 }
 
-                def handleException(exceptionValue: ExceptionValue): PCs = {
-                    // iterating over the individual exceptions is potentially
-                    // more precise than just iterating over the "abstraction"
+                /*
+                 * @param testForNullnessOfExceptionValue Required to avoid the meaningless
+                 *        generation of "NullPointerExceptions" for exceptions thrown by the
+                 *        JVM/outside the scope of the current method. In case of a domain
+                 *        which tracks nullness this issue is probably already implicitly handled
+                 *        by the domain;
+                 *        if the domain does not track null-ness, this information is
+                 *        explicitly required otherwise the assumption would be made that the
+                 *        exception value could be null – in all cases!
+                 */
+                def handleException(
+                    exceptionValue:                  ExceptionValue,
+                    testForNullnessOfExceptionValue: Boolean
+                ): PCs = {
+                    // Iterating over the individual exceptions is potentially
+                    // more precise than just iterating over the "abstraction".
                     val baseValues = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
-                        exceptionValue.isNull match {
-                            case No ⇒ // just forward
-                                doHandleTheException(exceptionValue, establishNonNull = false)
-                            case Unknown ⇒
-                                val npeHandlerPC =
-                                    if (theDomain.throwNullPointerExceptionOnThrow) {
-                                        val npe = theDomain.VMNullPointerException(pc)
-                                        doHandleTheException(npe, false)
-                                    } else
-                                        IntArraySet.empty
-                                npeHandlerPC ++ doHandleTheException(exceptionValue, true)
-                            case Yes ⇒
-                                val npe = theDomain.VMNullPointerException(pc)
-                                doHandleTheException(npe, false)
+                        if (testForNullnessOfExceptionValue) {
+                            exceptionValue.isNull match {
+                                case No ⇒ // just forward
+                                    doHandleTheException(exceptionValue, establishNonNull = false)
+                                case Unknown ⇒
+                                    val npeHandlerPC =
+                                        if (theDomain.throwNullPointerExceptionOnThrow) {
+                                            val npe = theDomain.VMNullPointerException(pc)
+                                            doHandleTheException(npe, false)
+                                        } else {
+                                            IntTrieSet.empty
+                                        }
+                                    npeHandlerPC ++ doHandleTheException(exceptionValue, true)
+                                case Yes ⇒
+                                    val npe = theDomain.VMNullPointerException(pc)
+                                    doHandleTheException(npe, false)
+                            }
+                        } else {
+                            // The exception is either VM generated or is thrown in the
+                            // context of a called method; in both cases the exception is
+                            // not null; the latter can only be the case if we have a
+                            // "throw null".
+                            doHandleTheException(exceptionValue, establishNonNull = false)
                         }
                     } else {
-                        handleExceptions(baseValues)
+                        handleExceptions(baseValues, testForNullnessOfExceptionValue)
                     }
                 }
 
-                def handleExceptions(exceptions: Traversable[ExceptionValue]): PCs = {
-                    exceptions.foldLeft(IntArraySet.empty)(_ ++ handleException(_))
+                def handleExceptions(
+                    exceptions:                      Traversable[ExceptionValue],
+                    testForNullnessOfExceptionValue: Boolean
+                ): PCs = {
+                    exceptions.foldLeft(IntTrieSet.empty) { (pcs, e) ⇒
+                        pcs ++ handleException(e, testForNullnessOfExceptionValue)
+                    }
                 }
 
                 def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
@@ -1480,7 +1570,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
-                    if (computation.throwsException) handleException(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                    }
                 }
 
                 def computationWithException(
@@ -1490,7 +1583,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //TODO val regPC =
                     if (computation.returnsNormally) fallThrough(rest) // else -1
                     //TODO val exPCs =
-                    if (computation.throwsException) handleException(computation.exceptions) // else IntArraySet.empty
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                    } // else IntTrieSet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
@@ -1502,7 +1598,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 ): Unit = {
 
                     if (computation.returnsNormally) fallThrough(rest)
-                    if (computation.throwsException) handleExceptions(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
+                    }
                 }
 
                 def computationWithReturnValueAndException(
@@ -1512,7 +1611,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //TODOval regPC =
                     if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
                     //TODO val exPCs =
-                    if (computation.throwsException) handleException(computation.exceptions) // else IntArraySet.empty
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                    } // else IntTrieSet.empty
 
                     //TODO if (computation.returnsNormally != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
@@ -1524,7 +1626,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 ): Unit = {
 
                     if (computation.hasResult) fallThrough(computation.result :&: rest)
-                    if (computation.throwsException) handleExceptions(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
+                    }
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1538,7 +1643,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else
                             fallThrough(rest)
                     }
-                    if (computation.throwsException) handleExceptions(computation.exceptions)
+                    if (computation.throwsException) {
+                        val exceptions = computation.exceptions
+                        handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
+                    }
 
                     //TODOif (computation.hasResult != computation.throwsException)
                     //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
@@ -1830,7 +1938,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // the exception handlers of the current method in the order that
                         // they appear in the corresponding exception handler table.
                         val theDomain.DomainReferenceValue(exceptionValue) = operands.head
-                        handleException(exceptionValue)
+                        handleException(exceptionValue, testForNullnessOfExceptionValue = true)
 
                     //
                     // CREATE ARRAY
@@ -2025,10 +2133,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 invoke.methodDescriptor,
                                 operands.take(argsCount)
                             )
-                        computationWithReturnValueAndExceptions(
-                            computation,
-                            operands.drop(argsCount)
-                        )
+                        val newOperands = operands.drop(argsCount)
+                        computationWithReturnValueAndExceptions(computation, newOperands)
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
@@ -2041,10 +2147,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 invoke.methodDescriptor,
                                 operands.take(argsCount + 1)
                             )
-                        computationWithOptionalReturnValueAndExceptions(
-                            computation,
-                            operands.drop(argsCount + 1)
-                        )
+                        val newOperands = operands.drop(argsCount + 1)
+                        computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 183 /*invokespecial*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKESPECIAL]
@@ -2502,15 +2606,22 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     fallThrough()
 
                                 case No ⇒
-                                    if (isNull.isNo)
-                                        handleException(theDomain.VMClassCastException(pc))
-                                    else { // isNull is unknown
+                                    if (isNull.isNo) {
+                                        handleException(
+                                            theDomain.VMClassCastException(pc),
+                                            testForNullnessOfExceptionValue = false
+                                        )
+                                    } else { // isNull is unknown
                                         val (newOperands, newLocals) =
                                             theDomain.refTopOperandIsNull(pc, operands, locals)
                                         fallThrough(newOperands, newLocals)
 
-                                        if (theDomain.throwClassCastException)
-                                            handleException(theDomain.VMClassCastException(pc))
+                                        if (theDomain.throwClassCastException) {
+                                            handleException(
+                                                theDomain.VMClassCastException(pc),
+                                                testForNullnessOfExceptionValue = false
+                                            )
+                                        }
                                     }
 
                                 case Unknown ⇒
@@ -2534,8 +2645,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     )
                                     fallThrough(newOperands, newLocals)
 
-                                    if (theDomain.throwClassCastException)
-                                        handleException(theDomain.VMClassCastException(pc))
+                                    if (theDomain.throwClassCastException) {
+                                        handleException(
+                                            theDomain.VMClassCastException(pc),
+                                            testForNullnessOfExceptionValue = false
+                                        )
+                                    }
                             }
                         }
 

@@ -142,12 +142,12 @@ trait Module_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): Attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length = */ in.readInt()
 
         val requiresCount = in.readUnsignedShort()
@@ -190,9 +190,9 @@ trait Module_attributeReader extends AttributeReader {
         } else {
             null
         }
-    }
+    }: Attribute // this is the return type...
 
-    registerAttributeReader(ModuleAttribute.Name → parser)
+    registerAttributeReader(ModuleAttribute.Name → parserFactory())
 }
 
 object ModuleAttribute {
@@ -200,4 +200,3 @@ object ModuleAttribute {
     final val Name = "Module"
 
 }
-

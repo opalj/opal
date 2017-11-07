@@ -30,14 +30,15 @@ package org.opalj
 package ai
 package common
 
-import org.opalj.br._
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 
 /**
  * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a
  * body.
  *
- * The registry was developed to support tools for debugging purposes that let
+ * The registry was developed to support tools for enabling the automatic selection of a domain
+ * that satisfies a given set of requirements; it also support debugging purposes that let
  * the user/developer choose between different domains. After choosing a domain,
  * an abstract interpretation can be performed.
  *
@@ -50,29 +51,119 @@ import org.opalj.br.analyses.SomeProject
  */
 object DomainRegistry {
 
-    type TheRegistry = Map[Class[_ <: Domain], (SomeProject, Method) ⇒ Domain]
+    case class DomainMetaInformation(
+            lessPreciseDomains: Set[Class[_ <: Domain]],
+            factory:            (SomeProject, Method) ⇒ Domain
+    )
+
+    type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]
 
     private[this] var descriptions: Map[String, Class[_ <: Domain]] = Map.empty
-    private[this] var theRegistry: TheRegistry = Map.empty
+    private[this] var classRegistry: ClassRegistry = Map.empty
 
     /**
      * Register a new domain that can be used to perform an abstract interpretation
      * of a specific method.
      *
-     * @param domainDescription A short description of the properties of the domain;
-     *      in particular w.r.t. the kind of computations the domain does.
-     * @param domainClass The class of the domain.
-     * @param factory The factory method that will be used to create instances of the
+     * @param  domainDescription A short description of the properties of the domain;
+     *         in particular w.r.t. the kind of computations the domain does.
+     * @param  lessPreciseDomains The set of domains which are less precise/costly than this domain.
+     *         This basically defines a partial order between the domains.
+     * @param  domainClass The class of the domain.
+     * @param  factory The factory method that will be used to create instances of the
      *      domain.
      */
     def register(
-        domainDescription: String,
-        domainClass:       Class[_ <: Domain],
-        factory:           (SomeProject, Method) ⇒ Domain
+        domainDescription:  String,
+        domainClass:        Class[_ <: Domain],
+        lessPreciseDomains: Set[Class[_ <: Domain]],
+        factory:            (SomeProject, Method) ⇒ Domain
     ): Unit = {
         this.synchronized {
+            if (classRegistry.get(domainClass).nonEmpty)
+                throw new IllegalArgumentException(s"$domainClass is already registered");
+
             descriptions += ((domainDescription, domainClass))
-            theRegistry += ((domainClass, factory))
+            classRegistry += ((domainClass, DomainMetaInformation(lessPreciseDomains, factory)))
+        }
+    }
+
+    /** The transitive hull of all less precise domains of the given domain. */
+    def allLessPreciseDomains(rootDomainClass: Class[_ <: Domain]): Set[Class[_ <: Domain]] = {
+        var domains = Set.empty[Class[_ <: Domain]]
+        var domainsToAnalyze = classRegistry(rootDomainClass).lessPreciseDomains
+        while (domainsToAnalyze.nonEmpty) {
+            val domain = domainsToAnalyze.head
+            domainsToAnalyze = domainsToAnalyze.tail
+            domains += domain
+            classRegistry(domain).lessPreciseDomains.foreach { d ⇒
+                if (!domains.contains(d)) domainsToAnalyze += d
+            }
+        }
+
+        domains
+    }
+
+    def selectCandidates(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+        classRegistry.keys.filter { candidate ⇒
+            requirements.forall(r ⇒ r.isAssignableFrom(candidate))
+        }.toSet
+    }
+
+    /**
+     * Selects a domain that satisfies all requirements and which – according to the domains' partial
+     * order is the most precise one. If the most precise one is not unique multiple domains are
+     * returned; if no domain satisfies the requirements an empty sequence is returned.
+     *
+     * @example
+     *          To get a domain use:
+     *          {{{
+     *          selectBest(Seq(classOf[RecordDefUse],classOf[IntegerRangeValues] ))
+     *          }}}
+     *
+     * @return The best domain satisfying the stated requirements.
+     */
+    def selectBest(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+        val candidateClasses = selectCandidates(requirements)
+        if (candidateClasses.isEmpty)
+            return Set.empty;
+
+        val d: Class[_ <: Domain] = candidateClasses.head
+        val rootSet = Set[Class[_ <: Domain]](d)
+        val (best, _) = candidateClasses.tail.foldLeft((rootSet, allLessPreciseDomains(d))) { (c, n) ⇒
+            // select the most precise domains...
+            val (candidateDomains, lessPreciseThanCurrent) = c
+            if (lessPreciseThanCurrent.contains(n))
+                c
+            else {
+                val lessPreciseThanN = allLessPreciseDomains(n)
+                (
+                    (candidateDomains -- lessPreciseThanN) + n,
+                    lessPreciseThanCurrent ++ lessPreciseThanN
+                )
+            }
+        }
+        best
+    }
+
+    def selectCheapest(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+        val candidateClasses = selectCandidates(requirements)
+        if (candidateClasses.isEmpty)
+            return Set.empty;
+
+        val d: Class[_ <: Domain] = candidateClasses.head
+        val rootSet = Set[Class[_ <: Domain]](d)
+        candidateClasses.tail.foldLeft(rootSet) { (c, n) ⇒
+            // select the least precise/cheapest domains...
+            val lessPreciseThanN = allLessPreciseDomains(n)
+            if (lessPreciseThanN.exists(c.contains)) {
+                // we already have a less precise domain...
+                c
+            } else {
+                // This one is less precise than all other, is one the other acutally
+                // more precise than N
+                c.filter(c ⇒ !allLessPreciseDomains(c).contains(n)) + n
+            }
         }
     }
 
@@ -80,12 +171,14 @@ object DomainRegistry {
      * Returns an `Iterable` to make it possible to iterate over the descriptions of
      * the domain. Useful to show the (end-users) some meaningful descriptions.
      */
-    def domainDescriptions(): Iterable[String] = this.synchronized { descriptions.keys }
+    def domainDescriptions(): Iterable[String] = this.synchronized {
+        for ((d, c) ← descriptions) yield s"[${c.getName}] $d"
+    }
 
     /**
      * Returns the current view of the registry.
      */
-    def registry: TheRegistry = this.synchronized { theRegistry }
+    def registry: ClassRegistry = this.synchronized { classRegistry }
 
     /**
      * Creates a new instance of the domain identified by the given `domainDescription`.
@@ -115,85 +208,95 @@ object DomainRegistry {
      * @param method A method with a body.
      */
     def newDomain(domainClass: Class[_ <: Domain], project: SomeProject, method: Method): Domain = {
-        this.synchronized { theRegistry(domainClass)(project, method) }
+        this.synchronized { classRegistry(domainClass).factory(project, method) }
     }
 
     // initialize the registry with the known default domains
+
+    // IMPROVE Add functionality to the domains to provide a description and then use that information when registering the domain factory
     register(
-        "[l0.BaseDomain] The most basic domain; it does all computations at the type level.",
+        "computations are done at the type level",
         classOf[domain.l0.BaseDomain[_]],
+        Set.empty,
         (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomain(project, method)
     )
 
     register(
-        "[l0.BaseDomainWithDefUse] The most basic domain; it does all computations at the type level and records the definition/use information.",
+        "computations are done at the type level; cfg and def/use information is recorded",
         classOf[domain.l0.BaseDomainWithDefUse[_]],
+        Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomainWithDefUse(project, method)
     )
 
     register(
-        "[l1.DefaultIntervalValuesDomain] A domain that uses intervals to represent the values of primitive values/variables.",
+        "computations related to int values are done using intervals",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
+        Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultIntervalValuesDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultSetValuesDomain] A domain that represents reference values at the type level and represents int/long values using sets.",
+        "computations related to int/long values are done using sets",
         classOf[domain.l1.DefaultSetValuesDomain[_]],
+        Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultSetValuesDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultReferenceValuesDomain] A domain that tracks various properties related to references values.",
+        "computations related to reference types track nullness, must alias and origin information",
         classOf[domain.l1.DefaultReferenceValuesDomain[_]],
+        Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultReferenceValuesDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultDomain] A domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
+        "computations related to ints use intervals; tracks nullness, must alias and origin information of reference values",
         classOf[domain.l1.DefaultDomain[_]],
+        Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomain(project, method)
         }
     )
 
     register(
-        "[l1.DefaultDomainWithDefUse] A classical abstract domain that records the CFG and tracks the def/use relations. The null-ness properties of references values are also tracked as well as int/long values using ranges/sets.",
+        "uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
+        Set(classOf[domain.l0.BaseDomainWithDefUse[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }
     )
 
     register(
-        "[l2.DefaultDomain] This abstract domain performs method invocations up to two levels deep additionally to the features of the l1.DefaultDomain.",
-        classOf[domain.l2.DefaultDomain[_]],
-        (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
-    )
-
-    register(
-        "[l2.DefaultPerformInvocationsDomain] This abstract domain performs simple method invocations additionally to the features of the l1.DefaultDomain.",
+        "performs simple method invocations additionally to performing int computations using intervals and ",
         classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
+        Set(
+            classOf[domain.l1.DefaultIntervalValuesDomain[_]],
+            classOf[domain.l1.DefaultReferenceValuesDomain[_]]
+        ),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l2.DefaultPerformInvocationsDomain(project, method)
         }
     )
 
     register(
-        "[la.DefaultDomain] This abstract domain reuses information provided by some pre analyses additionally to the features of the l1.DefaultDomain.",
-        classOf[domain.l1.DefaultDomain[_]],
-        (project: SomeProject, method: Method) ⇒ new domain.l1.DefaultDomain(project, method)
+        "called methods are context-sensitively analyzed (up to two levels per default)",
+        classOf[domain.l2.DefaultDomain[_]],
+        Set(classOf[domain.l2.DefaultPerformInvocationsDomain[_]]),
+        (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
     )
 
     register(
-        "[li.DefaultDomain] This domain performs some partial concrete evaluation.",
-        classOf[domain.la.DefaultDomain],
-        (project: SomeProject, method: Method) ⇒ new domain.la.DefaultDomain(project, method)
+        "reuses information provided by some pre analyses",
+        classOf[domain.la.DefaultDomain[_]],
+        Set(classOf[domain.l1.DefaultDomain[_]]),
+        (project: SomeProject, method: Method) ⇒ new domain.l1.DefaultDomain(project, method)
     )
+
 }

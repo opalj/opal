@@ -57,7 +57,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
                 Traversable.empty, true, /*true or false... doesn't matter when we have no lib. */
                 Traversable.empty,
                 Project.defaultHandlerForInconsistentProjects,
-                Project.GlobalConfig,
+                BaseConfig,
                 logCtx
             )
         })

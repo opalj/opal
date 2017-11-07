@@ -39,6 +39,12 @@ import java.io.FileNotFoundException;
  */
 public class MethodsWithExceptions {
 
+    @SuppressWarnings("all")
+    public static class SuperException extends java.awt.HeadlessException {}
+
+    @SuppressWarnings("all")
+    public static class SubException extends SuperException {}
+
     // 0 new java.lang.RuntimeException [16]
     // 3 dup
     // 4 aload_0 [message]
@@ -62,6 +68,10 @@ public class MethodsWithExceptions {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+
+    public static void justThrow(Throwable someThrowable) throws Throwable {
+        throw someThrowable; // abnormal return due to NullPointerException or Throwable!
     }
 
     // 0 aload_0 [t]
@@ -95,7 +105,8 @@ public class MethodsWithExceptions {
                 // will never be visible outside of this method.
             }
         } finally {
-            t.printStackTrace(); // <= t may be null => may throw NullPointerException
+            t.printStackTrace(); // <= t may be null => may
+            // throw NullPointerException
         }
     }
 
@@ -326,5 +337,15 @@ public class MethodsWithExceptions {
         }
 
         processIt(i+1);
+    }
+
+    public static void onlyNewNoInitDueToException(int i) {
+        int j = 1;
+        if (i == 0)
+            j = 0;
+        else {
+            j = j-1;
+        }
+        new java.util.HashMap<Integer,Integer>(i / j);
     }
 }

@@ -33,7 +33,6 @@ import scala.annotation.tailrec
 
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -228,6 +227,10 @@ final class ClassFile private (
             methods,
             attributes
         )
+    }
+
+    def methodsWithBody: Iterator[(Method, Code)] = {
+        methods.iterator.filter(_.body.isDefined).map(m ⇒ (m, m.body.get))
     }
 
     import ClassFile._
@@ -659,12 +662,12 @@ final class ClassFile private (
             if (fieldNameComparison == 0) {
                 var theFields = Chain(field)
                 var d = mid - 1
-                while (low <= d && fields(d).name.compareTo(name) == 0) {
+                while (low <= d && fields(d).name.equals(name)) {
                     theFields :&:= fields(d)
                     d -= 1
                 }
                 var u = mid + 1
-                while (u <= high && fields(u).name.compareTo(name) == 0) {
+                while (u <= high && fields(u).name.equals(name)) {
                     theFields :&:= fields(u)
                     u += 1
                 }
@@ -700,20 +703,21 @@ final class ClassFile private (
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
             val methodName = method.name
-            if (methodName == name) {
+            val methodNameComparison = methodName.compareTo(name)
+            if (methodNameComparison == 0) {
                 var theMethods = Chain(method)
                 var d = mid - 1
-                while (low <= d && methods(d).name.compareTo(name) == 0) {
+                while (low <= d && methods(d).name.equals(name)) {
                     theMethods :&:= methods(d)
                     d -= 1
                 }
                 var u = mid + 1
-                while (u <= high && methods(u).name.compareTo(name) == 0) {
+                while (u <= high && methods(u).name.equals(name)) {
                     theMethods :&:= methods(u)
                     u += 1
                 }
                 theMethods
-            } else if (methodName.compareTo(name) < 0) {
+            } else if (methodNameComparison < 0) {
                 findMethod(mid + 1, high)
             } else {
                 findMethod(low, mid - 1)
@@ -769,9 +773,6 @@ final class ClassFile private (
         visibility:  Option[VisibilityModifier],
         name:        String,
         descriptor:  MethodDescriptor
-    )(
-        implicit
-        logContext: LogContext
     ): Result[Method] = {
         assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
@@ -794,9 +795,6 @@ final class ClassFile private (
     final def findDirectlyOverridingMethod(
         packageName: String,
         method:      Method
-    )(
-        implicit
-        logContext: LogContext
     ): Result[Method] = {
         findDirectlyOverridingMethod(
             packageName,

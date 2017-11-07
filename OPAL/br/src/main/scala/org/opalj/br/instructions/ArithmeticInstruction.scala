@@ -37,6 +37,8 @@ package instructions
  */
 trait ArithmeticInstruction extends Instruction {
 
+    final override def asArithmeticInstruction: this.type = this
+
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
@@ -65,6 +67,8 @@ trait ArithmeticInstruction extends Instruction {
      * not all bits are taken into account.
      */
     def isShiftInstruction: Boolean
+
+    final override def toString(currentPC: Int): String = toString()
 }
 
 /**
@@ -77,4 +81,3 @@ object ArithmeticInstruction {
     final val jvmExceptions = List(ObjectType.ArithmeticException)
 
 }
-

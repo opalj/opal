@@ -81,4 +81,6 @@ abstract class NumericConversionInstruction extends Instruction with ConstantLen
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def expressionResult: Stack.type = Stack
+
+    final override def toString(currentPC: Int): String = toString()
 }

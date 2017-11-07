@@ -33,7 +33,7 @@ package instructions
 import org.opalj.collection.immutable.Chain
 
 /**
- * An instruction that "invokes" something. This can be, e.g., the invocation of a method
+ * An instruction that "invokes" something. This can, e.g., be the invocation of a method
  * or – using [[INCOMPLETE_INVOKEDYNAMIC]] – the read of a field value.
  *
  * @author Michael Eichberg
@@ -41,6 +41,8 @@ import org.opalj.collection.immutable.Chain
 abstract class InvocationInstruction extends Instruction with ConstantLengthInstruction {
 
     final override def asInvocationInstruction: this.type = this
+
+    final override def isInvocationInstruction: Boolean = true
 
     /**
      * The simple name of the called method.
@@ -96,7 +98,7 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
      * any handler is a potential successor!
      *
      * The result may contain duplicates iff multiple different exceptions are handled by
-     * the same handler. E.g., as generated in case of "Java's Multicatch instruction":
+     * the same handler. E.g., as generated in case of "Java's multicatch instruction":
      * {{{
      * try {} catch(IOException | NullPointerException ex) {...}
      * }}}
@@ -116,4 +118,6 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
             indexOfNextInstruction(currentPC) :&: exceptionHandlerPCs
         }
     }
+
+    final override def toString(currentPC: Int): String = toString()
 }

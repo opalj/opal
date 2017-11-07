@@ -30,9 +30,11 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.{BasicReport, Project}
-import org.opalj.br.instructions.INVOKESTATIC
+
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.instructions.INVOKESTATIC
 
 /**
  * Counts the number of `Class.forName` calls.

@@ -33,11 +33,12 @@ package l0
 
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
- * This is the most primitive domain that can be used to transform the bytecode to the
- * three address representation which is build upon the result of an abstract interpretation.
+ * This is the most primitive domain that can be used to transform Java bytecode to the
+ * three address representation offered by OPAL, which is build upon the result of a lightweight
+ * abstract interpretation.
  */
 class PrimitiveTACAIDomain(
         val classHierarchy: ClassHierarchy,
@@ -50,7 +51,7 @@ class PrimitiveTACAIDomain(
     with TheMethod
     with RecordDefUse {
 
-    def this(project: Project[_], method: Method) {
+    def this(project: SomeProject, method: Method) {
         this(project.classHierarchy, method)
     }
 }

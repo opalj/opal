@@ -41,6 +41,13 @@ import org.opalj.br.ObjectType
  * can directly be adapted to the calling context and can be used by the caller to continue
  * the abstract interpretation of the calling method.
  *
+ * '''The returned value will only be a given parameter, if the given parameter is not mutated.'''
+ * For example, if an array is passed to a method where the content is reified, the
+ * returned value will only be mapped back to the parameter value if the array is not changed at all.
+ * In other words, the returned value, which may get the pc of the method caller, may refer to
+ * any parameter given to the method. Only, if the returned value is a parameter, we know that
+ * this specific parameter was not mutated at all.
+ *
  * @author Michael Eichberg
  */
 trait RecordMethodCallResults
@@ -81,6 +88,11 @@ trait RecordMethodCallResults
         if (allReturnedValues.isEmpty)
             None
         else {
+            // IMPROVE If some of the returned values are, e.g., MultipleReferenceValues
+            // or if we have multiple return sites
+            // where some refer to parameters and some to local variables, then we should map back
+            // the information regarding the parameters and summarize only w.r.t. the
+            // local variables.
             val summarizedValue = summarize(callerPC, allReturnedValues.values)
 
             val nthParameter = passedParameters.nthValue { _ eq summarizedValue }

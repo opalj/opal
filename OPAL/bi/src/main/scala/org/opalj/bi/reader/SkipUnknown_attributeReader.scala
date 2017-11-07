@@ -41,9 +41,7 @@ import org.opalj.log.GlobalLogContext
  *
  * @author Michael Eichberg
  */
-trait SkipUnknown_attributeReader
-    extends Constant_PoolAbstractions
-    with Unknown_attributeAbstractions {
+trait SkipUnknown_attributeReader extends Unknown_attributeAbstractions {
     this: Constant_PoolReader ⇒
 
     type Unknown_attribute = Null

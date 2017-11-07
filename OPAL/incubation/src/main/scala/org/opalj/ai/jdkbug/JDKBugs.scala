@@ -643,7 +643,7 @@ trait TaintAnalysisDomain[Source]
         // skip if we already check for fields so we don't run into a loop
         if (!checkForFields) {
             // check if the field is set with a relevant value
-            if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toSeq).nonEmpty) {
+            if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toChain.toSeq).nonEmpty) {
 
                 taintedFields = name :: taintedFields
 
@@ -688,7 +688,7 @@ trait TaintAnalysisDomain[Source]
     ) = {
 
         // check if a tainted value is put in the field
-        if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toSeq).nonEmpty) {
+        if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toChain.toSeq).nonEmpty) {
             taintedFields = name :: taintedFields
             // else if it doesn't get a tainted value:
             // check if it was marked as tainted and remove it from the list
@@ -723,11 +723,11 @@ trait TaintAnalysisDomain[Source]
         descriptor:     MethodDescriptor,
         declaringClass: ReferenceType
     ): Boolean = {
-        (!declaringClass.isObjectType || (
+        !declaringClass.isObjectType || (
             descriptor.returnType != Class &&
             descriptor.returnType != Object &&
             descriptor.returnType != String
-        ))
+        )
     }
 
     /**

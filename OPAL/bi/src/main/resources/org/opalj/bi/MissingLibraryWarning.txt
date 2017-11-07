@@ -1,0 +1,15 @@
+AN ANALYSIS RELIED ON TYPE/METHOD/FIELD INFORMATION WHICH IS NOT AVAILABLE. That is, if this
+message is shown the project is not only incomplete, some analysis also had to make an assumption
+about a type/the relation between types, a field or a method which is not available.
+This generally results in unsound, imprecise and less comprehensible results and often in a hardly
+predictable way.
+For example, if the type hierarchy is incomplete, the identification of the "correct" exception
+handler may abort if the type hierarchy relation between a thrown and a caught exception is
+unknown; speculatively evaluating exception handlers could result in fatally failing analyses,
+because a compile-time impossible path is taken.
+Another example is that type hierarchy related computations - such as determining the common
+supertype of multiple types - may end up in unexpected (intersection) types.
+However, to facilitate general usage of OPAL, all analyses can generally be expected to handle
+incomplete projects.
+To get reliable, precise and sound results consider loading all libraries using (at least) a
+library class file reader.

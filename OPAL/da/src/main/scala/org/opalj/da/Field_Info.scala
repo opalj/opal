@@ -61,10 +61,7 @@ case class Field_Info(
         parseFieldType(cp(descriptor_index).asString)
     }
 
-    /**
-     * @param definingType The class defining this field.
-     */
-    def toXHTML(definingType: ObjectTypeInfo)(implicit cp: Constant_Pool): Node = {
+    def toXHTML(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, FIELD)
         val fieldName = this.fieldName
         val fieldDeclaration =

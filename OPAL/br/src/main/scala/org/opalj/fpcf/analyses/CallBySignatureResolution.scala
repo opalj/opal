@@ -71,7 +71,7 @@ class CallBySignatureResolution private (
     ): Set[Method] = {
 
         assert(
-            project.classFile(declClass).map(_.isInterfaceDeclaration).getOrElse(true),
+            project.classFile(declClass).forall(_.isInterfaceDeclaration),
             s"the declaring class ${declClass.toJava} does not define an interface type"
         )
 
@@ -106,7 +106,7 @@ class CallBySignatureResolution private (
  */
 object CallBySignatureResolution {
 
-    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): CallBySignatureResolution = {
+    def apply(project: SomeProject): CallBySignatureResolution = {
         new CallBySignatureResolution(project, project.get(PropertyStoreKey))
     }
 }
