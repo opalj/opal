@@ -101,17 +101,17 @@ import org.opalj.tac.TACode
 /**
  * A simple analysis for method purity based on the three address code representation.
  *
- * @author Dominik Helm
- *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though.
+ *
+ * @author Dominik Helm
  */
 class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    private val tacai = project.get(DefaultTACAIKey)
-    private val typeExtensibility = project.get(TypeExtensibilityKey)
+    val tacai = project.get(DefaultTACAIKey)
+    val typeExtensibility = project.get(TypeExtensibilityKey)
 
     /**
      * Determins the purity of the given method. The given method must have a body!
@@ -123,7 +123,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
 
         val declClass = method.classFile.thisType
 
-        var dependees: Set[EOptionP[Entity, Property]] = Set()
+        var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
         /**
          * Current purity level for this method.
@@ -131,7 +131,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          */
         var purity: Purity = Pure
 
-        val TACode(_, code, cfg, _, _) = tacai(method)
+        implicit val TACode(_, code, cfg, _, _) = tacai(method)
 
         // Creating implicit exceptions is side-effect free (for the fillInStackTrace)
         if (cfg.abnormalReturnNode.predecessors.exists { bb ⇒
@@ -154,7 +154,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     assert(code(defSite).astID == Assignment.ASTID, "defSite should be assignment")
                     val astID = code(defSite).asAssignment.expr.astID
                     astID == New.ASTID || astID == NewArray.ASTID
-                } else if(isVMLevelValue(defSite)){
+                } else if (isVMLevelValue(defSite)) {
                     true // VMLevelValues are freshly created
                 } else {
                     // In initializer methods, the receiver object is fresh
@@ -593,13 +593,11 @@ object MethodPurityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity.key)
 
-    override def usedProperties: Set[PropertyKind] =
+    override def usedProperties: Set[PropertyKind] = {
         Set(FieldMutability, ClassImmutability, TypeImmutability)
+    }
 
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         def analysis = new MethodPurityAnalysis(project)
         propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determinePurity)
         analysis
