@@ -58,6 +58,7 @@ class BaseMethodReturnValuesAnalysisDomain(
     with DefaultDomainValueBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelIntegerValues
+    // with l1.DefaultIntegerRangeValues
     with l0.DefaultTypeLevelLongValues
     with l0.TypeLevelLongValuesShiftOperators
     with l0.TypeLevelPrimitiveValuesConversions

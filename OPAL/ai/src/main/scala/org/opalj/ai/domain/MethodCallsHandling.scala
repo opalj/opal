@@ -114,14 +114,6 @@ trait MethodCallsHandling extends MethodCallsDomain {
         }
     }
 
-    protected[this] def handleInvoke(
-        pc:           PC,
-        targetMethod: Method,
-        operands:     Operands
-    ): MethodCallResult = {
-        handleInvoke(pc, targetMethod.descriptor)
-    }
-
     protected[this] def handleInstanceBasedInvoke(
         pc:               PC,
         methodDescriptor: MethodDescriptor,

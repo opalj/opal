@@ -33,7 +33,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.Naught
 
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -181,17 +181,17 @@ class CodeAttributeTest extends FlatSpec with Matchers {
 
     it should "be able to correctly identify the instructions where multiple paths join" in {
         codeOfPut.cfJoins.size should be(1)
-        codeOfPut.cfJoins should contain(15)
+        codeOfPut.cfJoins.contains(15) should be(true)
     }
 
     it should "be able to correctly identify the instructions where multiple paths join or fork" in {
         val (cfJoins, cfForks, forkTargetPCs) = codeOfPut.cfPCs()
         cfJoins.size should be(1)
-        cfJoins should contain(15)
+        cfJoins.contains(15) should be(true)
         cfForks.size should be(1)
-        cfForks should contain(8)
+        cfForks.contains(8) should be(true)
         forkTargetPCs.size should be(1)
-        forkTargetPCs(8) should be(IntArraySet(15, 11))
+        forkTargetPCs(8) should be(IntTrieSet(15, 11))
     }
 
     behavior of "the \"Code\" attribute's localVariableTable method"

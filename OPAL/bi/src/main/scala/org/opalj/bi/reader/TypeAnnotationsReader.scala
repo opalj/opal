@@ -49,10 +49,10 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
     //
 
     type TypeAnnotationTarget
-    def TypeAnnotationTarget(cp: Constant_Pool, in: DataInputStream): TypeAnnotationTarget
+    def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
 
     type TypeAnnotationPath
-    def TypeAnnotationPath(cp: Constant_Pool, in: DataInputStream): TypeAnnotationPath
+    def TypeAnnotationPath(in: DataInputStream): TypeAnnotationPath
 
     type TypeAnnotation
     implicit val TypeAnnotationManifest: ClassTag[TypeAnnotation]
@@ -107,11 +107,10 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
     def TypeAnnotation(cp: Constant_Pool, in: DataInputStream): TypeAnnotation = {
         TypeAnnotation(
             cp,
-            TypeAnnotationTarget(cp, in),
-            TypeAnnotationPath(cp, in),
+            TypeAnnotationTarget(in),
+            TypeAnnotationPath(in),
             in.readUnsignedShort() /*type_index*/ ,
             ElementValuePairs(cp, in)
         )
     }
 }
-

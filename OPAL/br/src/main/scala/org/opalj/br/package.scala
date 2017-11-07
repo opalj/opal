@@ -28,18 +28,17 @@
  */
 package org.opalj
 
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
-import scala.collection.BitSet
-
 import scala.xml.Node
 import scala.xml.Text
-
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.info
+import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -58,35 +57,27 @@ import org.opalj.bi.AccessFlagsContexts
  */
 package object br {
 
-    final val ConfigKeyPrefix = "org.opalj.br."
+    final val FrameworkName = "OPAL Bytecode Representation"
 
-    private[this] final val checkAssert: Boolean = {
+    {
         implicit val logContext = GlobalLogContext
         try {
-            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
-            OPALLogger.info("OPAL", "Bytecode Representation - Production Build")
+            assert(false) // <= test whether assertions are turned on or off...
+            info(FrameworkName, "Production Build")
         } catch {
-            case ae: AssertionError ⇒
-                OPALLogger.info("OPAL", "Bytecode Representation - Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
-        true
     }
 
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION)
-    def assert(assertion: Boolean): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed")
-    }
+    // We want to make sure that the class loader is used which potentially can
+    // find the config files; the libraries (e.g., Typesafe Config) may have
+    // been loaded using the parent class loader and, hence, may not be able to
+    // find the config files at all.
+    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
 
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION) @inline
-    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed: "+message)
-    }
+    final val ConfigKeyPrefix = "org.opalj.br."
 
-    type LiveVariables = Array[BitSet]
+    type LiveVariables = Array[BitArraySet]
 
     type Attributes = Seq[Attribute]
 
@@ -134,9 +125,9 @@ package object br {
      *
      * @note This type alias serves comprehension purposes.
      */
-    type PCs = org.opalj.collection.immutable.IntArraySet
+    type PCs = IntTrieSet
 
-    final def NoPCs = org.opalj.collection.immutable.EmptyIntArraySet
+    final val NoPCs: IntTrieSet = IntTrieSet.empty
 
     /**
      * Converts a given list of annotations into a Java-like representation.
@@ -195,11 +186,11 @@ package object br {
                     <span class="type object_type">{ ot.toJava }</span>
             case at: ArrayType ⇒
                 <span class="type array_type">
-                    { typeToXHTML(at.elementType, abbreviateType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
+                    { typeToXHTML(at.elementType, abbreviateType) }{ "[]" * at.dimensions }
                 </span>
             case bt: BaseType ⇒
                 <span class="type base_type">{ bt.toJava }</span>
-            case vt: VoidType ⇒
+            case VoidType ⇒
                 <span class="type void_type">void</span>
         }
     }

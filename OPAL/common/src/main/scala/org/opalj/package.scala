@@ -28,16 +28,19 @@
  */
 package org
 
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
- * OPAL is a Scala-based framework for the static analysis of Java bytecode.
- * OPAL is designed with performance, scalability and adaptability in mind.
+ * OPAL is a Scala-based framework for the static analysis, manipulation and creation of
+ * Java bytecode. OPAL is designed with performance, scalability and adaptability in mind.
  *
  * Its main components are:
  *  - a library (`Common`) which provides generally useful data-structures and algorithms
- *    for writing static analyses.
+ *    for static analyses.
  *  - a framework for parsing Java bytecode (`Bytecode Infrastructure`) that can be used to
  *    create arbitrary representations.
  *  - a library to create a one-to-one in-memory representation of Java bytecode
@@ -48,6 +51,7 @@ import org.opalj.log.OPALLogger
  *    Java bytecode (`Abstract Interpretation Framework` - [[org.opalj.ai]]).
  *  - a library to extract dependencies between code elements and to facilitate checking
  *    architecture definitions.
+ *  - a library for the lightweight manipulation and creation of Java bytecode.
  *
  * ==General Design Decisions==
  *
@@ -69,8 +73,8 @@ import org.opalj.log.OPALLogger
  * For efficiency reasons, OPAL sometimes uses mutable data-structures internally.
  * After construction time, these data-structures are generally represented using
  * their generic interfaces (e.g., `scala.collection.{Set,Map}`). However, a downcast
- * (e.g., to add/remove elements) is always forbidden as it would effectively prevent the
- * thread-safety properties. Furthermore, the concrete data-structure is always
+ * (e.g., to add/remove elements) is always forbidden as it would effectively prevent
+ * thread-safety. Furthermore, the concrete data-structure is always
  * considered an implementation detail and may change at any time.
  *
  * ===Assertions===
@@ -83,17 +87,28 @@ import org.opalj.log.OPALLogger
 package object opalj {
 
     {
-        // Log the information whether a production build or a development build is
-        // used.
+        // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
         import OPALLogger.info
         try {
-            scala.Predef.assert(false)
-            info("OPAL", "Common - Production Build")
+            assert(false)
+            // when we reach this point assertions are turned off
+            info("OPAL Common", "Production Build")
         } catch {
-            case ae: AssertionError ⇒
-                info("OPAL", "Common - Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info("OPAL Common", "Development Build with Assertions")
         }
+    }
+
+    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
+
+    /** Non-elidable version of `assert`; only to be used in a guarded context. */
+    def check(condition: Boolean) = {
+        if (!condition) throw new AssertionError();
+    }
+
+    /** Non-elidable version of `assert`; only to be used in a guarded context. */
+    def check(condition: Boolean, message: ⇒ String) = {
+        if (!condition) throw new AssertionError(message);
     }
 
     /**
@@ -131,7 +146,7 @@ package object opalj {
      * A simple type alias that can be used to communicate that the respective
      * value will/should only take values in the range of unsigned short values.
      */
-    final type UShort = Int // TODO: Use char???
+    final type UShort = Int
 
     /**
      * A simple type alias that can be used to communicate that the respective
@@ -152,10 +167,14 @@ package object opalj {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
     }
 
-    def notRequired(): Nothing = {
+    final def notRequired(): Nothing = {
         throw new UnknownError("providing an implementation was not expected to be required")
     }
 
+    /**
+     * A method that takes an arbitrary parameter and throws an UnknownError that states
+     * that an implementation was not required.
+     */
     final val NotRequired: (Any) ⇒ Nothing = (a: Any) ⇒ { notRequired() }
 
 }

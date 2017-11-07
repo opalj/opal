@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 
 import scala.language.existentials
-import java.util.{IdentityHashMap ⇒ JIDMap}
+import java.util.{HashMap ⇒ DataMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
@@ -47,6 +47,9 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{HashSet ⇒ HSet}
 import scala.collection.mutable.{ListBuffer ⇒ Buffer}
 import scala.collection.JavaConverters._
+
+import net.ceedubs.ficus.Ficus._
+
 import org.opalj.graphs.closedSCCs
 import org.opalj.io.writeAndOpen
 import org.opalj.collection.mutable.ArrayMap
@@ -71,18 +74,8 @@ import org.opalj.util.AnyToAnyThis
  * to handle the dependencies between the entities. Furthermore, the property store parallelizes
  * the computation of the properties as far as possible without requiring users to take care of it.
  *
- * The store supports two kinds of properties: '''set properties''' and '''per entity properties'''.
- * Set properties are particularly useful if the respective property (instance) is never specialized
- * for any entity. For example, the property whether a method is only used during initialization or
- * not could be shared across all respective classes. The property which methods are calling a
- * specific method m on the other hand is specific for each method m.
- * In general, if the concrete instance of a property may be shared by all entities it is
- * advantageous to model it as a set property. However, the more general mechanism is
- * per entity properties and this is generally needed if the result of a computation may be refined
- * during the computation.
- *
  * ==Usage==
- * The general strategy when using the PropertyStore is to always continue computing the property
+ * The general strategy, when using the PropertyStore, is to always continue computing the property
  * of an entity and to collect the dependencies on those elements that are relevant.
  * I.e., if some information is not or just not completely available, the analysis should
  * still continue using the provided information and (internally) records the dependency.
@@ -90,8 +83,8 @@ import org.opalj.util.AnyToAnyThis
  * framework about its dependencies.
  *
  * ===Core Requirements on Property Computation Functions===
- *  - (One Function per Property Kind) A specific kind of property is always computed
- *      by only one registered `PropertyComputation` function.
+ *  - (One Lazy/Direct Function per Property Kind) A specific kind of property is in each
+ *      phase always computed by only one registered `PropertyComputation` function.
  *  - (Thread-Safe) PropertyComputation functions have to be thread-safe. I.e., the function may
  *      be executed concurrently for different entities.
  *  - (Non-Overlapping Results) [[PropertyComputation]] functions that are invoked on different
@@ -172,15 +165,16 @@ class PropertyStore private (
         // class PropertyAndObservers(p: Property, os: Observers)
         // type Properties = OArrayMap[PropertyAndObservers] // the content of the array may be updated
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
-        private[this] val data:     JIDMap[Entity, EntityProperties],
+        private[this] val data:     DataMap[Entity, EntityProperties],
         final val ctx:              Map[Type, AnyRef],
         final val ParallelismLevel: Int,
-        final val isInterrupted:    () ⇒ Boolean,
-        @volatile var debug:        Boolean
+        final val isInterrupted:    () ⇒ Boolean
 )(
         implicit
         val logContext: LogContext
 ) { store ⇒
+
+    private[this] final val ValidateConsistency = PropertyStore.ValidateConsistency
 
     def context[T: TypeTag]: T = {
         val t = typeOf[T]
@@ -309,7 +303,7 @@ class PropertyStore private (
             dependerNode.addChildren(dependeeNodes.toList)
         }
 
-        org.opalj.graphs.toDot(epkNodes.values.toSet)
+        org.opalj.graphs.toDot(epkNodes.valuesIterator.toSet)
     }
 
     /**
@@ -423,7 +417,7 @@ class PropertyStore private (
 
         // 2. check that each observer found in observers still exists
         // observers : JCHMap[SomeEPK, Buffer[(SomeEPK, PropertyObserver)]]()
-        // data:  JIDMap[Entity, EntityProperties]
+        // data:  DataMap[Entity, EntityProperties]
         for {
             dependerEPK ← dependerEPKOpt
             dependeeOss = observers.get(dependerEPK)
@@ -800,7 +794,7 @@ class PropertyStore private (
         val l = eps.l
         val ps = eps.ps
         accessEntity {
-            withReadLock(l) { (ps.values collect ComputedProperty).toList }
+            withReadLock(l) { (ps.valuesIterator collect ComputedProperty).toList }
         }
     }
 
@@ -1227,7 +1221,7 @@ class PropertyStore private (
         accessStore {
             for {
                 (e, eps) ← entries
-                if eps.ps.values.exists { pos ⇒
+                if eps.ps.valuesIterator.exists { pos ⇒
                     val p = pos.p
                     (p ne null) && !p.isBeingComputed && propertyFilter(p)
                 }
@@ -1249,7 +1243,7 @@ class PropertyStore private (
             for {
                 (e, eps) ← entries
                 ps = eps.ps
-                pos ← ps.values
+                pos ← ps.valuesIterator
                 p = pos.p
                 if p ne null
                 if !p.isBeingComputed
@@ -1326,7 +1320,7 @@ class PropertyStore private (
                     return ;
 
                 isInterrupted = true
-                if (debug) logDebug("analysis progress", "cancelling scheduled computations")
+                if (ValidateConsistency) logDebug("analysis progress", "cancelling scheduled computations")
                 val waitingTasks = threadPool.shutdownNow()
                 tasksAborted(waitingTasks.size)
             }
@@ -1336,7 +1330,7 @@ class PropertyStore private (
                 // to help to make sure that the computation can finish in due time.
                 threadPool.awaitTermination(5000L, TimeUnit.MILLISECONDS)
 
-                if (debug) logDebug("analysis progress", "garbage collecting property computations")
+                if (ValidateConsistency) logDebug("analysis progress", "garbage collecting property computations")
                 accessStore {
                     // 1) clear the list of outgoing observers
                     store.observers.clear()
@@ -1345,7 +1339,7 @@ class PropertyStore private (
                     for {
                         eps ← entitiesProperties
                         ps = eps.ps
-                        (pos, pkId) ← ps.values.zipWithIndex // the property p may (still be) null
+                        (pos, pkId) ← ps.valuesIterator.zipWithIndex // the property p may (still be) null
                         os = pos.os
                         if os ne null // if the property is final the observers are already cleared
                     } {
@@ -1395,7 +1389,7 @@ class PropertyStore private (
 
                     if (scheduled == 0 && cleanUpRequired) {
                         cleanUpRequired = false
-                        if (debug) {
+                        if (ValidateConsistency) {
                             val message = s"all $executed scheduled tasks have finished"
                             logDebug("analysis progress", message)
                         }
@@ -1403,10 +1397,10 @@ class PropertyStore private (
                         // We want to give clients the full control over resolving
                         // cycles and using default values.
                         if (scheduled == 0 /*scheduled is still === 0*/ ) {
-                            if (debug) {
+                            if (ValidateConsistency) {
                                 def registeredObservers: Int = {
                                     val pss = entitiesProperties.map(_.ps)
-                                    val poss = pss.flatMap(_.values)
+                                    val poss = pss.flatMap(_.valuesIterator)
                                     poss.map { pos ⇒
                                         val os = pos.os
                                         if (os eq null) 0 else os.count(_ ne null)
@@ -1421,7 +1415,7 @@ class PropertyStore private (
                             }
                             notifyAll()
                         } else {
-                            if (debug) logDebug(
+                            if (ValidateConsistency) logDebug(
                                 "analysis progress",
                                 s"(re)scheduled $scheduled property computations"
                             )
@@ -1527,7 +1521,7 @@ class PropertyStore private (
             if (resolveCycles) {
                 val cSCCs: List[Iterable[SomeEPK]] =
                     closedSCCs(cyclicComputableEPKCandidates, epkSuccessors)
-                if (debug && cSCCs.nonEmpty) logDebug(
+                if (ValidateConsistency && cSCCs.nonEmpty) logDebug(
                     "analysis progress",
                     cSCCs.
                         map(_.mkString("", " → ", " ↺")).
@@ -1539,9 +1533,12 @@ class PropertyStore private (
                     storeUpdated = true
                     val results = PropertyKey.resolveCycle(store, cSCC)
                     if (results.nonEmpty) {
-                        if (debug) {
+                        if (ValidateConsistency) {
                             val cycle = cSCC.mkString("", " → ", " ↺")
-                            logInfo("analysis progress", s"resolving the cycle $cycle resulted in $results")
+                            logInfo(
+                                "analysis progress",
+                                s"resolving the cycle $cycle resulted in $results"
+                            )
                         }
                         for (result ← results) {
                             // TODO validate that we have indeed changed a property!
@@ -1549,9 +1546,10 @@ class PropertyStore private (
                         }
                     } else {
                         // The following handles the case of a cycle which could not be resolved.
-                        if (debug) {
+                        if (ValidateConsistency) {
                             val cycle = cSCC.mkString("", " → ", " ↺")
-                            val infoMessage = s"resolution of $cycle produced no results; removing observers"
+                            val infoMessage =
+                                s"resolution of $cycle produced no results; removing observers"
                             logInfo("analysis progress", infoMessage)
                         }
                         for (epk ← cSCC) { clearAllDependeeObservers(epk) }
@@ -1578,7 +1576,7 @@ class PropertyStore private (
                     set(e, defaultP)
                 }
 
-                if (debug) logDebug(
+                if (ValidateConsistency) logDebug(
                     "analysis progress", "created all tasks for setting the fallback properties"
                 )
             }
@@ -1592,7 +1590,8 @@ class PropertyStore private (
         private[this] def doWaitOnCompletion(): Unit = {
             //noinspection LoopVariableNotUpdated
             while (scheduled > 0) {
-                if (debug) logDebug("analysis progress", s"remaining tasks: $scheduled")
+                if (ValidateConsistency)
+                    logDebug("analysis progress", s"remaining tasks: $scheduled")
                 wait()
             }
         }
@@ -1800,7 +1799,7 @@ class PropertyStore private (
                             ) */
 
                         case IntermediateUpdate.id ⇒
-                            assert(p.isRefineable, s"$e: intermediate update of a final property $p")
+                            assert(p.isRefineable, s"$e: intermediate update of final property $p")
                             ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
                         /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
@@ -1818,7 +1817,7 @@ class PropertyStore private (
                     // We are either updating or setting a property or changing the state of the
                     // property => intermediate result => final result
                     val oldP = pos.p
-                    if (debug && (oldP ne null) && p.isOrdered) {
+                    if (ValidateConsistency && (oldP ne null) && p.isOrdered) {
                         val isValid = p.asOrderedProperty.isValidSuccessorOf(oldP.asOrderedProperty)
                         isValid.foreach(s ⇒ throw new AssertionError(s"$e: $s"))
                     }
@@ -1830,7 +1829,7 @@ class PropertyStore private (
 
                     (updateTypeId: @scala.annotation.switch) match {
                         case OneStepFinalUpdate.id ⇒
-                            if (debug) assert(
+                            if (ValidateConsistency) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: the old property $oldP is final; refinement to $p is not supported"
                             )
@@ -1844,7 +1843,7 @@ class PropertyStore private (
                             if (oldP.isInstanceOf[PropertyIsDirectlyComputed]) os = Nil /* => there are no observers */
 
                         case FinalUpdate.id ⇒
-                            if (debug) assert(
+                            if (ValidateConsistency) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: the old property $oldP is final; refinement to $p is not supported"
                             )
@@ -1856,22 +1855,22 @@ class PropertyStore private (
                             ) */
 
                         case IntermediateUpdate.id ⇒
-                            if (debug) assert(
+                            if (ValidateConsistency) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
                                 s"$e: impossible intermediate update of the old property $oldP with $p (os=$os)"
                             )
-                            if (debug) assert(
+                            if (ValidateConsistency) assert(
                                 p.isRefineable, s"$e: intermediate update using a final property $p"
                             )
                             if (oldP != p) {
-                                if (debug) assert(p != oldP, s"equals is not reflexive: $p <=> $oldP")
+                                if (ValidateConsistency) assert(p != oldP, s"equals is not reflexive: $p <=> $oldP")
                                 ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
                                 /*internal*/ /* assert(
                                     ps(p.key.id).p == p,
                                     s"the property store $pos does not contain the new property $p"
                                 ) */
                             } else {
-                                if (debug) logDebug(
+                                if (ValidateConsistency) logDebug(
                                     "analysis progress", s"$e: ignoring useless update $oldP => $p"
                                 )
                                 os = Nil
@@ -1892,7 +1891,7 @@ class PropertyStore private (
         // PROCESSING RESULTS
         //
 
-        if (debug && r.id != Results.id && r.id != IncrementalResult.id) logDebug(
+        if (ValidateConsistency && r.id != Results.id && r.id != IncrementalResult.id) logDebug(
             "analysis progress", s"analysis result $r"
         )
 
@@ -1902,9 +1901,21 @@ class PropertyStore private (
 
                 case NoResult.id ⇒ /* nothing to do */
 
-                case Results.id ⇒
-                    val Results(results) = r
-                    results.foreach(handleResult(_))
+                case Result.id ⇒
+                    val Result(e, p) = r
+                    update(e, p, FinalUpdate)
+                /*internal*/ /* assert(
+                        { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                        s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                    ) */
+
+                case RefineableResult.id ⇒
+                    val RefineableResult(e, p) = r
+                    update(e, p, IntermediateUpdate)
+                /*internal*/ /* assert(
+                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                        ) */
 
                 case ImmediateResult.id ⇒
                     val ImmediateResult(e, p) = r
@@ -1914,38 +1925,6 @@ class PropertyStore private (
                         s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
                     ) */
 
-                case ImmediateMultiResult.id ⇒
-                    val ImmediateMultiResult(results) = r
-                    results foreach { ep ⇒
-                        val e = ep.e
-                        val p = ep.p
-                        update(e, p, OneStepFinalUpdate)
-                        /*internal*/ /* assert(
-                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        ) */
-                    }
-
-                case Result.id ⇒
-                    val Result(e, p) = r
-                    update(e, p, FinalUpdate)
-                /*internal*/ /* assert(
-                        { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                        s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    ) */
-
-                case MultiResult.id ⇒
-                    val MultiResult(results) = r
-                    results foreach { ep ⇒
-                        val e = ep.e
-                        val p = ep.p
-                        update(e, p, FinalUpdate)
-                        /*internal*/ /* assert(
-                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        ) */
-                    }
-
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                     handleResult(ir)
@@ -1953,7 +1932,6 @@ class PropertyStore private (
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(dependerE, dependerP, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
-                    assert(dependees.nonEmpty, s"the intermediate result $r has no dependencies")
                     assert(
                         dependerP.isRefineable,
                         s"intermediate result $r used to store final property $dependerP"
@@ -1961,7 +1939,7 @@ class PropertyStore private (
 
                     val dependerPK = dependerP.key
 
-                    if (debug) assert(
+                    if (ValidateConsistency) assert(
                         { val epk = EPK(dependerE, dependerPK); !dependees.exists(_ == epk) },
                         s"$dependerE: self-recursive computation of $dependerPK"
                     )
@@ -2024,7 +2002,7 @@ class PropertyStore private (
                                     else
                                         IntermediateUpdate
 
-                                if (debug) logDebug(
+                                if (ValidateConsistency) logDebug(
                                     "analysis progress",
                                     s"scheduled continuation of $dependerE(${dependerP.key}): "+
                                         s"$dependeeE("+
@@ -2054,7 +2032,8 @@ class PropertyStore private (
                                 }
                             }
 
-                            for (dependeeEPK @ EPK(dependeeE, dependeePK) ← dependeeEPKs) {
+                            for { dependeeEPK ← dependeeEPKs } {
+                                val EPK(dependeeE, dependeePK) = dependeeEPK
                                 val dependeeCurrentEPs = data.get(dependeeE)
                                 val dependeeCurrentPs = dependeeCurrentEPs.ps
                                 val dependeePKId = dependeePK.id
@@ -2147,7 +2126,7 @@ class PropertyStore private (
                                     // the property was computed in the meantime...
                                     // but we don't want to call the continuation while we
                                     // still hold the lock on dependee
-                                    if (debug) logDebug(
+                                    if (ValidateConsistency) logDebug(
                                         "analysis progress",
                                         "immediately continued the suspended computation of "+
                                             s"$dependerE($dependerPK) using $dependeeE($dependeeP)"
@@ -2161,6 +2140,35 @@ class PropertyStore private (
                         val suspendedPC = suspended.asInstanceOf[SuspendedPC[Property]]
                         handleResult(suspendedPC.continue(p))
                     }
+
+                case Results.id ⇒
+                    val Results(results) = r
+                    results.foreach(handleResult(_))
+
+                case MultiResult.id ⇒
+                    val MultiResult(results) = r
+                    results foreach { ep ⇒
+                        val e = ep.e
+                        val p = ep.p
+                        update(e, p, FinalUpdate)
+                        /*internal*/ /* assert(
+                                    { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                                    s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                                ) */
+                    }
+
+                case ImmediateMultiResult.id ⇒
+                    val ImmediateMultiResult(results) = r
+                    results foreach { ep ⇒
+                        val e = ep.e
+                        val p = ep.p
+                        update(e, p, OneStepFinalUpdate)
+                        /*internal*/ /* assert(
+                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
+                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
+                        ) */
+                    }
+
             }
         }
     }
@@ -2175,10 +2183,12 @@ class PropertyStore private (
  */
 object PropertyStore {
 
+    final val ConfigKey = "org.opalj.debug.fpcf.PropertyStore.consistency"
+    final val ValidateConsistency = BaseConfig.as[Option[Boolean]](ConfigKey).getOrElse(false)
+
     def apply[T <: AnyRef: TypeTag](
         entities:      Traversable[Entity],
         isInterrupted: () ⇒ Boolean,
-        debug:         Boolean,
         context:       T
     )(
         implicit
@@ -2188,7 +2198,6 @@ object PropertyStore {
             entities,
             isInterrupted,
             Math.max(NumberOfThreadsForCPUBoundTasks, 2),
-            debug,
             PropertyStoreContext[T](context)
         )
     }
@@ -2196,7 +2205,6 @@ object PropertyStore {
     def apply(
         entities:      Traversable[Entity],
         isInterrupted: () ⇒ Boolean,
-        debug:         Boolean,
         context:       PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
@@ -2206,7 +2214,6 @@ object PropertyStore {
             entities,
             isInterrupted,
             Math.max(NumberOfThreadsForCPUBoundTasks, 2),
-            debug,
             context: _*
         )
     }
@@ -2220,7 +2227,6 @@ object PropertyStore {
      * @param isInterrupted A function that is called by the framework to test if
      *          the running/scheduled computations should be aborted.
      *          It is important that this function is efficient as it is frequently called.
-     * @param debug `true` if debug output should be generated.
      * @param context A collection of objects which are of different types and which
      *        can be queried later on to get information about the property store's
      *        context. For example, in case of OPAL the project to which this property store
@@ -2233,7 +2239,6 @@ object PropertyStore {
         entities:         Traversable[Entity],
         isInterrupted:    () ⇒ Boolean,
         parallelismLevel: Int,
-        debug:            Boolean,
         context:          PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
@@ -2243,17 +2248,17 @@ object PropertyStore {
         assert(parallelismLevel > 0)
 
         val entitiesCount = entities.size
-        val data = new JIDMap[Entity, EntityProperties](entitiesCount)
+        val data = new DataMap[Entity, EntityProperties](entitiesCount)
         var entityId = 0
         entities foreach { e ⇒
             if (data.put(e, new EntityProperties(entityId)) ne null) {
-                OPALLogger.error("internal - recoverable", s"duplicate entity: $e")
+                OPALLogger.error("internal - non-critical", s"duplicate entity: $e")
             }
             entityId += 1
         }
 
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
-        new PropertyStore(data, contextMap, parallelismLevel, isInterrupted, debug)
+        new PropertyStore(data, contextMap, parallelismLevel, isInterrupted)
     }
 
     /**
@@ -2282,7 +2287,7 @@ object PropertyStore {
 
 }
 
-class PropertyStoreContext[T <: AnyRef] private (val t: Type, val data: T) {
+class PropertyStoreContext[+T <: AnyRef] private (val t: Type, val data: T) {
 
     def asTuple: (Type, T) = (t, data)
 }

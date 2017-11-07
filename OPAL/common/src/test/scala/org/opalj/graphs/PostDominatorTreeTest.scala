@@ -30,13 +30,12 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tests the (Post)[[DominatorTree]] implementation.
@@ -56,7 +55,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
             PostDominatorTree(
                 Some(0),
                 (i: Int) ⇒ i == 0,
-                IntArraySet.empty,
+                IntTrieSet.empty,
                 Set(0).foreach,
                 foreachSuccessorOf, foreachPredecessorOf,
                 0
@@ -84,7 +83,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
             PostDominatorTree(
                 None,
                 existNodes.contains,
-                IntArraySet.empty,
+                IntTrieSet.empty,
                 existNodes.foreach,
                 foreachSuccessorOf, foreachPredecessorOf,
                 4
@@ -118,7 +117,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
             PostDominatorTree(
                 None,
                 existNodes.contains,
-                IntArraySet.empty,
+                IntTrieSet.empty,
                 existNodes.foreach,
                 foreachSuccessorOf, foreachPredecessorOf,
                 4
@@ -160,7 +159,7 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
             PostDominatorTree(
                 None,
                 existNodes.contains,
-                IntArraySet.empty,
+                IntTrieSet.empty,
                 existNodes.foreach,
                 foreachSuccessorOf, foreachPredecessorOf,
                 2

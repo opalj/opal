@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
 import java.net.URL
 
 import org.opalj.util.PerformanceEvaluation.time
@@ -143,7 +141,7 @@ case class RefinedReturnType[D <: Domain](
         val returnType = method.descriptor.returnType
         val additionalInfo =
             refinedType match {
-                case value @ TypeOfReferenceValue(utb) ⇒
+                case value @ TypeOfReferenceValue(_ /*utb*/ ) ⇒
                     if (returnType.isReferenceType && value.isValueSubtypeOf(returnType.asReferenceType).isNoOrUnknown)
                         s"the $refinedType is not a subtype of the declared type $returnType"
                     else if (returnType.isObjectType && project.classHierarchy.hasSubtypes(returnType.asObjectType).isNoOrUnknown)

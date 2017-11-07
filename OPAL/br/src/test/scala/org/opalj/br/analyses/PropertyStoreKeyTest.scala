@@ -144,12 +144,13 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
                     )
                 } else {
                     // check that the method does not contain a new instruction
-                    code.iterate((pc, i) ⇒
+                    code.iterate { (pc, i) ⇒
                         if (i.opcode == instructions.NEW.opcode) {
                             info("allocation sites: "+mToPCToAs.mkString("\n"))
                             val error = m.toJava(s"missing allocation site $pc:$i")
                             fail(error)
-                        })
+                        }
+                    }
                 }
             }
 
@@ -192,15 +193,12 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         assert(p.has(AllocationSitesKey).isDefined)
 
         it("should contain the allocation sites") {
+            val allocationSites = ps.context[AllocationSites]
 
-            val allAs: Iterable[AllocationSite] = ps.context[AllocationSites].allocationSites
+            assert(allocationSites.nonEmpty)
+            info(s"contains ${allocationSites.size} allocation sites")
 
-            val allocationSiteCount = allAs.size
-
-            assert(allocationSiteCount > 0)
-            info(s"contains $allocationSiteCount allocation sites")
-
-            val allAdded: Boolean = allAs.forall(ps.isKnown)
+            val allAdded: Boolean = allocationSites.forall(ps.isKnown)
             assert(allAdded)
         }
     }

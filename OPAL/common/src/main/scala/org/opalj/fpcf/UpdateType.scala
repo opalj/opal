@@ -33,7 +33,7 @@ package org.opalj.fpcf
  *
  * @author Michael Eichberg
  */
-sealed abstract class UpdateType(name: String) {
+sealed abstract class UpdateType(val name: String) {
     val id: Int
 
     def asUserUpdateType: UserUpdateType

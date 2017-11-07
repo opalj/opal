@@ -49,7 +49,8 @@ import org.opalj.fpcf.properties.ConditionallyImmutableObject
 import org.opalj.fpcf.properties.TypeImmutability
 
 /**
- * Determines the mutability of a specific type.
+ * Determines the mutability of a specific type by checking if all subtypes of a specific
+ * type are immutable and checking that the set of types is closed.
  *
  * @author Michael Eichberg
  */
@@ -73,19 +74,21 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
         val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
 
-        if (cf.isFinal || /*APP:*/ directSubtypes.isEmpty) {
+        if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
-            def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-                p match {
-                    case UnknownClassImmutability ⇒
-                        val dependees = Traversable(EP(e, p))
-                        IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
-                    case AtLeastConditionallyImmutableObject ⇒
-                        val dependees = Traversable(EP(e, p))
-                        IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
-                    case p: ClassImmutability ⇒
-                        assert(p.isFinal)
-                        Result(cf, p.correspondingTypeImmutability)
+            val c = new OnUpdateContinuation { c ⇒
+                def apply(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                    p match {
+                        case UnknownClassImmutability ⇒
+                            val dependees = Traversable(EP(e, p))
+                            IntermediateResult(cf, UnknownTypeImmutability, dependees, c)
+                        case AtLeastConditionallyImmutableObject ⇒
+                            val dependees = Traversable(EP(e, p))
+                            IntermediateResult(cf, AtLeastConditionallyImmutableType, dependees, c)
+                        case p: ClassImmutability ⇒
+                            assert(p.isFinal)
+                            Result(cf, p.correspondingTypeImmutability)
+                    }
                 }
             }
 
@@ -241,10 +244,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             nextResult()
                         case AtLeastConditionallyImmutableType ⇒
                             dependencies = dependencies map {
-                                case EPK(dependeeE, _) if dependeeE eq e ⇒
-                                    EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
-                                case EP(dependeeE, _) if dependeeE eq e ⇒
-                                    EP(e.asInstanceOf[ClassFile], AtLeastConditionallyImmutableType)
+                                case EPK(dependeeE: ClassFile, _) if dependeeE eq e ⇒
+                                    EP(dependeeE, AtLeastConditionallyImmutableType)
+                                case EP(dependeeE: ClassFile, _) if dependeeE eq e ⇒
+                                    EP(dependeeE, AtLeastConditionallyImmutableType)
                                 case d ⇒
                                     d
                             }
@@ -274,14 +277,12 @@ object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
 
-        // An optimization if the analysis also includes the JDK.
+        // An optimization, if the analysis also includes the JDK.
         project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
 
-        ps.scheduleForCollected {
-            case cf: ClassFile if (cf.thisType ne ObjectType.Object) ⇒ cf
-        }(
+        ps.scheduleForEntities(project.allClassFiles.filter(_.thisType ne ObjectType.Object)) {
             analysis.step1(typeExtensibility)
-        )
+        }
 
         analysis
     }

@@ -29,9 +29,9 @@
 package org.opalj
 package ai
 
-import scala.collection.BitSet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Mixin this trait if the domain needs information about the structure of the code.
@@ -48,11 +48,11 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
 
     private[this] var theInstructions: Array[Instruction] = null
 
-    private[this] var theCFJoins: BitSet = null
+    private[this] var theCFJoins: IntTrieSet = null
 
     def instructions: Array[Instruction] = theInstructions
     /** @see [[org.opalj.br.Code.cfPCs]] */
-    def cfJoins: BitSet = theCFJoins
+    def cfJoins: IntTrieSet = theCFJoins
 
     /**
      * Sets the code structure.
@@ -61,7 +61,7 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
      */
     private[ai] def setCodeStructure(
         theInstructions:  Array[Instruction],
-        theCFJoins:       BitSet,
+        theCFJoins:       IntTrieSet,
         theLiveVariables: LiveVariables
     ): Unit = {
         this.theInstructions = theInstructions

@@ -33,15 +33,13 @@ import scala.annotation.tailrec
 
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.log.StandardLogMessage
-import org.opalj.log.Warn
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
+import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_INTERFACE
@@ -229,6 +227,10 @@ final class ClassFile private (
             methods,
             attributes
         )
+    }
+
+    def methodsWithBody: Iterator[(Method, Code)] = {
+        methods.iterator.filter(_.body.isDefined).map(m ⇒ (m, m.body.get))
     }
 
     import ClassFile._
@@ -473,9 +475,11 @@ final class ClassFile private (
                         //          new Listener(){                  // X$Listener$1
                         //              void event(){
                         //                  new Listener(){...}}}}}} // X$Listener$2
-                        nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
+                        nestedClassesOfOuterClass =
+                            directNestedClasses(nestedClassesOfOuterClass).toSeq
                     }
-                    val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
+                    val filteredNestedClasses =
+                        nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
                     return filteredNestedClasses;
                 case None ⇒
                     val disclaimer = "; the inner classes information may be incomplete"
@@ -658,12 +662,12 @@ final class ClassFile private (
             if (fieldNameComparison == 0) {
                 var theFields = Chain(field)
                 var d = mid - 1
-                while (low <= d && fields(d).name.compareTo(name) == 0) {
+                while (low <= d && fields(d).name.equals(name)) {
                     theFields :&:= fields(d)
                     d -= 1
                 }
                 var u = mid + 1
-                while (u <= high && fields(u).name.compareTo(name) == 0) {
+                while (u <= high && fields(u).name.equals(name)) {
                     theFields :&:= fields(u)
                     u += 1
                 }
@@ -699,20 +703,21 @@ final class ClassFile private (
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
             val methodName = method.name
-            if (methodName == name) {
+            val methodNameComparison = methodName.compareTo(name)
+            if (methodNameComparison == 0) {
                 var theMethods = Chain(method)
                 var d = mid - 1
-                while (low <= d && methods(d).name.compareTo(name) == 0) {
+                while (low <= d && methods(d).name.equals(name)) {
                     theMethods :&:= methods(d)
                     d -= 1
                 }
                 var u = mid + 1
-                while (u <= high && methods(u).name.compareTo(name) == 0) {
+                while (u <= high && methods(u).name.equals(name)) {
                     theMethods :&:= methods(u)
                     u += 1
                 }
                 theMethods
-            } else if (methodName.compareTo(name) < 0) {
+            } else if (methodNameComparison < 0) {
                 findMethod(mid + 1, high)
             } else {
                 findMethod(low, mid - 1)
@@ -755,38 +760,42 @@ final class ClassFile private (
     }
 
     /**
-     * Returns the method which directly overrides a method with the given properties.
+     * Returns the method which directly overrides a method with the given properties. The result
+     * is `Success(<Method>)`` if we can find a method; `Empty` if no method can be found and
+     * `Failure` if a method is found which supposedly overrides the specified method,
+     * but which is less visible.
      *
-     * @note    This method is only defined for proper virtual methods.
+     * @note    This method is only defined for proper virtual methods. I.e., asking for
+     *          overridings of a private methods is not supported.
      */
     def findDirectlyOverridingMethod(
         packageName: String,
         visibility:  Option[VisibilityModifier],
         name:        String,
         descriptor:  MethodDescriptor
-    )(implicit logContext: LogContext): Option[Method] = {
-        findMethod(name, descriptor).filter(m ⇒ !m.isStatic).flatMap { candidateMethod ⇒
-            if (candidateMethod.isPrivate) {
-                val message =
-                    s"the private method ${candidateMethod.toJava} "+
-                        "\"overrides\" a non-private one defined by a superclass"
-                val logMessage = StandardLogMessage(Warn, Some("project configuration"), message)
-                OPALLogger.logOnce(logMessage)
-                None
-            } else if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName))
-                Some(candidateMethod)
-            else
-                None
+    ): Result[Method] = {
+        assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
+
+        findMethod(name, descriptor).filter(m ⇒ !m.isStatic) match {
+
+            case Some(candidateMethod) ⇒
+                import VisibilityModifier.isAtLeastAsVisibleAs
+                if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
+                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility))
+                    Success(candidateMethod)
+                else
+                    Failure
+
+            case None ⇒
+                Empty
         }
+
     }
 
     final def findDirectlyOverridingMethod(
         packageName: String,
         method:      Method
-    )(
-        implicit
-        logContext: LogContext
-    ): Option[Method] = {
+    ): Result[Method] = {
         findDirectlyOverridingMethod(
             packageName,
             method.visibilityModifier,

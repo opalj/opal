@@ -42,10 +42,7 @@ import br.instructions._
  * where a literal value is boxed into an object and then immediately unboxed. This means
  * that the object creation was useless.
  *
- * TODO [Improvement] Improve to also detect code like this:
- * {{{
- * Integer.valueOf(1).doubleValue()
- * }}}
+ * IMPROVE to also detect code like this: {{{Integer.valueOf(1).doubleValue()}}}
  *
  * @author Ralf Mitschke
  * @author Daniel Klauer

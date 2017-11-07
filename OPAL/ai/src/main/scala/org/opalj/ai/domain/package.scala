@@ -59,14 +59,14 @@ import org.opalj.br.ReferenceType
  *  - Domains That Provide a Default Implementation
  *      - [[Origin]] defines the functionality to return a value's origin if the value
  *      supports that.
- *      - [[TheProject]] default implementation of the [[TheClassHierarchy]]
+ *      - [[org.opalj.ai.domain.TheProject]] default implementation of the [[TheClassHierarchy]]
  *      trait that uses the project's class hierarchy.
- *      - [[DefaultHandlingOfMethodResults]] basically implements a Domain's methods
+ *      - [[org.opalj.ai.domain.DefaultHandlingOfMethodResults]] basically implements a Domain's methods
  *      related to return instructions an uncaught exceptions.
  *      - ...
  *
  *  - Domains That Implement Stackable Functionality
- *      - [[RecordThrownExceptions]] records information about all uncaught exceptions
+ *      - [[org.opalj.ai.domain.RecordThrownExceptions]] records information about all uncaught exceptions
  *      by intercepting a `Domain`'s respective methods. However, it does provide a
  *      default implementation. Hence, a typical pattern is:
  *      {{{
@@ -79,7 +79,7 @@ import org.opalj.br.ReferenceType
  * model is to use one `Domain` object per code block/method and therefore, thread-safety
  * is not required for `Domain`s that are used for the evaluation of methods. However
  * domains that are used to adapt/transfer values should be thread safe
- * (see [[ValuesCoordinatingDomain]] for further details).
+ * (see [[org.opalj.ai.domain.ValuesCoordinatingDomain]] for further details).
  *
  * @author Michael Eichberg
  */

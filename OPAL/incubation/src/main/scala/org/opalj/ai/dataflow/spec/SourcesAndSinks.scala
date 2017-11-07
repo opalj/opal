@@ -68,7 +68,8 @@ trait SourcesAndSinks {
                     for {
                         classFile ← project.allProjectClassFiles
                         if filter(classFile)
-                        method @ MethodWithBody(_) ← classFile.methods
+                        method ← classFile.methods
+                        if method.body.isDefined
                     } {
                         if (matcher.isDefinedAt(method)) {
                             val matchedValues = matcher(method)

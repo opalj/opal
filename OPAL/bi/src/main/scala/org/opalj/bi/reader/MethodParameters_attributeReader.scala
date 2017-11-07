@@ -77,12 +77,12 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parser(
-        ap:                   AttributeParent,
-        cp:                   Constant_Pool,
+    private[this] def parserFactory() = (
+        ap: AttributeParent,
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        in:                   DataInputStream
-    ): MethodParameters_attribute = {
+        in: DataInputStream
+    ) ⇒ {
         /*val attribute_length =*/ in.readInt()
         val parameters_count = in.readUnsignedByte
         if (parameters_count > 0 || reifyEmptyAttributes) {
@@ -98,6 +98,5 @@ trait MethodParameters_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(MethodParametersAttribute.Name → parser)
+    registerAttributeReader(MethodParametersAttribute.Name → parserFactory())
 }
-

@@ -32,6 +32,15 @@ package analyses
 
 import scala.annotation.switch
 
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.EffectivelyFinalField
+import org.opalj.fpcf.properties.Impure
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.MaybePure
+import org.opalj.fpcf.properties.ConditionallyPure
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -67,17 +76,9 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.EffectivelyFinalField
-import org.opalj.fpcf.properties.Impure
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.MaybePure
-import org.opalj.fpcf.properties.ConditionallyPure
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.TypeImmutability
 
 /**
  * Very simple and fast analysis of the purity of methods as defined by the
@@ -209,7 +210,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         if (dependees.isEmpty)
             return ImmediateResult(method, Pure);
 
-        def c(e: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
             p match {
                 case Impure | MaybePure ⇒
                     Result(method, Impure)
@@ -225,7 +226,6 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                         Result(method, Pure)
                     else
                         IntermediateResult(method, ConditionallyPure, dependees, c)
-
             }
         }
 
@@ -233,15 +233,10 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
     }
 
     /**
-     * Determines the purity of the given method.
+     * Determines the purity of the given method. The given method must have a body!
      */
     def determinePurity(method: Method): PropertyComputationResult = {
         if (method.isSynchronized)
-            return ImmediateResult(method, Impure);
-
-        // Due to a lack of knowledge, we classify all native methods or methods that
-        // have no body - because they are loaded using a library class file loader - as Impure.
-        if (method.body.isEmpty /*HERE: method.isNative || "isLibraryMethod(method)"*/ )
             return ImmediateResult(method, Impure);
 
         // All parameters either have to be base types or have to be immutable.

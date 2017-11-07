@@ -80,6 +80,6 @@ private[fpcf] abstract class DependeePropertyObserver(
 
     override def toString: String = {
         val id = System.identityHashCode(this).toHexString
-        s"DependeePropertyObserver(dependerEPK=$dependerEPK,isExecuted=${isExecuted.get},id=$id)"
+        s"DependeePropertyObserver(dependerEPK=$dependerEPK,isExecuted=${isExecuted.get})@$id"
     }
 }

@@ -74,21 +74,27 @@ object SizeOfInheritanceTree extends FeatureQuery {
         var sumOfSizeOfInheritanceTrees = 0
         val supertypes = classHierarchy.supertypes
         classHierarchy.foreachKnownType { t ⇒
-            val l = ClassFileLocation(project, t)
-            supertypes.get(t) match {
-                case Some(supertypeInformation) if isSupertypeInformationComplete(t) ⇒
-                    val sizeOfInheritanceTree = supertypeInformation.size
-                    features(Math.min(sizeOfInheritanceTree / CategorySize, 5)) += l
-                    classCount += 1
-                    sumOfSizeOfInheritanceTrees += sizeOfInheritanceTree
-                case _ /* None or <incomplete> */ ⇒
-                    features(6) += l
+            if (project.isProjectType(t)) {
+                val l = ClassFileLocation(project, t)
+                supertypes.get(t) match {
+                    case Some(supertypeInformation) if isSupertypeInformationComplete(t) ⇒
+                        val sizeOfInheritanceTree = supertypeInformation.size
+                        features(Math.min(sizeOfInheritanceTree / CategorySize, 5)) += l
+                        classCount += 1
+                        sumOfSizeOfInheritanceTrees += sizeOfInheritanceTree
+                    case _ /* None or <incomplete> */ ⇒
+                        features(6) += l
+                }
             }
         }
 
         projectConfiguration.addStatistic(
             "⟨SizeOfInheritanceTree⟩",
-            sumOfSizeOfInheritanceTrees.toDouble / classCount.toDouble
+            if (classCount != 0) {
+                sumOfSizeOfInheritanceTrees.toDouble / classCount.toDouble
+            } else {
+                0D
+            }
         )
 
         for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {

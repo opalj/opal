@@ -195,8 +195,13 @@ sealed trait Type extends UIDValue with Ordered[Type] {
         throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType")
     }
 
-    @throws[ClassCastException]("if this is not a numeric type")
+    @throws[ClassCastException]("if this is not an int like type")
     def asIntLikeType: IntLikeType = {
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
+    }
+
+    @throws[ClassCastException]("if this is not a boolean type")
+    def asBooleanType: BooleanType = {
         throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
     }
 
@@ -641,10 +646,9 @@ sealed abstract class CharType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = { typeConversionFactory.PrimitiveCharToLangCharacter }
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveCharToLangCharacter
+    }
 
 }
 case object CharType extends CharType
@@ -929,6 +933,8 @@ sealed abstract class BooleanType private () extends CTIntType {
 
     final override def isBooleanType: Boolean = true
 
+    final override def asBooleanType: BooleanType = this
+
     final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
@@ -1001,7 +1007,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         ObjectType.unboxValue(targetType)
     }
 
-    def isSubtyeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
         classHierarchy.isSubtypeOf(this, that)
     }
 
@@ -1163,6 +1169,7 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
     // Types related to the invokedynamic instruction
+    final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
     final val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
     final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")

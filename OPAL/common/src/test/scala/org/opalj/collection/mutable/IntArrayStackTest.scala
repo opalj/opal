@@ -43,7 +43,7 @@ import org.junit.runner.RunWith
 @RunWith(classOf[JUnitRunner])
 class IntArrayStackTest extends FlatSpec with Matchers {
 
-    behavior of "a the IntArrayStack data structure"
+    behavior of "an IntArrayStack"
 
     it should ("be empty if it is newly created") in {
         val stack = new IntArrayStack()
@@ -111,7 +111,7 @@ class IntArrayStackTest extends FlatSpec with Matchers {
             val v = stack.pop()
             fail(s"unexpectedly popped $v from a presumably empty stack")
         } catch {
-            case t: Throwable ⇒ // everything is OK
+            case _: Throwable ⇒ // everything is OK
         }
     }
 
@@ -126,6 +126,25 @@ class IntArrayStackTest extends FlatSpec with Matchers {
     it should ("be possible to call foldLeft even when the stack is empty") in {
         val stack = new IntArrayStack()
         stack.foldLeft(-3)(_ + _) should be(-3)
+    }
+
+    it should ("iterator overall values using intIterator") in {
+        val stack = new IntArrayStack()
+        stack.intIterator.hasNext should be(false)
+
+        stack.push(2)
+        var it = stack.intIterator
+        it.hasNext should be(true)
+        it.next() should be(2)
+        it.hasNext should be(false)
+
+        stack.push(3)
+        it = stack.intIterator
+        it.hasNext should be(true)
+        it.next() should be(3)
+        it.hasNext should be(true)
+        it.next() should be(2)
+        it.hasNext should be(false)
     }
 
     it should ("be comparable to other IntArrayStacks") in {

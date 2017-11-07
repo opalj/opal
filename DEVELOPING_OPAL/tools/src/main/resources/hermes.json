@@ -41,8 +41,12 @@
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-SNAPSHOT-0.3.jar"
                     },
                     {
-                        "id": "OPAL-AllProjects-MultiJar-SNAPSHOT-08-14-2014.jar",
-                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-AllProjects-MultiJar-SNAPSHOT-08-14-2014.jar"
+                        "id": "OPAL-MultiJar-SNAPSHOT-08-14-2014.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-08-14-2014.jar"
+                    },
+                    {
+                        "id": "OPAL-MultiJar-SNAPSHOT-11-01-2017.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar"
                     },
                     {
                         "id": "Multithreaded RPN Calculator ",
@@ -50,130 +54,130 @@
                     },
                     {
                         "id" : "JVM Features",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar",
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar",
                         "libcp_defaults" : "RTJar"
                     },
                     {
                         "id": "ai",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/ai.jar",
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/ai.jar",
                         "libcp_defaults" : "JRE"
                     },
                     {
                         "id": "arrays",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/arrays.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/arrays.jar"
                     },
                     {
                         "id": "bugs",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/bugs.jar",
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/bugs.jar",
                         "libcp_defaults" : "RTJar"
                     },
                     {
                         "id": "classhierarchy",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/classhierarchy.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/classhierarchy.jar"
                     },
                     {
                         "id": "code",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/code.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/code.jar"
                     },
                     {
                         "id": "constants",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/constants.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/constants.jar"
                     },
                     {
                         "id": "controlflow",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/controlflow.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/controlflow.jar"
                     },
                     {
                         "id": "cornercases",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/cornercases.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/cornercases.jar"
                     },
                     {
                         "id": "dependencies",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/dependencies-1.8-g-parameters-genericsignature-preserveAllLocals.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/dependencies-1.8-g-parameters-genericsignature-preserveAllLocals.jar"
                     },
                     {
                         "id": "deprecated",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/deprecated.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/deprecated.jar"
                     },
                     {
                         "id": "equals_hashcode",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/equals_hashcode.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/equals_hashcode.jar"
                     },
                     {
                         "id": "fields-g-8",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/fields-g-8-parameters-genericsignature.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/fields-g-8-parameters-genericsignature.jar"
                     },
                     {
                         "id": "fields-g=none",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/fields-g=none-5.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/fields-g=none-5.jar"
                     },
                     {
                         "id": "generictypes",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/generictypes.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/generictypes.jar"
                     },
                     {
                         "id": "immutability",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/immutability.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/immutability.jar"
                     },
                     {
                         "id": "immutable",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/immutable.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/immutable.jar"
                     },
                     {
                         "id": "innerclasses",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/innerclasses.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/innerclasses-1.8-g-parameters-genericsignature.jar"
                     },
                     {
                         "id": "java8methodresolution",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/java8methodresolution.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/java8methodresolution.jar"
                     },
                     {
                         "id": "jsr_ret",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/jsr_ret-1.3-g-preserveAllLocals-nowarn.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/jsr_ret-1.3-g-preserveAllLocals-nowarn.jar"
                     },
                     {
                         "id": "lambdas",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/lambdas-1.8-g-parameters-genericsignature.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/lambdas-1.8-g-parameters-genericsignature.jar"
                     },
                     {
                         "id": "methods_types",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/method_types.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/method_types.jar"
                     },
                     {
                         "id": "methods",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/methods.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/methods.jar"
                     },
                     {
                       "id": "metrics",
-                      "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/metrics.jar"
+                      "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/metrics.jar"
                     },
                     {
                         "id": "polymorphism",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/polymorphism.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/polymorphism.jar"
                     },
                     {
                         "id": "proxy",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/proxy.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/proxy.jar"
                     },
                     {
                         "id": "pureness",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/pureness.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/pureness-1.8-g-parameters-genericsignature.jar"
                     },
                     {
                         "id": "signatures",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/signatures.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/signatures.jar"
                     },
                     {
                         "id": "tactest",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/tactest-8-preserveAllLocals.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/tactest-8-preserveAllLocals.jar"
                     },
                     {
                         "id": "type_annotations",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/type_annotations.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/type_annotations.jar"
                     },
                     {
                         "id": "types",
-                        "cp": "../../OPAL/bi/target/scala-2.11/resource_managed/test/types.jar"
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/types.jar"
                     }
                 ]
             }

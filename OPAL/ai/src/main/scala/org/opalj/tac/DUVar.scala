@@ -29,12 +29,12 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.VMLevelValuesOriginOffset
 import org.opalj.ai.pcOfVMLevelValue
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
@@ -54,7 +54,7 @@ abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Va
      *
      * '''Defined, if and only if this is an assignment statement.'''
      */
-    def usedBy: IntArraySet
+    def usedBy: IntTrieSet
 
     /**
      * The indexes of the instructions which initialize this variable/
@@ -68,7 +68,7 @@ abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Va
      * `DivisionByZeroException` created by the JVM when an `int` value is divided by `0`) or
      * is just a constant.
      */
-    def definedBy: IntArraySet
+    def definedBy: IntTrieSet
 
 }
 
@@ -97,11 +97,11 @@ object DefSites {
      * Defines an extractor to get the definition site of an expression's/statement's value.
      * Returns the emp ty set if the value is a constant.
      */
-    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntArraySet] = {
+    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
         Some(
             valueExpr match {
                 case UVar(_, defSites) ⇒ defSites
-                case _: Const          ⇒ IntArraySet.empty
+                case _: Const          ⇒ IntTrieSet.empty
             }
         )
     }
@@ -120,7 +120,7 @@ object DefSites {
 class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         private[tac] var origin:   ValueOrigin,
         val value:                 Value,
-        private[tac] var useSites: IntArraySet
+        private[tac] var useSites: IntTrieSet
 ) extends DUVar[Value] {
 
     assert(origin >= 0)
@@ -128,7 +128,7 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
     def copy[V >: Value <: org.opalj.ai.ValuesDomain#DomainValue](
         origin:   ValueOrigin = this.origin,
         value:    V           = this.value,
-        useSites: IntArraySet = this.useSites
+        useSites: IntTrieSet  = this.useSites
     ): DVar[V] = {
         new DVar(origin, value, useSites)
     }
@@ -139,7 +139,7 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
      * The set of the indexes of the statements where this `variable` is used. Hence, a use-site
      * is always positive.
      */
-    def usedBy: IntArraySet = useSites
+    def usedBy: IntTrieSet = useSites
 
     def name: String = {
         val n = s"lv${origin.toHexString}"
@@ -182,7 +182,7 @@ object DVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        origin: ValueOrigin, value: d.DomainValue, useSites: IntArraySet
+        origin: ValueOrigin, value: d.DomainValue, useSites: IntTrieSet
     ): DVar[d.DomainValue] = {
 
         assert(useSites != null, s"no uses (null) for $origin: $value")
@@ -197,7 +197,7 @@ object DVar {
 
     def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
         d: DVar[Value]
-    ): Some[(Value, IntArraySet)] = {
+    ): Some[(Value, IntTrieSet)] = {
         Some((d.value, d.useSites))
     }
 
@@ -205,7 +205,7 @@ object DVar {
 
 class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val value:                 Value,
-        private[tac] var defSites: IntArraySet
+        private[tac] var defSites: IntTrieSet
 ) extends DUVar[Value] {
 
     def name: String = {
@@ -223,7 +223,7 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         if (DUVar.printDomainValue) s"$n/*:$value*/" else n
     }
 
-    def definedBy: IntArraySet = defSites
+    def definedBy: IntTrieSet = defSites
 
     def usedBy: Nothing = throw new UnsupportedOperationException
 
@@ -251,14 +251,14 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, useSites: IntArraySet
+        value: d.DomainValue, useSites: IntTrieSet
     ): UVar[d.DomainValue] = {
         new UVar[d.DomainValue](value, useSites)
     }
 
     def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
         u: UVar[Value]
-    ): Some[(Value, IntArraySet)] = {
+    ): Some[(Value, IntTrieSet)] = {
         Some((u.value, u.defSites))
     }
 

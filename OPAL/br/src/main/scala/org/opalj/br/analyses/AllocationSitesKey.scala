@@ -33,7 +33,9 @@ package analyses
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.log.OPALLogger.error
 
@@ -55,6 +57,7 @@ import org.opalj.log.OPALLogger.error
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
  * @author Michael Eichberg
+ * @author Florian Kübler
  */
 object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing] {
 
@@ -73,31 +76,47 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
      */
     override protected def compute(p: SomeProject): AllocationSites = {
         implicit val logContext = p.logContext
-        val sites = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
+        val sitesPerMethod = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
+        val sitesByType = new ConcurrentLinkedQueue[(ReferenceType, AllocationSite)]
 
         val errors = p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val m = methodInfo.method
             val code = m.body.get
-            val as = code.collectWithIndex {
-                case (pc, i) if i.opcode == instructions.NEW.opcode ⇒
-                    (pc, new ObjectAllocationSite(m, pc))
+            val as = code.foldLeft(Map.empty[PC, AllocationSite]) { (as, pc, instruction) ⇒
+                instruction.opcode match {
 
-                case (pc, i) if (
-                    i.opcode match {
-                        case instructions.NEWARRAY.opcode |
-                            instructions.ANEWARRAY.opcode |
-                            instructions.MULTIANEWARRAY.opcode ⇒ true
-                        case _ ⇒ false
-                    }
-                ) ⇒
-                    (pc, new ArrayAllocationSite(m, pc))
-            }.toMap
-            if (as.nonEmpty) sites.add((m, as))
+                    case instructions.NEW.opcode ⇒
+                        val ot = instruction.asNEW.objectType
+                        val nas = new ObjectAllocationSite(m, pc)
+                        sitesByType.add((ot, nas))
+                        as + ((pc, nas))
+
+                    case instructions.NEWARRAY.opcode |
+                        instructions.ANEWARRAY.opcode |
+                        instructions.MULTIANEWARRAY.opcode ⇒
+                        val ot = instruction.asCreateNewArrayInstruction.arrayType
+                        val nas = new ArrayAllocationSite(m, pc)
+                        sitesByType.add((ot, nas))
+                        as + ((pc, nas))
+
+                    case _ ⇒
+                        as
+                }
+            }
+            if (as.nonEmpty) sitesPerMethod.add((m, as))
         }
 
         errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
-        new AllocationSites(Map.empty ++ sites.asScala)
+        val initialMap: Map[ReferenceType, ArrayBuffer[AllocationSite]] =
+            Map.empty.withDefault(rt ⇒ new ArrayBuffer(8))
+        new AllocationSites(
+            sitesPerMethod.asScala.toMap,
+            sitesByType.asScala.foldLeft(initialMap) { (c, n) ⇒
+                val (rt, as) = n
+                c + ((rt, c(rt) += as))
+            }.map { e ⇒ val (rt, ass) = e; (rt, ConstArray.from(ass.toArray)) }
+        )
     }
 
     //
@@ -109,6 +128,6 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
         (p: SomeProject) ⇒ {
             // this will collect the allocations sites of the project if not yet collected...
             val allocationsSites = p.get(AllocationSitesKey)
-            (allocationsSites.data.values.flatMap(_.values), allocationsSites)
+            (allocationsSites, allocationsSites)
         }
 }

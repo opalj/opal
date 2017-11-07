@@ -34,10 +34,13 @@ import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.prefs.Preferences
+import java.util.Comparator
 
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.io.Source
+
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import org.chocosolver.solver.Model
@@ -94,38 +97,41 @@ import scalafx.scene.control.Menu
 
 import org.opalj.da.ClassFileReader
 import org.opalj.util.Nanoseconds
+import org.opalj.io.processSource
 
 /**
  * Executes all analyses to determine the representativeness of the given projects.
+ *
+ * ([[https://bitbucket.org/delors/opal/src/HEAD/DEVELOPING_OPAL/tools/src/main/resources/org/opalj/hermes/Hermes.txt?at=develop see Hermes.txt for further details]]).
  *
  * @author Michael Eichberg
  * @author Christian Schaarschmidt (JavaFX Data Visualization)
  */
 object Hermes extends JFXApp with HermesCore {
 
+    final val usage = {
+        processSource(Source.fromInputStream(this.getClass.getResourceAsStream("Hermes.txt"))) { s ⇒
+            s.getLines().mkString("\n")
+        }
+    }
+
     if (parameters.unnamed.size != 1 ||
         parameters.named.size > 1 || (
             parameters.named.size == 1 && parameters.named.get("csv").isEmpty
         )) {
         import Console.err
-        err.println("OPAL - Hermes")
         err.println("Invalid parameters: "+parameters.named.mkString("{", ",", "}"))
-        err.println("The parameter has to be the configuration which lists a corpus' projects and, ")
-        err.println("optionally, the file to which the results should be exported ")
-        err.println("(\"--csv=<FileName>\"). If such a file is specified the application will")
-        err.println("close automatically after running all analyses.")
-        err.println()
-        err.println("java org.opalj.hermes.Hermes <ConfigFile.json>")
+        err.println(usage)
         System.exit(1)
     }
 
     initialize(new File(parameters.unnamed(0)))
 
     if (parameters.named.size == 1) {
-        // when the CSV was requested, we perform the analysis and then finish Hermes
+        // when the statistics were requested, we perform the analysis and then finish Hermes
         analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
-                exportCSV(new File(parameters.named("csv")))
+                exportStatistics(new File(parameters.named("csv")))
                 stage.close() // <=> quit Hermes
             }
         }
@@ -265,12 +271,18 @@ object Hermes extends JFXApp with HermesCore {
                     None
                 }
             }
-            solution onSuccess {
-                case Some(result) ⇒
+            solution.onComplete {
+                case scala.util.Success(Some(result)) ⇒
                     Platform.runLater { solutionTextArea.text = result }
                     if (!aborted) computeSolutions()
-                case None ⇒
+                case scala.util.Success(None) ⇒
                     Platform.runLater { contentNode.getChildren.remove(solverProgressBar) }
+
+                case scala.util.Failure(e) ⇒
+                    Platform.runLater {
+                        solutionTextArea.text = "Computation failed:\n"+e.getMessage
+                        contentNode.getChildren.remove(solverProgressBar)
+                    }
             }
         }
         computeSolutions()
@@ -355,6 +367,9 @@ object Hermes extends JFXApp with HermesCore {
     }
 
     var primitiveFeatureIndex = 0
+    val featureComparator = new Comparator[Feature[URL]] {
+        def compare(f1: Feature[URL], f2: Feature[URL]): Int = f1.count - f2.count
+    }
     val featureQueryColumns = featureQueries.zipWithIndex map { fqi ⇒
         val (fq, featureQueryIndex) = fqi
         val featureQueryColumn = new TableColumn[ProjectFeatures[URL], Feature[URL]]()
@@ -398,6 +413,7 @@ object Hermes extends JFXApp with HermesCore {
                     featureColumn.visible = true
                 }
             }
+            featureColumn.setComparator(featureComparator)
             featureColumn.setPrefWidth(70.0d)
             featureColumn.cellValueFactory = { p ⇒ p.getValue.features(featureIndex) }
             featureColumn.cellFactory = { (_) ⇒
@@ -573,6 +589,10 @@ object Hermes extends JFXApp with HermesCore {
         val showAnalysisTimes = new MenuItem("Show Analysis Times...") {
             onAction = handle { analysisTimesStage.show() }
         }
+        val showQueryResultViz = new MenuItem("Visualize Query Results...") {
+            disable <== analysesFinished.not
+            onAction = handle { Visualization.display(stage, featureMatrix).show() }
+        }
         val showProjectStatistics = new MenuItem("Project Statistics...") {
             // IMPROVE Move it to a "permanent stage" and make the project statistics observable to make it possible to react on changes and to get proper JavaFX behavior
 
@@ -646,7 +666,7 @@ object Hermes extends JFXApp with HermesCore {
                     val filename = selectedFile.getName
                     val extension = filename.substring(filename.lastIndexOf("."), filename.length())
                     if (extension.equals(".csv")) {
-                        exportCSV(selectedFile)
+                        exportStatistics(selectedFile)
                     } else if (extension.equals(".json")) {
                         exportFlare(selectedFile)
                     }
@@ -660,6 +680,7 @@ object Hermes extends JFXApp with HermesCore {
         }
         List(
             showConfig,
+            showQueryResultViz,
             showAnalysisTimes, showProjectStatistics,
             fileExport,
             computeProjectsForCorpus

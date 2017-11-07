@@ -80,12 +80,11 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * In single-threaded execution, this means that the object graph of the program may not
  * have changed between invocation of the method and its return, except for potentially additional
  * objects allocated by the method. For multi-threaded execution, the object graph may not change
- * due to the invocation of the method (although it may change due to other methods executing on
- * concurrent threads). The method must not have any effects (besides consumption of resources like
- * memory and processor time) on methods executing concurrently, in particular it may not acquire
- * any locks on objects that concurrent methods could also try to acquire.
- *
- * TODO This sounds as if a pure method is not allowed to return a new object; however, I can't see any immediate reason why this should be forbidden. We need some example to explain this.
+ * due to the invocation of the method, again except allocation of new objects. Note that the object
+ * graph may change during execution of the method due to other methods executing on concurrent
+ * threads. The method must not have any effects (besides consumption of resources like memory and
+ * processor time) on methods executing concurrently, in particular it may not acquire any locks on
+ * objects that concurrent methods could also try to acquire.
  *
  * Analyses may return [[SideEffectFree]] as a safe default value if they are unable to guarantee
  * that a method is [[Pure]], even if it is. However, to return `SideEffectFree` the analysis has
@@ -106,8 +105,6 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * }}}
  * In multi-threaded execution, pure methods can not depend on any mutable state of their
  * parameters if that state might be mutated by concurrently executing methods.
- *
- * TODO We should really consider the case of pure in every context and pure only in single threaded contexts. In particular, when we analyze a library, we may want to be able to clearly distinguish these two cases.
  *
  * Analyses may return [[Pure]] only if they are able to guarantee that a method fulfills these
  * requirements.

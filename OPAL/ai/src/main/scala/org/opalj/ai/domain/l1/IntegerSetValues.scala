@@ -114,6 +114,7 @@ trait IntegerSetValues
      * Creates a new [[IntegerSet]] value using the given set unless the set exceeds the
      * maximum cardinality.
      */
+    // IMPROVE Use optimized collection (without (un)boxing).
     def IntegerSet(values: SortedSet[Int]): DomainTypedValue[CTIntType]
 
     type DomainBaseTypesBasedSet <: BaseTypesBasedSet with DomainValue
@@ -535,7 +536,7 @@ trait IntegerSetValues
                         val (os1, ls1) = updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, os1, ls1)
 
-                    case is: IntegerSet ⇒
+                    case _: IntegerSet ⇒
                         // value2 is unchanged
                         updateMemoryLayout(oldValue = value1, value2, operands, locals)
 

@@ -225,7 +225,7 @@ trait IntegerRangeValues
             case _                                               ⇒ orElse
         }
 
-    @inline final override def intValueOption(value: DomainValue): Option[Int] =
+    @inline final override def intValueOption(value: DomainValue): Option[Int] = // IMPROVE Define and use IntOption
         value match {
             case v: IntegerRange if v.lowerBound == v.upperBound ⇒ Some(v.lowerBound)
             case _                                               ⇒ None

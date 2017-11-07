@@ -30,12 +30,17 @@ package org.opalj
 
 import scala.language.existentials
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import scala.collection.AbstractIterator
 
-import org.opalj.util.AnyToAnyThis
-import org.opalj.collection.immutable.Chain
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.AnyToAnyThis
+import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
@@ -67,18 +72,24 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    final val FrameworkName = "OPAL - Abstract Interpretation Framework"
+    final val FrameworkName = "OPAL Abstract Interpretation Framework"
 
     {
         implicit val logContext = GlobalLogContext
+        import OPALLogger.info
         try {
-            scala.Predef.assert(false) // <= tests whether assertions are on or off...
-            OPALLogger.info(FrameworkName, "Production Build")
+            assert(false) // <= tests whether assertions are on or off...
+            info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒
-                OPALLogger.info(FrameworkName, "Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
+
+    // We want to make sure that the class loader is used which potentially can
+    // find the config files; the libraries (e.g., Typesafe Config) may have
+    // been loaded using the parent class loader and, hence, may not be able to
+    // find the config files at all.
+    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.
@@ -96,7 +107,7 @@ package object ai {
     final def NoPCs = org.opalj.br.NoPCs
 
     /**
-     * A `ValueOrigin` identifies the origin of a value.
+     * A `ValueOrigin` identifies the origin of a value within a method.
      * In most cases the origin is equal to the program counter of the instruction that created
      * the value. However, several negative values do have special semantics which are explained
      * in the following.
@@ -144,19 +155,20 @@ package object ai {
      *
      * Values in the range [ [[SpecialValuesOriginOffset]] (`-10,000,000`) ,
      * [[VMLevelValuesOriginOffset]] (`-100,000`) ] are used to identify values that are
-     * created by the VM (in particular exceptions) while evaluating the instruction with
-     * the `pc = -origin-100,000`.
+     * created outside of the method, but due to the evaluation of the instruction with
+     * the `pc = -origin-100,000` (in particular exceptions).
      *
-     * @see For further information see [[isVMLevelValue]],
-     *      [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]].
+     * @see [[isVMLevelValue]], [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]]
      */
     type ValueOrigin = Int
+    type ValueOrigins = IntTrieSet
+    type ValueOriginsIterator = IntIterator
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
      * information about VM level values'' (that is, VM generated exceptions).
      */
-    final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000
+    final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000 // TODO Rename MethodExternalOriginOffset
 
     /**
      * Identifies the upper bound for those "origin values" that encode special information;
@@ -171,18 +183,18 @@ package object ai {
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def isVMLevelValue(origin: ValueOrigin): Boolean = {
+    final def isVMLevelValue(origin: ValueOrigin): Boolean = { // TODO Rename isMethodExternalValue
         origin <= VMLevelValuesOriginOffset && origin > SpecialValuesOriginOffset
     }
 
     /**
-     * Creates the origin information for a VM level value (typically an exception) that
+     * Creates the origin information for a value (typically an exception) that
      * was (implicitly) created while evaluating the instruction with the given
      * program counter (`pc`).
      *
      * @see [[pcOfVMLevelValue]] for further information.
      */
-    final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = {
+    final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = { //TODO Rename valueOriginForMethodExternalValue
         val origin = VMLevelValuesOriginOffset - pc
         assert(
             origin <= VMLevelValuesOriginOffset,
@@ -194,11 +206,11 @@ package object ai {
 
     /**
      * Returns the program counter (`pc`) of the instruction that (implicitly) led to the
-     * creation of the VM level value (typically an `Exception`).
+     * creation of the (method external) value (typically an `Exception`).
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def pcOfVMLevelValue(origin: ValueOrigin): PC = {
+    final def pcOfVMLevelValue(origin: ValueOrigin): PC = { //TODO Rename pcOfMethodExternalValue
         assert(origin <= VMLevelValuesOriginOffset)
         -origin + VMLevelValuesOriginOffset
     }

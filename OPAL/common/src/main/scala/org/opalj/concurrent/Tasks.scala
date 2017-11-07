@@ -40,6 +40,41 @@ import scala.collection.JavaConverters._
 
 import org.opalj.concurrent.Locking.withLock
 
+sealed trait Tasks[T] {
+
+    def submit(t: T): Unit
+
+    def join(): Iterable[Throwable]
+
+}
+
+final class SequentialTasks[T](
+        val process:   (Tasks[T], T) ⇒ Unit,
+        isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
+) extends Tasks[T] {
+
+    private val tasksQueue = scala.collection.mutable.Queue.empty[T]
+
+    def submit(t: T): Unit = {
+        if (isInterrupted())
+            return ;
+
+        tasksQueue += t
+    }
+
+    def join(): Iterable[Throwable] = {
+        var throwables = List.empty[Throwable]
+        while (tasksQueue.nonEmpty) {
+            try {
+                process(this, tasksQueue.dequeue)
+            } catch {
+                case t: Throwable ⇒ throwables ::= t
+            }
+        }
+        throwables
+    }
+}
+
 /**
  * Executes the given function `process` for each submitted value of
  * type `T`. The `process` function can add further values that should be processed.
@@ -58,13 +93,13 @@ import org.opalj.concurrent.Locking.withLock
  *
  * @author Michael Eichberg
  */
-final class Tasks[T](
+final class ConcurrentTasks[T](
         val process:   (Tasks[T], T) ⇒ Unit,
         isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
 )(
         implicit
         val executionContext: ExecutionContext
-) { self ⇒
+) extends Tasks[T] { self ⇒
 
     private[this] var tasksCount = 0
     private[this] val tasksLock: ReentrantLock = new ReentrantLock()
@@ -95,7 +130,7 @@ final class Tasks[T](
         try {
             executionContext.execute(runnable)
         } catch {
-            case t: Throwable ⇒
+            case _: Throwable ⇒
                 withLock(tasksLock) {
                     val newTasksCount = tasksCount - 1
                     tasksCount = newTasksCount
@@ -156,10 +191,11 @@ final class Tasks[T](
     }
     */
 }
+
 /**
  * Factory to create [[Tasks]] objects to process value oriented tasks.
  *
- * @author Michael Eichber
+ * @author Michael Eichberg
  */
 object Tasks {
 
@@ -170,7 +206,11 @@ object Tasks {
         implicit
         executionContext: ExecutionContext
     ): Tasks[T] = {
-        new Tasks[T](process, isInterrupted)(executionContext)
+        if (executionContext eq null) {
+            new SequentialTasks[T](process, isInterrupted)
+        } else {
+            new ConcurrentTasks[T](process, isInterrupted)(executionContext)
+        }
     }
 
 }

@@ -64,7 +64,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * called method.
      *
      * In general, explicit support is required to identify recursive calls
-     * if the domain also follows method invocations,
+     * if the domain also follows method invocations.
      */
     protected[this] def calledMethodDomain(method: Method): CalledMethodDomain
 
@@ -194,8 +194,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
         if (method.isAbstract) {
             OPALLogger.logOnce(Error(
-                "project configuration",
-                "the resolved method on a concrete object is abstract: "+method.classFile
+                "project configuration", "resolved method is abstract: "+method.classFile
             ))
             fallback()
         } else if (!method.isNative) {
@@ -233,7 +232,6 @@ trait PerformInvocations extends MethodCallsHandling {
         resolvedMethod match {
             case Some(method) ⇒ testAndDoInvoke(pc, method, operands, fallback)
             case _ ⇒
-                // IMPROVE Get rid of log once...
                 OPALLogger.logOnce(Warn(
                     "project configuration",
                     "method reference cannot be resolved: "+
@@ -277,7 +275,7 @@ trait PerformInvocations extends MethodCallsHandling {
                             receiverClass, false, name, descriptor,
                             operands, fallback
                         )
-                    case unknown ⇒
+                    case Unknown ⇒
                         fallback()
                 }
 
@@ -294,8 +292,10 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-        def fallback() = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
-        doInvokeVirtual(pc, declaringClass, false, name, descriptor, operands, fallback)
+        def fallback(): MethodCallResult = {
+            super.invokevirtual(pc, declaringClass, name, descriptor, operands)
+        }
+        doInvokeVirtual(pc, declaringClass, false, name, descriptor, operands, fallback _)
     }
 
     abstract override def invokeinterface(
@@ -305,8 +305,10 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-        def fallback() = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
-        doInvokeVirtual(pc, declaringClass, true, name, descriptor, operands, fallback)
+        def fallback(): MethodCallResult = {
+            super.invokeinterface(pc, declaringClass, name, descriptor, operands)
+        }
+        doInvokeVirtual(pc, declaringClass, true, name, descriptor, operands, fallback _)
     }
 
     abstract override def invokespecial(
@@ -317,10 +319,10 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-        def fallback() = {
+        def fallback(): MethodCallResult = {
             super.invokespecial(pc, declaringClass, isInterface, name, descriptor, operands)
         }
-        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback)
+        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback _)
     }
 
     /**
@@ -336,10 +338,10 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor:     MethodDescriptor,
         operands:       Operands
     ): MethodCallResult = {
-        def fallback() = {
+        def fallback(): MethodCallResult = {
             super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
         }
-        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback)
+        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback _)
     }
 
 }

@@ -35,9 +35,12 @@ import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
+import net.ceedubs.ficus.Ficus._
 
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.Node
 
@@ -74,93 +77,97 @@ case class CFG(
         private val basicBlocks: Array[BasicBlock]
 ) { cfg ⇒
 
-    // 1. Check that each basic block has a lower start pc than the end pc
-    //    i.e., startPC <= endPC.
-    assert(
-        basicBlocks.forall { bb ⇒ bb == null || bb.startPC <= bb.endPC },
-        basicBlocks.filter(bb ⇒ bb != null && bb.startPC > bb.endPC).mkString
-    )
+    if (CFG.CheckConsistency) {
+        val allBBs = basicBlocks.filter(_ != null)
+        val allBBsSet = allBBs.toSet
+        // 1. Check that each basic block has a lower start pc than the end pc
+        //    i.e., startPC <= endPC.
+        check(
+            allBBs.forall(bb ⇒ bb.startPC <= bb.endPC),
+            allBBs.filter(bb ⇒ bb.startPC > bb.endPC).mkString
+        )
 
-    // 2. Check that each pc belonging to a basic block (bb) actually points to the respective bb
-    //    i.e., pc in basicBlock : bb => basicBlock(pc) == bb.
-    assert(
-        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
-            (bb.startPC to bb.endPC).forall { pc ⇒
-                (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb)
-            }
-        },
-        basicBlocks.zipWithIndex.filter(_._1 != null).
-            map(bb ⇒ s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
-            mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
-    )
+        // 2. Check that each pc belonging to a basic block (bb) actually points to the respective bb
+        //    i.e., pc in basicBlock : bb => basicBlock(pc) == bb.
+        check(
+            allBBsSet.forall { bb ⇒
+                (bb.startPC to bb.endPC).forall { pc ⇒
+                    (basicBlocks(pc) eq null) || (basicBlocks(pc) eq bb)
+                }
+            },
+            basicBlocks.zipWithIndex.filter(_._1 != null).
+                map(bb ⇒ s"${bb._2}:${bb._1}#${System.identityHashCode(bb._1).toHexString}").
+                mkString("basic blocks mapping broken:\n\t", ",\n\t", "\n")
+        )
 
-    // 3. Check that the CFG is self-consistent; i.e., that no node references a node
-    //    that does not occur in the BB.
-    assert(
-        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
-            bb.successors.forall { successorBB ⇒
-                (successorBB.isBasicBlock && {
-                    val succBB = successorBB.asBasicBlock
-                    (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
-                }) ||
-                    (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
-                    successorBB.isExitNode
-            }
-        },
-        basicBlocks.filter(_ != null).
-            map(bb ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
-            mkString("unexpected successors:\n\t", "\n\t", "")
-    )
-    assert(
-        basicBlocks.filter(_ != null).toSet.forall { bb ⇒
-            bb.predecessors.forall { predecessorBB ⇒
-                (
-                    predecessorBB.isBasicBlock && {
-                        val predBB = predecessorBB.asBasicBlock
-                        (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
-                    }
-                ) ||
-                    (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
-            }
-        },
-        basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
-            map(bb ⇒ bb._1+":"+bb._2.toString+" predecessors: "+bb._2.predecessors.mkString(", ")).
-            mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
-    )
+        // 3. Check that the CFG is self-consistent; i.e., that no node references a node
+        //    that does not occur in the BB.
+        check(
+            allBBsSet.forall { bb ⇒
+                bb.successors.forall { successorBB ⇒
+                    (successorBB.isBasicBlock && {
+                        val succBB = successorBB.asBasicBlock
+                        (basicBlocks(succBB.startPC) eq succBB) && (basicBlocks(succBB.endPC) eq succBB)
+                    }) ||
+                        (successorBB.isCatchNode && catchNodes.contains(successorBB.asCatchNode)) ||
+                        successorBB.isExitNode
+                }
+            },
+            allBBs.
+                map(bb ⇒ bb.toString+" => "+bb.successors.mkString(", ")).
+                mkString("unexpected successors:\n\t", "\n\t", "")
+        )
+        check(
+            allBBsSet.forall { bb ⇒
+                bb.predecessors.forall { predecessorBB ⇒
+                    (
+                        predecessorBB.isBasicBlock && {
+                            val predBB = predecessorBB.asBasicBlock
+                            (basicBlocks(predBB.startPC) eq predBB) && (basicBlocks(predBB.endPC) eq predBB)
+                        }
+                    ) ||
+                        (predecessorBB.isCatchNode && catchNodes.contains(predecessorBB.asCatchNode))
+                }
+            },
+            basicBlocks.zipWithIndex.filter(_._1 != null).map(_.swap).
+                map(bb ⇒ bb._1+":"+bb._2.toString+" predecessors: "+bb._2.predecessors.mkString(", ")).
+                mkString("unexpected predecessors:\n\t", "\n\t", s"\ncode:$code")
+        )
 
-    // 4.  Check that all catch nodes referred to by the basic blocks are listed in the
-    //     sequence of catch nodes
-    assert(
-        basicBlocks.
-            filter(bb ⇒ bb != null && bb.successors.exists { _.isCatchNode }).
-            flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
-            forall(catchBB ⇒ catchNodes.contains(catchBB)),
-        catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
-            (basicBlocks.filter(_ != null).collect {
-                case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
-                    s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
-            }).mkString("\n")
-    )
+        // 4.  Check that all catch nodes referred to by the basic blocks are listed in the
+        //     sequence of catch nodes
+        check(
+            allBBs.
+                filter(bb ⇒ bb.successors.exists { _.isCatchNode }).
+                flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
+                forall(catchBB ⇒ catchNodes.contains(catchBB)),
+            catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
+                (allBBs.collect {
+                    case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
+                        s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
+                }).mkString("\n")
+        )
 
-    // 5.   Check that predecessors and successors are consistent.
-    assert(
-        basicBlocks.filter(bb ⇒ bb != null).toSet.
-            forall(bb ⇒ bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }),
-        "successors and predecessors are inconsistent; e.g., "+
-            basicBlocks.filter(bb ⇒ bb != null).toSet.
-            find(bb ⇒ !bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }).
-            map(bb ⇒ bb.successors.find(succBB ⇒ !succBB.predecessors.contains(bb)).map(succBB ⇒
-                s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
-    )
-    assert(
-        basicBlocks.filter(bb ⇒ bb != null).toSet.
-            forall(bb ⇒ bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }),
-        "predecessors and successors are inconsistent; e.g., "+
-            basicBlocks.filter(bb ⇒ bb != null).toSet.
-            find(bb ⇒ !bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }).
-            map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
-                s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
-    )
+        // 5.   Check that predecessors and successors are consistent.
+        check(
+            allBBsSet.
+                forall(bb ⇒ bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }),
+            "successors and predecessors are inconsistent; e.g., "+
+                allBBsSet.
+                find(bb ⇒ !bb.successors.forall { succBB ⇒ succBB.predecessors.contains(bb) }).
+                map(bb ⇒ bb.successors.find(succBB ⇒ !succBB.predecessors.contains(bb)).map(succBB ⇒
+                    s"$succBB is a successor of $bb, but does not list it as a predecessor").get).get
+        )
+        check(
+            allBBsSet.
+                forall(bb ⇒ bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }),
+            "predecessors and successors are inconsistent; e.g., "+
+                allBBsSet.
+                find(bb ⇒ !bb.predecessors.forall { predBB ⇒ predBB.successors.contains(bb) }).
+                map(bb ⇒ bb.predecessors.find(predBB ⇒ !predBB.successors.contains(bb)).map(predBB ⇒
+                    s"predBB is a predecessor of $bb, but does not list it as a successor").get).get
+        )
+    }
 
     /**
      * The basic block associated with the very first instruction.
@@ -223,14 +230,14 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): IntArraySet = {
+    def successors(pc: PC): IntTrieSet = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            IntArraySet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntTrieSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var successorPCs = IntArraySet.empty
+            var successorPCs = IntTrieSet.empty
             bb.successors foreach {
                 case bb: BasicBlock ⇒ successorPCs += bb.startPC
                 case cb: CatchNode  ⇒ successorPCs += cb.handlerPC
@@ -253,7 +260,7 @@ case class CFG(
             f(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var visited = IntArraySet.empty
+            var visited = IntTrieSet.empty
             bb.successors foreach { bb ⇒
                 val nextPC =
                     if (bb.isBasicBlock) bb.asBasicBlock.startPC
@@ -268,13 +275,13 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC): IntArraySet = {
+    def predecessors(pc: PC): IntTrieSet = {
         if (pc == 0)
-            return IntArraySet.empty;
+            return IntTrieSet.empty;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var predecessorPCs = IntArraySet.empty
+            var predecessorPCs = IntTrieSet.empty
             bb.predecessors foreach {
                 case bb: BasicBlock ⇒
                     predecessorPCs += bb.endPC
@@ -285,7 +292,7 @@ case class CFG(
             }
             predecessorPCs
         } else {
-            IntArraySet(code.pcOfPreviousInstruction(pc))
+            new IntTrieSet1(code.pcOfPreviousInstruction(pc))
         }
     }
 
@@ -295,7 +302,7 @@ case class CFG(
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var visited = IntArraySet.empty
+            var visited = IntTrieSet.empty
             bb.predecessors foreach { bb ⇒
                 if (bb.isBasicBlock) {
                     f(bb.asBasicBlock.endPC)
@@ -539,4 +546,21 @@ case class CFG(
         val nodes = cfgNodeToGNodes.values
         nodes
     }
+}
+
+object CFG {
+
+    final val CheckConsistencyKey = "org.opalj.br.debug.cfg.CFG.consistency"
+
+    final val CheckConsistency: Boolean = {
+        implicit val logContext = GlobalLogContext
+        if (BaseConfig.as[Option[Boolean]](CheckConsistencyKey).getOrElse(false)) {
+            info("OPAL", s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)")
+            true
+        } else {
+            info("OPAL", s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)")
+            false
+        }
+    }
+
 }

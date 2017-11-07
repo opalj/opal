@@ -59,8 +59,6 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
         val projectStore = project.get(PropertyStoreKey)
 
         org.opalj.fpcf.analyses.FieldMutabilityAnalysis.start(project, projectStore)
-
-        projectStore.debug = true
         org.opalj.fpcf.analyses.PurityAnalysis.start(project, projectStore)
 
         projectStore.waitOnPropertyComputationCompletion(true)

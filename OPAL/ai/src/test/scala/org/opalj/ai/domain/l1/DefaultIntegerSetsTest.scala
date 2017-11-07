@@ -33,11 +33,15 @@ package l1
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 import scala.Iterable
 import scala.collection.immutable.SortedSet
 
-import org.opalj.collection.immutable.Chain
+import org.opalj.br.ArrayType
+import org.opalj.br.IntegerType
+import org.opalj.br.ObjectType
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
@@ -45,11 +49,6 @@ import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.PredefinedClassHierarchy
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
-import org.opalj.br.ArrayType
-import org.opalj.br.IntegerType
-import org.opalj.br.ObjectType
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
 
 /**
  * Tests the IntegerSets Domain.
@@ -1308,7 +1307,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
 
                     // we don't know the size of the array
                     domain.allReturnedValues.head._2 abstractsOver (
-                        domain.InitializedArrayValue(2, ArrayType(IntegerType), Chain(10))
+                        domain.ReferenceValue(2, ArrayType(IntegerType))
                     ) should be(true)
 
                     // get the loop counter at the "icmple instruction" which controls the

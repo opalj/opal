@@ -29,15 +29,15 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * The post-dominator tree (see [[PostDominatorTree$#apply*]] for details regarding
  * the properties).
  *
  * For information regarding issues related to using post-dominator trees for computing
- * control dependence information see "A New Foundation for Control Dependence and Slicing for Modern
- * Program Structures" (2007, Journal Version appeared in TOPLAS)
+ * control dependence information see "A New Foundation for Control Dependence and Slicing for
+ * Modern Program Structures" (2007, Journal Version appeared in TOPLAS)
  *
  * @param  startNode The (unique) exit node of the underlying CFG or the PDT's (artificial)
  *         start node.
@@ -50,7 +50,7 @@ import org.opalj.collection.immutable.IntArraySet
 final class PostDominatorTree private[graphs] (
         final val startNode:            Int,
         final val hasVirtualStartNode:  Boolean,
-        final val additionalExitNodes:  IntArraySet,
+        final val additionalExitNodes:  IntTrieSet,
         final val foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         private[graphs] final val idom: Array[Int] // the (post)dominator information
 ) extends AbstractDominatorTree {
@@ -112,7 +112,7 @@ object PostDominatorTree {
      *      scala>val pdt = org.opalj.graphs.PostDominatorTree.apply(
      *           |    uniqueExitNode = None,
      *           |    isExitNode,
-     *           |    org.opalj.collection.immutable.IntArraySet.empty,
+     *           |    org.opalj.collection.immutable.IntTrieSet.empty,
      *           |    foreachExitNode,
      *           |    foreachSuccessorOf,
      *           |    foreachPredecessorOf,
@@ -141,7 +141,7 @@ object PostDominatorTree {
     def apply(
         uniqueExitNode:       Option[Int],
         isExitNode:           Int ⇒ Boolean,
-        additionalExitNodes:  IntArraySet,
+        additionalExitNodes:  IntTrieSet,
         foreachExitNode:      (Int ⇒ Unit) ⇒ Unit,
         foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
@@ -186,7 +186,7 @@ object PostDominatorTree {
 
             val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
                 if (n == startNode) {
-                    DominatorTree.fornone
+                    DominatorTree.fornone // (_: (Int ⇒ Unit)) ⇒ {}
                 } else if (isExitNode(n) || additionalExitNodes.contains(n)) {
                     // a function that expects a function that will be called for all successors
                     (f: Int ⇒ Unit) ⇒ { f(startNode); foreachSuccessorOf(n)(f) }

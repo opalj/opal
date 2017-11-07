@@ -398,18 +398,30 @@ object ChainProperties extends Properties("Chain") {
         val fl2 = Chain(l2: _*)
         val fl3 = fl1 ++ fl2
         val l3 = l1 ++ l2
-        fl3.toList == l3 && isSpecialized(fl3)
+        isSpecialized(fl1) :| "specialization of fl1" &&
+            isSpecialized(fl2) :| "specialization of fl2" &&
+            //        isSpecialized(fl3) :| "specialization of fl3" &&
+            fl3.toList == l3
+    }
+
+    property("++[List[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
+        val fl1 = Chain(l1: _*)
+        val jfl = fl1 ++ l2
+        val l3 = l1 ++ l2
+        isSpecialized(fl1) :| "specialization of fl1" &&
+            //    isSpecialized(jfl) :| "specialization of jfl" &&
+            jfl.toList == l3
     }
 
     property("copy") = forAll { (l1: List[Int]) ⇒
         val fl1 = Chain(l1: _*)
         val (fl1Copy, last) = fl1.copy()
-        (fl1.isEmpty && fl1Copy.isEmpty && last == null) ||
+        isSpecialized(fl1) :| "specialization of fl1" &&
+            (fl1.isEmpty && fl1Copy.isEmpty && last == null) ||
             ((fl1 ne fl1Copy) && last != null && last.rest == Naught)
     }
 
     property("++!:[Chain[Int]]]") = forAll { (l1: List[Int], l2: List[Int]) ⇒
-
         val fl1 = Chain(l1: _*)
         val fl2 = Chain(l2: _*)
         val fl3 = fl1 ++!: fl2
@@ -556,7 +568,9 @@ object ChainProperties extends Properties("Chain") {
 
     property("mapConserve") = forAll { (l: List[String], c: Int) ⇒
         var alwaysTrue = true
-        def transform(s: String): String = { if (s.length < c) s else { alwaysTrue = false; s + c } }
+        def transform(s: String): String = {
+            if (s.length < c) s else { alwaysTrue = false; s + c }
+        }
         val fl = Chain(l: _*)
         classify(l.forall(s ⇒ transform(s) eq s), "all strings remain the same") {
             val mappedFL = fl.mapConserve(transform)

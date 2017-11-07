@@ -32,20 +32,21 @@ package domain
 
 import scala.annotation.tailrec
 import scala.annotation.switch
-
-import java.io.{ByteArrayOutputStream, PrintStream}
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 
 import scala.xml.Node
-import scala.collection.BitSet
-import scala.collection.mutable
+
+import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
 
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -103,8 +104,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    type ValueOrigins = IntArraySet
-    @inline final def ValueOrigins(vo: Int): IntArraySet = new IntArraySet1(vo)
+    @inline final def ValueOrigins(vo: Int): IntTrieSet = new IntTrieSet1(vo)
+    final def NoValueOrigins: IntTrieSet = EmptyIntTrieSet
 
     // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
@@ -122,7 +123,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // negative values indicate that the values are parameters.
     private[this] var defLocals: Array[Registers[ValueOrigins]] = _ // initialized by initProperties
 
-    abstract override def initProperties(code: Code, cfJoins: BitSet, locals: Locals): Unit = {
+    abstract override def initProperties(code: Code, cfJoins: IntTrieSet, locals: Locals): Unit = {
         val codeSize = code.codeSize
         val defOps = new Array[Chain[ValueOrigins]](codeSize)
         defOps(0) = Naught // the operand stack is empty...
@@ -198,7 +199,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def safeUsedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         val usedBy = this.usedBy(valueOrigin)
         if (usedBy eq null)
-            IntArraySet.empty
+            NoValueOrigins
         else
             usedBy
     }
@@ -208,7 +209,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * compute a value that is not used in the following.
      */
     def unused(): ValueOrigins = {
-        var unused = IntArraySet.empty
+        var unused = NoValueOrigins
 
         // 1. check if the parameters are used...
         val parametersOffset = this.parametersOffset
@@ -271,7 +272,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         newDefLocals: Registers[ValueOrigins]
     )(
         implicit
-        cfJoins:                 BitSet,
+        cfJoins:                 IntTrieSet,
         isSubroutineInstruction: (PC) ⇒ Boolean
     ): Boolean = {
         if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
@@ -439,7 +440,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         successorPC:        PC
     )(
         implicit
-        cfJoins:       BitSet,
         operandsArray: OperandsArray
     ): Chain[ValueOrigins] = {
         // The stack only contains the exception (which was created before
@@ -452,7 +452,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // the VM generated NullPointerException.
             val thrownValue = operandsArray(currentPC).head
             val exceptionIsNull = refIsNull(currentPC, thrownValue)
-            var newDefOps = IntArraySet.empty
+            var newDefOps = NoValueOrigins
             if (exceptionIsNull.isYesOrUnknown) newDefOps += ValueOriginForVMLevelValue(currentPC)
             if (exceptionIsNull.isNoOrUnknown) newDefOps ++= defOps(currentPC).head
             newDefOps
@@ -477,10 +477,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         currentInstruction:       Instruction,
         successorPC:              PC,
         isExceptionalControlFlow: Boolean,
-        usedValues:               Int, pushesValue: Boolean
+        usedValues:               Int,
+        pushesValue:              Boolean
     )(
         implicit
-        cfJoins:                 BitSet,
+        cfJoins:                 IntTrieSet,
         isSubroutineInstruction: (PC) ⇒ Boolean,
         operandsArray:           OperandsArray
     ): Boolean = {
@@ -507,7 +508,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         index:       Int
     )(
         implicit
-        cfJoins:                 BitSet,
+        cfJoins:                 IntTrieSet,
         isSubroutineInstruction: (PC) ⇒ Boolean,
         localsArray:             LocalsArray
     ): Boolean = {
@@ -528,7 +529,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         isExceptionalControlFlow: Boolean
     )(
         implicit
-        cfJoins:                 BitSet,
+        cfJoins:                 IntTrieSet,
         isSubroutineInstruction: (PC) ⇒ Boolean,
         operandsArray:           OperandsArray,
         localsArray:             LocalsArray
@@ -544,9 +545,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             newDefOps:    Chain[ValueOrigins],
             newDefLocals: Registers[ValueOrigins]
         ): Boolean = {
-            defUseDomain.propagate(
-                currentPC, successorPC, newDefOps, newDefLocals
-            )
+            defUseDomain.propagate(currentPC, successorPC, newDefOps, newDefLocals)
         }
 
         def stackOperation(usedValues: Int, pushesValue: Boolean): Boolean = {
@@ -758,7 +757,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
             case 91 /*dup_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 /*@ CTC1()*/ ) :&: (v2 @ CTC1()) :&: _ ⇒
+                    case (_ /*v1 @ CTC1()*/ ) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
                     case _ ⇒
@@ -767,7 +766,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             case 92 /*dup2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: _ ⇒
                         val currentDefOps = defOps(currentPC)
                         val (v1 :&: v2 :&: _) = currentDefOps
                         propagate(v1 :&: v2 :&: currentDefOps, defLocals(currentPC))
@@ -777,7 +776,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             case 93 /*dup2_x1*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
                     case _ ⇒
@@ -786,14 +785,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 }
             case 94 /*dup2_x2*/ ⇒
                 operandsArray(currentPC) match {
-                    case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: (v3 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: v4 :&: rest) = defOps(currentPC)
                         val currentLocals = defLocals(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, currentLocals)
-                    case (v1 @ CTC1()) :&: (v2 @ CTC1()) :&: _ ⇒
+                    case (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
-                    case (v1 /* @ CTC2()*/ ) :&: (v2 @ CTC1()) :&: _ ⇒
+                    case (_ /*v1 @ CTC2()*/ ) :&: (_@ CTC1()) :&: _ ⇒
                         val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
                         propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
                     case _ ⇒
@@ -886,11 +885,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val instructions = code.instructions
         val operandsArray = aiResult.operandsArray
         val localsArray = aiResult.localsArray
+        val subroutineInstructions = aiResult.subroutineInstructions
         val cfJoins = aiResult.cfJoins
 
-        var subroutinePCs: Set[PC] = Set.empty
-        var retPCs: Set[PC] = Set.empty
-        val nextPCs: mutable.LinkedHashSet[PC] = mutable.LinkedHashSet(0)
+        var subroutinePCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
+        var retPCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
+        // Performs poorly: val nextPCs: mutable.LinkedHashSet[PC] =mutable.LinkedHashSet(0)
+        val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
+        nextPCs.add(0)
 
         def checkAndScheduleNextSubroutine(): Boolean = {
             // When we reach this point "nextPCs" is already empty!
@@ -913,12 +915,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
              */
 
             if (retPCs.nonEmpty) {
-                nextPCs += retPCs.head
+                nextPCs.add(retPCs.head)
                 retPCs = retPCs.tail
                 true
             } else if (subroutinePCs.nonEmpty) {
                 if (subroutinePCs.size == 1) {
-                    nextPCs += subroutinePCs.head;
+                    nextPCs.add(subroutinePCs.head)
                     subroutinePCs = Set.empty
                 } else {
                     // We have to make sure that – before we schedule the evaluation of an
@@ -931,15 +933,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     // other subroutines have been completely evaluated.
                     // We check the latter condition using dominace information.
                     val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
-                        // We orignially fixed the above issued using a post-dominance related test
+                        // We originally fixed the above issue using a post-dominance related test
                         // however, due to the complexity related to post-dominator trees for
                         // methods with infinite loops, we are now using the (forwards) dominator
-                        // tree. I.e., we (hopefully) changed the implementation to avoid having to deal
-                        // with some very weird corner cases.
+                        // tree. I.e., we (hopefully) changed the implementation to avoid having to
+                        // deal with some very weird corner cases.
                         //if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
                         if (aiResult.domain.dominatorTree.strictlyDominates(c, n)) c else n
                     }
-                    nextPCs += nextSubroutinePC
+                    nextPCs.add(nextSubroutinePC)
                     subroutinePCs -= nextSubroutinePC
                 }
                 true
@@ -948,9 +950,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             }
         }
 
-        while (nextPCs.nonEmpty || checkAndScheduleNextSubroutine()) {
-            val currPC = nextPCs.head
-            nextPCs.remove(currPC)
+        while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
+            val currPC = nextPCs.removeFirstInt()
             /*
             println(
                 s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")}; "+
@@ -967,7 +968,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow
                     )(
-                        cfJoins, aiResult.subroutineInstructions.contains,
+                        cfJoins, subroutineInstructions.contains,
                         operandsArray, localsArray
                     )
                 } catch {
@@ -1011,7 +1012,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             // the subroutines only once
                             subroutinePCs += succPC
                         case RET.opcode ⇒ retPCs += succPC
-                        case _          ⇒ nextPCs += succPC
+                        case _          ⇒ nextPCs.add(succPC)
                     }
                 }
             }

@@ -39,7 +39,7 @@ import scala.annotation.elidable.ASSERTION
  * To use OPAL's logging facility use the companion object ([[OPALLogger$]]).
  *
  * @note   The OPALLogger framework is not intended to be used by developers to help
- *         debug analysis, but is intended to be used to inform (end)-users about the
+ *         debug analysis; it is intended to be used to inform (end)-users about the
  *         analysis progress.
  *
  * @author Michael Eichberg
@@ -57,9 +57,11 @@ trait OPALLogger {
      * it only once.
      *
      * This method should not be used if the message may only be generated at most
-     * once.
+     * once. The respective message will be cached in the log context.
      */
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit
+    final def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
+        if (ctx.incrementAndGetCount(message) == 1) log(message)
+    }
 
 }
 
@@ -144,7 +146,16 @@ object OPALLogger extends OPALLogger {
 
     def isUnregistered(ctx: LogContext): Boolean = this.synchronized { ctx.id == -2 }
 
-    def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
+    def logger(ctx: LogContext): OPALLogger = {
+        val ctxId = ctx.id
+        if (ctxId == -2) {
+            if (GlobalLogContext eq ctx)
+                throw new UnknownError("the global log context was unregistered")
+            else
+                throw new IllegalArgumentException(s"the log context $ctx is already unregistered")
+        }
+        this.synchronized { loggers(ctxId) }
+    }
 
     def globalLogger(): OPALLogger = this.synchronized { loggers(GlobalLogContext.id) }
 
@@ -155,10 +166,6 @@ object OPALLogger extends OPALLogger {
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         logger(ctx).log(message)
-    }
-
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        logger(ctx).logOnce(message)
     }
 
     /**
@@ -180,7 +187,10 @@ object OPALLogger extends OPALLogger {
         p:        ⇒ Boolean,
         category: String,
         message:  ⇒ String
-    )(implicit ctx: LogContext): Unit = {
+    )(
+        implicit
+        ctx: LogContext
+    ): Unit = {
         if (p) {
             log(Info(category, message))
         }
@@ -247,7 +257,10 @@ object OPALLogger extends OPALLogger {
         category: String,
         message:  String,
         t:        Throwable
-    )(implicit ctx: LogContext): Unit = {
+    )(
+        implicit
+        ctx: LogContext
+    ): Unit = {
         log(Error(category, message, t))
     }
 }

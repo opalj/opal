@@ -34,10 +34,7 @@ package log
  *
  * @author Michael Eichberg
  */
-class ConsoleOPALLogger(
-        val ansiColored: Boolean,
-        val minLogLevel: Int
-) extends AbstractOPALLogger {
+class ConsoleOPALLogger(val ansiColored: Boolean, val minLogLevel: Int) extends OPALLogger {
 
     def this(ansiColored: Boolean = true, minLogLevel: Level = Info) {
         this(ansiColored, minLogLevel.value)

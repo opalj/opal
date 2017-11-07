@@ -1,10 +1,10 @@
 //
-// Optional configuration settings specific to each developers machine.
+// Optional configuration __settings__ specific to each developers machine.
 //
 // Copy this file to "local.sbt" and change all settings as appropriate.
 //
 
-// If your CPU uses hyperthreading, it is recommended to specify the 
+// If your CPU uses hyperthreading, it is recommended to specify the
 // number of physical cores and the number of hyperthreaded cores;
 // this will spead up the overall execution.
 javaOptions in ThisBuild ++= Seq(

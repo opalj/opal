@@ -60,9 +60,10 @@ class BasicCFGJava8Test extends CFGTests {
         val BoringCodeClassFile = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
         it("a cfg with no control flow statemts should consists of a single basic block") {
-            val code = BoringCodeClassFile.findMethod("singleBlock").head.body.get
+            val m = BoringCodeClassFile.findMethod("singleBlock").head
+            val code = m.body.get
             val cfg = CFGFactory(code)
-            testCFGProperties("singleBlock", code, cfg, testProject.classHierarchy) {
+            testCFGProperties(m, code, cfg, testProject.classHierarchy) {
                 cfg.allBBs.size should be(1)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
@@ -71,9 +72,10 @@ class BasicCFGJava8Test extends CFGTests {
         }
 
         it("a cfg with some simple control flow statemts should consists of respective single basic blocks") {
-            val code = BoringCodeClassFile.findMethod("conditionalOneReturn").head.body.get
+            val m = BoringCodeClassFile.findMethod("conditionalOneReturn").head
+            val code = m.body.get
             val cfg = CFGFactory(code)
-            testCFGProperties("conditionalOneReturn", code, cfg, testProject.classHierarchy) {
+            testCFGProperties(m, code, cfg, testProject.classHierarchy) {
                 cfg.allBBs.size should be(11)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
@@ -82,9 +84,10 @@ class BasicCFGJava8Test extends CFGTests {
         }
 
         it("a cfg for a method with multiple return statements should have corresponding basic blocks") {
-            val code = BoringCodeClassFile.findMethod("conditionalTwoReturns").head.body.get
+            val m = BoringCodeClassFile.findMethod("conditionalTwoReturns").head
+            val code = m.body.get
             val cfg = CFGFactory(code)
-            testCFGProperties("conditionalTwoReturns", code, cfg, testProject.classHierarchy) {
+            testCFGProperties(m, code, cfg, testProject.classHierarchy) {
                 cfg.allBBs.size should be(6)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(3)

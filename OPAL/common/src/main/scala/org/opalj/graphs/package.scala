@@ -31,6 +31,7 @@ package org.opalj
 import scala.collection.mutable
 import scala.collection.mutable.ArrayStack
 
+import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -151,8 +152,8 @@ package object graphs {
      * Function to convert a given graphviz dot file to SVG. The transformation is done using the
      * vis-js.com library which is a translated version of graphviz to JavaScript.
      *
-     * The first call, which will initialize the JavaScript engine will take some time. Afterwards,
-     * the evaluation is much faster.
+     * The first call, which will initialize the JavaScript engine, will take some time.
+     * Afterwards, the tranformation is much faster.
      */
     final lazy val dotToSVG: (String) ⇒ String = {
         import javax.script.Invocable
@@ -206,7 +207,7 @@ package object graphs {
      * Identifies closed strongly connected components in directed (multi-)graphs.
      *
      * @tparam N The type of the graph's nodes. The nodes have to correctly implements equals
-     *         and hashCode..
+     *         and hashCode.
      * @param  ns The nodes of the graph.
      * @param  es A function that, given a node, returns all successor nodes. Basically, the edges
      *         of the graph.
@@ -216,7 +217,7 @@ package object graphs {
         es: N ⇒ Traversable[N]
     ): List[Iterable[N]] = {
 
-        case class NInfo(val dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
+        case class NInfo(dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
             override def toString: String = {
                 val cSCCId = this.cSCCId match {
                     case Undetermined ⇒ "Undetermined"
@@ -260,6 +261,14 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
+        /* The following is not a strict requirement, more an expectation (however, (c)sccs
+         * not reachable from a node in ns will not be detected!
+        assert(
+            { val allNodes = ns.toSet; allNodes.forall { n ⇒ es(n).forall(allNodes.contains) } },
+            "the graph references nodes which are not in the set of all nodes"
+        )
+        */
+
         // IMPROVE Instead of associating every node with its cSCCID it is also conceivable to just store the respective boundary nodes where a new cSCC candidate starts!
 
         // The algorithm used to compute the closed scc is loosely inspired by:
@@ -284,8 +293,7 @@ package object graphs {
          * node that does not belong to the SCC and try to determine if it is connected to some
          * previous SCC. If so, we merge all nodes as they belong to the same SCC.
          */
-
-        def dfs(n: N, initialDFSNum: DFSNum): DFSNum = {
+        def dfs(initialDFSNum: DFSNum, n: N): DFSNum = {
             if (hasDFSNum(n))
                 return initialDFSNum;
 
@@ -325,7 +333,7 @@ package object graphs {
                     val n = worklist.pop()
                     val nDFSNum = dfsNum(n)
                     if (nDFSNum >= thisPathFirstDFSNum) {
-                        //                        println(s"visited all children of path element $n")
+                        //                        println(s"visited all children of $n")
                         val thisPathNDFSNum = nDFSNum - thisPathFirstDFSNum
                         val nCSCCId = cSCCId(n)
                         nCSCCId match {
@@ -341,7 +349,16 @@ package object graphs {
 
                             case someCSCCId ⇒
                                 /*nothing to do*/
-                                assert(nDFSNum == 0 || nCSCCId == cSCCId(path.last))
+                                assert(
+                                    // nDFSNum == 0 ???
+                                    nDFSNum == initialDFSNum || someCSCCId == cSCCId(path.last),
+                                    s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; "+
+                                        s"cSCCId(path.last)=${cSCCId(path.last)}\n"+
+                                        s"(n=$n; initialDFSNum=$initialDFSNum; "+
+                                        s"thisPathFirstDFSNum=$thisPathFirstDFSNum\n"+
+                                        cSCCs.map(_.map(_.toString)).
+                                        mkString("found csccs:\n\t", "\n\t", "\n")
+                                )
 
                         }
                     } else {
@@ -397,7 +414,7 @@ package object graphs {
             nextDFSNum
         }
 
-        ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(n, initialDFSNum))
+        ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(initialDFSNum, n))
 
         cSCCs
 
@@ -437,8 +454,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ Iterator[Int],
-        filterSingletons: Boolean             = false
+        es:               Int ⇒ IntIterator,
+        filterSingletons: Boolean           = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
@@ -545,7 +562,7 @@ package object graphs {
                 //              signal that the node was not yet processed.
 
                 val ws = IntArrayStack(n)
-                val wsSuccessors = ArrayStack[Iterator[Int]](null)
+                val wsSuccessors = ArrayStack[IntIterator](null)
                 // INVARIANT:
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of

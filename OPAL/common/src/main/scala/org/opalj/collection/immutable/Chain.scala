@@ -31,12 +31,14 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
+
 import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
 import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.generic.FilterMonadic
+import scala.collection.AbstractIterable
 
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
@@ -319,7 +321,7 @@ sealed trait Chain[@specialized(Int) +T]
      * Prepends the given `int` value to this Chain if this chain is a chain of int values.
      */
     def :&:(x: Int)(implicit ev: this.type <:< Chain[Int]): Chain[Int] = {
-        new :&:[Int](x, this.asInstanceOf[Chain[Int]])
+        new :&:[Int](x, ev(this))
     }
 
     /**
@@ -360,23 +362,24 @@ sealed trait Chain[@specialized(Int) +T]
      * If this list is empty, the last element is null.
      */
     private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
-        val Nil = Naught
+        val Nil: Chain[X] = Naught
         if (isEmpty)
             return (this, null);
 
-        val result = new :&:[T](head, Nil)
+        val result = new :&:[X](head, Nil)
         var last = result
-        var rest: Chain[T] = this.tail
+        var rest: Chain[X] = this.tail
         while (rest.nonEmpty) {
             val x = rest.head
             rest = rest.tail
-            val newLast = new :&:[T](x, Nil)
+            val newLast = new :&:[X](x, Nil)
             last.rest = newLast
             last = newLast
         }
-        (result, last.asInstanceOf[:&:[X]])
+        (result, last)
     }
 
+    // TODO Manually specialize Chain!
     def ++[X >: T](that: Chain[X]): Chain[X] = {
         if (that.isEmpty)
             return this;
@@ -388,15 +391,16 @@ sealed trait Chain[@specialized(Int) +T]
         head
     }
 
-    def ++[X >: T <: AnyRef](other: Traversable[X]): Chain[X] = {
+    // TODO Manually specialize Chain!
+    def ++[X >: T](other: Traversable[X]): Chain[X] = {
         if (other.isEmpty)
             return this;
 
-        val that = other.to[Chain]
+        val that = other.foldLeft(new Chain.ChainBuilder[X])(_ += _).result
         if (this.isEmpty)
             that
         else {
-            val (head, last) = copy[X]
+            val (head, last) = copy[X]()
             last.rest = that
             head
         }
@@ -527,7 +531,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     override def toIterable: Iterable[T] = {
-        new Iterable[T] { def iterator: Iterator[T] = self.toIterator }
+        new AbstractIterable[T] { def iterator: Iterator[T] = self.toIterator }
     }
 
     def toIterator: Iterator[T] = {
@@ -536,6 +540,18 @@ sealed trait Chain[@specialized(Int) +T]
             def hasNext: Boolean = rest.nonEmpty
             def next(): T = {
                 val result = rest.head
+                rest = rest.tail
+                result
+            }
+        }
+    }
+
+    def mapToIntIterator(f: T ⇒ Int): IntIterator = {
+        new IntIterator {
+            private var rest = self
+            def hasNext: Boolean = rest.nonEmpty
+            def next(): Int = {
+                val result = f(rest.head)
                 rest = rest.tail
                 result
             }
@@ -551,6 +567,10 @@ sealed trait Chain[@specialized(Int) +T]
 
     def toIntArraySet(implicit ev: T <:< Int): IntArraySet = {
         foldLeft(new IntArraySetBuilder())(_ += _).result()
+    }
+
+    def toIntTrieSet(implicit ev: T <:< Int): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
     }
 
     def toStream: Stream[T] = toTraversable.toStream

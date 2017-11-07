@@ -31,8 +31,13 @@ package hermes
 
 import java.io.File
 
+import scala.io.Source
+
+import org.opalj.io.processSource
+
 /**
- * Executes all analyses to determine the representativeness of the given projects.
+ * Executes all analyses to determine the representativeness of the given projects
+ * ([[https://bitbucket.org/delors/opal/src/HEAD/DEVELOPING_OPAL/tools/src/main/resources/org/opalj/hermes/HermesCLI.txt?at=develop see HermesCLI.txt for further details]]).
  *
  * @author Michael Eichberg
  */
@@ -45,34 +50,63 @@ object HermesCLI {
         override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
     }
 
-    def main(args: Array[String]): Unit = {
+    final val usage = {
+        processSource(Source.fromInputStream(this.getClass.getResourceAsStream("HermesCLI.txt"))) { s ⇒
+            s.getLines().mkString("\n")
+        }
+    }
 
+    private def showUsage(): Unit = println(usage)
+
+    def main(args: Array[String]): Unit = {
         var configFile: String = null
-        var csvFile: String = null
+        var statisticsFile: String = null
+        var mappingFile: Option[String] = None
+        var noProjectStatistics: Boolean = false
 
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-csv" ⇒
-                    i += 1; csvFile = args(i)
-                case s ⇒ configFile = s
+                case "-config" ⇒
+                    i += 1
+                    configFile = args(i)
+
+                case "-statistics" ⇒
+                    i += 1
+                    statisticsFile = args(i)
+
+                case "-mapping" ⇒
+                    i += 1
+                    mappingFile = Some(args(i))
+
+                case "-noProjectStatistics" ⇒
+                    noProjectStatistics = true
+
+                case arg ⇒
+                    Console.err.println(s"Unknown parameter $arg.")
+                    showUsage()
+                    System.exit(2)
             }
             i += 1
         }
-        if (configFile == null || csvFile == null) {
-            import Console.err
-            err.println("OPAL - Hermes")
-            err.println("Parameters 1) the configuration which lists a corpus' projects")
-            err.println("           2) the file to which the results should be exported")
-            err.println("              -csv <FileName>")
-            err.println()
-            err.println("java org.opalj.hermes.HermesCLI <ConfigFile.json> -csv <FileName>")
+        if (configFile == null || statisticsFile == null) {
+            Console.err.println("Missing config file and/or statistics file.")
+            showUsage()
             System.exit(1)
         }
 
         Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
-                Hermes.exportCSV(new File(csvFile))
+                val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
+                Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
+                println("Wrote statistics: "+theStatisticsFile)
+
+                mappingFile.foreach { mappingFile ⇒
+                    val theMappingFile = new File(mappingFile).getAbsoluteFile()
+                    Hermes.exportMapping(theMappingFile)
+                    println("Wrote mapping: "+theMappingFile)
+                }
+
                 System.exit(0)
             }
         }

@@ -57,13 +57,13 @@ object InterpretMethod {
 
         override def isInterrupted: Boolean = Thread.interrupted()
 
-        override val tracer = {
-            val consoleTracer = new ConsoleTracer { override val printOIDs = true }
-            val xHTMLTracer = new XHTMLTracer {}
-            //    Some(new ConsoleTracer {})
-            //Some(new ConsoleEvaluationTracer {})
-            Some(new MultiTracer(consoleTracer, xHTMLTracer))
-        }
+        val consoleTracer =
+            new ConsoleTracer { override val printOIDs = true }
+        //new ConsoleEvaluationTracer {}
+
+        val xHTMLTracer = new XHTMLTracer {}
+
+        override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
     }
 
     /**
@@ -188,11 +188,13 @@ object InterpretMethod {
                         return ;
                 }
 
+        var ai: AI[Domain] = null;
         try {
             val result =
-                if (doTrace)
-                    new IMAI(doIdentifyDeadVariables)(method, createDomain(project, method))
-                else {
+                if (doTrace) {
+                    ai = new IMAI(doIdentifyDeadVariables)
+                    ai(method, createDomain(project, method))
+                } else {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
                     println("\t"+classFile.thisType.toJava+"{")
@@ -201,8 +203,8 @@ object InterpretMethod {
                         "; #max_stack="+body.maxStack+
                         "; #locals="+body.maxLocals+"]")
                     println("\t}")
-                    val result =
-                        new BaseAI(doIdentifyDeadVariables)(method, createDomain(project, method))
+                    ai = new BaseAI(doIdentifyDeadVariables)
+                    val result = ai(method, createDomain(project, method))
                     println("Finished abstract interpretation.")
                     result
                 }
@@ -215,16 +217,16 @@ object InterpretMethod {
                 val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
                 println("AI CFG: "+cfgFile)
 
-                val dominatorTreeAsDot = cfgDomain.dominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val domFile = writeAndOpen(dominatorTreeAsDot, "DominatorTreeOfTheAICFG", ".gv")
+                val domAsDot = cfgDomain.dominatorTree.toDot(evaluatedInstructions.contains)
+                val domFile = writeAndOpen(domAsDot, "DominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Dominator tree: "+domFile)
 
-                val postDominatorTreeAsDot = cfgDomain.postDominatorTree.toDot((i: Int) ⇒ evaluatedInstructions.contains(i))
-                val postDomFile = writeAndOpen(postDominatorTreeAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
+                val postDomAsDot = cfgDomain.postDominatorTree.toDot(evaluatedInstructions.contains)
+                val postDomFile = writeAndOpen(postDomAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
                 println("AI CFG - Post-Dominator tree: "+postDomFile)
 
                 val cdg = cfgDomain.pdtBasedControlDependencies
-                val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains(_))
+                val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains)
                 val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
                 println("AI CFG - Reverse Dominance Frontiers: "+rdfFile)
             }
@@ -269,7 +271,13 @@ object InterpretMethod {
         } catch {
             case ife: InterpretationFailedException ⇒
 
+                ai match {
+                    case ai: IMAI ⇒ ai.xHTMLTracer.result(null);
+                    case _        ⇒ /*nothing to do*/
+                }
+
                 def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
+                    val domain = ife.domain
                     val parameters =
                         if (nested) {
                             ife.localsArray(0).toSeq.reverse.
@@ -279,7 +287,7 @@ object InterpretMethod {
                             ""
 
                     val aiState =
-                        "<p><i>"+ife.domain.getClass.getName+"</i><b>( "+ife.domain.toString+" )"+"</b></p>"+
+                        s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>"+
                             parameters+
                             "Current instruction: "+ife.pc+"<br>"+
                             XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
@@ -323,6 +331,7 @@ object InterpretMethod {
                     )(ife.cfJoins, ife.operandsArray, ife.localsArray)
                 writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
+
         }
     }
 }

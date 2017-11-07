@@ -180,6 +180,6 @@ abstract class AbstractDominatorTree {
             if (isIndexValid(s) && s != startNode)
                 g += (t, s)
         }
-        g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
+        g.toDot(rankdir = "BT", ranksep = "0.3")
     }
 }

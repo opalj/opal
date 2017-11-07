@@ -79,6 +79,8 @@ abstract class LoadConstantInstruction[T] extends Instruction with ConstantLengt
     def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final def expressionResult: Stack.type = Stack
+
+    final override def toString(currentPC: Int): String = toString()
 }
 /**
  * Defines factory methods for `LoadConstantInstruction`s.
