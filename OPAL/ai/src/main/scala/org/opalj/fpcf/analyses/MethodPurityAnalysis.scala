@@ -193,7 +193,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 stmt.forallSubExpressions(checkPurityOfExpr) &&
                     checkPurityOfVirtualCall(declClass, interface, name, rcvr, descr)
 
-            case If.ASTID  | Switch.ASTID                       ⇒                stmt.forallSubExpressions(checkPurityOfExpr)
+            case If.ASTID | Switch.ASTID            ⇒ stmt.forallSubExpressions(checkPurityOfExpr)
             case Goto.ASTID | JSR.ASTID | Ret.ASTID ⇒ true
 
             case Return.ASTID                       ⇒ true
@@ -293,11 +293,11 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          * early.
          */
         def checkPurityOfVirtualCall(
-            rcvrClass: ReferenceType,
+            rcvrClass:   ReferenceType,
             isInterface: Boolean,
-            name:      String,
-            receiver:  Expr[V],
-            descr:     MethodDescriptor
+            name:        String,
+            receiver:    Expr[V],
+            descr:       MethodDescriptor
         ): Boolean = {
             if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise) {
                 val rcvr = receiver.asVar.value.asDomainReferenceValue
