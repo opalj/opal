@@ -100,7 +100,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.TACMethodParameter
 
 /**
- * A simple analysis for method purity based on the three address code representation.
+ * A simple interprocedural analysis which analyses a method's purity.
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though.
@@ -115,15 +115,16 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey) // IMPROVE Use MethodExtensibility once the method extensibility key is available (again)
 
     /**
-     * Checks whether the statement that is implicitly identified by the given origin, directly
-     * raises a VM-level exception. E.g., a virtual method call may rise a NullPointerException
-     * if the receiver is null.
+     * Checks whether the statement, which is the origin of an exception, directly created the
+     * exception or if the VM instantiated the exception. Here, we are only concerned about the
+     * exceptions thrown by the instructions not about exceptions that are transitively thrown;
+     * e.g. if a method is called.
      */
-    def raisesImplicitExceptions(origin: ValueOrigin)(implicit code: Array[Stmt[V]]): Boolean = {
+    def isImmediateVMException(origin: ValueOrigin)(implicit code: Array[Stmt[V]]): Boolean = {
         if (VMLevelValuesOriginOffset < origin && origin < 0)
             return false; // Parameters aren't implicit exceptions
 
-        def directlyRaisesVMLevelException(expr: Expr[V]): Boolean = {
+        def evaluationMayCauseVMLevelException(expr: Expr[V]): Boolean = {
             (expr.astID: @switch) match {
 
                 case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
@@ -148,9 +149,9 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 val rcvr = stmt.asInstanceMethodCall.receiver
                 !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
 
-            case Assignment.ASTID ⇒ directlyRaisesVMLevelException(stmt.asAssignment.expr)
+            case Assignment.ASTID ⇒ evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
 
-            case ExprStmt.ASTID   ⇒ directlyRaisesVMLevelException(stmt.asExprStmt.expr)
+            case ExprStmt.ASTID   ⇒ evaluationMayCauseVMLevelException(stmt.asExprStmt.expr)
 
             case _                ⇒ true
         }
@@ -165,27 +166,24 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
         if (method.isSynchronized)
             return ImmediateResult(method, Impure);
 
+        implicit val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
-
         /**
          * Current purity level for this method.
          * The checkPurityOfX methods will assign to this var to aggregate the purity.
          */
         var purity: Purity = Pure
 
-        implicit val TACode(_, code, cfg, _, _) = tacai(method)
-
-        // Creating implicit exceptions is side-effect free (for the fillInStackTrace)
-        if (cfg.abnormalReturnNode.predecessors.exists { bb ⇒
-            raisesImplicitExceptions(bb.asBasicBlock.endPC)
-        }) {
+        // Creating implicit exceptions is side-effect free (except for the fillInStackTrace)
+        val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
+        if (bbsCausingExceptions.exists(bb ⇒ isImmediateVMException(bb.asBasicBlock.endPC))) {
             purity = SideEffectFree
         }
 
         /**
-         * Checks trivially if a reference was created locally, hence actions on it might not
+         * Checks if a reference was created locally, hence actions on it might not
          * influence purity.
          *
          * @note Fresh references can be treated as non-escaping as the analysis result will be
@@ -268,7 +266,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 checkPurityOfExpr(subExpr)
             case CaughtException.ASTID ⇒
                 // Creating implicit exceptions is side-effect free (for the fillInStackTrace)
-                if (stmt.asCaughtException.origins.exists(raisesImplicitExceptions))
+                if (stmt.asCaughtException.origins.exists(isImmediateVMException))
                     purity = SideEffectFree
                 true
 
@@ -559,10 +557,12 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             }
         }
 
-        val codeIterator = code.iterator
-        while (codeIterator.hasNext) {
-            if (!checkPurityOfStmt(codeIterator.next())) // Early return for impure statements
+        val stmtCount = code.length
+        var s = 0
+        while (s < stmtCount) {
+            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
                 return ImmediateResult(method, Impure)
+            s += 1
         }
 
         // Every method that is not identified as being impure is (conditionally) pure or
