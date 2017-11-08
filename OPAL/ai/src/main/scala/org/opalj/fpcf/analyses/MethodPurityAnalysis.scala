@@ -158,17 +158,27 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          *       impure anyways if anything escapes the method.
          */
         def isFreshReference(expr: Expr[V]): Boolean = { // TODO Rename How about isLocallyInitialized ("created" doesn't fit and fresh sounds fanzy :-))
-            // Only examine vars
-            expr.isVar && expr.asVar.definedBy.forall { defSite ⇒
-                if (defSite >= 0) {
-                    val astID = code(defSite).asAssignment.expr.astID
-                    astID == New.ASTID || astID == NewArray.ASTID
-                } else if (isVMLevelValue(defSite)) {
-                    true // VMLevelValues are freshly created
-                } else {
-                    // In initializers the self reference (this) is
-                    method.isConstructor && defSite == OriginOfThis
+            if (expr.isConst)
+                true
+            else if (expr.isVar) {
+                expr.asVar.definedBy.forall { defSite ⇒
+                    if (defSite >= 0) {
+                        val astID = code(defSite).asAssignment.expr.astID
+                        astID == New.ASTID || astID == NewArray.ASTID
+                    } else if (isVMLevelValue(defSite)) {
+                        true // VMLevelValues are freshly created
+                    } else {
+                        // In initializers the self reference (this) is
+                        method.isConstructor && defSite == OriginOfThis
+                    }
                 }
+            } else {
+                // The expression could refer to further expressions or could be; e.g., in case
+                // of a non-flat representation, a GetStatic. In that case the reference is
+                // not locally created and/or initialized. To avoid special handling, we just
+                // fallback to know here as the analysis is intended to be used on flat
+                // representations anyway.
+                false
             }
         }
 
