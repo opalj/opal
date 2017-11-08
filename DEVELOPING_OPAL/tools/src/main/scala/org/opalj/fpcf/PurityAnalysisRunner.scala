@@ -36,8 +36,15 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
+import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.MethodPurityAnalysis
+import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.PurityAnalysis
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.SideEffectFree
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.
@@ -46,9 +53,15 @@ import org.opalj.fpcf.properties.Purity
  */
 object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
+    final val MPAParam = "-analysis=MethodPurityAnalysis"
+
     override def title: String = "assess the purity of methods"
 
     override def description: String = { "assess the purity of some methods" }
+
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+        super.checkAnalysisSpecificParameters(parameters.filter(_ != MPAParam))
+    }
 
     override def doAnalyze(
         project:       Project[URL],
@@ -56,14 +69,21 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val projectStore = project.get(PropertyStoreKey)
+        val propertyStore = project.get(PropertyStoreKey)
 
-        org.opalj.fpcf.analyses.FieldMutabilityAnalysis.start(project, projectStore)
-        org.opalj.fpcf.analyses.PurityAnalysis.start(project, projectStore)
+        if (parameters.contains(MPAParam)) {
+            ClassImmutabilityAnalysis.start(project, propertyStore)
+            TypeImmutabilityAnalysis.start(project, propertyStore)
+            AdvancedFieldMutabilityAnalysis.start(project, propertyStore)
+            MethodPurityAnalysis.start(project, propertyStore)
+        } else {
+            FieldMutabilityAnalysis.start(project, propertyStore)
+            PurityAnalysis.start(project, propertyStore)
+        }
 
-        projectStore.waitOnPropertyComputationCompletion(true)
+        propertyStore.waitOnPropertyComputationCompletion(true)
 
-        val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
+        val pureEntities: Traversable[EP[Entity, Purity]] = propertyStore.entities(Purity.key)
         val pureMethods: Traversable[(Method, Property)] =
             pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
         val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
@@ -76,8 +96,9 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
             )
 
         val result = methodInfo +
-            projectStore.toString(false)+
-            "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
+            propertyStore.toString(false)+
+            "\nPure methods:             "+pureMethods.filter(m ⇒ m._2 == Pure).size+
+            "\nSide-effect free methods: "+pureMethods.filter(m ⇒ m._2 == SideEffectFree).size
 
         BasicReport(result)
     }
