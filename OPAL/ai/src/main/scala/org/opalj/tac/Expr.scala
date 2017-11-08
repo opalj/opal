@@ -106,6 +106,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asParam: Param = throw new ClassCastException();
     def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
     def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
+    def isConst: Boolean = false
     def isIntConst: Boolean = false
     def asIntConst: IntConst = throw new ClassCastException();
     def isLongConst: Boolean = false
@@ -218,6 +219,7 @@ object Param { final val ASTID = -1 }
  * A constant value expression.
  */
 sealed abstract class Const extends ValueExpr[Nothing] {
+    final override def isConst: Boolean = true
     final override def isVar: Boolean = false
     final override def isSideEffectFree: Boolean = true
     def tpe: Type
