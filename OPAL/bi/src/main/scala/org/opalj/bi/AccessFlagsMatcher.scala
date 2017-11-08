@@ -126,8 +126,6 @@ object PrimitiveAccessFlagsMatcher {
  */
 object AccessFlagsMatcher {
 
-    final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
-
     // DEFINED FOR READABILITY PURPOSES:
     final val PUBLIC = ACC_PUBLIC
     final val PRIVATE = ACC_PRIVATE
@@ -156,4 +154,3 @@ object AccessFlagsMatcher {
 
     final val ANY = new AccessFlagsMatcher { def unapply(accessFlags: Int): Boolean = true }
 }
-
