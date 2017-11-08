@@ -100,7 +100,9 @@ import org.opalj.tac.TACode
 import org.opalj.tac.TACMethodParameter
 
 /**
- * A simple interprocedural analysis which analyses a method's purity.
+ * An inter-procedural analysis to determine a method's purity.
+ *
+ * TODO Describe the major properties of the analysis w.r.t. its precision.
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though.
@@ -193,13 +195,12 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             // Only examine vars
             expr.isVar && expr.asVar.definedBy.forall { defSite ⇒
                 if (defSite >= 0) {
-                    assert(code(defSite).astID == Assignment.ASTID, "defSite should be assignment")
                     val astID = code(defSite).asAssignment.expr.astID
                     astID == New.ASTID || astID == NewArray.ASTID
                 } else if (isVMLevelValue(defSite)) {
                     true // VMLevelValues are freshly created
                 } else {
-                    // In initializer methods, the receiver object is fresh
+                    // In initializers the self reference (this) is
                     method.isConstructor && defSite == OriginOfThis
                 }
             }
