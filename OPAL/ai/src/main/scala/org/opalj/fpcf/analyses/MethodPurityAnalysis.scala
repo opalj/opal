@@ -585,9 +585,16 @@ object MethodPurityAnalysis extends FPCFAnalysisRunner {
         Set(FieldMutability, ClassImmutability, TypeImmutability)
     }
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        def analysis = new MethodPurityAnalysis(project)
-        propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determinePurity)
+    def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val analysis = new MethodPurityAnalysis(p)
+        ps.scheduleForEntities(p.allMethodsWithBody)(analysis.determinePurity)
+        analysis
+    }
+
+    def registerAsLazyAnalysis(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val analysis = new MethodPurityAnalysis(p)
+        val propertyComputation = (e: Entity) ⇒ analysis.determinePurity(e.asInstanceOf[Method])
+        ps.scheduleLazyComputation(Purity.key, propertyComputation)
         analysis
     }
 }
