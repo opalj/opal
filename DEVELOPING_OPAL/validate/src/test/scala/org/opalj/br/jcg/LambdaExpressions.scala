@@ -26,44 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj.br.jcg
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting
-import org.opalj.graphs.Node
+import java.io.{ByteArrayOutputStream, File, PrintStream}
+import java.net.URL
 
-class ByteArrayClassLoader(project: SomeProject) extends ClassLoader {
+import org.opalj.br.{ClassFile, FixturesTest}
 
-    val lambdaRegex = Java8LambdaExpressionsRewriting.LambdaNameRegEx.r
+class LambdaExpressions extends FixturesTest {
+    val fixtureFiles: File = new File(s"DEVELOPING_OPAL/validate/src/test/resources/jcg/lambda_expressions.jar")
 
-    loadGraph(project.classHierarchy.toGraph())
+    override def fixtureFilter(cfSrc: (ClassFile, URL)): Boolean = true
 
-    def loadGraph(node: Node): Unit = {
-        if (node.nodeId >= 0) {
-            val ot = project.classHierarchy.getObjectType(node.nodeId)
-            project.allProjectClassFiles.find(_.thisType == ot).foreach(c ⇒ resolveProjectClass(c))
+    describe("JCG lambda_expressions test") {
+        it("should execute main successfully") {
+            val c = byteArrayClassLoader.loadClass("app.ExpressionPrinter")
+            val m = c.getMethod("main", classOf[Array[String]])
+
+            // Intercept output
+            val baos = new ByteArrayOutputStream()
+            val defaultOut = System.out
+            System.setOut(new PrintStream(baos))
+
+            m.invoke(null, Array("lambda_expressions.jar"))
+            assert(baos.toString == "Id(((1)++)²)\n")
+
+            // Reset System.out
+            System.setOut(defaultOut)
         }
-
-        if (node.hasSuccessors) {
-            node.foreachSuccessor(loadGraph)
-        }
-    }
-
-    def resolveProjectClass(classFile: ClassFile): Unit = {
-        try {
-            resolveClass(findClass(classFile))
-        } catch {
-            // Can be ignored. The class will most probably loaded at a later time, when all
-            // superclasses are loaded.
-            case _: Any ⇒
-        }
-    }
-
-    def findClass(classFile: ClassFile): Class[_] = {
-        val ba = ProjectSerializer.classToByte(
-            classFile
-        )
-
-        defineClass(classFile.thisType.toJava, ba, 0, ba.length)
     }
 }

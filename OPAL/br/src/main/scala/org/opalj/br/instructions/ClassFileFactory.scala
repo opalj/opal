@@ -277,8 +277,10 @@ object ClassFileFactory {
             )
         }
 
+        // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
+        // instruction on a static interface method.
         ClassFile(
-            0, 49,
+            0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
@@ -522,7 +524,9 @@ object ClassFileFactory {
             )
         }
 
-        ClassFile(0, 49,
+        // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
+        // instruction on a static interface method.
+        ClassFile(0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,

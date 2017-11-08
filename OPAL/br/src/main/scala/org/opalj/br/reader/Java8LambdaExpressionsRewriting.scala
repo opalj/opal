@@ -149,16 +149,27 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         val syntheticLambdaMethods: IndexedSeq[Method] = classFile.methods
             .filter(x ⇒ bi.ACC_SYNTHETIC.isSet(x.accessFlags))
             .filter(x ⇒ bi.ACC_PRIVATE.isSet(x.accessFlags))
+            .filter(x ⇒ bi.ACC_STATIC.isSet(x.accessFlags))
             .filter(_.name.startsWith("lambda$"))
 
-        // No access modifier means package private
         val syntheticLambdaMethodAccessFlags =
-            bi.ACC_SYNTHETIC.mask | bi.ACC_FINAL.mask | bi.ACC_STATIC.mask
+            if (updatedClassFile.isInterfaceDeclaration) {
+                // An interface method must have either ACC_PUBLIC or ACC_PRIVATE and NOT have
+                // ACC_FINAL set. Since the lambda class is in a different class in the same
+                // package, we have to declare the method as public. For more information see:
+                //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
+                bi.ACC_SYNTHETIC.mask | bi.ACC_STATIC.mask | bi.ACC_PUBLIC.mask
+            } else {
+                // For non interface method, we can make the method final and set the access to
+                // package private.
+                // Note: No access modifier means package private
+                bi.ACC_SYNTHETIC.mask | bi.ACC_STATIC.mask | bi.ACC_FINAL.mask
+            }
 
         updatedClassFile = updatedClassFile.copy(
             methods = syntheticLambdaMethods
                 .map(_.copy(accessFlags = syntheticLambdaMethodAccessFlags)) ++
-                updatedClassFile.methods.filterNot(syntheticLambdaMethods.contains(_)).map(_.copy())
+                classFile.methods.filterNot(syntheticLambdaMethods.contains(_)).map(_.copy())
         )
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
@@ -315,14 +326,45 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // TODO: Why can they be ignored
         val Seq(
             functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
-            invokeTargetMethodHandle: MethodCallMethodHandle,
+            tempInvokeTargetMethodHandle: MethodCallMethodHandle,
             functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*
             ) =
             bootstrapArguments
+        var invokeTargetMethodHandle = tempInvokeTargetMethodHandle
 
         val MethodCallMethodHandle(
             targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
             ) = invokeTargetMethodHandle
+
+        // Check if the target method is accessible from the lambda. If not, make it package
+        // private, so the lambda can access it.
+        var updatedClassFile = classFile
+        updatedClassFile
+            .findMethod(targetMethodName, targetMethodDescriptor)
+            .filter(tm ⇒ bi.ACC_PRIVATE.isSet(tm.accessFlags))
+            .foreach { targetMethod ⇒
+                updatedClassFile = updatedClassFile.copy(
+                    methods =
+                        IndexedSeq(
+                            targetMethod.copy(
+                                accessFlags = targetMethod.accessFlags & ~bi.ACC_PRIVATE.mask
+                            )
+                        ) ++ classFile.methods.filterNot(_.equals(targetMethod)).map(_.copy())
+                )
+
+                // In case of nested classes, we have to change the invoke instruction from
+                // invokespecial to invokevirtual, because the special handling used for private
+                // methods doesn't apply anymore.
+                if (bi.ACC_SUPER.isSet(classFile.accessFlags)) {
+                    if (invokeTargetMethodHandle.isInstanceOf[InvokeSpecialMethodHandle]) {
+                        invokeTargetMethodHandle = InvokeVirtualMethodHandle(
+                            invokeTargetMethodHandle.receiverType,
+                            invokeTargetMethodHandle.name,
+                            invokeTargetMethodHandle.methodDescriptor
+                        )
+                    }
+                }
+            }
 
         val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
@@ -503,8 +545,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         instructions(pc + 3) = NOP
         instructions(pc + 4) = NOP
 
-        val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
-        storeProxy(classFile, proxy, reason)
+        val reason = Some((updatedClassFile, instructions, pc, invokedynamic, newInvokestatic))
+        storeProxy(updatedClassFile, proxy, reason)
     }
 
     def storeProxy(

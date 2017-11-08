@@ -28,13 +28,17 @@
  */
 package org.opalj.br.invokedynamicrewriting
 
-import org.opalj.br.{FixturesTest, ObjectType}
+import java.io.File
+
+import org.opalj.br.FixturesTest
+import org.opalj.util.ScalaMajorVersion
 
 class SimpleLambdaAddTest extends FixturesTest {
+    val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
+
     describe("a simple lambda add") {
         it("should calculate 2+2 correctly") {
-            val ot = FixtureProject.classFile(ObjectType("org/opalj/br/fixtures/InvokeDynamics"))
-            val c = byteArrayClassLoader.findClass(ot.get)
+            val c = byteArrayClassLoader.loadClass("org.opalj.br.fixtures.InvokeDynamics")
             val instance = c.newInstance()
             val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
             val res = m.invoke(instance, new Integer(2), new Integer(2))

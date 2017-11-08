@@ -33,7 +33,6 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.RTJar
-import org.opalj.util.ScalaMajorVersion
 import org.scalatest.{FunSpec, Matchers}
 
 /**
@@ -43,17 +42,19 @@ import org.scalatest.{FunSpec, Matchers}
  */
 trait FixturesTest extends FunSpec with Matchers {
 
-    final val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
+    val fixtureFiles: File
 
-    final val FixtureProject: Project[URL] = {
+    def fixtureFilter(cfSrc: (ClassFile, URL)): Boolean = {
+        val (cf, _) = cfSrc
+        cf.thisType.packageName.startsWith("org/opalj/br/fixture")
+    }
+
+    final lazy val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
         val fixtureClassFiles = ClassFiles(fixtureFiles)
 
-        val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
-            val (cf, _) = cfSrc
-            cf.thisType.packageName.startsWith("org/opalj/br/fixture")
-        }
+        val projectClassFiles = fixtureClassFiles.filter(fixtureFilter)
 
         val libraryClassFiles = ClassFiles(RTJar)
 
@@ -65,5 +66,5 @@ trait FixturesTest extends FunSpec with Matchers {
         )
     }
 
-    final val byteArrayClassLoader = new ByteArrayClassLoader(FixtureProject)
+    final lazy val byteArrayClassLoader = new ByteArrayClassLoader(FixtureProject)
 }
