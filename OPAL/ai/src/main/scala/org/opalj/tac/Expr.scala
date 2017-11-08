@@ -603,7 +603,7 @@ sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V]
  */
 case class NonVirtualFunctionCall[+V <: Var[V]](
         pc:             PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
@@ -659,7 +659,7 @@ object VirtualFunctionCall { final val ASTID = -25 }
 
 case class StaticFunctionCall[+V <: Var[V]](
         pc:             PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,

@@ -521,7 +521,7 @@ object InstanceMethodCall {
  */
 case class NonVirtualMethodCall[+V <: Var[V]](
         pc:             PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
@@ -569,7 +569,7 @@ object VirtualMethodCall {
 
 case class StaticMethodCall[+V <: Var[V]](
         pc:             PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,

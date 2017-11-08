@@ -519,7 +519,8 @@ object TACNaive {
                         val stmt =
                             stmtFactory(
                                 pc,
-                                declaringClass, isInterfaceCall, name, methodDescriptor,
+                                declaringClass.asObjectType, isInterfaceCall,
+                                name, methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -535,7 +536,8 @@ object TACNaive {
                         val expr =
                             exprFactory(
                                 pc,
-                                declaringClass, isInterfaceCall, name, methodDescriptor,
+                                declaringClass.asObjectType, isInterfaceCall,
+                                name, methodDescriptor,
                                 receiver,
                                 params
                             )
