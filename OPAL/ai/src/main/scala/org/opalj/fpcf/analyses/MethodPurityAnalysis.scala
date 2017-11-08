@@ -173,10 +173,10 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     }
                 }
             } else {
-                // The expression could refer to further expressions or could be; e.g., in case
-                // of a non-flat representation, a GetStatic. In that case the reference is
+                // The expression could refer to further expressions in a non-flat representation.
+                // In that case it could be, e.g., a GetStatic. In that case the reference is
                 // not locally created and/or initialized. To avoid special handling, we just
-                // fallback to know here as the analysis is intended to be used on flat
+                // fallback to false here as the analysis is intended to be used on flat
                 // representations anyway.
                 false
             }
