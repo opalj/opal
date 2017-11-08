@@ -97,8 +97,8 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val result = methodInfo +
             propertyStore.toString(false)+
-            "\nPure methods:             "+pureMethods.filter(m ⇒ m._2 == Pure).size+
-            "\nSide-effect free methods: "+pureMethods.filter(m ⇒ m._2 == SideEffectFree).size
+            "\nPure methods:             "+pureMethods.count(m ⇒ m._2 == Pure)+
+            "\nSide-effect free methods: "+pureMethods.count(m ⇒ m._2 == SideEffectFree)
 
         BasicReport(result)
     }
