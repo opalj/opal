@@ -38,6 +38,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
@@ -451,7 +452,7 @@ trait AbstractEntityEscapeAnalysis {
             }
 
             // this entity is passed as parameter (or this local) to a method
-            case FormalParameter(_, _) ⇒ p match {
+            case _: FormalParameter | _: VirtualFormalParameter ⇒ p match {
 
                 case GlobalEscape         ⇒ Result(e, GlobalEscape)
 

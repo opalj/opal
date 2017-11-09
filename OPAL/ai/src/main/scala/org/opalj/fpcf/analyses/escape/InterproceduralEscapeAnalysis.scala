@@ -41,6 +41,8 @@ import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
+//import org.opalj.br.analyses.FormalParameters
+//import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.MaybeNoEscape
@@ -136,8 +138,8 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
                 resolveCycles = false,
                 useFallbacksForIncomputableProperties = false
             )
-        } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }
-*/
+        } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
+
         def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
             val property = epks.foldLeft(NoEscape: EscapeProperty) {
                 (escapeState, epk) ⇒
@@ -156,6 +158,8 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
                 }
             )
         }
+
+        EscapeAnalysisOfVirtualCalls.start(project)
 
         PropertyKey.updateCycleResolutionStrategy(EscapeProperty.key, cycleResolutionStrategy)
 

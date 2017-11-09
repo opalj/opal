@@ -40,11 +40,12 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.TypeExtensibilityKey
-import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.VirtualForwardingMethod
+import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -68,12 +69,12 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Assignment
 
-trait AbstractInterproceduralEntityEscapeAnalysis extends ConfigurationBasedConstructorEscapeAnalysis {
+trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
     //TODO Move to non entity based analysis
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
-    var dependeeCache: Map[FormalParameter, EOptionP[FormalParameter, EscapeProperty]] = Map.empty
+    var dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
 
     /**
      * This method is called, after the entity has been analyzed. If there is no dependee left or
@@ -237,8 +238,27 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends ConfigurationBasedCons
             // TODO: to optimize performance, we do not let the analysis run against the existing methods
             calcMostRestrictive(MaybeEscapeInCallee)
         } else {
-            //TODO project.resolveMethodReference()
             assert(m.declaringClassType.isObjectType)
+
+            val target = project.instanceCall(
+                m.declaringClassType.asObjectType,
+                dc.asObjectType,
+                name,
+                descr
+            )
+            assert(target.hasValue)
+            val vm = VirtualForwardingMethod(dc, name, descr, target.value)
+            val fps = propertyStore.context[VirtualFormalParameters]
+            if (usesDefSite(receiver)) {
+                val fp = fps(vm)(0)
+                handleEscapeState(fp, assignment)
+            }
+            for (i ← params.indices) {
+                if (usesDefSite(params(i))) {
+                    val fp = fps(vm)(i + 1)
+                    handleEscapeState(fp, assignment)
+                }
+            }
             val packageName = m.declaringClassType.asObjectType.packageName
             val methods =
                 if (isI) project.interfaceCall(dc.asObjectType, name, descr)
@@ -279,51 +299,55 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends ConfigurationBasedCons
                     val fps = propertyStore.context[FormalParameters]
                     val fp = fps(method)(param)
                     if (fp != e) {
-                        /* This is crucial for the analysis. the dependees set is not allowed to
-                         * contain duplicates. Due to very long target methods it could be the case
-                         * that multiple queries to the property store result in either an EP or an
-                         * EPK. Therefore we cache the result to have it consistent.
-                         */
-                        // TODO use mutable map and getOrElseUpdate ... makes the code nicer
-                        val escapeState = if (dependeeCache.contains(fp)) dependeeCache(fp)
-                        else {
-                            val es = propertyStore(fp, EscapeProperty.key)
-                            dependeeCache += ((fp, es))
-                            es
-                        }
-                        escapeState match {
-                            case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
-                            case EP(_, GlobalEscape)              ⇒ calcMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
-                            case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, EscapeViaReturn) ⇒
-                                aiResult.domain match {
-                                    case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
-                                        assignment match {
-                                            case Some(a) ⇒
-                                                //IMPROVE further track the value
-                                                calcMostRestrictive(MaybeEscapeInCallee)
-                                            case None ⇒
-                                                calcMostRestrictive(EscapeInCallee)
-                                        }
-                                    case _: org.opalj.ai.domain.l1.ReferenceValues ⇒
-                                        assignment match {
-                                            case Some(a) ⇒
-                                                calcMostRestrictive(MaybeEscapeInCallee)
-                                            case None ⇒
-                                                calcMostRestrictive(EscapeInCallee)
-                                        }
-
-                                }
-                            case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(MaybeEscapeInCallee)
-                            case epk ⇒
-                                dependees += epk
-                                dependeeToStmt += ((fp, assignment))
-                                calcMostRestrictive(EscapeInCallee)
-                        }
+                        handleEscapeState(fp, assignment)
                     }
                 }
             case _ ⇒ calcMostRestrictive(MaybeEscapeInCallee)
+        }
+    }
+
+    private[this] def handleEscapeState(fp: Entity, assignment: Option[Assignment[V]]): Unit = {
+        /* This is crucial for the analysis. the dependees set is not allowed to
+         * contain duplicates. Due to very long target methods it could be the case
+         * that multiple queries to the property store result in either an EP or an
+         * EPK. Therefore we cache the result to have it consistent.
+         */
+        //TODO use mutable map
+        val escapeState = dependeeCache.getOrElse(fp, {
+            val es = propertyStore(fp, EscapeProperty.key)
+            dependeeCache += ((fp, es))
+            es
+        })
+
+        escapeState match {
+            case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
+            case EP(_, GlobalEscape)              ⇒ calcMostRestrictive(GlobalEscape)
+            case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
+            case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
+            case EP(_, EscapeViaReturn) ⇒
+                aiResult.domain match {
+                    case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
+                        assignment match {
+                            case Some(a) ⇒
+                                //IMPROVE further track the value
+                                calcMostRestrictive(MaybeEscapeInCallee)
+                            case None ⇒
+                                calcMostRestrictive(EscapeInCallee)
+                        }
+                    case _: org.opalj.ai.domain.l1.ReferenceValues ⇒
+                        assignment match {
+                            case Some(a) ⇒
+                                calcMostRestrictive(MaybeEscapeInCallee)
+                            case None ⇒
+                                calcMostRestrictive(EscapeInCallee)
+                        }
+
+                }
+            case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(MaybeEscapeInCallee)
+            case epk ⇒
+                dependees += epk
+                dependeeToStmt += ((fp, assignment))
+                calcMostRestrictive(EscapeInCallee)
         }
     }
 }

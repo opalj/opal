@@ -98,6 +98,7 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
             PropertyStoreKey.makeAllocationSitesAvailable(project)
             PropertyStoreKey.makeFormalParametersAvailable(project)
+            PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 
