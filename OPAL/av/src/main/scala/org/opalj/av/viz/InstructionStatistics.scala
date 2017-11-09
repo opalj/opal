@@ -67,8 +67,7 @@ object InstructionStatistics extends AnalysisExecutor {
             } {
                 instructionsPerFQPN.update(
                     packageName,
-                    instructionsPerFQPN.getOrElse(packageName, 0) +
-                        body.programCounters.size
+                    instructionsPerFQPN.getOrElse(packageName, 0) + body.instructionsCount
                 )
             }
 

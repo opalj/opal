@@ -328,27 +328,27 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         val random = new java.util.Random(seed) // testing all permutations takes FAR too long...
 
         val edges = Array(
-            ("c" -> "b"),
+            ("c" -> "b"), /*REDUNDANT:*/ "c" -> "b",
             ("d" -> "e"),
             ("e" -> "e"),
             ("f" -> "g"),
-            ("g" -> "f"),
+            ("g" -> "f"), /*REDUNDANT:*/ "c" -> "b", /*REDUNDANT:*/ "d" -> "e",
             ("h" -> "i"),
             ("j" -> "k"),
             ("k" -> "l"),
-            ("l" -> "k"), ("l" -> "n"),
+            ("l" -> "k"), ("l" -> "n"), /*REDUNDANT:*/ "c" -> "b", /*REDUNDANT:*/ "d" -> "e",
             ("m" -> "l"),
-            ("o" -> "b"), ("o" -> "e"), ("o" -> "g"),
+            ("o" -> "b"), ("o" -> "e"), ("o" -> "g"), /*REDUNDANT:*/ "o" -> "e",
             ("p" -> "r"), ("p" -> "q"),
             ("q" -> "p"),
             ("r" -> "q"), ("r" -> "s"),
-            ("s" -> "t"), ("s" -> "q"),
+            ("s" -> "t"), ("s" -> "q"), /*REDUNDANT:*/ "o" -> "e",
             ("t" -> "p"),
             ("u" -> "p"), ("u" -> "v"), ("u" -> "w"),
             ("v" -> "w"),
             ("w" -> "v"),
-            ("x" -> "w"),
-            ("y" -> "t")
+            ("x" -> "w"), /*REDUNDANT:*/ "e" -> "e",
+            ("y" -> "t"), /*REDUNDANT:*/ "p" -> "q"
         )
         val expectedCSCCs = Set(
             List("e"),
@@ -372,7 +372,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                     edges(cellB) = temp
                     swaps -= 1
                 }
-                // add the adges
+                // add the edges
                 edges.foreach(g.+=)
                 g
             }

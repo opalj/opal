@@ -35,13 +35,12 @@ import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
-
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.Node
 
@@ -231,14 +230,14 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): IntArraySet = {
+    def successors(pc: PC): IntTrieSet = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            IntArraySet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntTrieSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var successorPCs = IntArraySet.empty
+            var successorPCs = IntTrieSet.empty
             bb.successors foreach {
                 case bb: BasicBlock ⇒ successorPCs += bb.startPC
                 case cb: CatchNode  ⇒ successorPCs += cb.handlerPC
@@ -261,7 +260,7 @@ case class CFG(
             f(code.instructions(pc).indexOfNextInstruction(pc)(code))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
-            var visited = IntArraySet.empty
+            var visited = IntTrieSet.empty
             bb.successors foreach { bb ⇒
                 val nextPC =
                     if (bb.isBasicBlock) bb.asBasicBlock.startPC
@@ -276,13 +275,13 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC): IntArraySet = {
+    def predecessors(pc: PC): IntTrieSet = {
         if (pc == 0)
-            return IntArraySet.empty;
+            return IntTrieSet.empty;
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var predecessorPCs = IntArraySet.empty
+            var predecessorPCs = IntTrieSet.empty
             bb.predecessors foreach {
                 case bb: BasicBlock ⇒
                     predecessorPCs += bb.endPC
@@ -293,7 +292,7 @@ case class CFG(
             }
             predecessorPCs
         } else {
-            IntArraySet(code.pcOfPreviousInstruction(pc))
+            new IntTrieSet1(code.pcOfPreviousInstruction(pc))
         }
     }
 
@@ -303,7 +302,7 @@ case class CFG(
 
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
-            var visited = IntArraySet.empty
+            var visited = IntTrieSet.empty
             bb.predecessors foreach { bb ⇒
                 if (bb.isBasicBlock) {
                     f(bb.asBasicBlock.endPC)

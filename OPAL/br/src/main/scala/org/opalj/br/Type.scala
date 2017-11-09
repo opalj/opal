@@ -195,8 +195,13 @@ sealed trait Type extends UIDValue with Ordered[Type] {
         throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType")
     }
 
-    @throws[ClassCastException]("if this is not a numeric type")
+    @throws[ClassCastException]("if this is not an int like type")
     def asIntLikeType: IntLikeType = {
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
+    }
+
+    @throws[ClassCastException]("if this is not a boolean type")
+    def asBooleanType: BooleanType = {
         throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
     }
 
@@ -643,10 +648,9 @@ sealed abstract class CharType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = { typeConversionFactory.PrimitiveCharToLangCharacter }
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveCharToLangCharacter
+    }
 
 }
 case object CharType extends CharType
@@ -930,6 +934,8 @@ sealed abstract class BooleanType private () extends CTIntType {
     final val WrapperType = ObjectType.Boolean
 
     final override def isBooleanType: Boolean = true
+
+    final override def asBooleanType: BooleanType = this
 
     final override def computationalType: ComputationalType = ComputationalTypeInt
 

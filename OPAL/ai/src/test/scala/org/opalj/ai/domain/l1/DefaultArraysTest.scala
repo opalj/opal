@@ -37,7 +37,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
-import org.opalj.collection.immutable.Chain
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{ObjectType, ArrayType}
 import org.opalj.br.{IntegerType, ByteType, ShortType}
@@ -400,9 +399,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val operandsArray = domain.operandsArray
 
                 // we are just testing the dimensions of the array property
-                operandsArray(8).head should be(
-                    InitializedArrayValue(4, fourDimIntArray, Chain(2, 3))
-                )
+                operandsArray(8).head should be(InitializedArrayValue(4, fourDimIntArray, 2))
             }
         }
 
@@ -412,18 +409,9 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val twoDimIntArray = ArrayType(ArrayType(IntegerType))
                 val operandsArray = domain.operandsArray
 
-                operandsArray(18).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, Chain(2))
-                )
-
-                operandsArray(31).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, Chain(2, 2))
-                )
-
-                operandsArray(35).head should be(
-                    InitializedArrayValue(2, twoDimIntArray, Chain(2))
-                )
-
+                operandsArray(18).head should be(InitializedArrayValue(2, twoDimIntArray, 2))
+                operandsArray(31).head should be(InitializedArrayValue(2, twoDimIntArray, 2))
+                operandsArray(35).head should be(InitializedArrayValue(2, twoDimIntArray, 2))
             }
         }
 
@@ -434,15 +422,15 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val operandsArray = domain.operandsArray
 
                 operandsArray(20).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(36).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(40).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
             }
@@ -455,27 +443,27 @@ class DefaultArraysTest extends FunSpec with Matchers {
                 val operandsArray = domain.operandsArray
 
                 operandsArray(20).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(28).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(32).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(48).head should be(
-                    InitializedArrayValue(3, threeDimIntArray, Chain(2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(64).head should be(
-                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), Chain(2, 2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
 
                 operandsArray(68).head should be(
-                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), Chain(2))
+                    InitializedArrayValue(3, threeDimIntArray, 2)
                 )
             }
         }
@@ -635,8 +623,7 @@ class DefaultArraysTestDomain(
     with IgnoreSynchronization
     with PredefinedClassHierarchy
     with RecordLastReturnedValues
-    // THIS DOMAIN MUST NOT MIX IN ANY DOMAIN THAT "PRECISELY" MODELS MUTABLE OBJECTS
-    with DefaultArrayValuesBinding
+    with DefaultConcreteArrayValuesBinding
     with TheMemoryLayout {
 
     // we don't collect "precise" information w.r.t. the heap about the content of an

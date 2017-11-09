@@ -68,9 +68,9 @@ case class TACode[P <: AnyRef, V <: Var[V]](
         this equals other
     }
 
-    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber())
+    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber()) // IMPROVE Use IntOption
 
-    def lineNumber(index: Int): Option[Int] = {
+    def lineNumber(index: Int): Option[Int] = { // IMPROVE Use IntOption
         lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
     }
 
@@ -97,4 +97,3 @@ object TACode {
     final val KindId = 1003
 
 }
-

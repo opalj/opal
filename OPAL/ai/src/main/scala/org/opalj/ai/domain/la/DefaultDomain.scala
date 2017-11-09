@@ -33,7 +33,7 @@ package la
 
 import scala.collection.Set
 
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.ai.analyses.FieldValuesKey
@@ -54,8 +54,8 @@ import org.opalj.ai.analyses.cg.CallGraphCache
  *
  * @author Michael Eichberg
  */
-class DefaultDomain(
-        val project: SomeProject,
+class DefaultDomain[Source](
+        val project: Project[Source],
         val method:  Method
 ) extends CorrelationalDomain
     with domain.DefaultDomainValueBinding

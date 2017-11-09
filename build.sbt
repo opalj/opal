@@ -57,6 +57,8 @@ testOptions in ThisBuild := {
     ).value
 }
 
+testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "2")
+
 testOptions in ThisBuild += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
@@ -69,9 +71,11 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
         "https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?" +
             (if (isSnapshot.value) "at=develop" else "at=master")
     )
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
 
 javaOptions in ThisBuild ++= Seq(
-    "-Xmx7G", "-Xms1024m", "-Xnoclassgc",
+    "-Xmx7G", "-Xms1024m", "-XX:ThreadStackSize=2048", "-Xnoclassgc",
     "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")
 
 addCommandAlias("compileAll", "; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
@@ -92,7 +96,11 @@ lazy val buildSettings =
         Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
         Seq(unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil) ++
         Seq(unmanagedSourceDirectories in IntegrationTest := (javaSource in Test).value :: (scalaSource in IntegrationTest).value :: Nil) ++
-        Seq(scalacOptions in(Compile, console) := Seq("-deprecation"))
+        Seq(scalacOptions in(Compile, console) := Seq("-deprecation")) ++
+        // We don't want the build to be aborted by inter-project links that are reported by
+        // scaladoc as errors using the standard compiler setting. (This case is only true, when
+        // we publish the projects.)
+        Seq(scalacOptions in(Compile, doc):= Opts.doc.version(version.value))
 
 lazy val scalariformSettings = scalariformItSettings ++
     Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
@@ -144,11 +152,7 @@ lazy val common = Project(
     base = file("OPAL/common"),
     settings = buildSettings ++ Seq(
         name := "Common",
-        // We don't want the build to be aborted by inter-project links that are reported by
-        // scaladoc as errors using the standard compiler setting. (This case is only true, when
-        // we publish the projects.)
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL-Common"),
-        //library dependencies
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL-Common"),
         libraryDependencies ++= Dependencies.common(scalaVersion.value)
     ))
     .configs(IntegrationTest)
@@ -160,7 +164,7 @@ lazy val bi = Project(
     base = file("OPAL/bi"),
     settings = buildSettings ++ Seq(
         name := "Bytecode Infrastructure",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Infrastructure"),
         libraryDependencies ++= Dependencies.bi
     ))
     .dependsOn(common % "it->test;test->test;compile->compile")
@@ -169,7 +173,7 @@ lazy val bi = Project(
     .settings(
         buildSettings ++ Seq(
             name := "Bytecode Infrastructure",
-            scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure") //,
+            scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Infrastructure") //,
             //library dependencies
             // libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
         ),
@@ -200,11 +204,7 @@ lazy val br = Project(
     base = file("OPAL/br"),
     settings = buildSettings ++ Seq(
         name := "Bytecode Representation",
-        // We don't want the build to be aborted by inter-project links that are reported by
-        // scaladoc as errors if we publish the projects; hence, we do not use the
-        // standard compiler settings!
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation"),
-        //library dependencies
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Representation"),
         libraryDependencies ++= Dependencies.br
     ))
     .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
@@ -215,7 +215,7 @@ lazy val da = Project(
     base = file("OPAL/da"),
     settings = buildSettings ++ Seq(
         name := "Bytecode Disassembler",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Disassembler"),
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Disassembler"),
         //[currently we can only use an unversioned version] assemblyJarName
         //in assembly := "OPALBytecodeDisassembler.jar-" + version.value
         assemblyJarName in assembly := "OPALDisassembler.jar",
@@ -229,7 +229,7 @@ lazy val bc = Project(
     base = file("OPAL/bc"),
     settings = buildSettings ++ Seq(
         name := "Bytecode Creator",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Creator")
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Creator")
     ))
     .dependsOn(da % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -239,7 +239,7 @@ lazy val ba = Project(
     base = file("OPAL/ba"),
     settings = buildSettings ++ Seq(
         name := "Bytecode Assembler",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Assembler")
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Assembler")
     ))
     .dependsOn(
         bc % "it->it;it->test;test->test;compile->compile",
@@ -265,7 +265,7 @@ lazy val de = Project(
     base = file("OPAL/de"),
     settings = buildSettings ++ Seq(
         name := "Dependencies Extraction Library",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Dependencies Extraction Library")
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Dependencies Extraction Library")
     ))
     .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -275,10 +275,8 @@ lazy val bp = Project(
     base = file("OPAL/bp"),
     settings = buildSettings ++ Seq(
         name := "BugPicker - Core",
-        // We don't want the build to be aborted by inter-project links that are reported by
-        // scaladoc as errors if we publish the projects; hence, we do not use the
-        // standard compiler settings!
-        scalacOptions in(Compile, doc) := Opts.doc.title("BugPicker - Core")))
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("BugPicker - Core"),
+        fork := true))
     .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
@@ -287,7 +285,7 @@ lazy val av = Project(
     base = file("OPAL/av"),
     settings = buildSettings ++ Seq(
         name := "Architecture Validation",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Architecture Validation")))
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Architecture Validation")))
     .dependsOn(de % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
@@ -296,7 +294,7 @@ lazy val DeveloperTools = Project(
     base = file("DEVELOPING_OPAL/tools"),
     settings = buildSettings ++ Seq(
         name := "OPAL-Developer Tools",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Developer Tools"),
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Developer Tools"),
         scalacOptions in(Compile, console) := Seq("-deprecation"),
         //library dependencies
         libraryDependencies ++= Dependencies.developertools,
@@ -329,7 +327,7 @@ lazy val demos = Project(
     base = file("OPAL/demos"),
     settings = buildSettings ++ Seq(publishArtifact := false) ++ Seq(
         name := "Demos",
-        scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Demos"),
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Demos"),
         unmanagedSourceDirectories in Compile := (javaSource in Compile).value :: (scalaSource in Compile).value :: Nil,
         fork in run := true
     ))
@@ -349,7 +347,7 @@ lazy val incubation = Project(
         name := "Incubation",
         // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
         version := "ALWAYS-SNAPSHOT",
-        scalacOptions in(Compile, doc) := Opts.doc.title("Incubation"),
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("Incubation"),
         fork in run := true,
         publishArtifact := false
     ))

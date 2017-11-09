@@ -31,12 +31,14 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
+
 import scala.collection.GenIterable
 import scala.collection.GenTraversableOnce
 import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.generic.FilterMonadic
+import scala.collection.AbstractIterable
 
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
@@ -529,7 +531,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     override def toIterable: Iterable[T] = {
-        new Iterable[T] { def iterator: Iterator[T] = self.toIterator }
+        new AbstractIterable[T] { def iterator: Iterator[T] = self.toIterator }
     }
 
     def toIterator: Iterator[T] = {
@@ -538,6 +540,18 @@ sealed trait Chain[@specialized(Int) +T]
             def hasNext: Boolean = rest.nonEmpty
             def next(): T = {
                 val result = rest.head
+                rest = rest.tail
+                result
+            }
+        }
+    }
+
+    def mapToIntIterator(f: T ⇒ Int): IntIterator = {
+        new IntIterator {
+            private var rest = self
+            def hasNext: Boolean = rest.nonEmpty
+            def next(): Int = {
+                val result = f(rest.head)
                 rest = rest.tail
                 result
             }
@@ -553,6 +567,10 @@ sealed trait Chain[@specialized(Int) +T]
 
     def toIntArraySet(implicit ev: T <:< Int): IntArraySet = {
         foldLeft(new IntArraySetBuilder())(_ += _).result()
+    }
+
+    def toIntTrieSet(implicit ev: T <:< Int): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
     }
 
     def toStream: Stream[T] = toTraversable.toStream

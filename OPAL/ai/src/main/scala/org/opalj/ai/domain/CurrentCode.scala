@@ -31,7 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.Code
-import scala.collection.BitSet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Provides information about the code block that is currently analyzed.
@@ -53,7 +53,7 @@ trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDoma
 
     abstract override def initProperties(
         code:          Code,
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         initialLocals: Locals
     ): Unit = {
 
