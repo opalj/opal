@@ -66,12 +66,24 @@ import org.opalj.tac._
 /**
  * An inter-procedural analysis to determine a method's purity.
  *
- * TODO Describe the major properties of the analysis w.r.t. its precision and soundness.
- * TODO This analysis cannot derive allocation free pureness.. why?
+ * @note This analysis is sound only up to the usual standards, i.e. it does not cope with
+ *       VirtualMachineErrors and may be unsound in the presence of native code, reflection or
+ *       [[sun.misc.Unsafe]]. Compared to the [[PurityAnalysis]], this analysis soundly handles
+ *       VMExceptions and methods returning mutable references.
  *
- * TODO I don't understand the following comment - in particular w.r.t. the loss in precision for non-flat trees.
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
- *       produce better results for a flat hierarchy, though.
+ *       produce better results for a flat hierarchy, though. This is because it will not assess the
+ *       types of expressions other than [[Var]]s and also not check them for locality.
+ *
+ * @note This analysis only derives the properties [[Pure]], [[SideEffectFree]] and [[Impure]]. It
+ *       does not provide any reasoning on why a method was considered `Impure`.
+ *       Compared to the `PurityAnalysis`, it deals with all methods, even if their reference type
+ *       parameters are mutable. It can handle accesses of (effectively) final instance fields,
+ *       array loads, array lenght and virtual/interface calls. Array stores and field writes as
+ *       well as (useless) synchronization on locally created, non-escaping objects/arrays are also
+ *       handled. Newly allocated objects/arrays returned from callees are not identified.
+ *       VMExceptions are treated as `SideEffectFree`, explicit exceptions are treated as `Impure`,
+ *       as the [[Throwable]] constructor calls the overridable `fillInStackTrace` method.
  *
  * @author Dominik Helm
  */
@@ -157,7 +169,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          * @note Fresh references can be treated as non-escaping as the analysis result will be
          *       impure anyways if anything escapes the method.
          */
-        def isFreshReference(expr: Expr[V]): Boolean = { // TODO Rename How about isLocallyInitialized ("created" doesn't fit and fresh sounds fanzy :-))
+        def isLocal(expr: Expr[V]): Boolean = {
             if (expr.isConst)
                 true
             else if (expr.isVar) {
@@ -168,7 +180,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     } else if (isVMLevelValue(defSite)) {
                         true // VMLevelValues are freshly created
                     } else {
-                        // In initializers the self reference (this) is
+                        // In initializers the self reference (this) is local
                         method.isConstructor && defSite == OriginOfThis
                     }
                 }
@@ -187,64 +199,58 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          * This method will return false for impure statements,
          * so evaluation can be terminated early.
          */
-        def checkPurityOfStmt(stmt: Stmt[V]): Boolean = (stmt.astID: @switch) match {
-
-            case StaticMethodCall.ASTID ⇒
-                val StaticMethodCall(_, declClass, interface, name, descr, params) = stmt
-                val callee = project.staticCall(declClass, interface, name, descr)
-                stmt.forallSubExpressions(checkPurityOfExpr) && checkPurityOfCall(declClass, name, callee)
-            case NonVirtualMethodCall.ASTID ⇒
-                val NonVirtualMethodCall(_, declClass, interface, name, descr, rcvr, params) = stmt
-                val callee = project.specialCall(declClass, interface, name, descr)
-                stmt.forallSubExpressions(checkPurityOfExpr) &&
+        def checkPurityOfStmt(stmt: Stmt[V]): Boolean = {
+            ((stmt.astID: @switch) match {
+                // For method calls, purity depends on purity of the method called
+                case StaticMethodCall.ASTID ⇒
+                    val StaticMethodCall(_, declClass, interface, name, descr, params) = stmt
+                    val callee = project.staticCall(declClass, interface, name, descr)
                     checkPurityOfCall(declClass, name, callee)
-            case VirtualMethodCall.ASTID ⇒
-                val VirtualMethodCall(_, declClass, interface, name, descr, rcvr, params) = stmt
-                stmt.forallSubExpressions(checkPurityOfExpr) &&
+                case NonVirtualMethodCall.ASTID ⇒
+                    val NonVirtualMethodCall(_, declClass, interface, name, descr, rcvr, params) =
+                        stmt
+                    val callee = project.specialCall(declClass, interface, name, descr)
+                    checkPurityOfCall(declClass, name, callee)
+                case VirtualMethodCall.ASTID ⇒
+                    val VirtualMethodCall(_, declClass, interface, name, descr, rcvr, params) = stmt
                     checkPurityOfVirtualCall(declClass, interface, name, rcvr, descr)
 
-            case If.ASTID | Switch.ASTID            ⇒ stmt.forallSubExpressions(checkPurityOfExpr)
-            case Goto.ASTID | JSR.ASTID | Ret.ASTID ⇒ true
+                // Returning objects/arrays is pure, if the returned object/array is locally
+                // initialized and non-escaping or the object is immutable
+                case ReturnValue.ASTID ⇒
+                    val value = stmt.asReturnValue.expr
+                    if (!isLocal(value)) checkPurityOfReturn(value)
+                    true
+                case Throw.ASTID ⇒
+                    val ex = stmt.asThrow.exception
+                    if (!isLocal(ex)) checkPurityOfReturn(ex)
+                    true
 
-            case Return.ASTID                       ⇒ true
-            case ReturnValue.ASTID ⇒
-                val ReturnValue(_, value) = stmt
-                if (!isFreshReference(value)) checkPurityOfReturn(value)
-                checkPurityOfExpr(value)
-            case Throw.ASTID ⇒
-                val ex = stmt.asThrow.exception
-                if (!isFreshReference(ex)) checkPurityOfReturn(ex)
-                checkPurityOfExpr(ex)
+                // Synchronization on non-escaping locally initialized objects/arrays is pure (and
+                // useless...)
+                case MonitorEnter.ASTID ⇒ isLocal(stmt.asMonitorEnter.objRef)
+                case MonitorExit.ASTID  ⇒ isLocal(stmt.asMonitorExit.objRef)
 
-            case Assignment.ASTID   ⇒ checkPurityOfExpr(stmt.asAssignment.expr)
-            case ExprStmt.ASTID     ⇒ checkPurityOfExpr(stmt.asExprStmt.expr)
+                // Storing into non-escaping locally initialized objects/arrays is pure
+                case ArrayStore.ASTID   ⇒ isLocal(stmt.asArrayStore.arrayRef)
+                case PutField.ASTID     ⇒ isLocal(stmt.asPutField.objRef)
 
-            // Synchronization on non-escaping locally initialized objects/arrays is pure (and useless...)
-            case MonitorEnter.ASTID ⇒ isFreshReference(stmt.asMonitorEnter.objRef)
-            case MonitorExit.ASTID  ⇒ isFreshReference(stmt.asMonitorExit.objRef)
-
-            case ArrayStore.ASTID ⇒
-                val ArrayStore(_, arrayRef, index, value) = stmt
-                isFreshReference(arrayRef) && checkPurityOfExpr(index) && checkPurityOfExpr(value)
-
-            case PutField.ASTID ⇒
-                val putField = stmt.asPutField
-                isFreshReference(putField.objRef) && checkPurityOfExpr(putField.value)
-            case PutStatic.ASTID ⇒
                 //TODO This is probably pure in a static initializer if the field assigned is a static field of this class. Is it?
-                false
+                case PutStatic.ASTID    ⇒ false
 
-            case Checkcast.ASTID ⇒ checkPurityOfExpr(stmt.asCheckcast.value)
+                // Creating implicit exceptions is side-effect free because the Throwable
+                // constructor will add the non-deterministic stack trace via fillInStackTrace
+                case CaughtException.ASTID ⇒
+                    if (stmt.asCaughtException.origins.exists(isImmediateVMException))
+                        purity = SideEffectFree
+                    true
 
-            case CaughtException.ASTID ⇒
-                // TODO Please document why the creation of an exception is never pure "fillInStackTrace is called by the default constructor of Throwable)
-                // TODO (BTW Do we have test cases related to the case where an excpetion is created without a StackTrace? This would be pure.)
-                // Creating implicit exceptions is side-effect free (except for fillInStackTrace)
-                if (stmt.asCaughtException.origins.exists(isImmediateVMException))
-                    purity = SideEffectFree
-                true
-
-            case Nop.ASTID ⇒ true
+                // The following statements do not further influence purity
+                case If.ASTID | Goto.ASTID | JSR.ASTID | Ret.ASTID | Switch.ASTID |
+                    Assignment.ASTID | Return.ASTID | Nop.ASTID | ExprStmt.ASTID |
+                    Checkcast.ASTID ⇒
+                    true
+            }) && stmt.forallSubExpressions(checkPurityOfExpr)
         }
 
         /**
@@ -252,48 +258,54 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          * This method will return false for impure expressions,
          * so evaluation can be terminated early.
          */
-        def checkPurityOfExpr(expr: Expr[V]): Boolean = (expr.astID: @switch) match {
-
-            case StaticFunctionCall.ASTID ⇒
-                val StaticFunctionCall(_, declClass, interface, name, descr, params) = expr
-                val callee = project.staticCall(declClass, interface, name, descr)
-                expr.forallSubExpressions(checkPurityOfExpr) && checkPurityOfCall(declClass, name, callee)
-            case NonVirtualFunctionCall.ASTID ⇒
-                val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
-                    expr
-                val callee = project.specialCall(declClass, interface, name, descr)
-                expr.forallSubExpressions(checkPurityOfExpr) &&
+        def checkPurityOfExpr(expr: Expr[V]): Boolean = {
+            ((expr.astID: @switch) match {
+                // For function calls, purity depends on purity of the method called
+                case StaticFunctionCall.ASTID ⇒
+                    val StaticFunctionCall(_, declClass, interface, name, descr, params) = expr
+                    val callee = project.staticCall(declClass, interface, name, descr)
                     checkPurityOfCall(declClass, name, callee)
-            case VirtualFunctionCall.ASTID ⇒
-                val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = expr
-                expr.forallSubExpressions(checkPurityOfExpr) &&
+                case NonVirtualFunctionCall.ASTID ⇒
+                    val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
+                        expr
+                    val callee = project.specialCall(declClass, interface, name, descr)
+                    checkPurityOfCall(declClass, name, callee)
+                case VirtualFunctionCall.ASTID ⇒
+                    val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
+                        expr
                     checkPurityOfVirtualCall(declClass, interface, name, rcvr, descr)
 
-            case GetStatic.ASTID ⇒
-                val GetStatic(_, declaringClass, name, fieldType) = expr
-                checkPurityOfFieldRef(declaringClass, name, fieldType)
-                true
-            case GetField.ASTID ⇒
-                val GetField(_, declaringClass, name, fieldType, objRef) = expr
-                if (!isFreshReference(objRef))
-                    checkPurityOfFieldRef(declaringClass, name, fieldType)
-                checkPurityOfExpr(objRef)
+                // Field/array loads are pure if the field is (effectively) final or the
+                // object/array is local and non-escaping
+                case GetStatic.ASTID ⇒
+                    val GetStatic(_, declClass, name, fieldType) = expr
+                    checkPurityOfFieldRef(declClass, name, fieldType)
+                    true
+                case GetField.ASTID ⇒
+                    val GetField(_, declClass, name, fieldType, objRef) = expr
+                    if (!isLocal(objRef)) checkPurityOfFieldRef(declClass, name, fieldType)
+                    true
+                case ArrayLoad.ASTID ⇒
+                    val ArrayLoad(_, index, arrayRef) = expr
+                    if (!isLocal(arrayRef)) purity = SideEffectFree
+                    true
 
-            case Compare.ASTID | BinaryExpr.ASTID | PrefixExpr.ASTID | PrimitiveTypecastExpr.ASTID ⇒
-                expr.forallSubExpressions(checkPurityOfExpr)
+                // We don't handle Invokedynamic for now
+                case Invokedynamic.ASTID        ⇒ false
 
-            case ArrayLoad.ASTID ⇒
-                val ArrayLoad(_, index, arrayRef) = expr
-                if (!isFreshReference(arrayRef)) purity = SideEffectFree
-                checkPurityOfExpr(arrayRef) && checkPurityOfExpr(index)
-            case NewArray.ASTID | ArrayLength.ASTID ⇒
-                // We have to check ArrayLength, it could be:  <null : Array[_]>.length
-                expr.forallSubExpressions(checkPurityOfExpr)
+                // "just" pure - not "allocation free pure"!
+                // IMPROVE also derive PureWithoutAllocations where possible
+                case New.ASTID | NewArray.ASTID ⇒ true
 
-            case Invokedynamic.ASTID ⇒ false // We don't handle Invokedynamic for now
+                // The following expressions do not further influence purity
+                case InstanceOf.ASTID | Compare.ASTID | Param.ASTID | MethodTypeConst.ASTID |
+                    MethodHandleConst.ASTID | IntConst.ASTID | LongConst.ASTID | FloatConst.ASTID |
+                    DoubleConst.ASTID | StringConst.ASTID | ClassConst.ASTID | NullExpr.ASTID |
+                    BinaryExpr.ASTID | PrefixExpr.ASTID | PrimitiveTypecastExpr.ASTID |
+                    ArrayLength.ASTID | Var.ASTID ⇒
+                    true
 
-            case New.ASTID           ⇒ true // => "just" pure - not "allocation free pure"!
-            case InstanceOf.ASTID    ⇒ true
+            }) && expr.forallSubExpressions(checkPurityOfExpr)
         }
 
         /**
@@ -310,6 +322,10 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             descr:       MethodDescriptor
         ): Boolean = {
             if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+                // The receiver could refer to further expressions in a non-flat representation.
+                // To avoid special handling, we just fallback to the general case of
+                // virtual/interface calls here as the analysis is intended to be used on flat
+                // representations anyway.
                 val rcvr = receiver.asVar.value.asDomainReferenceValue
                 if (rcvr.isNull.isYes)
                     true // We don't have to examine calls that will result in an NPE
@@ -317,7 +333,8 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     val callee = project.instanceCall(declClass, rcvr.valueType.get, name, descr)
                     checkPurityOfCall(rcvrClass, name, callee)
                 }
-            } else if (rcvrClass.isObjectType && typeExtensibility(rcvrClass.asObjectType).isNotNo) {
+            } else if (rcvrClass.isObjectType &&
+                typeExtensibility(rcvrClass.asObjectType).isNotNo) {
                 false // We don't know all overrides, so we are impure
             } else {
                 val callees =
@@ -411,7 +428,10 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
             // Only non-primitive return values influence purity
             // Also, we don't have to do costly dependee checks if we are already side-effect free
             if (returnValue.cTpe == ComputationalTypeReference && purity != SideEffectFree) {
-                if (!returnValue.isVar) { // We only examine the types of Vars
+                if (!returnValue.isVar) {
+                    // The expression could refer to further expressions in a non-flat
+                    // representation. To avoid special handling, we just fallback to SideEffectFree
+                    // here as the analysis is intended to be used on flat representations anyway.
                     purity = SideEffectFree
                 } else {
                     val value = returnValue.asVar.value.asDomainReferenceValue
