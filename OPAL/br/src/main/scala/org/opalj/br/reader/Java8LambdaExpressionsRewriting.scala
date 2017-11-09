@@ -340,9 +340,17 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             methods = classFile.methods.map { m ⇒
                 if (m.isPrivate &&
                     classFile.findMethod(targetMethodName, targetMethodDescriptor).isDefined) {
-                    m.copy(
-                        accessFlags = m.accessFlags & ~bi.ACC_PRIVATE.mask
-                    )
+                    // Interface methods must be either public or private, see
+                    //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
+                    if (classFile.isInterfaceDeclaration) {
+                        m.copy(
+                            accessFlags = (m.accessFlags & ~bi.ACC_PRIVATE.mask) | bi.ACC_PUBLIC.mask
+                        )
+                    } else {
+                        m.copy(
+                            accessFlags = m.accessFlags & ~bi.ACC_PRIVATE.mask
+                        )
+                    }
                 } else {
                     m.copy()
                 }
