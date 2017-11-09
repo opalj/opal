@@ -33,6 +33,12 @@ import java.io.File
 import org.opalj.br.FixturesTest
 import org.opalj.util.ScalaMajorVersion
 
+/**
+ * Test if OPAL is able to rewrite a simple lambda expression and check if the rewritten bytecode
+ * is executable.
+ *
+ * @author Andreas Muttscheller
+ */
 class SimpleLambdaAddTest extends FixturesTest {
     val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
 

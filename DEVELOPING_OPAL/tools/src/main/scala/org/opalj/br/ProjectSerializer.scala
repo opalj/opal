@@ -34,6 +34,7 @@ import org.opalj.ba
 import org.opalj.bc.Assembler
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.bytecode.RTJar
+import org.opalj.io.process
 
 /**
  * Program to export a project loaded with OPAL with all code rewriting, for example INVOKEDYNAMIC
@@ -51,7 +52,7 @@ object ProjectSerializer {
         println("OPAL - Project Serializer")
         println("Parameters:")
         println("   -cp <Folder/jar-file> the classes to load into OPAL and export")
-        println("   -o <FileName> the folder ")
+        println("   -o <FileName> the folder. Defaults to current folder.")
         println()
         println("java org.opalj.br.ProjectSerializer -cp <classpath or jar file> -o <output folder>")
     }
@@ -112,17 +113,16 @@ object ProjectSerializer {
         Console.out.println(s"Wrote all classfiles to $outFolder")
     }
 
-    def serialize(p: SomeProject, targetFolder: File /* default temp folder */ ): Unit = {
-        // TODO: Java Call Graph for Java project resolution test. Add to test fixtures.
+    def serialize(p: SomeProject, targetFolder: File): Unit = {
         p.allProjectClassFiles.par.foreach { c ⇒
             val b = classToByte(c)
             val targetPackageFolder = new File(s"${targetFolder.getAbsolutePath}/${c.thisType.packageName}")
             targetPackageFolder.mkdirs()
             val targetFile = new File(s"${targetFolder.getAbsolutePath}/${c.fqn}.class")
 
-            val bos = new BufferedOutputStream(new FileOutputStream(targetFile))
-            bos.write(b)
-            bos.close()
+            process(new BufferedOutputStream(new FileOutputStream(targetFile))) {
+                bos ⇒ bos.write(b)
+            }
         }
     }
 

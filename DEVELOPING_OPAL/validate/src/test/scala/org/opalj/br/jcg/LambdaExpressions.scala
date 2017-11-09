@@ -33,6 +33,13 @@ import java.net.URL
 
 import org.opalj.br.{ClassFile, FixturesTest}
 
+/**
+ * Tests for resolving various lambda expressions using the Java Call Graph library.
+ *
+ * See: https://bitbucket.org/delors/jcg
+ *
+ * @author Andreas Muttscheller
+ */
 class LambdaExpressions extends FixturesTest {
     val fixtureFiles: File = new File(s"DEVELOPING_OPAL/validate/src/test/resources/jcg/lambda_expressions.jar")
 

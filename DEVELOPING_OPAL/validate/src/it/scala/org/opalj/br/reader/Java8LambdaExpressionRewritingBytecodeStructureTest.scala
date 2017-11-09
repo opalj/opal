@@ -110,7 +110,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i: INVOKESTATIC ⇒ LambdaNameRegEx.r.findFirstIn(i.declaringClass.fqn).isDefined
+                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches(LambdaNameRegEx)
                 case _               ⇒ false
             }
         } {

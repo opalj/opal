@@ -503,7 +503,7 @@ object ClassFileFactory {
                         INVOKEVIRTUAL(
                             ObjectType.MethodHandle,
                             "invoke",
-                            MethodDescriptor.apply(
+                            MethodDescriptor(
                                 ObjectType.SerializedLambda, // Parameter
                                 ObjectType.Object // Return
                             )

@@ -55,8 +55,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             .filterNot { cfSrc ⇒
                 // Ignore the rewritten lambda expressions
                 val (cf, _) = cfSrc
-                Java8LambdaExpressionsRewriting.LambdaNameRegEx.r
-                    .findFirstIn(cf.thisType.toJava).isDefined
+                cf.thisType.toJava.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
             }
         val expected =
             new Specification(

@@ -29,12 +29,16 @@
 package org.opalj.br
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting
 import org.opalj.graphs.Node
 
+/**
+ * A classloader that resolves classfiles which are available in byte array form.
+ *
+ * @param project The project where the classfiles are loaded from.
+ *
+ * @author Andreas Muttscheller
+ */
 class ByteArrayClassLoader(project: SomeProject) extends ClassLoader {
-
-    val lambdaRegex = Java8LambdaExpressionsRewriting.LambdaNameRegEx.r
 
     loadGraph(project.classHierarchy.toGraph())
 

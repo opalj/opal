@@ -69,8 +69,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             method ← classFile.findMethod(name)
             body ← method.body
             factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
-            if Java8LambdaExpressionsRewriting.LambdaNameRegEx.r
-                .findFirstIn(factoryCall.declaringClass.fqn).isDefined
+            if factoryCall.declaringClass.fqn.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
             annotations = method.runtimeVisibleAnnotations
         } {
             successFull = true
