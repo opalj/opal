@@ -41,6 +41,8 @@ trait ConcreteSourceElement extends SourceElement {
 
     def accessFlags: Int
 
+    def hasFlags(accessFlags: Int): Boolean = (accessFlags & this.accessFlags) == accessFlags
+
     def visibilityModifier: Option[VisibilityModifier] = VisibilityModifier.get(accessFlags)
 
 }
