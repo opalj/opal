@@ -41,7 +41,7 @@ import org.opalj.concurrent.Locking.withWriteLock
  *
  * @author Michael Eichberg
  */
-final class PropertyKey[+P] private[fpcf] ( final val id: Int) extends AnyVal with PropertyKind {
+final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with PropertyKind {
 
     override def toString: String = s"PK(${PropertyKey.name(id)},id=$id)"
 }
@@ -86,8 +86,10 @@ object PropertyKey {
      * @param name The unique name associated with the property. To ensure
      *              uniqueness it is recommended to prepend (parts of) the package name of property.
      *              Properties defined by OPAL start with "opalj."
+     *
      * @param fallbackProperty A function that returns the property that will be associated
      *              with those entities for which the property is not explicitly computed.
+     *
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
      *              computations. The strategy can be adapted by an analysis to its own needs.
      *              In general, the cycle resolution strategy can query the (potential) properties
