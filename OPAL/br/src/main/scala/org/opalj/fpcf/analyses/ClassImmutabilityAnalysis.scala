@@ -52,6 +52,7 @@ import org.opalj.fpcf.properties.MutableObject
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
+import org.opalj.log.LogContext
 
 /**
  * Determines the mutability of instances of a specific class. In case the class
@@ -161,6 +162,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = ImmutableObject
+
         if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType)) {
             // IMPROVE We could analyze if the array is effectively final.
             // I.e., it is only initialized once (at construction time) and no reference to it
@@ -261,7 +263,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
             //[DEBUG]             val oldDependees = dependees
             e match {
-                // Field Mutability related dependencies.
+                // Field Mutability related dependencies:
                 //
                 case _: Field ⇒
                     p match {
@@ -275,7 +277,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     }
                 case _ ⇒
                     p match {
-                        // Superclass related dependencies.
+                        // Superclass related dependencies:
                         //
                         case _: MutableObject ⇒ return Result(cf, MutableObjectByAnalysis);
 
@@ -386,7 +388,7 @@ object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
         import classHierarchy.allSubtypes
         import classHierarchy.rootTypes
         import classHierarchy.isInterface
-        implicit val logContext = project.logContext
+        implicit val logContext : LogContext = project.logContext
 
         val analysis = new ClassImmutabilityAnalysis(project)
 
