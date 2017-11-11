@@ -36,7 +36,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
-
+import org.opalj.bi.AccessFlags
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
@@ -148,7 +148,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // class, we have to make the synthetic method accessible from the proxy class.
         updatedClassFile = updatedClassFile.copy(
             methods = classFile.methods.map { m ⇒
-                if (m.name.startsWith("lambda$") && m.isPrivate && m.isStatic && m.isSynthetic) {
+                if (m.name.startsWith("lambda$") &&
+                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
                     val syntheticLambdaMethodAccessFlags =
                         if (updatedClassFile.isInterfaceDeclaration) {
                             // An interface method must have either ACC_PUBLIC or ACC_PRIVATE and
