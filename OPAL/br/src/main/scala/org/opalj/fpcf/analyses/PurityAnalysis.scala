@@ -217,7 +217,15 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     return ImmediateResult(method, Impure);
 
                 case _ ⇒
-                /* All other instructions (IFs, Load/Stores, Arith., etc.) are pure. */
+                    // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
+                    // as long as no implicit exceptions are raised.
+                    if(instruction.jvmExceptions.nonEmpty) {
+                        // JVM Excpections reify the stack and, hence, make the method impure as
+                        // the calling context is now an explicit part of the method's result.
+                        return ImmediateResult(method, Impure);
+                    }
+                    // else ok..
+
             }
             currentPC = body.pcOfNextInstruction(currentPC)
         }
