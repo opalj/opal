@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+ /* BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -31,9 +31,15 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
+import org.opalj.{Result => CallResult}
+import org.opalj.{Failure => CallResolutionFailed}
+import org.opalj.{Empty => NoCallTarget}
+import org.opalj.{Success => CallTarget}
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.EffectivelyFinalField
+import org.opalj.fpcf.properties.FinalField
+import org.opalj.fpcf.properties.NonFinalField
 import org.opalj.fpcf.properties.Impure
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.MaybePure
@@ -41,8 +47,12 @@ import org.opalj.fpcf.properties.ConditionallyPure
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
 import org.opalj.br.PC
 import org.opalj.br.Method
+import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
+import org.opalj.br.SourceElement
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.GETSTATIC
@@ -52,10 +62,11 @@ import org.opalj.br.instructions.MONITORENTER
 import org.opalj.br.instructions.MONITOREXIT
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NEWARRAY
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.MULTIANEWARRAY
+import org.opalj.br.instructions.ARRAYLENGTH
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.ARRAYLENGTH
 import org.opalj.br.instructions.LALOAD
 import org.opalj.br.instructions.IALOAD
 import org.opalj.br.instructions.CALOAD
@@ -70,19 +81,22 @@ import org.opalj.br.instructions.DALOAD
 import org.opalj.br.instructions.FALOAD
 import org.opalj.br.instructions.FASTORE
 import org.opalj.br.instructions.DASTORE
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.instructions.ANEWARRAY
+
 
 /**
  * Very simple and fast analysis of the purity of methods as defined by the
  * [[org.opalj.fpcf.properties.Purity]] property.
+ *
+ * This analysis is a very, very shallow implementation that immediately gives
+ * up, when something "complicated" (e.g., method calls which take objects)
+ * is encountered.
  *
  * @author Michael Eichberg
  */
@@ -100,8 +114,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
      */
     private[this] def doDeterminePurity(
         method:           Method,
-        pc:               PC,
-        initialDependees: Set[EOptionP[Method, Purity]]
+        initialDependees: Set[EOptionP[SourceElement, Property]]
     ): PropertyComputationResult = {
 
         val declaringClassType = method.classFile.thisType
@@ -109,11 +122,15 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         val methodName = method.name
         val body = method.body.get
         val instructions = body.instructions
-        val maxPC = instructions.size
+        val maxPC = instructions.length
 
         var dependees = initialDependees
+        // The purity level of this method,
+        // if all dependees (Fields, Types) have no effect on the purity.
+        val lastResult : EOptionP[Method,Purity] = EPK(method,Purity.key)
+        var potentialPurityLevel : Purity = ConditionallyPure
 
-        var currentPC = pc
+        var currentPC = 0
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
             (instruction.opcode: @switch) match {
@@ -122,22 +139,21 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
 
                     resolveFieldReference(declaringClass, fieldName, fieldType) match {
 
-                        case Some(field) if field.isFinal ⇒
-                        /* Nothing to do; constants do not impede purity! */
-
-                        case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
-                            // We are suspending this computation and wait for the result.
-                            return propertyStore.require(
-                                method, Purity.key,
-                                field, FieldMutability.key
-                            ) { (e: Entity, dependeeP: Property) ⇒
-                                if (dependeeP == EffectivelyFinalField) {
-                                    val nextPC = body.pcOfNextInstruction(currentPC)
-                                    doDeterminePurity(method, nextPC, dependees)
-                                } else {
-                                    Result(method, Impure)
-                                }
-                            };
+                        // ... we have no support for arrays at the moment
+                        case Some(field) if !field.fieldType.isArrayType =>
+                            // the field has to be effectively final and
+                            // if it is an object – immutable!
+                            val fieldType = field.fieldType
+                            if(fieldType.isObjectType) {
+                                val fieldClassType = project.classFile(fieldType.asObjectType)
+                                if(fieldClassType.isDefined)
+                                    dependees += EPK(fieldClassType.get,TypeImmutability.key)
+                                else
+                                    return Result(method, Impure);
+                            }
+                            if(field.isNotFinal) {
+                                dependees += EPK(field, FieldMutability.key)
+                            }
 
                         case _ ⇒
                             // We know nothing about the target field (it is not
@@ -197,7 +213,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    // improve: If the data-structure was created locally... then we don't care.
+
                     return ImmediateResult(method, Impure);
 
                 case _ ⇒
@@ -206,12 +222,35 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
             currentPC = body.pcOfNextInstruction(currentPC)
         }
 
+        // IN GENERAL
         // Every method that is not identified as being impure is (conditionally)pure.
         if (dependees.isEmpty)
             return ImmediateResult(method, Pure);
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+            // We can't report any real result as long as we don't know that the fields are all
+            // effectively final and the types are immutable.
             p match {
+                case _ : FinalField | ImmutableType =>
+                    // let's filter the entity
+                    dependees = dependees.filter(_.e ne e)
+                    if(dependees.isEmpty) {
+                        Result(method,potentialPurityLevel)
+                    } else if(dependees.forall(d => d.pk == Purity.key)) {
+                        IntermediateResult(EP(method,potentialPurityLevel),dependees,c)
+                    } else {
+                        // we still have dependencies regarding field mutability/type immutability
+                        IntermediateResult(lastResult,dependees,c)
+                    }
+
+                case AtLeastConditionallyImmutableType =>
+                    // The result remains as is...
+                    IntermediateResult(lastResult,dependees,c)
+
+                case _ : TypeImmutability | _ : NonFinalField =>
+                    // the type is either mutable or at most conditionally immutable
+                    Result(method, Impure)
+
                 case Impure | MaybePure ⇒
                     Result(method, Impure)
 
@@ -232,28 +271,45 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         IntermediateResult(method, ConditionallyPure, dependees, c)
     }
 
-    /**
-     * Determines the purity of the given method. The given method must have a body!
+    protected def doCheckParameterImmutability(
+                                                  method : Method
+                                              ) :PropertyComputationResult = {
+
+        // All parameters either have to be base types or have to be immutable.
+        // IMPROVE Use plain object type once we use ObjectType in the store!
+        val referenceTypeParameters = method.parameterTypes.collect{
+            case t : ObjectType =>
+                project.classFile(t) match {
+                    case Some(cf) => cf
+                    case None => return ImmediateResult(method, Impure);
+                }
+        }
+
+        var dependees : Set[EOptionP[SourceElement,Property]] = Set.empty
+        referenceTypeParameters foreach { e =>
+            propertyStore(e,TypeImmutability.key) match {
+                case EP(_,ImmutableType) => /*everything is Ok*/
+                case epk : EPK[_,_] =>                    dependees += epk
+
+                case ep @ EP(_,immutability) =>
+                    if (immutability.isRefineable)
+                        dependees += ep
+                    else
+                        return ImmediateResult(method, Impure);
+            }
+        }
+        doDeterminePurity(method, dependees)
+    }
+
+        /**
+     * Determines the purity of the given method.
      */
     def determinePurity(method: Method): PropertyComputationResult = {
         if (method.isSynchronized)
             return ImmediateResult(method, Impure);
 
-        // All parameters either have to be base types or have to be immutable.
-        val referenceTypeParameters = method.parameterTypes.filterNot(_.isBaseType)
-        if (!referenceTypeParameters.forall { p ⇒ propertyStore.isKnown(p) })
-            return ImmediateResult(method, Impure);
-
-        // TODO Currently we are not able to interleave the purity analysis and the immutability analysis... which is, however, required!
-        propertyStore.allHaveProperty(
-            method, Purity.key, referenceTypeParameters, ImmutableType
-        ) { areImmutable ⇒
-            if (areImmutable) {
-                doDeterminePurity(method, 0, Set.empty[EOptionP[Method, Purity]])
-            } else {
-                ImmediateResult(method, Impure)
-            }
-        }
+        // 1. step ( will schedule 2. step if necessary):
+        doCheckParameterImmutability(method)
     }
 }
 
