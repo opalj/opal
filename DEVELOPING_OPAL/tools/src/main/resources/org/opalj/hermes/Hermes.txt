@@ -1,0 +1,8 @@
+OPAL - Hermes
+
+The parameter has to be the configuration which lists a corpus' projects and,
+optionally, the file to which the results should be exported
+(\"--csv=<FileName>\"). If such a file is specified the application will
+close automatically after running all analyses.
+
+java org.opalj.hermes.Hermes <ConfigFile.json>

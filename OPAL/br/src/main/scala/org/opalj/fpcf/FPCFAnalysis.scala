@@ -56,6 +56,8 @@ trait FPCFAnalysis {
 
     final implicit val logContext: LogContext = project.logContext
 
+    // def getEPKCache(e : Entity, pk : PropertyKey) : EOption[]
+
     // The project type:
     /** @migration won't be available in the near future*/
     final def isOpenLibrary: Boolean = project.analysisMode eq OPA

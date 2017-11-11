@@ -42,12 +42,13 @@ import org.opalj.ai.Domain
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
  * domain/data-flow analysis. This key performs the underlying data-flow analysis on demand using
- * the configured data-flow analyses; the results of the data-flow analyses are NOT shared. Hence,
- * this ''key'' should only be used if the result of the underlying analysis is no longer
+ * the configured data-flow analyses; the results of the data-flow analyses are NOT cached/shared.
+ * Hence, this ''key'' should only be used if the result of the underlying analysis is no longer
  * required after generating the TAC.
  *
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
  *          pass in `this` object.
+ *
  * @author Michael Eichberg
  */
 object SimpleTACAIKey extends TACAIKey {

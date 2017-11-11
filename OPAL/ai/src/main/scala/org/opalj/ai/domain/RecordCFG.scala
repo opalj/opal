@@ -34,18 +34,16 @@ import java.lang.ref.{SoftReference ⇒ SRef}
 
 import scala.collection.BitSet
 import scala.collection.mutable
-
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntArraySet1
-
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
-
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
@@ -54,6 +52,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
+import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -91,19 +90,19 @@ trait RecordCFG
     //
 
     // ... elements are either null or non-empty
-    private[this] var regularSuccessors: Array[IntArraySet] = _
+    private[this] var regularSuccessors: Array[IntTrieSet] = _
 
     // ... elements are either null or non-empty
-    private[this] var exceptionHandlerSuccessors: Array[IntArraySet] = _
+    private[this] var exceptionHandlerSuccessors: Array[IntTrieSet] = _
 
-    private[this] var theExitPCs: mutable.BitSet = _ // IMPROVE use an Int(Trie)Set
+    private[this] var theExitPCs: IntTrieSet = _
 
-    private[this] var theSubroutineStartPCs: IntArraySet = _
+    private[this] var theSubroutineStartPCs: IntTrieSet = _
 
     /**
      * The set of nodes to which a(n un)conditional jump back is executed.
      */
-    private[this] var theJumpBackTargetPCs: IntArraySet = _
+    private[this] var theJumpBackTargetPCs: IntTrieSet = _
 
     //
     // DERIVED INFORMATION
@@ -113,7 +112,7 @@ trait RecordCFG
      * @note    We use the monitor associated with "this" when computing predecessors;
      *          the monitor associated with "this" is not (to be) used otherwise!
      */
-    private[this] var thePredecessors: SRef[Array[IntArraySet]] = _ // uses regularSuccessors as lock
+    private[this] var thePredecessors: SRef[Array[IntTrieSet]] = _ // uses regularSuccessors as lock
 
     /**
      * @note    We use the monitor associated with regularSuccessors when computing the dominator
@@ -140,15 +139,15 @@ trait RecordCFG
      */
     abstract override def initProperties(
         code:          Code,
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         initialLocals: Locals
     ): Unit = {
         val codeSize = code.instructions.length
-        regularSuccessors = new Array[IntArraySet](codeSize)
-        exceptionHandlerSuccessors = new Array[IntArraySet](codeSize)
-        theExitPCs = new mutable.BitSet(codeSize)
-        theSubroutineStartPCs = IntArraySet.empty
-        theJumpBackTargetPCs = IntArraySet.empty
+        regularSuccessors = new Array[IntTrieSet](codeSize)
+        exceptionHandlerSuccessors = new Array[IntTrieSet](codeSize)
+        theExitPCs = IntTrieSet.empty
+        theSubroutineStartPCs = IntTrieSet.empty
+        theJumpBackTargetPCs = IntTrieSet.empty
 
         // The following values are initialized lazily (when required); after the abstract
         // interpretation was (successfully) performed!
@@ -192,7 +191,7 @@ trait RecordCFG
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            successors(currentPC) = new IntArraySet1(successorPC)
+            successors(currentPC) = new IntTrieSet1(successorPC)
         else {
             val newSuccessorsOfPC = successorsOfPC + successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
@@ -341,7 +340,7 @@ trait RecordCFG
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
      */
-    def exitPCs: BitSet = theExitPCs
+    def exitPCs: IntTrieSet = theExitPCs
 
     /**
      * Returns the PCs of the first instructions of all subroutines; that is, the instructions
@@ -352,7 +351,7 @@ trait RecordCFG
     /**
      * The set of instructions to which a jump back is performed.
      */
-    def jumpBackTargetPCs: IntArraySet = theJumpBackTargetPCs
+    def jumpBackTargetPCs: IntTrieSet = theJumpBackTargetPCs
 
     // IMPROVE Move the functionality to record/decide which instructions were executed to another domain which uses the operandsArray as the source of the information (more efficient!)
     /**
@@ -458,7 +457,7 @@ trait RecordCFG
         regularSuccessorsOnly: Boolean,
         p:                     PC ⇒ Boolean
     ): Boolean = {
-        var visitedSuccessors: IntArraySet = new IntArraySet1(pc) // IMPROVE Use IntArraySetBuilder?
+        var visitedSuccessors: IntTrieSet = new IntTrieSet1(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
@@ -466,7 +465,7 @@ trait RecordCFG
 
             visitedSuccessors ++= successorsToVisit
             successorsToVisit =
-                successorsToVisit.foldLeft(IntArraySet.empty) { (l, r) ⇒
+                successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
                     l ++ (
                         successorsOf(r, regularSuccessorsOnly) withFilter { pc ⇒
                             !visitedSuccessors.contains(pc)
@@ -544,15 +543,15 @@ trait RecordCFG
      * Computes the transitive hull of all instructions reachable from the given set of
      * instructions.
      */
-    def allReachable(pcs: IntArraySet): IntArraySet = {
-        pcs.foldLeft(IntArraySet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
+    def allReachable(pcs: IntTrieSet): IntTrieSet = {
+        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
     }
 
     /**
      * Computes the transitive hull of all instructions reachable from the given instruction.
      */
-    def allReachable(pc: PC): IntArraySet = {
-        var allReachable: IntArraySet = new IntArraySet1(pc)
+    def allReachable(pc: PC): IntTrieSet = {
+        var allReachable: IntTrieSet = new IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
             val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
@@ -610,13 +609,13 @@ trait RecordCFG
         }
     }
 
-    private[this] def predecessors: Array[IntArraySet] = {
-        getOrInitField[Array[IntArraySet]](
+    private[this] def predecessors: Array[IntTrieSet] = {
+        getOrInitField[Array[IntTrieSet]](
             () ⇒ this.thePredecessors,
             (predecessors) ⇒ this.thePredecessors = predecessors, // to cache the result
             this
         ) {
-                val predecessors = new Array[IntArraySet](regularSuccessors.length)
+                val predecessors = new Array[IntTrieSet](regularSuccessors.length)
                 for {
                     pc ← code.programCounters
                     successorPC ← allSuccessorsOf(pc)
@@ -624,7 +623,7 @@ trait RecordCFG
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
                         if (oldPredecessorsOfSuccessor eq null) {
-                            new IntArraySet1(pc)
+                            new IntTrieSet1(pc)
                         } else {
                             oldPredecessorsOfSuccessor + pc
                         }
@@ -698,9 +697,9 @@ trait RecordCFG
      * instruction.
      * The very vast majority of methods does not have infinite loops.
      */
-    def infiniteLoopHeaders: IntArraySet = {
+    def infiniteLoopHeaders: IntTrieSet = {
         if (theJumpBackTargetPCs.isEmpty)
-            return IntArraySet.empty;
+            return IntTrieSet.empty;
         // Let's test if the set of nodes reachable from a potential loop header is
         // closed; i.e., does not include an exit node and does not refer to a node
         // which is outside of the loop.
@@ -709,7 +708,7 @@ trait RecordCFG
         // every potential loop header can be reached.
         val predecessors = this.predecessors
         var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
-        var nodesToVisit = theExitPCs.foldLeft(Nil: List[Int])((c, n) ⇒ n :&: c)
+        var nodesToVisit = theExitPCs.toChain
         val visitedNodes = new mutable.BitSet(code.codeSize)
         while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
@@ -720,7 +719,7 @@ trait RecordCFG
                 nextPredecessors.foreach { predPC ⇒
                     remainingPotentialInfiniteLoopHeaders -= predPC
                     if (remainingPotentialInfiniteLoopHeaders.isEmpty) {
-                        return IntArraySet.empty;
+                        return IntTrieSet.empty;
                     }
                     if (!visitedNodes.contains(predPC)) {
                         nodesToVisit :&:= predPC
@@ -937,7 +936,7 @@ trait RecordCFG
 
         val exitPCs = theExitPCs
         val uniqueExitNode =
-            if (exitPCs.size == 1 && regularSuccessorsOf(exitPCs.head).isEmpty)
+            if (exitPCs.isSingletonSet && regularSuccessorsOf(exitPCs.head).isEmpty)
                 Some(exitPCs.head)
             else
                 None
@@ -978,7 +977,7 @@ trait RecordCFG
             PostDominatorTree(
                 uniqueExitNode,
                 exitPCs.contains,
-                IntArraySet.empty,
+                IntTrieSet.empty,
                 exitPCs.foreach,
                 foreachSuccessorOf,
                 foreachPredecessorOf,

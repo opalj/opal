@@ -1,0 +1,10 @@
+/* PARAMETERS:
+   param1: useSites={4} (origin=-2)
+*/
+0:/*pc=0:*/ lv0 = 3
+1:/*pc=1:*/ lv1 = new int[{lv0}]
+2:/*pc=5:*/ lv2 = 4
+3:/*pc=7:*/ lv3 = 1
+4:/*pc=8:*/ lv4 = {param1} + {lv3}
+5:/*pc=9:*/ {lv1}[{lv2}] = {lv4}
+// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception ⇒ abnormal return>

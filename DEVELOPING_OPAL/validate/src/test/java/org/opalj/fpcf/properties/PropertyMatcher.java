@@ -55,7 +55,9 @@ public interface PropertyMatcher {
      * @param p The project.
      * @param as The OPAL `ObjectType`'s of the executed analyses.
      */
-    default boolean isRelevant(Project<?> p,Set<ObjectType> as, AnnotationLike a) {
+    default boolean isRelevant(
+            Project<?> p, Set<ObjectType> as,
+            Object entity, AnnotationLike a) {
         return true;
     }
 

@@ -30,11 +30,11 @@ package org.opalj
 package ai
 
 import java.net.URL
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.RecordLastReturnedValues
-import org.opalj.ai.domain.Origin
 import org.opalj.ai.domain.Origins
 
 /**
@@ -72,16 +72,15 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
                 // "in real code" a specially tailored domain should be used.
                 new domain.l1.DefaultDomain(theProject, method) with RecordLastReturnedValues
             )
-            if result.domain.allReturnedValues.forall(_ match {
-                case (_, Origin(o)) if o < 0              ⇒ true
+            if result.domain.allReturnedValues.forall {
                 case (_, Origins(os)) if os.forall(_ < 0) ⇒ true
                 case _                                    ⇒ false
-            })
+            }
         } yield {
             // collect the origin information
             val origins =
                 result.domain.allReturnedValues.values.
-                    map(result.domain.origin(_).toSet).flatten.toSet
+                    map(result.domain.origin(_).toChain).flatten.toSet
 
             method.toJava + (
                 if (origins.nonEmpty)

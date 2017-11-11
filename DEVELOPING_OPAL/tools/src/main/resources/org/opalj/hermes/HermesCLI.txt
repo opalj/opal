@@ -1,0 +1,13 @@
+OPAL - Hermes
+Parameters:
+   -config <FileName> the configuration which lists a corpus' projects
+   -statistics <FileName> the csv file to which the results should be exported
+   -mapping <FileName> the properties file with the mapping between the feature
+                       queries and the extracted features; format:
+                       <FeatureQueryClass>=<FeatureID>(,<FeatureID>)*
+                       where in FeatureIDs every \ is replaced by \\
+                                             ... new line ('\n') is replaced by \n
+                                             ... , is replaced by \,
+   [-noProjectStatistics project statistics are not exported]
+
+java ...HermesCLI -config <ConfigFile.json> -statistics <FileName>

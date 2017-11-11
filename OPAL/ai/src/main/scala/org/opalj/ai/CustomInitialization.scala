@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 import org.opalj.br.Code
-import scala.collection.BitSet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Mixin this trait if a domain needs to perform some custom initialization.
@@ -53,7 +53,7 @@ trait CustomInitialization { domain: ValuesDomain ⇒
      * Always use `abstract override` and call the super method; it is recommended
      * to complete the initialization of this domain before calling the super method.
      */
-    def initProperties(code: Code, cfJoins: BitSet, initialLocals: Locals): Unit = {
+    def initProperties(code: Code, cfJoins: IntTrieSet, initialLocals: Locals): Unit = {
         // Empty by default.
     }
 

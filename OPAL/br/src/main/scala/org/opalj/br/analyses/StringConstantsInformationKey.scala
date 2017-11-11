@@ -72,21 +72,19 @@ object StringConstantsInformationKey
         val errors = project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
-            method.body.get.iterate { (pc, instruction) ⇒
-                instruction.opcode match {
-
-                    case LDC.opcode | LDC_W.opcode ⇒
-                        val LDCString(value) = instruction
-                        var list: ConcurrentLinkedQueue[(Method, PC)] = map.get(value)
-                        if (list eq null) {
-                            list = new ConcurrentLinkedQueue[(Method, PC)]()
-                            val previousList = map.putIfAbsent(value, list)
-                            if (previousList != null) list = previousList
-                        }
-                        list.add((method, pc))
-
-                    case _ ⇒ // we don't care
-                }
+            method.body.get.withFilter { i ⇒
+                val (_, instruction) = i
+                instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode
+            }.foreach {
+                case (pc, LDCString(value)) ⇒
+                    var list: ConcurrentLinkedQueue[(Method, PC)] = map.get(value)
+                    if (list eq null) {
+                        list = new ConcurrentLinkedQueue[(Method, PC)]()
+                        val previousList = map.putIfAbsent(value, list)
+                        if (previousList != null) list = previousList
+                    }
+                    list.add((method, pc))
+                case _ ⇒ /*other type of constant*/
             }
         }
         errors foreach { e ⇒

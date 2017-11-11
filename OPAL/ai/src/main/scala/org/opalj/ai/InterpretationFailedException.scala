@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import scala.collection.BitSet
 import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Exception that is thrown by the abstract interpreter when the abstract
@@ -51,7 +51,7 @@ sealed trait InterpretationFailedException {
     val pc: PC
     val worklist: List[PC]
     val evaluated: List[PC]
-    val cfJoins: BitSet
+    val cfJoins: IntTrieSet
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
     val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
@@ -70,7 +70,7 @@ object InterpretationFailedException {
     )(
         theAI:                               AI[_ >: theDomain.type],
         thePc:                               PC,
-        theCFJoins:                          BitSet,
+        theCFJoins:                          IntTrieSet,
         theWorklist:                         List[PC],
         theEvaluated:                        List[PC],
         theOperandsArray:                    theDomain.OperandsArray,
@@ -83,7 +83,7 @@ object InterpretationFailedException {
             val ai: AI[_ >: theDomain.type] = theAI
             val domain: theDomain.type = theDomain
             val pc: PC = thePc
-            val cfJoins: BitSet = theCFJoins
+            val cfJoins: IntTrieSet = theCFJoins
 
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated

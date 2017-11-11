@@ -222,6 +222,30 @@ public class MethodsWithArrays {
         return o;
     }
 
+    public static Object referenceToMultipleArrays(boolean b) {
+        Object[] foo = null;
+        Object[] bar = null;
+
+        if (b){
+            foo = new Object[1];
+            foo[0] = new Object();
+            bar = new Object[5];
+            bar[0] = foo;
+        }else {
+            foo = new Object[1];
+            foo[0] = "Text";
+            bar = new Object[1];
+            bar[0] = foo;
+        }
+
+        Object o = foo[0];
+        processIt(bar[0]); // no exception
+        processIt(bar[1]); // potentially an exception
+        processIt(bar[10]); // definitively an exception
+
+        return o; // dead...
+    }
+
     public static Object integerArraysFrenzy(int id, Object data) {
         // Inspiration: java/awt/image/DirectColorModel Object
         // getDataElements(int,Object)
@@ -293,6 +317,19 @@ public class MethodsWithArrays {
     public static int[] threeElements() {
         int[] a = new int[3];
         for (int i = 0; i < 3; i++)
+            a[i] = i + 1;
+        return a;
+    }
+
+    public static int[] arrayIndexOutOfBounds(int i) {
+        int[] a = new int[3];
+        a[4] = i + 1;
+        return a;
+    }
+
+    public static int[] arrayIndexOutOfBoundsInLoop() {
+        int[] a = new int[3];
+        for (int i = 0; i < 4; i++)
             a[i] = i + 1;
         return a;
     }
@@ -436,7 +473,7 @@ public class MethodsWithArrays {
     }
 
     public static Object[] arrayStoreException(boolean v) {
-        Object[] array = new Cloneable[1]; 
+        Object[] array = new Cloneable[1];
 
         if (v) {
             array[0] = new java.io.Serializable() {
@@ -447,4 +484,5 @@ public class MethodsWithArrays {
 
         return array;
     }
+
 }

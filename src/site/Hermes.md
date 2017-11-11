@@ -7,6 +7,7 @@ For example, when you want to test that your analysis is able to handle all type
 
 ![Hermes - Overview](Hermes.png)
 
+Hermes can be run in [headless mode](http://www.opal-project.de/library/api/SNAPSHOT/org/opalj/hermes/HermesCLI$.html) to just evaluate a set of projects and get back a CSV file with all results or you can start the [UI](http://www.opal-project.de/library/api/SNAPSHOT/org/opalj/hermes/Hermes$.html) which enables more advanced exploration of projects.   
 
 ## Developing Queries
 A query is basically a mapping between some feature and those elements of a project that implement/provide/have the respective feature. For example, a feature could be the kind of type (*interface*, *class*, *enum*, *annotation*) which is defined by a specific class file. The query would then analyze all class files of the project and assign each class file to its respective category. In the context of Hermes, we would consider the query as simultaneously deriving multiple features.

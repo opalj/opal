@@ -1,5 +1,5 @@
 /* PARAMETERS:
-   param1: useSites={1,10} (origin=-2)
+   param1: useSites={10,1} (origin=-2)
 */
 0:/*pc=0:*/ lv0 = 33
 1:/*pc=3:*/ lv1 = {lv0} / {param1}

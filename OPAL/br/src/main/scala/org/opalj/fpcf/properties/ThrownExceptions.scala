@@ -77,8 +77,9 @@ object ThrownExceptions {
         _: PropertyStore,
         epks: Iterable[SomeEPK]
     ) ⇒ {
+        // IMPROVE We should have support to handle cycles of "ThrownExceptions"
         val e = epks.find(_.pk == Key).get
-        val p = ThrownExceptionsAreUnknown.UnableToComputeThrownException
+        val p = ThrownExceptionsAreUnknown.UnresolvableCycle
         Iterable(Result(e, p))
     }
 
@@ -97,6 +98,17 @@ sealed class AllThrownExceptions(
 ) extends ThrownExceptions {
 
     override def toString: String = s"AllThrownExceptions($types)"
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: AllThrownExceptions ⇒
+                this.types == that.types && this.isRefineable == that.isRefineable
+            case _ ⇒ false
+        }
+    }
+
+    override def hashCode: Int = 13 * types.hashCode + (if (isRefineable) 41 else 53)
+
 }
 
 final case class NoExceptionsAreThrown(
@@ -123,7 +135,7 @@ final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExcept
 
 object ThrownExceptionsAreUnknown {
 
-    final val UnableToComputeThrownException = {
+    final val UnresolvableCycle = {
         ThrownExceptionsAreUnknown("a cycle was detected which the analysis could not resolve")
     }
 
@@ -131,14 +143,24 @@ object ThrownExceptionsAreUnknown {
         ThrownExceptionsAreUnknown("unable to determine the precise type(s) of a thrown exception")
     }
 
-    final val SomeCallerThrowsUnknownExceptions = {
-        ThrownExceptionsAreUnknown("called method throws unknown exceptions")
+    final val UnresolvedInvokeDynamic = {
+        ThrownExceptionsAreUnknown("the call targets of the unresolved invokedynamic are unknown")
     }
 
     final val MethodIsNative = ThrownExceptionsAreUnknown("the method is native")
 
     final val MethodBodyIsNotAvailable = {
-        ThrownExceptionsAreUnknown("the method body is not available")
+        ThrownExceptionsAreUnknown("the method body (of the concrete method) is not available")
+    }
+
+    final val UnboundedTargetMethods = {
+        ThrownExceptionsAreUnknown("the set of target methods is unbounded/extensible")
+    }
+
+    final val AnalysisLimitation = {
+        ThrownExceptionsAreUnknown(
+            "the analysis is too simple to compute a sound approximation of the thrown exceptions"
+        )
     }
 
 }
@@ -221,13 +243,16 @@ object ThrownExceptionsFallbackAnalysis extends ((PropertyStore, Entity) ⇒ Thr
                     )) {
                         true
                     } else {
-                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                        result = ThrownExceptionsAreUnknown.AnalysisLimitation
                         false
                     }
-                case INVOKEDYNAMIC.opcode |
-                    INVOKESTATIC.opcode |
-                    INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+
+                case INVOKEDYNAMIC.opcode ⇒
+                    result = ThrownExceptionsAreUnknown.UnresolvedInvokeDynamic
+                    false
+
+                case INVOKESTATIC.opcode | INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
+                    result = ThrownExceptionsAreUnknown.AnalysisLimitation
                     false
 
                 // let's determine if the register 0 is updated (i.e., if the register which

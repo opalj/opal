@@ -33,7 +33,7 @@ package instructions
 import scala.annotation.switch
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * An instruction that returns from a method.
@@ -142,7 +142,7 @@ object ReturnInstructions {
         val instructions = code.instructions
         val max = instructions.length
         var pc = 0
-        var returnPCs = IntArraySet.empty
+        var returnPCs = IntTrieSet.empty
         while (pc < max) {
             val instruction = instructions(pc)
             if (instruction.isReturnInstruction)

@@ -175,7 +175,7 @@ object DeadEdgesAnalysis {
 
         var issues = List.empty[Issue]
         for {
-            pc ← body.programCounters
+            pc ← body.programCounters.iterator
             if evaluatedInstructions.contains(pc)
             instruction = instructions(pc)
             opcode = instruction.opcode
