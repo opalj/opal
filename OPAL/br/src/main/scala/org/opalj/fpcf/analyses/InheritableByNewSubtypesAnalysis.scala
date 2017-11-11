@@ -80,12 +80,16 @@ import scala.collection.mutable
  */
 class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
+    def propertyComputation(isApplicationMode: Boolean)(e: Entity): PropertyComputationResult = {
+        ImmediateResult(e, subtypeInheritability(isApplicationMode)(e))
+    }
+
     /**
      * Determines whether a method can be inherited by a library client.
      * This should not be called if the current analysis mode is application-related.
      *
      */
-    def subtypeInheritability(isApplicationMode: Boolean)(e: Entity): Property = {
+    def subtypeInheritability(isApplicationMode: Boolean)(e: Entity): InheritableByNewTypes = {
         val method = e.asInstanceOf[Method]
 
         if (isApplicationMode)
@@ -145,9 +149,9 @@ object InheritableByNewSubtypesAnalysis extends FPCFAnalysisRunner {
     protected[fpcf] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new InheritableByNewSubtypesAnalysis(project)
         val isApplicationMode: Boolean = AnalysisModes.isApplicationLike(project.analysisMode)
-        propertyStore scheduleOnDemandComputation (
+        propertyStore.scheduleLazyPropertyComputation[InheritableByNewTypes](
             InheritableByNewTypes.Key,
-            analysis.subtypeInheritability(isApplicationMode)
+            analysis.propertyComputation(isApplicationMode)
         )
         analysis
     }

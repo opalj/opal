@@ -43,16 +43,16 @@ import org.opalj.fpcf.properties.SelfReferenceLeakage
 import org.opalj.fpcf.properties.DoesNotLeakSelfReference
 
 /**
- * Runs the default escape analysis.
+ * Runs the default self-reference leakage analysis.
  *
  * @author Michael Eichberg
  */
-object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
+object SelfReferenceLeakageAnalysisDemo extends DefaultOneStepAnalysis {
 
-    override def title: String = "shallow escape analysis"
+    override def title: String = "Analyses whether a class leaks it self-reference this"
 
     override def description: String = {
-        "determins escape information related to objects belonging to a specific class"
+        "Determines if a class leaks its self reference, if not, then the method which instantiates the object has full control."
     }
 
     def doAnalyze(
@@ -65,7 +65,7 @@ object EscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         var analysisTime = Seconds.None
         time {
-            EscapeAnalysis.analyze(project)
+            SelfReferenceLeakageAnalysis.analyze(project)
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 

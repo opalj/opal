@@ -30,12 +30,8 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.InstantiableClasses
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.Instantiability
 import org.opalj.fpcf.properties.NotInstantiable
 
 /**
@@ -46,13 +42,8 @@ import org.opalj.fpcf.properties.NotInstantiable
 object LibraryInstantiableClassesAnalysis {
 
     def doAnalyze(project: SomeProject): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
-
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
+        val notInstantiableClasses = SimpleInstantiabilityAnalysis.run(project).collect {
+            case EP(e, NotInstantiable) ⇒ e.thisType
         }
 
         new InstantiableClasses(project, notInstantiableClasses.toSet)

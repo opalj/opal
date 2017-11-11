@@ -30,13 +30,13 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.collection.mutable
+import scala.collection.parallel.ParIterable
+
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.util.GlobalPerformanceEvaluation
-
-import scala.collection.mutable
 import org.opalj.fpcf.properties.NotInstantiable
 import org.opalj.fpcf.properties.Instantiable
 import org.opalj.fpcf.properties.Instantiability
@@ -56,27 +56,9 @@ import org.opalj.fpcf.properties.Instantiability
  * precise call graph. For example, instance methods of those objects that cannot be
  * created are always dead.
  *
- * ==Usage==
- * Use the [[FPCFAnalysesManagerKey]] to query the analysis manager of a project. You can run
- * the analysis afterwards as follows:
- * {{{
- *  val analysisManager = project.get(FPCFAnalysisManagerKey)
- *  analysisManager.run(InstantiabilityAnalysis)
- * }}}
- * For detailed information see the documentation of the analysis manager.
- *
- * The results of this analysis are stored in the property store of the project. You can receive
- * the results as follows:
- * {{{
- * val theProjectStore = theProject.get(PropertyStoreKey)
- * val instantiableClasses = theProjectStore.entities { (p: Property) ⇒
- * p == Instantiable
- * }
- * }}}
- *
  * @note The analysis does not take reflective instantiations into account!
  */
-class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends ProjectBasedAnalysis {
 
     import project.classHierarchy.allSubclassTypes
 
@@ -85,95 +67,92 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
         classFiles: Seq[ClassFile]
     ): Traversable[EP[ClassFile, Instantiability]] = {
 
-        GlobalPerformanceEvaluation.time('inst) {
+        val instantiatedClasses = new Array[EP[ClassFile, Instantiability]](classFiles.length)
+        val seenConstructors = mutable.Set.empty[ClassFile]
 
-            val instantiatedClasses = new Array[EP[ClassFile, Instantiability]](classFiles.length)
-            val seenConstructors = mutable.Set.empty[ClassFile]
-
-            var i = 0
-            while (i < classFiles.length) {
-                val classFile = classFiles(i)
-                if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile)) {
-                    if (classFile.isAbstract) {
-                        val hasInstantiableSubtype = allSubclassTypes(classFile.thisType, reflexive = false).exists {
-                            subtype ⇒
-                                project.classFile(subtype) match {
-                                    case Some(cf) ⇒ !cf.isAbstract
-                                    case None     ⇒ true
-                                }
-                        }
-                        if (hasInstantiableSubtype)
-                            instantiatedClasses(i) = EP(classFile, Instantiable)
-                        else
-                            instantiatedClasses(i) = EP(classFile, NotInstantiable)
-                    } else
+        var i = 0
+        while (i < classFiles.length) {
+            val classFile = classFiles(i)
+            if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile)) {
+                if (classFile.isAbstract) {
+                    val hasInstantiableSubtype = allSubclassTypes(classFile.thisType, reflexive = false).exists {
+                        subtype ⇒
+                            project.classFile(subtype) match {
+                                case Some(cf) ⇒ !cf.isAbstract
+                                case None     ⇒ true
+                            }
+                    }
+                    if (hasInstantiableSubtype)
                         instantiatedClasses(i) = EP(classFile, Instantiable)
-                } else {
-                    classFile.methods foreach { method ⇒
-                        if (method.isNative && method.isStatic) {
-                            val instantiatedClasses = mutable.Set.empty[EP[ClassFile, Instantiability]]
-                            classFiles.foreach { classFile ⇒
-                                if (classFile.isAbstract &&
-                                    (isDesktopApplication || (isClosedLibrary && classFile.isPackageVisible)))
-                                    instantiatedClasses += EP(classFile, NotInstantiable)
-                                else
-                                    instantiatedClasses += EP(classFile, Instantiable)
-                            }
-                            // we can stop here, we have to assume that native methods instantiate every package visible class
-                            return instantiatedClasses;
-
-                        } else if (method.body.nonEmpty) {
-                            // prevents the analysis of native instance methods..
-
-                            val body = method.body.get
-                            val instructions = body.instructions
-                            val max = instructions.length
-                            var pc = 0
-                            while (pc < max) {
-                                val instruction = instructions(pc)
-                                if (instruction.opcode == INVOKESPECIAL.opcode) {
-                                    instruction match {
-                                        case INVOKESPECIAL(classType, _, "<init>", _) if classType.packageName == key ⇒
-                                            // We found a constructor call.
-                                            val classFile = project.classFile(classType)
-                                            if (classFile.nonEmpty) {
-                                                seenConstructors += classFile.get
-                                            }
-                                        case _ ⇒
-                                    }
-                                }
-                                pc = body.pcOfNextInstruction(pc)
-                            }
-                        } else {
-                            // we dont know what happens, be conservative
-                            if (!method.isAbstract)
-                                instantiatedClasses(i) = EP(classFile, Instantiable)
+                    else
+                        instantiatedClasses(i) = EP(classFile, NotInstantiable)
+                } else
+                    instantiatedClasses(i) = EP(classFile, Instantiable)
+            } else {
+                classFile.methods foreach { method ⇒
+                    if (method.isNative && method.isStatic) {
+                        val instantiatedClasses = mutable.Set.empty[EP[ClassFile, Instantiability]]
+                        classFiles.foreach { classFile ⇒
+                            if (classFile.isAbstract &&
+                                (isDesktopApplication || (isClosedLibrary && classFile.isPackageVisible)))
+                                instantiatedClasses += EP(classFile, NotInstantiable)
+                            else
+                                instantiatedClasses += EP(classFile, Instantiable)
                         }
+                        // we can stop here, we have to assume that native methods instantiate every package visible class
+                        return instantiatedClasses;
+
+                    } else if (method.body.nonEmpty) {
+                        // prevents the analysis of native instance methods..
+
+                        val body = method.body.get
+                        val instructions = body.instructions
+                        val max = instructions.length
+                        var pc = 0
+                        while (pc < max) {
+                            val instruction = instructions(pc)
+                            if (instruction.opcode == INVOKESPECIAL.opcode) {
+                                instruction match {
+                                    case INVOKESPECIAL(classType, _, "<init>", _) if classType.packageName == key ⇒
+                                        // We found a constructor call.
+                                        val classFile = project.classFile(classType)
+                                        if (classFile.nonEmpty) {
+                                            seenConstructors += classFile.get
+                                        }
+                                    case _ ⇒
+                                }
+                            }
+                            pc = body.pcOfNextInstruction(pc)
+                        }
+                    } else {
+                        // we dont know what happens, be conservative
+                        if (!method.isAbstract)
+                            instantiatedClasses(i) = EP(classFile, Instantiable)
                     }
                 }
-                i += 1
             }
-
-            i = 0
-            while (i < classFiles.length) {
-                val resultClassFile = instantiatedClasses(i)
-                if (resultClassFile eq null) {
-                    val entityClassFile = classFiles(i)
-                    val constructorInvoked = seenConstructors.collectFirst {
-                        case cf: ClassFile if (cf eq entityClassFile) ⇒ cf
-                    }
-                    constructorInvoked match {
-                        case Some(_) ⇒
-                            instantiatedClasses(i) = EP(entityClassFile, Instantiable)
-                        case None ⇒
-                            instantiatedClasses(i) = determineClassInstantiability(entityClassFile)
-                    }
-                }
-                i += 1
-            }
-
-            instantiatedClasses
+            i += 1
         }
+
+        i = 0
+        while (i < classFiles.length) {
+            val resultClassFile = instantiatedClasses(i)
+            if (resultClassFile eq null) {
+                val entityClassFile = classFiles(i)
+                val constructorInvoked = seenConstructors.collectFirst {
+                    case cf: ClassFile if (cf eq entityClassFile) ⇒ cf
+                }
+                constructorInvoked match {
+                    case Some(_) ⇒
+                        instantiatedClasses(i) = EP(entityClassFile, Instantiable)
+                    case None ⇒
+                        instantiatedClasses(i) = determineClassInstantiability(entityClassFile)
+                }
+            }
+            i += 1
+        }
+
+        instantiatedClasses
     }
 
     def determineClassInstantiability(classFile: ClassFile): EP[ClassFile, Instantiability] = {
@@ -217,17 +196,15 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
 /**
  * Companion object for the [[SimpleInstantiabilityAnalysis]] class.
  */
-object SimpleInstantiabilityAnalysis extends FPCFAnalysisRunner {
+object SimpleInstantiabilityAnalysis {
 
     final def definingPackage(cf: ClassFile): String = cf.thisType.packageName
 
-    override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
-
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    def run(project: SomeProject): Traversable[EP[ClassFile, Instantiability]] = {
         val analysis = new SimpleInstantiabilityAnalysis(project)
-        propertyStore.execute(PropertyStore.entitySelector[ClassFile], groupBy = definingPackage)(
-            analysis.determineProperty
-        )
-        analysis
+        project.allProjectClassFiles.groupBy(definingPackage).par.flatMap { groupedCFs ⇒
+            val (key, cfs) = groupedCFs
+            analysis.determineProperty(key, cfs)
+        }(ParIterable.canBuildFrom).seq
     }
 }

@@ -31,7 +31,6 @@ package org.opalj
 package fpcf
 package analyses
 
-import scala.IndexedSeq
 import scala.collection.mutable
 
 import org.opalj.br.BooleanType
@@ -43,9 +42,6 @@ import org.opalj.br.MethodDescriptor._
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.NotClientCallable
 import org.opalj.fpcf.properties.IsClientCallable
 import org.opalj.fpcf.properties.ClientCallable
@@ -68,6 +64,10 @@ class CallableFromClassesInOtherPackagesAnalysis private (
         val project: SomeProject
 ) extends FPCFAnalysis {
 
+    def propertyComputation(e: Entity): PropertyComputationResult = {
+        ImmediateResult(e, determineProperty(e))
+    }
+
     /**
      * Determines the [[org.opalj.fpcf.properties.ClientCallable]] property of non-static methods.
      * It is tailored to entry point set computation where we have to consider different kind of
@@ -82,99 +82,95 @@ class CallableFromClassesInOtherPackagesAnalysis private (
     def determineProperty(e: Entity): Property = {
         val method = e.asInstanceOf[Method]
 
-        import org.opalj.util.GlobalPerformanceEvaluation
+        if (method.isPrivate)
+            /* private methods are only visible in the scope of the class */
+            return NotClientCallable;
 
-        GlobalPerformanceEvaluation.time('callableByOthers) {
+        if (isOpenLibrary)
+            return IsClientCallable;
 
-            if (method.isPrivate)
-                /* private methods are only visible in the scope of the class */
-                return NotClientCallable;
+        //we are now either analyzing a library under CPA or an application.
+        if (method.isPackagePrivate || method.isConstructor)
+            /* a package private method can not leak to the client under CPA */
+            return NotClientCallable;
 
-            if (isOpenLibrary)
-                return IsClientCallable;
+        val classFile = method.classFile
+        if (classFile.isEffectivelyFinal && !method.isPublic)
+            return NotClientCallable;
 
-            //we are now either analyzing a library under CPA or an application.
-            if (method.isPackagePrivate || method.isConstructor)
-                /* a package private method can not leak to the client under CPA */
-                return NotClientCallable;
+        // From now on, we have the following conditions:
+        // - the method is public or protected
+        // - the class is not final
+        if (classFile.isPublic)
+            return IsClientCallable;
 
-            val classFile = method.classFile
-            if (classFile.isEffectivelyFinal && !method.isPublic)
-                return NotClientCallable;
+        val classHierarchy = project.classHierarchy
 
-            // From now on, we have the following conditions:
-            // - the method is public or protected
-            // - the class is not final
-            if (classFile.isPublic)
-                return IsClientCallable;
+        val classType = classFile.thisType
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
 
-            val classHierarchy = project.classHierarchy
-
-            val classType = classFile.thisType
-            val methodName = method.name
-            val methodDescriptor = method.descriptor
-
-            // From now on we operate with a package private class
-            // We first check whether the method is inherited by a visible subclass
-            if (!classFile.isFinal) {
-                val subtypes = mutable.Queue.empty ++= classHierarchy.directSubtypesOf(classType)
-                while (subtypes.nonEmpty) {
-                    val subtype = subtypes.dequeue()
-                    project.classFile(subtype) match {
-                        case Some(subclass) ⇒
-                            if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
-                                if (subclass.isPublic) {
-                                    // the original method is now visible (and not shadowed)
-                                    return IsClientCallable;
-                                } else
-                                    subtypes ++= classHierarchy.directSubtypesOf(subtype)
-                            }
-                        // we need to continue our search for a class that makes the method visible
-                        case None ⇒
-                            // The type hierarchy is obviously not downwards closed; i.e.,
-                            // the project configuration is rather strange!
-                            return IsClientCallable;
-                    }
-                }
-            }
-
-            //Now: A method does not become visible through a public subclass, but we also have to check the superclasses
-            val EqualsSignature = MethodDescriptor(ObjectType.Object, BooleanType)
-            val BasicWaitSignature = MethodDescriptor(LongType, VoidType)
-            val PreciseWaitSignature = MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)
-            classHierarchy.foreachSupertype(classType) { supertype ⇒
-                project.classFile(supertype) match {
-                    case Some(superclass) ⇒ {
-                        val declMethod = superclass.findMethod(methodName, methodDescriptor)
-                        if (declMethod.isDefined) {
-                            val m = declMethod.get
-                            if ((m.isPublic || m.isProtected) && superclass.isPublic)
+        // From now on we operate with a package private class
+        // We first check whether the method is inherited by a visible subclass
+        if (!classFile.isFinal) {
+            val subtypes = mutable.Queue.empty ++= classHierarchy.directSubtypesOf(classType)
+            while (subtypes.nonEmpty) {
+                val subtype = subtypes.dequeue()
+                project.classFile(subtype) match {
+                    case Some(subclass) ⇒
+                        if (subclass.findMethod(methodName, methodDescriptor).isEmpty) {
+                            if (subclass.isPublic) {
+                                // the original method is now visible (and not shadowed)
                                 return IsClientCallable;
+                            } else
+                                subtypes ++= classHierarchy.directSubtypesOf(subtype)
                         }
-                    }
-                    case None if supertype eq ObjectType.Object ⇒
-                        (methodName, methodDescriptor) match {
-                            case ("toString", JustReturnsString) |
-                                ("hashCode", JustReturnsInteger) |
-                                ("equals", EqualsSignature) |
-                                ("clone", JustReturnsObject) |
-                                ("getClass", JustReturnsClass) |
-                                ("finalize", NoArgsAndReturnVoid) |
-                                ("notify", NoArgsAndReturnVoid) |
-                                ("notifyAll", NoArgsAndReturnVoid) |
-                                ("wait", NoArgsAndReturnVoid) |
-                                ("wait", BasicWaitSignature) |
-                                ("wait", PreciseWaitSignature) ⇒
-                                return IsClientCallable;
-                            case _ ⇒ /* nothing leaks */
-                        }
-                    case _ ⇒
+                    // we need to continue our search for a class that makes the method visible
+                    case None ⇒
+                        // The type hierarchy is obviously not downwards closed; i.e.,
+                        // the project configuration is rather strange!
                         return IsClientCallable;
                 }
             }
-
-            NotClientCallable
         }
+
+        //Now: A method does not become visible through a public subclass, but we also have to check the superclasses
+        val EqualsSignature = MethodDescriptor(ObjectType.Object, BooleanType)
+        val BasicWaitSignature = MethodDescriptor(LongType, VoidType)
+        val PreciseWaitSignature = MethodDescriptor(IndexedSeq(LongType, IntegerType), VoidType)
+        classHierarchy.foreachSupertype(classType) { supertype ⇒
+            project.classFile(supertype) match {
+                case Some(superclass) ⇒ {
+                    val declMethod = superclass.findMethod(methodName, methodDescriptor)
+                    if (declMethod.isDefined) {
+                        val m = declMethod.get
+                        if ((m.isPublic || m.isProtected) && superclass.isPublic)
+                            return IsClientCallable;
+                    }
+                }
+                case None if supertype eq ObjectType.Object ⇒
+                    (methodName, methodDescriptor) match {
+                        case ("toString", JustReturnsString) |
+                            ("hashCode", JustReturnsInteger) |
+                            ("equals", EqualsSignature) |
+                            ("clone", JustReturnsObject) |
+                            ("getClass", JustReturnsClass) |
+                            ("finalize", NoArgsAndReturnVoid) |
+                            ("notify", NoArgsAndReturnVoid) |
+                            ("notifyAll", NoArgsAndReturnVoid) |
+                            ("wait", NoArgsAndReturnVoid) |
+                            ("wait", BasicWaitSignature) |
+                            ("wait", PreciseWaitSignature) ⇒
+                            return IsClientCallable;
+                        case _ ⇒ /* nothing leaks */
+                    }
+                case _ ⇒
+                    return IsClientCallable;
+            }
+        }
+
+        NotClientCallable
+
     }
 }
 
@@ -188,9 +184,9 @@ object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
     ): FPCFAnalysis = {
 
         val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
-        propertyStore scheduleOnDemandComputation (
+        propertyStore.scheduleLazyPropertyComputation(
             ClientCallable.Key,
-            analysis.determineProperty
+            analysis.propertyComputation
         )
         analysis
     }

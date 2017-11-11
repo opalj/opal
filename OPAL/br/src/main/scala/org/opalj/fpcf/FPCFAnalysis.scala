@@ -43,16 +43,13 @@ import AnalysisModes._
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysis {
+trait ProjectBasedAnalysis {
 
     implicit val project: SomeProject
     final def p = project
 
     final implicit val classHierarchy = project.classHierarchy
     final def ch = classHierarchy
-
-    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    final def ps = propertyStore
 
     final implicit val logContext: LogContext = project.logContext
 
@@ -67,4 +64,11 @@ trait FPCFAnalysis {
     final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
     /** @migration won't be available in the near future*/
     final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
+}
+
+trait FPCFAnalysis extends ProjectBasedAnalysis {
+
+    final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    final def ps = propertyStore
+
 }

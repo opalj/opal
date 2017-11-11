@@ -41,18 +41,12 @@ import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
  * A prime use case of the fixpoint framework
  * are all those analyses that may interact with the results of other analyses.
  *
- * For example, an analysis that analyses all field write access to determine if we can
+ * For example, an analysis that analyses all field write accessees to determine if we can
  * refine a field's type (for the purpose of the analysis) can (reuse) the information
  * about the return types of methods, which however may depend on the refined field types.
  *
  * The framework is generic enough to facilitate the implementation of
  * anytime algorithms.
- *
- * The framework supports two very basic kinds of properties. Those properties that are
- * associated with a specific entity; e.g., a field's ''real'' type, and those properties
- * that are shared by a set of entities; e.g., the set of all methods that are entry
- * points. In general, the latter properties can also be modeled using the first
- * mechanism, but this would not be as effective.
  *
  * @note The dependency relation is as follows:
  *      “A depends on B”

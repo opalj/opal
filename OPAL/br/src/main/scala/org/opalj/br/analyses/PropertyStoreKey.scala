@@ -40,6 +40,7 @@ import scala.collection.JavaConverters._
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.LockBasedPropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 
 /**
@@ -155,6 +156,6 @@ object PropertyStoreKey
             }
             entities
         }
-        PropertyStore(entities, defaultIsInterrupted, parallelismLevel, context: _*)
+        LockBasedPropertyStore(entities, defaultIsInterrupted, parallelismLevel, context: _*)
     }
 }

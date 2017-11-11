@@ -83,7 +83,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (!isDerived(analysisRunner.derivedProperties)) {
             if (debug)
                 OPALLogger.debug(
-                    "project configuration",
+                    "analysis configuration",
                     s"scheduling the analysis ${analysisRunner.name}"
                 )(project.logContext)
 
@@ -97,7 +97,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
             }
         } else {
             OPALLogger.error(
-                "project configuration",
+                "analysis configuration",
                 s"the analysis ${analysisRunner.name} is running/was executed for this project"
             )(project.logContext)
         }
@@ -109,10 +109,6 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     def isDerived(pKinds: Set[PropertyKind]): Boolean = pKinds exists (pKind ⇒ isDerived(pKind))
 
-    final def reset(): Unit = {
-        derivedProperties.clear()
-        propertyStore.reset()
-    }
 }
 
 object FPCFAnalysesManager {

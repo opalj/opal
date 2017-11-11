@@ -31,25 +31,11 @@ package fpcf
 package analyses
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.FieldWriteAccess
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.{ClassFile, Method, ObjectType}
+import org.opalj.br.analyses.{PropertyStoreKey, SomeProject}
+import org.opalj.br.instructions.{AASTORE, ATHROW, FieldWriteAccess, INVOKEDYNAMIC, INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, MethodInvocationInstruction, PUTFIELD, PUTSTATIC}
+import org.opalj.fpcf.properties.{DoesNotLeakSelfReference, LeaksSelfReference, SelfReferenceLeakage}
 import org.opalj.log.OPALLogger
-import org.opalj.fpcf.properties.LeaksSelfReference
-import org.opalj.fpcf.properties.DoesNotLeakSelfReference
 
 /**
  * A shallow analysis that determines for each new object that is created within a method
@@ -68,11 +54,11 @@ import org.opalj.fpcf.properties.DoesNotLeakSelfReference
  *
  * This analysis can be used as a foundation for an analysis that determines whether
  * all instances created for a specific class never escape the creating method and,
- * hence, respective types cannot occur.
+ * hence, respective types cannot occur outside the respective contexts.
  *
  * @author Michael Eichberg
  */
-class EscapeAnalysis(val debug: Boolean) {
+class SelfReferenceLeakageAnalysis(val debug: Boolean) {
 
     val SelfReferenceLeakage = org.opalj.fpcf.properties.SelfReferenceLeakage.Key
 
@@ -208,9 +194,9 @@ class EscapeAnalysis(val debug: Boolean) {
         // Let's check the supertypes w.r.t. their leakage property.
         val superclassType = classFile.superclassType.get
         val superclassFileOption = project.classFile(superclassType)
-        val interfaceTypesOption = classFile.interfaceTypes.map(project.classFile(_))
-        val hasUnknownSuperClass = (superclassFileOption.isEmpty && (superclassType ne ObjectType.Object))
-        if (hasUnknownSuperClass || interfaceTypesOption.exists(_ == None)) {
+        val interfaceTypesOption = classFile.interfaceTypes.map(project.classFile)
+        val hasUnknownSuperClass = superclassFileOption.isEmpty && (superclassType ne ObjectType.Object)
+        if (hasUnknownSuperClass || interfaceTypesOption.exists(_.isEmpty)) {
             // The project is not complete, hence, we have to use the fallback.
             if (debug)
                 OPALLogger.debug(
@@ -222,7 +208,7 @@ class EscapeAnalysis(val debug: Boolean) {
 
         // Given that we have Java 8, we may have a default method that leaks
         // the self reference.
-        val superClassFiles =
+        val superClassFiles: Seq[ClassFile] =
             if (superclassType ne ObjectType.Object)
                 superclassFileOption.get +: interfaceTypesOption.map(_.get)
             else
@@ -234,36 +220,52 @@ class EscapeAnalysis(val debug: Boolean) {
                     "analysis progress",
                     s"${classFile.thisType.toJava} waiting on leakage information about: ${superClassFiles.map(_.thisType.toJava).mkString(", ")}"
                 )
-            store.allHaveProperty(
-                /*depender*/ classFile, SelfReferenceLeakage,
-                /*dependees*/ superClassFiles, DoesNotLeakSelfReference
-            ) { haveProperty ⇒
-                if (haveProperty) {
-                    determineSelfReferenceLeakageContinuation(classFile, immediateResult = false)
-                } else {
+            var dependees: List[EPK[ClassFile, SelfReferenceLeakage]] = Nil
+
+            store(superClassFiles, SelfReferenceLeakage).foreach {
+                case EP(e, LeaksSelfReference) ⇒
                     if (debug)
                         OPALLogger.debug(
                             "analysis result",
-                            s"${classFile.thisType.toJava} leaks its self reference [a supertype already leaks the self reference]"
+                            s"${classFile.thisType.toJava} leaks its self reference via a supertype"
                         )
-                    Result(classFile, LeaksSelfReference);
-                }
+                    return ImmediateResult(classFile, LeaksSelfReference);
+                case epk: EPK[_, _]                  ⇒ dependees ::= epk
+                case EP(e, DoesNotLeakSelfReference) ⇒ // OK!
             }
+
+            if (dependees.isEmpty) {
+                determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
+            } else {
+                val thisEPK = EPK(classFile, SelfReferenceLeakage)
+                def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                    p match {
+                        case LeaksSelfReference ⇒
+                            Result(e, LeaksSelfReference)
+                        case DoesNotLeakSelfReference ⇒
+                            dependees = dependees.filter(epk ⇒ epk.e ne e)
+                            if (dependees.isEmpty)
+                                determineSelfReferenceLeakageContinuation(classFile, immediateResult = false)
+                            else
+                                IntermediateResult(thisEPK, dependees, c)
+                    }
+                }
+                IntermediateResult(thisEPK, dependees, c)
+            }
+
         } else {
             determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
         }
     }
 }
 
-object EscapeAnalysis {
+object SelfReferenceLeakageAnalysis {
 
     def analyze(implicit project: SomeProject): Unit = {
-        implicit val store = project.get(PropertyStoreKey)
-        val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.analyses.escape.debug")
-        val analysis = new EscapeAnalysis(debug.getOrElse(false))
-        store.scheduleForCollected { case cf: ClassFile ⇒ cf }(
-            analysis.determineSelfReferenceLeakage
-        )
+        implicit val ps = project.get(PropertyStoreKey)
+        val debug = project.config.as[Option[Boolean]]("org.opalj.fcpf.analyses.selfreferenceleakage.debug")
+        val analysis = new SelfReferenceLeakageAnalysis(debug.getOrElse(false))
+        ps.scheduleForEntities(project.allProjectClassFiles)(analysis.determineSelfReferenceLeakage)
     }
 
 }

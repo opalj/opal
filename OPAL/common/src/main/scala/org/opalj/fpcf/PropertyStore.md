@@ -1,7 +1,7 @@
 # Concepts supported by the PropertyStore
 
 The property store is responsible for concurrently executing a set of computations that derive  properties of different kinds for some entities.
-Properties computed for entitties conceptually have to have an underlying lattice which puts all properties in a partial order. Furthermore, properties can be final or refineable. Additionally, it is possible to state that - though the property is conceptually refineable – is actually final in the context of the running analysis. I.e., an analysis depending on a specific property may be informed that the result (whose extension has not changed) has become final.
+Properties computed for entities conceptually have to have an underlying lattice which puts all properties in a partial order. Furthermore, properties can be final or refineable. Additionally, it is possible to state that - though the property is conceptually refineable – is actually final in the context of the running analysis. I.e., an analysis depending on a specific property may be informed that the result (whose extension has not changed) has become final.
 
 In case that we have entities for which no analyses is scheduled, it is possible to let the store automatically fill in default values (fallback).
 
@@ -32,7 +32,7 @@ The property store has the guarantee that it will get a new computation result w
     - support debugging
         - support visualization
         - support querying
-    - pool/bulk notifications, i.e., wait as long as possible befor rescheduling the computation for a specific property
+    - pool/bulk notifications, i.e., wait as long as possible before rescheduling the computation for a specific property
     - set the value for a specific cell
 )
 

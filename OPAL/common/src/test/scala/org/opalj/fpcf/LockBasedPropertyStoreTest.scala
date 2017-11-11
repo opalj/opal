@@ -47,7 +47,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
+class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     // The following import is REQUIRED to override the type alias "type (scala.)String = java.lang.String"!
     // otherwise the type derived by the typeTag used as the context object is not
@@ -67,11 +67,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         "aabbcbbaa",
         "aaaffffffaaa", "aaaffffffffffffffffaaa"
     )
-    var psStrings: PropertyStore = initPSStrings()
-    def initPSStrings(): PropertyStore = {
+    var psStrings: LockBasedPropertyStore = initPSStrings()
+    def initPSStrings(): LockBasedPropertyStore = {
         val contextObject = "StringEntities"
         implicit val logContext = GlobalLogContext
-        val ps = PropertyStore(stringEntities, () ⇒ false, context = contextObject)
+        val ps = LockBasedPropertyStore(stringEntities, () ⇒ false, context = contextObject)
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -81,12 +81,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
         val rawEntities = stringEntities ++ List("d", "e", "f", "g")
         rawEntities ++ rawEntities.toSet.subsets
     }
-    var psStringsAndSetsOfStrings: PropertyStore = initPSStringsAndSetsOfStrings()
-    def initPSStringsAndSetsOfStrings(): PropertyStore = {
+    var psStringsAndSetsOfStrings: LockBasedPropertyStore = initPSStringsAndSetsOfStrings()
+    def initPSStringsAndSetsOfStrings(): LockBasedPropertyStore = {
         val contextObject = "StringAndSetOfStringsEntities"
         implicit val logContext = GlobalLogContext
 
-        val ps = PropertyStore(stringsAndSetsOfStrings, () ⇒ false, context = contextObject)
+        val ps = LockBasedPropertyStore(stringsAndSetsOfStrings, () ⇒ false, context = contextObject)
         assert(ps.context[String] === contextObject)
         ps
     }
@@ -226,9 +226,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     nodeE.targets += nodeR //                e -> r
     nodeR.targets += nodeB //       ↖︎-----------↵︎
     val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
-    var psNodes: PropertyStore = initPSNodes
-    def initPSNodes(): PropertyStore = {
-        psNodes = PropertyStore(nodeEntities, () ⇒ false)(GlobalLogContext)
+    var psNodes: LockBasedPropertyStore = initPSNodes
+    def initPSNodes(): LockBasedPropertyStore = {
+        psNodes = LockBasedPropertyStore(nodeEntities, () ⇒ false)(GlobalLogContext)
         psNodes
     }
 
@@ -275,9 +275,9 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
     nodeRRoot.targets += nodeLRRoot
     nodeRRoot.targets += nodeRRRoot
     val treeEntities = List[Node](nodeRoot, nodeLRoot, nodeLLRoot, nodeRRoot, nodeLRRoot, nodeRRRoot)
-    var treeNodes: PropertyStore = initTreeNodes
-    def initTreeNodes(): PropertyStore = {
-        treeNodes = PropertyStore(treeEntities, () ⇒ false)(GlobalLogContext)
+    var treeNodes: LockBasedPropertyStore = initTreeNodes
+    def initTreeNodes(): LockBasedPropertyStore = {
+        treeNodes = LockBasedPropertyStore(treeEntities, () ⇒ false)(GlobalLogContext)
         treeNodes
     }
 
@@ -360,7 +360,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
         val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
         @volatile var doInterrupt = false
-        val ps = PropertyStore(entities, () ⇒ doInterrupt)(GlobalLogContext)
+        val ps = LockBasedPropertyStore(entities, () ⇒ doInterrupt)(GlobalLogContext)
         ps schedule { e: Entity ⇒
             triggeredComputations.incrementAndGet()
             Thread.sleep(50)
@@ -702,7 +702,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     prevNode.targets += firstNode
 
                     // 2. we create the store
-                    val store = PropertyStore(allNodes, () ⇒ false)(GlobalLogContext)
+                    val store = LockBasedPropertyStore(allNodes, () ⇒ false)(GlobalLogContext)
 
                     def c(node: Node) =
                         new OnUpdateContinuation { c ⇒
@@ -873,7 +873,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                                 // This is strictly necessary to ensure termination because the
                                 // property store uses this information to decide whether to immediately
                                 // continue the computation or not.
-                                val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                                val dependeePs = ps[Node, ReachableNodes](remainingDependees, ReachableNodesKey)
                                 val dependeesReachableNodes =
                                     dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
                                         if (dependee.hasProperty)
@@ -901,7 +901,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                         }
 
                         // initial computation
-                        val dependeePs = ps(remainingDependees, ReachableNodesKey)
+                        val dependeePs = ps[Node, ReachableNodes](remainingDependees, ReachableNodesKey)
                         val reachableNodes =
                             dependeePs.foldLeft(remainingDependees.clone) { (reachableNodes, dependee) ⇒
                                 if (dependee.hasProperty)
@@ -961,7 +961,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     stringLengthTriggered = true
                     ImmediateResult(e, StringLength(e.size))
                 }
-                ps scheduleLazyComputation (StringLengthKey, stringLengthPC)
+                ps scheduleLazyPropertyComputation (StringLengthKey, stringLengthPC)
 
                 if (stringLengthTriggered) fail("computation is already triggered")
                 ps.waitOnPropertyComputationCompletion(true)
@@ -976,13 +976,13 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     stringLengthTriggered = true
                     ImmediateResult(e, StringLength(e.size))
                 }
-                ps scheduleLazyComputation (StringLengthKey, stringLengthPC)
+                ps scheduleLazyPropertyComputation (StringLengthKey, stringLengthPC)
 
                 val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
                     val s = e.toString
                     ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
                 }
-                ps scheduleLazyComputation (PalindromeKey, palindromePC)
+                ps scheduleLazyPropertyComputation (PalindromeKey, palindromePC)
 
                 stringLengthTriggered should be(false)
                 ps.waitOnPropertyComputationCompletion(true)
@@ -1022,7 +1022,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     val s = e.toString
                     ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
                 }
-                ps scheduleLazyComputation (PalindromeKey, palindromePC)
+                ps scheduleLazyPropertyComputation (PalindromeKey, palindromePC)
 
                 // triggers the computation of "PalindromeProperty
                 val pcr =
@@ -1048,7 +1048,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     val s = e.toString
                     ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
                 }
-                ps scheduleLazyComputation (PalindromeKey, palindromePC)
+                ps scheduleLazyPropertyComputation (PalindromeKey, palindromePC)
 
                 // triggers the computation of "PalindromeProperty
                 val pcr = ps.require("aaa", SuperPalindromeKey, "a", PalindromeKey) { (e, p) ⇒

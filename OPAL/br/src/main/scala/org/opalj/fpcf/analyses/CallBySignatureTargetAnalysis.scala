@@ -57,6 +57,16 @@ import org.opalj.fpcf.properties.InheritableByNewTypes
  */
 class CallBySignatureTargetAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
+    private def propertyComputation(
+
+        projectIndex:      ProjectIndex,
+        isApplicationMode: Boolean
+    )(
+        e: Entity
+    ): PropertyComputationResult = {
+        ImmediateResult(e, determineCallBySignatureTargets(projectIndex, isApplicationMode)(e))
+    }
+
     def determineCallBySignatureTargets(
         projectIndex:      ProjectIndex,
         isApplicationMode: Boolean
@@ -179,9 +189,9 @@ object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
         val analysis = new CallBySignatureTargetAnalysis(project)
         val projectIndex = project.get(ProjectIndexKey)
         val isApplicationMode = AnalysisModes.isApplicationLike(project.analysisMode)
-        propertyStore scheduleOnDemandComputation (
+        propertyStore.scheduleLazyPropertyComputation(
             CallBySignature.Key,
-            analysis.determineCallBySignatureTargets(projectIndex, isApplicationMode)
+            analysis.propertyComputation(projectIndex, isApplicationMode)
         )
         analysis
     }

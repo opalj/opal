@@ -30,18 +30,14 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import scala.collection.mutable.ListBuffer
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.ClassLocal
 import org.opalj.fpcf.properties.Global
 import org.opalj.fpcf.properties.PackageLocal
 import org.opalj.fpcf.properties.ProjectAccessibility
-import org.opalj.fpcf.properties.NotClientCallable
 import org.opalj.fpcf.properties.ClientCallable
 
 /**
@@ -123,14 +119,18 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         if (isPublicClass && (isPublicMethod || (!isFinalClass && isProtectedMethod)))
             return ImmediateResult(method, Global);
 
+        /* WE ARE REIMPLEMENTING THIS ANALYSIS AT THE MOMENT!
         propertyStore.require(method, ProjectAccessibility.Key, method, ClientCallable.Key)(
             (dependeeE: Entity, dependeeP: Property) ⇒ {
                 if (dependeeP == NotClientCallable)
                     Result(method, PackageLocal)
                 else
-                    Result(method, Global)
+                */
+        Result(method, Global)
+        /*
             }
         )
+        */
     }
 }
 

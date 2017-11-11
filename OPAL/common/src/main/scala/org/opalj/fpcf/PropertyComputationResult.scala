@@ -135,8 +135,7 @@ object NoResult extends PropertyComputationResult {
  *      before (using one of the `apply` functions of the property store.)
  */
 case class IntermediateResult(
-        e:         Entity,
-        p:         Property,
+        eOptP:     SomeEOptionP,
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
@@ -157,12 +156,12 @@ case class IntermediateResult(
 
     private[fpcf] final def id = IntermediateResult.id
 
-    override def hashCode: Int = (e.hashCode * 13 + p.hashCode) * 17 + dependees.hashCode
+    override def hashCode: Int = eOptP.hashCode * 17 + dependees.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(otherE, otherP, otherDependeeEs, _) ⇒
-                this.e == otherE && this.p == otherP && {
+            case IntermediateResult(otherEOptP, otherDependeeEs, _) ⇒
+                this.eOptP == otherEOptP && {
                     val dependees = this.dependees
                     dependees.forall(thisDependee ⇒ otherDependeeEs.exists(_ == thisDependee)) &&
                         dependees.size == otherDependeeEs.size
@@ -172,10 +171,22 @@ case class IntermediateResult(
     }
 
     override def toString: String = {
-        s"IntermediateResult($e,$p,dependees=${dependees.mkString("{", ",", "}")})"
+        s"IntermediateResult($eOptP,dependees=${dependees.mkString("{", ",", "}")})"
     }
 }
-private[fpcf] object IntermediateResult { private[fpcf] final val id = 6 }
+private[fpcf] object IntermediateResult {
+    private[fpcf] final val id = 6
+
+    def apply(
+        e:         Entity,
+        p:         Property,
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): IntermediateResult = {
+        new IntermediateResult(EP(e, p), dependees, c)
+    }
+
+}
 
 /**
  * Encapsulates some result and also some computations that should be scheduled after the results
