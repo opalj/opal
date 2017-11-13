@@ -71,10 +71,10 @@ object VirtualForwardingMethodsKey
                 // all instance methods present in the current class file, including methods derived
                 // from any supertype that are not overriden by this type.
                 mc ← p.instanceMethods(cf.thisType)
-                m = mc.method
-                md = m.descriptor
-                vm = VirtualForwardingMethod(cf.thisType, m.name, md, m)
             } {
+                val m = mc.method
+                val md = m.descriptor
+                val vm = VirtualForwardingMethod(cf.thisType, m.name, md, m)
                 sites.add(vm)
             }
         }

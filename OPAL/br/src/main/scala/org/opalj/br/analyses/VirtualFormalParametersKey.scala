@@ -30,10 +30,9 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.JavaConverters._
+import scala.collection.mutable.OpenHashMap
 
 import org.opalj.collection.immutable.ConstArray
-import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -45,7 +44,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
  *             [[VirtualFormalParameter]] objects for the corresponding method parameters.
  * @author Florian Kuebler
  */
-class VirtualFormalParameters private[analyses] (val data: Map[VirtualMethod, ConstArray[VirtualFormalParameter]]) {
+class VirtualFormalParameters private[analyses] (
+        val data: scala.collection.Map[VirtualMethod, ConstArray[VirtualFormalParameter]]
+) {
 
     /**
      * Returns the virtual formal parameters array for the given method. If the method is not known,
@@ -54,23 +55,25 @@ class VirtualFormalParameters private[analyses] (val data: Map[VirtualMethod, Co
      */
     def apply(m: VirtualMethod): ConstArray[VirtualFormalParameter] = data.getOrElse(m, null)
 
-    def virtualFormalParameters: Iterable[VirtualFormalParameter] = data.values.flatten.filter(_ ne null)
+    def virtualFormalParameters: Iterable[VirtualFormalParameter] = {
+        // TOOD Why should it ever be null?
+        data.values.flatten.filter(_ ne null)
+    }
 }
 
 /**
  * The ''key'' object to get information about all virtual formal parameters.
  *
- * @note See [[org.opalj.br.analyses.VirtualFormalParameter]] and [[VirtualFormalParameters]] for further details.
+ * @note    See [[org.opalj.br.analyses.VirtualFormalParameter]] and [[VirtualFormalParameters]]
+ *          for further details.
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in
  *          `this` object.
- * @author Florian Kuebler
+ * @author  Florian Kuebler
  */
 object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalParameters, Nothing] {
 
     /**
-     * The analysis has no special prerequisites.
-     *
-     * @return `Nil`.
+     * The key uses the `VirtualForwardingMethodsKey`.
      */
     override protected def requirements: ProjectInformationKeys = {
         List(VirtualForwardingMethodsKey)
@@ -84,13 +87,13 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      */
     override protected def compute(p: SomeProject): VirtualFormalParameters = {
 
-        val sites = new ConcurrentLinkedQueue[(VirtualMethod, ConstArray[VirtualFormalParameter])]
+        val sites = new OpenHashMap[VirtualMethod, ConstArray[VirtualFormalParameter]]
 
         for {
-            vm ← p.get(VirtualForwardingMethodsKey).par
-            md = vm.descriptor
-            parametersCount = md.parametersCount
+            vm ← p.get(VirtualForwardingMethodsKey)
         } {
+            val md = vm.descriptor
+            val parametersCount = md.parametersCount
             val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
             assert(!vm.target.isStatic)
             formalParameters(0) = new VirtualFormalParameter(vm, -1)
@@ -100,10 +103,10 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
                 formalParameters(p) = new VirtualFormalParameter(vm, -p - 1)
                 p += 1
             }
-            sites.add(vm → ConstArray(formalParameters))
+            sites += (vm → ConstArray(formalParameters))
         }
 
-        new VirtualFormalParameters(sites.asScala.toMap)
+        new VirtualFormalParameters(sites)
     }
 
     //
