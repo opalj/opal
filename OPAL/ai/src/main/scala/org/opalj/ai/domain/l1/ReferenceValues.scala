@@ -41,7 +41,6 @@ import java.util.IdentityHashMap
 import org.opalj.collection.UID
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IdentityPair
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
@@ -131,11 +130,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * Returns the next unused time stamp.
      */
     def nextRefId(): RefId = { unusedRefId += 1; unusedRefId }
-
-    /**
-     * Extractor for reference ids.
-     */
-    object RefId { def unapply(value: ReferenceValue): Some[RefId] = Some(value.refId) }
 
     /**
      * Creates an update object that characterizes a reference id update.
@@ -404,8 +398,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         /**
-         * Creates a new instance of this object where the refrence id is set to the
-         * given reference id `t`. Optionally, it is also possible to update the `origin`
+         * Creates a new instance of this object where the reference id is set to the
+         * given reference id `refId`. Optionally, it is also possible to update the `origin`
          * and `isNull` information.
          *
          * @example A typical usage:
@@ -695,7 +689,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         this: DomainArrayValue ⇒
 
         assert(isNull.isNoOrUnknown)
-        assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
+        assert(isPrecise || !classHierarchy.isKnownToBeFinal(theUpperTypeBound))
 
         override def updateRefId(
             refId:  RefId,
@@ -1698,8 +1692,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
-            assert(upperTypeBound.isSingletonSet, "no array type: "+this.upperTypeBound)
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
+            assert(upperTypeBound.isSingletonSet, s"$upperTypeBound is not an array type")
+            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
@@ -1720,7 +1714,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 return justThrows(VMNullPointerException(pc));
 
             assert(upperTypeBound.isSingletonSet)
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is no array type")
+            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
@@ -1910,14 +1904,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ObjectValue(pc, Unknown, upperTypeBound, nextRefId())
     }
 
-    override def InitializedArrayValue(
-        pc:        PC,
-        arrayType: ArrayType,
-        counts:    Chain[Int]
-    ): DomainArrayValue = {
-        ArrayValue(pc, No, true, arrayType, nextRefId())
-    }
-
     override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, No, true, arrayType, nextRefId())
     }
@@ -1926,7 +1912,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ArrayValue(pc, No, true, arrayType, nextRefId())
     }
 
-    override protected[domain] def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue = {
+    override def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue = {
         if (arrayType.elementType.isBaseType)
             ArrayValue(pc, Unknown, true, arrayType, nextRefId())
         else

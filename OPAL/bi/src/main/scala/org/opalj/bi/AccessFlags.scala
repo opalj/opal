@@ -36,6 +36,14 @@ package bi
  */
 object AccessFlags {
 
+    final val ACC_PUBLIC_STATIC /*:Int*/ = ACC_PUBLIC.mask | ACC_STATIC.mask
+
+    final val ACC_NATIVE_VARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
+
+    final val ACC_SYNTHETIC_PUBLIC_SUPER = ACC_SYNTHETIC.mask | ACC_PUBLIC.mask | ACC_SUPER.mask
+
+    final val ACC_SYNTHETIC_STATIC_PUBLIC = ACC_SYNTHETIC.mask | ACC_STATIC.mask | ACC_PUBLIC.mask
+
     /**
      * Returns the names of the access flags set in a respective vector.
      */

@@ -30,18 +30,18 @@ package org.opalj
 package br
 
 import scala.math.Ordered
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_VARARGS
 import org.opalj.bi.ACC_SYNCHRONIZED
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlags
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -480,8 +480,8 @@ final class Method private[br] (
 object Method {
 
     @inline def isNativeAndVarargs(accessFlags: Int) = {
-        import AccessFlagsMatcher.ACC_NATIVEAndVARARGS
-        (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
+        import AccessFlags.ACC_NATIVE_VARARGS
+        (accessFlags & ACC_NATIVE_VARARGS) == ACC_NATIVE_VARARGS
     }
 
     /**

@@ -52,12 +52,12 @@ import org.opalj.br._
 import org.opalj.br.instructions._
 
 /**
- * A highly-configurable framework for the (abstract) interpretation of Java bytecode
- * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
+ * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
+ * The framework is built upon OPAL's standard representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * until an instruction is hit where multiple
- * control flows potentially join. This instruction is then only analyzed if no
+ * until an instruction is hit where multiple control flows potentially join.
+ * This instruction is then only analyzed if no
  * further instruction can be evaluated where no paths join ([[org.opalj.br.Code.cfPCs]]).
  * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
@@ -70,6 +70,7 @@ import org.opalj.br.instructions._
  * customized domain can be used, e.g., to build a call graph or to
  * do other intra-/interprocedural analyses while the code is analyzed.
  * Additionally, it is possible to analyze the result of an abstract interpretation.
+ * The latter is particularly facilitated by the 3-address code.
  *
  * ==Thread Safety==
  * This class is thread-safe. However, to make it possible to use one abstract
@@ -86,7 +87,7 @@ import org.opalj.br.instructions._
  * Subclasses '''are not required to be thread-safe and may have more complex state.'''
  *
  * @note
- *         OPAL does not make assumptions about the number of domain objects that
+ *         OPAL does not make assumptions about the number of domains that
  *         are used. However, if a single domain object is used by multiple instances
  *         of this class and the abstract interpretations are executed concurrently, then
  *         the domain has to be thread-safe.
@@ -113,7 +114,7 @@ import org.opalj.br.instructions._
  *         about 4,5%. Additionally, it also reduces the effort spent on "expensive" joins which
  *         leads to an overall(!) improvement for the l1.DefaultDomain of ~8,5%.
  *
- *         ==Dead Variables Elimination based on Definitive Paths==
+ *         TODO ==Dead Variables Elimination based on Definitive Paths==
  *         (STILL IN DESIGN!!!!)
  *         ===Idea===
  *         Given an instruction i which may result in a fork of the control-flow (e.g.,
@@ -159,10 +160,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      * instruction or after the ai has completely evaluated an instruction, updated the
      * memory and stated all constraints.
      *
-     * @note When the abstract interpreter is currently waiting on the result of the
-     *    interpretation of a called method it may take some time before the
-     *    interpretation of the current method (this abstract interpreter) is actually
-     *    aborted.
+     * @note   When the abstract interpreter is currently waiting on the result of the
+     *         interpretation of a called method it may take some time before the
+     *         interpretation of the current method (this abstract interpreter) is actually
+     *         aborted.
      *
      * This method '''needs to be overridden in subclasses to identify situations
      * in which a running abstract interpretation should be interrupted'''.
@@ -186,11 +187,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     /**
      *  Performs an abstract interpretation of the given method using the given domain.
      *
-     *  @param method A non-native, non-abstract method of the given class file that
-     *      will be analyzed. All parameters are automatically initialized with sensible
-     *      default values.
-     *  @param theDomain The domain that will be used to perform computations related
-     *      to values.
+     *  @param  method The method - which has to have a body - that will be analyzed.
+     *          All parameters are automatically initialized with sensible default values.
+     *  @param  theDomain The domain that will be used to perform computations related
+     *          to values.
      */
     def apply(method: Method, theDomain: D): AIResult { val domain: theDomain.type } = {
         perform(method, theDomain)(None)
@@ -269,8 +269,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
             if (!method.isStatic) {
                 val thisType = method.classFile.thisType
-                val thisValue =
-                    domain.NonNullObjectValue(origin(localVariableIndex), thisType)
+                val thisValue = domain.NonNullObjectValue(origin(localVariableIndex), thisType)
                 locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
