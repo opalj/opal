@@ -35,7 +35,6 @@ import scala.collection.JavaConverters._
 import org.opalj.collection.immutable.ConstArray
 import java.util.concurrent.ConcurrentLinkedQueue
 
-
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
  * The set also contains virtual formal parameters of library methods.
@@ -73,7 +72,9 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override protected def requirements: ProjectInformationKeys = {
+        List(VirtualForwardingMethodsKey)
+    }
 
     /**
      * Collects all virtual formal parameters.
