@@ -41,7 +41,6 @@ import org.opalj.fpcf.properties.ConditionallyPure
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.TypeImmutability
-
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -80,19 +79,11 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.EffectivelyFinalField
-import org.opalj.fpcf.properties.Impure
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.MaybePure
-import org.opalj.fpcf.properties.ConditionallyPure
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.TypeImmutability
 
 /**
- * Very simple and fast analysis of the purity of methods as defined by the
- * [[org.opalj.fpcf.properties.Purity]] property.
+ * Very simple, fast, but also imprecise analysis of the purity of methods. See the
+ * [[org.opalj.fpcf.properties.Purity]] property for details regarding the precise
+ * semantics of `(Im)Pure`.
  *
  * @author Michael Eichberg
  */
@@ -119,7 +110,7 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         val methodName = method.name
         val body = method.body.get
         val instructions = body.instructions
-        val maxPC = instructions.size
+        val maxPC = instructions.length
 
         var dependees = initialDependees
 
@@ -207,7 +198,6 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    // improve: If the data-structure was created locally... then we don't care.
                     return ImmediateResult(method, Impure);
 
                 case _ ⇒

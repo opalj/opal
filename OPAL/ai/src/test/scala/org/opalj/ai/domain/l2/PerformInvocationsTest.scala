@@ -215,16 +215,12 @@ object PerformInvocationsTestFixture {
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding
-        with li.DefaultPreciseIntegerValues
-        with li.DefaultPreciseLongValues
+        with l1.DefaultIntegerRangeValues
+        with l1.DefaultLongSetValues
         with l1.ConcretePrimitiveValuesConversions
         with l1.LongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
-        with TheMethod {
-
-        override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
-
-    }
+        with TheMethod
 
     abstract class InvocationDomain(
             val project: Project[java.net.URL],

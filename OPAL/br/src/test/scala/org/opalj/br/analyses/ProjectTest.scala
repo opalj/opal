@@ -36,8 +36,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
-
-import reader.Java8Framework.ClassFiles
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests the support for "project" related functionality.

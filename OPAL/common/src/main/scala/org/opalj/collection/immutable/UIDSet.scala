@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.opalj
 package collection
 package immutable
 
+import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
@@ -121,6 +121,7 @@ object UIDSet0 extends UIDSet[UID] {
     override def tail: UIDSet[UID] = throw new NoSuchElementException
     override def contains(e: UID): Boolean = false
     override def filter(p: UID ⇒ Boolean): UIDSet[UID] = this
+    override def filterNot(p: UID ⇒ Boolean): UIDSet[UID] = this
     override def +(e: UID): UIDSet[UID] = new UIDSet1(e)
     override def -(e: UID): UIDSet[UID] = this
     override def foldLeft[B](z: B)(op: (B, UID) ⇒ B): B = z
@@ -158,6 +159,7 @@ case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def tail: UIDSet[T] = empty
     override def iterator: Iterator[T] = Iterator.single(value)
     override def filter(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) this else empty
+    override def filterNot(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) empty else this
 
     override def +(e: T): UIDSet[T] = if (value.id == e.id) this else new UIDSet2(value, e)
     override def -(e: T): UIDSet[T] = if (value.id == e.id) empty else this
@@ -208,11 +210,26 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def contains(e: T): Boolean = { val eId = e.id; value1.id == eId || value2.id == eId }
     override def filter(p: T ⇒ Boolean): UIDSet[T] = {
         if (p(value1)) {
-            if (p(value2)) this else new UIDSet1(value1)
+            if (p(value2))
+                this
+            else
+                new UIDSet1(value1)
         } else if (p(value2)) {
             new UIDSet1(value2)
         } else {
             empty
+        }
+    }
+    override def filterNot(p: T ⇒ Boolean): UIDSet[T] = {
+        if (p(value1)) {
+            if (p(value2))
+                empty
+            else
+                new UIDSet1(value2)
+        } else if (p(value2)) {
+            new UIDSet1(value1)
+        } else {
+            this
         }
     }
     override def foldLeft[B](z: B)(op: (B, T) ⇒ B): B = op(op(z, value1), value2)
@@ -270,7 +287,7 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
 
 sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { self ⇒
     protected def value: T
-    // the following two methods return are either a UIDTrieSetNode, UIDTrieSetLeaf or null:
+    // the following two methods return either a UIDTrieSetNode, a UIDTrieSetLeaf or null:
     protected def left: UIDTrieSetNodeLike[T]
     protected def right: UIDTrieSetNodeLike[T]
 
@@ -305,9 +322,9 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
 
     def iterator: Iterator[T] = {
 
-        new Iterator[T] {
+        new AbstractIterator[T] {
 
-            private val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
+            private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
 
             def hasNext: Boolean = nextNodes.nonEmpty
 
@@ -447,6 +464,8 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
             selectHead(newLeft, newRight)
         }
     }
+
+    override def filterNot(p: T ⇒ Boolean): UIDSet[T] = filter((u: T) ⇒ !p(u))
 
     //
     // METHODS DEFINED BY UIDTrieSet

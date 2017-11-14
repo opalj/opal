@@ -1,5 +1,5 @@
 /* PARAMETERS:
-   param1: useSites={1,6} (origin=-2)
+   param1: useSites={6,1} (origin=-2)
 */
 0:/*pc=0:*/ lv0 = 1
 1:/*pc=3:*/ if({param1} != 0) goto 4
@@ -13,5 +13,5 @@
 
 // 3, 4 →
 5:/*pc=14:*/ /*expression value is ignored:*/new HashMap
-6:/*pc=19:*/ /*expression value is ignored:*/{param1} / {lv2, lv4}
+6:/*pc=19:*/ /*expression value is ignored:*/{param1} / {lv4, lv2}
 // ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception ⇒ abnormal return>

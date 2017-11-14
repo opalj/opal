@@ -37,9 +37,8 @@ import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import scala.collection.BitSet
-
 import org.opalj.io.writeAndOpen
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
 import org.opalj.br.instructions._
 
@@ -184,7 +183,7 @@ object XHTML {
         resultHeader: Option[String],
         domain:       Domain
     )(
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
@@ -213,7 +212,7 @@ object XHTML {
         code:   Code,
         domain: Domain
     )(
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     ): Node = {
@@ -293,7 +292,7 @@ object XHTML {
         domain:       Domain,
         operandsOnly: Boolean
     )(
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         operandsArray: TheOperandsArray[domain.Operands],
         localsArray:   TheLocalsArray[domain.Locals]
     )(
@@ -306,7 +305,7 @@ object XHTML {
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
-            if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
+            if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
                 pc, code.lineNumber(pc), instruction, cfJoins.contains(pc),
                 belongsToSubroutine(pc),

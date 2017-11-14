@@ -31,11 +31,6 @@ package ai
 package domain
 package tracing
 
-import org.opalj.ai.Domain
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.Update
-import org.opalj.ai.domain.RecordReturnFromMethodInstructions
-import org.opalj.ai.domain.TheCode
 import org.opalj.br.instructions.ReturnInstruction
 
 /**
@@ -53,9 +48,7 @@ trait SimpleBooleanPropertyTracing
      */
     def propertyName: String
 
-    class BooleanProperty private[SimpleBooleanPropertyTracing] (
-            val state: Boolean
-    )
+    class BooleanProperty private[SimpleBooleanPropertyTracing] (val state: Boolean)
         extends Property {
 
         def join(otherProperty: DomainProperty): Update[DomainProperty] =
@@ -75,7 +68,7 @@ trait SimpleBooleanPropertyTracing
 
     final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
 
-    def initialPropertyValue: DomainProperty = new BooleanProperty(false)
+    def initialPropertyValue(): DomainProperty = new BooleanProperty(false)
 
     def hasPropertyOnExit: Boolean = {
         allReturnFromMethodInstructions forall { pc ⇒ getProperty(pc).state }

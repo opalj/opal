@@ -36,7 +36,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br._
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
@@ -104,7 +104,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(IntArraySet(7)) // <= void return
+            allReturnVoidInstructions should be(IntTrieSet(7)) // <= void return
         }
     }
 
@@ -124,14 +124,14 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
             allThrownExceptions should be(Map.empty)
-            allReturnVoidInstructions should be(IntArraySet(39)) // <= void return
+            allReturnVoidInstructions should be(IntTrieSet(39)) // <= void return
         }
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
-            allReturnVoidInstructions should be(IntArraySet(38)) // <= void return
+            allReturnVoidInstructions should be(IntTrieSet(38)) // <= void return
             allThrownExceptions should be(Map())
             // Due to the simplicity of the domain (the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception

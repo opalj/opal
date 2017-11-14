@@ -31,6 +31,7 @@ package org.opalj
 import scala.collection.mutable
 import scala.collection.mutable.ArrayStack
 
+import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -216,7 +217,7 @@ package object graphs {
         es: N ⇒ Traversable[N]
     ): List[Iterable[N]] = {
 
-        case class NInfo(val dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
+        case class NInfo(dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
             override def toString: String = {
                 val cSCCId = this.cSCCId match {
                     case Undetermined ⇒ "Undetermined"
@@ -260,7 +261,8 @@ package object graphs {
         cSCCId:    (N) ⇒ CSCCId
     ): List[Iterable[N]] = {
 
-        /* The following is not a strict requirement, more an expectation:
+        /* The following is not a strict requirement, more an expectation (however, (c)sccs
+         * not reachable from a node in ns will not be detected!
         assert(
             { val allNodes = ns.toSet; allNodes.forall { n ⇒ es(n).forall(allNodes.contains) } },
             "the graph references nodes which are not in the set of all nodes"
@@ -421,7 +423,7 @@ package object graphs {
     /**
      * Implementation of Tarjan's algorithm for finding strongly connected components. Compared
      * to the standard implementation using non-tail recursive calls, this one uses an explicit
-     * stack to make the implementation to scale to very large (degenerated) graphs. E.g.,
+     * stack to make the implementation scale to very large (degenerated) graphs. E.g.,
      * this implementation can handle graphs containing up to XXX nodes in a single cycle.
      *
      * @example
@@ -452,8 +454,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ Iterator[Int],
-        filterSingletons: Boolean             = false
+        es:               Int ⇒ IntIterator,
+        filterSingletons: Boolean           = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
@@ -560,7 +562,7 @@ package object graphs {
                 //              signal that the node was not yet processed.
 
                 val ws = IntArrayStack(n)
-                val wsSuccessors = ArrayStack[Iterator[Int]](null)
+                val wsSuccessors = ArrayStack[IntIterator](null)
                 // INVARIANT:
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of

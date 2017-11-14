@@ -68,7 +68,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         //    with DefaultStringValuesBinding
         with l1.DefaultClassValuesBinding
         with l1.DefaultArrayValuesBinding
-        with li.DefaultPreciseIntegerValues
+        with l1.DefaultIntegerRangeValues
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults
         with RecordLastReturnedValues
@@ -77,19 +77,19 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         with IgnoreSynchronization
         with ReflectiveInvoker {
 
-        override protected def maxUpdatesForIntegerValues = 25
-
         override def warnOnFailedReflectiveCalls: Boolean = false
 
         var lastObject: Object = _
 
         def lastValue(): Object = lastObject
 
+        val StringBuilderType = ObjectType("java/lang/StringBuilder")
+
         override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
-                case i: IntegerValue ⇒
-                    Some(new java.lang.Integer(i.value))
-                case r: ReferenceValue if (r.upperTypeBound.includes(ObjectType("java/lang/StringBuilder"))) ⇒
+                case i: IntegerRange if i.lowerBound == i.upperBound ⇒
+                    Some(new java.lang.Integer(i.lowerBound))
+                case r: ReferenceValue if r.upperTypeBound.includes(StringBuilderType) ⇒
                     Some(new java.lang.StringBuilder())
                 case _ ⇒
                     super.toJavaObject(pc, value)

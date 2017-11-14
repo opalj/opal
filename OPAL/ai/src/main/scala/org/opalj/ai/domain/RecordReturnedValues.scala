@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.BitSet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Code
 
 /**
@@ -84,7 +84,7 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
 
     abstract override def initProperties(
         code:          Code,
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         initialLocals: Locals
     ): Unit = {
         returnedValues = Map.empty

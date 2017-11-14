@@ -126,9 +126,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding
-        with li.DefaultPreciseIntegerValues {
+        with l1.DefaultIntegerRangeValues {
         domain: Configuration ⇒
-        override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
     abstract class SharedInvocationDomain(

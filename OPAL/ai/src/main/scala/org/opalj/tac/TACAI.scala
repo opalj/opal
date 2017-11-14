@@ -31,10 +31,9 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
-
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br
 import org.opalj.br._
@@ -185,13 +184,13 @@ object TACAI {
         // To get the target value the ai based vo has to be negated and we have to add -1.
         // E.g., if the ai-based vo is -1 then the index which needs to be used is -(-1)-1 ==> 0
         // which will contain (for -1 only) the value -1.
-        val normalizeParameterOrigins: IntArraySet ⇒ IntArraySet = {
+        val normalizeParameterOrigins: IntTrieSet ⇒ IntTrieSet = {
             if (!isStatic && simpleRemapping) {
                 // => no remapping is necessary
-                (aiVOs: IntArraySet) ⇒ aiVOs
+                (aiVOs: IntTrieSet) ⇒ aiVOs
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
-                (aiVOs: IntArraySet) ⇒
+                (aiVOs: IntTrieSet) ⇒
                     {
                         aiVOs.map { aiVO ⇒
                             if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
@@ -200,9 +199,9 @@ object TACAI {
             } else {
                 // => we create an array which contains the mapping information
                 val aiVOToTACVo: Array[Int] = normalizeParameterOriginsMap(descriptor, isStatic)
-                (aiVOs: IntArraySet) ⇒ {
+                (aiVOs: IntTrieSet) ⇒ {
                     if (aiVOs eq null) {
-                        IntArraySet.empty
+                        IntTrieSet.empty
                     } else {
                         aiVOs map { aiVO ⇒
                             if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
@@ -217,7 +216,7 @@ object TACAI {
 
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
-        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntArraySet /*DefSites*/ )] = Queue.empty
+        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntTrieSet /*DefSites*/ )] = Queue.empty
 
         def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -246,7 +245,7 @@ object TACAI {
 
         // The catch handler statements which were added to the code that do not take up
         // the slot of an empty load/store statement.
-        var addedHandlerStmts: IntArraySet = IntArraySet.empty
+        var addedHandlerStmts: IntTrieSet = IntTrieSet.empty
         val handlerPCs = (new IntArraySetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
 
         var pc: PC = 0
@@ -672,7 +671,7 @@ object TACAI {
                         else
                             addStmt(NonVirtualMethodCall(
                                 pc,
-                                declClass, isInterface, name, descriptor,
+                                declClass.asObjectType, isInterface, name, descriptor,
                                 receiver,
                                 params
                             ))
@@ -688,7 +687,7 @@ object TACAI {
                             else
                                 NonVirtualFunctionCall(
                                     pc,
-                                    declClass, isInterface, name, descriptor,
+                                    declClass.asObjectType, isInterface, name, descriptor,
                                     receiver,
                                     params
                                 )
@@ -883,7 +882,7 @@ object TACAI {
                 if (!method.isStatic) {
                     var usedBy = domain.usedBy(-1)
                     if (usedBy eq null) {
-                        usedBy = IntArraySet.empty
+                        usedBy = IntTrieSet.empty
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
@@ -895,7 +894,7 @@ object TACAI {
                     var usedBy = domain.usedBy(defOrigin)
                     // the usedBy for parameters never refer to parameters => have negative values!
                     if (usedBy eq null) {
-                        usedBy = IntArraySet.empty
+                        usedBy = IntTrieSet.empty
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }

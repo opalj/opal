@@ -90,7 +90,7 @@ object SimpleProjectStatistics extends DefaultOneStepAnalysis {
                     classFile ← project.allClassFiles
                     method ← classFile.methods
                     if method.body.isDefined
-                    size = method.body.get.programCounters.size
+                    size = method.body.get.instructionsCount
                     if size > max
                 } {
                     max = size

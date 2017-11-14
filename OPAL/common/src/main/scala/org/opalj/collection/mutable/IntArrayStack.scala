@@ -204,6 +204,21 @@ final class IntArrayStack private (
         }
     }
 
+    def intIterator: IntIterator = {
+        new IntIterator {
+            var currentIndex = stack.size0 - 1
+            def hasNext: Boolean = currentIndex >= 0
+
+            def next(): Int = {
+                val currentIndex = this.currentIndex
+                val r = stack.data(currentIndex)
+                this.currentIndex = currentIndex - 1
+                r
+            }
+
+        }
+    }
+
     override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
     override def toString: String = {

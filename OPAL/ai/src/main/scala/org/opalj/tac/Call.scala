@@ -34,8 +34,11 @@ import org.opalj.br.ReferenceType
 
 /**
  * Common supertrait of statements and expressions calling a method.
+ *
+ * @author Michael Eichberg
  */
 trait Call[+V <: Var[V]] {
+    /** The declaring class; can be an array type for all methods defined by `java.lang.Object`. */
     def declaringClass: ReferenceType
     def isInterface: Boolean
     def name: String

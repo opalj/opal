@@ -66,8 +66,10 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
-        val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
+        val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes"
+        val fixtureFiles = new File(sourceFolder)
         val fixtureClassFiles = ClassFiles(fixtureFiles)
+        if (fixtureClassFiles.isEmpty) fail(s"no class files at $fixtureFiles")
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
             val (cf, _) = cfSrc
@@ -138,14 +140,14 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
             val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
-            if (matcher.isRelevant(p, ats, annotation)) {
+            if (matcher.isRelevant(p, ats, e, annotation)) {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val properties = ps.properties(e)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
-                            fail(propertiesAsStrings.mkString("actual: ", ", ", "\nerror: "+error))
+                            fail(propertiesAsStrings.mkString("actual: ", ", ", "\nexpectation: "+error))
                         case None   ⇒ /* OK */
                         case result ⇒ fail("matcher returned unexpected result: "+result)
                     }

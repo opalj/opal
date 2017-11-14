@@ -38,6 +38,8 @@ import scala.collection.AbstractIterator
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
+import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -159,6 +161,8 @@ package object ai {
      * @see [[isVMLevelValue]], [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]]
      */
     type ValueOrigin = Int
+    type ValueOrigins = IntTrieSet
+    type ValueOriginsIterator = IntIterator
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin

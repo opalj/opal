@@ -31,7 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.Code
-import scala.collection.BitSet
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Tracks if a monitor(enter|exit) instruction was executed.
@@ -50,7 +50,7 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
 
     abstract override def initProperties(
         code:          Code,
-        cfJoins:       BitSet,
+        cfJoins:       IntTrieSet,
         initialLocals: Locals
     ): Unit = {
         super.initProperties(code, cfJoins, initialLocals)
