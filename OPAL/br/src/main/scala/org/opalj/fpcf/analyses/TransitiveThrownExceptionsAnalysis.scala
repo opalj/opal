@@ -134,11 +134,16 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         var dependees = Set.empty[EOptionP[Method, ThrownExceptions]]
         var dependeesSubClasses = Set.empty[EOptionP[Method, SubClassesThrownExceptions]]
 
+        val breakpointMethod = "baz"
+
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
          */
         def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
+            if (m.name.equals(breakpointMethod)) {
+                println("foo")
+            }
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
@@ -213,7 +218,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     }
 
                 case INVOKEVIRTUAL.opcode ⇒
-                    if (m.name.equals("superclassThrows")) {
+                    if (m.name.equals(breakpointMethod)) {
                         println("foo")
                     }
                     // TODO check subtypes as well, new property type for aggregated method calls
@@ -333,7 +338,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
             }
         }
 
-        if (m.name.equals("superclassThrows")) {
+        if (m.name.equals(breakpointMethod)) {
             println("foo")
         }
 
@@ -365,6 +370,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
             // concrete exceptions.
             var notYetComputed = subclassesResults.filter(_.is(ConditionallyClassOrSubClassesThrowExceptions))
             val subExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+            subExceptions ++= exceptions.concreteTypes
             subclassesResults
                 .filter(_.is(ClassOrSubClassesThrowExceptions))
                 .map(_.p.asInstanceOf[ClassOrSubClassesThrowExceptions].exceptions)
@@ -373,7 +379,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                 // We don't have all final results, add dependencies to then and wait for their
                 // result
                 def cSub(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-                    if (m.name.equals("superclassThrows")) {
+                    if (m.name.equals(breakpointMethod)) {
                         println("foo")
                     }
                     ut match {
@@ -427,7 +433,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         }
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-            if (m.name.equals("superclassThrows")) {
+            if (m.name.equals(breakpointMethod)) {
                 println("foo")
             }
             p match {

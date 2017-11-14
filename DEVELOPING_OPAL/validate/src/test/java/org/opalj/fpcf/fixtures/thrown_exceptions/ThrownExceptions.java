@@ -132,6 +132,7 @@ public class ThrownExceptions {
 
     private Foo foo = new Foo();
     private FooBar foobar = new FooBar();
+    private Foo fooBar = new FooBar();
 
     @DoesNotThrowException("no call or explicit throw instruction")
     public int noSubclasses() {
@@ -146,5 +147,10 @@ public class ThrownExceptions {
     @MayThrowException("will throw exception")
     public int superclassThrows() {
         return foo.qux();
+    }
+
+    @MayThrowException("will throw exception")
+    public int superclassThrows2() {
+        return fooBar.qux();
     }
 }
