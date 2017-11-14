@@ -46,7 +46,8 @@ import org.opalj.log.OPALLogger.error
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-object VirtualForwardingMethodsKey extends ProjectInformationKey[Traversable[VirtualForwardingMethod], Nothing] {
+object VirtualForwardingMethodsKey
+    extends ProjectInformationKey[Traversable[VirtualForwardingMethod], Nothing] {
 
     /**
      * The analysis has no special prerequisites.
@@ -58,8 +59,7 @@ object VirtualForwardingMethodsKey extends ProjectInformationKey[Traversable[Vir
     /**
      * Collects all virtual forwarding methods.
      *
-     * @note This analysis is internally parallelized. I.e., it is advantageous to run this
-     *       analysis in isolation.
+     * @note This analysis is internally parallelized.
      */
     override protected def compute(p: SomeProject): Traversable[VirtualForwardingMethod] = {
         implicit val logContext = p.logContext
@@ -71,14 +71,16 @@ object VirtualForwardingMethodsKey extends ProjectInformationKey[Traversable[Vir
                 // all instance methods present in the current class file, including methods derived
                 // from any supertype that are not overriden by this type.
                 mc ← p.instanceMethods(cf.thisType)
-                m = mc.method
-                md = m.descriptor
-                vm = VirtualForwardingMethod(cf.thisType, m.name, md, m)
             } {
+                val m = mc.method
+                val md = m.descriptor
+                val vm = VirtualForwardingMethod(cf.thisType, m.name, md, m)
                 sites.add(vm)
             }
         }
-        errors.foreach { e ⇒ error("virtual forwarding methods", "collecting virtual forwarding methods failed", e) }
+        errors.foreach { e ⇒
+            error("virtual forwarding methods", "collecting virtual forwarding methods failed", e)
+        }
 
         sites.asScala
     }
