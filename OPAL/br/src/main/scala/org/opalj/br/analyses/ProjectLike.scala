@@ -761,17 +761,17 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * @param   receiverType A class type or an array type; never an interface type.
      */
     def instanceCall(
-        callerType:   ObjectType,
-        receiverType: ReferenceType,
-        name:         String,
-        descriptor:   MethodDescriptor
+        callerClassType: ObjectType,
+        receiverType:    ReferenceType,
+        name:            String,
+        descriptor:      MethodDescriptor
     ): Result[Method] = {
         if (receiverType.isArrayType) {
             return Result(ObjectClassFile flatMap { cf ⇒ cf.findMethod(name, descriptor) });
         }
 
         val receiverClassType = receiverType.asObjectType
-        val mdcResult = lookupVirtualMethod(callerType, receiverClassType, name, descriptor)
+        val mdcResult = lookupVirtualMethod(callerClassType, receiverClassType, name, descriptor)
         mdcResult map { mdc ⇒ mdc.method }
     }
 
