@@ -481,7 +481,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                 }
                 if (cfos.exists(_.isEmpty))
                     maxPurity = SideEffectFree // Unknown class, might be mutable
-                else
+                else {
                     cfos.forall { cfo ⇒
                         propertyStore(cfo.get, TypeImmutability.key) match {
                             case EP(_, ImmutableType) ⇒
@@ -497,7 +497,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                                 true
                         }
                     }
-
+                }
             }
         }
 
