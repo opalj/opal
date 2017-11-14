@@ -83,7 +83,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
     override def hashCode: Int = method.descriptor.hashCode * 113 + packageName.hashCode()
 
     override def toString: String = {
-        val packageName = if(this.packageName == "") "<default>" else this.packageName
+        val packageName = if (this.packageName == "") "<default>" else this.packageName
         s"MethodDeclarationContext($packageName, ${method.signatureToJava()})"
     }
 
