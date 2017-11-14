@@ -388,7 +388,7 @@ object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
         import classHierarchy.allSubtypes
         import classHierarchy.rootTypes
         import classHierarchy.isInterface
-        implicit val logContext : LogContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val analysis = new ClassImmutabilityAnalysis(project)
 
@@ -411,7 +411,9 @@ object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
             rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && isInterface(rt).isNo)
 
         unexpectedRootTypes.flatMap(rt ⇒ allSubtypes(rt, reflexive = true)).view.
-            // TODO Either remove the following filter call or document why it is usefull!
+            // For classes that directly inherit from Object, but which also
+            // implement unknown interface types it is possible to compute the class
+            // immutability
             filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
             foreach(ot ⇒ project.classFile(ot) foreach { cf ⇒
                 handleResult(ImmediateResult(cf, MutableObjectDueToUnknownSupertypes))

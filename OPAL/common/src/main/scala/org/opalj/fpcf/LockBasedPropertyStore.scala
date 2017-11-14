@@ -67,46 +67,7 @@ import org.opalj.collection.UID
 import org.opalj.util.AnyToAnyThis
 
 /**
- * The property store manages the execution of computations of properties related to specific
- * entities (e.g., methods, fields and classes of a program). These computations may require and
- * provide information about other entities of the store and the property store implements the logic
- * to handle the dependencies between the entities. Furthermore, the property store parallelizes
- * the computation of the properties as far as possible without requiring users to take care of it.
- *
- * ==Usage==
- * The general strategy, when using the PropertyStore, is to always continue computing the property
- * of an entity and to collect the dependencies on those elements that are relevant.
- * I.e., if some information is not or just not completely available, the analysis should
- * still continue using the provided information and (internally) records the dependency.
- * Later on, when the analysis has computed its result, it reports the same and informs the
- * framework about its dependencies.
- *
- * ===Core Requirements on Property Computation Functions===
- *  - (One Lazy/Direct Function per Property Kind) A specific kind of property is in each
- *      phase always computed by only one registered `PropertyComputation` function.
- *  - (Thread-Safe) PropertyComputation functions have to be thread-safe. I.e., the function may
- *      be executed concurrently for different entities.
- *  - (Non-Overlapping Results) [[PropertyComputation]] functions that are invoked on different
- *      entities have to compute result sets that are disjoint.
- *      For example, an analysis that performs a computation on class files and
- *      that derives properties of a specific kind related to a class file's methods must ensure
- *      that the same analysis running concurrently on two different class files do not derive
- *      information about the same method.
- *      (Property computations that derive '''simple''' information about other entities may
- *      use [[put]] to store these information while continuing the computation of the
- *      primary property.)
- *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new) property for
- *      a specific element then the result must be more specific within one execution
- *      phase.
- *
- * ===Cyclic Dependencies===
- * In general, it may happen that some analyses cannot make any progress, because
- * they are mutually dependent. In this case the computation of a property `p` of an entity `e1`
- * depends on the property `p` of an entity `e2` that requires the property `p` of the entity `e1`.
- * In this case the [[PropertyKey]]'s strategy is used to resolve such a cyclic dependency.
- *
- * ==Thread Safety==
- * The PropertyStore is thread-safe.
+ * @inheritdoc
  *
  * ==Multi-Threading==
  * The PropertyStore uses its own fixed size ThreadPool with at most
@@ -606,146 +567,6 @@ class LockBasedPropertyStore private (
     }
 
     /**
-     * Returns the property associated with the respective `dependeeE`.
-     *
-     * The function `c` is the function that is called when the property becomes
-     * available and which computes – and then returns – the property for the depender.
-     *
-     * Require can only be used if it is guaranteed that the computation of the property
-     * dependeePK will never require the property dependerPK. Hence, it should only be used
-     * in combination with properties where the most precise analysis will never directly or
-     * indirectly requirer `dependerPk`.
-     *
-     * @example
-     * {{{
-     *   val c: Continuation =
-     *      (dependeeE: Entity, dependeeP: Property) ⇒
-     *          if (dependeeP == EffectivelyFinal) {
-     *              val nextPC = body.pcOfNextInstruction(currentPC)
-     *              determinePurityCont(method, nextPC, dependees)
-     *          } else {
-     *              Result(method, Impure)
-     *          }
-     * }}}
-     * @param dependerE The entity for which we are currently computing a property.
-     * @param dependerPK The property that is currently computed for the entity `dependerE`.
-     * @param dependeeE The entity about which some information is strictly required to compute the
-     *      property `dependerPK`.
-     */
-    // TODO Remove ... this completely counters  the concept of independent analysis
-    // Locks of this.apply(...): Store, Entity
-    def require[DependeeP <: Property](
-        dependerE:  Entity,
-        dependerPK: SomePropertyKey,
-        dependeeE:  Entity,
-        dependeePK: PropertyKey[DependeeP]
-    )(
-        c: Continuation[DependeeP]
-    ): PropertyComputationResult = {
-        this(dependeeE, dependeePK) match {
-            case SomeProperty(dependeeP) ⇒
-                // dependeeP may be already updated, but it is now on the caller to make
-                // a decision whether it will continue waiting for further updates or not
-                c(dependeeE, dependeeP)
-            case _ /*None*/ ⇒
-                new SuspendedPC[DependeeP](dependerE, dependerPK, dependeeE, dependeePK) {
-                    override def continue(dependeeP: DependeeP) = c(dependeeE, dependeeP)
-                }
-        }
-    }
-
-    /**
-     * Tests if all entities have the given property. If the respective property is
-     * not yet available, the computation will be suspended until the property of
-     * the respective kind is available. '''Hence, it only makes sense to use this
-     * function if the respective property is computed by an independent analysis or
-     * if it is an inherent property of the analysis/analyses that the information about the
-     * dependees is guaranteed to become available without requiring information
-     * about the depender.'''
-     *
-     * This function eagerly tries to determine if the answer is false and only
-     * suspends the computation if the (negative) answer cannot directly be computed.
-     *
-     * @note Calling this method only makes sense if all properties that have the same property
-     *      kind as `expectedP` are not refineable/are final or if it is certain that no
-     *      further refinement of the respective properties can happen.
-     */
-    // Locks (indirectly): this.apply(...): Store, Entity
-    def allHaveProperty(
-        dependerE: Entity, dependerPK: SomePropertyKey,
-        dependees: Traversable[Entity], expectedP: Property
-    )(
-        c: (Boolean) ⇒ PropertyComputationResult
-    ): PropertyComputationResult = {
-        allHaveProperty(
-            dependerE, dependerPK,
-            dependees, expectedP.key, (p: Property) ⇒ p == expectedP
-        )(c)
-    }
-
-    /**
-     * Tests if all entities satisfy the given property. If the respective properties are
-     * not yet available, the computation will be suspended until the properties of
-     * the respective kind are available. Hence, it only makes sense to use this
-     * function if the respective property is computed by an independent analysis or
-     * if it is an inherent property of the analysis/analyses that the information about the
-     * dependees is guaranteed to become available without requiring information
-     * about the depender.
-     *
-     * This function eagerly tries to determine if the answer is false and only
-     * suspends the computation if the (negative) answer cannot directly be computed.
-     */
-    // Locks: this.apply(...): Store, Entity
-    def allHaveProperty[DependeeP <: Property](
-        dependerE: Entity, dependerPK: SomePropertyKey,
-        dependees:  Traversable[Entity],
-        dependeePK: PropertyKey[DependeeP],
-        expectedP:  DependeeP ⇒ Boolean
-    )(
-        c: (Boolean) ⇒ PropertyComputationResult
-    ): PropertyComputationResult = {
-        var remainingEs = dependees
-        var unavailableEs: List[Entity] = Nil
-        while (remainingEs.nonEmpty) {
-            // The idea is to eagerly try to determine if the answer might be false.
-            val dependeeE = remainingEs.head
-            remainingEs = remainingEs.tail
-            val p = this(dependeeE, dependeePK)
-            p match {
-                case SomeProperty(dependeeP) ⇒ if (!expectedP(dependeeP)) return c(false);
-                case NoProperty()            ⇒ unavailableEs = dependeeE :: unavailableEs
-            }
-        }
-        if (unavailableEs.isEmpty) {
-            // all information was available and was always as expected
-            return c(true);
-        }
-
-        // Let's wait on the next result and then try to get as many results as
-        // possible, by using haveProperty again... i.e., we try to minimize the
-        // number of suspended computations that we need to create.
-        val deependeeE = unavailableEs.head
-        new SuspendedPC[DependeeP](dependerE, dependerPK, deependeeE, dependeePK) {
-            override def continue(dependeeP: DependeeP): PropertyComputationResult = {
-                if (!expectedP(dependeeP))
-                    return c(false);
-
-                val remainingUnavailableEs = unavailableEs.tail
-                if (remainingUnavailableEs.isEmpty) {
-                    c(true)
-                } else {
-                    allHaveProperty(
-                        dependerE, dependerPK,
-                        remainingUnavailableEs, dependeePK, expectedP
-                    )(
-                        c
-                    )
-                }
-            }
-        }
-    }
-
-    /**
      * Returns an iterator of the different properties associated with the given element.
      *
      * This method is the preferred way to get a snapshot all properties of an entity and should
@@ -1146,20 +967,12 @@ class LockBasedPropertyStore private (
     }
 
     /**
-     * Will call the given function `c` for all elements of `es` in parallel; all elements of `es`
-     * have to be entities known to the property store.
-     */
-    def scheduleForEntities[E <: Entity](es: TraversableOnce[E])(c: PropertyComputation[E]): Unit = {
-        bulkScheduleComputations(es, c.asInstanceOf[Entity ⇒ PropertyComputationResult])
-    }
-
-    /**
      * Schedules the execution of the given PropertyComputation function for the given entity.
      * This is of particular interest to start an incremental computation
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierachy in a top-down manner.
      */
     def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
-        if (!isInterrupted()) scheduleComputation(e, pc)
+        scheduleComputation(e, pc)
     }
 
     /**
@@ -1467,27 +1280,27 @@ class LockBasedPropertyStore private (
             cyclicComputableEPKCandidates --= directlyIncomputableEPKs
             cyclicComputableEPKCandidates --= indirectlyIncomputableEPKs
 
-            val epkSuccessors: (SomeEPK) ⇒ Traversable[SomeEPK] = (epk: SomeEPK) ⇒ {
-                val observers = store.observers.get(epk)
-                /*internal*/ assert(
-                    observers ne null,
-                    {
-                        writeAndOpen(visualizeDependencies(), "PropertyStoreDependencies", ".dot")
-                        s"$epk has no dependees!\n"+
-                            cyclicComputableEPKCandidates.
-                            map(_.toString.replace("\n", "\n\t\t")).
-                            mkString("\tcyclicComputableEPKCandidates=\n\t\t", " ->\n\t\t", "\n") +
-                            directlyIncomputableEPKs.
-                            map(_.toString.replace("\n", "\n\t\t")).
-                            mkString("\tdirectlyIncomputableEPKs=\n\t\t", "\n\t\t", "\n") +
-                            indirectlyIncomputableEPKs.
-                            map(_.toString.replace("\n", "\n\t\t")).
-                            mkString("\tindirectlyIncomputableEPKs=\n\t\t", "\n\t\t", "\n")
-                    }
-                )
-                observers.view.map(_._1)
-            }
             if (resolveCycles) {
+                val epkSuccessors: (SomeEPK) ⇒ Traversable[SomeEPK] = (epk: SomeEPK) ⇒ {
+                    val observers = store.observers.get(epk)
+                    /*internal*/ assert(
+                        observers ne null,
+                        {
+                            writeAndOpen(visualizeDependencies(), "PropertyStoreDependencies", ".dot")
+                            s"$epk has no dependees!\n"+
+                                cyclicComputableEPKCandidates.
+                                map(_.toString.replace("\n", "\n\t\t")).
+                                mkString("\tcyclicComputableEPKCandidates=\n\t\t", " ->\n\t\t", "\n") +
+                                directlyIncomputableEPKs.
+                                map(_.toString.replace("\n", "\n\t\t")).
+                                mkString("\tdirectlyIncomputableEPKs=\n\t\t", "\n\t\t", "\n") +
+                                indirectlyIncomputableEPKs.
+                                map(_.toString.replace("\n", "\n\t\t")).
+                                mkString("\tindirectlyIncomputableEPKs=\n\t\t", "\n\t\t", "\n")
+                        }
+                    )
+                    observers.view.map(_._1)
+                }
                 val cSCCs: List[Iterable[SomeEPK]] =
                     closedSCCs(cyclicComputableEPKCandidates, epkSuccessors)
                 if (ValidateConsistency && cSCCs.nonEmpty) logDebug(
@@ -1605,7 +1418,7 @@ class LockBasedPropertyStore private (
         es: TraversableOnce[_ <: Entity],
         pc: SomePropertyComputation
     ): Unit = {
-        es foreach { e ⇒ if (!isInterrupted()) scheduleComputation(e, pc) }
+        es foreach { e ⇒ scheduleComputation(e, pc) }
     }
 
     /**
@@ -1661,7 +1474,8 @@ class LockBasedPropertyStore private (
                 }
             }
         }
-        scheduleTask(task)
+        if (!isInterrupted())
+            scheduleTask(task)
     }
 
     /**

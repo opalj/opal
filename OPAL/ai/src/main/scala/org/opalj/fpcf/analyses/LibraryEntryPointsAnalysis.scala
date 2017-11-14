@@ -87,14 +87,12 @@ class LibraryEntryPointsAnalysis private[analyses] (
             return ImmediateResult(method, IsEntryPoint);
         }
 
-        if (method.isPrivate ||
-            (isClosedLibrary && method.isPackagePrivate))
-            return ImmediateResult(method, NoEntryPoint)
+        if (method.isPrivate || (isClosedLibrary && method.isPackagePrivate))
+            return ImmediateResult(method, NoEntryPoint);
 
         // Now: the method is neither an (static or default) interface method nor and method
         // which relates somehow to object serialization.
 
-        import propertyStore.require
         val c_inst: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
             val isInstantiable = (dependeeP eq Instantiable)
             if (isInstantiable && method.isStaticInitializer)

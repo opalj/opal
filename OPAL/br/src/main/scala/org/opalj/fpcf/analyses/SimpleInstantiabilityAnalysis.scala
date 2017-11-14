@@ -35,7 +35,7 @@ import scala.collection.parallel.ParIterable
 
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{PropertyStoreKey, SomeProject}
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.fpcf.properties.NotInstantiable
 import org.opalj.fpcf.properties.Instantiable
@@ -206,5 +206,10 @@ object SimpleInstantiabilityAnalysis {
             val (key, cfs) = groupedCFs
             analysis.determineProperty(key, cfs)
         }(ParIterable.canBuildFrom).seq
+    }
+
+    def apply(project: SomeProject): Unit = {
+        val ps = project.get(PropertyStoreKey)
+        run(project).foreach(ep ⇒ ps.set(ep.e, ep.p))
     }
 }

@@ -214,6 +214,6 @@ class EntryPointInformation(propertyStore: PropertyStore, configuredEntryPoints:
 
     def getEntryPoints(): Set[Method] = {
         configuredEntryPoints ++
-            propertyStore.collect { case (m: Method, IsEntryPoint) if m.body.nonEmpty ⇒ m }
+            propertyStore.entities(IsEntryPoint).collect { case m: Method if m.body.isDefined ⇒ m }
     }
 }

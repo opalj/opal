@@ -62,7 +62,6 @@ case object FinalUpdate extends UserUpdateType("Final Update") {
     final val id = 2
     final override def isIntermediateUpdate: Boolean = false
     final override def isFinalUpdate: Boolean = true
-
 }
 
 /**

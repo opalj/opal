@@ -43,7 +43,6 @@ import org.opalj.br.VoidType
 /**
  * Determines the methods that are Entry Points into a given Program.
  *
- *
  * @author Michael Reif
  */
 class EntryPointsAnalysis private (val project: SomeProject) extends FPCFAnalysis {
@@ -79,16 +78,16 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner {
                 analysis
             case JEE6WebApplication ⇒
                 val jEEAnalysis = new JavaEEEntryPointsAnalysis(project)
-                propertyStore.scheduleForCollected(JavaEEEntryPointsAnalysis.entitySelector)(
+                propertyStore.scheduleForEntities(project.allClassFiles)(
                     jEEAnalysis.determineEntrypoints
                 )
                 jEEAnalysis
             case (CPA | OPA) ⇒
-                val analysis = new LibraryEntryPointsAnalysis(project)
+                SimpleInstantiabilityAnalysis(project)
                 val analysisRunner = project.get(FPCFAnalysesManagerKey)
-                analysisRunner.run(SimpleInstantiabilityAnalysis)
                 analysisRunner.run(CallableFromClassesInOtherPackagesAnalysis)
                 analysisRunner.run(MethodAccessibilityAnalysis)
+                val analysis = new LibraryEntryPointsAnalysis(project)
                 propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
                 analysis
         }

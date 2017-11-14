@@ -396,16 +396,11 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 // Idea... only if data is tainted we check if it is a palindrome...
 
                 ps schedule { e: Entity ⇒
-                    ps.require(e, PalindromeKey, e, TaintedKey) { (e: Entity, p: Property) ⇒
-                        if (p == Tainted) {
-                            if (e.toString.reverse == e.toString())
-                                ImmediateResult(e, Palindrome)
-                            else
-                                ImmediateResult(e, NoPalindrome)
-                        } else {
-                            NoResult
-                        }
-                    }
+                    IntermediateResult(
+                        EPK(e, PalindromeKey),
+                        Seq(ps(e, TaintedKey)),
+                        (Entity, Property, UserUpdateType) ⇒ { NoResult }: PropertyComputationResult
+                    )
                 }
 
                 ps.waitOnPropertyComputationCompletion(true)
@@ -600,28 +595,33 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 val ps = psStrings
 
                 // Here, only if data is tainted we check if it is a palindrome...
-
                 ps schedule { e: Entity ⇒
-                    ps.require(e, PalindromeKey, e, TaintedKey) { (e: Entity, p: Property) ⇒
-                        if (p == Tainted) {
-                            if (e.toString.reverse == e.toString())
-                                ImmediateResult(e, Palindrome)
-                            else
-                                ImmediateResult(e, NoPalindrome)
-                        } else {
-                            NoResult // it is technically possible to not associate an entity with a property...
-                        }
-                    }
+                    IntermediateResult(
+                        EPK(e, PalindromeKey), Seq(ps(e, TaintedKey)),
+                        (e: Entity, p: Property, UserUpdateType) ⇒ {
+                            if (p == Tainted) {
+                                if (e.toString.reverse == e.toString())
+                                    ImmediateResult(e, Palindrome)
+                                else
+                                    ImmediateResult(e, NoPalindrome)
+                            } else {
+                                NoResult
+                            }
+                        }: PropertyComputationResult
+                    )
                 }
 
                 ps schedule { e: Entity ⇒
-                    ps.require(e, TaintedKey, e, StringLengthKey) { (e: Entity, p) ⇒
-                        if (p.length % 2 == 0) {
-                            ImmediateResult(e, Tainted)
-                        } else {
-                            ImmediateResult(e, NotTainted)
-                        }
-                    }
+                    IntermediateResult(
+                        EPK(e, TaintedKey), Seq(ps(e, StringLengthKey)),
+                        (e: Entity, p: Property, UserUpdateType) ⇒ {
+                            if (p.asInstanceOf[StringLength].length % 2 == 0) {
+                                ImmediateResult(e, Tainted)
+                            } else {
+                                ImmediateResult(e, NotTainted)
+                            }
+                        }: PropertyComputationResult
+                    )
                 }
 
                 ps schedule { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
@@ -991,77 +991,13 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
                 ps("a", StringLengthKey) should be(EPK("a", StringLengthKey)) // this should trigger the computation
                 ps("a", StringLengthKey) // but hopefully only once (tested using "triggered")
-
-                @volatile var superPalindromeCompleted = false
-                // triggers the computation of "PalindromeProperty
-                val pcr = ps.allHaveProperty(
-                    "aa", SuperPalindromeKey,
-                    List("a"), Palindrome
-                ) { aIsPalindrome ⇒
-                        superPalindromeCompleted = true
-                        Result("aa", if (aIsPalindrome) SuperPalindrome else NoSuperPalindrome)
-                    }
-                pcr shouldBe (a[SuspendedPC[_]])
-
-                // We can explicitly add results though this is generally not required in a well
-                // written analysis.
-                ps.handleResult(pcr)
-
+                ps("a", PalindromeKey)
+                ps("a", PalindromeKey)
                 ps.waitOnPropertyComputationCompletion(true)
 
                 ps("a", StringLengthKey).p should be(StringLength(1))
                 ps("a", PalindromeKey).p should be(Palindrome)
-                ps("aa", SuperPalindromeKey).p should be(SuperPalindrome)
-                superPalindromeCompleted should be(true)
             }
-
-            it("should be triggered for all that are queried using \"allHaveProperty\"") {
-                val ps = psStrings
-
-                val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
-                    val s = e.toString
-                    ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
-                }
-                ps scheduleLazyPropertyComputation (PalindromeKey, palindromePC)
-
-                // triggers the computation of "PalindromeProperty
-                val pcr =
-                    ps.allHaveProperty(
-                        "aaa", SuperPalindromeKey,
-                        List("a", "aa"), Palindrome
-                    ) { arePalindromes ⇒
-                            Result("aaa", if (arePalindromes) SuperPalindrome else throw new UnknownError)
-                        }
-                pcr shouldBe (a[SuspendedPC[_]])
-                ps.handleResult(pcr)
-                ps.waitOnPropertyComputationCompletion(true)
-
-                ps("a", PalindromeKey) should be(EP("a", Palindrome))
-                ps("aa", PalindromeKey) should be(EP("aa", Palindrome))
-                ps("aaa", SuperPalindromeKey) should be(EP("aaa", SuperPalindrome))
-            }
-
-            it("should be triggered in case of a \"require\" dependency") {
-                val ps = psStrings
-
-                val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
-                    val s = e.toString
-                    ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
-                }
-                ps scheduleLazyPropertyComputation (PalindromeKey, palindromePC)
-
-                // triggers the computation of "PalindromeProperty
-                val pcr = ps.require("aaa", SuperPalindromeKey, "a", PalindromeKey) { (e, p) ⇒
-                    Result("aaa", if (p == Palindrome) SuperPalindrome else NoSuperPalindrome)
-                }
-                pcr shouldBe (a[SuspendedPC[_]])
-                ps.handleResult(pcr)
-                ps.waitOnPropertyComputationCompletion(true)
-
-                ps("a", PalindromeKey) should be(EP("a", Palindrome))
-                ps("aaa", SuperPalindromeKey) should be(EP("aaa", SuperPalindrome))
-            }
-
         }
 
         describe("direct computations of an entity's property") {
@@ -1098,7 +1034,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 // test that the other computations are not immediately executed were executed
                 ps.entities(p ⇒ true).toSet should be(Set("a", "aea"))
             }
-
+            /*
             it("should not be triggered for those that are queried using \"allHaveProperty\" if the query fails early") {
                 val ps = psStrings
 
@@ -1125,7 +1061,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 ps.properties("a") should be(Nil)
                 ps.properties("aa") should be(Nil)
             }
-
+*/
             it("can depend on other direct property computations (chaining of direct property computations)") {
                 val ps = psStrings
                 val stringLengthPC = (e: Entity) ⇒ { StringLength(e.toString.size) }

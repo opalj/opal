@@ -117,5 +117,4 @@ object JavaEEEntryPointsAnalysis {
 
     val injectAnnotation = ObjectType("javax/inject/Inject")
 
-    final def entitySelector: PartialFunction[Entity, ClassFile] = { case cf: ClassFile ⇒ cf }
 }

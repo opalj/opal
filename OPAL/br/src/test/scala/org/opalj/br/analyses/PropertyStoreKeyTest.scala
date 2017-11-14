@@ -56,18 +56,6 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
         val ps = p.get(PropertyStoreKey)
 
-        it("should always contain the project's methods") {
-            assert(p.allMethods.forall(ps.isKnown))
-        }
-
-        it("should always contain the project's fields") {
-            assert(p.allFields.forall(ps.isKnown))
-        }
-
-        it("should always contain the project's class files") {
-            assert(p.allClassFiles.forall(ps.isKnown))
-        }
-
         it("the context should always contain the project's methods") {
             assert(p.allMethods == ps.context[Iterable[Method]])
         }
@@ -124,9 +112,6 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
             assert(allocationSiteCount > 0)
             info(s"contains $allocationSiteCount allocation sites")
-
-            val allAdded: Boolean = allAs.forall(ps.isKnown)
-            assert(allAdded)
         }
 
         it("should be possible to query the allocation sites") {
@@ -176,8 +161,6 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
             assert(formalParametersCount >= p.allMethods.map(m ⇒ m.descriptor.parametersCount).sum)
             info(s"contains $formalParametersCount formal parameters")
-
-            assert(allFPs.forall(ps.isKnown))
         }
     }
 
@@ -197,9 +180,6 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
 
             assert(allocationSites.nonEmpty)
             info(s"contains ${allocationSites.size} allocation sites")
-
-            val allAdded: Boolean = allocationSites.forall(ps.isKnown)
-            assert(allAdded)
         }
     }
 

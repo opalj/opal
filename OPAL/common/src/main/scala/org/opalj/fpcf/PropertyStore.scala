@@ -34,11 +34,13 @@ import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
 
 /**
- * The property store manages the execution of computations of properties related to specific
+ * A property store manages the execution of computations of properties related to specific
  * entities (e.g., methods, fields and classes of a program). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
  * to handle the dependencies between the entities. Furthermore, the property store parallelizes
- * the computation of the properties as far as possible without requiring users to take care of it.
+ * the computation of the properties as far as possible without requiring users to take care of it;
+ * users are also generally not required to think about the concurrency when implementing an
+ * analysis.
  *
  * ==Usage==
  * The general strategy, when using the PropertyStore, is to always continue computing the property
@@ -49,50 +51,56 @@ import scala.reflect.runtime.universe.typeOf
  * framework about its dependencies.
  *
  * ===Core Requirements on Property Computation Functions===
- *  - (One Lazy/Direct Function per Property Kind) A specific kind of property is in each
- *      phase always computed by only one registered `PropertyComputation` function.
- *  - (Thread-Safe) PropertyComputation functions have to be thread-safe. I.e., the function may
- *      be executed concurrently for different entities.
+ *  - (One Lazy Function per Property Kind) A specific kind of property is (in each
+ *    phase) always computed by only one registered `PropertyComputation` function.
+ *    No other analysis is (conceptually) allowed to derive a value for an E/PK pairing
+ *    for which a lazy function is registered.
+ *  - (Thread-Safe PropertyComputation functions) If a single instance of a property computation
+ *    function (which is the standard case) is scheduled for computing the properties of multiple
+ *    entities, that function has to be thread safe. I.e., the function may
+ *    be executed concurrently for different entities.
  *  - (Non-Overlapping Results) [[PropertyComputation]] functions that are invoked on different
- *      entities have to compute result sets that are disjoint.
- *      For example, an analysis that performs a computation on class files and
- *      that derives properties of a specific kind related to a class file's methods must ensure
- *      that the same analysis running concurrently on two different class files do not derive
- *      information about the same method.
+ *    entities have to compute result sets that are disjoint.
+ *    For example, an analysis that performs a computation on class files and
+ *    that derives properties of a specific kind related to a class file's methods must ensure
+ *    that the same analysis running concurrently on two different class files do not derive
+ *    information about the same method.
  *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new) property for
- *      a specific element then the result must be equal or more specific within one execution
- *      phase.
+ *    a specific element then the result must be equal or more specific within one execution
+ *    phase.
  *
  * ===Cyclic Dependencies===
  * In general, it may happen that some analyses cannot make any progress, because
  * they are mutually dependent. In this case the computation of a property `p` of an entity `e1`
- * depends on the property `p` of an entity `e2` that requires the property `p` of the entity `e1`.
- * In this case the [[PropertyKey]]'s strategy is used to resolve such a cyclic dependency.
+ * depends on the property `p'` of an entity `e2` that requires the property `p` of the entity `e1`.
+ * In this case a registered strategy is used to resolve the cyclic dependency. If no strategy is
+ * available all current values will be committed, if no "current" value is available the fallback
+ * value will be committed.
  *
  * ==Thread Safety==
- * The PropertyStore is thread-safe.
+ * A PropertyStore is thread-safe.
  *
  * ==Multi-Threading==
  * The PropertyStore uses its own fixed size ThreadPool with at most
  * [[org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks]] threads.
  *
+ * ==Common Abbreviations==
+ * - e =         Entity
+ * - p =         Property
+ * - ps =        Properties (the properties of an entity)
+ * - pk =        Property Key
+ * - pc =        Property Computation
+ * - lpc =       Lazy Property Computation
+ * - c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
+ * - EPK =       Entity and a PropertyKey
+ * - EP =        Entity and an associated Property
+ * - EOptionP =  Entity and either a PropertyKey or (if available) a Property
+ *
  * @author Michael Eichberg
  */
-// COMMON ABBREVIATONS USED IN THE FOLLOWING:
-// ==========================================
-// e =         Entity
-// p =         Property
-// ps =        Properties (the properties of an entity)
-// pk =        Property Key
-// pc =        Property Computation
-// lpc =       Lazy Property Computation
-// c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
-// EPK =       Entity and a PropertyKey
-// EP =        Entity and an associated Property
-// EOptionP =  Entity and either a PropertyKey or (if available) a Property
 abstract class PropertyStore {
 
-    /** Immutable map which stores the context objects. */
+    /** Immutable map which stores the context objects given at initialization time. */
     val ctx: Map[Type, AnyRef]
 
     /** Looks up the context object of the given type. */
@@ -100,11 +108,6 @@ abstract class PropertyStore {
         val t = typeOf[T]
         ctx.getOrElse(t, { throw ContextNotAvailableException(t, ctx) }).asInstanceOf[T]
     }
-
-    /**
-     * Returns `true` if the store contains the respective entity.
-     */
-    def isKnown(e: Entity): Boolean
 
     /**
      * Returns a consistent snapshot of the stored properties.
@@ -117,6 +120,8 @@ abstract class PropertyStore {
      * Returns a short string representation of the property store related to the key figures.
      */
     override def toString: String = toString(false)
+
+    // We have to register the cycle resolution strategies with the store as such unless the cycle only consists of elements with the same PK!
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -163,8 +168,7 @@ abstract class PropertyStore {
      *      is strictly more precise.
      * @note Querying a property may trigger the computation of the property if the underlying
      *      function is a lazy property computation function.
-     * @param e An entity stored in the property store.
-     * @param pk The kind of property.
+     * @param epk An entity/property key pair.
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
      *      `EP(e,Property)` otherwise; in the later case `EP` may encapsulate a property that
      *      is the final result of a computation `ep.isPropertyFinal === true` even though the
@@ -181,8 +185,10 @@ abstract class PropertyStore {
      * be used if you know that all properties are already computed. Using this method '''will not
      * trigger''' the computation of a property.
      *
-     * @note The returned iterator operates on a snapshot and will never throw any
-     *      `ConcurrentModificatonException`.
+     * @note The returned traversable operates on a snapshot.
+     *
+     * @note Does not trigger lazy property computations.
+     *
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]`
      */
@@ -193,16 +199,25 @@ abstract class PropertyStore {
      * returns a consistent snapshot view of the store w.r.t. the given
      * [[PropertyKey]].
      *
-     * Lazy property computations are not triggered.
+     * @note Lazy property computations are not triggered.
      */
     def entities[P <: Property](pk: PropertyKey[P]): Traversable[EP[Entity, P]]
 
     /**
      * Returns all entities that currently have a specific property.
      *
-     * Does not trigger lazy property computations.
+     * @note Does not trigger lazy property computations.
      */
     def entities[P <: Property](p: P): Traversable[Entity]
+
+    /**
+     * The set of all entities which already have a property that passes the given filter.
+     *
+     * This method returns a snapshot.
+     *
+     * @note This method will not trigger lazy property computations.
+     */
+    def entities(propertyFilter: Property ⇒ Boolean): Traversable[Entity]
 
     /**
      * Directly associate the given property `p` with the given entity `e` if `e` has no property
@@ -218,7 +233,6 @@ abstract class PropertyStore {
      *
      * If a property is already associated with the given entity, an IllegalStateException is thrown
      * to prevent programming errors.
-     *
      */
     def set(e: Entity, p: Property): Unit
 
@@ -242,7 +256,9 @@ abstract class PropertyStore {
      * Will call the given function `c` for all elements of `es` in parallel; all elements of `es`
      * have to be entities known to the property store.
      */
-    def scheduleForEntities[E <: Entity](es: TraversableOnce[E])(c: PropertyComputation[E]): Unit
+    def scheduleForEntities[E <: Entity](es: TraversableOnce[E])(c: PropertyComputation[E]): Unit = {
+        es.foreach(e ⇒ scheduleForEntity(e)(c))
+    }
 
     /**
      * Schedules the execution of the given PropertyComputation function for the given entity.
@@ -252,34 +268,23 @@ abstract class PropertyStore {
     def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
+     * Processes the result. Generally, not called by analyses.
+     */
+    def handleResult(r: PropertyComputationResult): Unit
+
+    /**
      * Awaits the completion of all property computation functions which were previously registered.
-     * If a second thread is used to register [[PropertyComputation]] functions
-     * no guarantees are given; it is recommended to schedule all property computation functions
-     * using one thread and using that thread to call this method.
      *
-     * This function is only '''guaranteed''' to wait on the completion of the computation
-     * of those properties for which a property computation function was registered by
-     * the calling thread. If the computations starts further computations, this method will
-     * also wait on the completion of those.
+     * @note  If a second thread is used to register [[PropertyComputation]] functions
+     *        no guarantees are given; it is recommended to schedule all property computation
+     *        functions using one thread and using that thread to call this method.
+     *
+     * @param resolveCycles If `true`, cycles will be resolved.
      */
     def waitOnPropertyComputationCompletion(
         resolveCycles:                         Boolean = true,
         useFallbacksForIncomputableProperties: Boolean = true
     ): Unit
-
-    /**
-     * The set of all entities which already have a property that passes the given filter.
-     *
-     * This method returns a snapshot.
-     *
-     * @note This method will not trigger lazy property computations.
-     */
-    def entities(propertyFilter: Property ⇒ Boolean): Traversable[Entity]
-
-    /**
-     * Processes the result.
-     */
-    def handleResult(r: PropertyComputationResult): Unit
 
 }
 
@@ -299,4 +304,3 @@ object PropertyStoreContext {
     }
 
 }
-
