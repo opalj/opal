@@ -289,8 +289,9 @@ final case class VirtualForwardingMethod(
 
     override def equals(other: Any): Boolean = other match {
         case that: VirtualForwardingMethod ⇒
-            (this.target == that.target) &&
+            (this.target eq that.target) &&
                 super.equals(other)
+        case _ ⇒ false
     }
 
 }
