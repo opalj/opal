@@ -31,6 +31,9 @@ package fpcf
 package properties
 
 import org.opalj.fpcf.PropertyKey.SomeEPKs
+import org.opalj.fpcf.properties.DomainSpecific.DomainSpecificReason
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToUnknownProperty
+import org.opalj.fpcf.properties.ImpureBase.ImpureReason
 import org.opalj.fpcf.properties.Purity.HAS_ALLOCATIONS
 import org.opalj.fpcf.properties.Purity.IS_NON_DETERMINISTIC
 import org.opalj.fpcf.properties.Purity.MODIFIES_RECEIVER
@@ -76,8 +79,8 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * Given the preceeding specification, the purity of a method is described by the subclasses of
  * this property:
  *
- * [[Impure]] methods have no constraints on their behavior. They may have side effect and depend
- * on all accessible (global) state. Analyses can always return `Impure` as a safe default
+ * [[ImpureBase]] methods have no constraints on their behavior. They may have side effect and
+ * depend on all accessible (global) state. Analyses can always return `Impure` as a safe default
  * value - even if they are not able to prove that a method is indeed impure; however, in the
  * latter case using [[MaybePure]] is recommended as this enable potentially succeeding Analyses
  * to refine the property. Besides `Impure` there are several other implementations of
@@ -140,7 +143,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * [[SideEffectFree]] depending on other analysis results not yet available.
  * `ConditionallySideEffectFree` methods may not become [[Pure]] anymore. ConditionallyPure methods
  * are methods that may still become [[Pure]] depending on the properties of the depending entities.
- * Hence, `ConditionallyPure` methods might also become [[Impure]] or [[SideEffectFree]], or
+ * Hence, `ConditionallyPure` methods might also become [[ImpureBase]] or [[SideEffectFree]], or
  * [[ConditionallySideEffectFree]].
  *
  * [[ConditionallySideEffectFreeWithoutAllocations]] and [[ConditionallyPureWithoutAllocations]] are
@@ -149,25 +152,25 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *
  * [[ConditionallyExternallySideEffectFree]] and [[ConditionallyExternallyPure]] methods on the
  * other hand can only become [[ExternallySideEffectFree]] or [[ConditionallyPure]], respectively.
- * They might also become anything below these, such as [[Impure]].
+ * They might also become anything below these, such as [[ImpureBase]].
  *
  * [[ConditionallyDomainSpecificSideEffectFree]] and [[ConditionallyDomainSpecificPure]] methods are
  * methods that may only become [[DomainSpecificSideEffectFree]] or [[DomainSpecificPure]],
- * respectively. They might also become anything below these, such as [[Impure]].
+ * respectively. They might also become anything below these, such as [[ImpureBase]].
  *
  * [[ConditionallyDomainSpecificExternallySideEffectFree]] and
  * [[ConditionallyDomainSpecificExternallyPure]] methods are methods that may only become
  * [[DomainSpecificExternallySideEffectFree]] or [[DomainSpecificExternallyPure]], respectively.
- * They might also become anything below these, such as [[Impure]].
+ * They might also become anything below these, such as [[ImpureBase]].
  *
  * [[MaybePure]] is used as a default fallback value if no purity information could be computed for
- * a method. Conceptually, clients must treat this in the same way as [[Impure]] except that
+ * a method. Conceptually, clients must treat this in the same way as [[ImpureBase]] except that
  * a future refinement may be possible.
  *
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-abstract class Purity extends Property with PurityPropertyMetaInformation {
+sealed abstract class Purity extends Property with PurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[Purity]] property.
@@ -185,7 +188,7 @@ abstract class Purity extends Property with PurityPropertyMetaInformation {
     val reasons: Set[DomainSpecificReason] = Set.empty
 
     def meet(other: Purity): Purity = other match {
-        case MaybePure | _: ImpureBase ⇒ other
+        case MaybePure | ImpureBase(_) ⇒ other
         case _                         ⇒ Purity(flags | other.flags, reasons | other.reasons)
     }
 
@@ -365,26 +368,28 @@ case object ExternallySideEffectFree extends Purity {
 }
 
 /**
- * Trait for reasons that explain why a method is domain specific.
- * Analyses (or rather the Rater objects they use) may use the reasons below or extend this trait
+ * Reasons that explain why a method is domain specific.
+ * Analyses (or rather the Rater objects they use) may use the reasons below or use their own
  * for more reasons.
  */
-trait DomainSpecificReason
+object DomainSpecific {
+    type DomainSpecificReason = String
 
-/**
- * Domain specific because the method may raise exceptions.
- */
-case object RaisesExceptions extends DomainSpecificReason
+    /**
+     * Domain specific because the method may raise exceptions.
+     */
+    final val RaisesExceptions: DomainSpecificReason = "raises exceptions"
 
-/**
- * Domain specific because the method uses `System.out` or `System.err`.
- */
-case object UsesSystemOutOrErr extends DomainSpecificReason
+    /**
+     * Domain specific because the method uses `System.out` or `System.err`.
+     */
+    final val UsesSystemOutOrErr: DomainSpecificReason = "uses System.out or System.err"
 
-/**
- * Domain specific because the method uses some form of logging.
- */
-case object UsesLogging extends DomainSpecificReason
+    /**
+     * Domain specific because the method uses some form of logging.
+     */
+    final val UsesLogging: DomainSpecificReason = "uses logging"
+}
 
 /**
  * The respective method may perform actions that are generally considered impure or
@@ -557,7 +562,8 @@ case class ConditionallyDomainSpecificSideEffectFree(
         override val reasons: Set[DomainSpecificReason]
 ) extends Purity {
     final val isRefineable = true
-    final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | USES_DOMAIN_SPECIFIC_ACTIONS | IS_CONDITIONAL
+    final val flags =
+        HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | USES_DOMAIN_SPECIFIC_ACTIONS | IS_CONDITIONAL
 }
 
 /**
@@ -573,7 +579,8 @@ case class ConditionallyDomainSpecificExternallyPure(
         override val reasons: Set[DomainSpecificReason]
 ) extends Purity {
     final val isRefineable = true
-    final val flags = HAS_ALLOCATIONS | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS | IS_CONDITIONAL
+    final val flags =
+        HAS_ALLOCATIONS | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS | IS_CONDITIONAL
 }
 
 /**
@@ -589,76 +596,71 @@ case class ConditionallyDomainSpecificExternallySideEffectFree(
         override val reasons: Set[DomainSpecificReason]
 ) extends Purity {
     final val isRefineable = true
-    final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS | IS_CONDITIONAL
+    final val flags =
+        HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS | IS_CONDITIONAL
 }
 
-/**
- * Base trait for methods that are impure.
- *
- * Analyses may use any of the implementations below or extend this trait to give other reasons for
- * a method being impure. The reason given may be just the first of several reasons for impurity
- * and it is not required to be the same reason for different runs of the analysis.
- */
-trait ImpureBase extends Purity {
+case class ImpureBase(reason: ImpureReason) extends Purity {
     final val isRefineable = true
-    val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
+    final val flags =
+        HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
 
     override def meet(other: Purity) = other match {
         case MaybePure ⇒ MaybePure
         case _         ⇒ this
     }
+
+    override def toString = s"Impure($reason)"
 }
 
 /**
- * The respective method is either impure or we encountered an unresolvable cycle and cycle
- * resolution was enforced [[PropertyStore#waitOnPropertyComputationCompletion]].
+ * Companion object defining common values for impurity.
  *
- * General impurity without further specified reason.
- * Analyses may return this object or any other implementation of ImpureBase to give a more specific
- * reason for the method being impure.
+ * Analyses may use any of the values below or use their to give other reasons for
+ * a method being impure. The reason given may be just the first of several reasons for impurity
+ * and it is not required to be the same reason for different runs of the analysis.
  */
-case object Impure extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
-}
+object ImpureBase {
+    type ImpureReason = String
 
-/**
- * The method is impure because it uses synchronization.
- */
-case object ImpureDueToSynchronization extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
-}
+    /**
+     * The respective method is either impure or we encountered an unresolvable cycle and cycle
+     * resolution was enforced [[PropertyStore#waitOnPropertyComputationCompletion]].
+     *
+     * General impurity without further specified reason.
+     * Analyses may return this object or any other implementation of ImpureBase to give a more
+     * specific reason for the method being impure.
+     */
+    final val Impure = ImpureBase("")
 
-/**
- * The method is impure because it may modify heap objects.
- */
-case object ImpureDueToHeapModification extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
-}
+    /**
+     * The method is impure because it uses synchronization.
+     */
+    final val ImpureDueToSynchronization = ImpureBase("uses synchronization")
 
-/**
- * The method is impure because it calls a method or uses a type that may be overriden/extended.
- */
-case object ImpureDueToFutureExtension extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
-}
+    /**
+     * The method is impure because it may modify heap objects.
+     */
+    final val ImpureDueToHeapModification = ImpureBase("modifies heap objects")
 
-/**
- * The method is impure because it calls a method that may be impure.
- */
-case object ImpureDueToImpureCall extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
-}
+    /**
+     * The method is impure because it calls a method or uses a type that may be overriden/extended.
+     */
+    final val ImpureDueToFutureExtension =
+        ImpureBase("uses method/type that may be overriden/extended")
 
-/**
- * The method is impure because it uses an entity not found in the current project's scope.
- */
-case object ImpureDueToUnknownEntity extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
-}
+    /**
+     * The method is impure because it calls a method that may be impure.
+     */
+    final val ImpureDueToImpureCall = ImpureBase("calls impure method")
 
-/**
- * The method is impure because an entity it uses has a property value unknown to the analysis.
- */
-case object ImpureDueToUnknownProperty extends ImpureBase {
-    override final val flags = HAS_ALLOCATIONS | IS_NON_DETERMINISTIC | MODIFIES_RECEIVER | USES_DOMAIN_SPECIFIC_ACTIONS
+    /**
+     * The method is impure because it uses an entity not found in the current project's scope.
+     */
+    final val ImpureDueToUnknownEntity = ImpureBase("depends on unknown entity")
+
+    /**
+     * The method is impure because an entity it uses has a property value unknown to the analysis.
+     */
+    final val ImpureDueToUnknownProperty = ImpureBase("depends on entity with unknown property")
 }

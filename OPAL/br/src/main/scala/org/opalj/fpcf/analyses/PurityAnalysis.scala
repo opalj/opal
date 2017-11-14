@@ -31,10 +31,9 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.EffectivelyFinalField
-import org.opalj.fpcf.properties.Impure
+import org.opalj.fpcf.properties.ImpureBase.Impure
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.MaybePure
 import org.opalj.fpcf.properties.ConditionallyPure
@@ -76,9 +75,9 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.ANEWARRAY
+import org.opalj.fpcf.properties.ImpureBase
 
 /**
  * Very simple, fast, but also imprecise analysis of the purity of methods. See the
@@ -164,12 +163,12 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                                 purity match {
                                     case EP(_, Pure) ⇒ /* Nothing to do...*/
 
-                                    case EP(_, Impure | MaybePure) ⇒
-                                        return ImmediateResult(method, Impure);
-
                                     // Handling cyclic computations
                                     case ep @ EP(_, ConditionallyPure) ⇒
                                         dependees += ep
+
+                                    case EP(_, _) ⇒
+                                        return ImmediateResult(method, Impure);
 
                                     case epk ⇒
                                         dependees += epk
@@ -212,9 +211,6 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
             p match {
-                case Impure | MaybePure ⇒
-                    Result(method, Impure)
-
                 case ConditionallyPure ⇒
                     val newEP = EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
                     dependees = dependees.filter(_.e ne e) + newEP
@@ -226,6 +222,9 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                         Result(method, Pure)
                     else
                         IntermediateResult(method, ConditionallyPure, dependees, c)
+
+                case ImpureBase(_) | MaybePure | _ ⇒
+                    Result(method, Impure)
             }
         }
 

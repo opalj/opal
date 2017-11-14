@@ -54,13 +54,14 @@ import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.Impure
+import org.opalj.fpcf.properties.ImpureBase.Impure
 import org.opalj.fpcf.properties.MaybePure
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.FinalField
+import org.opalj.fpcf.properties.ImpureBase
 import org.opalj.tac._
 
 /**
@@ -74,7 +75,7 @@ import org.opalj.tac._
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
  *       types of expressions other than [[Var]]s and also not check them for locality.
  *
- * @note This analysis only derives the properties [[Pure]], [[SideEffectFree]] and [[Impure]]. It
+ * @note This analysis only derives the properties [[Pure]], [[SideEffectFree]] and `Impure`. It
  *       does not provide any reasoning on why a method was considered `Impure`.
  *       Compared to the `PurityAnalysis`, it deals with all methods, even if their reference type
  *       parameters are mutable. It can handle accesses of (effectively) final instance fields,
@@ -536,7 +537,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
                     maxPurity = SideEffectFree
 
                 // Cases resulting in impurity
-                case Impure | MaybePure | // Call to impure method
+                case ImpureBase(_) | MaybePure | // Call to impure method
                     _ ⇒ // Unknown property
                     impure = true
             }

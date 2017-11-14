@@ -30,6 +30,17 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.fpcf.properties.DomainSpecific.DomainSpecificReason
+import org.opalj.fpcf.properties.DomainSpecific.UsesLogging
+import org.opalj.fpcf.properties.DomainSpecific.UsesSystemOutOrErr
+import org.opalj.fpcf.properties.DomainSpecific.RaisesExceptions
+import org.opalj.fpcf.properties.ImpureBase.Impure
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToSynchronization
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToHeapModification
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToFutureExtension
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToUnknownProperty
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToUnknownEntity
+import org.opalj.fpcf.properties.ImpureBase.ImpureDueToImpureCall
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
@@ -161,7 +172,8 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             ConditionallyDomainSpecificExternallySideEffectFree
         )
 
-        val reasons: Set[DomainSpecificReason] = Set(RaisesExceptions, UsesSystemOutOrErr, UsesLogging)
+        val reasons: Set[DomainSpecificReason] =
+            Set(RaisesExceptions, UsesSystemOutOrErr, UsesLogging)
 
         for {
             p1 ← domainSpecific
@@ -190,7 +202,7 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 val meet12 = prop1 meet prop2
                 val meet21 = prop2 meet prop1
                 (prop1, prop2) match {
-                    case (_: ImpureBase, _: ImpureBase) ⇒
+                    case (ImpureBase(_), ImpureBase(_)) ⇒
                         assert(
                             meet12 == prop1 || meet12 == prop2,
                             s"$prop1 meet $prop2 was not one of the impure reasons (was $meet12)"
