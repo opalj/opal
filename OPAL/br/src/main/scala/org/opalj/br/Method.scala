@@ -357,14 +357,14 @@ sealed abstract class JVMMethod
      * their method descriptors.
      */
     def compare(other: JVMMethod): Int = {
-        if (this.name eq other.name)
+        if (this.name == other.name)
             this.descriptor.compare(other.descriptor)
         else
             this.name.compareTo(other.name)
     }
 
     def compare(otherName: String, otherDescriptor: MethodDescriptor): Int = {
-        if (this.name eq otherName)
+        if (this.name == otherName)
             this.descriptor.compare(otherDescriptor)
         else
             this.name.compareTo(otherName)

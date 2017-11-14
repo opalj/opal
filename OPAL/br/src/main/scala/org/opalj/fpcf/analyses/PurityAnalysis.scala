@@ -83,8 +83,9 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 
 /**
- * Very simple and fast analysis of the purity of methods as defined by the
- * [[org.opalj.fpcf.properties.Purity]] property.
+ * Very simple, fast, but also imprecise analysis of the purity of methods. See the
+ * [[org.opalj.fpcf.properties.Purity]] property for details regarding the precise
+ * semantics of `(Im)Pure`.
  *
  * This analysis is a very, very shallow implementation that immediately gives
  * up, when something "complicated" (e.g., method calls which take objects)
@@ -203,7 +204,6 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-
                     return ImmediateResult(method, Impure);
 
                 case _ ⇒

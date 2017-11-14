@@ -754,24 +754,24 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * This method supports default methods and signature polymorphic calls; i.e., the
      * descriptor of the retuned methods may not be equal to the given method descriptor.
      *
-     * @param   callerType The object type which defines the method which performs the call.
+     * @param   callerClassType The object type which defines the method which performs the call.
      *          This information is required if the call target has (potentially) default
      *          visibility. (Note that this - in general - does not replace the need to perform an
      *          accessibility check.)
      * @param   receiverType A class type or an array type; never an interface type.
      */
     def instanceCall(
-        callerType:   ObjectType,
-        receiverType: ReferenceType,
-        name:         String,
-        descriptor:   MethodDescriptor
+        callerClassType: ObjectType,
+        receiverType:    ReferenceType,
+        name:            String,
+        descriptor:      MethodDescriptor
     ): Result[Method] = {
         if (receiverType.isArrayType) {
             return Result(ObjectClassFile flatMap { cf ⇒ cf.findMethod(name, descriptor) });
         }
 
         val receiverClassType = receiverType.asObjectType
-        val mdcResult = lookupVirtualMethod(callerType, receiverClassType, name, descriptor)
+        val mdcResult = lookupVirtualMethod(callerClassType, receiverClassType, name, descriptor)
         mdcResult map { mdc ⇒ mdc.method }
     }
 
