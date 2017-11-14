@@ -92,7 +92,7 @@ object ThrownExceptions {
     }
 }
 
-sealed class AllThrownExceptions(
+class AllThrownExceptions(
         val types:        BRTypesSet,
         val isRefineable: Boolean
 ) extends ThrownExceptions {

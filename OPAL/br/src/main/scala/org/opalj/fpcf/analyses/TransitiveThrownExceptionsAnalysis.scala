@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.PC
 import org.opalj.br.ObjectType
@@ -38,6 +39,56 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties._
+
+sealed abstract class SubClassesThrownExceptions extends Property {
+    final type Self = SubClassesThrownExceptions
+
+    final def key = SubClassesThrownExceptions.Key
+}
+
+object SubClassesThrownExceptions {
+
+    private[this] final val cycleResolutionStrategy = (
+        _: PropertyStore,
+        epks: Iterable[SomeEPK]
+    ) ⇒ {
+        // TODO Resolve cycles
+        val e = epks.find(_.pk == Key).get
+        val p = ThrownExceptionsAreUnknown.UnresolvableCycle
+        Iterable(Result(e, p))
+    }
+
+    final val Key: PropertyKey[SubClassesThrownExceptions] = {
+        PropertyKey.create[SubClassesThrownExceptions](
+            "SubClassesThrownExceptions",
+            SubClassesMayThrowException,
+            cycleResolutionStrategy
+        )
+    }
+}
+
+case object SubClassesMayThrowException extends SubClassesThrownExceptions {
+    final val isRefineable = true
+}
+
+case class ClassOrSubClassesThrowExceptions(exceptions: BRTypesSet)
+    extends SubClassesThrownExceptions {
+    final val isRefineable = false
+}
+
+case object ClassOrSubClassesDontThrowExceptions extends SubClassesThrownExceptions {
+    final val isRefineable = false
+}
+
+case class ConditionallyClassOrSubClassesThrowExceptions(exceptions: BRTypesSet)
+    extends SubClassesThrownExceptions {
+    final val isRefineable = true
+}
+
+case object NeedSubclassInformation extends AllThrownExceptions(
+    BRTypesSet.empty,
+    isRefineable = true
+)
 
 /**
  * Transitive analysis of thrown exceptions
@@ -72,7 +123,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
 
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
-        var result: ThrownExceptionsAreUnknown = null
+        var result: ThrownExceptions = null
 
         var isSynchronizationUsed = false
 
@@ -81,6 +132,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         var isFieldAccessed = false
 
         var dependees = Set.empty[EOptionP[Method, ThrownExceptions]]
+        var dependeesSubClasses = Set.empty[EOptionP[Method, SubClassesThrownExceptions]]
 
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
@@ -120,17 +172,17 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                                                 true
                                         }
                                     case _ ⇒
-                                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                                        result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
                                         false
                                 }
                             case _ ⇒
-                                result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                                result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
                                 false
                         }
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                    result = ThrownExceptionsAreUnknown.UnresolvedInvokeDynamic
                     false
 
                 case INVOKEINTERFACE.opcode ⇒
@@ -139,23 +191,31 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     if (callees.nonEmpty) {
                         val thrownExceptions = ps(callees.head, ThrownExceptions.Key)
 
-                        thrownExceptions match {
-                            case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
-                                true
-                            case EP(_, e: ThrownExceptionsAreUnknown) ⇒
-                                result = e
-                                false
-                            // Handling cyclic computations
-                            case epk ⇒
-                                dependees += epk
-                                true
+                        if (thrownExceptions.isPropertyFinal) {
+                            thrownExceptions match {
+                                case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
+                                    true
+                                case EP(_, e: ThrownExceptionsAreUnknown) ⇒
+                                    result = e
+                                    false
+                                // Handling cyclic computations
+                                case epk ⇒
+                                    dependees += epk
+                                    true
+                            }
+                        } else {
+                            dependees += thrownExceptions
+                            true
                         }
                     } else {
-                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
+                        result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
                         false
                     }
 
                 case INVOKEVIRTUAL.opcode ⇒
+                    if (m.name.equals("superclassThrows")) {
+                        println("foo")
+                    }
                     // TODO check subtypes as well, new property type for aggregated method calls
                     val iv = instruction.asInstanceOf[INVOKEVIRTUAL]
                     var callerPackage = ""
@@ -163,25 +223,21 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                         callerPackage = m.classFile.fqn.substring(0, m.classFile.fqn.lastIndexOf("/"))
                     }
                     val callees = project.virtualCall(callerPackage, iv)
-                    if (callees.nonEmpty) {
-                        val thrownExceptions = ps(callees.head, ThrownExceptions.Key)
-
+                    result = NoExceptionsAreThrown.NoInstructionThrowsExceptions
+                    callees.foreach { callee ⇒
+                        val thrownExceptions = ps(callee, SubClassesThrownExceptions.Key)
                         thrownExceptions match {
-                            case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
-                                true
-                            case EP(_, e: ThrownExceptionsAreUnknown) ⇒
-                                result = e
-                                false
-                            // TODO Result with intermediate result
+                            case EP(_, ClassOrSubClassesThrowExceptions(e)) ⇒
+                                exceptions ++= e.concreteTypes
+                                result = new AllThrownExceptions(e, false)
+                            case EP(_, ClassOrSubClassesDontThrowExceptions) ⇒
+
                             // Handling cyclic computations
                             case epk ⇒
-                                dependees += epk
-                                true
+                                dependeesSubClasses += epk
                         }
-                    } else {
-                        result = ThrownExceptionsAreUnknown.SomeCallerThrowsUnknownExceptions
-                        false
                     }
+                    callees.nonEmpty
 
                 // let's determine if the register 0 is updated (i.e., if the register which
                 // stores the this reference in case of instance methods is updated)
@@ -277,7 +333,87 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
             }
         }
 
+        if (m.name.equals("superclassThrows")) {
+            println("foo")
+        }
+
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
+
+        val subClasses = project.classHierarchy.directSubtypesOf(m.classFile.thisType)
+
+        if (subClasses.isEmpty) {
+            // Simple case, the current class doesn't have any children, so we can put the final
+            // result immediately into the property store.
+            if (exceptions.isEmpty) {
+                ps.put(m, ClassOrSubClassesDontThrowExceptions)
+            } else {
+                ps.put(m, ClassOrSubClassesThrowExceptions(exceptions))
+            }
+        } else {
+            // Complex case: the current method depends on the method of all subclasses
+            // First we query the propertystore for all results of the direct subtype methods
+            val subclassesResults = subClasses
+                .flatMap(x ⇒ project.classFile(x).get.findMethod(m.name, m.descriptor))
+                .map { subMethod ⇒
+                    ps(
+                        subMethod,
+                        SubClassesThrownExceptions.Key
+                    )
+                }
+
+            // Then we check if we have open dependencies on some subtypes and get all
+            // concrete exceptions.
+            var notYetComputed = subclassesResults.filter(_.is(ConditionallyClassOrSubClassesThrowExceptions))
+            val subExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+            subclassesResults
+                .filter(_.is(ClassOrSubClassesThrowExceptions))
+                .map(_.p.asInstanceOf[ClassOrSubClassesThrowExceptions].exceptions)
+                .foreach { c ⇒ subExceptions ++= c.concreteTypes }
+            if (notYetComputed.nonEmpty) {
+                // We don't have all final results, add dependencies to then and wait for their
+                // result
+                def cSub(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                    if (m.name.equals("superclassThrows")) {
+                        println("foo")
+                    }
+                    ut match {
+                        // Wait for final result
+                        case IntermediateUpdate ⇒
+                            println(s"Intermediate ${e} - ${p}")
+                            IntermediateResult(e, p, notYetComputed, cSub)
+                        case FinalUpdate ⇒
+                            notYetComputed = notYetComputed.filter { _.e ne e }
+
+                            // Collect exceptions
+                            p match {
+                                case e: ClassOrSubClassesThrowExceptions ⇒
+                                    subExceptions ++= e.exceptions.concreteTypes
+                                case _ ⇒
+                            }
+
+                            // Check if we have a final result
+                            if (notYetComputed.isEmpty) {
+                                if (subExceptions.isEmpty) {
+                                    Result(m, ClassOrSubClassesDontThrowExceptions)
+                                } else {
+                                    Result(m, ClassOrSubClassesThrowExceptions(subExceptions))
+                                }
+                            } else {
+                                IntermediateResult(m, ConditionallyClassOrSubClassesThrowExceptions(subExceptions), notYetComputed, cSub)
+                            }
+                    }
+                }
+                ps.handleResult(IntermediateResult(m, ConditionallyClassOrSubClassesThrowExceptions(subExceptions), notYetComputed, cSub))
+            } else {
+                // All subtypes have already final results, so we can make our result final as well
+                if (subExceptions.isEmpty) {
+                    ps.handleResult(Result(m, ClassOrSubClassesDontThrowExceptions))
+                } else {
+                    ps.handleResult(Result(m, ClassOrSubClassesThrowExceptions(subExceptions)))
+                }
+            }
+        }
+
         if (!areAllExceptionsCollected) {
             assert(result ne null)
             return Result(m, result);
@@ -291,11 +427,13 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         }
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+            if (m.name.equals("superclassThrows")) {
+                println("foo")
+            }
             p match {
-                case NoExceptionsAreThrown.NoInstructionThrowsExceptions ⇒
-                    // TODO Check all NoExceptionsAreThrown
+                case e: NoExceptionsAreThrown ⇒
                     if (exceptions.isEmpty)
-                        Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
+                        Result(m, e)
                     else {
                         Result(m, new AllThrownExceptions(exceptions, false))
                     }
@@ -303,27 +441,55 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                 case thrownExceptions: AllThrownExceptions ⇒
                     dependees = dependees.filter { _.e ne e }
                     exceptions ++= thrownExceptions.types.concreteTypes
-                    if (dependees.isEmpty)
+                    if (dependees.isEmpty && dependeesSubClasses.isEmpty)
                         if (exceptions.isEmpty) {
                             Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
                         } else {
                             Result(m, new AllThrownExceptions(exceptions, false))
                         }
                     else
-                        IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
+                        IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees ++ dependeesSubClasses, c)
 
                 case u: ThrownExceptionsAreUnknown ⇒
                     Result(m, u)
+
+                case _: ConditionallyClassOrSubClassesThrowExceptions ⇒
+                    IntermediateResult(e, new AllThrownExceptions(exceptions, false), dependees ++ dependeesSubClasses, c)
+
+                case a: ClassOrSubClassesThrowExceptions ⇒
+                    dependeesSubClasses = dependeesSubClasses.filter { _.e ne e }
+                    exceptions ++= a.exceptions.concreteTypes
+                    if (dependees.isEmpty && dependeesSubClasses.isEmpty)
+                        if (exceptions.isEmpty) {
+                            Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
+                        } else {
+                            Result(m, new AllThrownExceptions(exceptions, false))
+                        }
+                    else
+                        IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees ++ dependeesSubClasses, c)
+                case ClassOrSubClassesDontThrowExceptions ⇒
+                    dependeesSubClasses = dependeesSubClasses.filter { _.e ne e }
+                    if (dependees.isEmpty && dependeesSubClasses.isEmpty)
+                        if (exceptions.isEmpty) {
+                            Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
+                        } else {
+                            Result(m, new AllThrownExceptions(exceptions, false))
+                        }
+                    else
+                        IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees ++ dependeesSubClasses, c)
+                case SubClassesMayThrowException ⇒
+                    //IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees ++ dependeesSubClasses, c)
+                    Result(m, new AllThrownExceptions(exceptions, false))
             }
         }
 
-        if (dependees.isEmpty) {
+        if (dependees.isEmpty && dependeesSubClasses.isEmpty) {
             if (exceptions.isEmpty)
                 Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
             else
                 Result(m, new AllThrownExceptions(exceptions, false))
         } else {
-            IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
+            IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees ++ dependeesSubClasses, c)
         }
     }
 }

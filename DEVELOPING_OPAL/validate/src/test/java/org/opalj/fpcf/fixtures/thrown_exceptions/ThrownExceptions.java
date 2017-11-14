@@ -81,5 +81,70 @@ public class ThrownExceptions {
         return throwException();
     }
 
+    @MayThrowException("will throw exception")
+    public int simpleCycle(boolean b) {
+        if (b) {
+            simpleCycle(false);
+        } else {
+            throw new NullPointerException();
+        }
+        return 42;
+    }
+
+    @DoesNotThrowException("no call or explicit throw instruction")
+    public int cycleA(boolean b) {
+        if (b) {
+            return cycleB();
+        }
+        return 42;
+    }
+
+    @DoesNotThrowException("no call or explicit throw instruction")
+    public int cycleB() {
+        cycleA(false);
+        return 42;
+    }
+
     // TODO Add tests for cycles, a->a and a->b->a
+
+
+    private static class Foo {
+        public int baz() {
+            throw new NullPointerException();
+        }
+
+        public int qux() {
+            return 42;
+        }
+    }
+
+    private static class FooBar extends Foo {
+        @Override
+        public int baz() {
+            return 42;
+        }
+
+        @Override
+        public int qux() {
+            throw new NullPointerException();
+        }
+    }
+
+    private Foo foo = new Foo();
+    private FooBar foobar = new FooBar();
+
+    @DoesNotThrowException("no call or explicit throw instruction")
+    public int noSubclasses() {
+        return foobar.baz();
+    }
+
+    @MayThrowException("will throw exception")
+    public int subclassThrows() {
+        return foo.baz();
+    }
+
+    @MayThrowException("will throw exception")
+    public int superclassThrows() {
+        return foo.qux();
+    }
 }
