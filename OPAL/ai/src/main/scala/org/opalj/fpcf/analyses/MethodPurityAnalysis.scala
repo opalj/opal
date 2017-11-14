@@ -168,7 +168,8 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
          * influence purity.
          *
          * @note Fresh references can be treated as non-escaping as the analysis result will be
-         *       impure anyways if anything escapes the method via parameters or calls.
+         *       impure if anything escapes the method via parameters, static field
+         *       assignments or calls.
          */
         def isLocal(expr: Expr[V]): Boolean = {
             if (expr.isConst)
@@ -427,7 +428,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
 
         /**
          * Examines the effect of returning a value on the method purity.
-         * Returning a reference to a mutable object or array may cause non-deterministic behavior
+         * Returning a reference to a mutable object or array may cause nondeterministic behavior
          * as the object/array may be modified between invocations of the method, so the method can
          * only be side-effect free. E.g., a given parameter which references a mutable object is
          * returned (and not otherwise accessed).
@@ -435,69 +436,69 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
         def checkPurityOfReturn(returnValue: Expr[V]): Unit = {
             // Only non-primitive return values influence purity.
             if (returnValue.cTpe != ComputationalTypeReference)
-                return;
+                return ;
 
             // If the method can't be pure, the return value is not important.
-            if(maxPurity == SideEffectFree)
-                return;
+            if (maxPurity == SideEffectFree)
+                return ;
 
             if (!returnValue.isVar) {
                 // The expression could refer to further expressions in a non-flat
                 // representation. To avoid special handling, we just fallback to SideEffectFree
                 // here as the analysis is intended to be used on flat representations anyway.
                 maxPurity = SideEffectFree
-                return;
+                return ;
             }
 
             val value = returnValue.asVar.value.asDomainReferenceValue
-            if(value.isNull.isYes)
-            // Null is immutable
-                return;
+            if (value.isNull.isYes)
+                // Null is immutable
+                return ;
 
-                        if (value.upperTypeBound.exists(_.isArrayType)) {
-                            // Arrays are always mutable
-                            maxPurity = SideEffectFree
-                            return;
-                        }
+            if (value.upperTypeBound.exists(_.isArrayType)) {
+                // Arrays are always mutable
+                maxPurity = SideEffectFree
+                return ;
+            }
 
             if (value.isPrecise) { // Precise class known, use ClassImmutability
-                            val cfo = project.classFile(value.upperTypeBound.head.asObjectType)
-                            if (cfo.isEmpty)
-                                maxPurity = SideEffectFree // Unknown class, might be mutable
-                            else
-                                propertyStore(cfo.get, ClassImmutability.key) match {
-                                    case EP(_, ImmutableObject) ⇒
-                                    // Returning immutable objects is pure
-                                    case ep @ EP(_, AtLeastConditionallyImmutableObject) ⇒
-                                        dependees += ep
-                                    case EP(_, _) ⇒ maxPurity = SideEffectFree
-                                    case epk      ⇒ dependees += epk
-                                }
-                        } else { // Precise class unknown, use TypeImmutability
+                val cfo = project.classFile(value.upperTypeBound.head.asObjectType)
+                if (cfo.isEmpty)
+                    maxPurity = SideEffectFree // Unknown class, might be mutable
+                else
+                    propertyStore(cfo.get, ClassImmutability.key) match {
+                        case EP(_, ImmutableObject) ⇒
+                        // Returning immutable objects is pure
+                        case ep @ EP(_, AtLeastConditionallyImmutableObject) ⇒
+                            dependees += ep
+                        case EP(_, _) ⇒ maxPurity = SideEffectFree
+                        case epk      ⇒ dependees += epk
+                    }
+            } else { // Precise class unknown, use TypeImmutability
                 // IMPROVE Use ObjectType once we attach the respective information to ObjectTypes
-                            val cfos = value.upperTypeBound.map { tpe ⇒
-                                project.classFile(tpe.asObjectType)
-                            }
-                            if (cfos.exists(_.isEmpty))
-                                maxPurity = SideEffectFree // Unknown class, might be mutable
-                            else
-                                cfos.forall { cfo ⇒
-                                    propertyStore(cfo.get, TypeImmutability.key) match {
-                                        case EP(_, ImmutableType) ⇒
-                                            true // Returning immutable objects is pure
-                                        case ep @ EP(_, AtLeastConditionallyImmutableType) ⇒
-                                            dependees += ep
-                                            true
-                                        case EP(_, _) ⇒
-                                            maxPurity = SideEffectFree
-                                            false // Return early if we are already side-effect free
-                                        case epk ⇒
-                                            dependees += epk
-                                            true
-                                    }
-                                }
+                val cfos = value.upperTypeBound.map { tpe ⇒
+                    project.classFile(tpe.asObjectType)
+                }
+                if (cfos.exists(_.isEmpty))
+                    maxPurity = SideEffectFree // Unknown class, might be mutable
+                else
+                    cfos.forall { cfo ⇒
+                        propertyStore(cfo.get, TypeImmutability.key) match {
+                            case EP(_, ImmutableType) ⇒
+                                true // Returning immutable objects is pure
+                            case ep @ EP(_, AtLeastConditionallyImmutableType) ⇒
+                                dependees += ep
+                                true
+                            case EP(_, _) ⇒
+                                maxPurity = SideEffectFree
+                                false // Return early if we are already side-effect free
+                            case epk ⇒
+                                dependees += epk
+                                true
+                        }
+                    }
 
-
+            }
         }
 
         /**
