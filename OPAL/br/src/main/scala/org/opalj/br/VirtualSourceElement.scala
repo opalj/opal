@@ -32,8 +32,8 @@ package br
 import scala.math.Ordered
 
 /**
- * A `VirtualSourceElement` is the representation of some source element that is
- * always detached from the concrete source element that represents the implementation.
+ * A `VirtualSourceElement` is the representation of some source element that may be
+ * detached from the concrete source element that represents the implementation.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -246,7 +246,7 @@ sealed class VirtualMethod(
         other match {
             case that: VirtualMethod ⇒
                 (this.declaringClassType eq that.declaringClassType) &&
-                    (this.descriptor == that.descriptor) &&
+                    this.descriptor == that.descriptor &&
                     this.name == that.name
             case _ ⇒ false
         }
@@ -283,7 +283,7 @@ final case class VirtualForwardingMethod(
         target:                          Method
 ) extends VirtualMethod(declaringClassType, name, descriptor) {
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
 
     override def hashCode: Opcode = (target.hashCode() * 41) + super.hashCode
 
