@@ -37,6 +37,7 @@ import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
+import org.opalj.fpcf.properties.MaybeNoEscape
 
 class EscapeAnalysisOfVirtualCalls private ( final val project: SomeProject) extends FPCFAnalysis {
 
@@ -68,15 +69,16 @@ class EscapeAnalysisOfVirtualCalls private ( final val project: SomeProject) ext
                             RefineableResult(fp, escapeState)
                         else
                             Result(fp, escapeState)
-                    } else
-                        IntermediateResult(fp, escapeState, dependees, c)
+                    } else {
+                        // there can't be any cycles, so this is sound
+                        IntermediateResult(fp, MaybeNoEscape meet escapeState, dependees, c)
+                    }
                 case p: EscapeProperty if p.isRefineable ⇒ ut match {
                     case IntermediateUpdate ⇒
+                        escapeState = escapeState meet p.atMost
                         val newEP = EP(e.asInstanceOf[FormalParameter], p)
                         dependees = dependees.filter(_.e ne e) + newEP
-                        IntermediateResult(
-                            fp, escapeState meet p, dependees, c
-                        )
+                        IntermediateResult(fp, MaybeNoEscape meet escapeState, dependees, c)
                     case _ ⇒
                         escapeState = escapeState meet p
                         dependees = dependees.filter { _.e ne e }
@@ -86,7 +88,7 @@ class EscapeAnalysisOfVirtualCalls private ( final val project: SomeProject) ext
                             else
                                 Result(fp, escapeState)
                         } else {
-                            RefineableResult(fp, escapeState)
+                            IntermediateResult(fp, escapeState, dependees, c)
                         }
                 }
             }
@@ -99,7 +101,7 @@ class EscapeAnalysisOfVirtualCalls private ( final val project: SomeProject) ext
                 ImmediateResult(fp, escapeState)
             }
         } else {
-            IntermediateResult(fp, escapeState, dependees, c)
+            IntermediateResult(fp, MaybeNoEscape meet escapeState, dependees, c)
         }
     }
 
