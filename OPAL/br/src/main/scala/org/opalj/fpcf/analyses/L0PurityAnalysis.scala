@@ -89,11 +89,11 @@ import org.opalj.br.instructions.INVOKEINTERFACE
  *
  * This analysis is a very, very shallow implementation that immediately gives
  * up, when something "complicated" (e.g., method calls which take objects)
- * is encountered.
+ * is encountered. It also does not perform any significant control-/data-flow analyses.
  *
  * @author Michael Eichberg
  */
-class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
     import project.resolveFieldReference
     import project.nonVirtualCall
@@ -298,22 +298,34 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
         }
     }
 
-    protected def doCheckParameterImmutability(
+    protected def doCheckDescriptorImmutability(
         method: Method
     ): PropertyComputationResult = {
 
         // All parameters either have to be base types or have to be immutable.
         // IMPROVE Use plain object type once we use ObjectType in the store!
-        val referenceTypeParameters = method.parameterTypes.collect {
+        var referenceTypes = method.parameterTypes.iterator.collect {
             case t: ObjectType ⇒
                 project.classFile(t) match {
                     case Some(cf) ⇒ cf
                     case None     ⇒ return ImmediateResult(method, Impure);
                 }
         }
+        val methodReturnType = method.descriptor.returnType
+        if (methodReturnType.isArrayType) {
+            // we currently have no logic to decide whether the array was created locally
+            // or was created elsewhere...
+            return ImmediateResult(method, Impure);
+        }
+        if (methodReturnType.isObjectType) {
+            project.classFile(methodReturnType.asObjectType) match {
+                case Some(cf) ⇒ referenceTypes ++= Iterator(cf)
+                case None     ⇒ return ImmediateResult(method, Impure);
+            }
+        }
 
         var dependees: Set[EOptionP[SourceElement, Property]] = Set.empty
-        referenceTypeParameters foreach { e ⇒
+        referenceTypes foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
                 case EP(_, ImmutableType) ⇒ /*everything is Ok*/
                 case epk: EPK[_, _]       ⇒ dependees += epk
@@ -336,21 +348,21 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
             return ImmediateResult(method, Impure);
 
         // 1. step ( will schedule 2. step if necessary):
-        doCheckParameterImmutability(method)
+        doCheckDescriptorImmutability(method)
     }
 }
 
 /**
  * @author Michael Eichberg
  */
-object PurityAnalysis extends FPCFAnalysisRunner {
+object L0PurityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity)
 
     override def usedProperties: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new PurityAnalysis(project)
+        val analysis = new L0PurityAnalysis(project)
         propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determinePurity)
         analysis
     }
