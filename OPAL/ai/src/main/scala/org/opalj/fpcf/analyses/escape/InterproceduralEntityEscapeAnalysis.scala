@@ -237,36 +237,51 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             // therefore the method could be overriden and we do not know if the object escapes
             // TODO: to optimize performance, we do not let the analysis run against the existing methods
             calcMostRestrictive(MaybeEscapeInCallee)
+        } else if (dc.isArrayType) {
+            val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
+            checkParams(methodO, params, assignment)
+            if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
         } else {
             assert(m.declaringClassType.isObjectType)
+            assert(dc.isObjectType)
 
             val target = project.instanceCall(
                 m.declaringClassType.asObjectType,
-                dc.asObjectType,
+                dc,
                 name,
                 descr
             )
-            assert(target.hasValue)
-            val vm = VirtualForwardingMethod(dc, name, descr, target.value)
-            val fps = propertyStore.context[VirtualFormalParameters]
-            if (usesDefSite(receiver)) {
-                val fp = fps(vm)(0)
-                handleEscapeState(fp, assignment)
-            }
-            for (i ← params.indices) {
-                if (usesDefSite(params(i))) {
-                    val fp = fps(vm)(i + 1)
-                    handleEscapeState(fp, assignment)
+            if (target.hasValue) {
+                val vm = VirtualForwardingMethod(dc, name, descr, target.value)
+                if (isSignaturePolymorphicMethod(vm.target)) {
+                    //IMPROVE
+                    calcMostRestrictive(MaybeEscapeInCallee)
+                } else {
+                    val fps = propertyStore.context[VirtualFormalParameters]
+                    if (usesDefSite(receiver)) {
+                        val fp = fps(vm)
+                        handleEscapeState(fp(0), assignment)
+
+                    }
+                    for (i ← params.indices) {
+                        if (usesDefSite(params(i))) {
+                            val fp = fps(vm)
+                            handleEscapeState(fp(i + 1), assignment)
+                        }
+                    }
+                    val packageName = m.declaringClassType.asObjectType.packageName
+                    val methods =
+                        if (isI) project.interfaceCall(dc.asObjectType, name, descr)
+                        else project.virtualCall(packageName, dc, name, descr)
+                    for (method ← methods) {
+                        checkParams(Success(method), params, assignment)
+                        if (usesDefSite(receiver))
+                            handleCall(Success(method), 0, assignment)
+                    }
                 }
-            }
-            val packageName = m.declaringClassType.asObjectType.packageName
-            val methods =
-                if (isI) project.interfaceCall(dc.asObjectType, name, descr)
-                else project.virtualCall(packageName, dc, name, descr)
-            for (method ← methods) {
-                checkParams(Success(method), params, assignment)
-                if (usesDefSite(receiver))
-                    handleCall(Success(method), 0, assignment)
+            } else {
+                // the method is unknown, so we have to stop here
+                calcMostRestrictive(MaybeEscapeInCallee)
             }
 
         }
@@ -281,18 +296,22 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
         }
     }
 
+    private[this] def isSignaturePolymorphicMethod(method: Method): Boolean = {
+        method.isNativeAndVarargs &&
+            method.descriptor.parametersCount == 1 &&
+            method.descriptor.parameterType(0).isArrayType &&
+            method.descriptor.parameterType(0).asArrayType.componentType == ObjectType.Object &&
+            ((method.classFile.thisType eq ObjectType.VarHandle) ||
+                (method.classFile.thisType eq ObjectType.MethodHandle))
+    }
+
     private[this] def handleCall(
         methodO: org.opalj.Result[Method], param: Int, assignment: Option[Assignment[V]]
     ): Unit = {
         methodO match {
             case Success(method) ⇒
                 // handle signature polymorphic methods
-                if (method.isNativeAndVarargs &&
-                    method.descriptor.parametersCount == 1 &&
-                    method.descriptor.parameterType(0).isArrayType &&
-                    method.descriptor.parameterType(0).asArrayType.componentType == ObjectType.Object &&
-                    ((method.classFile.thisType eq ObjectType.VarHandle) ||
-                        (method.classFile.thisType eq ObjectType.MethodHandle))) {
+                if (isSignaturePolymorphicMethod(method)) {
                     //IMPROVE
                     calcMostRestrictive(MaybeEscapeInCallee)
                 } else {
@@ -353,20 +372,20 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 }
 
 class InterproceduralEntityEscapeAnalysis(
-    val e:             Entity,
-    var defSite:       IntTrieSet,
-    val uses:          IntTrieSet,
-    val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:        Parameters[TACMethodParameter],
-    val cfg:           CFG,
-    val handlers:      ExceptionHandlers,
-    val aiResult:      AIResult,
-    val m:             VirtualMethod,
-    val propertyStore: PropertyStore,
-    val project:       SomeProject
+        val e:             Entity,
+        var defSite:       IntTrieSet,
+        val uses:          IntTrieSet,
+        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:        Parameters[TACMethodParameter],
+        val cfg:           CFG,
+        val handlers:      ExceptionHandlers,
+        val aiResult:      AIResult,
+        val m:             VirtualMethod,
+        val propertyStore: PropertyStore,
+        val project:       SomeProject
 ) extends DefaultEntityEscapeAnalysis
-        with ConstructorSensitiveEntityEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntitiyEscapeAnalysis
-        with AbstractInterproceduralEntityEscapeAnalysis
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntitiyEscapeAnalysis
+    with AbstractInterproceduralEntityEscapeAnalysis
