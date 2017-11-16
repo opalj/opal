@@ -31,6 +31,7 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
+
 import org.opalj.ai.Domain
 import org.opalj.ai.isVMLevelValue
 import org.opalj.ai.pcOfVMLevelValue
@@ -86,7 +87,7 @@ import org.opalj.tac._
  *
  * @author Dominik Helm
  */
-class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
@@ -572,7 +573,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
     }
 }
 
-object MethodPurityAnalysis extends FPCFAnalysisRunner {
+object L1PurityAnalysis extends FPCFAnalysisRunner {
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity.key)
 
@@ -581,15 +582,15 @@ object MethodPurityAnalysis extends FPCFAnalysisRunner {
     }
 
     def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new MethodPurityAnalysis(p)
+        val analysis = new L1PurityAnalysis(p)
         ps.scheduleForEntities(p.allMethodsWithBody)(analysis.determinePurity)
         analysis
     }
 
     def registerAsLazyAnalysis(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new MethodPurityAnalysis(p)
+        val analysis = new L1PurityAnalysis(p)
         val propertyComputation = (e: Entity) ⇒ analysis.determinePurity(e.asInstanceOf[Method])
-        ps.scheduleLazyComputation(Purity.key, propertyComputation)
+        ps.scheduleLazyPropertyComputation(Purity.key, propertyComputation)
         analysis
     }
 }

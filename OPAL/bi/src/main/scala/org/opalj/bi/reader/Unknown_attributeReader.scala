@@ -35,8 +35,6 @@ import java.io.DataInputStream
 /**
  * A generic reader that can read attributes that are neither defined by the
  * specification nor by some additional user supplied code.
- *
- * @author Michael Eichberg
  */
 trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions {
 

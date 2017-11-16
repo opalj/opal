@@ -38,7 +38,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.MethodWithBody
+import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.fpcf.properties.IsEntryPoint
@@ -128,9 +128,9 @@ object CHADemo extends DefaultOneStepAnalysis {
 
         // ENTRY POINT INFO
 
-        val cpaEP = cpaStore.collect { case (m @ MethodWithBody(_), IsEntryPoint) ⇒ m }.toSet
+        val cpaEP = cpaStore.entities(IsEntryPoint).collect { case m: Method if m.body.isDefined ⇒ m }.toSet
 
-        val opaEP = opaStore.collect { case (m @ MethodWithBody(_), IsEntryPoint) ⇒ m }.toSet
+        val opaEP = opaStore.entities(IsEntryPoint).collect { case m: Method if m.body.isDefined ⇒ m }.toSet
 
         if (entryPointInfo) {
 

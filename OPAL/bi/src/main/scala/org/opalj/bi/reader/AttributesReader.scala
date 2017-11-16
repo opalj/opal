@@ -36,8 +36,6 @@ import org.opalj.control.repeat
 /**
  * Trait that implements a template method to read in the attributes of
  * a class, method_info, field_info or code_attribute structure.
- *
- * @author Michael Eichberg
  */
 trait AttributesReader
     extends AttributesAbstractions
@@ -115,6 +113,7 @@ trait AttributesReader
      * <li>MethodParameters_attribute </li>
      * <li>RuntimeVisibleTypeAnnotations_attribute </li>
      * <li>RuntimeInvisibleTypeAnnotations_attribute </li>
+     * </ul>
      * <b>Java 9</b>Attributes (Aug. 2016):<br />
      * <ul>
      * <li>Module_attribute</li>

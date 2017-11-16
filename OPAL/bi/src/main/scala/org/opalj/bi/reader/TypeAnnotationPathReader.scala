@@ -90,8 +90,8 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
                     val type_path_kind = in.readUnsignedByte()
                     (type_path_kind: @scala.annotation.switch) match {
                         // FROM THE JVM SPEC:
-                        // If the value of the type_path_kind item is 0, 1, or 2, then the value of the
-                        // type_argument_index item is 0.
+                        // If the value of the type_path_kind item is 0, 1, or 2,
+                        // then the value of the type_argument_index item is 0.
                         case 0 ⇒
                             in.read() // <=> in.skip..
                             TypeAnnotationDeeperInArrayType

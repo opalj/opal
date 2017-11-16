@@ -190,8 +190,13 @@ private[fpcf] object IntermediateResult {
 
 /**
  * Encapsulates some result and also some computations that should be scheduled after the results
- * were stored. I.e., in this case the property store guarantees that all values can be queried
- * by `nextComputations` if necessary.
+ * were stored. I.e., in this case the property store guarantees that all values stored previously
+ * can be queried by `nextComputations` if necessary.
+ *
+ * To ensure correctness it is absolutel< essential that all entities - for which some result
+ * could eventually be computed - are actually associated with some result before the
+ * property store reaches quiescence. Hence, it is generally not possible that a lazy
+ * computation returns `IncrementalResult` objects.
  *
  * Incremental results are particularly usefull to process tree structures such as the class
  * hierarchy.

@@ -31,74 +31,76 @@ package fpcf
 
 import java.net.URL
 
+import org.opalj.br.Method
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.Method
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.MethodPurityAnalysis
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.PurityAnalysis
+import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.L1PurityAnalysis
+import org.opalj.fpcf.analyses.L0PurityAnalysis
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.SideEffectFree
 
 /**
- * Runs the purity analysis including all analyses that may improve the overall result.
+ * Executes a purity analysis for a given code base.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
-    final val MPAParam = "-analysis=MethodPurityAnalysis"
+    final val L1PurityAnalysisParameter = "-analysis=L1PurityAnalysis"
 
     override def title: String = "assess the purity of methods"
 
-    override def description: String = { "assess the purity of some methods" }
+    override def description: String = {
+        "assess the purity of the projects methods using the configured analysis"
+    }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
-        super.checkAnalysisSpecificParameters(parameters.filter(_ != MPAParam))
+        super.checkAnalysisSpecificParameters(parameters.filter(_ != L1PurityAnalysisParameter))
     }
 
     override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
         val propertyStore = project.get(PropertyStoreKey)
 
-        if (parameters.contains(MPAParam)) {
+        if (parameters.contains(L1PurityAnalysis)) {
             ClassImmutabilityAnalysis.start(project, propertyStore)
             TypeImmutabilityAnalysis.start(project, propertyStore)
-            AdvancedFieldMutabilityAnalysis.start(project, propertyStore)
-            MethodPurityAnalysis.start(project, propertyStore)
+            L1FieldMutabilityAnalysis.start(project, propertyStore)
+            L1PurityAnalysis.start(project, propertyStore)
         } else {
-            FieldMutabilityAnalysis.start(project, propertyStore)
-            PurityAnalysis.start(project, propertyStore)
+            L1FieldMutabilityAnalysis.start(project, propertyStore)
+            L0PurityAnalysis.start(project, propertyStore)
         }
 
         propertyStore.waitOnPropertyComputationCompletion(true)
 
-        val pureEntities: Traversable[EP[Entity, Purity]] = propertyStore.entities(Purity.key)
-        val pureMethods: Traversable[(Method, Property)] =
-            pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
-        val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
+        val entitiesWithPurityProperty: Traversable[EP[Entity, Purity]] =
+            propertyStore.entities(Purity.key)
+        val methodsWithPurityProperty: Traversable[(Method, Property)] =
+            entitiesWithPurityProperty.collect { case EP(m: Method, p) ⇒ (m, p) }
+        val methodsWithPurityPropertyAsStrings =
+            methodsWithPurityProperty.map(m ⇒ m._2+" >> "+m._1.toJava)
 
         val methodInfo =
-            pureMethodsAsStrings.toList.sorted.mkString(
-                "\nPure methods:\n",
-                "\n",
-                s"\nTotal: ${pureMethods.size}\n"
+            methodsWithPurityPropertyAsStrings.toList.sorted.mkString(
+                "\nPurity of methods:\n\t",
+                "\n\t",
+                s"\n\tTotal: ${methodsWithPurityProperty.size}\n"
             )
 
         val result = methodInfo +
             propertyStore.toString(false)+
-            "\nPure methods:             "+pureMethods.count(m ⇒ m._2 == Pure)+
-            "\nSide-effect free methods: "+pureMethods.count(m ⇒ m._2 == SideEffectFree)
+            "\nPure methods:             "+methodsWithPurityProperty.count(m ⇒ m._2 == Pure)+
+            "\nSide-effect free methods: "+methodsWithPurityProperty.count(m ⇒ m._2 == SideEffectFree)
 
         BasicReport(result)
     }

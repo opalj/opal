@@ -29,7 +29,9 @@
 package org.opalj.fpcf
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
+
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.concurrent.Locking.withReadLock
 import org.opalj.concurrent.Locking.withWriteLock
 

@@ -34,8 +34,6 @@ import scala.collection.mutable.Buffer
 
 /**
  * Constant pool related type definitions.
- *
- * @author Michael Eichberg
  */
 trait Constant_PoolAbstractions {
 

@@ -52,7 +52,7 @@ import org.opalj.tac.SelfReferenceParameter
  * @author Florian Kuebler
  * @author Michael Eichberg
  */
-class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class L1FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     final val tacai = project.get(DefaultTACAIKey)
 
@@ -148,12 +148,12 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
 /**
  * Executor for the field mutability analysis.
  */
-object AdvancedFieldMutabilityAnalysis extends FPCFAnalysisRunner {
+object L1FieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new AdvancedFieldMutabilityAnalysis(project)
+        val analysis = new L1FieldMutabilityAnalysis(project)
         val classFileCandidates =
             if (project.libraryClassFilesAreInterfacesOnly)
                 project.allProjectClassFiles

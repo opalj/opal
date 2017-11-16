@@ -30,14 +30,15 @@ package org.opalj
 package fpcf
 
 import java.net.URL
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.ClassFile
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
 import org.opalj.fpcf.properties.TypeImmutability
@@ -66,19 +67,17 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
 
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
-        val projectStore = time { get(PropertyStoreKey) } { r ⇒ t = r.toSeconds }
-        //projectStore.debug = true
+        val ps = time { get(PropertyStoreKey) } { r ⇒ t = r.toSeconds }
 
-        val manager = project.get(FPCFAnalysesManagerKey)
-        manager.run(FieldMutabilityAnalysis)
         time {
-            manager.runAll(ClassImmutabilityAnalysis, TypeImmutabilityAnalysis)
+            L0FieldMutabilityAnalysis.start(project, ps)
+            ClassImmutabilityAnalysis.start(project, ps)
+            TypeImmutabilityAnalysis.start(project, ps)
+            ps.waitOnPropertyComputationCompletion(true)
         } { r ⇒ t += r.toSeconds }
 
-        projectStore.validate(None)
-
         val immutableClasses =
-            projectStore.entities(ClassImmutability.key).
+            ps.entities(ClassImmutability.key).
                 filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
                 groupBy { _.p }.map { kv ⇒
                     (
@@ -95,7 +94,7 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
             immutableClasses.map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).toList.sorted.mkString("\n")
 
         val immutableTypes =
-            projectStore.entities(TypeImmutability.key).
+            ps.entities(TypeImmutability.key).
                 filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
                 groupBy { _.p }.map { kv ⇒ (kv._1, kv._2.size) }
         val immutableTypesPerCategory =
@@ -107,7 +106,7 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
             }.map { ep ⇒
                 ep.e.asInstanceOf[ClassFile].thisType.toJava+
                     " => "+ep.p+
-                    " => "+projectStore(ep.e, TypeImmutability.key).p
+                    " => "+ps(ep.e, TypeImmutability.key).p
             }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
         BasicReport(
@@ -118,7 +117,7 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
                 immutableClassesPerCategory+"\n"+
                 "\tType Immutability:\n"+
                 immutableTypesPerCategory+"\n"+
-                "\n"+projectStore.toString(false)+"\n"+
+                "\n"+ps.toString(false)+"\n"+
                 "The overall analysis took: "+t
         )
     }

@@ -45,7 +45,7 @@ import org.opalj.fpcf.properties.FieldMutability
  * available data-store) are not considered. This is in-line with the semantics of final,
  * which also does not prevent reads of partially initialized objects.
  */
-class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * Analyzes the mutability of private static non-final fields.
@@ -114,12 +114,12 @@ class FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAna
 /**
  * Factory object to create instances of the FieldMutabilityAnalysis.
  */
-object FieldMutabilityAnalysis extends FPCFAnalysisRunner {
+object L0FieldMutabilityAnalysis extends FPCFAnalysisRunner {
 
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new FieldMutabilityAnalysis(project)
+        val analysis = new L0FieldMutabilityAnalysis(project)
         val classFileCandidates =
             if (project.libraryClassFilesAreInterfacesOnly)
                 project.allProjectClassFiles

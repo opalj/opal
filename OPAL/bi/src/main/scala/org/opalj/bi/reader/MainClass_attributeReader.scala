@@ -35,8 +35,6 @@ import java.io.DataInputStream
 /**
  * The MainClass attribute is an attribute in the attributes table
  * of a module definition (Java 9).
- *
- * @author Michael Eichberg
  */
 trait MainClass_attributeReader extends AttributeReader {
 

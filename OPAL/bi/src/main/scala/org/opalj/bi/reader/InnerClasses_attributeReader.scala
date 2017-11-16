@@ -33,12 +33,11 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''inner classes'' attribute.
- *
- * @author Michael Eichberg
  */
 trait InnerClasses_attributeReader extends AttributeReader {
 

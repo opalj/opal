@@ -64,7 +64,6 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
 
         var oldTime = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
-
             oldEntryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project).size
         } { t ⇒ oldTime = t.toSeconds }
 
@@ -76,8 +75,8 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         var analysisTimeCPA = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
 
+            SimpleInstantiabilityAnalysis.run(cpaProject)
             cpaExecuter.runAll(
-                SimpleInstantiabilityAnalysis,
                 CallableFromClassesInOtherPackagesAnalysis,
                 MethodAccessibilityAnalysis
             )
@@ -94,8 +93,8 @@ object EntryPointAnalysisDemo extends MethodAnalysisDemo {
         var analysisTimeOPA = org.opalj.util.Seconds.None
         org.opalj.util.PerformanceEvaluation.time {
 
+            SimpleInstantiabilityAnalysis.run(opaProject)
             opaExecuter.runAll(
-                SimpleInstantiabilityAnalysis,
                 CallableFromClassesInOtherPackagesAnalysis,
                 MethodAccessibilityAnalysis
             )

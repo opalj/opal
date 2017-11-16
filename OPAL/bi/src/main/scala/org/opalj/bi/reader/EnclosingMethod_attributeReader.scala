@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Generic parser for the ''enclosing method'' attribute.
- *
- * @author Michael Eichberg
  */
 trait EnclosingMethod_attributeReader extends AttributeReader {
 

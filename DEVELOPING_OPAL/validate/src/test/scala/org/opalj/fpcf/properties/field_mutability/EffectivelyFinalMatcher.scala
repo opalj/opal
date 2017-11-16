@@ -48,8 +48,8 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
 
     final val SupportedAnalyses: Set[ObjectType] = {
         Set(
-            ObjectType("org/opalj/fpcf/analyses/FieldMutabilityAnalysis"),
-            ObjectType("org/opalj/fpcf/analyses/AdvancedFieldMutabilityAnalysis")
+            ObjectType("org/opalj/fpcf/analyses/L0FieldMutabilityAnalysis"),
+            ObjectType("org/opalj/fpcf/analyses/L1FieldMutabilityAnalysis")
         )
     }
 
@@ -67,14 +67,14 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: List[Property]
+        properties: Traversable[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
-        if (analyses.exists(as.contains) && !properties.contains(EffectivelyFinalField)) {
+        if (analyses.exists(as.contains) && !properties.exists(p ⇒ p == EffectivelyFinalField)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {

@@ -26,22 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 package analyses
 
+import org.opalj.UShort
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Method
 import org.opalj.br.instructions._
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.fpcf.properties.MethodComplexity
 import org.opalj.ai.PC
-import org.opalj.UShort
 
 /**
  * A shallow analysis that tries to identify methods that are relatively simple, that is,
  * which don't have loops and don't depend on other (more) complex methods. For such methods
  * it often makes sense to "inline them at analysis time".
- *
- * @param maxComplexity
  *
  * @author Michael Eichberg
  */

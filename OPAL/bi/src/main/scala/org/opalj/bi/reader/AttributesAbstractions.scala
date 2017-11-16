@@ -30,12 +30,10 @@ package org.opalj
 package bi
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 /**
  * Defines common abstractions over class file attributes.
- *
- * @author Michael Eichberg
  */
 trait AttributesAbstractions {
 

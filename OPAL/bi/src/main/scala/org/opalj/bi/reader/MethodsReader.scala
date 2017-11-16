@@ -33,12 +33,11 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
 /**
  * Defines a template method to read in a class file's Method_info structure.
- *
- * @author Michael Eichberg
  */
 trait MethodsReader extends Constant_PoolAbstractions {
 

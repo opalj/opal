@@ -30,18 +30,9 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.fpcf.properties.NoEntryPoint
-import org.opalj.fpcf.properties.IsEntryPoint
-import org.opalj.fpcf.properties.EntryPoint
 import org.opalj.fpcf.properties._
-import org.opalj.fpcf.properties.ProjectAccessibility
-import org.opalj.fpcf.properties.ClassLocal
-import org.opalj.fpcf.properties.Global
-import org.opalj.fpcf.properties.PackageLocal
-import org.opalj.fpcf.properties.Instantiable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.ai.analyses.cg.CallGraphFactory
 
@@ -50,7 +41,8 @@ import org.opalj.ai.analyses.cg.CallGraphFactory
  *
  * @author Michael Reif
  */
-class LibraryEntryPointsAnalysis private[analyses] (
+// ONLY TO BE USED/CALLED BY THE ENTRYPOINTSANALYSIS!
+private[analyses] class LibraryEntryPointsAnalysis private[analyses] (
         val project: SomeProject
 ) extends {
     private[this] final val AccessKey = ProjectAccessibility.Key
@@ -90,35 +82,25 @@ class LibraryEntryPointsAnalysis private[analyses] (
         if (method.isPrivate || (isClosedLibrary && method.isPackagePrivate))
             return ImmediateResult(method, NoEntryPoint);
 
-        // Now: the method is neither an (static or default) interface method nor and method
+        // Now: the method is neither an (static or default) interface method nor a method
         // which relates somehow to object serialization.
 
-        val c_inst: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
-            val isInstantiable = (dependeeP eq Instantiable)
-            if (isInstantiable && method.isStaticInitializer)
-                Result(method, IsEntryPoint)
-            else {
-                val isAbstractOrInterface = dependeeE match {
-                    case cf: ClassFile ⇒ cf.isAbstract || cf.isInterfaceDeclaration
-                    case _             ⇒ false
-                }
-                val c_vis: Continuation[Property] = (dependeeE: Entity, dependeeP: Property) ⇒ {
-                    if (dependeeP eq ClassLocal)
-                        Result(method, NoEntryPoint)
-                    else if ((dependeeP eq Global) && (isInstantiable || method.isStatic))
+        // ALL REQUIRED PROPERTIES ARE AVAILABLE (IF POSSIBLE)
+        propertyStore(classFile, InstantiabilityKey) match {
+            case EP(e, Instantiable) if method.isStaticInitializer ⇒ Result(method, IsEntryPoint)
+            case EP(_, p) ⇒
+                val isInstantiable = p == Instantiable
+                val isAbstractOrInterface = classFile.isAbstract || classFile.isInterfaceDeclaration
+                propertyStore(method, AccessKey) match {
+                    case EP(_, ClassLocal) ⇒ Result(method, NoEntryPoint)
+                    case EP(_, Global) if isInstantiable || method.isStatic ⇒
                         Result(method, IsEntryPoint)
-                    else if ((dependeeP eq Global) && !isInstantiable && isAbstractOrInterface ||
-                        (dependeeP eq PackageLocal)) {
-                        val epProperty = isClientCallable(method)
-                        Result(method, epProperty)
-                    } else
-                        Result(method, NoEntryPoint)
+                    case EP(_, PackageLocal) ⇒ Result(method, isClientCallable(method))
+                    case EP(_, Global) if !isInstantiable && isAbstractOrInterface ⇒
+                        Result(method, isClientCallable(method))
+                    case _ ⇒ Result(method, NoEntryPoint)
                 }
-
-                require(method, EntryPoint.Key, method, AccessKey)(c_vis)
-            }
+            case _ ⇒ throw new UnknownError("the other analyses have to be executed first")
         }
-
-        require(method, EntryPoint.Key, classFile, InstantiabilityKey)(c_inst);
     }
 }

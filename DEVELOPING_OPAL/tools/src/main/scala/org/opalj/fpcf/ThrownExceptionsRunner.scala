@@ -27,13 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package fpcf
 
 import java.net.URL
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
+
+import org.opalj.br.Method
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.AllThrownExceptions
+import org.opalj.fpcf.properties.ThrownExceptions
+import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
 import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract
 
 /**
@@ -41,7 +46,7 @@ import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract
  *
  * @author Michael Eichberg
  */
-object ThrownExceptions extends DefaultOneStepAnalysis {
+object ThrownExceptionsRunner extends DefaultOneStepAnalysis {
 
     override def description: String = "approximates the set of exceptions thrown by methods"
 
@@ -54,8 +59,8 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         ps.scheduleForEntities(project.allMethods)(new ThrownExceptionsFallbackAnalysis(ps))
         ps.waitOnPropertyComputationCompletion(true)
 
-        val methodsWithCompleteThrownExceptionsInfo = ps.collect {
-            case (m: Method, ts: AllThrownExceptions) if ts != MethodIsAbstract ⇒ (m, ts)
+        val methodsWithCompleteThrownExceptionsInfo = ps.entities(ThrownExceptions.Key).collect {
+            case EP(m: Method, ts: AllThrownExceptions) if ts != MethodIsAbstract ⇒ (m, ts)
         }
         val methodsWhichDoNotThrowExceptions = methodsWithCompleteThrownExceptionsInfo.collect {
             case e @ (m: Method, ts: AllThrownExceptions) if ts.types.isEmpty ⇒ e

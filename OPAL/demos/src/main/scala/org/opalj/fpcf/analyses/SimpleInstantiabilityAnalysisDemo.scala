@@ -32,10 +32,11 @@ package analyses
 package demo
 
 import java.net.URL
+
+import org.opalj.br.ClassFile
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.Instantiability
 import org.opalj.fpcf.properties.Instantiable
@@ -56,12 +57,11 @@ object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val propertyStore = project.get(PropertyStoreKey)
-        val executer = project.get(FPCFAnalysesManagerKey)
         var analysisTime = org.opalj.util.Seconds.None
 
         org.opalj.util.PerformanceEvaluation.time {
 
-            executer.run(SimpleInstantiabilityAnalysis)
+            SimpleInstantiabilityAnalysis.run(project)
 
         } { t ⇒ analysisTime = t.toSeconds }
 

@@ -32,8 +32,8 @@ package analyses
 package complexity
 
 import java.net.URL
+
 import org.opalj.br.analyses.Project
-import org.opalj.br.Method
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.PropertyStoreKey
@@ -49,8 +49,8 @@ object MethodComplexityDemo extends DefaultOneStepAnalysis {
     override def title: String = "assesses the complexity of methods"
 
     override def description: String =
-        """|a very simple assessment of a method that primarily serves
-      |the goal to make decisions about those methods that may be inlined""".stripMargin('|')
+        """|a very simple assessment of a method's complexity that primarily serves
+           |the goal to make decisions about those methods that may be inlined""".stripMargin('|')
 
     override def doAnalyze(
         project:       Project[URL],
@@ -58,14 +58,18 @@ object MethodComplexityDemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         implicit val theProject = project
-        implicit val theProjectStore = theProject.get(PropertyStoreKey)
+        implicit val propertyStore = theProject.get(PropertyStoreKey)
 
         val analysis = new MethodComplexityAnalysis
-        theProjectStore.execute { case m: Method if m.body.isDefined ⇒ m } { m ⇒ Seq(EP(m, analysis(m))) }
-        theProjectStore.waitOnPropertyComputationCompletion(true)
-        println(theProjectStore.toString)
-        val ratings = theProjectStore.collect[(String, Property)] {
-            case (e, p @ MethodComplexity(c)) if c < Int.MaxValue ⇒ (e.toString, p)
+        propertyStore.scheduleForEntities(project.allMethodsWithBody) { m ⇒ Result(m, analysis(m)) }
+        propertyStore.waitOnPropertyComputationCompletion(true)
+        println(propertyStore.toString)
+        val ratings = propertyStore.entities { p ⇒
+            p match {
+                case MethodComplexity(c) if c < Int.MaxValue ⇒ true
+                case _                                       ⇒ false
+
+            }
         }
         BasicReport(ratings.mkString("\n", "\n", s"\n${ratings.size} simple methods found - Done."))
     }

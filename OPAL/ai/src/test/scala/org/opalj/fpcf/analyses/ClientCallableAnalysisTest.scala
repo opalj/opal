@@ -55,12 +55,10 @@ abstract class ClientCallableAnalysisTest extends AbstractFixpointAnalysisAssump
     def defaultValue = IsClientCallable.toString
 }
 
-class ClientCallableAnalysisCPATest
-    extends ClientCallableAnalysisTest {
+class ClientCallableAnalysisCPATest    extends ClientCallableAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithClosedPackagesAssumption
 }
 
-class ClientCallableAnalysisOPATest
-    extends ClientCallableAnalysisTest {
+class ClientCallableAnalysisOPATest    extends ClientCallableAnalysisTest {
     override def analysisMode = AnalysisModes.LibraryWithOpenPackagesAssumption
 }

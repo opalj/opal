@@ -87,6 +87,8 @@ object EntryPointsAnalysis extends FPCFAnalysisRunner {
                 val analysisRunner = project.get(FPCFAnalysesManagerKey)
                 analysisRunner.run(CallableFromClassesInOtherPackagesAnalysis)
                 analysisRunner.run(MethodAccessibilityAnalysis)
+                propertyStore.waitOnPropertyComputationCompletion(true, true)
+                // STRICTLY REQUIRED OVER HERE - THE FOLLOWING ANALYSIS REQUIRES IT!
                 val analysis = new LibraryEntryPointsAnalysis(project)
                 propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
                 analysis

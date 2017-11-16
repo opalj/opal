@@ -33,12 +33,11 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
 /**
  * Generic parser for a method parameter's visible or invisible annotations.
- *
- * @author Michael Eichberg
  */
 trait ParametersAnnotationsReader extends AnnotationAbstractions {
 
@@ -60,4 +59,3 @@ trait ParametersAnnotationsReader extends AnnotationAbstractions {
         repeat(in.readUnsignedByte) { repeat(in.readUnsignedShort) { Annotation(cp, in) } }
     }
 }
-

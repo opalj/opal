@@ -100,6 +100,13 @@ import scala.reflect.runtime.universe.typeOf
  */
 abstract class PropertyStore {
 
+    //
+    //
+    // CONTEXT RELATED FUNCTIONALITY
+    // (Required by analyses that use the property store to query the context.)
+    //
+    //
+
     /** Immutable map which stores the context objects given at initialization time. */
     val ctx: Map[Type, AnyRef]
 
@@ -109,6 +116,40 @@ abstract class PropertyStore {
         ctx.getOrElse(t, { throw ContextNotAvailableException(t, ctx) }).asInstanceOf[T]
     }
 
+    @volatile private[this] var isInterrupted: () ⇒ Boolean = {
+        () ⇒ Thread.currentThread.isInterrupted()
+    }
+
+    //
+    //
+    // INTERRUPTION RELATED FUNCTIONALITY
+    // (Required by the property store to determine if it should abort executing tasks.)
+    //
+    //
+
+    /**
+     * Sets the callback function that is regularly called by the property store to test if
+     * the property store should stop executing new tasks. Given that the given method is
+     * called frequently, it should be reasonbily efficient. The method has to be thread-safe.
+     *
+     * The default method
+     */
+    final def setIsInterrupted(isInterrupted: () ⇒ Boolean): Unit = {
+        this.isInterrupted = isInterrupted
+    }
+
+    /**
+     * Generally called by the property store to test if if should stop the execution of (new)
+     * tasks. This function can be called by 3rd party code.
+     */
+    final def checkIsInterrupted: Boolean = isInterrupted()
+
+    //
+    //
+    // DEBUGGING AND COMPREHENSION RELATED FUNCTIONALITY
+    //
+    //
+
     /**
      * Returns a consistent snapshot of the stored properties.
      *
@@ -117,9 +158,15 @@ abstract class PropertyStore {
     def toString(printProperties: Boolean): String
 
     /**
-     * Returns a short string representation of the property store related to the key figures.
+     * Returns a short string representation of the property store showing core figures.
      */
     override def toString: String = toString(false)
+
+    //
+    //
+    // CORE FUNCTIONALITY
+    //
+    //
 
     // We have to register the cycle resolution strategies with the store as such unless the cycle only consists of elements with the same PK!
 
@@ -140,9 +187,9 @@ abstract class PropertyStore {
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
-     * @note Querying the properties of the given entities will trigger lazy and direct property
-     *      computations.
-     * @note The returned collection can be used to create an [[IntermediateResult]].
+     * @note  Querying the properties of the given entities will trigger lazy and direct property
+     *        computations.
+     * @note  The returned collection can be used to create an [[IntermediateResult]].
      */
     final def apply[E <: Entity, P <: Property](
         es:  Traversable[E],
@@ -246,6 +293,8 @@ abstract class PropertyStore {
      * This store ensures that the property computation function `pc` is never invoked more
      * than once for the same element at the same time. If `pc` is invoked again for a specific
      * element then only because a dependee has changed!
+     *
+     * In general, the result can't be an `IncrementalResult`.
      */
     def scheduleLazyPropertyComputation[P <: Property](
         pk: PropertyKey[P],
@@ -256,19 +305,26 @@ abstract class PropertyStore {
      * Will call the given function `c` for all elements of `es` in parallel; all elements of `es`
      * have to be entities known to the property store.
      */
-    def scheduleForEntities[E <: Entity](es: TraversableOnce[E])(c: PropertyComputation[E]): Unit = {
+    def scheduleForEntities[E <: Entity](
+        es: TraversableOnce[E]
+    )(
+        c: PropertyComputation[E]
+    ): Unit = {
         es.foreach(e ⇒ scheduleForEntity(e)(c))
     }
 
     /**
-     * Schedules the execution of the given PropertyComputation function for the given entity.
+     * Schedules the execution of the given `PropertyComputation` function for the given entity.
      * This is of particular interest to start an incremental computation
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierachy in a top-down manner.
      */
     def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
-     * Processes the result. Generally, not called by analyses.
+     * Processes the result. Generally, not called by analyses. If this function is directly
+     * called, the caller has to ensure that we don't have overlapping resuls and that the
+     * given result is a meaningful update of the previous property associated with the respective
+     * entity - if any!
      */
     def handleResult(r: PropertyComputationResult): Unit
 

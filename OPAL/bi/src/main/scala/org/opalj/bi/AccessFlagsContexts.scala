@@ -33,8 +33,6 @@ package bi
  * Enumeration of the different contexts in which the JVM Spec. uses
  * `access_flags` fields and also an enumeration which `access_flags` are found
  * in which context.
- *
- * @author Michael Eichberg
  */
 object AccessFlagsContexts extends Enumeration {
 

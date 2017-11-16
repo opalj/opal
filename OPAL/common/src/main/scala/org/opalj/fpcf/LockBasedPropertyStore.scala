@@ -127,8 +127,7 @@ class LockBasedPropertyStore private (
         // class EntityProperties(l: ReentrantReadWriteLock, ps: Properties) // the references are never updated
         private[this] val data:     DataMap[Entity, EntityProperties],
         final val ctx:              Map[Type, AnyRef],
-        final val ParallelismLevel: Int,
-        final val isInterrupted:    () ⇒ Boolean
+        final val ParallelismLevel: Int
 )(
         implicit
         val logContext: LogContext
@@ -935,7 +934,7 @@ class LockBasedPropertyStore private (
         val it = keys.iterator()
         var es: List[Entity] = Nil
         while (it.hasNext) {
-            if (isInterrupted())
+            if (checkIsInterrupted)
                 return ;
             val e = it.next()
             if (f(e)) es = e :: es
@@ -1098,7 +1097,7 @@ class LockBasedPropertyStore private (
 
             this.synchronized {
                 // double-checked locking idiom...
-                if (isInterrupted)
+                if (checkIsInterrupted)
                     return ;
 
                 isInterrupted = true
@@ -1441,7 +1440,7 @@ class LockBasedPropertyStore private (
          */
         // Locks: Tasks
         def scheduleTask(task: Runnable): Unit = {
-            if (isInterrupted()) {
+            if (checkIsInterrupted) {
                 Tasks.interrupt()
                 return ;
             }
@@ -1463,7 +1462,7 @@ class LockBasedPropertyStore private (
         val task = new Runnable {
             override def run(): Unit = {
                 try {
-                    if (!isInterrupted()) f
+                    if (!checkIsInterrupted) f
                 } catch {
                     case t: Throwable ⇒
                         t.printStackTrace()
@@ -1474,7 +1473,7 @@ class LockBasedPropertyStore private (
                 }
             }
         }
-        if (!isInterrupted())
+        if (!checkIsInterrupted)
             scheduleTask(task)
     }
 
@@ -2042,7 +2041,9 @@ object LockBasedPropertyStore {
         }
 
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
-        new LockBasedPropertyStore(data, contextMap, parallelismLevel, isInterrupted)
+        val ps = new LockBasedPropertyStore(data, contextMap, parallelismLevel)
+        ps.setIsInterrupted(isInterrupted)
+        ps
     }
 
     /**

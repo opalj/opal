@@ -43,6 +43,7 @@ import AnalysisModes._
  * @author Michael Reif
  * @author Michael Eichberg
  */
+// TODO Move the interface to org.opalj.br.analyses
 trait ProjectBasedAnalysis {
 
     implicit val project: SomeProject

@@ -30,9 +30,10 @@ package org.opalj
 package bi
 package reader
 
+import scala.reflect.ClassTag
+
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
 import org.opalj.control.repeat
 
 /**
@@ -41,8 +42,6 @@ import org.opalj.control.repeat
  * '''From the Specification'''
  * The Code attribute is a variable-length attribute in the attributes table
  * of a method_info structure.
- *
- * @author Michael Eichberg
  */
 trait Code_attributeReader extends AttributeReader {
 

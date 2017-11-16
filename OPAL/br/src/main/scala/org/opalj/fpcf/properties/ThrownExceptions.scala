@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyComputation
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.PC

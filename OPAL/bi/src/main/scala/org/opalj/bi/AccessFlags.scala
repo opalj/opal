@@ -31,8 +31,6 @@ package bi
 
 /**
  * Convenience methods related to access flags.
- *
- * @author Michael Eichberg
  */
 object AccessFlags {
 
