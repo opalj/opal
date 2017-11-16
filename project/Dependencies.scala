@@ -36,7 +36,7 @@ import sbt._
  */
 object Dependencies {
 
-    lazy val version = new {
+    object version {
         val junit = "4.12"
         val scalatest = "3.0.4"
         val scalacheck = "1.13.5"
@@ -55,7 +55,7 @@ object Dependencies {
         val fastutil = "8.1.0"
     }
 
-    lazy val library = new {
+    object library {
 
         // --- test libraries
 
