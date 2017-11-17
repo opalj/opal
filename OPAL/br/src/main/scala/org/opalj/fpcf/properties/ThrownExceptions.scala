@@ -30,14 +30,10 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
-import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
-import org.opalj.br.PC
-import org.opalj.br.ObjectType
-import org.opalj.br.BooleanType
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
+import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
+import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 import org.opalj.br.instructions._
 
 /**
@@ -163,6 +159,47 @@ object ThrownExceptionsAreUnknown {
         )
     }
 
+    final val SubclassesHaveUnknownExceptions = {
+        ThrownExceptionsAreUnknown(
+            "one or more subclass throw unknown exceptions"
+        )
+    }
+
+}
+
+/**
+ * TODO: Documentation
+ */
+object ClassHierarchyThrownExceptions {
+
+    private[this] final val cycleResolutionStrategy = (
+        _: PropertyStore,
+        epks: Iterable[SomeEPK]
+    ) ⇒ {
+        // TODO Resolve cycles
+        val e = epks.find(_.pk == Key).get
+        val p = ClassHierarchyThrownExceptions()
+        Iterable(Result(e, p))
+    }
+
+    final val Key: PropertyKey[ClassHierarchyThrownExceptions] = {
+        PropertyKey.create[ClassHierarchyThrownExceptions](
+            "ClassHierarchyThrownExceptions",
+            ClassHierarchyThrownExceptions(),
+            cycleResolutionStrategy
+        )
+    }
+}
+
+case class ClassHierarchyThrownExceptions(
+        exceptions:           BRTypesSet = BRTypesSet.empty,
+        isRefineable:         Boolean    = false,
+        hasUnknownExceptions: Boolean    = false
+)
+    extends Property {
+    final type Self = ClassHierarchyThrownExceptions
+
+    final def key = ClassHierarchyThrownExceptions.Key
 }
 
 //

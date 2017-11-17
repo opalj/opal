@@ -28,7 +28,7 @@
  */
 package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.TransitiveThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.{TransitiveThrownExceptionsAnalysis, TransitiveThrownExceptionsClassHierarchyAnalysis}
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -41,12 +41,15 @@ class ThrownExceptionAnalysisTests extends PropertiesTest {
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
-        validateProperties(as, methodsWithAnnotations, Set("ThrownExceptions"))
+        validateProperties(as, methodsWithAnnotations, Set("ThrownExceptions", "ClassHierarchyThrownExceptions"))
     }
 
     describe("the org.opalj.fpcf.analyses.TransitiveThrownExceptionsAnalysis is executed") {
-        val as = executeAnalyses(Set(TransitiveThrownExceptionsAnalysis))
-        validateProperties(as, methodsWithAnnotations, Set("ThrownExceptions"))
+        val as = executeAnalyses(Set(
+            TransitiveThrownExceptionsClassHierarchyAnalysis,
+            TransitiveThrownExceptionsAnalysis
+        ))
+        validateProperties(as, methodsWithAnnotations, Set("ThrownExceptions", "ClassHierarchyThrownExceptions"))
     }
 
 }

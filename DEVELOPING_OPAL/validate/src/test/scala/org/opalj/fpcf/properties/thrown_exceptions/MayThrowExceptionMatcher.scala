@@ -47,9 +47,9 @@ class MayThrowExceptionMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: List[Property]
     ): Option[String] = {
-        if (properties.forall(p ⇒ !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key))
+        if (properties.forall(p ⇒ !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key)) {
             None
-        else {
+        } else {
             Some(a.elementValuePairs.head.value.toString)
         }
     }
