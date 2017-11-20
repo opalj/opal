@@ -40,11 +40,11 @@ import org.opalj.util.ScalaMajorVersion
  * @author Andreas Muttscheller
  */
 class SimpleLambdaAddTest extends FixturesTest {
-    val fixtureFiles = new File(s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes")
+    val fixtureFiles = new File(s"OPAL/bi/target/scala-$ScalaMajorVersion/test-classes/lambdas-1.8-g-parameters-genericsignature.jar")
 
     describe("a simple lambda add") {
         it("should calculate 2+2 correctly") {
-            val c = byteArrayClassLoader.loadClass("org.opalj.br.fixtures.InvokeDynamics")
+            val c = byteArrayClassLoader.loadClass("lambdas.InvokeDynamics")
             val instance = c.newInstance()
             val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
             val res = m.invoke(instance, new Integer(2), new Integer(2))

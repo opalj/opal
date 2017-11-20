@@ -26,12 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.fixtures;
+package lambdas;
 
 import java.util.concurrent.Callable;
 
 /**
- * Test fixtures for invokedynamic rewriting
+ * Simple lambda add test with main method
  */
 public class InvokeDynamics {
 

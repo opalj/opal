@@ -44,10 +44,7 @@ trait FixturesTest extends FunSpec with Matchers {
 
     val fixtureFiles: File
 
-    def fixtureFilter(cfSrc: (ClassFile, URL)): Boolean = {
-        val (cf, _) = cfSrc
-        cf.thisType.packageName.startsWith("org/opalj/br/fixture")
-    }
+    def fixtureFilter(cfSrc: (ClassFile, URL)): Boolean = true
 
     final lazy val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()

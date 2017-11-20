@@ -29,9 +29,8 @@
 package org.opalj.br.jcg
 
 import java.io.{ByteArrayOutputStream, File, PrintStream}
-import java.net.URL
 
-import org.opalj.br.{ClassFile, FixturesTest}
+import org.opalj.br.FixturesTest
 
 /**
  * Tests for resolving various lambda expressions using the Java Call Graph library.
@@ -41,9 +40,7 @@ import org.opalj.br.{ClassFile, FixturesTest}
  * @author Andreas Muttscheller
  */
 class LambdaExpressions extends FixturesTest {
-    val fixtureFiles: File = new File(s"DEVELOPING_OPAL/validate/src/test/resources/jcg/lambda_expressions.jar")
-
-    override def fixtureFilter(cfSrc: (ClassFile, URL)): Boolean = true
+    val fixtureFiles: File = new File(s"OPAL/bi/src/test/resources/classfiles/lambda_expressions.jar")
 
     describe("JCG lambda_expressions test") {
         it("should execute main successfully") {
