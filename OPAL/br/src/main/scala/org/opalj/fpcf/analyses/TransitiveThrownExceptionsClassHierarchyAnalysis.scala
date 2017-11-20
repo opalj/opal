@@ -56,11 +56,6 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
 
         var dependees = Set.empty[EOptionP[Method, Property]]
 
-        val breakpointMethod = "throwException"
-        if (m.name.equals(breakpointMethod)) {
-            println("foo")
-        }
-
         val concreteMethod = ps(m, ThrownExceptions.Key)
         concreteMethod match {
             case EP(_, a: AllThrownExceptions) ⇒
@@ -103,19 +98,22 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
             }
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-            if (m.name.equals(breakpointMethod)) {
-                println(s"cht-c ${m.name} -> ${e.asInstanceOf[Method].name} ${p}")
-            }
             methodIsRefinable = false
             p match {
                 case c: ClassHierarchyThrownExceptions ⇒
                     exceptions ++= c.exceptions.concreteTypes
                     hasUnknownExceptions |= c.hasUnknownExceptions
-                    if (!c.isRefineable) {
+                    if (ut == FinalUpdate) {
                         dependees = dependees.filter { _.e ne e }
+                    } else {
+                        dependees = dependees.filter(_.e ne e) + EP(e.asInstanceOf[Method], p)
                     }
                 case a: AllThrownExceptions ⇒
-                    dependees = dependees.filter { _.e ne e }
+                    if (ut == FinalUpdate) {
+                        dependees = dependees.filter { _.e ne e }
+                    } else {
+                        dependees = dependees.filter(_.e ne e) + EP(e.asInstanceOf[Method], p)
+                    }
                     exceptions ++= a.types.concreteTypes
                 case ThrownExceptionsAreUnknown(_) ⇒
                     hasUnknownExceptions = true

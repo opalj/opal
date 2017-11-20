@@ -81,16 +81,12 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         var isFieldAccessed = false
 
         var dependees = Set.empty[EOptionP[Method, Property]]
-        val breakpointMethod = "callThrowException"
 
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
          */
         def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
-            if (m.name.equals(breakpointMethod)) {
-                println("foo")
-            }
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
@@ -165,9 +161,6 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     }
 
                 case INVOKEVIRTUAL.opcode ⇒
-                    if (m.name.equals(breakpointMethod)) {
-                        println("foo")
-                    }
                     // TODO check subtypes as well, new property type for aggregated method calls
                     val iv = instruction.asInstanceOf[INVOKEVIRTUAL]
                     var callerPackage = ""
@@ -286,10 +279,6 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
             }
         }
 
-        if (m.name.equals(breakpointMethod) && m.classFile.thisType.toJava.contains("org.opalj.fpcf.fixtures")) {
-            println("foo")
-        }
-
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
 
         if (!areAllExceptionsCollected) {
@@ -305,9 +294,6 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         }
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
-            if (m.name.equals(breakpointMethod) && m.classFile.thisType.toJava.contains("org.opalj.fpcf.fixtures")) {
-                println(s"t-c ${m.name} -> ${e.asInstanceOf[Method].name} ${p}")
-            }
             p match {
                 case e: NoExceptionsAreThrown ⇒
                     if (exceptions.isEmpty)

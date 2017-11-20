@@ -70,12 +70,36 @@ sealed abstract class ThrownExceptions extends Property {
 object ThrownExceptions {
 
     private[this] final val cycleResolutionStrategy = (
-        _: PropertyStore,
+        ps: PropertyStore,
         epks: Iterable[SomeEPK]
     ) ⇒ {
         // IMPROVE We should have support to handle cycles of "ThrownExceptions"
-        val e = epks.find(_.pk == Key).get
-        val p = ThrownExceptionsAreUnknown.UnresolvableCycle
+        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+
+        var unknownExceptions: String = null
+        epks.foreach {
+            case EPK(e, ClassHierarchyThrownExceptions.Key) ⇒
+                (ps(e, ClassHierarchyThrownExceptions.Key).p: @unchecked) match {
+                    case c: ClassHierarchyThrownExceptions ⇒
+                        exceptions ++= c.exceptions.concreteTypes
+                }
+
+            case EPK(e, Key) ⇒
+                (ps(e, Key).p: @unchecked) match {
+                    case u: ThrownExceptionsAreUnknown ⇒ unknownExceptions = u.reason
+                    case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
+                }
+        }
+
+        val p = if (unknownExceptions != null) {
+            ThrownExceptionsAreUnknown(unknownExceptions)
+        } else if (exceptions.nonEmpty) {
+            new AllThrownExceptions(exceptions, false)
+        } else {
+            NoExceptionsAreThrown.NoInstructionThrowsExceptions
+        }
+
+        val e = epks.find(_.pk == Key).get.e
         Iterable(Result(e, p))
     }
 
@@ -173,13 +197,32 @@ object ThrownExceptionsAreUnknown {
 object ClassHierarchyThrownExceptions {
 
     private[this] final val cycleResolutionStrategy = (
-        _: PropertyStore,
+        ps: PropertyStore,
         epks: Iterable[SomeEPK]
     ) ⇒ {
-        // TODO Resolve cycles
-        val e = epks.find(_.pk == Key).get
-        val p = ClassHierarchyThrownExceptions()
-        Iterable(Result(e, p))
+        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        var hasUnknownExceptions = false
+        epks.foreach {
+            case EPK(e, Key) ⇒
+                (ps(e, Key).p: @unchecked) match {
+                    case c: ClassHierarchyThrownExceptions ⇒
+                        exceptions ++= c.exceptions.concreteTypes
+                        hasUnknownExceptions |= c.hasUnknownExceptions
+                }
+
+            case EPK(e, ThrownExceptions.Key) ⇒
+                (ps(e, ThrownExceptions.Key).p: @unchecked) match {
+                    case _: ThrownExceptionsAreUnknown ⇒ hasUnknownExceptions = true
+                    case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
+                }
+        }
+        val entity = epks.find(_.pk == Key).get.e
+        val p = ClassHierarchyThrownExceptions(
+            exceptions = exceptions,
+            hasUnknownExceptions = hasUnknownExceptions
+        )
+
+        Iterable(Result(entity, p))
     }
 
     final val Key: PropertyKey[ClassHierarchyThrownExceptions] = {
@@ -200,6 +243,20 @@ case class ClassHierarchyThrownExceptions(
     final type Self = ClassHierarchyThrownExceptions
 
     final def key = ClassHierarchyThrownExceptions.Key
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: ClassHierarchyThrownExceptions ⇒
+                this.exceptions == that.exceptions &&
+                    this.isRefineable == that.isRefineable &&
+                    this.hasUnknownExceptions == that.hasUnknownExceptions
+            case _ ⇒ false
+        }
+    }
+
+    override def hashCode: Int = 13 * exceptions.hashCode +
+        (if (isRefineable) 41 else 53) +
+        (if (hasUnknownExceptions) 41 else 53)
 }
 
 //
