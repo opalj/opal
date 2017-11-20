@@ -41,12 +41,11 @@ import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.TypeEscapeProperty
 import org.opalj.fpcf.properties.GlobalType
 import org.opalj.fpcf.properties.PackageLocalType
 import org.opalj.fpcf.properties.MaybePackageLocalType
-import org.opalj.fpcf.properties.MaybeEscapeInCallee
+import org.opalj.fpcf.properties.AtMost
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.tac.DefaultTACAIKey
@@ -73,7 +72,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                     val escapeState = propertyStore(allocation, EscapeProperty.key)
                     escapeState match {
                         case EP(_, NoEscape | EscapeInCallee) ⇒
-                        case EP(_, MaybeNoEscape | MaybeEscapeInCallee) ⇒
+                        case EP(_, AtMost(NoEscape) | AtMost(EscapeInCallee)) ⇒
                             maybeLocal = true
                         // /dependees += escapeState
                         case EP(_, _) ⇒ return ImmediateResult(cf, GlobalType)

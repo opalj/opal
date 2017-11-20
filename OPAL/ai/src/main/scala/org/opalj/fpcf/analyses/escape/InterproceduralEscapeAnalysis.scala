@@ -45,10 +45,7 @@ import org.opalj.br.analyses.AllocationSitesKey
 //import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties._
-import org.opalj.fpcf.PropertyKey.SomeEPKs
-import org.opalj.fpcf.properties.EscapeProperty.key
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.DVar
@@ -83,7 +80,7 @@ class InterproceduralEscapeAnalysis private (
         aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
-        new InterproceduralEntityEscapeAnalysis(e, IntTrieSet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
+        new InterproceduralEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
     /**
      * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes
@@ -107,13 +104,13 @@ class InterproceduralEscapeAnalysis private (
                     }
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
 
-            case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, MaybeNoEscape)
+            case FormalParameter(m, _) if m.body.isEmpty ⇒ RefineableResult(e, AtMost(NoEscape))
             case FormalParameter(m, -1) ⇒
                 val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
                 doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
             case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                Result(e, MaybeNoEscape)
+                RefineableResult(e, AtMost(NoEscape))
             case FormalParameter(m, i) ⇒
                 val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
@@ -140,28 +137,7 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
             )
         } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
 
-        def cycleResolutionStrategy(ps: PropertyStore, epks: SomeEPKs): Iterable[PropertyComputationResult] = {
-            val property = epks.foldLeft(NoEscape: EscapeProperty) {
-                (escapeState, epk) ⇒
-                    epk match {
-                        case EPK(e, `key`) ⇒
-                            ps(e, key).p.atMost meet escapeState
-                        case _ ⇒
-                            throw new RuntimeException() //escapeState meet MaybeNoEscape
-                    }
-            }
-            Iterable(
-                if (property.isRefineable) {
-                    RefineableResult(epks.head.e, property)
-                } else {
-                    Result(epks.head.e, property)
-                }
-            )
-        }
-
         EscapeAnalysisOfVirtualCalls.start(project)
-
-        PropertyKey.updateCycleResolutionStrategy(EscapeProperty.key, cycleResolutionStrategy)
 
         val analysis = new InterproceduralEscapeAnalysis(project)
 

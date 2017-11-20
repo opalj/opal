@@ -46,9 +46,9 @@ import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.cfg.CFG
 import org.opalj.tac.Stmt
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.AtMost
 import org.opalj.tac.Parameters
 import org.opalj.tac.DVar
 import org.opalj.tac.TACode
@@ -62,7 +62,7 @@ import org.opalj.tac.DUVar
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
  * [[org.opalj.br.analyses.FormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.FormalParameter]]s are marked as
- * [[org.opalj.fpcf.properties.MaybeNoEscape]]. It uses
+ * [[org.opalj.fpcf.properties.AtMost(NoEscape)]]. It uses
  * [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] to handle a specific entity.
  *
  *
@@ -84,7 +84,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(e, IntTrieSet(defSite), uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
+        new SimpleEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the
@@ -92,7 +92,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
      * is defined. Allocation sites that are part of dead code are immediately returned as
      * [[org.opalj.fpcf.properties.NoEscape]].
      * [[org.opalj.br.analyses.FormalParameter]]s that are not the this local of a constructor are
-     * flagged as [[org.opalj.fpcf.properties.MaybeNoEscape]].
+     * flagged as [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
      *
      * @param e The entity whose escape state has to be determined.
      */
@@ -115,12 +115,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                             throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
                     }
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
-            case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, MaybeNoEscape)
+            case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, AtMost(NoEscape))
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
                 val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
                 doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
-            case FormalParameter(_, _) ⇒ ImmediateResult(e, MaybeNoEscape)
+            case FormalParameter(_, _) ⇒ RefineableResult(e, AtMost(NoEscape))
         }
     }
 }

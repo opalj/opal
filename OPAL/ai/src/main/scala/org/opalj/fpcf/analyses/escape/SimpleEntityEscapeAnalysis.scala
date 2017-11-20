@@ -33,6 +33,7 @@ package escape
 
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
+import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.ExceptionHandlers
@@ -44,20 +45,17 @@ import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.fpcf.properties.MaybeNoEscape
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.MaybeEscapeViaParameter
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
-import org.opalj.fpcf.properties.MaybeEscapeViaAbnormalReturn
-import org.opalj.fpcf.properties.MaybeEscapeViaParameterAndAbnormalReturn
+import org.opalj.fpcf.properties.AtMost
+import org.opalj.fpcf.properties.Conditional
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -83,7 +81,7 @@ import org.opalj.tac.Throw
  */
 class SimpleEntityEscapeAnalysis(
         val e:             Entity,
-        var defSite:       IntTrieSet,
+        val defSite:       ValueOrigin,
         val uses:          IntTrieSet,
         val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         val params:        Parameters[TACMethodParameter],
@@ -177,14 +175,14 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
 
             // do not check the escape state of the entity (defSite) whose escape state we are
             // currently computing to avoid endless loops
-            if (!defSite.contains(referenceDefSite)) {
+            if (defSite != referenceDefSite) {
                 // is the object/array reference of the field a local
                 if (referenceDefSite >= 0) {
                     code(referenceDefSite) match {
                         case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
                             /* as may alias information are not easily available we cannot simply
                             check for escape information of the base object */
-                            calcMostRestrictive(MaybeNoEscape)
+                            calcMostRestrictive(AtMost(NoEscape))
                         /*val allocationSites =
                                 propertyStore.context[AllocationSites]
                             val allocationSite = allocationSites(m)(pc)
@@ -211,14 +209,14 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                                 if (!seen.contains(x)) worklist = worklist + x
                             }
                         // we are not inter-procedural
-                        case Assignment(_, _, _: FunctionCall[_]) ⇒ calcMostRestrictive(MaybeNoEscape)
+                        case Assignment(_, _, _: FunctionCall[_]) ⇒ calcMostRestrictive(AtMost(NoEscape))
                         case Assignment(_, _, _: Const)           ⇒ // must be null
                         case _                                    ⇒ throw new RuntimeException("not yet implemented")
                     }
 
                 } else if (referenceDefSite >= ai.VMLevelValuesOriginOffset) {
                     // assigned to field of parameter
-                    calcMostRestrictive(MaybeEscapeViaParameter)
+                    calcMostRestrictive(AtMost(EscapeViaParameter))
                     /* As may alias information are not easily available we cannot simply use
                     the code below:
                     val formalParameters = propertyStore.context[FormalParameters]
@@ -293,7 +291,7 @@ object ConfigurationBasedConstructorEscapeAnalysis {
  * constructor or escapes. Is this the case, leastRestrictiveProperty will be set to the lower bound
  * of the current value and the calculated escape state.
  *
- * For non constructor calls, [[org.opalj.fpcf.properties.MaybeEscapeInCallee]] of e will be returned
+ * For non constructor calls, [[org.opalj.fpcf.properties.AtMost(EscapeInCallee)]] of e will be returned
  * whenever the receiver or a parameter is a use of defSite.
  */
 trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
@@ -316,27 +314,26 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                         // check if the this local escapes in the callee
                         val escapeState = propertyStore(fp(m)(0), EscapeProperty.key)
                         escapeState match {
-                            case EP(_, NoEscape)                            ⇒ //NOTHING TO DO
-                            case EP(_, GlobalEscape)                        ⇒ calcMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeViaStaticField)                ⇒ calcMostRestrictive(EscapeViaStaticField)
-                            case EP(_, EscapeViaHeapObject)                 ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, EscapeInCallee)                      ⇒ calcMostRestrictive(EscapeInCallee)
-                            case EP(_, EscapeViaParameter)                  ⇒ calcMostRestrictive(MaybeNoEscape)
-                            case EP(_, EscapeViaAbnormalReturn)             ⇒ calcMostRestrictive(MaybeNoEscape)
-                            case EP(_, EscapeViaParameterAndAbnormalReturn) ⇒ calcMostRestrictive(MaybeNoEscape)
-                            case EP(_, MaybeEscapeInCallee) ⇒
-                                calcMostRestrictive(EscapeInCallee)
-                                dependees += escapeState
-                            case EP(_, MaybeNoEscape)                            ⇒ dependees += escapeState
-                            case EP(_, MaybeEscapeViaParameter)                  ⇒ dependees += escapeState
-                            case EP(_, MaybeEscapeViaAbnormalReturn)             ⇒ dependees += escapeState
-                            case EP(_, MaybeEscapeViaParameterAndAbnormalReturn) ⇒ dependees += escapeState
+                            case EP(_, NoEscape)                                    ⇒ //NOTHING TO DO
+                            case EP(_, GlobalEscape)                                ⇒ calcMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeViaStaticField)                        ⇒ calcMostRestrictive(EscapeViaStaticField)
+                            case EP(_, EscapeViaHeapObject)                         ⇒ calcMostRestrictive(EscapeViaHeapObject)
+                            case EP(_, EscapeInCallee)                              ⇒ calcMostRestrictive(EscapeInCallee)
+                            case EP(_, AtMost(EscapeInCallee))                      ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
+                            case EP(_, EscapeViaParameter)                          ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, EscapeViaAbnormalReturn)                     ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, EscapeViaParameterAndAbnormalReturn)         ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(NoEscape))                            ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(EscapeViaParameter))                  ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(EscapeViaAbnormalReturn))             ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, Conditional(_))                              ⇒ dependees += escapeState
                             case EP(_, p) ⇒
                                 throw new UnknownError(s"unexpected escape property ($p) for constructors")
                             // result not yet finished
                             case epk ⇒ dependees += epk
                         }
-                    case /* unknown method */ _ ⇒ calcMostRestrictive(MaybeNoEscape)
+                    case /* unknown method */ _ ⇒ calcMostRestrictive(AtMost(NoEscape))
                 }
         }
     }

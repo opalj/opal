@@ -30,12 +30,10 @@ package org.opalj.fpcf
 
 import java.net.URL
 
-import org.opalj.AnalysisModes
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
 
@@ -51,8 +49,9 @@ class EscapeAnalysisTests extends PropertiesTest {
     override def executeAnalyses(
         analysisRunners: Set[FPCFAnalysisRunner]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        val p = Project.recreate(FixtureProject, testConfig)
+        //val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.DesktopApplication)//(AnalysisModes.OPA)
+        //val p = Project.recreate(FixtureProject, testConfig)
+        val p = FixtureProject.recreate()
 
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
@@ -65,7 +64,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         org.opalj.br.analyses.PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
         val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(false, false)
+        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         (p, ps, as)
     }
 

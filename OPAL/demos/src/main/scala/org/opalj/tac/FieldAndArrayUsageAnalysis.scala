@@ -40,9 +40,8 @@ import org.opalj.fpcf.EP
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.MaybeNoEscape
-import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.AtMost
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
@@ -166,9 +165,9 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                             for (pc ← pcsOfNewArrays) {
                                                 val as = ass(m)(pc)
                                                 propertyStore(as, EscapeProperty.key) match {
-                                                    case EP(_, NoEscape | MaybeNoEscape) ⇒
+                                                    case EP(_, NoEscape | AtMost(NoEscape)) ⇒
                                                         maybeNoEscapingArrays += 1
-                                                    case EP(_, EscapeInCallee | MaybeEscapeInCallee) ⇒
+                                                    case EP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
                                                         maybeInCalleeArrays += 1
                                                     case EP(_, p) if p.isBottom ⇒ globalArrays += 1
                                                     case _                      ⇒ maybeInCallerArrays += 1

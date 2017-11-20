@@ -28,10 +28,7 @@
  */
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.properties.escape.EscapeViaAbnormalReturn;
-import org.opalj.fpcf.properties.escape.EscapeViaStaticField;
-import org.opalj.fpcf.properties.escape.MaybeNoEscape;
-import org.opalj.fpcf.properties.escape.NoEscape;
+import org.opalj.fpcf.properties.escape.*;
 import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
 public class EscapesOfExceptions {
@@ -45,7 +42,7 @@ public class EscapesOfExceptions {
 
     public static int directCatchedException() {
         try {
-            throw new @NoEscape("the exception is catched immediately") RuntimeException();
+            throw new @EscapeInCallee("the exception is catched immediately") RuntimeException();
         } catch (RuntimeException e) {
             return -1;
         }
@@ -54,9 +51,9 @@ public class EscapesOfExceptions {
     public static int multipleExceptionsAllCatched(boolean b) throws Exception {
         Exception e;
         if (b) {
-            e = new @NoEscape("the exception is catched") IllegalArgumentException();
+            e = new @EscapeInCallee("the exception is catched") IllegalArgumentException();
         } else {
-            e = new @NoEscape("the exception is also catched") IllegalStateException();
+            e = new @EscapeInCallee("the exception is also catched") IllegalStateException();
         }
         try {
             throw e;
@@ -70,7 +67,7 @@ public class EscapesOfExceptions {
     public static int multipleExceptionsSomeCatched(boolean b) throws Exception {
         Exception e = null;
         if (b) {
-            e = new @NoEscape("the exception is catched") IllegalArgumentException();
+            e = new @EscapeInCallee("the exception is catched") IllegalArgumentException();
         } else {
             e = new @EscapeViaAbnormalReturn(
                     "the exception is not catched") IllegalStateException();

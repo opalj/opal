@@ -43,6 +43,7 @@ import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
+import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.VirtualForwardingMethod
 import org.opalj.br.analyses.VirtualFormalParameters
@@ -50,12 +51,11 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.MaybeEscapeInCallee
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.MaybeNoEscape
+import org.opalj.fpcf.properties.AtMost
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
@@ -75,54 +75,6 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
     var dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
-
-    /**
-     * This method is called, after the entity has been analyzed. If there is no dependee left or
-     * the entity escapes globally, the result is returned directly. If the current escape state of
-     * the entity is a `maybe`, we have to lift it down to [[GlobalEscape]], to make the less
-     * conservative cycle resolution sound.
-     * In any other case, the `maybe` version of the current escape state is returned as
-     * [[IntermediateResult]].
-     *
-     * @see [[EscapeProperty]]
-     */
-    protected[this] override def returnResult: PropertyComputationResult = {
-        // if we do not depend on other entities, or are globally escaping, return the result
-        if (dependees.isEmpty || mostRestrictiveProperty.isBottom) {
-            if (mostRestrictiveProperty.isRefineable) {
-                RefineableResult(e, mostRestrictiveProperty)
-            } else {
-                ImmediateResult(e, mostRestrictiveProperty)
-            }
-        } else {
-            if (mostRestrictiveProperty.isRefineable) {
-                ImmediateResult(e, GlobalEscape)
-            } else {
-                // The refineable escape properties are the `maybe` ones.
-                // So a meet between the currently most restrictive property and MaybeNoEscape
-                // will lead to the maybe version of it
-                IntermediateResult(e, MaybeNoEscape meet mostRestrictiveProperty, dependees, c)
-            }
-        }
-    }
-
-    /**
-     * If the current escape state of
-     * the entity is a `maybe`, we have to lift it down to [[GlobalEscape]], to make the less
-     * conservative cycle resolution sound.
-     * Otherwise [[AbstractEntityEscapeAnalysis.performIntermediateUpdate]] is called.
-     */
-    protected[this] override def performIntermediateUpdate(
-        other: Entity,
-        p:     Property,
-        x:     EscapeProperty
-    ): PropertyComputationResult = {
-        if (mostRestrictiveProperty.isRefineable) {
-            ImmediateResult(e, GlobalEscape)
-        } else {
-            super.performIntermediateUpdate(other, p, x)
-        }
-    }
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         handleStaticCall(
@@ -236,7 +188,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             // the type of the virtual call is extensible and the analysis mode is library like
             // therefore the method could be overriden and we do not know if the object escapes
             // TODO: to optimize performance, we do not let the analysis run against the existing methods
-            calcMostRestrictive(MaybeEscapeInCallee)
+            calcMostRestrictive(AtMost(EscapeInCallee))
         } else if (dc.isArrayType) {
             val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
             checkParams(methodO, params, assignment)
@@ -255,7 +207,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 val vm = VirtualForwardingMethod(dc, name, descr, target.value)
                 if (isSignaturePolymorphicMethod(vm.target)) {
                     //IMPROVE
-                    calcMostRestrictive(MaybeEscapeInCallee)
+                    calcMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     val fps = propertyStore.context[VirtualFormalParameters]
                     if (usesDefSite(receiver)) {
@@ -281,7 +233,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 }
             } else {
                 // the method is unknown, so we have to stop here
-                calcMostRestrictive(MaybeEscapeInCallee)
+                calcMostRestrictive(AtMost(EscapeInCallee))
             }
 
         }
@@ -313,7 +265,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // handle signature polymorphic methods
                 if (isSignaturePolymorphicMethod(method)) {
                     //IMPROVE
-                    calcMostRestrictive(MaybeEscapeInCallee)
+                    calcMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     val fps = propertyStore.context[FormalParameters]
                     val fp = fps(method)(param)
@@ -321,7 +273,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                         handleEscapeState(fp, assignment)
                     }
                 }
-            case _ ⇒ calcMostRestrictive(MaybeEscapeInCallee)
+            case _ ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
         }
     }
 
@@ -344,25 +296,14 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
             case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
             case EP(_, EscapeViaReturn) ⇒
-                aiResult.domain match {
-                    case _: org.opalj.ai.domain.l2.PerformInvocations ⇒
-                        assignment match {
-                            case Some(a) ⇒
-                                //IMPROVE further track the value
-                                calcMostRestrictive(MaybeEscapeInCallee)
-                            case None ⇒
-                                calcMostRestrictive(EscapeInCallee)
-                        }
-                    case _: org.opalj.ai.domain.l1.ReferenceValues ⇒
-                        assignment match {
-                            case Some(a) ⇒
-                                calcMostRestrictive(MaybeEscapeInCallee)
-                            case None ⇒
-                                calcMostRestrictive(EscapeInCallee)
-                        }
-
+                assignment match {
+                    case Some(a) ⇒
+                        calcMostRestrictive(AtMost(EscapeInCallee))
+                    case None ⇒
+                        calcMostRestrictive(EscapeInCallee)
                 }
-            case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(MaybeEscapeInCallee)
+            case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
+            case EP(_, AtMost(_))      ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
             case epk ⇒
                 dependees += epk
                 dependeeToStmt += ((fp, assignment))
@@ -373,7 +314,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 
 class InterproceduralEntityEscapeAnalysis(
         val e:             Entity,
-        var defSite:       IntTrieSet,
+        val defSite:       ValueOrigin,
         val uses:          IntTrieSet,
         val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         val params:        Parameters[TACMethodParameter],
