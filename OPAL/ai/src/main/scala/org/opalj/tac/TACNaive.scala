@@ -500,9 +500,7 @@ object TACNaive {
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
                     loadConstant(as[LoadConstantInstruction[_]](instruction))
 
-                case INVOKEINTERFACE.opcode |
-                    INVOKESPECIAL.opcode |
-                    INVOKEVIRTUAL.opcode ⇒
+                case INVOKESPECIAL.opcode ⇒
                     val invoke = as[MethodInvocationInstruction](instruction)
                     val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
@@ -511,15 +509,11 @@ object TACNaive {
                     import invoke.{methodDescriptor, declaringClass, isInterfaceCall, name}
                     val returnType = methodDescriptor.returnType
                     if (returnType.isVoidType) {
-                        val stmtFactory =
-                            if (invoke.isVirtualMethodCall)
-                                VirtualMethodCall.apply[IdBasedVar] _
-                            else
-                                NonVirtualMethodCall.apply[IdBasedVar] _
                         val stmt =
-                            stmtFactory(
+                            NonVirtualMethodCall(
                                 pc,
-                                declaringClass, isInterfaceCall, name, methodDescriptor,
+                                declaringClass.asObjectType, isInterfaceCall,
+                                name, methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -527,15 +521,44 @@ object TACNaive {
                         schedule(pcOfNextInstruction(pc), rest)
                     } else {
                         val newVar = OperandVar(returnType.computationalType, rest)
-                        val exprFactory =
-                            if (invoke.isVirtualMethodCall)
-                                VirtualFunctionCall.apply[IdBasedVar] _
-                            else
-                                NonVirtualFunctionCall.apply[IdBasedVar] _
                         val expr =
-                            exprFactory(
+                            NonVirtualFunctionCall(
                                 pc,
-                                declaringClass, isInterfaceCall, name, methodDescriptor,
+                                declaringClass.asObjectType, isInterfaceCall,
+                                name, methodDescriptor,
+                                receiver,
+                                params
+                            )
+                        statements(pc) = List(Assignment[IdBasedVar](pc, newVar, expr))
+                        schedule(pcOfNextInstruction(pc), newVar :: rest)
+                    }
+
+                case INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
+                    val invoke = as[MethodInvocationInstruction](instruction)
+                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
+                    val (operands, rest) = stack.splitAt(numOps)
+                    val (paramsInOperandsOrder, List(receiver)) = operands.splitAt(numOps - 1)
+                    val params = paramsInOperandsOrder.reverse
+                    import invoke.{methodDescriptor, declaringClass, isInterfaceCall, name}
+                    val returnType = methodDescriptor.returnType
+                    if (returnType.isVoidType) {
+                        val stmt =
+                            VirtualMethodCall(
+                                pc,
+                                declaringClass, isInterfaceCall,
+                                name, methodDescriptor,
+                                receiver,
+                                params
+                            )
+                        statements(pc) = List(stmt)
+                        schedule(pcOfNextInstruction(pc), rest)
+                    } else {
+                        val newVar = OperandVar(returnType.computationalType, rest)
+                        val expr =
+                            VirtualFunctionCall(
+                                pc,
+                                declaringClass, isInterfaceCall,
+                                name, methodDescriptor,
                                 receiver,
                                 params
                             )

@@ -154,10 +154,9 @@ sealed abstract class MethodDescriptor
         else {
             var i = 0
             while (i < thisParametersCount) {
-                val parameterComparisonResult =
-                    this.parameterTypes(i).compare(other.parameterTypes(i))
-                if (parameterComparisonResult != 0)
-                    return parameterComparisonResult;
+                val comparisonResult = this.parameterTypes(i).compare(other.parameterTypes(i))
+                if (comparisonResult != 0)
+                    return comparisonResult;
                 else // the types are identical
                     i += 1
             }
