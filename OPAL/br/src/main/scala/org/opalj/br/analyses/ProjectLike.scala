@@ -849,7 +849,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Convience method;
-     * see [[virtualCall(callerPackageName: String,declaringType:ReferenceType*]]
+     * see [[#virtualCall(callerPackageName:String,declaringType:*]]
      * for details.
      */
     def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {
