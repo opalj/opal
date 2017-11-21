@@ -77,7 +77,7 @@ trait CFGNode extends Node {
     }
 
     private[cfg] def updatePredecessor(oldBB: CFGNode, newBB: CFGNode): Unit = {
-        _predecessors = _predecessors - (oldBB) + (newBB)
+        _predecessors = _predecessors - oldBB + newBB
     }
 
     def predecessors: Set[CFGNode] = _predecessors
