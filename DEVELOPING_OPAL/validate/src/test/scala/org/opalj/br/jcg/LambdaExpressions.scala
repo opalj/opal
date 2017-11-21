@@ -30,6 +30,7 @@ package org.opalj.br.jcg
 
 import java.io.{ByteArrayOutputStream, File, PrintStream}
 
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.FixturesTest
 
 /**
@@ -40,7 +41,7 @@ import org.opalj.br.FixturesTest
  * @author Andreas Muttscheller
  */
 class LambdaExpressions extends FixturesTest {
-    val fixtureFiles: File = new File(s"OPAL/bi/src/test/resources/classfiles/lambda_expressions.jar")
+    val fixtureFiles: File = locateTestResources("classfiles/lambda_expressions.jar", "bi")
 
     describe("JCG lambda_expressions test") {
         it("should execute main successfully") {

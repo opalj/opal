@@ -28,10 +28,8 @@
  */
 package org.opalj.br.invokedynamicrewriting
 
-import java.io.File
-
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.FixturesTest
-import org.opalj.util.ScalaMajorVersion
 
 /**
  * Test if OPAL is able to rewrite a simple lambda expression and check if the rewritten bytecode
@@ -40,7 +38,7 @@ import org.opalj.util.ScalaMajorVersion
  * @author Andreas Muttscheller
  */
 class SimpleLambdaAddTest extends FixturesTest {
-    val fixtureFiles = new File(s"OPAL/bi/target/scala-$ScalaMajorVersion/test-classes/lambdas-1.8-g-parameters-genericsignature.jar")
+    val fixtureFiles = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     describe("a simple lambda add") {
         it("should calculate 2+2 correctly") {
