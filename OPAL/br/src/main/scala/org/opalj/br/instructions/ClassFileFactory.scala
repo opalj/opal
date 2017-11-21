@@ -279,6 +279,8 @@ object ClassFileFactory {
 
         // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
         // instruction on a static interface method.
+        // Given that none of the generated methods contains any control-flow instructions
+        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
         ClassFile(
             0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
@@ -526,6 +528,8 @@ object ClassFileFactory {
 
         // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
         // instruction on a static interface method.
+        // Given that none of the generated methods contains any control-flow instructions
+        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
         ClassFile(0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
