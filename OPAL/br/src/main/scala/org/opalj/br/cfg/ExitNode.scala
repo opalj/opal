@@ -60,7 +60,7 @@ class ExitNode( final val normalReturn: Boolean) extends CFGNode {
     // FOR DEBUGGING/VISUALIZATION PURPOSES
     //
 
-    override def toString(): String = s"ExitNode(normalReturn=$normalReturn)"
+    override def toString: String = s"ExitNode(normalReturn=$normalReturn)"
 
     override def toHRR: Option[String] = {
         Some(if (normalReturn) "Normal Return" else "Abnormal Return")
@@ -68,18 +68,9 @@ class ExitNode( final val normalReturn: Boolean) extends CFGNode {
 
     override def visualProperties: Map[String, String] = {
         if (normalReturn)
-            Map(
-                "labelloc" → "l",
-                "fillcolor" → "green",
-                "style" → "filled"
-            )
+            Map("labelloc" → "l", "fillcolor" → "green", "style" → "filled")
         else
-            Map(
-                "labelloc" → "l",
-                "fillcolor" → "red",
-                "style" → "filled",
-                "shape" → "octagon"
-            )
+            Map("labelloc" → "l", "fillcolor" → "red", "style" → "filled", "shape" → "octagon")
     }
 
 }

@@ -105,6 +105,7 @@
     			</div>
     			<ul class="copyright">
     				<li>&copy; The OPAL Project. All rights reserved.</li>
+                    <li><img src="Athene.png" height="27" style="vertical-align:middle"></li>
     				<li>Design: <a href="http://templated.co">TEMPLATED</a></li>
     			</ul>
     		</div>

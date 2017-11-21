@@ -671,7 +671,7 @@ object TACAI {
                         else
                             addStmt(NonVirtualMethodCall(
                                 pc,
-                                declClass, isInterface, name, descriptor,
+                                declClass.asObjectType, isInterface, name, descriptor,
                                 receiver,
                                 params
                             ))
@@ -687,7 +687,7 @@ object TACAI {
                             else
                                 NonVirtualFunctionCall(
                                     pc,
-                                    declClass, isInterface, name, descriptor,
+                                    declClass.asObjectType, isInterface, name, descriptor,
                                     receiver,
                                     params
                                 )
