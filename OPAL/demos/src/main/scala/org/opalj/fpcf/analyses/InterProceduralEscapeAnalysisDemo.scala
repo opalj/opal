@@ -42,7 +42,7 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.FormalParameter
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
@@ -61,11 +61,11 @@ import org.opalj.log.OPALLogger.info
 
 /**
  * A small demo that shows how to use the
- * [[org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis]] and what are the results of it.
+ * [[org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis]] and what are the results of it.
  *
  * @author Florian Kübler
  */
-object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
+object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
     override def title: String = "determines escape information"
 
@@ -103,7 +103,7 @@ object InterproceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            InterproceduralEscapeAnalysis.start(project)
+            InterProceduralEscapeAnalysis.start(project)
             propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 

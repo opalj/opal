@@ -35,7 +35,7 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -86,8 +86,8 @@ class EscapeAnalysisTests extends PropertiesTest {
         )
     }
 
-    describe("the org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(InterproceduralEscapeAnalysis))
+    describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
+        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis))
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,

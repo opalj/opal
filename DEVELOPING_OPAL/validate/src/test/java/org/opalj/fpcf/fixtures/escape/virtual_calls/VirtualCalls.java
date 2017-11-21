@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape.virtual_calls;
 
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.fixtures.escape.Circle;
 import org.opalj.fpcf.properties.escape.EscapeInCallee;
@@ -20,12 +20,11 @@ public class VirtualCalls {
         Circle c = new
                 @EscapeInCallee(
                         value = "the type is final and worst escape is via return",
-                        analyses = InterproceduralEscapeAnalysis.class)
+                        analyses = InterProceduralEscapeAnalysis.class)
                 @MaybeEscapeInCallee(
                         value = "intra-procedural analyses don't handle this",
                         analyses = SimpleEscapeAnalysis.class)
                         Circle();
         return x.copyCircle(c);
     }
-
 }

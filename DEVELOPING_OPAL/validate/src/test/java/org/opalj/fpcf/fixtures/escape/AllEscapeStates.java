@@ -28,7 +28,7 @@
  */
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.*;
 
@@ -42,7 +42,7 @@ public class AllEscapeStates {
     public static void escapeInCallee() {
         Circle c = new
                 @EscapeInCallee(value = "the this local escapes in toString",
-                        analyses = InterproceduralEscapeAnalysis.class)
+                        analyses = InterProceduralEscapeAnalysis.class)
                 @MaybeEscapeInCallee(value = "the simple analysis is intra-procedural",
                         analyses = SimpleEscapeAnalysis.class)
                         Circle();

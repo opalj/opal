@@ -1,7 +1,7 @@
 package org.opalj.fpcf.properties.escape;
 
 import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 
@@ -26,7 +26,7 @@ public @interface MaybeEscapeViaParameterAndReturn {
     String value();
 
     Class<? extends FPCFAnalysis>[] analyses() default { SimpleEscapeAnalysis.class,
-            InterproceduralEscapeAnalysis.class };
+            InterProceduralEscapeAnalysis.class };
 
     boolean performInvokationsDomain() default true;
 

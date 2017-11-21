@@ -38,7 +38,7 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.AllocationSites
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.log.LogContext
@@ -86,7 +86,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            InterproceduralEscapeAnalysis.start(project)
+            InterProceduralEscapeAnalysis.start(project)
             propertyStore.waitOnPropertyComputationCompletion(
                 useFallbacksForIncomputableProperties = false
             )

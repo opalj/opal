@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.EscapeViaParameter;
 import org.opalj.fpcf.properties.escape.MaybeEscapeViaParameter;
@@ -21,7 +21,7 @@ public class AList {
 
     public void add(
             @MaybeEscapeViaParameter(value = "the parameter escapes via the array",
-                    analyses = InterproceduralEscapeAnalysis.class)
+                    analyses = InterProceduralEscapeAnalysis.class)
             @MaybeNoEscape(value = "SimpleEscapeAnalyis does not track formal parameters",
                     analyses = SimpleEscapeAnalysis.class)
                     Object o

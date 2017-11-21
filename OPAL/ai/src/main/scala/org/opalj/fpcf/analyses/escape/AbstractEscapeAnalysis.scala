@@ -39,6 +39,8 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
+import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.DUVar
@@ -95,7 +97,18 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         aiResult: AIResult,
         m:        VirtualMethod
     ): PropertyComputationResult = {
-        entityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m).doDetermineEscape()
+        val analysis = entityEscapeAnalysis(
+            e,
+            defSite,
+            uses,
+            code,
+            params,
+            cfg,
+            handlers,
+            aiResult,
+            m
+        )
+        analysis.doDetermineEscape()
     }
 
     /**
@@ -106,4 +119,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
     protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
     protected[this] val aiProvider = project.get(SimpleAIKey)
+    protected[this] val formalParameters: FormalParameters = propertyStore.context[FormalParameters]
+    protected[this] val virtualFormalParameters: VirtualFormalParameters = propertyStore.context[VirtualFormalParameters]
 }

@@ -40,23 +40,17 @@ import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.EscapeViaParameter
-import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
-import org.opalj.fpcf.properties.EscapeViaHeapObject
-import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
-import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.UVar
@@ -105,6 +99,8 @@ trait AbstractEntityEscapeAnalysis {
     val code: Array[Stmt[V]]
     val cfg: CFG
     val aiResult: AIResult
+    val formalParameters: FormalParameters
+    val virtualFormalParameters: VirtualFormalParameters
 
     val e: Entity
     val uses: IntTrieSet
@@ -114,7 +110,6 @@ trait AbstractEntityEscapeAnalysis {
     // STATE MUTATED WHILE ANALYZING THE METHOD
     //
     protected[this] var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
-    protected[this] var dependeeToStmt = Map.empty[Entity, Option[Assignment[V]]]
     protected[this] var mostRestrictiveProperty: EscapeProperty = NoEscape
 
     def doDetermineEscape(): PropertyComputationResult = {
@@ -207,7 +202,7 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.fpcf.properties.EscapeViaAbnormalReturn]].
      * This analysis does not check whether the exception is caught or not.
      *
-     * @see [[org.opalj.fpcf.analyses.escape.ExceptionAwareEntitiyEscapeAnalysis]] which overrides
+     * @see [[org.opalj.fpcf.analyses.escape.ExceptionAwareEntityEscapeAnalysis]] which overrides
      *      this very simple behavior.
      */
     protected[this] def handleThrow(aThrow: Throw[V]): Unit
@@ -342,8 +337,9 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def removeFromDependeesAndComputeResult(
         other: Entity, p: EscapeProperty
     ): PropertyComputationResult = {
+        assert(other.isInstanceOf[FormalParameter] || other.isInstanceOf[VirtualFormalParameter])
         calcMostRestrictive(p)
-        dependees = dependees filter (_.e ne other)
+        dependees = dependees.filter(_.e ne other)
         returnResult
     }
 
@@ -375,6 +371,7 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def performIntermediateUpdate(
         other: Entity, p: EscapeProperty, intermediateProperty: EscapeProperty
     ): PropertyComputationResult = {
+        assert(other.isInstanceOf[FormalParameter] || other.isInstanceOf[VirtualFormalParameter])
         val newEP = EP(other, p)
         dependees = dependees.filter(_.e ne other) + newEP
         calcMostRestrictive(intermediateProperty)
@@ -384,143 +381,7 @@ trait AbstractEntityEscapeAnalysis {
     /**
      * A continuation function, that handles the updates of property values for entity `other`.
      */
-    protected[this] def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
-        other match {
-            /*
-            case AllocationSite(_, _, _) ⇒ p match {
-                case GlobalEscape         ⇒ Result(e, GlobalEscape)
-                case EscapeViaStaticField ⇒ Result(e, EscapeViaHeapObject)
-                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
-                case NoEscape             ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
-                case _                    ⇒ removeFromDependeesAndComputeResult(other, MaybeNoEscape)
-            }*/
-
-            // special handling for the this local of the constructor
-            case FormalParameter(method, -1) if method.isConstructor ⇒ p match {
-
-                case GlobalEscape         ⇒ Result(e, GlobalEscape)
-
-                case EscapeViaStaticField ⇒ Result(e, EscapeViaStaticField)
-
-                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
-
-                case NoEscape             ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
-
-                case EscapeInCallee       ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
-
-                case EscapeViaParameter ⇒
-                    // we do not further track the field of the actual parameter
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
-
-                case EscapeViaAbnormalReturn ⇒
-                    // this could be the case if `other` is an exception and is thrown in its constructor
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
-
-                case EscapeViaParameterAndAbnormalReturn ⇒
-                    // combines the two cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
-
-                case AtMost(NoEscape) | AtMost(EscapeViaParameter) | AtMost(EscapeViaAbnormalReturn) |
-                    AtMost(EscapeViaParameterAndAbnormalReturn) ⇒
-                    assert(u eq FinalUpdate)
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
-
-                case AtMost(EscapeInCallee) ⇒
-                    assert(u eq FinalUpdate)
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-
-                case Conditional(EscapeViaParameter) | Conditional(EscapeViaAbnormalReturn) |
-                    Conditional(EscapeViaParameterAndAbnormalReturn) |
-                    Conditional(AtMost(EscapeViaParameter)) |
-                    Conditional(AtMost(EscapeViaAbnormalReturn)) |
-                    Conditional(AtMost(EscapeViaNormalAndAbnormalReturn)) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], AtMost(NoEscape))
-
-                case Conditional(NoEscape) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(e, p.asInstanceOf[EscapeProperty], NoEscape)
-
-                case Conditional(EscapeInCallee) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(e, p.asInstanceOf[EscapeProperty], EscapeInCallee)
-
-                case Conditional(AtMost(NoEscape)) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(e, p.asInstanceOf[EscapeProperty], AtMost(NoEscape))
-
-                case Conditional(AtMost(EscapeInCallee)) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(e, p.asInstanceOf[EscapeProperty], AtMost(EscapeInCallee))
-
-                case p ⇒
-                    throw new UnknownError(s"unexpected escape property ($p) for constructors")
-            }
-
-            // this entity is passed as parameter (or this local) to a method
-            case _: FormalParameter | _: VirtualFormalParameter ⇒ p match {
-
-                case GlobalEscape         ⇒ Result(e, GlobalEscape)
-
-                case EscapeViaStaticField ⇒ Result(e, EscapeViaStaticField)
-
-                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
-
-                case NoEscape | EscapeInCallee ⇒
-                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
-
-                case EscapeViaParameter ⇒
-                    // IMPROVE we do not further track the field of the actual parameter
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-
-                case EscapeViaAbnormalReturn ⇒
-                    // IMPROVE we do not further track the exception thrown in the callee
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-
-                case EscapeViaReturn ⇒
-                    /*
-                     * IMPROVE we do not further track the return value of the callee.
-                     * But the org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-                     * eliminates the assignments, if the function called is identity-like
-                     */
-                    val assignemnt = dependeeToStmt(other)
-                    assignemnt match {
-                        case Some(_) ⇒
-                            removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-                        case None ⇒
-                            removeFromDependeesAndComputeResult(other, EscapeInCallee)
-                    }
-
-                case EscapeViaParameterAndAbnormalReturn | EscapeViaNormalAndAbnormalReturn |
-                    EscapeViaParameterAndAbnormalReturn | EscapeViaParameterAndReturn |
-                    EscapeViaParameterAndNormalAndAbnormalReturn ⇒
-                    // combines the cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-
-                case AtMost(_) ⇒
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-
-                case Conditional(NoEscape) | Conditional(EscapeInCallee) ⇒
-                    performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], EscapeInCallee)
-
-                case Conditional(EscapeViaReturn) ⇒
-                    val assignemnt = dependeeToStmt(other)
-                    assignemnt match {
-                        case Some(_) ⇒
-                            performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], AtMost(EscapeInCallee))
-                        case None ⇒
-                            performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], EscapeInCallee)
-                    }
-
-                case Conditional(_) ⇒
-                    performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], AtMost(EscapeInCallee))
-
-                case p ⇒
-                    throw new UnknownError(s"unexpected escape property ($p) for constructors")
-            }
-            case _ ⇒ throw new RuntimeException(s"unexpected escape property ($p)")
-        }
-    }
+    protected[this] def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult
 }
 
 trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
@@ -603,4 +464,10 @@ trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     }
 
     protected[this] override def handleOtherKindsOfExpressions(expr: Expr[V]): Unit = {}
+
+    protected[this] override def c(
+        other: Entity, p: Property, u: UpdateType
+    ): PropertyComputationResult = {
+        throw new UnknownError(s"unexpected escape property ($p) for $other")
+    }
 }

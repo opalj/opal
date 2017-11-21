@@ -47,6 +47,8 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.VirtualForwardingMethod
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -56,6 +58,13 @@ import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.AtMost
+import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
+import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
@@ -69,12 +78,14 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Assignment
 
-trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
     //TODO Move to non entity based analysis
-    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
+    private[this] val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
-    var dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
+    // STATE MUTATED DURING THE ANALYSIS
+    private[this] val dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
+    private[this] var dependeeToStmt = Map.empty[Entity, Option[Assignment[V]]]
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         handleStaticCall(
@@ -86,7 +97,12 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
         call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         handleStaticCall(
-            call.declaringClass, call.isInterface, call.name, call.descriptor, call.params, assignment
+            call.declaringClass,
+            call.isInterface,
+            call.name,
+            call.descriptor,
+            call.params,
+            assignment
         )
     }
 
@@ -209,15 +225,14 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                     //IMPROVE
                     calcMostRestrictive(AtMost(EscapeInCallee))
                 } else {
-                    val fps = propertyStore.context[VirtualFormalParameters]
                     if (usesDefSite(receiver)) {
-                        val fp = fps(vm)
+                        val fp = virtualFormalParameters(vm)
                         handleEscapeState(fp(0), assignment)
 
                     }
                     for (i ← params.indices) {
                         if (usesDefSite(params(i))) {
-                            val fp = fps(vm)
+                            val fp = virtualFormalParameters(vm)
                             handleEscapeState(fp(i + 1), assignment)
                         }
                     }
@@ -267,8 +282,7 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                     //IMPROVE
                     calcMostRestrictive(AtMost(EscapeInCallee))
                 } else {
-                    val fps = propertyStore.context[FormalParameters]
-                    val fp = fps(method)(param)
+                    val fp = formalParameters(method)(param)
                     if (fp != e) {
                         handleEscapeState(fp, assignment)
                     }
@@ -297,36 +311,109 @@ trait AbstractInterproceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
             case EP(_, EscapeViaReturn) ⇒
                 assignment match {
-                    case Some(a) ⇒
+                    case Some(_) ⇒
                         calcMostRestrictive(AtMost(EscapeInCallee))
                     case None ⇒
                         calcMostRestrictive(EscapeInCallee)
                 }
+            // we do not track parameters or exceptions in the callee side
             case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
             case EP(_, AtMost(_))      ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
             case epk ⇒
+                assert(epk.e.isInstanceOf[FormalParameter] || epk.e.isInstanceOf[VirtualFormalParameter])
                 dependees += epk
                 dependeeToStmt += ((fp, assignment))
                 calcMostRestrictive(EscapeInCallee)
         }
     }
+
+    abstract override protected[this] def c(
+        other: Entity, p: Property, u: UpdateType
+    ): PropertyComputationResult = {
+        other match {
+            // this entity is passed as parameter (or this local) to a method
+            case _: FormalParameter | _: VirtualFormalParameter ⇒ p match {
+
+                case GlobalEscape         ⇒ Result(e, GlobalEscape)
+
+                case EscapeViaStaticField ⇒ Result(e, EscapeViaStaticField)
+
+                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
+
+                case NoEscape | EscapeInCallee ⇒
+                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
+
+                case EscapeViaParameter ⇒
+                    // IMPROVE we do not further track the field of the actual parameter
+                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+
+                case EscapeViaAbnormalReturn ⇒
+                    // IMPROVE we do not further track the exception thrown in the callee
+                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+
+                case EscapeViaReturn ⇒
+                    /*
+                     * IMPROVE we do not further track the return value of the callee.
+                     * But the org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+                     * eliminates the assignments, if the function called is identity-like
+                     */
+                    val assignment = dependeeToStmt(other)
+                    assignment match {
+                        case Some(_) ⇒
+                            removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                        case None ⇒
+                            removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                    }
+
+                case EscapeViaParameterAndAbnormalReturn | EscapeViaNormalAndAbnormalReturn |
+                    EscapeViaParameterAndAbnormalReturn | EscapeViaParameterAndReturn |
+                    EscapeViaParameterAndNormalAndAbnormalReturn ⇒
+                    // combines the cases above
+                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+
+                case AtMost(_) ⇒
+                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+
+                case Conditional(NoEscape) | Conditional(EscapeInCallee) ⇒
+                    performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], EscapeInCallee)
+
+                case p @ Conditional(EscapeViaReturn) ⇒
+                    val assignment = dependeeToStmt(other)
+                    assignment match {
+                        case Some(_) ⇒
+                            performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                        case None ⇒
+                            performIntermediateUpdate(other, p, EscapeInCallee)
+                    }
+
+                case p @ Conditional(_) ⇒
+                    performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+
+                case _ ⇒
+                    throw new UnknownError(s"unexpected escape property ($p) for $other")
+            }
+            case _ ⇒ super.c(other, p, u)
+        }
+    }
 }
 
-class InterproceduralEntityEscapeAnalysis(
-        val e:             Entity,
-        val defSite:       ValueOrigin,
-        val uses:          IntTrieSet,
-        val code:          Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:        Parameters[TACMethodParameter],
-        val cfg:           CFG,
-        val handlers:      ExceptionHandlers,
-        val aiResult:      AIResult,
-        val m:             VirtualMethod,
-        val propertyStore: PropertyStore,
-        val project:       SomeProject
+class InterProceduralEntityEscapeAnalysis(
+        val e:                       Entity,
+        val defSite:                 ValueOrigin,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val params:                  Parameters[TACMethodParameter],
+        val cfg:                     CFG,
+        val handlers:                ExceptionHandlers,
+        val aiResult:                AIResult,
+        val formalParameters:        FormalParameters,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val m:                       VirtualMethod,
+        val propertyStore:           PropertyStore,
+        val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
     with ConstructorSensitiveEntityEscapeAnalysis
     with ConfigurationBasedConstructorEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntitiyEscapeAnalysis
-    with AbstractInterproceduralEntityEscapeAnalysis
+    with ExceptionAwareEntityEscapeAnalysis
+    with AbstractInterProceduralEntityEscapeAnalysis

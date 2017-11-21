@@ -84,7 +84,21 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
+        new SimpleEntityEscapeAnalysis(
+            e,
+            defSite,
+            uses,
+            code,
+            params,
+            cfg,
+            handlers,
+            aiResult,
+            formalParameters,
+            virtualFormalParameters,
+            m,
+            propertyStore,
+            project
+        )
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the

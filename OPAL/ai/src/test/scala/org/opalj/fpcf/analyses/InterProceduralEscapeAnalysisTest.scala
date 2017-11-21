@@ -39,11 +39,11 @@ import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 
-class InterproceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
+class InterProceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
     def analysisName = "InterproceduralEscapeAnalysis"
 
@@ -51,7 +51,7 @@ class InterproceduralEscapeAnalysisTest extends AbstractFixpointAnalysisTest {
 
     override def testFilePath = "bi"
 
-    override def analysisRunners = List(InterproceduralEscapeAnalysis)
+    override def analysisRunners = List(InterProceduralEscapeAnalysis)
 
     override def propertyKey: PropertyKey[EscapeProperty] = EscapeProperty.key
 

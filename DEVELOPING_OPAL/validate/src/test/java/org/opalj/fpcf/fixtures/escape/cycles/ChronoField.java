@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape.cycles;
 
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.MaybeEscapeInCallee;
 
 public enum ChronoField implements TemporalField {
@@ -32,7 +32,7 @@ public enum ChronoField implements TemporalField {
     @Override
     public boolean isSupportedBy(@MaybeEscapeInCallee(
             value = "Type is accessible but all methods do not let the parameter escape",
-            analyses = InterproceduralEscapeAnalysis.class) TemporalAccessor temporal
+            analyses = InterProceduralEscapeAnalysis.class) TemporalAccessor temporal
     ) {
         return temporal.isSupported(this);
     }

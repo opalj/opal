@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.*;
 
@@ -14,7 +14,7 @@ public class EscapesViaReturn {
 
     public static Object identity(
             @EscapeViaReturn(value = "the object is returned",
-                    analyses = InterproceduralEscapeAnalysis.class)
+                    analyses = InterProceduralEscapeAnalysis.class)
                     Object o
     ) {
         return o;
@@ -24,7 +24,7 @@ public class EscapesViaReturn {
         Object o = new
                 @EscapeViaReturn(
                         value = "the object is passed to an identity function and then returned",
-                        analyses = InterproceduralEscapeAnalysis.class)
+                        analyses = InterProceduralEscapeAnalysis.class)
                 @MaybeEscapeViaReturn(
                         value = "intra-procedural analyses don't track the call but the domain does",
                         analyses = SimpleEscapeAnalysis.class)
@@ -38,7 +38,7 @@ public class EscapesViaReturn {
         Object o = new
                 @EscapeInCallee(
                         value = "the object is passed to an identity function and not returned",
-                        analyses = InterproceduralEscapeAnalysis.class)
+                        analyses = InterProceduralEscapeAnalysis.class)
                 @MaybeEscapeInCallee(
                         value = "intra-procedural analyses don't track the call",
                         analyses = SimpleEscapeAnalysis.class)
@@ -48,7 +48,7 @@ public class EscapesViaReturn {
 
     public static Object sometimesIdentity(boolean b,
             @EscapeViaReturn(value = "the object is returned",
-                    analyses = InterproceduralEscapeAnalysis.class)
+                    analyses = InterProceduralEscapeAnalysis.class)
                     Object o
     ) {
         if (b) {

@@ -65,7 +65,7 @@ import org.opalj.tac.TACMethodParameter
  *
  * @author Florian Kuebler
  */
-class InterproceduralEscapeAnalysis private (
+class InterProceduralEscapeAnalysis private (
         final val project: SomeProject
 ) extends AbstractEscapeAnalysis {
 
@@ -80,7 +80,21 @@ class InterproceduralEscapeAnalysis private (
         aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
-        new InterproceduralEntityEscapeAnalysis(e, defSite, uses, code, params, cfg, handlers, aiResult, m, propertyStore, project)
+        new InterProceduralEntityEscapeAnalysis(
+            e,
+            defSite,
+            uses,
+            code,
+            params,
+            cfg,
+            handlers,
+            aiResult,
+            formalParameters,
+            virtualFormalParameters,
+            m,
+            propertyStore,
+            project
+        )
 
     /**
      * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes
@@ -119,7 +133,7 @@ class InterproceduralEscapeAnalysis private (
     }
 }
 
-object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
+object InterProceduralEscapeAnalysis extends FPCFAnalysisRunner {
 
     type V = DUVar[Domain#DomainValue]
 
@@ -137,9 +151,9 @@ object InterproceduralEscapeAnalysis extends FPCFAnalysisRunner {
             )
         } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
 
-        EscapeAnalysisOfVirtualCalls.start(project)
+        VirtualCallAggregatingEscapeAnalysis.start(project)
 
-        val analysis = new InterproceduralEscapeAnalysis(project)
+        val analysis = new InterProceduralEscapeAnalysis(project)
 
         //val fps = propertyStore.context[FormalParameters].formalParameters.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
         //val ass = propertyStore.context[AllocationSites].allocationSites.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)

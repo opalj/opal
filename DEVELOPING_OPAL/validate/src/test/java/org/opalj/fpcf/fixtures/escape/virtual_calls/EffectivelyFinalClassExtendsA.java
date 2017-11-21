@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape.virtual_calls;
 
-import org.opalj.fpcf.analyses.escape.InterproceduralEscapeAnalysis;
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.fixtures.escape.Circle;
 import org.opalj.fpcf.properties.escape.EscapeViaReturn;
@@ -11,7 +11,7 @@ public class EffectivelyFinalClassExtendsA extends ClassA {
     @Override
     public final Circle copyCircle(
             @EscapeViaReturn(value = "is directly returned",
-                    analyses = InterproceduralEscapeAnalysis.class)
+                    analyses = InterProceduralEscapeAnalysis.class)
             @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
                     analyses = SimpleEscapeAnalysis.class)
                     Circle aCircle
