@@ -34,8 +34,8 @@ package cg
 import br.analyses.ProjectInformationKey
 import br.analyses.SomeProject
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.InjectedClassesInformationKey
+import org.opalj.br.analyses.cg.InstantiableClassesKey
 
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.

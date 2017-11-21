@@ -29,25 +29,25 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get a function that determines whether a type is directly
  * extensible or not.
  *
  * @see [[DirectTypeExtensibilityInformation]] for further information.
- *
  * @author Michael Reif
  */
 object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.DirectTypeExtensibilityKey."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.DirectTypeExtensibilityKey."
 
     final val DefaultExtensibilityAnalysis = {
-        "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
+        "org.opalj.br.analyses.cg.DirectTypeExtensibilityInformation"
     }
 
     /**
@@ -63,13 +63,15 @@ object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ A
 
         val configKey = ConfigKeyPrefix+"analysis"
         try {
+            val packageAnalysis =
+                project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
             reify(
                 project,
-                project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
+                packageAnalysis
             )
         } catch {
             case t: Throwable ⇒
-                error(
+                OPALLogger.error(
                     "project configuration",
                     "failed to compute \"direct extensibility information\""+
                         "; \"Unknown extensibility\" will now be used as the fallback",

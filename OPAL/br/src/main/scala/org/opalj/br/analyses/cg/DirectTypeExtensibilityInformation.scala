@@ -29,9 +29,12 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.collection.mutable.ArrayMap
+
+import scala.collection.mutable
 
 /**
  * Determines whether a type (class or interface) is directly extensible by a (yet unknown)
@@ -51,12 +54,21 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
+        val configuredTypes = configuredExtensibleTypes.foldLeft(mutable.HashMap.empty[Int, Answer]) { (r, tuple) ⇒
+            val (ot, ans) = tuple
+            r.put(ot.id, ans)
+            r
+        }
+
         val allClassFiles = project.allClassFiles
         val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](ObjectType.objectTypesCount)) { (r, classFile) ⇒
             val objectType = classFile.thisType
             val isExtensible =
                 {
-                    if (classFile.isEffectivelyFinal ||
+                    val configured = configuredTypes.get(objectType.id)
+                    if (configured.isDefined)
+                        configured.get
+                    else if (classFile.isEffectivelyFinal ||
                         classFile.isEnumDeclaration ||
                         classFile.isAnnotationDeclaration)
                         No
@@ -72,7 +84,6 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
 
         }
         extensibility
-        //configuredTypeExtensibilities.foldLeft(extensibility) { (r, entry) ⇒ r + entry }
     }
 
     /**
@@ -84,7 +95,7 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
      *
      * @return  Those types for which the direct extensibility is explicit configured.
      */
-    protected[this] def configuredTypeExtensibilities: TraversableOnce[(ObjectType, Answer)] = {
+    protected[this] def configuredExtensibleTypes: TraversableOnce[(ObjectType, Answer)] = {
         Traversable.empty
     }
 
@@ -146,7 +157,7 @@ class ConfigureExtensibleTypes(
     /**
      * Returns the types which are extensible.
      */
-    override def configuredTypeExtensibilities: TraversableOnce[(ObjectType, Yes.type)] = {
+    override def configuredExtensibleTypes: TraversableOnce[(ObjectType, Yes.type)] = {
         parseConfig("extensibleTypes").iterator.map(t ⇒ (t, Yes))
     }
 }
@@ -175,7 +186,7 @@ class ConfigureFinalTypes(
     /**
      * Returns the types which are not extensible/which are final.
      */
-    override def configuredTypeExtensibilities: TraversableOnce[(ObjectType, No.type)] = {
+    override def configuredExtensibleTypes: TraversableOnce[(ObjectType, No.type)] = {
         parseConfig("finalTypes").iterator.map(t ⇒ (t, No))
     }
 }

@@ -29,30 +29,27 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 /**
- * The ''key'' object to get a function that determines whether a method can be overridden by a not
- * yet existing type. A method can be overridden if it's declaring type ___dt___is extensible by an
- * (unknown) type ___ut___ (e.g. when the analysis assumes an open world) and if the method is not
- * overridden by another subtype ___s___ such that ___ut <: s <: st___ and if the method can be
- * overridden according to the JVM's semantics.
+ * The ''key'' object to get a function that determines whether a type is extensible or not.
+ * A type is extensible if a developer could define a subtype that is not part of the given
+ * application/library.
  *
+ * @author Michael Eichberg
  * @author Michael Reif
  */
-object OverriddenMethodKey extends ProjectInformationKey[Method ⇒ Answer, ObjectType ⇒ Answer] {
+object TypeExtensibilityKey
+    extends ProjectInformationKey[ObjectType ⇒ Answer, ObjectType ⇒ Answer] {
 
     /**
-     * The [[OverriddenMethodKey]] has the [[TypeExtensibilityKey]] as prerequisite.
+     * The [[TypeExtensibilityKey]] has the [[DirectTypeExtensibilityKey]] as prerequisite.
      *
      * @return Seq(DirectTypeExtensibilityKey).
      */
-    override protected def requirements = Seq(TypeExtensibilityKey)
+    override protected def requirements = Seq(DirectTypeExtensibilityKey)
 
-    override protected def compute(project: SomeProject): Method ⇒ Answer = {
-        new OverriddenMethodInformationAnalysis(
-            project,
-            project.get(DirectTypeExtensibilityKey),
-            project.get(TypeExtensibilityKey)
-        )
+    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
+        new TypeExtensibilityInformationAnalysis(project)
     }
 }

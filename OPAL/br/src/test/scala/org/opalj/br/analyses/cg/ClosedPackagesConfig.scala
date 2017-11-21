@@ -27,34 +27,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package br
 package analyses
+package cg
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.cg.InstantiableClasses
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+object ClosedPackagesConfig {
 
-/**
- * Analyzes which classes are instantiable.
- *
- * @author Michael Reif
- */
-object LibraryInstantiableClassesAnalysis {
+    val openCodeBase =
+        """
+            |org.opalj.br.analyses.cg.ClosedPackagesKey {
+            |    analysis = "org.opalj.br.analyses.cg.OpenCodeBase"
+            |}
+        """.stripMargin
 
-    def doAnalyze(project: SomeProject): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    val closedCodeBase =
+        """
+           |org.opalj.br.analyses.cg.ClosedPackagesKey {
+           |    analysis = "org.opalj.br.analyses.cg.ClosedCodeBase"
+           |}
+        """.stripMargin
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
+    def configureClosedPackages(regex: String = "java(/.*)") =
+        s"""
+            |org.opalj.br.analyses.cg.ClosedPackagesKey {
+            |    analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
+            |    closedPackages = "$regex"
+            |}
+        """.stripMargin
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
-    }
+    def configureOpenPackages(regex: String = ".*") =
+        s"""
+           |org.opalj.br.analyses.cg.ClosedPackagesKey {
+           |    analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
+           |    openPackages = "$regex"
+           |}
+        """.stripMargin
 }

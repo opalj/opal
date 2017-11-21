@@ -29,12 +29,11 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import net.ceedubs.ficus.Ficus._
-
-import org.opalj.log.OPALLogger.warn
 import org.opalj.log.LogContext
-import org.opalj.br.analyses.ClosedPackagesKey.ConfigKeyPrefix
+import org.opalj.log.OPALLogger.warn
 
 /**
  * Determines which packages are open or closed; that is, determines to which packages code
@@ -53,7 +52,7 @@ import org.opalj.br.analyses.ClosedPackagesKey.ConfigKeyPrefix
  * The concrete analysis which determines the open/closed packages is instantiated reflectively
  * by [[ClosedPackagesKey]]. This facilitates the configuration of project specific closed packages.
  * The class can be configured using the config key:
- * `org.opalj.br.analyses.ClosedPackagesKey.analysis={ClosedPackagesAnalysis}``
+ * `org.opalj.br.analyses.ClosedPackagesKey.analysis={ClosedPackagesAnalysis}`
  *
  * @note The concept of open and closed packages - and the reason why it matters - is discussed in
  *       "Call Graph Construction for Java Libraries"

@@ -29,9 +29,12 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import java.util.concurrent.ConcurrentLinkedQueue
+
 import scala.collection.JavaConverters._
+
 import org.opalj.br.instructions.NEW
 
 /**

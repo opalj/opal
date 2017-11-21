@@ -29,6 +29,7 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import net.ceedubs.ficus.Ficus._
 
@@ -53,18 +54,16 @@ import org.opalj.log.OPALLogger.error
  *          }
  *      }
  *      }}}
- *
  * @note Please see the documentation of [[ClosedPackagesInformation]] and its subtypes for more
  *       information.
  * @note The default configuration is the conservative [[OpenCodeBase]] analysis.
- *
  * @author Michael Reif
  */
 object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothing] {
 
-    final val DefaultClosedPackagesAnalysis = "org.opalj.br.analyses.OpenCodeBase"
+    final val DefaultClosedPackagesAnalysis = "org.opalj.br.analyses.cg.OpenCodeBase"
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.ClosedPackagesKey."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClosedPackagesKey."
 
     /**
      * The [[ClosedPackagesKey]] has no special prerequisites.
@@ -77,9 +76,9 @@ object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothi
         implicit val logContext = project.logContext
 
         try {
+            val key = ConfigKeyPrefix+"analysis"
             val analysisClassName =
-                project.config.as[Option[String]](ConfigKeyPrefix+"analysis").
-                    getOrElse(DefaultClosedPackagesAnalysis)
+                project.config.as[Option[String]](key).getOrElse(DefaultClosedPackagesAnalysis)
             reify(project, analysisClassName)
         } catch {
             case t: Throwable ⇒

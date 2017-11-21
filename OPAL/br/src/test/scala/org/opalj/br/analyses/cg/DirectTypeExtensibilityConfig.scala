@@ -29,38 +29,31 @@
 package org.opalj
 package br
 package analyses
+package cg
 
-import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
+object DirectTypeExtensibilityConfig {
 
-/**
- * The ''key'' object to get information about the classes that can be instantiated
- * (either, directly or indirectly).
- *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
- *
- * @author Michael Eichberg
- */
-object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
+    val directTypeExtensibilityAnalysis =
+        """
+            |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
+            |    analysis = "org.opalj.br.analyses.cg.DirectTypeExtensibilityInformation"
+            |}
+        """.stripMargin
 
-    /**
-     * The [[InstantiableClasses]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    def configureExtensibleTypes(types: List[String] = List.empty) =
+        s"""
+            |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
+            |    analysis = "org.opalj.br.analyses.cg.ConfigureExtensibleTypes"
+            |    extensibleTypes = [${types.map("\""+_+"\"").mkString(",")}]
+            |}
+          """.stripMargin
 
-    /**
-     * Computes the information which classes are (not) instantiable.
-     *
-     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
-     */
-    override protected def compute(project: SomeProject): InstantiableClasses = {
-        val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
-        if (isLibrary)
-            LibraryInstantiableClassesAnalysis.doAnalyze(project)
-        else
-            InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
-    }
+    def configureFinalTypes(types: List[String] = List.empty) =
+        s"""
+            |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
+            |    analysis = "org.opalj.br.analyses.cg.ConfigureFinalTypes"
+            |    finalTypes = [${types.map("\""+_+"\"").mkString(",")}]
+            |}
+        """.stripMargin
+
 }
-

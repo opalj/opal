@@ -33,8 +33,8 @@ package analyses.cg
 import org.opalj.log.OPALLogger
 import org.opalj.br._
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InstantiableClassesKey
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.defaultIsInterrupted

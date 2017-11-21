@@ -29,10 +29,10 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.Queue
 
 /**
  * Determines if a type (class, interface) is further extensible by yet unknown
@@ -76,7 +76,7 @@ class TypeExtensibilityInformationAnalysis(
 
         val isExtensibleMap = mutable.Map.empty[ObjectType, Answer]
 
-        val typesToProcess = Queue.empty[ObjectType] ++ leafTypes
+        val typesToProcess = mutable.Queue.empty[ObjectType] ++ leafTypes
         val hasExtensibleSubtype = new Array[Boolean](ObjectType.objectTypesCount)
         val hasUnknownSubtype = new Array[Boolean](ObjectType.objectTypesCount)
         val isEnqueued = new Array[Boolean](ObjectType.objectTypesCount)
@@ -99,7 +99,7 @@ class TypeExtensibilityInformationAnalysis(
     }
 
     @tailrec final private[this] def determineExtensibility(
-        typesToProcess:       Queue[ObjectType],
+        typesToProcess:       mutable.Queue[ObjectType],
         hasExtensibleSubtype: Array[Boolean],
         hasUnknownSubtype:    Array[Boolean],
         isEnqueued:           Array[Boolean],
@@ -111,7 +111,7 @@ class TypeExtensibilityInformationAnalysis(
         //         We use a queue to ensure that we always first process all subtypes of a type to
         //         ensure that we have final knowledge about the subtypes' extensibility.
 
-        val objectType = typesToProcess.dequeue()
+        val objectType = typesToProcess.dequeue
         val oid = objectType.id
         project.classFile(objectType) match {
             case Some(classFile) ⇒

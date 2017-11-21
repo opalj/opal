@@ -29,16 +29,16 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 /**
  * This analysis provides information about whether a method can be overridden by a yet unknown type.
  *
  * @note This class does not provide any caching, i.e., if this information is queried multiple times
  *       per method it is recomputed.
- *
  * @author Michael Reif
  */
-private[analyses] class OverriddenMethodInformationAnalysis(
+private[analyses] class IsOverridableMethodInformationAnalysis(
         project:              SomeProject,
         isDirectlyExtensible: ObjectType ⇒ Answer,
         isTypeExtensible:     ObjectType ⇒ Answer

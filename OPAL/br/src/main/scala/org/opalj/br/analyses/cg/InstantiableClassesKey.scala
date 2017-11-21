@@ -29,26 +29,39 @@
 package org.opalj
 package br
 package analyses
+package cg
+
+import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
 
 /**
- * The ''key'' object to get a function that determines whether a type is extensible or not.
- * A type is extensible if a developer could define a subtype that is not part of the given
- * application/library.
+ * The ''key'' object to get information about the classes that can be instantiated
+ * (either, directly or indirectly).
  *
+ * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  * @author Michael Eichberg
- * @author Michael Reif
  */
-object TypeExtensibilityKey
-    extends ProjectInformationKey[ObjectType ⇒ Answer, ObjectType ⇒ Answer] {
+object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
 
     /**
-     * The [[TypeExtensibilityKey]] has the [[DirectTypeExtensibilityKey]] as prerequisite.
+     * The [[InstantiableClasses]] has no special prerequisites.
      *
-     * @return Seq(DirectTypeExtensibilityKey).
+     * @return `Nil`.
      */
-    override protected def requirements = Seq(DirectTypeExtensibilityKey)
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
-    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
-        new TypeExtensibilityInformationAnalysis(project)
+    /**
+     * Computes the information which classes are (not) instantiable.
+     *
+     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
+     */
+    override protected def compute(project: SomeProject): InstantiableClasses = {
+        //FIX ME
+        val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
+        if (isLibrary)
+            LibraryInstantiableClassesAnalysis.doAnalyze(project)
+        else
+            InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }
+
