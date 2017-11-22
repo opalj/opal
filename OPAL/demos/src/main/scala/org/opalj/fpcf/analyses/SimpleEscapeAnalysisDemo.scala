@@ -106,7 +106,8 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
 
-        def countFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[FormalParameter])
+        // we are only interested in the this locals of the constructors
+        def countFP(entities: Traversable[Entity]) = entities.collect { case e @ FormalParameter(m, -1) if m.isConstructor ⇒ e }.size
 
         val message =
             s"""|ALLOCATION SITES:

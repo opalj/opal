@@ -191,9 +191,9 @@ sealed abstract class EscapeProperty
     def isTop: Boolean
 }
 
-sealed abstract class BasicEscapeProperty extends EscapeProperty {
+sealed abstract class FinalEscapeProperty extends EscapeProperty {
     override def isRefineable: Boolean = false
-    def meet(that: BasicEscapeProperty): BasicEscapeProperty
+    def meet(that: FinalEscapeProperty): FinalEscapeProperty
 }
 
 object EscapeProperty extends EscapePropertyMetaInformation {
@@ -257,7 +257,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
  *
  * @see [[EscapeProperty]] for further details.
  */
-case object NoEscape extends BasicEscapeProperty {
+case object NoEscape extends FinalEscapeProperty {
 
     final val PID = 0
 
@@ -267,7 +267,7 @@ case object NoEscape extends BasicEscapeProperty {
 
     override def meet(that: EscapeProperty): EscapeProperty = that
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = that
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = that
 
     override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
 
@@ -302,7 +302,7 @@ case object NoEscape extends BasicEscapeProperty {
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
  */
-case object EscapeInCallee extends BasicEscapeProperty {
+case object EscapeInCallee extends FinalEscapeProperty {
 
     final val PID = 1
 
@@ -321,12 +321,12 @@ case object EscapeInCallee extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID ⇒ this
         case _            ⇒ that
     }
@@ -351,7 +351,7 @@ case object EscapeInCallee extends BasicEscapeProperty {
  * }
  * }}}
  */
-case object EscapeViaParameter extends BasicEscapeProperty {
+case object EscapeViaParameter extends FinalEscapeProperty {
 
     final val PID = 2
 
@@ -370,12 +370,12 @@ case object EscapeViaParameter extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID | EscapeInCallee.PID    ⇒ this
         case EscapeViaReturn.PID                  ⇒ EscapeViaParameterAndReturn
         case EscapeViaAbnormalReturn.PID          ⇒ EscapeViaParameterAndAbnormalReturn
@@ -401,7 +401,7 @@ case object EscapeViaParameter extends BasicEscapeProperty {
  * }
  * }}}
  */
-case object EscapeViaReturn extends BasicEscapeProperty {
+case object EscapeViaReturn extends FinalEscapeProperty {
 
     final val PID = 3
 
@@ -420,13 +420,13 @@ case object EscapeViaReturn extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID | EscapeInCallee.PID       ⇒ this
         case EscapeViaParameter.PID                  ⇒ EscapeViaParameterAndReturn
         case EscapeViaAbnormalReturn.PID             ⇒ EscapeViaNormalAndAbnormalReturn
@@ -455,7 +455,7 @@ case object EscapeViaReturn extends BasicEscapeProperty {
  * }
  * }}}
  */
-case object EscapeViaAbnormalReturn extends BasicEscapeProperty {
+case object EscapeViaAbnormalReturn extends FinalEscapeProperty {
 
     final val PID = 4
 
@@ -474,13 +474,13 @@ case object EscapeViaAbnormalReturn extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID | EscapeInCallee.PID ⇒ this
         case EscapeViaParameter.PID            ⇒ EscapeViaParameterAndAbnormalReturn
         case EscapeViaReturn.PID               ⇒ EscapeViaNormalAndAbnormalReturn
@@ -492,7 +492,7 @@ case object EscapeViaAbnormalReturn extends BasicEscapeProperty {
 /**
  * Characterizes escapes that are [[EscapeViaParameter]] and [[EscapeViaReturn]].
  */
-case object EscapeViaParameterAndReturn extends BasicEscapeProperty {
+case object EscapeViaParameterAndReturn extends FinalEscapeProperty {
 
     final val PID = 5
 
@@ -515,13 +515,13 @@ case object EscapeViaParameterAndReturn extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID | EscapeInCallee.PID            ⇒ this
         case EscapeViaParameter.PID | EscapeViaReturn.PID ⇒ this
         case EscapeViaAbnormalReturn.PID                  ⇒ EscapeViaParameterAndNormalAndAbnormalReturn
@@ -534,7 +534,7 @@ case object EscapeViaParameterAndReturn extends BasicEscapeProperty {
 /**
  * Characterizes escapes that are [[EscapeViaParameter]] and [[EscapeViaAbnormalReturn]].
  */
-case object EscapeViaParameterAndAbnormalReturn extends BasicEscapeProperty {
+case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
 
     final val PID = 6
 
@@ -557,13 +557,13 @@ case object EscapeViaParameterAndAbnormalReturn extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID | EscapeInCallee.PID ⇒ this
         case EscapeViaParameter.PID | EscapeViaAbnormalReturn.PID ⇒ this
         case EscapeViaReturn.PID ⇒ EscapeViaParameterAndNormalAndAbnormalReturn
@@ -576,7 +576,7 @@ case object EscapeViaParameterAndAbnormalReturn extends BasicEscapeProperty {
 /**
  * Characterizes escapes that are [[EscapeViaAbnormalReturn]] and [[EscapeViaReturn]].
  */
-case object EscapeViaNormalAndAbnormalReturn extends BasicEscapeProperty {
+case object EscapeViaNormalAndAbnormalReturn extends FinalEscapeProperty {
 
     final val PID = 7
 
@@ -599,13 +599,13 @@ case object EscapeViaNormalAndAbnormalReturn extends BasicEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: BasicEscapeProperty ⇒ this meet that
+        case that: FinalEscapeProperty ⇒ this meet that
         case _: GlobalEscape           ⇒ that
         case Conditional(property)     ⇒ Conditional(property meet this)
         case AtMost(property)          ⇒ AtMost(property meet this)
     }
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = (that.propertyValueID: @switch) match {
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
         case NoEscape.PID | EscapeInCallee.PID                 ⇒ this
         case EscapeViaReturn.PID | EscapeViaAbnormalReturn.PID ⇒ this
         case EscapeViaParameter.PID                            ⇒ EscapeViaParameterAndNormalAndAbnormalReturn
@@ -619,7 +619,7 @@ case object EscapeViaNormalAndAbnormalReturn extends BasicEscapeProperty {
  * Characterizes escapes that are [[EscapeViaParameter]], [[EscapeViaAbnormalReturn]] and
  * [[EscapeViaReturn]].
  */
-case object EscapeViaParameterAndNormalAndAbnormalReturn extends BasicEscapeProperty {
+case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProperty {
     final val PID = 8
 
     override def propertyValueID: PropertyKeyID = PID
@@ -646,12 +646,12 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends BasicEscapeProp
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case _: GlobalEscape        ⇒ that
-        case _: BasicEscapeProperty ⇒ this
+        case _: FinalEscapeProperty ⇒ this
         case Conditional(property)  ⇒ Conditional(property meet this)
         case AtMost(property)       ⇒ AtMost(property meet this)
     }
 
-    override def meet(that: BasicEscapeProperty): BasicEscapeProperty = this
+    override def meet(that: FinalEscapeProperty): FinalEscapeProperty = this
 }
 
 /**
@@ -687,6 +687,7 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends BasicEscapeProp
  * changes will happen and therefore the dependencies can be deleted.
  * @see [[EscapeProperty]] for further details.
  * @author Florian Kuebler
+ *          * todo why not final
  */
 trait GlobalEscape extends EscapeProperty {
     override def isBottom: Boolean = true
@@ -790,10 +791,10 @@ case object EscapeViaStaticField extends GlobalEscape {
  * It must not be used to indicate open dependencies, when the analysis has completed analyzing the
  * local method (i.e. for [[org.opalj.fpcf.IntermediateResult]]). In that case [[Conditional]] has to be used.
  */
-case class AtMost private (property: BasicEscapeProperty) extends EscapeProperty {
+case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty {
     override def propertyValueID: PropertyKeyID = property.propertyValueID + 20
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case _: BasicEscapeProperty ⇒ property lessOrEqualRestrictive that
+        case _: FinalEscapeProperty ⇒ property lessOrEqualRestrictive that
         case AtMost(thatProperty)   ⇒ property lessOrEqualRestrictive thatProperty
         case _                      ⇒ false
     }
@@ -804,26 +805,26 @@ case class AtMost private (property: BasicEscapeProperty) extends EscapeProperty
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case AtMost(thatProperty)      ⇒ AtMost(thatProperty meet property)
         case Conditional(thatProperty) ⇒ Conditional(this meet thatProperty)
-        case that: BasicEscapeProperty ⇒ AtMost(property meet that)
+        case that: FinalEscapeProperty ⇒ AtMost(property meet that)
         case _: GlobalEscape           ⇒ that
     }
 }
 
 object AtMost {
-    private[this] val AtMostNoEscape = new AtMost(NoEscape)
-    private[this] val AtMostEscapeInCallee = new AtMost(EscapeInCallee)
-    private[this] val AtMostEscapeViaParameter = new AtMost(EscapeViaParameter)
-    private[this] val AtMostEscapeViaReturn = new AtMost(EscapeViaReturn)
-    private[this] val AtMostEscapeViaAbnormalReturn = new AtMost(EscapeViaAbnormalReturn)
-    private[this] val AtMostEscapeViaParameterAndReturn = new AtMost(EscapeViaParameterAndReturn)
-    private[this] val AtMostEscapeViaParameterAndAbnormalReturn = new AtMost(EscapeViaParameterAndAbnormalReturn)
-    private[this] val AtMostEscapeViaNormalAndAbnormalReturn = new AtMost(EscapeViaNormalAndAbnormalReturn)
-    private[this] val AtMostEscapeViaParameterAndNormalAndAbnormalReturn = new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
+    final val AtMostNoEscape = new AtMost(NoEscape)
+    final val AtMostEscapeInCallee = new AtMost(EscapeInCallee)
+    final val AtMostEscapeViaParameter = new AtMost(EscapeViaParameter)
+    final val AtMostEscapeViaReturn = new AtMost(EscapeViaReturn)
+    final val AtMostEscapeViaAbnormalReturn = new AtMost(EscapeViaAbnormalReturn)
+    final val AtMostEscapeViaParameterAndReturn = new AtMost(EscapeViaParameterAndReturn)
+    final val AtMostEscapeViaParameterAndAbnormalReturn = new AtMost(EscapeViaParameterAndAbnormalReturn)
+    final val AtMostEscapeViaNormalAndAbnormalReturn = new AtMost(EscapeViaNormalAndAbnormalReturn)
+    final val AtMostEscapeViaParameterAndNormalAndAbnormalReturn = new AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)
 
     /**
-     * Ensures for each [[BasicEscapeProperty]] only one object will be created.
+     * Ensures for each [[FinalEscapeProperty]] only one object will be created.
      */
-    def apply(property: BasicEscapeProperty): AtMost = (property.propertyValueID: @switch) match {
+    def apply(property: FinalEscapeProperty): AtMost = (property.propertyValueID: @switch) match {
         case NoEscape.PID                                     ⇒ AtMostNoEscape
         case EscapeInCallee.PID                               ⇒ AtMostEscapeInCallee
         case EscapeViaParameter.PID                           ⇒ AtMostEscapeViaParameter
@@ -848,7 +849,7 @@ object AtMost {
 case class Conditional private (property: EscapeProperty) extends EscapeProperty {
     override def propertyValueID: PropertyKeyID = property.propertyValueID + 40
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case _: BasicEscapeProperty    ⇒ property lessOrEqualRestrictive that
+        case _: FinalEscapeProperty    ⇒ property lessOrEqualRestrictive that
         case Conditional(thatProperty) ⇒ property lessOrEqualRestrictive thatProperty
         case AtMost(thatProperty)      ⇒ property lessOrEqualRestrictive thatProperty
         case _                         ⇒ false
