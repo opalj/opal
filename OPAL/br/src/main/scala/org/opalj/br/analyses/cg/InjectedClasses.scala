@@ -29,6 +29,7 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
@@ -43,7 +44,7 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Reif
  */
-class InjectedClassesInformation(val injectedTypes: Set[ObjectType]) {
+class InjectedClasses(val injectedTypes: Set[ObjectType]) {
 
     final def isInjected(classFile: ClassFile): Boolean = isInjected(classFile.thisType)
 
@@ -51,13 +52,13 @@ class InjectedClassesInformation(val injectedTypes: Set[ObjectType]) {
 }
 
 /**
- * Factory to create [[InjectedClassesInformation]].
+ * Factory to create [[InjectedClasses]].
  *
  * @author Michael Reif
  */
-object InjectedClassesInformationAnalysis {
+object InjectedClassesAnalysis {
 
-    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): InjectedClassesInformation = {
+    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): InjectedClasses = {
 
         val injectedTypes = new ConcurrentLinkedQueue[ObjectType]
 
@@ -74,6 +75,6 @@ object InjectedClassesInformationAnalysis {
             }
         }
 
-        new InjectedClassesInformation(injectedTypes.asScala.toSet)
+        new InjectedClasses(injectedTypes.asScala.toSet)
     }
 }

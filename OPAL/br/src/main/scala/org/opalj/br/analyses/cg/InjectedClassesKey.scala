@@ -29,6 +29,7 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import org.opalj.concurrent.defaultIsInterrupted
 
@@ -40,10 +41,10 @@ import org.opalj.concurrent.defaultIsInterrupted
  *
  * @author Michael Reif
  */
-object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClassesInformation, Nothing] {
+object InjectedClassesKey extends ProjectInformationKey[InjectedClasses, Nothing] {
 
     /**
-     * The [[InjectedClassesInformation]] has no special prerequisites.
+     * The [[InjectedClasses]] has no special prerequisites.
      *
      * @return `Nil`.
      */
@@ -52,8 +53,7 @@ object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClass
     /**
      * Computes the information which types are injected at a field.
      */
-    override protected def compute(project: SomeProject): InjectedClassesInformation = {
-        InjectedClassesInformationAnalysis(project, defaultIsInterrupted)
+    override protected def compute(project: SomeProject): InjectedClasses = {
+        InjectedClassesAnalysis(project, defaultIsInterrupted)
     }
 }
-
