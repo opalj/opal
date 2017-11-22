@@ -42,17 +42,15 @@ import org.opalj.fpcf.properties._
  */
 class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
-    import scala.reflect.runtime.universe.typeOf
-
     /**
      * Determines the purity of the given method. The given method must have a body!
      */
     def determineClassHierarchy(m: Method): PropertyComputationResult = {
-        val project = ps.ctx(typeOf[SomeProject]).asInstanceOf[SomeProject]
-
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
         var methodIsRefinable = false
         var hasUnknownExceptions = false
+
+        // TODO: ProjectKey for method m isOverrideable once implemented
 
         var dependees = Set.empty[EOptionP[Method, Property]]
 

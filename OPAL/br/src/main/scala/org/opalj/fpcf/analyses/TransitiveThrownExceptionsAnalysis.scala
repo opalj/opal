@@ -134,6 +134,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     false
 
                 case INVOKEINTERFACE.opcode ⇒
+                    // TODO: Merge with INVOKEVIRTUAL
                     val ii = instruction.asInstanceOf[INVOKEINTERFACE]
                     val callees = project.interfaceCall(ii)
                     if (callees.nonEmpty) {
@@ -161,7 +162,6 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     }
 
                 case INVOKEVIRTUAL.opcode ⇒
-                    // TODO check subtypes as well, new property type for aggregated method calls
                     val iv = instruction.asInstanceOf[INVOKEVIRTUAL]
                     var callerPackage = ""
                     if (m.classFile.fqn.contains("/")) {

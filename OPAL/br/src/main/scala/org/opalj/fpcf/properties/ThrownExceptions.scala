@@ -193,6 +193,7 @@ object ThrownExceptionsAreUnknown {
 
 /**
  * TODO: Documentation
+ * Was kann sie, was macht sie, wie sieht die cycle resolution aus
  */
 object ClassHierarchyThrownExceptions {
 
@@ -204,14 +205,15 @@ object ClassHierarchyThrownExceptions {
         var hasUnknownExceptions = false
         epks.foreach {
             case EPK(e, Key) ⇒
-                (ps(e, Key).p: @unchecked) match {
+                ps(e, Key).p match {
                     case c: ClassHierarchyThrownExceptions ⇒
                         exceptions ++= c.exceptions.concreteTypes
                         hasUnknownExceptions |= c.hasUnknownExceptions
+                    case _ => throw new UnknownError(s"Cycle involving unknown keys: $e")
                 }
 
             case EPK(e, ThrownExceptions.Key) ⇒
-                (ps(e, ThrownExceptions.Key).p: @unchecked) match {
+                ps(e, ThrownExceptions.Key).p match {
                     case _: ThrownExceptionsAreUnknown ⇒ hasUnknownExceptions = true
                     case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
                 }
@@ -234,10 +236,11 @@ object ClassHierarchyThrownExceptions {
     }
 }
 
+// TODO Change to ThrownExceptionsByOverridingMethods
 case class ClassHierarchyThrownExceptions(
         exceptions:           BRTypesSet = BRTypesSet.empty,
         isRefineable:         Boolean    = false,
-        hasUnknownExceptions: Boolean    = false
+        hasUnknownExceptions: Boolean    = false // TOOD: new case object if exceptions are unknown
 )
     extends Property {
     final type Self = ClassHierarchyThrownExceptions
@@ -247,9 +250,9 @@ case class ClassHierarchyThrownExceptions(
     override def equals(other: Any): Boolean = {
         other match {
             case that: ClassHierarchyThrownExceptions ⇒
-                this.exceptions == that.exceptions &&
-                    this.isRefineable == that.isRefineable &&
-                    this.hasUnknownExceptions == that.hasUnknownExceptions
+                this.isRefineable == that.isRefineable &&
+                this.hasUnknownExceptions == that.hasUnknownExceptions &&
+                    this.exceptions == that.exceptions
             case _ ⇒ false
         }
     }
