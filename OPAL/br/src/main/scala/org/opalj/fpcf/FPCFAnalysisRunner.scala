@@ -78,7 +78,7 @@ trait FPCFAnalysisRunner {
      * This method has to be overridden in every subclass since it is used by the
      * [[FPCFAnalysesManager]] to guarantee the save execution of all FPCFAnalysis.
      */
-    protected[fpcf] def derivedProperties: Set[PropertyKind]
+    def derivedProperties: Set[PropertyKind]
 
     /**
      * Returns the kinds of properties which are queried by this analysis.
@@ -88,7 +88,7 @@ trait FPCFAnalysisRunner {
      * @note   Self usages don't have to be documented since the analysis will derive this
      *         property during the computation.
      */
-    protected[fpcf] def usedProperties: Set[PropertyKind] = Set.empty
+    def usedProperties: Set[PropertyKind] = Set.empty
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly

@@ -49,6 +49,6 @@ object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer,
     override protected def requirements = Seq(DirectTypeExtensibilityKey)
 
     override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
-        new TypeExtensibilityInformationAnalysis(project)
+        new TypeExtensibilityAnalysis(project)
     }
 }

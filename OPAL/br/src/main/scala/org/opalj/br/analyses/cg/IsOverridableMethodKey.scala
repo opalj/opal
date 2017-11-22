@@ -50,7 +50,7 @@ object IsOverridableMethodKey extends ProjectInformationKey[Method ⇒ Answer, N
     def requirements = Seq(TypeExtensibilityKey)
 
     override protected def compute(project: SomeProject): Method ⇒ Answer = {
-        new IsOverridableMethodInformationAnalysis(
+        new IsOverridableMethodAnalysis(
             project,
             project.get(DirectTypeExtensibilityKey),
             project.get(TypeExtensibilityKey)

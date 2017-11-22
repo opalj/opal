@@ -62,7 +62,7 @@ import org.opalj.collection.mutable.ArrayMap
  *
  * @author Michael Reif
  */
-class TypeExtensibilityInformationAnalysis(val project: SomeProject) extends (ObjectType ⇒ Answer) {
+class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
     private[this] val typeExtensibility: ArrayMap[Answer] = {
         import project.classHierarchy

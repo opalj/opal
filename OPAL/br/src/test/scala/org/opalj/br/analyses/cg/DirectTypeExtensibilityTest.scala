@@ -175,7 +175,7 @@ object DirectTypeExtensibilityConfig {
     val directTypeExtensibilityAnalysis =
         """
           |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
-          |    analysis = "org.opalj.br.analyses.cg.DirectTypeExtensibilityInformation"
+          |    analysis = "org.opalj.br.analyses.cg.DirectTypeExtensibility"
           |}
         """.stripMargin
 

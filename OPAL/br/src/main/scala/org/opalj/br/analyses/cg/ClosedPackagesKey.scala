@@ -37,10 +37,10 @@ import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to get a function that determines whether a package is closed or not.
- * See [[ClosedPackagesInformation]] for further details.
+ * See [[ClosedPackages]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
- * or not. The respective analysis has to extend the abstract [[ClosedPackagesInformation]] class.
+ * or not. The respective analysis has to extend the abstract [[ClosedPackages]] class.
  * To configure which analysis is used use the key
  * `org.opalj.br.analyses.cg.ClosedPackagesKey.analysis` to specify the name of the class which
  * implements the analysis.
@@ -55,7 +55,7 @@ import org.opalj.log.OPALLogger.error
  *      }
  *      }}}
  *
- * @note Please see the documentation of [[ClosedPackagesInformation]] and its subtypes for more
+ * @note Please see the documentation of [[ClosedPackages]] and its subtypes for more
  *       information.
  *
  * @note The default configuration is the conservative [[OpenCodeBase]] analysis.
@@ -86,7 +86,7 @@ object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothi
             val configuredAnalysis = project.config.as[Option[String]](key)
             val analysisClassName = configuredAnalysis.getOrElse(DefaultClosedPackagesAnalysis)
             val constructor = Class.forName(analysisClassName).getConstructors.head
-            constructor.newInstance(project).asInstanceOf[ClosedPackagesInformation]
+            constructor.newInstance(project).asInstanceOf[ClosedPackages]
         } catch {
             case t: Throwable ⇒
                 val m = "cannot compute closed packages; all packages are now considered open"

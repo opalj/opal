@@ -34,7 +34,7 @@ package cg
 import br.analyses.ProjectInformationKey
 import br.analyses.SomeProject
 import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.InjectedClassesInformationKey
+import org.opalj.br.analyses.cg.InjectedClassesKey
 import org.opalj.br.analyses.cg.InstantiableClassesKey
 
 /**
@@ -57,7 +57,7 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph, Nothing]
 
     override protected def requirements =
         Seq(
-            InjectedClassesInformationKey,
+            InjectedClassesKey,
             EntryPointKey,
             PropertyStoreKey,
             InstantiableClassesKey,

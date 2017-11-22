@@ -38,8 +38,9 @@ import scala.collection.JavaConverters._
 import org.opalj.br.instructions.NEW
 
 /**
- * A very basic analysis which identifies those classes that can never be instantiated (e.g.,
- * `java.lang.Math`) by user code.
+ * A very basic analysis which identifies those classes that can never be instantiated by user code.
+ * A famous example is "java.lang.Math" which just defines a single private constructor which
+ * is never called.
  *
  * A class is not instantiable if it only defines private constructors and these constructors
  * are not called by any static method and the class is also not Serializable. However,

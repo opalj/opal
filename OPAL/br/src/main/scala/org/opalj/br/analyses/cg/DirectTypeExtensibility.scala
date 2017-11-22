@@ -42,11 +42,11 @@ import org.opalj.collection.mutable.ArrayMap
  * client application/library. A type is directly extensible if a developer could have
  * defined a direct - not transitive - subtype that is not part of the given application/library.
  *
- * This analysis directly builds on top of the [[ClosedPackagesInformation]].
+ * This analysis directly builds on top of the [[ClosedPackages]].
  *
  * @author Michael Reif
  */
-sealed abstract class DirectTypeExtensibilityInformation extends (ObjectType ⇒ Answer) {
+sealed abstract class AbstractDirectTypeExtensibility extends (ObjectType ⇒ Answer) {
 
     val project: SomeProject
 
@@ -54,7 +54,7 @@ sealed abstract class DirectTypeExtensibilityInformation extends (ObjectType ⇒
      * Enables subclasses to explicitly specify the (non-)extensible types. This enables
      * users to use domain knowledge to override the result of the base analysis.
      *
-     * @note See [[DirectTypeExtensibilityInformation#parseConfig]] for how to use OPAL's
+     * @note See [[DirectTypeExtensibility#parseSpecifiedTypesList]] for how to use OPAL's
      *       configuration to configure sets of object types.
      *
      * @return  Those types for which the direct extensibility is explicit configured.
@@ -68,7 +68,7 @@ sealed abstract class DirectTypeExtensibilityInformation extends (ObjectType ⇒
      *          configured object types. [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
      * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
      *          respective analysis;
-     *          [[DirectTypeExtensibilityInformation#configuredTypeExtensibilities]].
+     *          [[DirectTypeExtensibility#configuredExtensibleTypes]].
      */
     protected[this] def parseSpecifiedTypesList(simpleKey: String): List[ObjectType] = {
         val completeKey = DirectTypeExtensibilityKey.ConfigKeyPrefix + simpleKey
@@ -130,9 +130,11 @@ sealed abstract class DirectTypeExtensibilityInformation extends (ObjectType ⇒
     def apply(t: ObjectType): Answer = typeExtensibility.get(t.id).getOrElse(Unknown)
 }
 
+class DirectTypeExtensibility(val project: SomeProject) extends AbstractDirectTypeExtensibility
+
 /**
  * Determines whether a type is directly extensible by a (yet unknown)
- * client application/library using the base analysis [[DirectTypeExtensibilityInformation]]
+ * client application/library using the base analysis [[DirectTypeExtensibility]]
  * and an explicitly configured list of extensible types where the list overrides the findings of
  * the analysis. This enables domain specific configurations.
  *
@@ -147,9 +149,7 @@ sealed abstract class DirectTypeExtensibilityInformation extends (ObjectType ⇒
  *              ["java/util/Math", "com/example/Type"]
  *          }}}
  */
-class ConfigureExtensibleTypes(
-        val project: SomeProject
-) extends DirectTypeExtensibilityInformation {
+class ConfigureExtensibleTypes(val project: SomeProject) extends AbstractDirectTypeExtensibility {
 
     /**
      * Returns the types which are extensible.
@@ -161,7 +161,7 @@ class ConfigureExtensibleTypes(
 
 /**
  * Determines whether a type is directly extensible by a (yet unknown)
- * client application/library using the base analysis [[DirectTypeExtensibilityInformation]]
+ * client application/library using the base analysis [[DirectTypeExtensibility]]
  * and an explicitly configured list of final (not extensible) types; the list overrides the
  * findings of the analysis. This enables domain specific configurations.
  *
@@ -176,9 +176,7 @@ class ConfigureExtensibleTypes(
  *              ["java/util/Math", "com/example/Type"]
  *          }}}
  */
-class ConfigureFinalTypes(
-        val project: SomeProject
-) extends DirectTypeExtensibilityInformation {
+class ConfigureFinalTypes(val project: SomeProject) extends AbstractDirectTypeExtensibility {
 
     /**
      * Returns the types which are not extensible/which are final.

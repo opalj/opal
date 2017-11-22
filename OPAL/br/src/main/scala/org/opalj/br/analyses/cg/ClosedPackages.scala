@@ -61,7 +61,7 @@ import org.opalj.log.OPALLogger.warn
  *
  * @author Michael Reif
  */
-abstract class ClosedPackagesInformation extends (String ⇒ Boolean) {
+abstract class ClosedPackages extends (String ⇒ Boolean) {
 
     def project: SomeProject
 
@@ -91,7 +91,7 @@ abstract class ClosedPackagesInformation extends (String ⇒ Boolean) {
  * @note An application that uses reflection to load functionality at runtime has a
  *       well-defined extension point and is not a ''simple application'' in the above sense.
  */
-class ClosedCodeBase(val project: SomeProject) extends ClosedPackagesInformation {
+class ClosedCodeBase(val project: SomeProject) extends ClosedPackages {
 
     /** Always returns true. */
     override def isClosed(packageName: String): Boolean = true
@@ -99,7 +99,7 @@ class ClosedCodeBase(val project: SomeProject) extends ClosedPackagesInformation
 }
 
 /**
- * A conservative [[ClosedPackagesInformation]] analysis which considers all packages
+ * A conservative [[ClosedPackages]] analysis which considers all packages
  * (except of those starting with `java`) as being open. The `java.*` packages are protected
  * by the JVM itself.
  * This analysis can safely be used by every analysis, but - depending on the context -
@@ -110,7 +110,7 @@ class ClosedCodeBase(val project: SomeProject) extends ClosedPackagesInformation
  * to
  *  `org.opalj.br.analyses.[[OpenCodeBase]]`
  */
-class OpenCodeBase(val project: SomeProject) extends ClosedPackagesInformation {
+class OpenCodeBase(val project: SomeProject) extends ClosedPackages {
 
     override def isClosed(packageName: String): Boolean = packageName.startsWith("java/")
 
@@ -129,7 +129,7 @@ class OpenCodeBase(val project: SomeProject) extends ClosedPackagesInformation {
  *      The previous example treats all packages starting with `java` and `com.sun`
  *      as closed.
  */
-class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackagesInformation {
+class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackages {
 
     private[this] val closedPackagesRegex = {
         val closedPackages = project.config.as[Option[String]](ConfigKeyPrefix+"closedPackages")

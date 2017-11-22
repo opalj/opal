@@ -700,7 +700,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      */
     def specialCall(
         declaringClassType: ObjectType, // an interface or class type to be precise
-        isInterface:        Boolean, // TODO is isInterface needed - isn't it contained in "instancemethods" ?
+        isInterface:        Boolean,
         name:               String, // an interface or class type to be precise
         descriptor:         MethodDescriptor
     ): Result[Method] = {
@@ -848,8 +848,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Convience method;
-     * see [[virtualCall(callerPackageName: String,declaringType:ReferenceType*]]
+     * Convience method; see `virtualCall(callerPackageName:String,declaringType:ReferenceType*`
      * for details.
      */
     def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {

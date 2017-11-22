@@ -56,7 +56,7 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph, Nothing]
      *
      * @return `Nil`.
      */
-    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesKey, IntStatisticsKey, EntryPointKey)
+    override protected def requirements = Seq(CallBySignatureResolutionKey, InstantiableClassesKey, EntryPointKey)
 
     /**
      * Computes the `CallGraph` for the given project.

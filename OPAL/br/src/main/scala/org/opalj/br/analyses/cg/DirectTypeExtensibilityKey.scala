@@ -39,16 +39,14 @@ import org.opalj.log.OPALLogger
  * The ''key'' object to get a function that determines whether a type is directly
  * extensible or not.
  *
- * @see [[DirectTypeExtensibilityInformation]] for further information.
+ * @see [[DirectTypeExtensibility]] for further information.
  * @author Michael Reif
  */
 object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.DirectTypeExtensibilityKey."
 
-    final val DefaultExtensibilityAnalysis = {
-        "org.opalj.br.analyses.cg.DirectTypeExtensibilityInformation"
-    }
+    final val DefaultExtensibilityAnalysis = "org.opalj.br.analyses.cg.DirectTypeExtensibility"
 
     /**
      * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
