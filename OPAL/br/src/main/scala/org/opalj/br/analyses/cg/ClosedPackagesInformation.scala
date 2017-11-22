@@ -139,34 +139,3 @@ class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackag
     override def apply(packageName: String): Boolean = packageName matches closedPackagesRegex
 
 }
-
-/**
- * Determines the open packages using a regular expression.
- *
- * The regular expression can be defined using the general configuration key:
- * `org.opalj.br.analyses.ClosedPackagesKey.openPackages`
- *
- * @example
- *      {{{
- *      org.opalj.br.analyses.ClosedPackagesKey.openPackages = "net/open/"
- *      }}}
- *      The previous example would consider the package `net/open/` as open.
- *
- */
-class OpenPackagesConfiguration(val project: SomeProject) extends ClosedPackagesInformation {
-
-    private[this] val openPackagesRegex = {
-        val openPackages = project.config.as[Option[String]](ConfigKeyPrefix+"openPackages")
-
-        if (openPackages.isEmpty)
-            warn(
-                "project configuration",
-                "config key org.opalj.br.analyses.ClosedPackagesKey.openPackages not found "+
-                    "- all packages are considered open."
-            )
-
-        openPackages.getOrElse(".*")
-    }
-
-    override def apply(packageName: String): Boolean = packageName matches openPackagesRegex
-}
