@@ -42,7 +42,7 @@ class SimpleLambdaAddTest extends FixturesTest {
 
     describe("a simple lambda add") {
         it("should calculate 2+2 correctly") {
-            val c = byteArrayClassLoader.loadClass("lambdas.InvokeDynamics")
+            val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
             val instance = c.newInstance()
             val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
             val res = m.invoke(instance, new Integer(2), new Integer(2))

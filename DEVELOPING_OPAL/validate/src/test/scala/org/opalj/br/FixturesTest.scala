@@ -31,7 +31,7 @@ package org.opalj.br
 import java.io.File
 import java.net.URL
 
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.{Project, ProjectBasedInMemoryClassLoader}
 import org.opalj.bytecode.RTJar
 import org.scalatest.{FunSpec, Matchers}
 
@@ -63,5 +63,5 @@ trait FixturesTest extends FunSpec with Matchers {
         )
     }
 
-    final lazy val byteArrayClassLoader = new ByteArrayClassLoader(FixtureProject)
+    final lazy val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(FixtureProject)
 }

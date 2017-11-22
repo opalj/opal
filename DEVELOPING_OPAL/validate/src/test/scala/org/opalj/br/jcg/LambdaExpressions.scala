@@ -45,7 +45,7 @@ class LambdaExpressions extends FixturesTest {
 
     describe("JCG lambda_expressions test") {
         it("should execute main successfully") {
-            val c = byteArrayClassLoader.loadClass("app.ExpressionPrinter")
+            val c = inMemoryClassLoader.loadClass("app.ExpressionPrinter")
             val m = c.getMethod("main", classOf[Array[String]])
 
             // Intercept output

@@ -26,50 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj.br.analyses
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.graphs.Node
+import org.opalj.br.ProjectSerializer
 
 /**
- * A classloader that resolves classfiles which are available in byte array form.
- *
- * @param project The project where the classfiles are loaded from.
+ * A simple `ClassLoader` that looks-up the available classes from the given Project.
  *
  * @author Andreas Muttscheller
  */
-class ByteArrayClassLoader(project: SomeProject) extends ClassLoader {
+class ProjectBasedInMemoryClassLoader(
+        val project: SomeProject,
+        parent:      ClassLoader = getClass.getClassLoader
+) extends ClassLoader(parent) {
 
-    // TODO: Create new constructor in InMemoryClassLoader.scala
-
-    loadGraph(project.classHierarchy.toGraph())
-
-    def loadGraph(node: Node): Unit = {
-        if (node.nodeId >= 0) {
-            val ot = project.classHierarchy.getObjectType(node.nodeId)
-            project.allProjectClassFiles.find(_.thisType == ot).foreach(c ⇒ resolveProjectClass(c))
+    @throws[ClassNotFoundException]
+    override def findClass(name: String): Class[_] = {
+        project.allProjectClassFiles.find(_.thisType.toJava == name) match {
+            case Some(data) ⇒
+                val bytes = ProjectSerializer.classToByte(data)
+                defineClass(name, bytes, 0, bytes.length)
+            case None ⇒ throw new ClassNotFoundException(name)
         }
-
-        if (node.hasSuccessors) {
-            node.foreachSuccessor(loadGraph)
-        }
-    }
-
-    def resolveProjectClass(classFile: ClassFile): Unit = {
-        try {
-            resolveClass(findClass(classFile))
-        } catch {
-            // Can be ignored. The class will most probably loaded at a later time, when all
-            // superclasses are loaded.
-            case _: Any ⇒
-        }
-    }
-
-    def findClass(classFile: ClassFile): Class[_] = {
-        val ba = ProjectSerializer.classToByte(
-            classFile
-        )
-
-        defineClass(classFile.thisType.toJava, ba, 0, ba.length)
     }
 }
