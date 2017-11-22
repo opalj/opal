@@ -53,40 +53,24 @@ object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ A
     /**
      * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
      */
-    override protected def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
+    def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
      * Computes the direct type extensibility information for the given project.
      */
     override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
-        implicit val logContext = project.logContext
-
         val configKey = ConfigKeyPrefix+"analysis"
         try {
-            val packageAnalysis =
-                project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
-            reify(
-                project,
-                packageAnalysis
-            )
+            val configuredAnalysis = project.config.as[Option[String]](configKey)
+            val analysisClassName = configuredAnalysis.getOrElse(DefaultExtensibilityAnalysis)
+            val constructor = Class.forName(analysisClassName).getConstructors.head
+            constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
         } catch {
             case t: Throwable ⇒
-                OPALLogger.error(
-                    "project configuration",
-                    "failed to compute \"direct extensibility information\""+
-                        "; \"Unknown extensibility\" will now be used as the fallback",
-                    t
-                )
+                val m = "cannot compute type extensibility; extensibility is unknown for all types"
+                OPALLogger.error("project configuration", m, t)(project.logContext)
                 (o: ObjectType) ⇒ Unknown
         }
     }
 
-    /**
-     * Reflectively instantiates the configured analysis. The instantiated class has to satisfy the
-     * interface and has to provide a single constructor parameterized over a [[Project]].
-     */
-    private[this] def reify(project: SomeProject, analysisName: String): ObjectType ⇒ Answer = {
-        val constructor = Class.forName(analysisName).getConstructors.head
-        constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
-    }
 }

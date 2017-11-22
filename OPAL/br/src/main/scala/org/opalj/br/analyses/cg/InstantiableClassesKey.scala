@@ -35,10 +35,11 @@ import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
 
 /**
- * The ''key'' object to get information about the classes that can be instantiated
+ * The ''key'' object to get information about the classes that could be instantiated
  * (either, directly or indirectly).
  *
  * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ *
  * @author Michael Eichberg
  */
 object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
@@ -48,7 +49,7 @@ object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses,
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the information which classes are (not) instantiable.

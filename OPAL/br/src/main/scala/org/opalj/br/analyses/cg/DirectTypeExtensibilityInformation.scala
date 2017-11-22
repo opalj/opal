@@ -31,10 +31,11 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
-import org.opalj.collection.mutable.ArrayMap
-
 import scala.collection.mutable
+
+import net.ceedubs.ficus.Ficus._
+
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Determines whether a type (class or interface) is directly extensible by a (yet unknown)
@@ -45,27 +46,64 @@ import scala.collection.mutable
  *
  * @author Michael Reif
  */
-class DirectTypeExtensibilityInformation(val project: SomeProject) extends (ObjectType ⇒ Answer) {
+sealed abstract class DirectTypeExtensibilityInformation extends (ObjectType ⇒ Answer) {
 
-    // IMPROVE Use (not yet existing...) ImplicitUIDMap where we use a plain array to store the answer.
-    private[this] lazy val typeExtensibility: ArrayMap[Answer] = compute()
+    val project: SomeProject
 
-    protected[this] def compute(): ArrayMap[Answer] = {
+    /**
+     * Enables subclasses to explicitly specify the (non-)extensible types. This enables
+     * users to use domain knowledge to override the result of the base analysis.
+     *
+     * @note See [[DirectTypeExtensibilityInformation#parseConfig]] for how to use OPAL's
+     *       configuration to configure sets of object types.
+     *
+     * @return  Those types for which the direct extensibility is explicit configured.
+     */
+    protected[this] def configuredExtensibleTypes: Iterator[(ObjectType, Answer)] = Iterator.empty
+
+    /**
+     * Get the list of configured types using the configured config key.
+     *
+     * @param   simpleKey The simple name of the config key that will be used to get a list of
+     *          configured object types. [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
+     * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
+     *          respective analysis;
+     *          [[DirectTypeExtensibilityInformation#configuredTypeExtensibilities]].
+     */
+    protected[this] def parseSpecifiedTypesList(simpleKey: String): List[ObjectType] = {
+        val completeKey = DirectTypeExtensibilityKey.ConfigKeyPrefix + simpleKey
+        val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
+
+        import project.classHierarchy
+
+        fqns.flatMap { fqn ⇒
+            // We chose "/." to identify all subtypes, because we can only use a character
+            // (sequence) that contains an invalid character in a JVM identifier.
+            if (fqn.endsWith("/.")) {
+                val ot = ObjectType(fqn.substring(0, fqn.length - 2))
+                classHierarchy.allSubtypes(ot, reflexive = true)
+            } else {
+                List(ObjectType(fqn))
+            }
+        }
+    }
+
+    private[this] val typeExtensibility: ArrayMap[Answer] = {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        val configuredTypes = configuredExtensibleTypes.foldLeft(mutable.HashMap.empty[Int, Answer]) { (r, tuple) ⇒
-            val (ot, ans) = tuple
-            r.put(ot.id, ans)
-            r
+        val configuredTypes = mutable.LongMap.empty[Answer] ++ configuredExtensibleTypes.map { e ⇒
+            val (ot, answer) = e
+            (ot.id, answer)
         }
 
         val allClassFiles = project.allClassFiles
-        val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](ObjectType.objectTypesCount)) { (r, classFile) ⇒
+        val entries = ObjectType.objectTypesCount
+        val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](entries)) { (r, classFile) ⇒
             val objectType = classFile.thisType
             val isExtensible =
                 {
-                    val configured = configuredTypes.get(objectType.id)
+                    val configured = configuredTypes.get(objectType.id.toLong)
                     if (configured.isDefined)
                         configured.get
                     else if (classFile.isEffectivelyFinal ||
@@ -79,7 +117,7 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
                     else
                         Yes
                 }
-            r.update(objectType.id, isExtensible)
+            r(objectType.id) = isExtensible
             r
 
         }
@@ -87,48 +125,7 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
     }
 
     /**
-     * Enables subclasses to explicitly specify the extensibility of some types. This enables
-     * users to use domain knowledge to override the result of the base analysis.
-     *
-     * @note See [[DirectTypeExtensibilityInformation#parseConfig]] for how to use OPAL's
-     *       configuration to configure sets of object types.
-     *
-     * @return  Those types for which the direct extensibility is explicit configured.
-     */
-    protected[this] def configuredExtensibleTypes: TraversableOnce[(ObjectType, Answer)] = {
-        Traversable.empty
-    }
-
-    /**
-     * Get the list of configured types using the configured config key.
-     *
-     * @param   simpleKey The simple name of the config key that will be used to get a list of
-     *          configured object types. [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
-     * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
-     *          respective analysis;
-     *          [[DirectTypeExtensibilityInformation#configuredTypeExtensibilities]].
-     */
-    protected[this] def parseConfig(simpleKey: String): List[ObjectType] = {
-        val completeKey = DirectTypeExtensibilityKey.ConfigKeyPrefix + simpleKey
-        val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
-
-        import project.classHierarchy
-
-        fqns.flatMap { fqn ⇒
-            // We chose "/." to identify all subtypes, because we can only use a character
-            // (sequence) that contains an invalid character in a JVM identifier.
-            if (fqn.endsWith("/.")) {
-                val ot = ObjectType(fqn.substring(0, fqn.length - 2))
-                classHierarchy.allSubtypes(ot, true)
-            } else {
-                List(ObjectType(fqn))
-            }
-        }
-    }
-
-    /**
-     * Determines whether the given type can directly be extended by a (yet unknown)
-     * library/application.
+     * Determines whether the given type can directly be extended by (yet unknown) code.
      */
     def apply(t: ObjectType): Answer = typeExtensibility.get(t.id).getOrElse(Unknown)
 }
@@ -151,14 +148,14 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
  *          }}}
  */
 class ConfigureExtensibleTypes(
-        project: SomeProject
-) extends DirectTypeExtensibilityInformation(project) {
+        val project: SomeProject
+) extends DirectTypeExtensibilityInformation {
 
     /**
      * Returns the types which are extensible.
      */
-    override def configuredExtensibleTypes: TraversableOnce[(ObjectType, Yes.type)] = {
-        parseConfig("extensibleTypes").iterator.map(t ⇒ (t, Yes))
+    override def configuredExtensibleTypes: Iterator[(ObjectType, Yes.type)] = {
+        parseSpecifiedTypesList("extensibleTypes").iterator.map(t ⇒ (t, Yes))
     }
 }
 
@@ -180,13 +177,13 @@ class ConfigureExtensibleTypes(
  *          }}}
  */
 class ConfigureFinalTypes(
-        override val project: SomeProject
-) extends DirectTypeExtensibilityInformation(project) {
+        val project: SomeProject
+) extends DirectTypeExtensibilityInformation {
 
     /**
      * Returns the types which are not extensible/which are final.
      */
-    override def configuredExtensibleTypes: TraversableOnce[(ObjectType, No.type)] = {
-        parseConfig("finalTypes").iterator.map(t ⇒ (t, No))
+    override def configuredExtensibleTypes: Iterator[(ObjectType, No.type)] = {
+        parseSpecifiedTypesList("finalTypes").iterator.map(t ⇒ (t, No))
     }
 }

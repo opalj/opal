@@ -32,9 +32,9 @@ package analyses
 package cg
 
 /**
- * Stores the information about those classes that are not instantiable. The set of
+ * Stores the information about those class that are not instantiable. The set of
  * classes that are not instantiable is usually only a small fraction of all classes
- * and hence, more efficient to store/access.
+ * and hence, more efficient to store/query than those which are instantiable.
  *
  * A class is considered instantiable if it is possible that at some point in time an
  * instance of the respective class is created (via a direct constructor call, a factory method
@@ -47,6 +47,7 @@ package cg
  *
  * @author Michael Eichberg
  */
+// RENAME => MayHaveInstances
 class InstantiableClasses(
         val project:         SomeProject,
         val notInstantiable: Set[ObjectType]
@@ -58,6 +59,6 @@ class InstantiableClasses(
         "# of not instantiable classes in the project" → notInstantiable.size
     )
 
-    override def toString(): String = notInstantiable.mkString("Not instantiable: ", ", ", ".")
+    override def toString: String = notInstantiable.mkString("Not instantiable: ", ", ", ".")
 
 }

@@ -39,8 +39,7 @@ package cg
  * @author Michael Eichberg
  * @author Michael Reif
  */
-object TypeExtensibilityKey
-    extends ProjectInformationKey[ObjectType ⇒ Answer, ObjectType ⇒ Answer] {
+object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
     /**
      * The [[TypeExtensibilityKey]] has the [[DirectTypeExtensibilityKey]] as prerequisite.

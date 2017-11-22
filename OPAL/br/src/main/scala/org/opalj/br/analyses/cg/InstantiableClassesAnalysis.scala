@@ -101,7 +101,8 @@ object InstantiableClassesAnalysis {
 
                 cf.methods.exists { method ⇒
                     // Check that the method is potentially a factory method...
-                    method.isStatic && !method.isStaticInitializer && (
+                    // or creates the singleton instance...
+                    method.isStatic && (
                         {
 
                             method.isNative
