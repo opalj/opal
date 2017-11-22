@@ -40,6 +40,8 @@ import org.opalj.graphs.Node
  */
 class ByteArrayClassLoader(project: SomeProject) extends ClassLoader {
 
+    // TODO: Create new constructor in InMemoryClassLoader.scala
+
     loadGraph(project.classHierarchy.toGraph())
 
     def loadGraph(node: Node): Unit = {
