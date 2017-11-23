@@ -194,8 +194,20 @@ object ThrownExceptionsAreUnknown {
 }
 
 /**
- * TODO: Documentation
- * Was kann sie, was macht sie, wie sieht die cycle resolution aus
+ * This property stores information about the exceptions a certain method throw, including
+ * the exceptions a possible overridden method in a subclass throws.
+ * It uses the ThrownExceptions property to gather information about the exceptions thrown in a
+ * particular method. It also includes the thrown exceptions of the respective method in all
+ * subclasses.
+ *
+ * Results can either be `AllThrownExceptionsByOverridingMethods`, which contains a set of possible
+ * exceptions thrown in the current classes method or its subclasses. If we aren't able to collect
+ * all exceptions, `UnknownThrownExceptionsByOverridingMethods` will be returned. This is the case
+ * if the analysis encounters a ATHROW instruction for example.
+ *
+ * The cycle resolution collects the properties from the given entities and constructs a final
+ * result. Possible properties can be `ThrownExceptionsByOverridingMethods` as well as
+ * `ThrownExceptions`. The result will be saved in the PropertyStore and propagated to the dependees.
  */
 object ThrownExceptionsByOverridingMethods {
 
