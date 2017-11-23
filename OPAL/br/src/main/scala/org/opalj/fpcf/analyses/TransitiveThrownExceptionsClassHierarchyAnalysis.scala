@@ -43,7 +43,8 @@ import org.opalj.fpcf.properties._
 class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
     /**
-     * Determines the purity of the given method. The given method must have a body!
+     * Determines the exceptions a method and its overridden methods by subclasses throw. This
+     * analysis builds the information over the class hierarchy.
      */
     def determineClassHierarchy(m: Method): PropertyComputationResult = {
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)

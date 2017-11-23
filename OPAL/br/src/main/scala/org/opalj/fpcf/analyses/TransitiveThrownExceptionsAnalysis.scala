@@ -50,7 +50,9 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
     import scala.reflect.runtime.universe.typeOf
 
     /**
-     * Determines the purity of the given method. The given method must have a body!
+     * Determines the exceptions a method throws. This analysis also follows invocation instructions
+     * and adds the exceptions thrown by the called method into its own result.
+     * The given method must have a body!
      */
     def determineThrownExceptions(m: Method): PropertyComputationResult = {
         if (m.isNative)
