@@ -51,8 +51,6 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
         var methodIsRefinable = false
         var hasUnknownExceptions = false
 
-        // TODO: ProjectKey for method m isOverrideable once implemented
-
         var dependees = Set.empty[EOptionP[Method, Property]]
 
         val concreteMethod = ps(m, ThrownExceptions.Key)

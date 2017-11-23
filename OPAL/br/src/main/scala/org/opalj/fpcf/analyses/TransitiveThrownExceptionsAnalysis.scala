@@ -36,6 +36,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties._
 
@@ -46,8 +47,6 @@ import org.opalj.fpcf.properties._
  * @author Andreas Muttscheller
  */
 class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
-
-    import scala.reflect.runtime.universe.typeOf
 
     /**
      * Determines the exceptions a method throws. This analysis also follows invocation instructions
@@ -63,7 +62,12 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
         if (body.isEmpty)
             return ImmediateResult(m, ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable);
 
-        val project = ps.ctx(typeOf[SomeProject]).asInstanceOf[SomeProject]
+        // If an unknown subclass can override this method we cannot gather information about
+        // the thrown exceptions. Return the analysis immediately.
+        if (project.get(IsOverridableMethodKey)(m).isYes) {
+            return Result(m, UnknownThrownExceptionsByOverridingMethods);
+        }
+
         //
         //... when we reach this point the method is non-empty
         //
