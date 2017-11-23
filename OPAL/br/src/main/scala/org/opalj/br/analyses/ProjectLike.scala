@@ -700,7 +700,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      */
     def specialCall(
         declaringClassType: ObjectType, // an interface or class type to be precise
-        isInterface:        Boolean, // TODO is isInterface needed - isn't it contained in "instancemethods" ?
+        isInterface:        Boolean,
         name:               String, // an interface or class type to be precise
         descriptor:         MethodDescriptor
     ): Result[Method] = {
@@ -847,13 +847,21 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         methods
     }
 
+    /**
+     * Convience method; see `virtualCall(callerPackageName:String,declaringType:ReferenceType*`
+     * for details.
+     */
     def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {
         virtualCall(callerPackageName, i.declaringClass, i.name, i.methodDescriptor)
     }
 
     /**
      * Returns the set of methods that may be called by an invokevirtual call, if
-     * the receiver type is unknown or effectively encompasses all subtypes.
+     * the receiver type is unknown or effectively encompasses all subtypes it
+     * is recommended to use [[instanceCall]].
+     *
+     * @note    As in case of instance call, the returned method may have a different
+     *          descriptor if we have a signature polymorphic call!
      */
     def virtualCall(
         callerPackageName: String,

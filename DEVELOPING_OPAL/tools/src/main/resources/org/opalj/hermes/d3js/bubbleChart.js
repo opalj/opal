@@ -75,7 +75,6 @@ function display(viewDetails) {
     const node = canvas.selectAll(".node")
         .data(pack(root).leaves())
         .enter().append("g")
-        .filter(function(d) { return d.value > 0;})
         .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 
     node.append("circle")

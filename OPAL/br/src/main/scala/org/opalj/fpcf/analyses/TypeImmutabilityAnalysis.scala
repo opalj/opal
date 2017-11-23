@@ -31,9 +31,9 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.properties.MutableType
 import org.opalj.fpcf.properties.UnknownClassImmutability

@@ -29,31 +29,31 @@
 package org.opalj
 package br
 package analyses
-
-import org.opalj.concurrent.defaultIsInterrupted
+package cg
 
 /**
- * The ''key'' object to get information about the types of objects that are potentially injected.
- * For example, by a web framework or a dependency injection framework.
- *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ * The ''key'' object to get a function that determines whether a method can be overridden by a not
+ * yet existing type. A method can be overridden if it's declaring type ___dt___is extensible by an
+ * (unknown) type ___ut___ (e.g., when the analysis assumes an open world) and if the method is not
+ * overridden by another subtype ___s___ such that ___ut <: s <: st___ and if the method can be
+ * overridden according to the JVM's semantics.
  *
  * @author Michael Reif
  */
-object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClassesInformation, Nothing] {
+object IsOverridableMethodKey extends ProjectInformationKey[Method ⇒ Answer, Nothing] {
 
     /**
-     * The [[InjectedClassesInformation]] has no special prerequisites.
+     * The [[IsOverridableMethodKey]] has the [[TypeExtensibilityKey]] as prerequisite.
      *
-     * @return `Nil`.
+     * @return Seq(TypeExtensibilityKey).
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    def requirements = Seq(TypeExtensibilityKey)
 
-    /**
-     * Computes the information which types are injected at a field.
-     */
-    override protected def compute(project: SomeProject): InjectedClassesInformation = {
-        InjectedClassesInformationAnalysis(project, defaultIsInterrupted)
+    override protected def compute(project: SomeProject): Method ⇒ Answer = {
+        new IsOverridableMethodAnalysis(
+            project,
+            project.get(DirectTypeExtensibilityKey),
+            project.get(TypeExtensibilityKey)
+        )
     }
 }
-

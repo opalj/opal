@@ -29,63 +29,37 @@
 package org.opalj
 package br
 package analyses
+package cg
+
+import scala.collection.mutable
 
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Determines whether a type (class or interface) is directly extensible by a (yet unknown)
  * client application/library. A type is directly extensible if a developer could have
  * defined a direct - not transitive - subtype that is not part of the given application/library.
  *
- * This analysis directly builds on top of the [[ClosedPackagesInformation]].
+ * This analysis directly builds on top of the [[ClosedPackages]].
  *
  * @author Michael Reif
  */
-class DirectTypeExtensibilityInformation(val project: SomeProject) extends (ObjectType ⇒ Answer) {
+sealed abstract class AbstractDirectTypeExtensibility extends (ObjectType ⇒ Answer) {
 
-    // IMPROVE Use (not yet existing...) ImplicitUIDMap where we use a plain array to store the answer.
-    private[this] lazy val typeExtensibility: Map[ObjectType, Answer] = compute()
-
-    protected[this] def compute(): Map[ObjectType, Answer] = {
-
-        val isClosedPackage = project.get(ClosedPackagesKey)
-
-        val allClassFiles = project.allClassFiles
-        val extensibility = allClassFiles.foldLeft(Map.empty[ObjectType, Answer]) { (r, classFile) ⇒
-            val objectType = classFile.thisType
-            r +
-                ((
-                    objectType,
-                    {
-                        if (classFile.isEffectivelyFinal ||
-                            classFile.isEnumDeclaration ||
-                            classFile.isAnnotationDeclaration)
-                            No
-                        else if (classFile.isPublic)
-                            Yes
-                        else if (isClosedPackage(objectType.packageName))
-                            No
-                        else
-                            Yes
-                    }
-                ))
-        }
-
-        configuredTypeExtensibilities.foldLeft(extensibility) { (r, entry) ⇒ r + entry }
-    }
+    val project: SomeProject
 
     /**
-     * Enables subclasses to explicitly specify the extensibility of some types. This enables
+     * Enables subclasses to explicitly specify the (non-)extensible types. This enables
      * users to use domain knowledge to override the result of the base analysis.
      *
-     * @note See [[DirectTypeExtensibilityInformation#parseConfig]] for how to use OPAL's
+     * @note See [[DirectTypeExtensibility#parseSpecifiedTypesList]] for how to use OPAL's
      *       configuration to configure sets of object types.
      *
      * @return  Those types for which the direct extensibility is explicit configured.
      */
-    protected[this] def configuredTypeExtensibilities: TraversableOnce[(ObjectType, Answer)] = {
-        Traversable.empty
-    }
+    protected[this] def configuredExtensibleTypes: Iterator[(ObjectType, Answer)] = Iterator.empty
 
     /**
      * Get the list of configured types using the configured config key.
@@ -94,9 +68,9 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
      *          configured object types. [[DirectTypeExtensibilityKey.ConfigKeyPrefix]].
      * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
      *          respective analysis;
-     *          [[DirectTypeExtensibilityInformation#configuredTypeExtensibilities]].
+     *          [[DirectTypeExtensibility#configuredExtensibleTypes]].
      */
-    protected[this] def parseConfig(simpleKey: String): List[ObjectType] = {
+    protected[this] def parseSpecifiedTypesList(simpleKey: String): List[ObjectType] = {
         val completeKey = DirectTypeExtensibilityKey.ConfigKeyPrefix + simpleKey
         val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
 
@@ -107,24 +81,60 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
             // (sequence) that contains an invalid character in a JVM identifier.
             if (fqn.endsWith("/.")) {
                 val ot = ObjectType(fqn.substring(0, fqn.length - 2))
-                classHierarchy.allSubtypes(ot, true)
+                classHierarchy.allSubtypes(ot, reflexive = true)
             } else {
                 List(ObjectType(fqn))
             }
         }
     }
 
-    /**
-     * Determines whether the given type can directly be extended by a (yet unknown)
-     * library/application.
-     */
-    def apply(t: ObjectType): Answer = typeExtensibility.get(t).getOrElse(Unknown)
+    private[this] val typeExtensibility: ArrayMap[Answer] = {
 
+        val isClosedPackage = project.get(ClosedPackagesKey)
+
+        val configuredTypes = mutable.LongMap.empty[Answer] ++ configuredExtensibleTypes.map { e ⇒
+            val (ot, answer) = e
+            (ot.id, answer)
+        }
+
+        val allClassFiles = project.allClassFiles
+        val entries = ObjectType.objectTypesCount
+        val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](entries)) { (r, classFile) ⇒
+            val objectType = classFile.thisType
+            val isExtensible =
+                {
+                    val configured = configuredTypes.get(objectType.id.toLong)
+                    if (configured.isDefined)
+                        configured.get
+                    else if (classFile.isEffectivelyFinal ||
+                        classFile.isEnumDeclaration ||
+                        classFile.isAnnotationDeclaration)
+                        No
+                    else if (classFile.isPublic)
+                        Yes
+                    else if (isClosedPackage(objectType.packageName))
+                        No
+                    else
+                        Yes
+                }
+            r(objectType.id) = isExtensible
+            r
+
+        }
+        extensibility
+    }
+
+    /**
+     * Determines whether the given type can directly be extended by (yet unknown) code.
+     */
+    def apply(t: ObjectType): Answer = typeExtensibility.get(t.id).getOrElse(Unknown)
 }
+
+class DirectTypeExtensibility(val project: SomeProject) extends AbstractDirectTypeExtensibility
 
 /**
  * Determines whether a type is directly extensible by a (yet unknown)
- * client application/library using the base analysis [[DirectTypeExtensibilityInformation]]
+ * client application/library using the base analysis [[DirectTypeExtensibility]]
  * and an explicitly configured list of extensible types where the list overrides the findings of
  * the analysis. This enables domain specific configurations.
  *
@@ -139,21 +149,19 @@ class DirectTypeExtensibilityInformation(val project: SomeProject) extends (Obje
  *              ["java/util/Math", "com/example/Type"]
  *          }}}
  */
-class ConfigureExtensibleTypes(
-        project: SomeProject
-) extends DirectTypeExtensibilityInformation(project) {
+class ConfigureExtensibleTypes(val project: SomeProject) extends AbstractDirectTypeExtensibility {
 
     /**
      * Returns the types which are extensible.
      */
-    override def configuredTypeExtensibilities: TraversableOnce[(ObjectType, Yes.type)] = {
-        parseConfig("extensibleTypes").iterator.map(t ⇒ (t, Yes))
+    override def configuredExtensibleTypes: Iterator[(ObjectType, Yes.type)] = {
+        parseSpecifiedTypesList("extensibleTypes").iterator.map(t ⇒ (t, Yes))
     }
 }
 
 /**
  * Determines whether a type is directly extensible by a (yet unknown)
- * client application/library using the base analysis [[DirectTypeExtensibilityInformation]]
+ * client application/library using the base analysis [[DirectTypeExtensibility]]
  * and an explicitly configured list of final (not extensible) types; the list overrides the
  * findings of the analysis. This enables domain specific configurations.
  *
@@ -168,14 +176,12 @@ class ConfigureExtensibleTypes(
  *              ["java/util/Math", "com/example/Type"]
  *          }}}
  */
-class ConfigureFinalTypes(
-        override val project: SomeProject
-) extends DirectTypeExtensibilityInformation(project) {
+class ConfigureFinalTypes(val project: SomeProject) extends AbstractDirectTypeExtensibility {
 
     /**
      * Returns the types which are not extensible/which are final.
      */
-    override def configuredTypeExtensibilities: TraversableOnce[(ObjectType, No.type)] = {
-        parseConfig("finalTypes").iterator.map(t ⇒ (t, No))
+    override def configuredExtensibleTypes: Iterator[(ObjectType, No.type)] = {
+        parseSpecifiedTypesList("finalTypes").iterator.map(t ⇒ (t, No))
     }
 }

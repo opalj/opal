@@ -29,36 +29,31 @@
 package org.opalj
 package br
 package analyses
+package cg
 
-import scala.collection.Set
+import org.opalj.concurrent.defaultIsInterrupted
 
 /**
- * Stores the information about those classes that are not instantiable. The set of
- * classes that are not instantiable is usually only a small fraction of all classes
- * and hence, more efficient to store/access.
+ * The ''key'' object to get information about the types of objects that are potentially injected.
+ * For example, by a web framework or a dependency injection framework.
  *
- * A class is considered instantiable if it is possible that at some point in time an
- * instance of the respective class is created (via a direct constructor call, a factory method
- * call, an indirect instance creation by means of creating an instance of a subtype.)
+ * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
  *
- * An example of a class which is not instaniable is a class which defines a private constructor
- * which is not called by other (factory) methods and which is also not serializable. A class
- * which defines no constructor at all (not possible using Java, but still valid bytecode) is
- * also not instantiable.
- *
- * @author Michael Eichberg
+ * @author Michael Reif
  */
-class InstantiableClasses(
-        val project:         SomeProject,
-        val notInstantiable: Set[ObjectType]
-) {
+object InjectedClassesKey extends ProjectInformationKey[InjectedClasses, Nothing] {
 
-    def isNotInstantiable(classType: ObjectType): Boolean = notInstantiable.contains(classType)
+    /**
+     * The [[InjectedClasses]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
-    def statistics: Map[String, Int] = Map(
-        "# of not instantiable classes in the project" → notInstantiable.size
-    )
-
-    override def toString(): String = notInstantiable.mkString("Not instantiable: ", ", ", ".")
-
+    /**
+     * Computes the information which types are injected at a field.
+     */
+    override protected def compute(project: SomeProject): InjectedClasses = {
+        InjectedClassesAnalysis(project, defaultIsInterrupted)
+    }
 }

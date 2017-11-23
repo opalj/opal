@@ -36,14 +36,14 @@ import sbt._
  */
 object Dependencies {
 
-    lazy val version = new {
+    object version {
         val junit = "4.12"
         val scalatest = "3.0.4"
         val scalacheck = "1.13.5"
 
         val scalaxml = "1.0.6"
-        val playjson = "2.6.6"
-        val ficus = "1.4.2"
+        val playjson = "2.6.7"
+        val ficus = "1.4.3"
         val commonstext = "1.1"
         val scalaparsercombinators = "1.0.6"
 
@@ -55,7 +55,7 @@ object Dependencies {
         val fastutil = "8.1.0"
     }
 
-    lazy val library = new {
+    object library {
 
         // --- test libraries
 
