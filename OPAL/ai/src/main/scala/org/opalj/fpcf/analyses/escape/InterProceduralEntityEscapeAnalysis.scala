@@ -39,7 +39,6 @@ import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
@@ -49,6 +48,7 @@ import org.opalj.br.VirtualForwardingMethod
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -81,7 +81,7 @@ import org.opalj.tac.Assignment
 trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
     //TODO Move to non entity based analysis
-    private[this] val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
+    private[this] val isMethodExtensible: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     // STATE MUTATED DURING THE ANALYSIS
     private[this] val dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
@@ -200,58 +200,64 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             } else {
                 // the receiver is null, the method is not invoked and the object does not escape
             }
-        } else if (dc.isObjectType && typeExtensibility(dc.asObjectType).isNotNo && AnalysisModes.isLibraryLike(project.analysisMode)) {
-            // the type of the virtual call is extensible and the analysis mode is library like
-            // therefore the method could be overriden and we do not know if the object escapes
-            // TODO: to optimize performance, we do not let the analysis run against the existing methods
-            calcMostRestrictive(AtMost(EscapeInCallee))
-        } else if (dc.isArrayType) {
-            val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
-            checkParams(methodO, params, assignment)
-            if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
         } else {
             assert(m.declaringClassType.isObjectType)
-            assert(dc.isObjectType)
-
-            val target = project.instanceCall(
-                m.declaringClassType.asObjectType,
-                dc,
-                name,
-                descr
-            )
-            if (target.hasValue) {
-                val vm = VirtualForwardingMethod(dc, name, descr, target.value)
-                if (isSignaturePolymorphicMethod(vm.target)) {
-                    //IMPROVE
-                    calcMostRestrictive(AtMost(EscapeInCallee))
-                } else {
-                    if (usesDefSite(receiver)) {
-                        val fp = virtualFormalParameters(vm)
-                        handleEscapeState(fp(0), assignment)
-
-                    }
-                    for (i ← params.indices) {
-                        if (usesDefSite(params(i))) {
+            val methodO = project.instanceCall(m.declaringClassType.asObjectType, dc, name, descr)
+            if (methodO.isEmpty ||
+                (dc.isObjectType &&
+                    isMethodExtensible(methodO.value).isNotNo &&
+                    AnalysisModes.isLibraryLike(project.analysisMode))) {
+                // the type of the virtual call is extensible and the analysis mode is library like
+                // therefore the method could be overriden and we do not know if the object escapes
+                // TODO: to optimize performance, we do not let the analysis run against the existing methods
+                calcMostRestrictive(AtMost(EscapeInCallee))
+            } else if (dc.isArrayType) {
+                val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
+                checkParams(methodO, params, assignment)
+                if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
+            } else {
+                assert(dc.isObjectType)
+                val target = project.instanceCall(
+                    m.declaringClassType.asObjectType,
+                    dc,
+                    name,
+                    descr
+                )
+                if (target.hasValue) {
+                    val vm = VirtualForwardingMethod(dc, name, descr, target.value)
+                    if (isSignaturePolymorphicMethod(vm.target)) {
+                        //IMPROVE
+                        calcMostRestrictive(AtMost(EscapeInCallee))
+                    } else {
+                        if (usesDefSite(receiver)) {
                             val fp = virtualFormalParameters(vm)
-                            handleEscapeState(fp(i + 1), assignment)
+                            handleEscapeState(fp(0), assignment)
+
+                        }
+                        for (i ← params.indices) {
+                            if (usesDefSite(params(i))) {
+                                val fp = virtualFormalParameters(vm)
+                                handleEscapeState(fp(i + 1), assignment)
+                            }
+                        }
+                        val packageName = m.declaringClassType.asObjectType.packageName
+                        val methods =
+                            if (isI) project.interfaceCall(dc.asObjectType, name, descr)
+                            else project.virtualCall(packageName, dc, name, descr)
+                        for (method ← methods) {
+                            checkParams(Success(method), params, assignment)
+                            if (usesDefSite(receiver))
+                                handleCall(Success(method), 0, assignment)
                         }
                     }
-                    val packageName = m.declaringClassType.asObjectType.packageName
-                    val methods =
-                        if (isI) project.interfaceCall(dc.asObjectType, name, descr)
-                        else project.virtualCall(packageName, dc, name, descr)
-                    for (method ← methods) {
-                        checkParams(Success(method), params, assignment)
-                        if (usesDefSite(receiver))
-                            handleCall(Success(method), 0, assignment)
-                    }
+                } else {
+                    // the method is unknown, so we have to stop here
+                    calcMostRestrictive(AtMost(EscapeInCallee))
                 }
-            } else {
-                // the method is unknown, so we have to stop here
-                calcMostRestrictive(AtMost(EscapeInCallee))
-            }
 
+            }
         }
+
     }
 
     private[this] def checkParams(
@@ -398,22 +404,22 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 }
 
 class InterProceduralEntityEscapeAnalysis(
-        val e:                       Entity,
-        val defSite:                 ValueOrigin,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:                  Parameters[TACMethodParameter],
-        val cfg:                     CFG,
-        val handlers:                ExceptionHandlers,
-        val aiResult:                AIResult,
-        val formalParameters:        FormalParameters,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val m:                       VirtualMethod,
-        val propertyStore:           PropertyStore,
-        val project:                 SomeProject
+    val e:                       Entity,
+    val defSite:                 ValueOrigin,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:                  Parameters[TACMethodParameter],
+    val cfg:                     CFG,
+    val handlers:                ExceptionHandlers,
+    val aiResult:                AIResult,
+    val formalParameters:        FormalParameters,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val m:                       VirtualMethod,
+    val propertyStore:           PropertyStore,
+    val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntityEscapeAnalysis
-    with AbstractInterProceduralEntityEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntityEscapeAnalysis
+        with AbstractInterProceduralEntityEscapeAnalysis
