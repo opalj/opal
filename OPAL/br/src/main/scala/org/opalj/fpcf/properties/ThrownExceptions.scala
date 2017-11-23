@@ -78,14 +78,16 @@ object ThrownExceptions {
 
         var unknownExceptions: String = null
         epks.foreach {
-            case EPK(e, ClassHierarchyThrownExceptions.Key) ⇒
-                (ps(e, ClassHierarchyThrownExceptions.Key).p: @unchecked) match {
-                    case c: ClassHierarchyThrownExceptions ⇒
+            case EPK(e, ThrownExceptionsByOverridingMethods.Key) ⇒
+                ps(e, ThrownExceptionsByOverridingMethods.Key).p match {
+                    case UnknownThrownExceptionsByOverridingMethods ⇒
+                        unknownExceptions = "Overridden method throw unknown exceptions"
+                    case c: AllThrownExceptionsByOverridingMethods ⇒
                         exceptions ++= c.exceptions.concreteTypes
                 }
 
             case EPK(e, Key) ⇒
-                (ps(e, Key).p: @unchecked) match {
+                ps(e, Key).p match {
                     case u: ThrownExceptionsAreUnknown ⇒ unknownExceptions = u.reason
                     case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
                 }
@@ -195,7 +197,7 @@ object ThrownExceptionsAreUnknown {
  * TODO: Documentation
  * Was kann sie, was macht sie, wie sieht die cycle resolution aus
  */
-object ClassHierarchyThrownExceptions {
+object ThrownExceptionsByOverridingMethods {
 
     private[this] final val cycleResolutionStrategy = (
         ps: PropertyStore,
@@ -206,10 +208,11 @@ object ClassHierarchyThrownExceptions {
         epks.foreach {
             case EPK(e, Key) ⇒
                 ps(e, Key).p match {
-                    case c: ClassHierarchyThrownExceptions ⇒
+                    case c: AllThrownExceptionsByOverridingMethods ⇒
                         exceptions ++= c.exceptions.concreteTypes
-                        hasUnknownExceptions |= c.hasUnknownExceptions
-                    case _ => throw new UnknownError(s"Cycle involving unknown keys: $e")
+                    case UnknownThrownExceptionsByOverridingMethods ⇒
+                        hasUnknownExceptions = true
+                    case _ ⇒ throw new UnknownError(s"Cycle involving unknown keys: $e")
                 }
 
             case EPK(e, ThrownExceptions.Key) ⇒
@@ -219,47 +222,49 @@ object ClassHierarchyThrownExceptions {
                 }
         }
         val entity = epks.find(_.pk == Key).get.e
-        val p = ClassHierarchyThrownExceptions(
-            exceptions = exceptions,
-            hasUnknownExceptions = hasUnknownExceptions
-        )
+        val p = if (hasUnknownExceptions)
+            AllThrownExceptionsByOverridingMethods(exceptions)
+        else
+            UnknownThrownExceptionsByOverridingMethods
 
         Iterable(Result(entity, p))
     }
 
-    final val Key: PropertyKey[ClassHierarchyThrownExceptions] = {
-        PropertyKey.create[ClassHierarchyThrownExceptions](
-            "ClassHierarchyThrownExceptions",
-            ClassHierarchyThrownExceptions(),
+    final val Key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
+        PropertyKey.create[ThrownExceptionsByOverridingMethods](
+            "ThrownExceptionsByOverridingMethodsProperty",
+            AllThrownExceptionsByOverridingMethods(),
             cycleResolutionStrategy
         )
     }
 }
 
-// TODO Change to ThrownExceptionsByOverridingMethods
-case class ClassHierarchyThrownExceptions(
-        exceptions:           BRTypesSet = BRTypesSet.empty,
-        isRefineable:         Boolean    = false,
-        hasUnknownExceptions: Boolean    = false // TOOD: new case object if exceptions are unknown
-)
-    extends Property {
-    final type Self = ClassHierarchyThrownExceptions
+sealed abstract class ThrownExceptionsByOverridingMethods extends Property {
+    final type Self = ThrownExceptionsByOverridingMethods
+    final def key = ThrownExceptionsByOverridingMethods.Key
+}
 
-    final def key = ClassHierarchyThrownExceptions.Key
+case class AllThrownExceptionsByOverridingMethods(
+        exceptions:   BRTypesSet = BRTypesSet.empty,
+        isRefineable: Boolean    = false
+) extends ThrownExceptionsByOverridingMethods {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: ClassHierarchyThrownExceptions ⇒
+            case that: AllThrownExceptionsByOverridingMethods ⇒
                 this.isRefineable == that.isRefineable &&
-                this.hasUnknownExceptions == that.hasUnknownExceptions &&
                     this.exceptions == that.exceptions
             case _ ⇒ false
         }
     }
 
     override def hashCode: Int = 13 * exceptions.hashCode +
-        (if (isRefineable) 41 else 53) +
-        (if (hasUnknownExceptions) 41 else 53)
+        (if (isRefineable) 41 else 53)
+}
+
+case object UnknownThrownExceptionsByOverridingMethods
+    extends ThrownExceptionsByOverridingMethods {
+    final val isRefineable = false
 }
 
 //

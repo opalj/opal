@@ -70,10 +70,10 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
 
         if (subClasses.isEmpty && !methodIsRefinable) {
             // If we don't have subclasses and the method result is final, return directly
-            return Result(
-                m,
-                ClassHierarchyThrownExceptions(hasUnknownExceptions = hasUnknownExceptions)
-            );
+            if (hasUnknownExceptions)
+                return Result(m, UnknownThrownExceptionsByOverridingMethods);
+            else
+                return Result(m, AllThrownExceptionsByOverridingMethods());
         }
 
         // Complex case: the current method depends on the method of all subclasses
@@ -83,29 +83,32 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
             .map { subMethod ⇒
                 ps(
                     subMethod,
-                    ClassHierarchyThrownExceptions.Key
+                    ThrownExceptionsByOverridingMethods.Key
                 )
             }
-            .filter(_.is(ClassHierarchyThrownExceptions))
+            .filter(_.is(AllThrownExceptionsByOverridingMethods))
             .foreach {
-                case EP(_, c: ClassHierarchyThrownExceptions) ⇒
+                case EP(_, c: AllThrownExceptionsByOverridingMethods) ⇒
                     exceptions ++= c.exceptions.concreteTypes
-                    hasUnknownExceptions |= c.hasUnknownExceptions
                     methodIsRefinable |= c.isRefineable
+                case EP(_, UnknownThrownExceptionsByOverridingMethods) ⇒
+                    hasUnknownExceptions = true
                 case epk ⇒ dependees += epk
             }
 
         def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
             methodIsRefinable = false
             p match {
-                case c: ClassHierarchyThrownExceptions ⇒
+                case c: AllThrownExceptionsByOverridingMethods ⇒
                     exceptions ++= c.exceptions.concreteTypes
-                    hasUnknownExceptions |= c.hasUnknownExceptions
                     if (ut == FinalUpdate) {
                         dependees = dependees.filter { _.e ne e }
                     } else {
                         dependees = dependees.filter(_.e ne e) + EP(e.asInstanceOf[Method], p)
                     }
+                case UnknownThrownExceptionsByOverridingMethods ⇒
+                    hasUnknownExceptions = true
+                    dependees = Set.empty[EOptionP[Method, Property]]
                 case a: AllThrownExceptions ⇒
                     if (ut == FinalUpdate) {
                         dependees = dependees.filter { _.e ne e }
@@ -117,11 +120,10 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
                     hasUnknownExceptions = true
                     dependees = dependees.filter { _.e ne e }
             }
-            val r = ClassHierarchyThrownExceptions(
-                exceptions,
-                isRefineable = dependees.nonEmpty,
-                hasUnknownExceptions = hasUnknownExceptions
-            )
+            val r = if (hasUnknownExceptions)
+                UnknownThrownExceptionsByOverridingMethods
+            else
+                AllThrownExceptionsByOverridingMethods(exceptions, isRefineable = dependees.nonEmpty)
             if (dependees.isEmpty) {
                 Result(m, r)
             } else {
@@ -129,11 +131,11 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
             }
         }
 
-        val r = ClassHierarchyThrownExceptions(
-            exceptions,
-            isRefineable = dependees.nonEmpty,
-            hasUnknownExceptions = hasUnknownExceptions
-        )
+        val r = if (hasUnknownExceptions)
+            UnknownThrownExceptionsByOverridingMethods
+        else
+            AllThrownExceptionsByOverridingMethods(exceptions, isRefineable = dependees.nonEmpty)
+
         if (dependees.isEmpty) {
             Result(m, r)
         } else {
@@ -147,7 +149,7 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
  */
 object TransitiveThrownExceptionsClassHierarchyAnalysis extends FPCFAnalysisRunner {
 
-    override def derivedProperties: Set[PropertyKind] = Set(ClassHierarchyThrownExceptions.Key)
+    override def derivedProperties: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods.Key)
 
     override def usedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
 

@@ -171,14 +171,14 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     result = NoExceptionsAreThrown.NoInstructionThrowsExceptions
                     callees.foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
-                        val classHierarchy = ps(callee, ClassHierarchyThrownExceptions.Key)
+                        val classHierarchy = ps(callee, ThrownExceptionsByOverridingMethods.Key)
                         classHierarchy match {
-                            case EP(_, ClassHierarchyThrownExceptions(e, r, u)) ⇒
+                            case EP(_, AllThrownExceptionsByOverridingMethods(e, r)) ⇒
                                 exceptions ++= e.concreteTypes
-                                if (u)
-                                    result = ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions
                                 if (r)
                                     dependees += classHierarchy
+                            case EP(_, UnknownThrownExceptionsByOverridingMethods) ⇒
+                                result = ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions
                             case epk ⇒ // Not yet computed
                                 dependees += epk
                         }
@@ -319,11 +319,9 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                 case u: ThrownExceptionsAreUnknown ⇒
                     Result(m, u)
 
-                case ClassHierarchyThrownExceptions(ex, r, u) ⇒
+                case AllThrownExceptionsByOverridingMethods(ex, r) ⇒
                     exceptions ++= ex.concreteTypes
-                    if (u) {
-                        Result(m, ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions)
-                    } else if (!r) {
+                    if (!r) {
                         dependees = dependees.filter { _.e ne e }
                         if (dependees.isEmpty && exceptions.isEmpty) {
                             Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
@@ -333,6 +331,8 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     } else {
                         IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
                     }
+                case UnknownThrownExceptionsByOverridingMethods ⇒
+                    Result(m, ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions)
             }
         }
 
@@ -352,7 +352,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
  */
 object TransitiveThrownExceptionsAnalysis extends FPCFAnalysisRunner {
 
-    override def usedProperties: Set[PropertyKind] = Set(ClassHierarchyThrownExceptions.Key)
+    override def usedProperties: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods.Key)
 
     override def derivedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
