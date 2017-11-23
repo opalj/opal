@@ -133,41 +133,16 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     result = ThrownExceptionsAreUnknown.UnresolvedInvokeDynamic
                     false
 
-                case INVOKEINTERFACE.opcode ⇒
-                    // TODO: Merge with INVOKEVIRTUAL
-                    val ii = instruction.asInstanceOf[INVOKEINTERFACE]
-                    val callees = project.interfaceCall(ii)
-                    if (callees.nonEmpty) {
-                        val thrownExceptions = ps(callees.head, ThrownExceptions.Key)
-
-                        if (thrownExceptions.isPropertyFinal) {
-                            thrownExceptions match {
-                                case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
-                                    true
-                                case EP(_, e: ThrownExceptionsAreUnknown) ⇒
-                                    result = e
-                                    false
-                                // Handling cyclic computations
-                                case epk ⇒
-                                    dependees += epk
-                                    true
-                            }
-                        } else {
-                            dependees += thrownExceptions
-                            true
-                        }
-                    } else {
-                        result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
-                        false
-                    }
-
-                case INVOKEVIRTUAL.opcode ⇒
-                    val iv = instruction.asInstanceOf[INVOKEVIRTUAL]
+                case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     var callerPackage = ""
                     if (m.classFile.fqn.contains("/")) {
                         callerPackage = m.classFile.fqn.substring(0, m.classFile.fqn.lastIndexOf("/"))
                     }
-                    val callees = project.virtualCall(callerPackage, iv)
+                    val callees = instruction match {
+                        case iv: INVOKEVIRTUAL   ⇒ project.virtualCall(callerPackage, iv)
+                        case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
+                        case _                   ⇒ Set.empty[Method]
+                    }
                     result = NoExceptionsAreThrown.NoInstructionThrowsExceptions
                     callees.foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
