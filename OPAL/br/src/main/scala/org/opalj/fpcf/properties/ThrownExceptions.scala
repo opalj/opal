@@ -223,9 +223,9 @@ object ThrownExceptionsByOverridingMethods {
         }
         val entity = epks.find(_.pk == Key).get.e
         val p = if (hasUnknownExceptions)
-            AllThrownExceptionsByOverridingMethods(exceptions)
-        else
             UnknownThrownExceptionsByOverridingMethods
+        else
+            AllThrownExceptionsByOverridingMethods(exceptions)
 
         Iterable(Result(entity, p))
     }
