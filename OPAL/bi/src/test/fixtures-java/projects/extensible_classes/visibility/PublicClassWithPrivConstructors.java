@@ -1,4 +1,5 @@
-/* BSD 2-Clause License:
+/*
+ * BSD 2-Clause License:
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
@@ -26,41 +27,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
+package extensible_classes.visibility;
 
-import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
+public class PublicClassWithPrivConstructors {
 
-/**
- * The ''key'' object to get information about the classes that can be instantiated
- * (either, directly or indirectly).
- *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
- *
- * @author Michael Eichberg
- */
-object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
+    private PublicClassWithPrivConstructors(){
 
-    /**
-     * The [[InstantiableClasses]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
-
-    /**
-     * Computes the information which classes are (not) instantiable.
-     *
-     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
-     */
-    override protected def compute(project: SomeProject): InstantiableClasses = {
-        val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
-        if (isLibrary)
-            LibraryInstantiableClassesAnalysis.doAnalyze(project)
-        else
-            InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }
-

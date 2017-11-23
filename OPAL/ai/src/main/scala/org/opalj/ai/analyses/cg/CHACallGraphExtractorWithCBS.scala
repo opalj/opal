@@ -37,7 +37,6 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.IntStatisticsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.analyses.CallBySignatureResolutionKey
 
@@ -71,8 +70,6 @@ class CHACallGraphExtractorWithCBS(
         ): Set[Method] = {
             cbsIndex.findMethods(name, descriptor, declaringClassType)
         }
-
-        val statistics = project.get(IntStatisticsKey)
 
         override def interfaceCall(
             caller:             Method,

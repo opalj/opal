@@ -29,16 +29,18 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.Queue
+
+import org.opalj.collection.mutable.ArrayMap
 
 /**
- * Determines if a type (class, interface) is further extensible by yet unknown
+ * Determines if a type (class or interface) is further extensible by yet unknown
  * types (that is, can be (transitively) inherited from).
- * == Special cases ==
  *
+ * == Special cases ==
  * If a class is defined in a package starting with '''java.*''', it always has to be treated like
  * classes that belong to a closed package. This is necessary because the
  * default `ClassLoader` prevents the definition of further classes within these packages, hence,
@@ -60,72 +62,62 @@ import scala.collection.mutable.Queue
  *
  * @author Michael Reif
  */
-class TypeExtensibilityInformationAnalysis(
-        val project: SomeProject
-) extends (ObjectType ⇒ Answer) {
+class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
-    lazy val typeExtensibility: Map[ObjectType, Answer] = initTypeExtensibilityInformation.toMap
+    private[this] val typeExtensibility: ArrayMap[Answer] = {
+        import project.classHierarchy
 
-    override def apply(t: ObjectType): Answer = typeExtensibility.getOrElse(t, Unknown)
+        val leafTypes = classHierarchy.leafTypes
+        implicit val isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
 
-    private[this] def initTypeExtensibilityInformation: mutable.Map[ObjectType, Answer] = {
-        val leafTypes = project.classHierarchy.leafTypes
+        val objectTypesCount = ObjectType.objectTypesCount
+        val typeExtensibility = ArrayMap[Answer](objectTypesCount)
+        val hasExtensibleSubtype = new Array[Boolean](objectTypesCount)
+        val hasUnknownSubtype = new Array[Boolean](objectTypesCount)
+        val isEnqueued = new Array[Boolean](objectTypesCount)
 
-        if (leafTypes.isEmpty)
-            return mutable.Map.empty;
-
-        val isExtensibleMap = mutable.Map.empty[ObjectType, Answer]
-
-        val typesToProcess = Queue.empty[ObjectType] ++ leafTypes
-        val hasExtensibleSubtype = new Array[Boolean](ObjectType.objectTypesCount)
-        val hasUnknownSubtype = new Array[Boolean](ObjectType.objectTypesCount)
-        val isEnqueued = new Array[Boolean](ObjectType.objectTypesCount)
+        // We use a queue to ensure that we always first process all subtypes of a type to
+        // ensure that we have final knowledge about all subtypes' extensibility before
+        // processing a supertype.
+        val typesToProcess = mutable.Queue.empty[ObjectType] ++ leafTypes
         typesToProcess foreach { ot ⇒
             isEnqueued(ot.id) = true
-            if (project.classHierarchy.hasSubtypes(ot).isYesOrUnknown) {
-                // this test should never succeed.... because we start with the leaf types...
-                // hence, the types are known...
-                throw new UnknownError()
-                // hasUnknownSubtype(oid) = true
-            }
+            assert(classHierarchy.hasSubtypes(ot).isNo, s"found leaf type $ot with subtypes")
         }
 
         determineExtensibility(
             typesToProcess,
-            hasExtensibleSubtype, hasUnknownSubtype,
+            hasExtensibleSubtype,
+            hasUnknownSubtype,
             isEnqueued,
-            isExtensibleMap
-        )(project.get(DirectTypeExtensibilityKey))
+            typeExtensibility
+        )
     }
 
-    @tailrec final private[this] def determineExtensibility(
-        typesToProcess:       Queue[ObjectType],
+    @tailrec private[this] def determineExtensibility(
+        typesToProcess:       mutable.Queue[ObjectType],
         hasExtensibleSubtype: Array[Boolean],
         hasUnknownSubtype:    Array[Boolean],
         isEnqueued:           Array[Boolean],
-        typeExtensibilityMap: mutable.Map[ObjectType, Answer]
+        typeExtensibility:    ArrayMap[Answer]
     )(
         implicit
         isDirectlyExtensible: ObjectType ⇒ Answer
-    ): mutable.Map[ObjectType, Answer] = {
-        //         We use a queue to ensure that we always first process all subtypes of a type to
-        //         ensure that we have final knowledge about the subtypes' extensibility.
-
-        val objectType = typesToProcess.dequeue()
+    ): ArrayMap[Answer] = {
+        val objectType = typesToProcess.dequeue
         val oid = objectType.id
         project.classFile(objectType) match {
             case Some(classFile) ⇒
                 val directlyExtensible = isDirectlyExtensible(objectType)
                 val isExtensible = hasExtensibleSubtype(oid)
-
                 if (isExtensible || directlyExtensible.isYes) {
-                    classFile.superclassType.foreach(st ⇒ hasExtensibleSubtype(st.id) = true)
+                    classFile.superclassType.foreach(ct ⇒ hasExtensibleSubtype(ct.id) = true)
                     classFile.interfaceTypes.foreach(it ⇒ hasExtensibleSubtype(it.id) = true)
-                    typeExtensibilityMap.put(objectType, Yes)
+                    typeExtensibility(objectType.id) = Yes
                 } else if (hasUnknownSubtype(oid) || directlyExtensible.isUnknown) {
-                    typeExtensibilityMap.put(objectType, Unknown)
+                    typeExtensibility(objectType.id) = Unknown
                 } else {
-                    typeExtensibilityMap.put(objectType, No)
+                    typeExtensibility(objectType.id) = No
                 }
 
             case None ⇒
@@ -135,9 +127,10 @@ class TypeExtensibilityInformationAnalysis(
         }
 
         project.classHierarchy.directSupertypes(objectType).foreach { superType ⇒
-            if (!isEnqueued(superType.id)) {
+            val soid = superType.id
+            if (!isEnqueued(soid)) {
                 typesToProcess.enqueue(superType)
-                isEnqueued(superType.id) = true
+                isEnqueued(soid) = true
             }
         }
 
@@ -147,10 +140,12 @@ class TypeExtensibilityInformationAnalysis(
                 typesToProcess,
                 hasExtensibleSubtype, hasUnknownSubtype,
                 isEnqueued,
-                typeExtensibilityMap
+                typeExtensibility
             )
-        } else
-            typeExtensibilityMap
+        } else {
+            typeExtensibility
+        }
     }
 
+    override def apply(t: ObjectType): Answer = typeExtensibility.getOrElse(t.id, Unknown)
 }

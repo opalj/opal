@@ -83,8 +83,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (!isDerived(analysisRunner.derivedProperties)) {
             if (debug)
                 OPALLogger.debug(
-                    "project configuration",
-                    s"scheduling the analysis ${analysisRunner.name}"
+                    "project configuration", s"scheduling the analysis ${analysisRunner.name}"
                 )(project.logContext)
 
             registerProperties(analysisRunner)

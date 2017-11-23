@@ -29,13 +29,11 @@
 package org.opalj
 package br
 package analyses
-
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+package cg
 
 import com.typesafe.config.ConfigFactory
-
 import org.opalj.br.TestSupport.biProject
+import org.scalatest.{FunSpec, Matchers}
 
 /**
  * @author Michael Reif
@@ -133,11 +131,11 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is configured as extensible") {
 
-        val forcedExtensibleTyptes = List(PublicFinalClass, PublicClassWithPrivateConstructor).
+        val forcedExtensibleTypes = List(PublicFinalClass, PublicClassWithPrivateConstructor).
             map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
-            DirectTypeExtensibilityConfig.configureExtensibleTypes(forcedExtensibleTyptes),
+            DirectTypeExtensibilityConfig.configureExtensibleTypes(forcedExtensibleTypes),
             ClosedPackagesConfig.openCodeBase
         )
 
@@ -153,11 +151,11 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is configured as final") {
 
-        val forcedExtensibleTyptes = List(PublicClass, PublicInterface).
+        val forcedExtensibleTypes = List(PublicClass, PublicInterface).
             map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
-            DirectTypeExtensibilityConfig.configureFinalTypes(forcedExtensibleTyptes),
+            DirectTypeExtensibilityConfig.configureFinalTypes(forcedExtensibleTypes),
             ClosedPackagesConfig.closedCodeBase
         )
 
@@ -176,25 +174,25 @@ object DirectTypeExtensibilityConfig {
 
     val directTypeExtensibilityAnalysis =
         """
-            |org.opalj.br.analyses.DirectTypeExtensibilityKey {
-            |    analysis = "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
-            |}
+          |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
+          |    analysis = "org.opalj.br.analyses.cg.DirectTypeExtensibility"
+          |}
         """.stripMargin
 
     def configureExtensibleTypes(types: List[String] = List.empty) =
         s"""
-            |org.opalj.br.analyses.DirectTypeExtensibilityKey {
-            |    analysis = "org.opalj.br.analyses.ConfigureExtensibleTypes"
-            |    extensibleTypes = [${types.map("\""+_+"\"").mkString(",")}]
-            |}
+           |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
+           |    analysis = "org.opalj.br.analyses.cg.ConfigureExtensibleTypes"
+           |    extensibleTypes = [${types.map("\""+_+"\"").mkString(",")}]
+           |}
           """.stripMargin
 
     def configureFinalTypes(types: List[String] = List.empty) =
         s"""
-            |org.opalj.br.analyses.DirectTypeExtensibilityKey {
-            |    analysis = "org.opalj.br.analyses.ConfigureFinalTypes"
-            |    finalTypes = [${types.map("\""+_+"\"").mkString(",")}]
-            |}
+           |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
+           |    analysis = "org.opalj.br.analyses.cg.ConfigureFinalTypes"
+           |    finalTypes = [${types.map("\""+_+"\"").mkString(",")}]
+           |}
         """.stripMargin
 
 }
@@ -203,31 +201,31 @@ object ClosedPackagesConfig {
 
     val openCodeBase =
         """
-            |org.opalj.br.analyses.ClosedPackagesKey {
-            |    analysis = "org.opalj.br.analyses.OpenCodeBase"
-            |}
+          |org.opalj.br.analyses.cg.ClosedPackagesKey {
+          |    analysis = "org.opalj.br.analyses.cg.OpenCodeBase"
+          |}
         """.stripMargin
 
     val closedCodeBase =
         """
-           |org.opalj.br.analyses.ClosedPackagesKey {
-           |    analysis = "org.opalj.br.analyses.ClosedCodeBase"
-           |}
+          |org.opalj.br.analyses.cg.ClosedPackagesKey {
+          |    analysis = "org.opalj.br.analyses.cg.ClosedCodeBase"
+          |}
         """.stripMargin
 
     def configureClosedPackages(regex: String = "java(/.*)") =
         s"""
-            |org.opalj.br.analyses.ClosedPackagesKey {
-            |    analysis = "org.opalj.br.analyses.ClosedPackagesConfiguration"
-            |    closedPackages = "$regex"
-            |}
+           |org.opalj.br.analyses.cg.ClosedPackagesKey {
+           |    analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
+           |    closedPackages = "$regex"
+           |}
         """.stripMargin
 
-    def configureOpenPackages(regex: String = ".*") =
+    def configureOpenPackages(regex: String = "^.*$") =
         s"""
-           |org.opalj.br.analyses.ClosedPackagesKey {
-           |    analysis = "org.opalj.br.analyses.ClosedPackagesConfiguration"
-           |    openPackages = "$regex"
+           |org.opalj.br.analyses.cg.ClosedPackagesKey {
+           |    analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
+           |    closedPackages = "$regex"
            |}
         """.stripMargin
 }

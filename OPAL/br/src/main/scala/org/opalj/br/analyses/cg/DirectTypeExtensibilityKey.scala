@@ -29,51 +29,46 @@
 package org.opalj
 package br
 package analyses
+package cg
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.JavaConverters._
-import org.opalj.br.ObjectType
+import net.ceedubs.ficus.Ficus._
 
-/**
- * Stores the information which types of objects are (potentially) injected based on the
- * annotations that are found in the project. For example, by means of
- * reflection or by a web server or some other comparable framework.
- *
- * This information is used to compute the entry points of JEE applications.
- *
- * @author Michael Reif
- */
-class InjectedClassesInformation(val injectedTypes: Set[ObjectType]) {
-
-    final def isInjected(classFile: ClassFile): Boolean = isInjected(classFile.thisType)
-
-    def isInjected(objectType: ObjectType): Boolean = injectedTypes.contains(objectType)
-}
+import org.opalj.log.OPALLogger
 
 /**
- * Factory to create [[InjectedClassesInformation]].
+ * The ''key'' object to get a function that determines whether a type is directly
+ * extensible or not.
  *
+ * @see [[DirectTypeExtensibility]] for further information.
  * @author Michael Reif
  */
-object InjectedClassesInformationAnalysis {
+object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
-    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): InjectedClassesInformation = {
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.DirectTypeExtensibilityKey."
 
-        val injectedTypes = new ConcurrentLinkedQueue[ObjectType]
+    final val DefaultExtensibilityAnalysis = "org.opalj.br.analyses.cg.DirectTypeExtensibility"
 
-        project.parForeachClassFile(isInterrupted) { cf ⇒
-            for {
-                field ← cf.fields
-                fieldType = field.fieldType
-                if fieldType.isObjectType
-                if field.annotations.size > 0
-                // IMPROVE Check for specific annotations that are related to "Injections"
-            } {
-                injectedTypes.add(fieldType.asObjectType)
+    /**
+     * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
+     */
+    def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
 
-            }
+    /**
+     * Computes the direct type extensibility information for the given project.
+     */
+    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
+        val configKey = ConfigKeyPrefix+"analysis"
+        try {
+            val configuredAnalysis = project.config.as[Option[String]](configKey)
+            val analysisClassName = configuredAnalysis.getOrElse(DefaultExtensibilityAnalysis)
+            val constructor = Class.forName(analysisClassName).getConstructors.head
+            constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
+        } catch {
+            case t: Throwable ⇒
+                val m = "cannot compute type extensibility; extensibility is unknown for all types"
+                OPALLogger.error("project configuration", m, t)(project.logContext)
+                (o: ObjectType) ⇒ Unknown
         }
-
-        new InjectedClassesInformation(injectedTypes.asScala.toSet)
     }
+
 }

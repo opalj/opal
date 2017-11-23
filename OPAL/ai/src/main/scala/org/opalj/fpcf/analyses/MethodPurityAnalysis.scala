@@ -44,7 +44,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.TypeExtensibilityKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
 import org.opalj.fpcf.properties.ClassImmutability
@@ -72,9 +72,10 @@ import org.opalj.tac._
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
- *       types of expressions other than [[Var]]s and also not check them for locality.
+ *       types of expressions other than [[org.opalj.tac.Var]]s and also not check them for locality.
  *
- * @note This analysis only derives the properties [[Pure]], [[SideEffectFree]] and [[Impure]]. It
+ * @note This analysis only derives the properties [[org.opalj.fpcf.properties.Pure$]],
+ *       [[org.opalj.fpcf.properties.SideEffectFree$]] and [[org.opalj.fpcf.properties.Impure$]]. It
  *       does not provide any reasoning on why a method was considered `Impure`.
  *       Compared to the `PurityAnalysis`, it deals with all methods, even if their reference type
  *       parameters are mutable. It can handle accesses of (effectively) final instance fields,
@@ -82,7 +83,7 @@ import org.opalj.tac._
  *       well as (useless) synchronization on locally created, non-escaping objects/arrays are also
  *       handled. Newly allocated objects/arrays returned from callees are not identified.
  *       VMExceptions are treated as `SideEffectFree`, explicit exceptions are treated as `Impure`,
- *       as the [[Throwable]] constructor calls the overridable `fillInStackTrace` method.
+ *       as the `Throwable` constructor calls the overridable `fillInStackTrace` method.
  *
  * @author Dominik Helm
  */

@@ -27,34 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package br
 package analyses
-
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.cg.InstantiableClasses
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+package cg
 
 /**
- * Analyzes which classes are instantiable.
+ * The ''key'' object to get a function that determines whether a type is extensible or not.
+ * A type is extensible if a developer could define a subtype that is not part of the given
+ * application/library.
  *
+ * @author Michael Eichberg
  * @author Michael Reif
  */
-object LibraryInstantiableClassesAnalysis {
+object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
-    def doAnalyze(project: SomeProject): InstantiableClasses = {
-        val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
-            fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+    /**
+     * The [[TypeExtensibilityKey]] has the [[DirectTypeExtensibilityKey]] as prerequisite.
+     *
+     * @return Seq(DirectTypeExtensibilityKey).
+     */
+    override protected def requirements = Seq(DirectTypeExtensibilityKey)
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val notInstantiableClasses = propertyStore.collect[ObjectType] {
-            case (cf: ClassFile, NotInstantiable) ⇒ cf.thisType
-        }
-
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
+    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
+        new TypeExtensibilityAnalysis(project)
     }
 }
