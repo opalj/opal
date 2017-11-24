@@ -132,14 +132,15 @@ class OpenCodeBase(val project: SomeProject) extends ClosedPackages {
 class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackages {
 
     private[this] val closedPackagesRegex = {
-        val closedPackages = project.config.as[Option[String]](ConfigKeyPrefix+"closedPackages")
+        val configKey = ClosedPackagesKey.ConfigKeyPrefix+"closedPackages"
+        val closedPackages = project.config.as[Option[String]](configKey)
 
-        if (closedPackages.isEmpty)
+        if (closedPackages.isEmpty) {
             warn(
                 "project configuration",
-                "config key org.opalj.br.analyses.cg.ClosedPackagesKey.closedPackages is not set "+
-                    "- all packages are considered closed"
+                s"$configKey is not set - all packages are considered closed"
             )
+        }
 
         closedPackages.getOrElse(".*")
     }

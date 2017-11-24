@@ -64,36 +64,6 @@ import org.opalj.collection.mutable.ArrayMap
  */
 class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
-    private[this] val typeExtensibility: ArrayMap[Answer] = {
-        import project.classHierarchy
-
-        val leafTypes = classHierarchy.leafTypes
-        implicit val isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
-
-        val objectTypesCount = ObjectType.objectTypesCount
-        val typeExtensibility = ArrayMap[Answer](objectTypesCount)
-        val hasExtensibleSubtype = new Array[Boolean](objectTypesCount)
-        val hasUnknownSubtype = new Array[Boolean](objectTypesCount)
-        val isEnqueued = new Array[Boolean](objectTypesCount)
-
-        // We use a queue to ensure that we always first process all subtypes of a type to
-        // ensure that we have final knowledge about all subtypes' extensibility before
-        // processing a supertype.
-        val typesToProcess = mutable.Queue.empty[ObjectType] ++ leafTypes
-        typesToProcess foreach { ot ⇒
-            isEnqueued(ot.id) = true
-            assert(classHierarchy.hasSubtypes(ot).isNo, s"found leaf type $ot with subtypes")
-        }
-
-        determineExtensibility(
-            typesToProcess,
-            hasExtensibleSubtype,
-            hasUnknownSubtype,
-            isEnqueued,
-            typeExtensibility
-        )
-    }
-
     @tailrec private[this] def determineExtensibility(
         typesToProcess:       mutable.Queue[ObjectType],
         hasExtensibleSubtype: Array[Boolean],
@@ -145,6 +115,36 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
         } else {
             typeExtensibility
         }
+    }
+
+    private[this] val typeExtensibility: ArrayMap[Answer] = {
+        import project.classHierarchy
+
+        val leafTypes = classHierarchy.leafTypes
+        implicit val isDirectlyExtensible = project.get(ClassExtensibilityKey)
+
+        val objectTypesCount = ObjectType.objectTypesCount
+        val typeExtensibility = ArrayMap[Answer](objectTypesCount)
+        val hasExtensibleSubtype = new Array[Boolean](objectTypesCount)
+        val hasUnknownSubtype = new Array[Boolean](objectTypesCount)
+        val isEnqueued = new Array[Boolean](objectTypesCount)
+
+        // We use a queue to ensure that we always first process all subtypes of a type to
+        // ensure that we have final knowledge about all subtypes' extensibility before
+        // processing a supertype.
+        val typesToProcess = mutable.Queue.empty[ObjectType] ++ leafTypes
+        typesToProcess foreach { ot ⇒
+            isEnqueued(ot.id) = true
+            assert(classHierarchy.hasSubtypes(ot).isNo, s"found leaf type $ot with subtypes")
+        }
+
+        determineExtensibility(
+            typesToProcess,
+            hasExtensibleSubtype,
+            hasUnknownSubtype,
+            isEnqueued,
+            typeExtensibility
+        )
     }
 
     override def apply(t: ObjectType): Answer = typeExtensibility.getOrElse(t.id, Unknown)

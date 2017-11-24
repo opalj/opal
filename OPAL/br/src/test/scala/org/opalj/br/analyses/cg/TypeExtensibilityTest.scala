@@ -39,7 +39,7 @@ import org.scalatest.Matchers
 /**
  * This tests the basic functionality of the [[TypeExtensibilityKey]] and determines whether the
  * computed information is correct. Beneath the basics, the test also contains an integration test
- * that ensures that all directly extensible types (see [[DirectTypeExtensibilityTest]]) are also
+ * that ensures that all directly extensible types (see [[ClassExtensibilityTest]]) are also
  * transitively extensible.
  *
  * @author Michael Reif
@@ -60,14 +60,14 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
         val openConf = ConfigFactory.parseString(
             mergeConfigString(
-                DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+                ClassExtensibilityConfig.classExtensibilityAnalysis,
                 ClosedPackagesConfig.openCodeBase
             )
         )
 
         val closedConf = ConfigFactory.parseString(
             mergeConfigString(
-                DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+                ClassExtensibilityConfig.classExtensibilityAnalysis,
                 ClosedPackagesConfig.closedCodeBase
             )
         )
@@ -76,7 +76,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
             // open package
             var project = Project.recreate(testProject, openConf, true)
-            var isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
+            var isDirectlyExtensible = project.get(ClassExtensibilityKey)
             var isExtensible = project.get(TypeExtensibilityKey)
 
             var relevantTypes = for {
@@ -92,7 +92,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
             // closed package
             project = Project.recreate(project, closedConf, true)
-            isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
+            isDirectlyExtensible = project.get(ClassExtensibilityKey)
             isExtensible = project.get(TypeExtensibilityKey)
 
             relevantTypes = for {
@@ -109,7 +109,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located in a closed package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.closedCodeBase
         )
 
@@ -151,7 +151,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located an open package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.openCodeBase
         )
 
