@@ -73,7 +73,7 @@ import org.opalj.tac._
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
- *       types of expressions other than [[ org.opalj.tac.Var]]s and also not check them for locality.
+ *       types of expressions other than [[org.opalj.tac.Var]]s and also not check them for locality.
  *
  * @note This analysis only derives the properties [[org.opalj.fpcf.properties.Pure]],
  *       [[org.opalj.fpcf.properties.SideEffectFree]] and [[org.opalj.fpcf.properties.Impure]]. It
