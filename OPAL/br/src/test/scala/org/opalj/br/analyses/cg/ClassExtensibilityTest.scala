@@ -38,7 +38,7 @@ import org.scalatest.{FunSpec, Matchers}
 /**
  * @author Michael Reif
  */
-class DirectTypeExtensibilityTest extends FunSpec with Matchers {
+class ClassExtensibilityTest extends FunSpec with Matchers {
 
     val testProject = biProject("extensible_classes.jar")
 
@@ -64,13 +64,13 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located in an open package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.openCodeBase
         )
 
         val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("non-final types should be extensible") {
             isExtensible(PublicClass) should be(Yes)
@@ -98,13 +98,13 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located in a closed package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.closedCodeBase
         )
 
         val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("public non-final types should be extensible") {
             isExtensible(PublicClass) should be(Yes)
@@ -131,17 +131,17 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is configured as extensible") {
 
-        val forcedExtensibleTypes = List(PublicFinalClass, PublicClassWithPrivateConstructor).
+        val forcedExtensibleClasses = List(PublicFinalClass, PublicClassWithPrivateConstructor).
             map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
-            DirectTypeExtensibilityConfig.configureExtensibleTypes(forcedExtensibleTypes),
+            ClassExtensibilityConfig.configuredExtensibleClasses(forcedExtensibleClasses),
             ClosedPackagesConfig.openCodeBase
         )
 
         val config = ConfigFactory.parseString(confString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("it should be extensible, no matter what") {
             isExtensible(PublicFinalClass) should be(Yes)
@@ -151,17 +151,17 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is configured as final") {
 
-        val forcedExtensibleTypes = List(PublicClass, PublicInterface).
+        val forcedExtensibleClasses = List(PublicClass, PublicInterface).
             map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
-            DirectTypeExtensibilityConfig.configureFinalTypes(forcedExtensibleTypes),
+            ClassExtensibilityConfig.configuredFinalClasses(forcedExtensibleClasses),
             ClosedPackagesConfig.closedCodeBase
         )
 
         val config = ConfigFactory.parseString(confString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("it should NOT be extensible, no matter what") {
             isExtensible(PublicClass) should be(No)
@@ -170,28 +170,28 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
     }
 }
 
-object DirectTypeExtensibilityConfig {
+object ClassExtensibilityConfig {
 
-    val directTypeExtensibilityAnalysis =
+    val classExtensibilityAnalysis =
         """
-          |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
-          |    analysis = "org.opalj.br.analyses.cg.DirectTypeExtensibility"
+          |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+          |    analysis = "org.opalj.br.analyses.cg.DefaultClassExtensibility"
           |}
         """.stripMargin
 
-    def configureExtensibleTypes(types: List[String] = List.empty) =
+    def configuredExtensibleClasses(types: List[String] = List.empty) =
         s"""
-           |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
-           |    analysis = "org.opalj.br.analyses.cg.ConfigureExtensibleTypes"
-           |    extensibleTypes = [${types.map("\""+_+"\"").mkString(",")}]
+           |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+           |    analysis = "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses"
+           |    extensibleClasses = [${types.map("\""+_+"\"").mkString(",")}]
            |}
           """.stripMargin
 
-    def configureFinalTypes(types: List[String] = List.empty) =
+    def configuredFinalClasses(types: List[String] = List.empty) =
         s"""
-           |org.opalj.br.analyses.cg.DirectTypeExtensibilityKey {
-           |    analysis = "org.opalj.br.analyses.cg.ConfigureFinalTypes"
-           |    finalTypes = [${types.map("\""+_+"\"").mkString(",")}]
+           |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+           |    analysis = "org.opalj.br.analyses.cg.ConfiguredFinalClasses"
+           |    finalClasses = [${types.map("\""+_+"\"").mkString(",")}]
            |}
         """.stripMargin
 

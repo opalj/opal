@@ -32,8 +32,9 @@ package analyses
 package cg
 
 /**
- * The ''key'' object to get a function that determines whether a type is extensible or not.
- * A type is extensible if a developer could define a subtype that is not part of the given
+ * '''Key'' to get the function that determines whether a type (i.e., we abstrat over a class/
+ * interface and all its subtypes) is extensible or not.
+ * A type is extensible if a developer could define a sub(*)type that is not part of the given
  * application/library.
  *
  * @author Michael Eichberg
@@ -42,11 +43,11 @@ package cg
 object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
     /**
-     * The [[TypeExtensibilityKey]] has the [[DirectTypeExtensibilityKey]] as prerequisite.
+     * The [[TypeExtensibilityKey]] has the [[ClassExtensibilityKey]] as prerequisite.
      *
-     * @return Seq(DirectTypeExtensibilityKey).
+     * @return Seq(ClassExtensibilityKey).
      */
-    override protected def requirements = Seq(DirectTypeExtensibilityKey)
+    override protected def requirements = Seq(ClassExtensibilityKey)
 
     override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
         new TypeExtensibilityAnalysis(project)

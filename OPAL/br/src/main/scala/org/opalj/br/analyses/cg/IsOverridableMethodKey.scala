@@ -52,7 +52,7 @@ object IsOverridableMethodKey extends ProjectInformationKey[Method ⇒ Answer, N
     override protected def compute(project: SomeProject): Method ⇒ Answer = {
         new IsOverridableMethodAnalysis(
             project,
-            project.get(DirectTypeExtensibilityKey),
+            project.get(ClassExtensibilityKey),
             project.get(TypeExtensibilityKey)
         )
     }

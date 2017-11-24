@@ -62,7 +62,7 @@ import org.opalj.log.OPALLogger.error
  *
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothing] {
+object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClosedPackagesKey."
 
@@ -80,7 +80,7 @@ object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothi
      * The instantiated class has to satisfy the interface and needs to provide a single
      * constructor parameterized over a Project.
      */
-    override protected def compute(project: SomeProject): String ⇒ Boolean = {
+    override protected def compute(project: SomeProject): ClosedPackages = {
         try {
             val key = ConfigKeyPrefix+"analysis"
             val configuredAnalysis = project.config.as[Option[String]](key)
@@ -91,7 +91,7 @@ object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothi
             case t: Throwable ⇒
                 val m = "cannot compute closed packages; all packages are now considered open"
                 error("project configuration", m, t)(project.logContext)
-                (s: String) ⇒ false
+                new OpenCodeBase(project)
         }
     }
 
