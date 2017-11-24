@@ -138,7 +138,7 @@ trait ExceptionAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
                 }
             }
             if (abnormalReturned && !isCatched) {
-                calcMostRestrictive(EscapeViaAbnormalReturn)
+                meetMostRestrictive(EscapeViaAbnormalReturn)
             }
         }
     }
@@ -186,7 +186,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
                             /* as may alias information are not easily available we cannot simply
                             check for escape information of the base object */
-                            calcMostRestrictive(AtMost(NoEscape))
+                            meetMostRestrictive(AtMost(NoEscape))
                         /*val allocationSites =
                                 propertyStore.context[AllocationSites]
                             val allocationSite = allocationSites(m)(pc)
@@ -203,7 +203,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         /* if the base object came from a static field, the value assigned to it
                          escapes globally */
                         case Assignment(_, _, GetStatic(_, _, _, _)) ⇒
-                            calcMostRestrictive(EscapeViaHeapObject)
+                            meetMostRestrictive(EscapeViaHeapObject)
                         case Assignment(_, _, GetField(_, _, _, _, objRef)) ⇒
                             objRef.asVar.definedBy foreach { x ⇒
                                 if (!seen.contains(x)) worklist = worklist + x
@@ -213,14 +213,14 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                                 if (!seen.contains(x)) worklist = worklist + x
                             }
                         // we are not inter-procedural
-                        case Assignment(_, _, _: FunctionCall[_]) ⇒ calcMostRestrictive(AtMost(NoEscape))
+                        case Assignment(_, _, _: FunctionCall[_]) ⇒ meetMostRestrictive(AtMost(NoEscape))
                         case Assignment(_, _, _: Const)           ⇒ // must be null
                         case _                                    ⇒ throw new RuntimeException("not yet implemented")
                     }
 
                 } else if (referenceDefSite >= ai.VMLevelValuesOriginOffset) {
                     // assigned to field of parameter
-                    calcMostRestrictive(AtMost(EscapeViaParameter))
+                    meetMostRestrictive(AtMost(EscapeViaParameter))
                     /* As may alias information are not easily available we cannot simply use
                     the code below:
                     val formalParameters = propertyStore.context[FormalParameters]
@@ -256,7 +256,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEntityEscapeAn
 
         // the object constructor will not escape the this local
         if (propertyOption.nonEmpty) {
-            calcMostRestrictive(propertyOption.get)
+            meetMostRestrictive(propertyOption.get)
         } else {
             super.handleThisLocalOfConstructor(call)
         }
@@ -318,18 +318,18 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                         val escapeState = propertyStore(formalParameters(callee)(0), EscapeProperty.key)
                         escapeState match {
                             case EP(_, NoEscape)                                    ⇒ //NOTHING TO DO
-                            case EP(_, GlobalEscape)                                ⇒ calcMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeViaStaticField)                        ⇒ calcMostRestrictive(EscapeViaStaticField)
-                            case EP(_, EscapeViaHeapObject)                         ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, EscapeInCallee)                              ⇒ calcMostRestrictive(EscapeInCallee)
-                            case EP(_, AtMost(EscapeInCallee))                      ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
-                            case EP(_, EscapeViaParameter)                          ⇒ calcMostRestrictive(AtMost(NoEscape))
-                            case EP(_, EscapeViaAbnormalReturn)                     ⇒ calcMostRestrictive(AtMost(NoEscape))
-                            case EP(_, EscapeViaParameterAndAbnormalReturn)         ⇒ calcMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(NoEscape))                            ⇒ calcMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(EscapeViaParameter))                  ⇒ calcMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(EscapeViaAbnormalReturn))             ⇒ calcMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ calcMostRestrictive(AtMost(NoEscape))
+                            case EP(_, GlobalEscape)                                ⇒ meetMostRestrictive(GlobalEscape)
+                            case EP(_, EscapeViaStaticField)                        ⇒ meetMostRestrictive(EscapeViaStaticField)
+                            case EP(_, EscapeViaHeapObject)                         ⇒ meetMostRestrictive(EscapeViaHeapObject)
+                            case EP(_, EscapeInCallee)                              ⇒ meetMostRestrictive(EscapeInCallee)
+                            case EP(_, AtMost(EscapeInCallee))                      ⇒ meetMostRestrictive(AtMost(EscapeInCallee))
+                            case EP(_, EscapeViaParameter)                          ⇒ meetMostRestrictive(AtMost(NoEscape))
+                            case EP(_, EscapeViaAbnormalReturn)                     ⇒ meetMostRestrictive(AtMost(NoEscape))
+                            case EP(_, EscapeViaParameterAndAbnormalReturn)         ⇒ meetMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(NoEscape))                            ⇒ meetMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(EscapeViaParameter))                  ⇒ meetMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(EscapeViaAbnormalReturn))             ⇒ meetMostRestrictive(AtMost(NoEscape))
+                            case EP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ meetMostRestrictive(AtMost(NoEscape))
                             case ep @ EP(_, Conditional(_)) ⇒
                                 dependees += ep
                             case EP(_, p) ⇒
@@ -338,7 +338,7 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                             case epk ⇒
                                 dependees += epk
                         }
-                    case /* unknown method */ _ ⇒ calcMostRestrictive(AtMost(NoEscape))
+                    case /* unknown method */ _ ⇒ meetMostRestrictive(AtMost(NoEscape))
                 }
         }
     }

@@ -94,7 +94,7 @@ trait AbstractEntityEscapeAnalysis {
     //
     val project: SomeProject
     val propertyStore: PropertyStore
-    val m: VirtualMethod
+    val m: VirtualMethod //TODO rename and to method
     val params: Parameters[TACMethodParameter]
     val code: Array[Stmt[V]]
     val cfg: CFG
@@ -102,7 +102,7 @@ trait AbstractEntityEscapeAnalysis {
     val formalParameters: FormalParameters
     val virtualFormalParameters: VirtualFormalParameters
 
-    val e: Entity
+    val e: Entity //TODO rename
     val uses: IntTrieSet
     val defSite: ValueOrigin
 
@@ -125,10 +125,11 @@ trait AbstractEntityEscapeAnalysis {
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
      * given one.
      */
-    @inline protected[this] final def calcMostRestrictive(prop: EscapeProperty): Unit = {
+    @inline protected[this] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
         assert((mostRestrictiveProperty meet prop).lessOrEqualRestrictive(mostRestrictiveProperty))
         assert(!prop.isInstanceOf[Conditional])
         mostRestrictiveProperty = mostRestrictiveProperty meet prop
+        assert(!mostRestrictiveProperty.isInstanceOf[Conditional])
     }
 
     /**
@@ -159,10 +160,10 @@ trait AbstractEntityEscapeAnalysis {
         (stmt.astID: @switch) match {
             case PutStatic.ASTID ⇒
                 val value = stmt.asPutStatic.value
-                if (usesDefSite(value)) calcMostRestrictive(EscapeViaStaticField)
+                if (usesDefSite(value)) meetMostRestrictive(EscapeViaStaticField)
             case ReturnValue.ASTID ⇒
                 if (usesDefSite(stmt.asReturnValue.expr))
-                    calcMostRestrictive(EscapeViaReturn)
+                    meetMostRestrictive(EscapeViaReturn)
             case PutField.ASTID ⇒
                 handlePutField(stmt.asPutField)
             case ArrayStore.ASTID ⇒
@@ -338,7 +339,7 @@ trait AbstractEntityEscapeAnalysis {
         other: Entity, p: EscapeProperty
     ): PropertyComputationResult = {
         assert(other.isInstanceOf[FormalParameter] || other.isInstanceOf[VirtualFormalParameter])
-        calcMostRestrictive(p)
+        meetMostRestrictive(p)
         dependees = dependees.filter(_.e ne other)
         returnResult
     }
@@ -351,8 +352,10 @@ trait AbstractEntityEscapeAnalysis {
      */
     protected[this] def returnResult: PropertyComputationResult = {
         // if we do not depend on other entities, or are globally escaping, return the result
+        // note: replace by global escape
         if (dependees.isEmpty || mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
+            //TODO do not remove the dependency in this case
             if (mostRestrictiveProperty.isRefineable) {
                 RefineableResult(e, mostRestrictiveProperty)
             } else {
@@ -374,7 +377,7 @@ trait AbstractEntityEscapeAnalysis {
         assert(other.isInstanceOf[FormalParameter] || other.isInstanceOf[VirtualFormalParameter])
         val newEP = EP(other, p)
         dependees = dependees.filter(_.e ne other) + newEP
-        calcMostRestrictive(intermediateProperty)
+        meetMostRestrictive(intermediateProperty)
         IntermediateResult(e, Conditional(mostRestrictiveProperty), dependees, c)
     }
 
@@ -387,27 +390,27 @@ trait AbstractEntityEscapeAnalysis {
 trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     protected[this] override def handlePutField(putField: PutField[V]): Unit = {
         if (usesDefSite(putField.value))
-            calcMostRestrictive(AtMost(NoEscape))
+            meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
         if (usesDefSite(arrayStore.value))
-            calcMostRestrictive(AtMost(NoEscape))
+            meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleThrow(aThrow: Throw[V]): Unit = {
         if (usesDefSite(aThrow.exception))
-            calcMostRestrictive(AtMost(NoEscape))
+            meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(NoEscape))
+            meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
@@ -421,46 +424,46 @@ trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         assert(call.name == "<init>")
         if (usesDefSite(call.receiver))
-            calcMostRestrictive(AtMost(NoEscape))
+            meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
         assert(call.name != "<init>")
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleVirtualFunctionCall(
         call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleNonVirtualFunctionCall(
         call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleStaticFunctionCall(
         call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
     ): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleInvokeDynamic(
         call: Invokedynamic[V], assignment: Option[Assignment[V]]
     ): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            calcMostRestrictive(AtMost(EscapeInCallee))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleOtherKindsOfExpressions(expr: Expr[V]): Unit = {}
@@ -468,6 +471,6 @@ trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     protected[this] override def c(
         other: Entity, p: Property, u: UpdateType
     ): PropertyComputationResult = {
-        throw new UnknownError(s"unexpected escape property ($p) for $other")
+        throw new UnknownError(s"unhandled escape property ($p) for $other")
     }
 }

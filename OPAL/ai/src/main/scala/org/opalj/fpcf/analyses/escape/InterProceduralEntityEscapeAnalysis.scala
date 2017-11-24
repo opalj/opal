@@ -81,11 +81,12 @@ import org.opalj.tac.Assignment
 trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
     //TODO Move to non entity based analysis
-    private[this] val isMethodExtensible: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     // STATE MUTATED DURING THE ANALYSIS
     private[this] val dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
-    private[this] var dependeeToStmt = Map.empty[Entity, Option[Assignment[V]]]
+    //TODO rename + fixme
+    private[this] val hasReturnValueUseSites = scala.collection.mutable.Set[Entity]()
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         handleStaticCall(
@@ -190,7 +191,11 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     ): Unit = {
         assert(receiver.isVar)
         val value = receiver.asVar.value.asDomainReferenceValue
-        if (value.isPrecise) {
+        if (dc.isArrayType) {
+            val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
+            checkParams(methodO, params, assignment)
+            if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
+        } else if (value.isPrecise) {
             if (value.isNull.isNoOrUnknown) {
                 val valueType = value.valueType.get
                 assert(m.declaringClassType.isObjectType)
@@ -201,22 +206,13 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // the receiver is null, the method is not invoked and the object does not escape
             }
         } else {
-            assert(m.declaringClassType.isObjectType)
             val methodO = project.instanceCall(m.declaringClassType.asObjectType, dc, name, descr)
-            if (methodO.isEmpty ||
-                (dc.isObjectType &&
-                    isMethodExtensible(methodO.value).isNotNo &&
-                    AnalysisModes.isLibraryLike(project.analysisMode))) {
+            if (methodO.isEmpty || isMethodOverridable(methodO.value).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
                 // TODO: to optimize performance, we do not let the analysis run against the existing methods
-                calcMostRestrictive(AtMost(EscapeInCallee))
-            } else if (dc.isArrayType) {
-                val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
-                checkParams(methodO, params, assignment)
-                if (usesDefSite(receiver)) handleCall(methodO, 0, assignment)
+                meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                assert(dc.isObjectType)
                 val target = project.instanceCall(
                     m.declaringClassType.asObjectType,
                     dc,
@@ -225,9 +221,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 )
                 if (target.hasValue) {
                     val vm = VirtualForwardingMethod(dc, name, descr, target.value)
-                    if (isSignaturePolymorphicMethod(vm.target)) {
+                    if (project.isSignaturePolymorphic(vm.target.classFile.thisType, vm.target)) {
                         //IMPROVE
-                        calcMostRestrictive(AtMost(EscapeInCallee))
+                        meetMostRestrictive(AtMost(EscapeInCallee))
+                        //TODO check if this is to much (param contains def-site)
                     } else {
                         if (usesDefSite(receiver)) {
                             val fp = virtualFormalParameters(vm)
@@ -240,19 +237,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                                 handleEscapeState(fp(i + 1), assignment)
                             }
                         }
-                        val packageName = m.declaringClassType.asObjectType.packageName
-                        val methods =
-                            if (isI) project.interfaceCall(dc.asObjectType, name, descr)
-                            else project.virtualCall(packageName, dc, name, descr)
-                        for (method ← methods) {
-                            checkParams(Success(method), params, assignment)
-                            if (usesDefSite(receiver))
-                                handleCall(Success(method), 0, assignment)
-                        }
                     }
                 } else {
                     // the method is unknown, so we have to stop here
-                    calcMostRestrictive(AtMost(EscapeInCallee))
+                    meetMostRestrictive(AtMost(EscapeInCallee))
                 }
 
             }
@@ -269,31 +257,22 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
         }
     }
 
-    private[this] def isSignaturePolymorphicMethod(method: Method): Boolean = {
-        method.isNativeAndVarargs &&
-            method.descriptor.parametersCount == 1 &&
-            method.descriptor.parameterType(0).isArrayType &&
-            method.descriptor.parameterType(0).asArrayType.componentType == ObjectType.Object &&
-            ((method.classFile.thisType eq ObjectType.VarHandle) ||
-                (method.classFile.thisType eq ObjectType.MethodHandle))
-    }
-
     private[this] def handleCall(
         methodO: org.opalj.Result[Method], param: Int, assignment: Option[Assignment[V]]
     ): Unit = {
         methodO match {
             case Success(method) ⇒
-                // handle signature polymorphic methods
-                if (isSignaturePolymorphicMethod(method)) {
+                if (project.isSignaturePolymorphic(method.classFile.thisType, method)) {
                     //IMPROVE
-                    calcMostRestrictive(AtMost(EscapeInCallee))
+                    meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     val fp = formalParameters(method)(param)
+                    //todo handle self recursive
                     if (fp != e) {
                         handleEscapeState(fp, assignment)
                     }
                 }
-            case _ ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
+            case _ ⇒ meetMostRestrictive(AtMost(EscapeInCallee))
         }
     }
 
@@ -311,25 +290,25 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
         })
 
         escapeState match {
-            case EP(_, NoEscape | EscapeInCallee) ⇒ calcMostRestrictive(EscapeInCallee)
-            case EP(_, GlobalEscape)              ⇒ calcMostRestrictive(GlobalEscape)
-            case EP(_, EscapeViaStaticField)      ⇒ calcMostRestrictive(EscapeViaStaticField)
-            case EP(_, EscapeViaHeapObject)       ⇒ calcMostRestrictive(EscapeViaHeapObject)
+            case EP(_, NoEscape | EscapeInCallee) ⇒ meetMostRestrictive(EscapeInCallee)
+            case EP(_, GlobalEscape)              ⇒ meetMostRestrictive(GlobalEscape)
+            case EP(_, EscapeViaStaticField)      ⇒ meetMostRestrictive(EscapeViaStaticField)
+            case EP(_, EscapeViaHeapObject)       ⇒ meetMostRestrictive(EscapeViaHeapObject)
             case EP(_, EscapeViaReturn) ⇒
                 assignment match {
                     case Some(_) ⇒
-                        calcMostRestrictive(AtMost(EscapeInCallee))
+                        meetMostRestrictive(AtMost(EscapeInCallee))
                     case None ⇒
-                        calcMostRestrictive(EscapeInCallee)
+                        meetMostRestrictive(EscapeInCallee)
                 }
             // we do not track parameters or exceptions in the callee side
-            case EP(_, p) if p.isFinal ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
-            case EP(_, AtMost(_))      ⇒ calcMostRestrictive(AtMost(EscapeInCallee))
+            case EP(_, p) if p.isFinal ⇒ meetMostRestrictive(AtMost(EscapeInCallee))
+            case EP(_, AtMost(_))      ⇒ meetMostRestrictive(AtMost(EscapeInCallee))
             case epk ⇒
                 assert(epk.e.isInstanceOf[FormalParameter] || epk.e.isInstanceOf[VirtualFormalParameter])
                 dependees += epk
-                dependeeToStmt += ((fp, assignment))
-                calcMostRestrictive(EscapeInCallee)
+                hasReturnValueUseSites += fp
+                meetMostRestrictive(EscapeInCallee)
         }
     }
 
@@ -338,6 +317,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     ): PropertyComputationResult = {
         other match {
             // this entity is passed as parameter (or this local) to a method
+            //TODO trait
             case _: FormalParameter | _: VirtualFormalParameter ⇒ p match {
 
                 case GlobalEscape         ⇒ Result(e, GlobalEscape)
@@ -363,13 +343,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                      * But the org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
                      * eliminates the assignments, if the function called is identity-like
                      */
-                    val assignment = dependeeToStmt(other)
-                    assignment match {
-                        case Some(_) ⇒
-                            removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
-                        case None ⇒
-                            removeFromDependeesAndComputeResult(other, EscapeInCallee)
-                    }
+                    if (hasReturnValueUseSites contains other)
+                        removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    else
+                        removeFromDependeesAndComputeResult(other, EscapeInCallee)
 
                 case EscapeViaParameterAndAbnormalReturn | EscapeViaNormalAndAbnormalReturn |
                     EscapeViaParameterAndAbnormalReturn | EscapeViaParameterAndReturn |
@@ -384,13 +361,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                     performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], EscapeInCallee)
 
                 case p @ Conditional(EscapeViaReturn) ⇒
-                    val assignment = dependeeToStmt(other)
-                    assignment match {
-                        case Some(_) ⇒
-                            performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
-                        case None ⇒
-                            performIntermediateUpdate(other, p, EscapeInCallee)
-                    }
+                    if (hasReturnValueUseSites contains other)
+                        performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                    else
+                        performIntermediateUpdate(other, p, EscapeInCallee)
 
                 case p @ Conditional(_) ⇒
                     performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
