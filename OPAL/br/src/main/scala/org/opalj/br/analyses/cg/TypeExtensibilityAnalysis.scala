@@ -37,7 +37,7 @@ import scala.collection.mutable
 import org.opalj.collection.mutable.ArrayMap
 
 /**
- * Determines if a type (class or interface) is further extensible by yet unknown
+ * Determines if a type (class or interface) is further (transitively) extensible by yet unknown
  * types (that is, can be (transitively) inherited from).
  *
  * == Special cases ==
@@ -64,42 +64,40 @@ import org.opalj.collection.mutable.ArrayMap
  */
 class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType ⇒ Answer) {
 
+    import project.classHierarchy
+    import classHierarchy.foreachDirectSupertype
+
     @tailrec private[this] def determineExtensibility(
         typesToProcess:       mutable.Queue[ObjectType],
-        hasExtensibleSubtype: Array[Boolean],
-        hasUnknownSubtype:    Array[Boolean],
+        subtypeExtensibility: Array[Answer],
         isEnqueued:           Array[Boolean],
         typeExtensibility:    ArrayMap[Answer]
     )(
         implicit
-        isDirectlyExtensible: ObjectType ⇒ Answer
+        isClassExtensible: ObjectType ⇒ Answer
     ): ArrayMap[Answer] = {
         val objectType = typesToProcess.dequeue
         val oid = objectType.id
-        project.classFile(objectType) match {
-            case Some(classFile) ⇒
-                val directlyExtensible = isDirectlyExtensible(objectType)
-                val isExtensible = hasExtensibleSubtype(oid)
-                if (isExtensible || directlyExtensible.isYes) {
-                    classFile.superclassType.foreach(ct ⇒ hasExtensibleSubtype(ct.id) = true)
-                    classFile.interfaceTypes.foreach(it ⇒ hasExtensibleSubtype(it.id) = true)
-                    typeExtensibility(objectType.id) = Yes
-                } else if (hasUnknownSubtype(oid) || directlyExtensible.isUnknown) {
-                    typeExtensibility(objectType.id) = Unknown
-                } else {
-                    typeExtensibility(objectType.id) = No
-                }
-
-            case None ⇒
-                project.classHierarchy.directSupertypes(objectType).foreach { superType ⇒
-                    hasUnknownSubtype(superType.id) = true
-                }
+        val thisSubtypeExtensibility = {
+            val thisSubtypeExtensibility = subtypeExtensibility(oid)
+            if (thisSubtypeExtensibility eq null) No else thisSubtypeExtensibility
         }
-
-        project.classHierarchy.directSupertypes(objectType).foreach { superType ⇒
-            val soid = superType.id
+        val thisTypeExtensbility = isClassExtensible(objectType) match {
+            case Yes     ⇒ Yes
+            case Unknown ⇒ if (thisSubtypeExtensibility.isYes) Yes else Unknown
+            case No      ⇒ thisSubtypeExtensibility
+        }
+        typeExtensibility(oid) = thisTypeExtensbility
+        foreachDirectSupertype(objectType) { st ⇒
+            val soid = st.id
+            subtypeExtensibility(soid) match {
+                case null | No ⇒ subtypeExtensibility(soid) = thisTypeExtensbility
+                case Yes       ⇒ // nothing to do
+                case Unknown   ⇒ if (thisTypeExtensbility.isYes) subtypeExtensibility(soid) = Yes
+            }
+            // schedule supertypes
             if (!isEnqueued(soid)) {
-                typesToProcess.enqueue(superType)
+                typesToProcess.enqueue(st)
                 isEnqueued(soid) = true
             }
         }
@@ -108,7 +106,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
             // tail-recursive call... to process the workqueue
             determineExtensibility(
                 typesToProcess,
-                hasExtensibleSubtype, hasUnknownSubtype,
+                subtypeExtensibility,
                 isEnqueued,
                 typeExtensibility
             )
@@ -118,20 +116,17 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
     }
 
     private[this] val typeExtensibility: ArrayMap[Answer] = {
-        import project.classHierarchy
+        implicit val isClassExtensible = project.get(ClassExtensibilityKey)
 
         val leafTypes = classHierarchy.leafTypes
-        implicit val isDirectlyExtensible = project.get(ClassExtensibilityKey)
-
         val objectTypesCount = ObjectType.objectTypesCount
         val typeExtensibility = ArrayMap[Answer](objectTypesCount)
-        val hasExtensibleSubtype = new Array[Boolean](objectTypesCount)
-        val hasUnknownSubtype = new Array[Boolean](objectTypesCount)
+        val subtypeExtensibility = new Array[Answer](objectTypesCount)
         val isEnqueued = new Array[Boolean](objectTypesCount)
 
-        // We use a queue to ensure that we always first process all subtypes of a type to
-        // ensure that we have final knowledge about all subtypes' extensibility before
-        // processing a supertype.
+        // We use a queue to ensure that we always first process all subtypes of a type. This
+        // guarantees that we have final knowledge about the extensibility of all subtypes
+        // of a type before we are processing the supertype.
         val typesToProcess = mutable.Queue.empty[ObjectType] ++ leafTypes
         typesToProcess foreach { ot ⇒
             isEnqueued(ot.id) = true
@@ -140,8 +135,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
 
         determineExtensibility(
             typesToProcess,
-            hasExtensibleSubtype,
-            hasUnknownSubtype,
+            subtypeExtensibility,
             isEnqueued,
             typeExtensibility
         )
