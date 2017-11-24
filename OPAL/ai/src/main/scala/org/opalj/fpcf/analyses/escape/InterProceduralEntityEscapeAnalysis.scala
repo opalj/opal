@@ -392,8 +392,8 @@ class InterProceduralEntityEscapeAnalysis(
     val propertyStore:           PropertyStore,
     val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
+        with AbstractInterProceduralEntityEscapeAnalysis
         with ConstructorSensitiveEntityEscapeAnalysis
         with ConfigurationBasedConstructorEscapeAnalysis
         with SimpleFieldAwareEntityEscapeAnalysis
         with ExceptionAwareEntityEscapeAnalysis
-        with AbstractInterProceduralEntityEscapeAnalysis
