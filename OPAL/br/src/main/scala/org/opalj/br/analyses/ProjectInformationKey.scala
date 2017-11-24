@@ -30,6 +30,8 @@ package org.opalj
 package br
 package analyses
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * `ProjecInformationKey` objects are used to get/associate some
  * (immutable) information with a project that should be computed on demand.
@@ -130,7 +132,7 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
  */
 private object ProjectInformationKey {
 
-    private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
+    private[this] val idGenerator = new AtomicInteger(0)
 
     private[ProjectInformationKey] def nextId: Int = idGenerator.getAndIncrement()
 

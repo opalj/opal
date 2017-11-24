@@ -31,9 +31,11 @@ package br
 package analyses
 
 import java.net.URL
+
+import org.opalj.br.analyses.cg.InstantiableClassesKey
 import org.opalj.util.Nanoseconds
 import org.opalj.util.asMB
-import org.opalj.util.PerformanceEvaluation.{time, memory}
+import org.opalj.util.PerformanceEvaluation.{memory, time}
 
 /**
  * Basic information about (non-)instantiable classes.

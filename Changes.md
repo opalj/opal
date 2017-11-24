@@ -1,7 +1,8 @@
 # Major Changes
 
 ## Upcomming
- - Hermes now has extended visualization capabilities to make it even easire to comprehend the differences between projects
+ - Hermes now has extended visualization capabilities to make it even easiere to comprehend the differences between projects
+ - The overall performance has been improved (in particular on multi-core systems with 4 or more cores) 
 
 
 ## 1.0.0 - Released Oct. 25th 2017

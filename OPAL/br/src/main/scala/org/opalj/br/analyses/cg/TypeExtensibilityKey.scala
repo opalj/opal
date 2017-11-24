@@ -29,31 +29,27 @@
 package org.opalj
 package br
 package analyses
-
-import org.opalj.concurrent.defaultIsInterrupted
+package cg
 
 /**
- * The ''key'' object to get information about the types of objects that are potentially injected.
- * For example, by a web framework or a dependency injection framework.
+ * '''Key'' to get the function that determines whether a type (i.e., we abstrat over a class/
+ * interface and all its subtypes) is extensible or not.
+ * A type is extensible if a developer could define a sub(*)type that is not part of the given
+ * application/library.
  *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
- *
+ * @author Michael Eichberg
  * @author Michael Reif
  */
-object InjectedClassesInformationKey extends ProjectInformationKey[InjectedClassesInformation, Nothing] {
+object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
 
     /**
-     * The [[InjectedClassesInformation]] has no special prerequisites.
+     * The [[TypeExtensibilityKey]] has the [[ClassExtensibilityKey]] as prerequisite.
      *
-     * @return `Nil`.
+     * @return Seq(ClassExtensibilityKey).
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override protected def requirements = Seq(ClassExtensibilityKey)
 
-    /**
-     * Computes the information which types are injected at a field.
-     */
-    override protected def compute(project: SomeProject): InjectedClassesInformation = {
-        InjectedClassesInformationAnalysis(project, defaultIsInterrupted)
+    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
+        new TypeExtensibilityAnalysis(project)
     }
 }
-

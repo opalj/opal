@@ -29,20 +29,52 @@
 package org.opalj
 package br
 package analyses
+package cg
 
-import org.opalj.util.IntStatistics
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.JavaConverters._
+import org.opalj.br.ObjectType
 
 /**
- * This project information key offers the possibility to gather simple counting statistics.
+ * Stores the information which types of objects are (potentially) injected based on the
+ * annotations that are found in the project. For example, by means of
+ * reflection or by a web server or some other comparable framework.
+ *
+ * This information is used to compute the entry points of JEE applications.
  *
  * @author Michael Reif
  */
-object IntStatisticsKey extends ProjectInformationKey[IntStatistics, Nothing] {
+class InjectedClasses(val injectedTypes: Set[ObjectType]) {
 
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    final def isInjected(classFile: ClassFile): Boolean = isInjected(classFile.thisType)
 
-    override protected def compute(project: SomeProject): IntStatistics = {
-        new IntStatistics
-    }
+    def isInjected(objectType: ObjectType): Boolean = injectedTypes.contains(objectType)
 }
 
+/**
+ * Factory to create [[InjectedClasses]].
+ *
+ * @author Michael Reif
+ */
+object InjectedClassesAnalysis {
+
+    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): InjectedClasses = {
+
+        val injectedTypes = new ConcurrentLinkedQueue[ObjectType]
+
+        project.parForeachClassFile(isInterrupted) { cf ⇒
+            for {
+                field ← cf.fields
+                fieldType = field.fieldType
+                if fieldType.isObjectType
+                if field.annotations.size > 0
+                // IMPROVE Check for specific annotations that are related to "Injections"
+            } {
+                injectedTypes.add(fieldType.asObjectType)
+
+            }
+        }
+
+        new InjectedClasses(injectedTypes.asScala.toSet)
+    }
+}
