@@ -627,10 +627,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Returns true if the method defined by the given class type is a signature polymorphic
-     * method. (See JVM 8 Spec. for details.)
+     * method. (See JVM 8 Spec. for details.) //TODO JAVA 8+
      */
+    //TODO add method that lookup the defining class type
     def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
-        (definingClassType eq ObjectType.MethodHandle) &&
+        (
+            (definingClassType eq ObjectType.MethodHandle) ||
+            (definingClassType eq ObjectType.VarHandle)
+        ) &&
             method.isNativeAndVarargs &&
             method.descriptor == SignaturePolymorphicMethodDescriptor
     }

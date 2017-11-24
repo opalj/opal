@@ -39,35 +39,39 @@ import org.opalj.log.OPALLogger
  * The ''key'' object to get a function that determines whether a type is directly
  * extensible or not.
  *
- * @see [[DirectTypeExtensibility]] for further information.
+ * @see [[ClassExtensibility]] for further information.
  * @author Michael Reif
  */
-object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
+object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, Nothing] {
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.DirectTypeExtensibilityKey."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClassExtensibilityKey."
 
-    final val DefaultExtensibilityAnalysis = "org.opalj.br.analyses.cg.DirectTypeExtensibility"
+    final val DefaultClassExtensibilityAnalysis = {
+        "org.opalj.br.analyses.cg.DefaultClassExtensibility"
+    }
 
     /**
-     * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
+     * The [[ClassExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
      */
     def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
      * Computes the direct type extensibility information for the given project.
      */
-    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
+    override protected def compute(project: SomeProject): ClassExtensibility = {
         val configKey = ConfigKeyPrefix+"analysis"
         try {
             val configuredAnalysis = project.config.as[Option[String]](configKey)
-            val analysisClassName = configuredAnalysis.getOrElse(DefaultExtensibilityAnalysis)
+            val analysisClassName = configuredAnalysis.getOrElse(DefaultClassExtensibilityAnalysis)
             val constructor = Class.forName(analysisClassName).getConstructors.head
-            constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
+            constructor.newInstance(project).asInstanceOf[ClassExtensibility]
         } catch {
             case t: Throwable ⇒
-                val m = "cannot compute type extensibility; extensibility is unknown for all types"
+                val m = "cannot compute the extensibility of classes; extensibility will be unknown"
                 OPALLogger.error("project configuration", m, t)(project.logContext)
-                (o: ObjectType) ⇒ Unknown
+                new ClassExtensibility {
+                    def isClassExtensible(t: ObjectType): Answer = Unknown
+                }
         }
     }
 
