@@ -112,10 +112,10 @@ trait AnalysisExecutor {
             "usage",
             "java "+
                 this.getClass().getName()+"\n"+
-                "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
+                "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
                 "[-analysisMode=<the kind of project ("+analysisModes+")>]\n"+
-                "[-completelyLoadLibraries=<true|false> (The default is false.)]\n"+
+                "[-completelyLoadLibraries=<true|false> (Default: false.)]\n"+
                 analysisSpecificParametersDescription
         )
         OPALLogger.info("general", "description: "+analysis.description)
