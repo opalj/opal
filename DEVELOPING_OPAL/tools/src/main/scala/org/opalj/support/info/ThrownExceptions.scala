@@ -72,7 +72,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         if (parameters.contains(L1TEParameter)) {
             L1ThrownExceptionsAnalysis.start(project, ps)
             // IMPROVE ThrownExceptionsByOverridingMethods.startLazily(project, ps)
-            //ThrownExceptionsByOverridingMethods.start(project, ps)
+            ThrownExceptionsByOverridingMethods.start(project, ps)
         } else {
             val fallbackAnalysis = new ThrownExceptionsFallbackAnalysis(ps)
             ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
