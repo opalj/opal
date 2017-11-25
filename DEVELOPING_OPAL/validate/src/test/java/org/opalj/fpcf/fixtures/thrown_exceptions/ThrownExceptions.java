@@ -28,7 +28,6 @@
  */
 package org.opalj.fpcf.fixtures.thrown_exceptions;
 
-import org.opalj.fpcf.analyses.TransitiveThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.MayThrowException;
 
