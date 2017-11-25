@@ -26,17 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package debug
+package org.opalj.support.debug
 
 import scala.Console.RED
 import scala.Console.RESET
 import scala.Console.err
-import org.opalj.br.{Method}
+
+import org.opalj.util.asMB
+import org.opalj.util.PerformanceEvaluation.memory
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.io.writeAndOpen
+import org.opalj.graphs.DefaultMutableNode
+import org.opalj.graphs.toDot
+
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.ai.PC
 import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.ai.analyses.cg.ComputedCallGraph
@@ -45,12 +52,6 @@ import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphAlgorithmConfigu
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.ExtVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.CFACallGraphAlgorithmConfiguration
-import org.opalj.graphs.DefaultMutableNode
-import org.opalj.util.asMB
-import org.opalj.util.PerformanceEvaluation.memory
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.io.writeAndOpen
-import org.opalj.graphs.toDot
 
 /**
  * Visualizes call graphs using Graphviz.
@@ -172,7 +173,9 @@ object CallGraphVisualization {
 
                 // Some statistics
                 val callGraph = computedCallGraph.callGraph
-                import callGraph.{callsCount, calledByCount, foreachCallingMethod}
+                import callGraph.calledByCount
+                import callGraph.callsCount
+                import callGraph.foreachCallingMethod
                 println("Methods with at least one resolved call: "+callsCount)
                 println("Methods which are called by at least one method: "+calledByCount)
 

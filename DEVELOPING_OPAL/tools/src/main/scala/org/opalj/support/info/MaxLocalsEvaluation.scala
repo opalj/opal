@@ -27,10 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package support
+package info
 
 import java.net.URL
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
+
+import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
  * Computes some statistics related to the number of parameters and locals
@@ -40,8 +45,10 @@ import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
  */
 object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
 
+    override def title: String = "Maximum Number of Locals"
+
     override def description: String = {
-        "Collects information about the maxium number of registers required per method."
+        "provide information about the maximum number of registers required per method"
     }
 
     def doAnalyze(

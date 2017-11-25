@@ -26,12 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.support.debug
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
+
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import org.opalj.ai.Domain
+import org.opalj.ai.PC
+import org.opalj.ai.AITracer
+import org.opalj.ai.NoUpdate
+import org.opalj.ai.Update
+import org.opalj.ai.AIResult
+import org.opalj.ai.SomeUpdate
+import org.opalj.ai.IsReferenceValue
+import org.opalj.ai.domain
 import org.opalj.ai.domain.TheCode
 
 /**
@@ -87,7 +96,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                     val values = rv.allValues
                     val t =
                         if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
-                            s";refId=${rv.asInstanceOf[domain.l1.ReferenceValues#ReferenceValue].refId}"
+                            s";refId=${rv.asInstanceOf[org.opalj.ai.domain.l1.ReferenceValues#ReferenceValue].refId}"
                         else
                             ""
                     values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +

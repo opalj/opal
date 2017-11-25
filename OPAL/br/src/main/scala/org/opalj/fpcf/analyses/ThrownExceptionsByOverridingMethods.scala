@@ -26,12 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analyses
+package org.opalj
+package fpcf
+package analyses
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
-import org.opalj.fpcf._
 import org.opalj.fpcf.properties._
 
 /**
@@ -39,14 +40,28 @@ import org.opalj.fpcf.properties._
  * [[org.opalj.fpcf.properties.ThrownExceptions]] property.
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+class ThrownExceptionsByOverridingMethods private (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
+    private def lazilyAggregateExceptionsThrownByOverridingMethods(
+        e: Entity
+    ): PropertyComputationResult = {
+        e match {
+            case m: Method ⇒
+                aggregateExceptionsThrownByOverridingMethods(m)
+            case e ⇒
+                val m = s"the ThrownExceptions property is only defined for methods; found $e"
+                throw new UnknownError(m)
+        }
+    }
 
     /**
-     * Determines the exceptions a method and its overridden methods by subclasses throw. This
-     * analysis builds the information over the class hierarchy.
+     * Aggregates the exceptions thrown by a method and all overriding methods.
      */
-    def determineClassHierarchy(m: Method): PropertyComputationResult = {
+    def aggregateExceptionsThrownByOverridingMethods(m: Method): PropertyComputationResult = {
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
         var methodIsRefinable = false
         var hasUnknownExceptions = false
@@ -82,7 +97,7 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
             .map { subMethod ⇒
                 ps(
                     subMethod,
-                    ThrownExceptionsByOverridingMethods.Key
+                    properties.ThrownExceptionsByOverridingMethods.Key
                 )
             }
             .filter(_.is(AllThrownExceptionsByOverridingMethods))
@@ -144,17 +159,33 @@ class TransitiveThrownExceptionsClassHierarchyAnalysis private ( final val proje
 }
 
 /**
+ * Factory/executor of the thrown exceptions analysis.
+ *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-object TransitiveThrownExceptionsClassHierarchyAnalysis extends FPCFAnalysisRunner {
-
-    override def derivedProperties: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods.Key)
+object ThrownExceptionsByOverridingMethods extends FPCFAnalysisRunner {
 
     override def usedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new TransitiveThrownExceptionsClassHierarchyAnalysis(project)
-        propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determineClassHierarchy)
+    override def derivedProperties: Set[PropertyKind] = {
+        Set(properties.ThrownExceptionsByOverridingMethods.Key)
+    }
+
+    def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val analysis = new ThrownExceptionsByOverridingMethods(project)
+        val allMethods = project.allMethodsWithBody
+        ps.scheduleForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
+        analysis
+    }
+
+    /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
+    def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val analysis = new ThrownExceptionsByOverridingMethods(project)
+        ps.scheduleLazyComputation[properties.ThrownExceptionsByOverridingMethods](
+            properties.ThrownExceptionsByOverridingMethods.Key,
+            analysis.lazilyAggregateExceptionsThrownByOverridingMethods
+        )
         analysis
     }
 }

@@ -26,14 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
+package org.opalj.support.debug
 
 import java.net.URL
 
 import org.opalj.io.writeAndOpen
 import org.opalj.graphs.toDot
-
+import org.opalj.br.cfg
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
@@ -44,9 +44,10 @@ import org.opalj.br.analyses.Project
 object PrintBaseCFG {
 
     def main(args: Array[String]): Unit = {
-        import Console.{RED, RESET}
+        import Console.RED
+        import Console.RESET
 
-        if (args.size != 3) {
+        if (args.length != 3) {
             println("You have to specify the method that should be analyzed.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
@@ -59,13 +60,13 @@ object PrintBaseCFG {
 
         val file = new java.io.File(fileName)
         if (!file.exists()) {
-            println(RED+"[error] The file does not exist: "+fileName+"."+RESET)
+            println(RED+"[error] the file does not exist: "+fileName+"."+RESET)
             return ;
         }
 
         val project = try { Project(file) } catch {
             case e: Exception ⇒
-                println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)
+                println(RED+"[error] cannot process file: "+e.getMessage+"."+RESET)
                 return ;
         }
 
@@ -76,7 +77,7 @@ object PrintBaseCFG {
                 else
                     className
             project.allClassFiles.find(_.fqn == fqn).getOrElse {
-                println(RED+"[error] Cannot find the class: "+className+"."+RESET)
+                println(RED+"[error] cannot find the class: "+className+"."+RESET)
                 return ;
             }
         }
@@ -92,13 +93,13 @@ object PrintBaseCFG {
                 if (method.body.isDefined)
                     method
                 else {
-                    println(RED+"[error] The method: "+methodName+" does not have a body"+RESET)
+                    println(RED+"[error] the method: "+methodName+" does not have a body"+RESET)
                     return ;
                 }
             case None ⇒
                 val allMethods = classFile.methods.map(_.signatureToJava(false)).toSet
                 val altMethods = allMethods.toSeq.sorted.mkString(" Candidates: ", ", ", ".")
-                println(s"$RED[error] Cannot find the method: $methodName.$RESET $altMethods")
+                println(s"$RED[error] cannot find the method: $methodName.$RESET $altMethods")
                 return ;
         }
 

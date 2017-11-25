@@ -27,7 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package support
+package info
 
 import java.net.URL
 
@@ -36,6 +37,9 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.EP
 import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
@@ -53,14 +57,14 @@ import org.opalj.fpcf.properties.SideEffectFree
  */
 object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
-    final val MPAParam = "-analysis=MethodPurityAnalysis"
+    override def title: String = "Purity Analysis"
 
-    override def title: String = "assess the purity of methods"
+    override def description: String = "assess the purity of some methods"
 
-    override def description: String = { "assess the purity of some methods" }
+    final val L1PAParameter = "-analysis=L1PurityAnalysis"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
-        super.checkAnalysisSpecificParameters(parameters.filter(_ != MPAParam))
+        super.checkAnalysisSpecificParameters(parameters.filter(_ != L1PAParameter))
     }
 
     override def doAnalyze(
@@ -71,7 +75,7 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val propertyStore = project.get(PropertyStoreKey)
 
-        if (parameters.contains(MPAParam)) {
+        if (parameters.contains(L1PAParameter)) {
             ClassImmutabilityAnalysis.start(project, propertyStore)
             TypeImmutabilityAnalysis.start(project, propertyStore)
             AdvancedFieldMutabilityAnalysis.start(project, propertyStore)

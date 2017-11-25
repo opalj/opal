@@ -26,17 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.support.debug
 
 import java.util.Date
 import java.net.URL
 
 import org.opalj.io.writeAndOpen
 import org.opalj.graphs.toDot
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
+import org.opalj.ai.InterpretationFailedException
+import org.opalj.ai.AI
+import org.opalj.ai.Domain
+import org.opalj.ai.MultiTracer
+import org.opalj.ai.BaseAI
+import org.opalj.ai.util
+import org.opalj.ai.AITracer
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.util.XHTML
@@ -57,11 +64,10 @@ object InterpretMethod {
 
         override def isInterrupted: Boolean = Thread.interrupted()
 
-        val consoleTracer =
-            new ConsoleTracer { override val printOIDs = true }
+        val consoleTracer: AITracer = new ConsoleTracer { override val printOIDs = true }
         //new ConsoleEvaluationTracer {}
 
-        val xHTMLTracer = new XHTMLTracer {}
+        val xHTMLTracer: XHTMLTracer = new XHTMLTracer {}
 
         override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
     }
@@ -76,7 +82,8 @@ object InterpretMethod {
      *      is returned.
      */
     def main(args: Array[String]): Unit = {
-        import Console.{RED, RESET}
+        import Console.RED
+        import Console.RESET
         import language.existentials
 
         def printUsage(issue: Option[String]): Unit = {

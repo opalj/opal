@@ -26,11 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package analyses
+package org.opalj.support.tools
 
 import java.io.File
+
+import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
+import org.opalj.br.ClassHierarchy
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -72,7 +74,6 @@ object ClassHierarchyExtractor {
     def main(args: Array[String]): Unit = {
 
         import Console.err
-
         import org.opalj.br.reader.Java8Framework.ClassFiles
 
         if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {

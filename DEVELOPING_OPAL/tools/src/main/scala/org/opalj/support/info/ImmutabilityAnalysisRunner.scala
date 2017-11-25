@@ -27,9 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package support
+package info
 
 import java.net.URL
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.analyses.PropertyStoreKey
@@ -37,6 +39,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.ClassFile
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
@@ -50,9 +53,9 @@ import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
  */
 object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
 
-    override def title: String = "determines the immutability of objects and types"
+    override def title: String = "Immutability Analysis"
 
-    override def description: String = "determines the immutability of objects and types"
+    override def description: String = "determines the immutability of classes and types"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -67,15 +70,12 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
         val projectStore = time { get(PropertyStoreKey) } { r ⇒ t = r.toSeconds }
-        //projectStore.debug = true
 
         val manager = project.get(FPCFAnalysesManagerKey)
         manager.run(FieldMutabilityAnalysis)
         time {
             manager.runAll(ClassImmutabilityAnalysis, TypeImmutabilityAnalysis)
         } { r ⇒ t += r.toSeconds }
-
-        projectStore.validate(None)
 
         val immutableClasses =
             projectStore.entities(ClassImmutability.key).

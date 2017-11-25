@@ -26,27 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package support
+package info
 
 import java.net.URL
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, PropertyStoreKey}
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.AllThrownExceptions
+import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
+import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethods
 import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract
 
 /**
- * Runs the transitive thrown exception analysis.
+ * Prints out the information about the exceptions thrown by methods.
  *
+ * @author Michael Eichberg
  * @author Andreas Muttschelller
  */
-object TransitiveThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
+object ThrownExceptions extends DefaultOneStepAnalysis {
 
-    override def title: String = "assess the thrown exceptions of methods"
+    override def title: String = "Thrown Exceptions"
 
-    override def description: String = { "assess the thrown exceptions of some methods" }
+    override def description: String = "computes the set of exceptions thrown by methods"
 
-    override def doAnalyze(
+    final val L1TEParameter = "-analysis=L1ThrownExceptionsAnalysis"
+
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+        super.checkAnalysisSpecificParameters(parameters.filter(_ != L1TEParameter))
+    }
+
+    def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
@@ -54,7 +69,14 @@ object TransitiveThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
 
         val ps = project.get(PropertyStoreKey)
 
-        org.opalj.fpcf.analyses.TransitiveThrownExceptionsAnalysis.start(project, ps)
+        if (parameters.contains(L1TEParameter)) {
+            L1ThrownExceptionsAnalysis.start(project, ps)
+            // IMPROVE ThrownExceptionsByOverridingMethods.startLazily(project, ps)
+            //ThrownExceptionsByOverridingMethods.start(project, ps)
+        } else {
+            val fallbackAnalysis = new ThrownExceptionsFallbackAnalysis(ps)
+            ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
+        }
 
         ps.waitOnPropertyComputationCompletion(true)
 
@@ -68,9 +90,9 @@ object TransitiveThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
         val methodsWithCompleteThrownExceptionsInfoCount =
             methodsWithCompleteThrownExceptionsInfo.size
         val privateMethodsWithCompleteThrownExceptionsInfoCount =
-            methodsWithCompleteThrownExceptionsInfo.view.filter(_._1.isPrivate).size
+            methodsWithCompleteThrownExceptionsInfo.view.count(_._1.isPrivate)
         val methodsWhichDoNotThrowExceptionsCount =
-            methodsWhichDoNotThrowExceptions.view.filter(_._1.isPrivate).size
+            methodsWhichDoNotThrowExceptions.view.count(_._1.isPrivate)
 
         val report = methodsWithCompleteThrownExceptionsInfo.map {
             case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava} ⇒ $ts" }
@@ -80,7 +102,7 @@ object TransitiveThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
             report+
                 "\n\nNumber of methods for which the set of thrown exceptions is known: "+
                 methodsWithCompleteThrownExceptionsInfoCount+"\n"+
-                s" ... private methods: ${privateMethodsWithCompleteThrownExceptionsInfoCount}\n"+
+                s" ... private methods: $privateMethodsWithCompleteThrownExceptionsInfoCount\n"+
                 s" ... which throw no exceptions: ${methodsWhichDoNotThrowExceptions.size}\n"+
                 s" ... ... private methods: $methodsWhichDoNotThrowExceptionsCount"
         )

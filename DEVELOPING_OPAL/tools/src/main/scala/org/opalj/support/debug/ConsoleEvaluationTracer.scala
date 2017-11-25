@@ -26,12 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.support.debug
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
+
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+
+import org.opalj.ai.AITracer
+import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
+import org.opalj.ai.PC
+import org.opalj.ai.Update
 
 /**
  * A tracer that primarily prints out the evaluation order of the instructions on the

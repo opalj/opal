@@ -26,45 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-
-import java.net.URL
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
-import org.opalj.br.analyses.StringConstantsInformationKey
+package org.opalj.support
 
 /**
- * Prints out all string constants found in the bytecode.
- *
- * @author Michael Eichberg
+ * Tools which help to debug OPAL as such. E.g., it is possible to run the abstract interpreter
+ * for an arbitrary method to analyze the respective result.
  */
-object StringConstants extends DefaultOneStepAnalysis {
-
-    override def description: String = "collects all constant strings in the program"
-
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-
-        val data = project.get(StringConstantsInformationKey)
-        val mappedData: ConstArray[String] = data.map { kv ⇒
-            val (string, locations) = kv
-            val escapedString = string.
-                replace("\u001b", "\\u001b").
-                replace("\n", "\\n").
-                replace("\t", "\\t").
-                replace("\"", "\\\"")
-            locations.map { methodPc ⇒
-                val (method, pc) = methodPc
-                method.toJava(s"pc=$pc")
-            }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
-        }
-
-        val report = mappedData.mkString("Strings:\n", "\n", s"Found ${data.size} string constants.")
-
-        BasicReport(report)
-    }
-}
+package object debug

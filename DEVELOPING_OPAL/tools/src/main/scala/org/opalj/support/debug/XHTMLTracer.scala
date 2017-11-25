@@ -26,13 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.support.debug
 
 import scala.xml.Node
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.writeAndOpen
+
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.FieldAccess
@@ -40,6 +40,13 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
+import org.opalj.ai.PC
+import org.opalj.ai.Domain
+import org.opalj.ai.Update
+import org.opalj.ai.AIResult
+import org.opalj.ai.AITracer
+import org.opalj.ai.Locals
+import org.opalj.ai.Operands
 import org.opalj.ai.common.XHTML.dumpLocals
 import org.opalj.ai.common.XHTML.dumpStack
 
@@ -53,7 +60,7 @@ case class FlowEntity(
     val flowId = FlowEntity.nextFlowId
 }
 
-private[ai] object FlowEntity {
+object FlowEntity {
     private var flowId = -1
     private def nextFlowId = { flowId += 1; flowId }
     def lastFlowId: Int = flowId - 1
@@ -109,7 +116,8 @@ trait XHTMLTracer extends AITracer {
     }
 
     def dumpXHTML(title: String): scala.xml.Node = {
-        import scala.collection.immutable.{SortedMap, SortedSet}
+        import scala.collection.immutable.SortedMap
+        import scala.collection.immutable.SortedSet
 
         val inOrderFlow = flow.map(_.reverse).reverse
         var pathsCount = 0

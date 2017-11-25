@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package support
 package debug
 
 import java.io.File
@@ -40,10 +40,14 @@ import scala.util.control.ControlThrowable
 import scala.xml.NodeSeq
 
 import org.opalj.log.LogContext
+import org.opalj.io.writeAndOpen
+
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.ai.util.XHTML
-import org.opalj.io.writeAndOpen
+import org.opalj.ai.domain
+import org.opalj.ai.Domain
+import org.opalj.ai.InstructionCountBoundedAI
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -154,10 +158,14 @@ object InterpretMethodsAnalysis {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
 
-        import Console.{RED, YELLOW, GREEN, RESET}
+        import Console.GREEN
+        import Console.RED
+        import Console.RESET
+        import Console.YELLOW
 
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
-        import performanceEvaluationContext.{time, getTime}
+        import performanceEvaluationContext.getTime
+        import performanceEvaluationContext.time
         val methodsCount = new AtomicInteger(0)
         val instructionEvaluationsCount = new AtomicLong(0)
 

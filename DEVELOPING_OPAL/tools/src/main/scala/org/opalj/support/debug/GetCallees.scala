@@ -26,8 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.support.debug
 
 import scala.Console.RED
 import scala.Console.RESET
@@ -35,6 +34,7 @@ import scala.Console.RESET
 import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.analyses.Project
+import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.util.XHTML

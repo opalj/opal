@@ -46,7 +46,19 @@ import org.opalj.fpcf.properties._
  *
  * @author Andreas Muttscheller
  */
-class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+class L1ThrownExceptionsAnalysis private (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
+    private def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
+        e match {
+            case m: Method ⇒
+                determineThrownExceptions(m)
+            case e ⇒
+                val m = s"the ThrownExceptions property is only defined for methods; found $e"
+                throw new UnknownError(m)
+        }
+    }
 
     /**
      * Determines the exceptions a method throws. This analysis also follows invocation instructions
@@ -140,10 +152,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    var callerPackage = ""
-                    if (m.classFile.fqn.contains("/")) {
-                        callerPackage = m.classFile.fqn.substring(0, m.classFile.fqn.lastIndexOf("/"))
-                    }
+                    val callerPackage = m.classFile.thisType.packageName
                     val callees = instruction match {
                         case iv: INVOKEVIRTUAL   ⇒ project.virtualCall(callerPackage, iv)
                         case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
@@ -152,7 +161,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     result = NoExceptionsAreThrown.NoInstructionThrowsExceptions
                     callees.foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
-                        val classHierarchy = ps(callee, ThrownExceptionsByOverridingMethods.Key)
+                        val classHierarchy = ps(callee, properties.ThrownExceptionsByOverridingMethods.Key)
                         classHierarchy match {
                             case EP(_, AllThrownExceptionsByOverridingMethods(e, r)) ⇒
                                 exceptions ++= e.concreteTypes
@@ -173,6 +182,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     ASTORE_0.opcode ⇒
                     isLocalVariable0Updated = true
                     true
+
                 case ISTORE.opcode | LSTORE.opcode |
                     FSTORE.opcode | DSTORE.opcode |
                     ASTORE.opcode ⇒
@@ -312,6 +322,7 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
                     } else {
                         IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
                     }
+
                 case UnknownThrownExceptionsByOverridingMethods ⇒
                     Result(m, ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions)
             }
@@ -329,17 +340,37 @@ class TransitiveThrownExceptionsAnalysis private ( final val project: SomeProjec
 }
 
 /**
+ * Factory and runner for the [[L1ThrownExceptionsAnalysis]].
+ *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-object TransitiveThrownExceptionsAnalysis extends FPCFAnalysisRunner {
+object L1ThrownExceptionsAnalysis extends FPCFAnalysisRunner {
 
-    override def usedProperties: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods.Key)
+    override def usedProperties: Set[PropertyKind] = {
+        Set(properties.ThrownExceptionsByOverridingMethods.Key)
+    }
 
     override def derivedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
+    /**
+     * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
+     * in general, the analysis is expected to be registered as a lazy computation.
+     */
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new TransitiveThrownExceptionsAnalysis(project)
-        propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determineThrownExceptions)
+        val analysis = new L1ThrownExceptionsAnalysis(project)
+        val allMethods = project.allMethodsWithBody
+        propertyStore.scheduleForEntities(allMethods)(analysis.determineThrownExceptions)
+        analysis
+    }
+
+    /** Registers an analysis to compute the thrown exceptions lazily. */
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new L1ThrownExceptionsAnalysis(project)
+        propertyStore.scheduleLazyComputation[ThrownExceptions](
+            ThrownExceptions.Key,
+            analysis.lazilyDetermineThrownExceptions
+        )
         analysis
     }
 }

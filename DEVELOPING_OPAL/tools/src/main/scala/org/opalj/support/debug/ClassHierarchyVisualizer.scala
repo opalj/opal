@@ -26,15 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.support.debug
 
-class ConfigurableXHTMLTracer(openDumpOnResult: Boolean = false) extends XHTMLTracer {
+import org.opalj.graphs.toDot
+import org.opalj.log.GlobalLogContext
+import org.opalj.io.writeAndOpen
+import org.opalj.br.ClassFile
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
-    override def result(result: AIResult): Unit = {
-        if (openDumpOnResult)
-            super.result(result)
+/**
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy
+ * of the specified jar file(s).
+ *
+ * @author Michael Eichberg
+ */
+object ClassHierarchyVisualizer {
+
+    def main(args: Array[String]): Unit = {
+        if (!args.forall(_.endsWith(".jar"))) {
+            println("Usage: java …ClassHierarchy <JAR file>+")
+            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            sys.exit(-1)
+        }
+
+        val classHierarchy =
+            if (args.length == 0) {
+                ClassHierarchy.preInitializedClassHierarchy
+            } else {
+                val classFiles =
+                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
+                        cfs ++ ClassFiles(new java.io.File(filename))
+                    }
+                ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
+            }
+
+        val dotGraph = toDot(Set(classHierarchy.toGraph()), "back")
+        writeAndOpen(dotGraph, "ClassHierarchy", ".gv")
     }
-
 }
-
