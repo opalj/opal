@@ -131,8 +131,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(interfaceOt) should be(No)
         }
 
-        it("a public class should be transitively extensible when all subclasses"+
-            " are NOT extensible") {
+        it("a non-final public class is transitively extensible even when all subclasses are NOT") {
             val pClassOt = ObjectType(s"${testPackage}case3/PublicClass")
 
             val pfClassOt = ObjectType(s"${testPackage}case3/PublicFinalClass")
@@ -148,7 +147,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
     }
 
-    describe("when a type is located an open package") {
+    describe("when a type belongs to an open package") {
 
         val configString = mergeConfigString(
             ClassExtensibilityConfig.classExtensibilityAnalysis,
@@ -158,6 +157,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
         val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
+        val isClassExtensible = project.get(ClassExtensibilityKey)
 
         it("a package visible class should be transitively extensible") {
             val case1_classOt = ObjectType(s"${testPackage}case1/Class")
@@ -169,9 +169,20 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(case2_interfaceOt) should be(Yes)
         }
 
-        it("the extensibility of an unknown type should unknown") {
-            val case4_classOt = ObjectType("java/util/HashSet")
-            isExtensible(case4_classOt) should be(Unknown)
+        it("the extensibility of an unknown type from which an application type inherits from is (obviously) yes") {
+            val hashSetObjectType = ObjectType("java/util/HashSet")
+            assert(project.classFile(hashSetObjectType).isEmpty)
+            assert(isClassExtensible(hashSetObjectType) == Unknown)
+
+            isExtensible(hashSetObjectType) should be(Yes)
+        }
+
+        it("the extensibility of an unknown type should be unknown") {
+            val unknownType = ObjectType("unknown/Unknown")
+            assert(project.classFile(unknownType).isEmpty)
+            assert(isClassExtensible(unknownType) == Unknown)
+
+            isExtensible(unknownType) should be(Unknown)
         }
     }
 }
