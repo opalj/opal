@@ -69,7 +69,7 @@ public class ExceptionUsages {
     }
 
     @DoesNotThrowException(
-            reason = "self-recursive methods call (StackOverflow is not supported by OPAL)",
+            reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)",
             requires = {}
     )
     public int selfRecursiveMethod(boolean b) {

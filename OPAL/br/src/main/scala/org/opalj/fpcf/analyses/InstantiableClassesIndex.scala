@@ -47,8 +47,9 @@ object LibraryInstantiableClassesAnalysis {
 
     def doAnalyze(project: SomeProject): InstantiableClasses = {
         val fpcfManager = project.get(FPCFAnalysesManagerKey)
-        if (!fpcfManager.isDerived(Instantiability))
+        if (!fpcfManager.isDerived(Instantiability)) {
             fpcfManager.run(SimpleInstantiabilityAnalysis, true)
+        }
 
         val propertyStore = project.get(PropertyStoreKey)
         val notInstantiableClasses = propertyStore.collect[ObjectType] {
