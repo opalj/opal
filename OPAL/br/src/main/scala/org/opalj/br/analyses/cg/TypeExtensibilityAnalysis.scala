@@ -42,9 +42,9 @@ import org.opalj.collection.mutable.ArrayMap
  *
  * == Special cases ==
  * If a class is defined in a package starting with '''java.*''', it always has to be treated like
- * classes that belong to a closed package. This is necessary because the
- * default `ClassLoader` prevents the definition of further classes within these packages, hence,
- * they are closed by definition.
+ * classes that belong to a closed package. This is necessary because the default `ClassLoader`
+ * prevents the definition of further classes within these packages, hence, they are closed by
+ * definition.
  *
  * If the analyzed codebase has an incomplete type hierarchy, which leads to unknown subtype
  * relationships, it is necessary to add these particular classes to the computed set of
@@ -53,7 +53,6 @@ import org.opalj.collection.mutable.ArrayMap
  * == Extensibility w.r.t. Open Packages ==
  * A class is extensible if:
  *  - the class is not (effectively) final
- *  - one of its subclasses is extensible
  *
  * == Extensibility w.r.t. Closed Packages ==
  * A class is extensible if:
@@ -128,10 +127,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
         // guarantees that we have final knowledge about the extensibility of all subtypes
         // of a type before we are processing the supertype.
         val typesToProcess = mutable.Queue.empty[ObjectType] ++ leafTypes
-        typesToProcess foreach { ot ⇒
-            isEnqueued(ot.id) = true
-            assert(classHierarchy.hasSubtypes(ot).isNo, s"found leaf type $ot with subtypes")
-        }
+        typesToProcess.foreach { ot ⇒ isEnqueued(ot.id) = true }
 
         determineExtensibility(
             typesToProcess,
