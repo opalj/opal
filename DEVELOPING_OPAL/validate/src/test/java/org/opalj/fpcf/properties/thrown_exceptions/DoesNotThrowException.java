@@ -39,7 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Andreas Muttscheller
  */
-@PropertyValidator(key = "ThrownExceptions",validator = DoesNotThrowExceptionMatcher.class)
+@PropertyValidator(key = "ExpectedExceptions",validator = DoesNotThrowExceptionMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface DoesNotThrowException {
@@ -47,5 +47,5 @@ public @interface DoesNotThrowException {
     /**
      * A short reasoning of this property.
      */
-    String value();// default = "N/A";
+    String value();
 }

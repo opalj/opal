@@ -94,7 +94,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
     /**
      * Returns the [[org.opalj.fpcf.properties.PropertyMatcher]] associated with the annotation -
-     * if the annotation specifies an expected property currently relevant; i.e,  if the
+     * if the annotation specifies an expected property currently relevant; i.e, if the
      * property kind specified by the annotation is in the set `propertyKinds`.
      *
      * @param p The current project.

@@ -28,7 +28,8 @@
  */
 package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.{L1ThrownExceptionsAnalysis, ThrownExceptionsByOverridingMethods}
+import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -41,15 +42,23 @@ class ThrownExceptionAnalysisTests extends PropertiesTest {
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
-        validateProperties(as, methodsWithAnnotations, Set("L1ThrownExceptionsAnalysis", "ClassHierarchyThrownExceptions"))
+        validateProperties(
+            as,
+            methodsWithAnnotations,
+            Set("ExpectedExceptions", "ClassHierarchyThrownExceptions")
+        )
     }
 
-    describe("the org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethods is executed") {
+    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
         val as = executeAnalyses(Set(
-            ThrownExceptionsByOverridingMethods,
+            ThrownExceptionsByOverridingMethodsAnalysis,
             L1ThrownExceptionsAnalysis
         ))
-        validateProperties(as, methodsWithAnnotations, Set("L1ThrownExceptionsAnalysis", "ClassHierarchyThrownExceptions"))
+        validateProperties(
+            as,
+            methodsWithAnnotations,
+            Set("ExpectedExceptions", "ClassHierarchyThrownExceptions")
+        )
     }
 
 }

@@ -26,32 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.thrown_exceptions
+package org.opalj.fpcf.properties.thrown_exceptions;
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.{AnnotationLike, ObjectType}
-import org.opalj.fpcf.properties.{AbstractPropertyMatcher, NoExceptionsAreThrown, ThrownExceptions}
-import org.opalj.fpcf.{Entity, Property}
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Matches a methods's `ThrowsException` property.
+ * Annotation to state the (transitivley) thrown exceptions.
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-class MayThrowExceptionMatcher extends AbstractPropertyMatcher {
+@PropertyValidator(key = "ExpectedExceptions",validator = ExpectedExceptionsMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface ExpectedExceptions {
 
-    def validateProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          AnnotationLike,
-        properties: List[Property]
-    ): Option[String] = {
-        if (properties.forall(p ⇒ !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key)) {
-            None
-        } else {
-            Some(a.elementValuePairs.head.value.toString)
-        }
-    }
-
+    /**
+     * A short reasoning of this property.
+     */
+    Class<? extends Throwable>[] value() default  {};
 }

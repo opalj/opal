@@ -26,15 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.thrown_exceptions
+package org.opalj.fpcf
+package properties
+package thrown_exceptions
 
-import org.opalj.br.{AnnotationLike, ObjectType}
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{Entity, Property}
-import org.opalj.fpcf.properties.{AbstractPropertyMatcher, NoExceptionsAreThrown, ThrownExceptions}
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
 
 /**
- * Matches a methods's `ThrowsException` property.
+ * Matches a methods's `ThrownExceptions` property.
  *
  * @author Andreas Muttscheller
  */
@@ -47,7 +50,9 @@ class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: List[Property]
     ): Option[String] = {
-        if (properties.forall(p ⇒ p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key))
+        if (properties.forall { p ⇒
+            p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
+        })
             None
         else {
             Some(a.elementValuePairs.head.value.toString)

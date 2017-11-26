@@ -36,13 +36,13 @@ import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.fpcf.properties._
 
 /**
- * Transitive analysis of thrown exceptions
- * [[org.opalj.fpcf.properties.ThrownExceptions]] property.
+ * Aggregates the exceptions thrown by a method over all methods which override the respective
+ * method.
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-class ThrownExceptionsByOverridingMethods private (
+class ThrownExceptionsByOverridingMethodsAnalysis private (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -164,7 +164,7 @@ class ThrownExceptionsByOverridingMethods private (
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object ThrownExceptionsByOverridingMethods extends FPCFAnalysisRunner {
+object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisRunner {
 
     override def usedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
@@ -173,7 +173,7 @@ object ThrownExceptionsByOverridingMethods extends FPCFAnalysisRunner {
     }
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new ThrownExceptionsByOverridingMethods(project)
+        val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
         val allMethods = project.allMethodsWithBody
         ps.scheduleForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
         analysis
@@ -181,9 +181,9 @@ object ThrownExceptionsByOverridingMethods extends FPCFAnalysisRunner {
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
     def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new ThrownExceptionsByOverridingMethods(project)
-        ps.scheduleLazyComputation[properties.ThrownExceptionsByOverridingMethods](
-            properties.ThrownExceptionsByOverridingMethods.Key,
+        val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
+        ps.scheduleLazyComputation[ThrownExceptionsByOverridingMethods](
+            ThrownExceptionsByOverridingMethods.Key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods
         )
         analysis

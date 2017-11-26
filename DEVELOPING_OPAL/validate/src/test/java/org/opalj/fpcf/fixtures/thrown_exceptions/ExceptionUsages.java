@@ -29,58 +29,93 @@
 package org.opalj.fpcf.fixtures.thrown_exceptions;
 
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
-import org.opalj.fpcf.properties.thrown_exceptions.MayThrowException;
+import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
 
 /**
- * Test methods for the TransitiveThrownException analysis
+ * Test methods for the thrown exceptions analysis.
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-public class ThrownExceptions {
+public class ExceptionUsages {
 
-    @DoesNotThrowException("no call or explicit throw instruction")
+    //
+    // CASES RELATED TO NOW EXCEPTIONS
+    //
+
+    @DoesNotThrowException("just returns constant")
     public static int staticDoesNotThrowException() {
         return 1;
     }
 
-    @MayThrowException("will throw exception")
-    public static int staticThrowsException() {
-        throw new NullPointerException();
-    }
-
-    @DoesNotThrowException("no call or explicit throw instruction")
+    @DoesNotThrowException("infinite self-recursive call")
     public static int staticCallDoesNotThrowException() {
         staticCallDoesNotThrowException();
         return 1337;
     }
 
-    @MayThrowException("will throw exception")
+    @DoesNotThrowException("just returns constant")
+    public int doesNotThrowException() {
+        return 2;
+    }
+
+    @DoesNotThrowException("callee does not throw exception")
+    public int callDoesNotThrowException() {
+        return doesNotThrowException();
+    }
+
+    @DoesNotThrowException("self-recursive methods call (StackOverflow is not supported by OPAL)")
+    public int selfRecursiveMethod(boolean b) {
+        if (b) {
+            return selfRecursiveMethod(false);
+        } else {
+            return 42;
+        }
+    }
+
+    @DoesNotThrowException("mutual recursive method calls which throw no exception")
+    public int cycleA(boolean b) {
+        if (b) {
+            return cycleB();
+        }
+        return 42;
+    }
+
+    @DoesNotThrowException("mutual recursive method calls which throw no exception")
+    public int cycleB() {
+        cycleA(false);
+        return 42;
+    }
+
+    //
+    // CASES RELATED TO EXCEPTIONS
+    //
+
+    @ExpectedExceptions()
+    public static int staticThrowsException() {
+        throw new NullPointerException();
+    }
+
+
+    @ExpectedExceptions()
     public static int staticCallThrowsException() {
         staticThrowsException();
         return 42;
     }
 
-    @DoesNotThrowException("no call or explicit throw instruction")
-    public int doesNotThrowException() {
-        return 2;
-    }
 
-    @MayThrowException("will throw exception")
+    @ExpectedExceptions()
     public int throwException() {
         throw new NullPointerException();
     }
 
-    @DoesNotThrowException("no call or explicit throw instruction")
-    public int callDoesNotThrowException() {
-        return doesNotThrowException();
-    }
 
-    @MayThrowException("will throw exception")
+    @ExpectedExceptions()
     public int callThrowException() {
         return throwException();
     }
 
-    @MayThrowException("will throw exception")
+    @ExpectedExceptions()
     public int simpleCycle(boolean b) {
         if (b) {
             simpleCycle(false);
@@ -90,19 +125,7 @@ public class ThrownExceptions {
         return 42;
     }
 
-    @DoesNotThrowException("no call or explicit throw instruction")
-    public int cycleA(boolean b) {
-        if (b) {
-            return cycleB();
-        }
-        return 42;
-    }
 
-    @DoesNotThrowException("no call or explicit throw instruction")
-    public int cycleB() {
-        cycleA(false);
-        return 42;
-    }
 
     // TODO Add tests for cycles, a->a and a->b->a
 
@@ -138,17 +161,17 @@ public class ThrownExceptions {
         return foobar.baz();
     }
 
-    @MayThrowException("will throw exception")
+    @ExpectedExceptions()
     public int subclassThrows() {
         return foo.baz();
     }
 
-    @MayThrowException("will throw exception")
+    @ExpectedExceptions()
     public int superclassThrows() {
         return foo.qux();
     }
 
-    @MayThrowException("will throw exception")
+    @ExpectedExceptions()
     public int superclassThrows2() {
         return fooBar.qux();
     }
