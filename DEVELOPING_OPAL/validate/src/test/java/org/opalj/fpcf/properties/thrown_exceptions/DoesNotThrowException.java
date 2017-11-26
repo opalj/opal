@@ -39,6 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  * Annotation to state that the annotated method throws no exception.
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
 @PropertyValidator(key = "ExpectedExceptions",validator = DoesNotThrowExceptionMatcher.class)
 @Documented

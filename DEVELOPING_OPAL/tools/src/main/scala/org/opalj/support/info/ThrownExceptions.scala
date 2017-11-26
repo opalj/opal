@@ -71,7 +71,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
 
         if (parameters.contains(L1TEParameter)) {
             L1ThrownExceptionsAnalysis.start(project, ps)
-            // IMPROVE ThrownExceptionsByOverridingMethods.startLazily(project, ps)
+            // IMPROVE ThrownExceptionsByOverridingMethods.startLazily(project, ps) is for no apparent reason totally crashing..
             ThrownExceptionsByOverridingMethodsAnalysis.start(project, ps)
         } else {
             val fallbackAnalysis = new ThrownExceptionsFallbackAnalysis(ps)
