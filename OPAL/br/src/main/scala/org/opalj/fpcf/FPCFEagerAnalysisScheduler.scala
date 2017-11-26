@@ -26,39 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package properties
-package thrown_exceptions
+package org.opalj
+package fpcf
 
-import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
+import org.opalj.br.analyses.PropertyStoreKey
 
 /**
- * Matches a methods's `ThrownExceptions` property.
+ * Factory for FPCF analyses which should be directly started/scheduled.
  *
- * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
+trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
-    def validateProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          AnnotationLike,
-        properties: List[Property]
-    ): Option[String] = {
-        val isPropertyValid =
-            properties.forall { p ⇒
-                p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
-            }
-        if (isPropertyValid)
-            None
-        else {
-            Some(a.elementValuePairs.head.value.toString)
-        }
+    /**
+     * Starts the analysis for the given `project`. This method is typically implicitly
+     * called by the [[FPCFAnalysesManager]].
+     */
+    final protected[fpcf] def start(project: SomeProject): FPCFAnalysis = {
+        start(project, project.get(PropertyStoreKey))
     }
 
+    /**
+     * Starts the analysis for the given `project`. This method is typically implicitly
+     * called by the [[FPCFAnalysesManager]].
+     */
+    protected[fpcf] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis
 }

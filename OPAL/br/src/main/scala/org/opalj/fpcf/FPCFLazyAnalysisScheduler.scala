@@ -26,39 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
-import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.PropertyStoreKey
 
 /**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ *  The underlying analysis will only be registered with the property store and
+ *  scheduled for a specific entity if queried.
  *
- * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-class ThrownExceptionAnalysisTests extends PropertiesTest {
+trait FPCFLazyAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(
-            as,
-            methodsWithAnnotations,
-            Set("ExpectedExceptions", "ClassHierarchyThrownExceptions")
-        )
+    /**
+     * Registers the analysis as a lazy property computation.
+     */
+    final protected[fpcf] def startLazily(project: SomeProject): FPCFAnalysis = {
+        startLazily(project, project.get(PropertyStoreKey))
     }
 
-    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
-        val as = executeAnalyses(Set(
-            ThrownExceptionsByOverridingMethodsAnalysis,
-            L1ThrownExceptionsAnalysis
-        ))
-        validateProperties(
-            as,
-            methodsWithAnnotations,
-            Set("ExpectedExceptions", "ClassHierarchyThrownExceptions")
-        )
-    }
+    /**
+     * Registers the analysis as a lazy computation, that is, the method
+     * will call `ProperytStore.scheduleLazyComputation`.
+     */
+    protected[fpcf] def startLazily(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): FPCFAnalysis
 
 }

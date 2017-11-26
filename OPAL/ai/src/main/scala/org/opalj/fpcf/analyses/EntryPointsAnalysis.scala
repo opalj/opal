@@ -63,7 +63,7 @@ class EntryPointsAnalysis private (val project: SomeProject) extends FPCFAnalysi
     }
 }
 
-object EntryPointsAnalysis extends FPCFAnalysisRunner {
+object EntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(EntryPoint.Key)
 

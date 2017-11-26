@@ -148,7 +148,7 @@ class AdvancedFieldMutabilityAnalysis private (val project: SomeProject) extends
 /**
  * Executor for the field mutability analysis.
  */
-object AdvancedFieldMutabilityAnalysis extends FPCFAnalysisRunner {
+object AdvancedFieldMutabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 

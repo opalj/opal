@@ -27,38 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.fpcf
-package properties
-package thrown_exceptions
 
-import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
+import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
 
 /**
- * Matches a methods's `ThrownExceptions` property.
+ * Tests if the properties specified in the test project (the classes in the (sub-)package of
+ * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
+ * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
  * @author Andreas Muttscheller
  */
-class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
+class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
-    def validateProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          AnnotationLike,
-        properties: List[Property]
-    ): Option[String] = {
-        val isPropertyValid =
-            properties.forall { p ⇒
-                p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
-            }
-        if (isPropertyValid)
-            None
-        else {
-            Some(a.elementValuePairs.head.value.toString)
-        }
+    describe("no analysis is scheduled") {
+        val as = executeAnalyses(Set.empty)
+        validateProperties(
+            as,
+            methodsWithAnnotations,
+            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods")
+        )
+    }
+
+    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
+        val as = executeAnalyses(Set(
+            ThrownExceptionsByOverridingMethodsAnalysis,
+            L1ThrownExceptionsAnalysis
+        ))
+        validateProperties(
+            as,
+            methodsWithAnnotations,
+            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods")
+        )
     }
 
 }

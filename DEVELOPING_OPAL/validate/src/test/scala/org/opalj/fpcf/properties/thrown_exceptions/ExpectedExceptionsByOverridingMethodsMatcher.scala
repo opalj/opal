@@ -26,22 +26,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 package properties
 package thrown_exceptions
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
 
 /**
- * Matches a methods's `ThrownExceptions` property.
+ * Matches a methods's `ThrownExceptionsByOverridingMethods` property.
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
+class ExpectedExceptionsByOverridingMethodsMatcher extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,
@@ -50,13 +50,11 @@ class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: List[Property]
     ): Option[String] = {
-        val isPropertyValid =
-            properties.forall { p ⇒
-                p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
-            }
-        if (isPropertyValid)
+        if (properties.forall { p ⇒
+            !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
+        }) {
             None
-        else {
+        } else {
             Some(a.elementValuePairs.head.value.toString)
         }
     }

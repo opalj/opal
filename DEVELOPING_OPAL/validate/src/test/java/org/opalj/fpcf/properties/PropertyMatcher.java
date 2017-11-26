@@ -52,6 +52,8 @@ public interface PropertyMatcher {
      * Called by the framework to test if executing the matcher - given the set of
      * actual analyses that are executed - is meaningful.
      *
+     * This test is used to filter the creation of useless test cases.
+     *
      * @param p The project.
      * @param as The OPAL `ObjectType`'s of the executed analyses.
      */

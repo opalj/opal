@@ -573,7 +573,7 @@ class MethodPurityAnalysis private (val project: SomeProject) extends FPCFAnalys
     }
 }
 
-object MethodPurityAnalysis extends FPCFAnalysisRunner {
+object MethodPurityAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity.key)
 
@@ -587,7 +587,7 @@ object MethodPurityAnalysis extends FPCFAnalysisRunner {
         analysis
     }
 
-    def registerAsLazyAnalysis(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new MethodPurityAnalysis(p)
         val propertyComputation = (e: Entity) ⇒ analysis.determinePurity(e.asInstanceOf[Method])
         ps.scheduleLazyComputation(Purity.key, propertyComputation)

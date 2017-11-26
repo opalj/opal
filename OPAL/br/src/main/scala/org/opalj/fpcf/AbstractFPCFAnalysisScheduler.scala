@@ -31,9 +31,6 @@ package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-
 /**
  * Provides the generic infrastructure that is implemented by all factories for
  * FPCF analyses.
@@ -47,14 +44,14 @@ import org.opalj.br.analyses.PropertyStoreKey
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysisRunner {
+private[fpcf] trait AbstractFPCFAnalysisScheduler {
 
     /**
      * The unique id of this factory.
      *
      * Every factory for a specific analysis is automatically associated with a unique id.
      */
-    final val uniqueId: Int = FPCFAnalysisRunner.nextId
+    final val uniqueId: Int = AbstractFPCFAnalysisScheduler.nextId
 
     /**
      * Returns a short descriptive name of the analysis for which this is the factory.
@@ -73,7 +70,7 @@ trait FPCFAnalysisRunner {
 
     /**
      * Returns a set of integers that contains the id of every [[Property]] that is derived by
-     * the underlying analysis which is described by this [[FPCFAnalysisRunner]].
+     * the underlying analysis which is described by this `AbstractFPCFAnalysisScheduler`.
      *
      * This method has to be overridden in every subclass since it is used by the
      * [[FPCFAnalysesManager]] to guarantee the save execution of all FPCFAnalysis.
@@ -89,35 +86,18 @@ trait FPCFAnalysisRunner {
      *         property during the computation.
      */
     def usedProperties: Set[PropertyKind] = Set.empty
-
-    /**
-     * Starts the analysis for the given `project`. This method is typically implicitly
-     * called by the [[FPCFAnalysesManager]].
-     */
-    final protected[fpcf] def start(project: SomeProject): FPCFAnalysis = {
-        start(project, project.get(PropertyStoreKey))
-    }
-
-    /**
-     * Starts the analysis for the given `project`. This method is typically implicitly
-     * called by the [[FPCFAnalysesManager]].
-     */
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis
 }
 
 /**
- * Companion object of FPCFAnalysisRunner that defines common helper functions and
+ * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines interal helper functions and
  * values.
  *
  * @author Michael Reif
  */
-object FPCFAnalysisRunner {
+private[fpcf] object AbstractFPCFAnalysisScheduler {
 
     private[this] val idGenerator: AtomicInteger = new AtomicInteger(0)
 
-    private[FPCFAnalysisRunner] def nextId: Int = idGenerator.getAndIncrement()
+    private[AbstractFPCFAnalysisScheduler] def nextId: Int = idGenerator.getAndIncrement()
 
 }

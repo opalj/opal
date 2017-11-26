@@ -217,7 +217,7 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends F
 /**
  * Companion object for the [[SimpleInstantiabilityAnalysis]] class.
  */
-object SimpleInstantiabilityAnalysis extends FPCFAnalysisRunner {
+object SimpleInstantiabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
     final def definingPackage(cf: ClassFile): String = cf.thisType.packageName
 

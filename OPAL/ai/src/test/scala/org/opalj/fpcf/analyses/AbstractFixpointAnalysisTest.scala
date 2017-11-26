@@ -86,7 +86,7 @@ abstract class AbstractFixpointAnalysisTest extends FlatSpec with Matchers {
      * This method has to be overridden in a subclass to define the analysis that
      * is going to be tested.
      */
-    def analysisRunners: Seq[FPCFAnalysisRunner]
+    def analysisRunners: Seq[FPCFEagerAnalysisScheduler]
 
     def runAnalysis(project: Project[URL]): Unit = {
         val analysesManager = project.get(FPCFAnalysesManagerKey)

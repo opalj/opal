@@ -52,7 +52,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     private[this] final val derivedProperties = mutable.Set.empty[Int]
 
     private[this] def registerProperties(
-        analysisRunner: FPCFAnalysisRunner
+        analysisRunner: FPCFEagerAnalysisScheduler
     ): Unit = derivedProperties.synchronized {
         assert(
             !analysisRunner.derivedProperties.exists { pKind ⇒ derivedProperties.contains(pKind.id) },
@@ -61,11 +61,11 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         derivedProperties ++= analysisRunner.derivedProperties.map(_.id)
     }
 
-    final def runAll(analyses: FPCFAnalysisRunner*): Unit = runAll(analyses, true)
+    final def runAll(analyses: FPCFEagerAnalysisScheduler*): Unit = runAll(analyses, true)
 
     final def runAll(
-        analyses:         Traversable[FPCFAnalysisRunner],
-        waitOnCompletion: Boolean                         = true
+        analyses:         Traversable[FPCFEagerAnalysisScheduler],
+        waitOnCompletion: Boolean                                 = true
     ): Unit = {
         analyses.foreach { run(_, false) }
         if (waitOnCompletion) {
@@ -77,8 +77,8 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     }
 
     def run(
-        analysisRunner:   FPCFAnalysisRunner,
-        waitOnCompletion: Boolean            = true
+        analysisRunner:   FPCFEagerAnalysisScheduler,
+        waitOnCompletion: Boolean                    = true
     ): Unit = this.synchronized {
         if (!isDerived(analysisRunner.derivedProperties)) {
             if (debug)

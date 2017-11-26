@@ -60,6 +60,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
      * @param cf A class file which is not the class file of `java.lang.Object`.
      */
     def step1(
+        // FIXME isn't this supposed to be class immutability ??? If not - document why!!!
         typeExtensibility: ObjectType ⇒ Answer
     )(
         cf: ClassFile
@@ -267,7 +268,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
  *
  * @author Michael Eichberg
  */
-object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
+object TypeImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(TypeImmutability)
 

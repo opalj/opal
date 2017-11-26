@@ -51,5 +51,6 @@ public @interface EffectivelyFinal{
      */
     String value() ; // default = "N/A";
 
+    /** The set of analyses that is able to correctly derive this property. */
     Class<? extends FPCFAnalysis>[] analyses() default {FieldMutabilityAnalysis.class, AdvancedFieldMutabilityAnalysis.class};
 }

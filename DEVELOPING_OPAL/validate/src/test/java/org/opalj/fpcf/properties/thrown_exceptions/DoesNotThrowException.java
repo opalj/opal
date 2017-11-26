@@ -29,6 +29,7 @@
 package org.opalj.fpcf.properties.thrown_exceptions;
 
 import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.fpcf.FPCFAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -47,5 +48,8 @@ public @interface DoesNotThrowException {
     /**
      * A short reasoning of this property.
      */
-    String value();
+    String reason();
+
+    /** The (set of) analyses that strictly need to be executed before the test makes sense. */
+    Class<? extends FPCFAnalysis>[] requires() default {};
 }

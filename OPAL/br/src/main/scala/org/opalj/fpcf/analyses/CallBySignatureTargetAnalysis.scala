@@ -166,7 +166,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
     }
 }
 
-object CallBySignatureTargetAnalysis extends FPCFAnalysisRunner {
+object CallBySignatureTargetAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(CallBySignature.Key)
 

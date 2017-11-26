@@ -255,12 +255,19 @@ class PurityAnalysis private ( final val project: SomeProject) extends FPCFAnaly
             }
         }
     }
+
+    def doDeterminePurity(e: Entity): PropertyComputationResult = {
+        e match {
+            case m: Method ⇒ doDeterminePurity(m)
+            case e         ⇒ throw new UnknownError("the purity property is only defined for methods")
+        }
+    }
 }
 
 /**
  * @author Michael Eichberg
  */
-object PurityAnalysis extends FPCFAnalysisRunner {
+object PurityAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(Purity)
 
@@ -269,6 +276,12 @@ object PurityAnalysis extends FPCFAnalysisRunner {
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new PurityAnalysis(project)
         propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determinePurity)
+        analysis
+    }
+
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new PurityAnalysis(project)
+        propertyStore.scheduleLazyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
 }

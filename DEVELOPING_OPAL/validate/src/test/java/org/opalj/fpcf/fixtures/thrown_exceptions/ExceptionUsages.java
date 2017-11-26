@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf.fixtures.thrown_exceptions;
 
+import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
 
@@ -43,28 +44,34 @@ public class ExceptionUsages {
     // CASES RELATED TO NOW EXCEPTIONS
     //
 
-    @DoesNotThrowException("just returns constant")
+    @DoesNotThrowException(reason="just returns constant", requires={})
     public static int staticDoesNotThrowException() {
         return 1;
     }
 
-    @DoesNotThrowException("infinite self-recursive call")
+    @DoesNotThrowException(reason="infinite self-recursive call", requires={})
     public static int staticCallDoesNotThrowException() {
         staticCallDoesNotThrowException();
         return 1337;
     }
 
-    @DoesNotThrowException("just returns constant")
+    @DoesNotThrowException(reason="just returns constant", requires={})
     public int doesNotThrowException() {
         return 2;
     }
 
-    @DoesNotThrowException("callee does not throw exception")
+    @DoesNotThrowException(
+            reason = "callee does not throw exception",
+            requires = {L1ThrownExceptionsAnalysis.class}
+    )
     public int callDoesNotThrowException() {
         return doesNotThrowException();
     }
 
-    @DoesNotThrowException("self-recursive methods call (StackOverflow is not supported by OPAL)")
+    @DoesNotThrowException(
+            reason = "self-recursive methods call (StackOverflow is not supported by OPAL)",
+            requires = {}
+    )
     public int selfRecursiveMethod(boolean b) {
         if (b) {
             return selfRecursiveMethod(false);
@@ -73,7 +80,10 @@ public class ExceptionUsages {
         }
     }
 
-    @DoesNotThrowException("mutual recursive method calls which throw no exception")
+    @DoesNotThrowException(
+            reason = "mutual recursive method calls which throw no exception",
+            requires = {}
+    )
     public int cycleA(boolean b) {
         if (b) {
             return cycleB();
@@ -81,7 +91,10 @@ public class ExceptionUsages {
         return 42;
     }
 
-    @DoesNotThrowException("mutual recursive method calls which throw no exception")
+    @DoesNotThrowException(
+            reason = "mutual recursive method calls which throw no exception",
+            requires = {}
+    )
     public int cycleB() {
         cycleA(false);
         return 42;
@@ -140,7 +153,7 @@ public class ExceptionUsages {
         }
     }
 
-    private static class FooBar extends Foo {
+    private final static class FooBar extends Foo {
         @Override
         public int baz() {
             return 42;
@@ -152,14 +165,18 @@ public class ExceptionUsages {
         }
     }
 
-    private Foo foo = new Foo();
-    private FooBar foobar = new FooBar();
-    private Foo fooBar = new FooBar();
-
-    @DoesNotThrowException("no call or explicit throw instruction")
+    @DoesNotThrowException(
+        reason="just calls empty default constructor and \"empty\" method of final class",
+        requires={L1ThrownExceptionsAnalysis.class}
+    )
     public int noSubclasses() {
+        FooBar foobar = new FooBar();
         return foobar.baz();
     }
+
+    private final Foo foo = new Foo();
+    private final FooBar foobar = new FooBar();
+    private final Foo fooBar = new FooBar();
 
     @ExpectedExceptions()
     public int subclassThrows() {

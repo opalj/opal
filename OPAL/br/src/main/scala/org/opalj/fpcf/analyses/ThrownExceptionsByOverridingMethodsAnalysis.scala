@@ -164,7 +164,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisRunner {
+object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisScheduler {
 
     override def usedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
