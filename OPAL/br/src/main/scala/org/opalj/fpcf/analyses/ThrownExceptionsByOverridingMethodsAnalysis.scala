@@ -182,7 +182,7 @@ object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisScheduler
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
     def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
-        ps.scheduleLazyComputation[ThrownExceptionsByOverridingMethods](
+        ps.scheduleLazyPropertyComputation[ThrownExceptionsByOverridingMethods](
             ThrownExceptionsByOverridingMethods.Key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods
         )

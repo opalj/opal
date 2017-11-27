@@ -48,7 +48,7 @@ class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: List[Property]
+        properties: Traversable[Property]
     ): Option[String] = {
         val isPropertyValid =
             properties.forall { p ⇒

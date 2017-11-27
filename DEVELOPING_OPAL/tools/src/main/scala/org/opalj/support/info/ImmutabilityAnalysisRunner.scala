@@ -39,7 +39,6 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis

@@ -351,10 +351,11 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
         doCheckDescriptorImmutability(method)
     }
 
+    /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
             case m: Method ⇒ doDeterminePurity(m)
-            case e         ⇒ throw new UnknownError("the purity property is only defined for methods")
+            case e         ⇒ throw new UnknownError("purity is only defined for methods")
         }
     }
 }
@@ -375,8 +376,8 @@ object L0PurityAnalysis extends FPCFAnalysisScheduler {
     }
 
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new PurityAnalysis(project)
-        propertyStore.scheduleLazyComputation(Purity.key, analysis.doDeterminePurity)
+        val analysis = new L0PurityAnalysis(project)
+        propertyStore.scheduleLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
 }

@@ -38,6 +38,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions._
 
 /**
  * Specifies for each method the exceptions that are potentially thrown by the respective method.
@@ -68,6 +69,13 @@ sealed abstract class ThrownExceptions extends Property {
     final type Self = ThrownExceptions
 
     final def key = ThrownExceptions.Key
+
+    /**
+     * Returns `true` if and only if the method does not yet throw exceptions. I.e., if the
+     * this property is still refineable then this property may still change. Otherwise,
+     * the analysis was able to determine that no exceptions are thrown.
+     */
+    def throwsNoExceptions: Boolean
 }
 
 object ThrownExceptions {
@@ -122,6 +130,8 @@ class AllThrownExceptions(
         val isRefineable: Boolean
 ) extends ThrownExceptions {
 
+    override def throwsNoExceptions: Boolean = types.isEmpty
+
     override def toString: String = s"AllThrownExceptions($types)"
 
     override def equals(other: Any): Boolean = {
@@ -139,6 +149,9 @@ class AllThrownExceptions(
 final case class NoExceptionsAreThrown(
         explanation: String
 ) extends AllThrownExceptions(BRTypesSet.empty, isRefineable = false) {
+
+    override def throwsNoExceptions: Boolean = true
+
     override def toString: String = s"NoExceptionsAreThrown($explanation)"
 }
 
@@ -154,11 +167,15 @@ object NoExceptionsAreThrown {
 
 final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExceptions {
 
+    override def throwsNoExceptions: Boolean = false // <= they are unknown
+
     def isRefineable: Boolean = false
 
 }
 
 object ThrownExceptionsAreUnknown {
+
+    final val MethodIsNative = ThrownExceptionsAreUnknown("the method is native")
 
     final val UnresolvableCycle = {
         ThrownExceptionsAreUnknown("a cycle was detected which the analysis could not resolve")
@@ -171,8 +188,6 @@ object ThrownExceptionsAreUnknown {
     final val UnresolvedInvokeDynamic = {
         ThrownExceptionsAreUnknown("the call targets of the unresolved invokedynamic are unknown")
     }
-
-    final val MethodIsNative = ThrownExceptionsAreUnknown("the method is native")
 
     final val MethodBodyIsNotAvailable = {
         ThrownExceptionsAreUnknown("the method body (of the concrete method) is not available")
@@ -189,15 +204,11 @@ object ThrownExceptionsAreUnknown {
     }
 
     final val SubclassesHaveUnknownExceptions = {
-        ThrownExceptionsAreUnknown(
-            "one or more subclass throw unknown exceptions"
-        )
+        ThrownExceptionsAreUnknown("one or more subclass throw unknown exceptions")
     }
 
     final val MethodIsOverrideable = {
-        ThrownExceptionsAreUnknown(
-            "the method is overrideable by a not yet existing type"
-        )
+        ThrownExceptionsAreUnknown("the method is overrideable by a not yet existing type")
     }
 
 }

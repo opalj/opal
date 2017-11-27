@@ -76,7 +76,7 @@ class L1ThrownExceptionsAnalysis private (
 
         // If an unknown subclass can override this method we cannot gather information about
         // the thrown exceptions. Return the analysis immediately.
-        if (project.get(IsOverridableMethodKey)(m).isYes) {
+        if (project.get(IsOverridableMethodKey)(m).isYesOrUnknown) {
             return Result(m, ThrownExceptionsAreUnknown.MethodIsOverrideable);
         }
 
@@ -367,7 +367,7 @@ object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
     /** Registers an analysis to compute the thrown exceptions lazily. */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.scheduleLazyComputation[ThrownExceptions](
+        propertyStore.scheduleLazyPropertyComputation[ThrownExceptions](
             ThrownExceptions.Key,
             analysis.lazilyDetermineThrownExceptions
         )

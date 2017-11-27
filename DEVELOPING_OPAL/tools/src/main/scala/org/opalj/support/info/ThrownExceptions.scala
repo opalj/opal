@@ -37,11 +37,11 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AllThrownExceptions
 import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
-import org.opalj.fpcf.properties.NoExceptionsAreThrown.MethodIsAbstract
 
 /**
  * Prints out the information about the exceptions thrown by methods.
@@ -80,29 +80,32 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
 
         ps.waitOnPropertyComputationCompletion(true)
 
-        val methodsWithCompleteThrownExceptionsInfo = ps.collect {
-            case (m: Method, ts: AllThrownExceptions) if ts != MethodIsAbstract ⇒ (m, ts)
+        val methodsWithAllThrownExceptions = {
+            ps.entities((p: Property) ⇒ p.isInstanceOf[AllThrownExceptions]).map { e ⇒
+                e.asInstanceOf[Method]
+            }
         }
-        val methodsWhichDoNotThrowExceptions = methodsWithCompleteThrownExceptionsInfo.collect {
-            case e @ (m: Method, ts: AllThrownExceptions) if ts.types.isEmpty ⇒ e
+        val methodsWhichDoNotThrowExceptions = methodsWithAllThrownExceptions.filter { m ⇒
+            ps(m, fpcf.properties.ThrownExceptions.Key).p.throwsNoExceptions
         }
 
-        val methodsWithCompleteThrownExceptionsInfoCount =
-            methodsWithCompleteThrownExceptionsInfo.size
-        val privateMethodsWithCompleteThrownExceptionsInfoCount =
-            methodsWithCompleteThrownExceptionsInfo.view.count(_._1.isPrivate)
+        val methodsWithAllThrownExceptionsCount = methodsWithAllThrownExceptions.size
+        val privateMethodsWithAllThrownExceptionsCount =
+            methodsWithAllThrownExceptions.count(_.isPrivate)
         val methodsWhichDoNotThrowExceptionsCount =
-            methodsWhichDoNotThrowExceptions.view.count(_._1.isPrivate)
+            methodsWhichDoNotThrowExceptions.view.count(_.isPrivate)
 
-        val report = methodsWithCompleteThrownExceptionsInfo.map {
-            case (m: Method, ts: AllThrownExceptions) ⇒ { s"${m.toJava} ⇒ $ts" }
+        val report = methodsWithAllThrownExceptions.map { e ⇒
+            val m: Method = e.asInstanceOf[Method]
+            val thrownExceptions = ps(m, fpcf.properties.ThrownExceptions.Key).p
+            s"${m.toJava} ⇒ $thrownExceptions"
         }.toList.sorted.mkString("\n")
 
         BasicReport(
             report+
                 "\n\nNumber of methods for which the set of thrown exceptions is known: "+
-                methodsWithCompleteThrownExceptionsInfoCount+"\n"+
-                s" ... private methods: $privateMethodsWithCompleteThrownExceptionsInfoCount\n"+
+                methodsWithAllThrownExceptionsCount+"\n"+
+                s" ... private methods: $privateMethodsWithAllThrownExceptionsCount\n"+
                 s" ... which throw no exceptions: ${methodsWhichDoNotThrowExceptions.size}\n"+
                 s" ... ... private methods: $methodsWhichDoNotThrowExceptionsCount"
         )

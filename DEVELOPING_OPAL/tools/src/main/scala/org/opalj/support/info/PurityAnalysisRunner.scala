@@ -37,14 +37,9 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-<<<<<<< HEAD:DEVELOPING_OPAL/tools/src/main/scala/org/opalj/fpcf/PurityAnalysisRunner.scala
-=======
-import org.opalj.br.Method
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.EP
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
->>>>>>> 998bb1ee7fc7e62ed17c7ca6e6d49fb87b9e596a:DEVELOPING_OPAL/tools/src/main/scala/org/opalj/support/info/PurityAnalysisRunner.scala
 import org.opalj.fpcf.analyses.ClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis

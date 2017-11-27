@@ -48,7 +48,7 @@ class ExpectedExceptionsByOverridingMethodsMatcher extends AbstractPropertyMatch
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: List[Property]
+        properties: Traversable[Property]
     ): Option[String] = {
         if (properties.forall { p ⇒
             !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
