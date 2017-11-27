@@ -31,6 +31,7 @@ package org.opalj.fpcf.fixtures.thrown_exceptions;
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
+import org.opalj.fpcf.properties.thrown_exceptions.ThrownExceptionsAreUnknown;
 
 /**
  * Test methods for the thrown exceptions analysis.
@@ -55,12 +56,12 @@ public class ExceptionUsages {
         return 1337;
     }
 
-    @DoesNotThrowException(reason="just returns constant", requires={})
+    @ThrownExceptionsAreUnknown(reason="just returns constant", requires={})
     public int doesNotThrowException() {
         return 2;
     }
 
-    @DoesNotThrowException(
+    @ThrownExceptionsAreUnknown(
             reason = "callee does not throw exception",
             requires = {L1ThrownExceptionsAnalysis.class}
     )
@@ -68,7 +69,7 @@ public class ExceptionUsages {
         return doesNotThrowException();
     }
 
-    @DoesNotThrowException(
+    @ThrownExceptionsAreUnknown(
             reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)",
             requires = {}
     )
@@ -80,7 +81,7 @@ public class ExceptionUsages {
         }
     }
 
-    @DoesNotThrowException(
+    @ThrownExceptionsAreUnknown(
             reason = "mutual recursive method calls which throw no exception",
             requires = {}
     )
@@ -91,7 +92,7 @@ public class ExceptionUsages {
         return 42;
     }
 
-    @DoesNotThrowException(
+    @ThrownExceptionsAreUnknown(
             reason = "mutual recursive method calls which throw no exception",
             requires = {}
     )
@@ -165,7 +166,7 @@ public class ExceptionUsages {
         }
     }
 
-    @DoesNotThrowException(
+    @ThrownExceptionsAreUnknown(
         reason="just calls empty default constructor and \"empty\" method of final class",
         requires={L1ThrownExceptionsAnalysis.class}
     )
