@@ -67,7 +67,7 @@ import org.opalj.collection.UID
 import org.opalj.util.AnyToAnyThis
 
 /**
- * @inheritdoc
+ * See [[PropertyStore]] for a general description.
  *
  * ==Multi-Threading==
  * The PropertyStore uses its own fixed size ThreadPool with at most
@@ -75,51 +75,6 @@ import org.opalj.util.AnyToAnyThis
  *
  * @author Michael Eichberg
  */
-/*
- * The LockBasedProperStore prevents deadlocks by ensuring that updates of the store are always
- * atomic and by ensuring that each computation acquires all necessary locks (write and/or
- * read) locks in the same order!
- * The locking strategy (w.r.t. the shared locks) is as follows:
- *  1.  Every entity is directly associated with a ReentrantReadWriteLock that
- *      is always used if a property for the respective entity is read or written.
- *      (Independent of the kind of property that is accessed.)
- *  1.  Continuation functions are never invoked concurrently.
- *  1.  Associated information (e.g., the internally created observers) also use
- *      the lock associated with the entity.
- *  1.  Each computation is potentially executed concurrently and it is required
- *      that each computation is thread-safe.
- *  1.  The store as a whole is associated with a lock to enable selected methods
- *      to get a consistent view.
- *  1.  All set properties related operation are synchronized using the set property's mutex.
- *
- *  THE LOCK ORDER IS:
- *  [1.] the global SET PROPERTY OBSERVERS related Lock (read/write)
- *  [2.] the specific SET PROPERTY related lock (mutex)
- *  [3.] the global STORE lock (accessEntity/accessStore=exclusive access)
- *  [4.] the specific ENTITY (read/write) related lock (the entity lock must only be acquired
- *       when the store lock (accessEntity/accessStore) is held.
- *       If multiple locks are required at the same time, then all locks are acquired
- *       in the order of the entity id; i.e., we are using a globally consistent order.
- *  [5.] the global TASKS related lock (<Tasks>.synchronized)
- */
-// COMMON ABBREVIATONS USED IN THE FOLLOWING:
-// ==========================================
-// e =         Entity
-// l =         Entity Lock (associated with an entity)
-// p =         Property
-// ps =        Properties (the properties of an entity)
-// eps =       EntityProperties (the pairing of an entity's lock and its properties)
-// pk =        Property Key
-// pc =        Property Computation
-// lpc =       Lazy Property Computation
-// dpc =       Direct Property Computation
-// c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
-// (p)o =      PropertyObserver
-// os =        PropertyObservers
-// pos =       PropertyAndObservers
-// EPK =       Entity and a PropertyKey
-// EP =        Entity and an associated Property
-// EOptionP =  Entity and either a PropertyKey or (if available) a Property
 class LockBasedPropertyStore private (
         // type Observers = mutable.ListBuffer[PropertyObserver]
         // class PropertyAndObservers(p: Property, os: Observers)
@@ -132,6 +87,51 @@ class LockBasedPropertyStore private (
         implicit
         val logContext: LogContext
 ) extends PropertyStore { store ⇒
+    /*
+     * The LockBasedProperStore prevents deadlocks by ensuring that updates of the store are always
+     * atomic and by ensuring that each computation acquires all necessary locks (write and/or
+     * read) locks in the same order!
+     * The locking strategy (w.r.t. the shared locks) is as follows:
+     *  1.  Every entity is directly associated with a ReentrantReadWriteLock that
+     *      is always used if a property for the respective entity is read or written.
+     *      (Independent of the kind of property that is accessed.)
+     *  1.  Continuation functions are never invoked concurrently.
+     *  1.  Associated information (e.g., the internally created observers) also use
+     *      the lock associated with the entity.
+     *  1.  Each computation is potentially executed concurrently and it is required
+     *      that each computation is thread-safe.
+     *  1.  The store as a whole is associated with a lock to enable selected methods
+     *      to get a consistent view.
+     *  1.  All set properties related operation are synchronized using the set property's mutex.
+     *
+     *  THE LOCK ORDER IS:
+     *  [1.] the global SET PROPERTY OBSERVERS related Lock (read/write)
+     *  [2.] the specific SET PROPERTY related lock (mutex)
+     *  [3.] the global STORE lock (accessEntity/accessStore=exclusive access)
+     *  [4.] the specific ENTITY (read/write) related lock (the entity lock must only be acquired
+     *       when the store lock (accessEntity/accessStore) is held.
+     *       If multiple locks are required at the same time, then all locks are acquired
+     *       in the order of the entity id; i.e., we are using a globally consistent order.
+     *  [5.] the global TASKS related lock (<Tasks>.synchronized)
+     */
+    // COMMON ABBREVIATONS USED IN THE FOLLOWING:
+    // ==========================================
+    // e =         Entity
+    // l =         Entity Lock (associated with an entity)
+    // p =         Property
+    // ps =        Properties (the properties of an entity)
+    // eps =       EntityProperties (the pairing of an entity's lock and its properties)
+    // pk =        Property Key
+    // pc =        Property Computation
+    // lpc =       Lazy Property Computation
+    // dpc =       Direct Property Computation
+    // c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
+    // (p)o =      PropertyObserver
+    // os =        PropertyObservers
+    // pos =       PropertyAndObservers
+    // EPK =       Entity and a PropertyKey
+    // EP =        Entity and an associated Property
+    // EOptionP =  Entity and either a PropertyKey or (if available) a Property
 
     private[this] final val ValidateConsistency = LockBasedPropertyStore.ValidateConsistency
 
@@ -627,21 +627,7 @@ class LockBasedPropertyStore private (
 
     // TODO FOREACH
 
-    /**
-     * Directly associate the given property `p` with the given entity `e` if `e` has no property
-     * of the respective kind and no other lazy or direct computation is currently executed.
-     *
-     * This method must not be used '''if there might be a regular scheduled computation that
-     * computes the property `p` for `e`'''.
-     *
-     * A use case is an analysis that does not interact with the property store while
-     * executing the analysis, but wants to store some results in the store.
-     * (If the property store is "just" used for parallelizing the execution of the analysis
-     * it is still possible to use `set`.)
-     *
-     * If a property is already associated with the given entity, an exception is thrown
-     * to prevent programming errors.
-     *
+    /*
      * @see [[put]] For further information regarding the usage of `set` and `put`.
      */
     // Locks: accessEntity and this.update(...): Entity
@@ -650,18 +636,23 @@ class LockBasedPropertyStore private (
         val eps = data.get(e)
         val el = eps.l
         val ps = eps.ps
-        accessEntity {
+        val posP = accessEntity {
             withWriteLock(el) {
                 val pos = ps(pkId)
                 // Check that there is no property and no property is currently computed.
                 if ((pos eq null) || (pos.p eq null)) {
                     // we do not have a property...
                     handleResult(ImmediateResult(e, p))
-                } else {
-                    val message = s"$e: property $p is ignored because it already has ${pos.p}"
-                    throw new AssertionError(message)
+                    return ;
                 }
+                pos.p
             }
+        }
+        if (posP == p) {
+            // ignore
+        } else {
+            val message = s"cannot set $e to $p becaus it already has the value $posP"
+            throw new IllegalArgumentException(message)
         }
     }
 

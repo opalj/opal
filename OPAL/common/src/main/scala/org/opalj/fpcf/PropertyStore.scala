@@ -258,7 +258,7 @@ abstract class PropertyStore {
     def entities[P <: Property](p: P): Traversable[Entity]
 
     /**
-     * The set of all entities which already have a property that passes the given filter.
+     * The set of all entities which already have a property that pass the given filter.
      *
      * This method returns a snapshot.
      *
@@ -267,19 +267,19 @@ abstract class PropertyStore {
     def entities(propertyFilter: Property ⇒ Boolean): Traversable[Entity]
 
     /**
-     * Directly associate the given property `p` with the given entity `e` if `e` has no property
-     * of the respective kind!
+     * Directly associates the given property `p` with property kind `pk` with the given entity
+     * `e` if `e` has no property of the respective kind. The property is treated as being final.
      *
-     * This method must not be used '''if there might be a regular scheduled computation that
-     * computes the property `p` for `e`'''.
+     * @note    This method must not be used '''if there might be another computation that
+     *          computes the property kind `pk` for `e` and which return the respective property
+     *          as a result'''.
      *
      * A use case is an analysis that does not interact with the property store while
-     * executing the analysis, but wants to store some results in the store.
-     * (If the property store is "just" used for parallelizing the execution of the analysis
-     * it is still possible to use `set`.)
+     * executing the analysis, but wants to store the results in the store. This analysis '''must
+     * be executed before any other analysis is scheduled'''.
      *
-     * If a property is already associated with the given entity, an IllegalStateException is thrown
-     * to prevent programming errors.
+     * If a different property is already associated with the given entity, an
+     * IllegalArgumentException is thrown.
      */
     def set(e: Entity, p: Property): Unit
 
