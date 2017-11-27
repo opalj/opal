@@ -30,8 +30,10 @@ package org.opalj
 package fpcf
 
 import scala.collection.mutable
+
 import net.ceedubs.ficus.Ficus._
-import org.opalj.log.OPALLogger
+
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.log.OPALLogger.error
 import org.opalj.br.analyses.SomeProject
@@ -43,12 +45,12 @@ import org.opalj.br.analyses.PropertyStoreKey
  */
 class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
-	implicit def logContext : LogContext = project.logContext
+    implicit def logContext: LogContext = project.logContext
 
     val propertyStore = project.get(PropertyStoreKey)
     //  private[this] def propertyStore = project.get(PropertyStoreKey)
 
-    final val debug = {
+    final val doDebug = {
         project.config.as[Option[Boolean]](FPCFAnalysesManager.ConfigKey).getOrElse(false)
     }
 
@@ -85,8 +87,8 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         waitOnCompletion: Boolean            = true
     ): Unit = this.synchronized {
         if (!isDerived(analysisRunner.derivedProperties)) {
-            if (debug) {
-                debug("analysis configuration",s"scheduling the analysis ${analysisRunner.name}")
+            if (doDebug) {
+                debug("analysis configuration", s"scheduling the analysis ${analysisRunner.name}")
             }
 
             registerProperties(analysisRunner)
@@ -98,8 +100,8 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
                 )
             }
         } else {
-        	val runner = analysisRunner.name
-            error("analysis configuration",s"$runner is running/was executed for this project")
+            val runner = analysisRunner.name
+            error("analysis configuration", s"$runner is running/was executed for this project")
         }
     }
 

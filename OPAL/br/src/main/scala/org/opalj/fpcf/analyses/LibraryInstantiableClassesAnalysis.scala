@@ -31,9 +31,7 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.cg.InstantiableClasses
-import org.opalj.fpcf.properties.Instantiability
 import org.opalj.fpcf.properties.NotInstantiable
 
 /**
