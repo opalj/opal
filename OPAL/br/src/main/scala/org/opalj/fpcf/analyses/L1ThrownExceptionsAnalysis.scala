@@ -77,7 +77,7 @@ class L1ThrownExceptionsAnalysis private (
         // If an unknown subclass can override this method we cannot gather information about
         // the thrown exceptions. Return the analysis immediately.
         if (project.get(IsOverridableMethodKey)(m).isYes) {
-            return Result(m, UnknownThrownExceptionsByOverridingMethods);
+            return Result(m, ThrownExceptionsAreUnknown.MethodIsOverrideable);
         }
 
         //

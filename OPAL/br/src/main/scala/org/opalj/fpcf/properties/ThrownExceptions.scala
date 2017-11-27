@@ -194,6 +194,12 @@ object ThrownExceptionsAreUnknown {
         )
     }
 
+    final val MethodIsOverrideable = {
+        ThrownExceptionsAreUnknown(
+            "the method is overrideable by a not yet existing type"
+        )
+    }
+
 }
 
 /**
