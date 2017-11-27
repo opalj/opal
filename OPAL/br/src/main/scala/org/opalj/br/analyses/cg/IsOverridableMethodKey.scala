@@ -29,51 +29,31 @@
 package org.opalj
 package br
 package analyses
-
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.JavaConverters._
-import org.opalj.br.ObjectType
+package cg
 
 /**
- * Stores the information which types of objects are (potentially) injected based on the
- * annotations that are found in the project. For example, by means of
- * reflection or by a web server or some other comparable framework.
- *
- * This information is used to compute the entry points of JEE applications.
+ * The ''key'' object to get a function that determines whether a method can be overridden by a not
+ * yet existing type. A method can be overridden if it's declaring type ___dt___is extensible by an
+ * (unknown) type ___ut___ (e.g., when the analysis assumes an open world) and if the method is not
+ * overridden by another subtype ___s___ such that ___ut <: s <: st___ and if the method can be
+ * overridden according to the JVM's semantics.
  *
  * @author Michael Reif
  */
-class InjectedClassesInformation(val injectedTypes: Set[ObjectType]) {
+object IsOverridableMethodKey extends ProjectInformationKey[Method ⇒ Answer, Nothing] {
 
-    final def isInjected(classFile: ClassFile): Boolean = isInjected(classFile.thisType)
+    /**
+     * The [[IsOverridableMethodKey]] has the [[TypeExtensibilityKey]] as prerequisite.
+     *
+     * @return Seq(TypeExtensibilityKey).
+     */
+    def requirements = Seq(TypeExtensibilityKey)
 
-    def isInjected(objectType: ObjectType): Boolean = injectedTypes.contains(objectType)
-}
-
-/**
- * Factory to create [[InjectedClassesInformation]].
- *
- * @author Michael Reif
- */
-object InjectedClassesInformationAnalysis {
-
-    def apply(project: SomeProject, isInterrupted: () ⇒ Boolean): InjectedClassesInformation = {
-
-        val injectedTypes = new ConcurrentLinkedQueue[ObjectType]
-
-        project.parForeachClassFile(isInterrupted) { cf ⇒
-            for {
-                field ← cf.fields
-                fieldType = field.fieldType
-                if fieldType.isObjectType
-                if field.annotations.size > 0
-                // IMPROVE Check for specific annotations that are related to "Injections"
-            } {
-                injectedTypes.add(fieldType.asObjectType)
-
-            }
-        }
-
-        new InjectedClassesInformation(injectedTypes.asScala.toSet)
+    override protected def compute(project: SomeProject): Method ⇒ Answer = {
+        new IsOverridableMethodAnalysis(
+            project,
+            project.get(ClassExtensibilityKey),
+            project.get(TypeExtensibilityKey)
+        )
     }
 }

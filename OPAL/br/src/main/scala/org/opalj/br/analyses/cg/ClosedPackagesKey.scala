@@ -29,6 +29,7 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import net.ceedubs.ficus.Ficus._
 
@@ -36,12 +37,12 @@ import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to get a function that determines whether a package is closed or not.
- * See [[ClosedPackagesInformation]] for further details.
+ * See [[ClosedPackages]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
- * or not. The respective analysis has to extend the abstract [[ClosedPackagesInformation]] class.
+ * or not. The respective analysis has to extend the abstract [[ClosedPackages]] class.
  * To configure which analysis is used use the key
- * `org.opalj.br.analyses.ClosedPackagesKey.analysis` to specify the name of the class which
+ * `org.opalj.br.analyses.cg.ClosedPackagesKey.analysis` to specify the name of the class which
  * implements the analysis.
  *
  * @example
@@ -54,54 +55,44 @@ import org.opalj.log.OPALLogger.error
  *      }
  *      }}}
  *
- * @note Please see the documentation of [[ClosedPackagesInformation]] and its subtypes for more
+ * @note Please see the documentation of [[ClosedPackages]] and its subtypes for more
  *       information.
+ *
  * @note The default configuration is the conservative [[OpenCodeBase]] analysis.
  *
  * @author Michael Reif
  */
-object ClosedPackagesKey extends ProjectInformationKey[String ⇒ Boolean, Nothing] {
+object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] {
 
-    final val DefaultClosedPackagesAnalysis = "org.opalj.br.analyses.OpenCodeBase"
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClosedPackagesKey."
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.ClosedPackagesKey."
+    final val DefaultClosedPackagesAnalysis = "org.opalj.br.analyses.cg.OpenCodeBase"
 
     /**
      * The [[ClosedPackagesKey]] has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
-    override protected def compute(project: SomeProject): String ⇒ Boolean = {
-        implicit val logContext = project.logContext
-
+    /**
+     * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
+     * The instantiated class has to satisfy the interface and needs to provide a single
+     * constructor parameterized over a Project.
+     */
+    override protected def compute(project: SomeProject): ClosedPackages = {
         try {
-            val analysisClassName =
-                project.config.as[Option[String]](ConfigKeyPrefix+"analysis").
-                    getOrElse(DefaultClosedPackagesAnalysis)
-            reify(project, analysisClassName)
+            val key = ConfigKeyPrefix+"analysis"
+            val configuredAnalysis = project.config.as[Option[String]](key)
+            val analysisClassName = configuredAnalysis.getOrElse(DefaultClosedPackagesAnalysis)
+            val constructor = Class.forName(analysisClassName).getConstructors.head
+            constructor.newInstance(project).asInstanceOf[ClosedPackages]
         } catch {
             case t: Throwable ⇒
-                error(
-                    "project configuration",
-                    "failed to compute \"closed packages information\""+
-                        "; all packages are now considered open",
-                    t
-                )
-                (s: String) ⇒ false
+                val m = "cannot compute closed packages; all packages are now considered open"
+                error("project configuration", m, t)(project.logContext)
+                new OpenCodeBase(project)
         }
     }
 
-    /**
-     * Reflectively instantiates a ''ClosedPackagesAnalysis''. The instantiated class has to
-     * satisfy the interface and needs to provide a single constructor parameterized over a Project.
-     */
-    private[this] def reify(
-        project:      SomeProject,
-        analysisName: String
-    ): ClosedPackagesInformation = {
-        val constructor = Class.forName(analysisName).getConstructors.head
-        constructor.newInstance(project).asInstanceOf[ClosedPackagesInformation]
-    }
 }

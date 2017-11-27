@@ -34,9 +34,9 @@ package la
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.PC
-import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.ai.analyses.cg.Callees
 import org.opalj.ai.domain.l2.PerformInvocations
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should

@@ -35,10 +35,10 @@ import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.br.analyses.cg.InstantiableClassesKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.EntryPointsAnalysis
 import org.opalj.fpcf.properties.IsEntryPoint

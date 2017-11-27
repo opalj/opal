@@ -27,27 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package br
 package analyses
+package cg
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.br.analyses.cg.InstantiableClasses
-import org.opalj.fpcf.properties.Instantiability
-import org.opalj.fpcf.properties.NotInstantiable
+import org.opalj.concurrent.defaultIsInterrupted
+import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
 
 /**
- * Analyzes which classes are instantiable.
+ * The ''key'' object to get information about the classes that could be instantiated
+ * (either, directly or indirectly).
  *
- * @author Michael Reif
+ * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ *
+ * @author Michael Eichberg
  */
-object LibraryInstantiableClassesAnalysis {
+object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
 
-    def doAnalyze(project: SomeProject): InstantiableClasses = {
-        val notInstantiableClasses = SimpleInstantiabilityAnalysis.run(project).collect {
-            case EP(e, NotInstantiable) ⇒ e.thisType
-        }
+    /**
+     * The [[InstantiableClasses]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
-        new InstantiableClasses(project, notInstantiableClasses.toSet)
+    /**
+     * Computes the information which classes are (not) instantiable.
+     *
+     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
+     */
+    override protected def compute(project: SomeProject): InstantiableClasses = {
+        //FIX ME
+        val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
+        if (isLibrary)
+            LibraryInstantiableClassesAnalysis.doAnalyze(project)
+        else
+            InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }
+

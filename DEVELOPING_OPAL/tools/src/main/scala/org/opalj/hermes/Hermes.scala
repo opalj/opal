@@ -31,8 +31,6 @@ package hermes
 
 import java.io.File
 import java.net.URL
-import java.io.FileWriter
-import java.io.BufferedWriter
 import java.util.prefs.Preferences
 import java.util.Comparator
 
@@ -41,8 +39,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
-import com.fasterxml.jackson.core.JsonFactory
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import org.chocosolver.solver.Model
 import org.chocosolver.solver.variables.IntVar
 import javafx.stage.Screen
@@ -140,61 +136,6 @@ object Hermes extends JFXApp with HermesCore {
     // We use standard preferences for saving the application state; not for
     // permanent configuration settings!
     val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
-
-    def exportFlare(file: File): Unit = {
-        val writer = new BufferedWriter(new FileWriter(file))
-        val jsonGenerator = new JsonFactory().createGenerator(writer)
-        jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter())
-        // create root
-        jsonGenerator.writeStartObject()
-        jsonGenerator.writeStringField("name", "flare")
-        jsonGenerator.writeArrayFieldStart("children")
-        featureMatrix foreach { project ⇒
-            // create node for each project
-            jsonGenerator.writeStartObject()
-            jsonGenerator.writeStringField("name", project.id.value)
-            jsonGenerator.writeArrayFieldStart("children")
-            // statistics
-            jsonGenerator.writeStartObject()
-            jsonGenerator.writeStringField("name", "statistics")
-            jsonGenerator.writeArrayFieldStart("children")
-            project.projectConfiguration.statistics foreach { stat ⇒
-                jsonGenerator.writeStartObject()
-                jsonGenerator.writeStringField("name", stat.getKey)
-                jsonGenerator.writeNumberField("value", stat.getValue)
-                jsonGenerator.writeEndObject()
-            }
-            jsonGenerator.writeEndArray()
-            jsonGenerator.writeEndObject()
-            // sort features by feature groups
-            jsonGenerator.writeStartObject()
-            jsonGenerator.writeStringField("name", "features")
-            jsonGenerator.writeArrayFieldStart("children")
-            project.featureGroups foreach {
-                case (group, features) ⇒
-                    jsonGenerator.writeStartObject()
-                    jsonGenerator.writeStringField("name", group.id)
-                    jsonGenerator.writeArrayFieldStart("children")
-                    features foreach { f ⇒
-                        jsonGenerator.writeStartObject()
-                        jsonGenerator.writeStringField("name", f.value.id)
-                        jsonGenerator.writeNumberField("value", f.value.count)
-                        jsonGenerator.writeEndObject()
-                    }
-                    jsonGenerator.writeEndArray()
-                    jsonGenerator.writeEndObject()
-            }
-            jsonGenerator.writeEndArray()
-            jsonGenerator.writeEndObject()
-            jsonGenerator.writeEndArray()
-            jsonGenerator.writeEndObject()
-            jsonGenerator.flush()
-        }
-        jsonGenerator.writeEndArray()
-        jsonGenerator.writeEndObject()
-
-        jsonGenerator.close()
-    }
 
     override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater {
         // We have to ensure that we are not calling this too often to avoid that the
@@ -657,19 +598,12 @@ object Hermes extends JFXApp with HermesCore {
                 val fileChooser = new FileChooser {
                     title = "Open Class File"
                     extensionFilters ++= Seq(
-                        new ExtensionFilter("Comma Separated Values", "*.csv"),
-                        new ExtensionFilter("Flare JSON", "*.json")
+                        new ExtensionFilter("Comma Separated Values", "*.csv")
                     )
                 }
                 val selectedFile = fileChooser.showSaveDialog(stage)
                 if (selectedFile != null) {
-                    val filename = selectedFile.getName
-                    val extension = filename.substring(filename.lastIndexOf("."), filename.length())
-                    if (extension.equals(".csv")) {
-                        exportStatistics(selectedFile)
-                    } else if (extension.equals(".json")) {
-                        exportFlare(selectedFile)
-                    }
+                    exportStatistics(selectedFile)
                 }
             }
         }

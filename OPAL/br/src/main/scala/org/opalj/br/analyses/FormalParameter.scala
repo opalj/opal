@@ -71,7 +71,7 @@ final class FormalParameter( final val method: Method, final val origin: Int) {
     override def hashCode(): Int = method.hashCode() * 111 + origin
 
     override def toString: String = {
-        s"FormalParameter(${method.signatureToJava(withVisibility = false)},origin=$origin)"
+        s"FormalParameter(${method.signatureToJava(withVisibility = false)},index=$parameterIndex)"
     }
 
 }

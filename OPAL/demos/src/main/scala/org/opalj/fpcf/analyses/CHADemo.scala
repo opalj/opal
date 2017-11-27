@@ -33,6 +33,7 @@ package cg
 package cha
 
 import java.net.URL
+
 import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, PropertyStoreKey}
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -44,7 +45,7 @@ import org.opalj.util.PerformanceEvaluation
 import org.opalj.fpcf.properties.IsEntryPoint
 import org.opalj.ai.analyses.cg.CallGraphFactory
 import org.opalj.ai.analyses.cg.CallGraph
-import org.opalj.br.analyses.InstantiableClassesKey
+import org.opalj.br.analyses.cg.InstantiableClassesKey
 
 object CHADemo extends DefaultOneStepAnalysis {
 

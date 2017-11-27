@@ -32,6 +32,8 @@ package fpcf
 import scala.collection.mutable
 import net.ceedubs.ficus.Ficus._
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.debug
+import org.opalj.log.OPALLogger.error
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.PropertyStoreKey
 
@@ -40,6 +42,8 @@ import org.opalj.br.analyses.PropertyStoreKey
  * @author Michael Eichberg
  */
 class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
+
+	implicit def logContext : LogContext = project.logContext
 
     val propertyStore = project.get(PropertyStoreKey)
     //  private[this] def propertyStore = project.get(PropertyStoreKey)
@@ -81,11 +85,9 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         waitOnCompletion: Boolean            = true
     ): Unit = this.synchronized {
         if (!isDerived(analysisRunner.derivedProperties)) {
-            if (debug)
-                OPALLogger.debug(
-                    "analysis configuration",
-                    s"scheduling the analysis ${analysisRunner.name}"
-                )(project.logContext)
+            if (debug) {
+                debug("analysis configuration",s"scheduling the analysis ${analysisRunner.name}")
+            }
 
             registerProperties(analysisRunner)
             analysisRunner.start(project, propertyStore)
@@ -96,10 +98,8 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
                 )
             }
         } else {
-            OPALLogger.error(
-                "analysis configuration",
-                s"the analysis ${analysisRunner.name} is running/was executed for this project"
-            )(project.logContext)
+        	val runner = analysisRunner.name
+            error("analysis configuration",s"$runner is running/was executed for this project")
         }
     }
 

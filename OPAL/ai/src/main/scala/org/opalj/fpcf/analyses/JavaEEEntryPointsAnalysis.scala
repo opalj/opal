@@ -30,22 +30,22 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.InjectedClassesInformationKey
 import org.opalj.fpcf.properties.NoEntryPoint
 import org.opalj.fpcf.properties.IsEntryPoint
-
-import scala.collection.mutable.ListBuffer
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InjectedClassesKey
 import org.opalj.ai.analyses.cg.CallGraphFactory
 
 class JavaEEEntryPointsAnalysis private[analyses] (
         val project: SomeProject
 ) extends {
     private[this] final val SerializableType = ObjectType.Serializable
-    private[this] final val InjectedClasses = project.get(InjectedClassesInformationKey)
+    private[this] final val InjectedClasses = project.get(InjectedClassesKey)
     private[this] final val ExceptionHandlerFactory = ObjectType("javax/faces/context/ExceptionHandlerFactory")
 } with FPCFAnalysis {
 
@@ -62,7 +62,7 @@ class JavaEEEntryPointsAnalysis private[analyses] (
         val willBeInjected = InjectedClasses.isInjected(classFile)
         val result = ListBuffer.empty[SomeEP]
         val isWebFactory = project.classHierarchy.isSubtypeOf(classFile.thisType, ExceptionHandlerFactory).isYesOrUnknown
-        classFile.methods.filter(m ⇒ !m.isAbstract && !m.isNative) foreach { method ⇒
+        classFile.methods.iterator.filter(m ⇒ !m.isAbstract && !m.isNative) foreach { method ⇒
 
             if (CallGraphFactory.isPotentiallySerializationRelated(method)(project.classHierarchy)) {
                 result += EP(method, IsEntryPoint)

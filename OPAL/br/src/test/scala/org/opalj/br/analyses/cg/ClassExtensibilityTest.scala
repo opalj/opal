@@ -29,18 +29,16 @@
 package org.opalj
 package br
 package analyses
-
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+package cg
 
 import com.typesafe.config.ConfigFactory
-
 import org.opalj.br.TestSupport.biProject
+import org.scalatest.{FunSpec, Matchers}
 
 /**
  * @author Michael Reif
  */
-class DirectTypeExtensibilityTest extends FunSpec with Matchers {
+class ClassExtensibilityTest extends FunSpec with Matchers {
 
     val testProject = biProject("extensible_classes.jar")
 
@@ -66,13 +64,13 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located in an open package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.openCodeBase
         )
 
         val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("non-final types should be extensible") {
             isExtensible(PublicClass) should be(Yes)
@@ -100,13 +98,13 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located in a closed package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.closedCodeBase
         )
 
         val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("public non-final types should be extensible") {
             isExtensible(PublicClass) should be(Yes)
@@ -133,17 +131,17 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is configured as extensible") {
 
-        val forcedExtensibleTyptes = List(PublicFinalClass, PublicClassWithPrivateConstructor).
+        val forcedExtensibleClasses = List(PublicFinalClass, PublicClassWithPrivateConstructor).
             map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
-            DirectTypeExtensibilityConfig.configureExtensibleTypes(forcedExtensibleTyptes),
+            ClassExtensibilityConfig.configuredExtensibleClasses(forcedExtensibleClasses),
             ClosedPackagesConfig.openCodeBase
         )
 
         val config = ConfigFactory.parseString(confString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("it should be extensible, no matter what") {
             isExtensible(PublicFinalClass) should be(Yes)
@@ -153,17 +151,17 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
 
     describe("when a type is configured as final") {
 
-        val forcedExtensibleTyptes = List(PublicClass, PublicInterface).
+        val forcedExtensibleClasses = List(PublicClass, PublicInterface).
             map(_.fqn.replaceAll("[.]", "/"))
 
         val confString = mergeConfigString(
-            DirectTypeExtensibilityConfig.configureFinalTypes(forcedExtensibleTyptes),
+            ClassExtensibilityConfig.configuredFinalClasses(forcedExtensibleClasses),
             ClosedPackagesConfig.closedCodeBase
         )
 
         val config = ConfigFactory.parseString(confString)
         val project = Project.recreate(testProject, config, true)
-        val isExtensible = project.get(DirectTypeExtensibilityKey)
+        val isExtensible = project.get(ClassExtensibilityKey)
 
         it("it should NOT be extensible, no matter what") {
             isExtensible(PublicClass) should be(No)
@@ -172,29 +170,29 @@ class DirectTypeExtensibilityTest extends FunSpec with Matchers {
     }
 }
 
-object DirectTypeExtensibilityConfig {
+object ClassExtensibilityConfig {
 
-    val directTypeExtensibilityAnalysis =
+    val classExtensibilityAnalysis =
         """
-            |org.opalj.br.analyses.DirectTypeExtensibilityKey {
-            |    analysis = "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
-            |}
+          |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+          |    analysis = "org.opalj.br.analyses.cg.DefaultClassExtensibility"
+          |}
         """.stripMargin
 
-    def configureExtensibleTypes(types: List[String] = List.empty) =
+    def configuredExtensibleClasses(types: List[String] = List.empty) =
         s"""
-            |org.opalj.br.analyses.DirectTypeExtensibilityKey {
-            |    analysis = "org.opalj.br.analyses.ConfigureExtensibleTypes"
-            |    extensibleTypes = [${types.map("\""+_+"\"").mkString(",")}]
-            |}
+           |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+           |    analysis = "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses"
+           |    extensibleClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |}
           """.stripMargin
 
-    def configureFinalTypes(types: List[String] = List.empty) =
+    def configuredFinalClasses(types: List[String] = List.empty) =
         s"""
-            |org.opalj.br.analyses.DirectTypeExtensibilityKey {
-            |    analysis = "org.opalj.br.analyses.ConfigureFinalTypes"
-            |    finalTypes = [${types.map("\""+_+"\"").mkString(",")}]
-            |}
+           |org.opalj.br.analyses.cg.ClassExtensibilityKey {
+           |    analysis = "org.opalj.br.analyses.cg.ConfiguredFinalClasses"
+           |    finalClasses = [${types.map("\""+_+"\"").mkString(",")}]
+           |}
         """.stripMargin
 
 }
@@ -203,31 +201,31 @@ object ClosedPackagesConfig {
 
     val openCodeBase =
         """
-            |org.opalj.br.analyses.ClosedPackagesKey {
-            |    analysis = "org.opalj.br.analyses.OpenCodeBase"
-            |}
+          |org.opalj.br.analyses.cg.ClosedPackagesKey {
+          |    analysis = "org.opalj.br.analyses.cg.OpenCodeBase"
+          |}
         """.stripMargin
 
     val closedCodeBase =
         """
-           |org.opalj.br.analyses.ClosedPackagesKey {
-           |    analysis = "org.opalj.br.analyses.ClosedCodeBase"
-           |}
+          |org.opalj.br.analyses.cg.ClosedPackagesKey {
+          |    analysis = "org.opalj.br.analyses.cg.ClosedCodeBase"
+          |}
         """.stripMargin
 
     def configureClosedPackages(regex: String = "java(/.*)") =
         s"""
-            |org.opalj.br.analyses.ClosedPackagesKey {
-            |    analysis = "org.opalj.br.analyses.ClosedPackagesConfiguration"
-            |    closedPackages = "$regex"
-            |}
+           |org.opalj.br.analyses.cg.ClosedPackagesKey {
+           |    analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
+           |    closedPackages = "$regex"
+           |}
         """.stripMargin
 
-    def configureOpenPackages(regex: String = ".*") =
+    def configureOpenPackages(regex: String = "^.*$") =
         s"""
-           |org.opalj.br.analyses.ClosedPackagesKey {
-           |    analysis = "org.opalj.br.analyses.ClosedPackagesConfiguration"
-           |    openPackages = "$regex"
+           |org.opalj.br.analyses.cg.ClosedPackagesKey {
+           |    analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
+           |    closedPackages = "$regex"
            |}
         """.stripMargin
 }

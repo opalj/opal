@@ -29,62 +29,50 @@
 package org.opalj
 package br
 package analyses
+package cg
 
 import net.ceedubs.ficus.Ficus._
 
-import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get a function that determines whether a type is directly
  * extensible or not.
  *
- * @see [[DirectTypeExtensibilityInformation]] for further information.
- *
+ * @see [[ClassExtensibility]] for further information.
  * @author Michael Reif
  */
-object DirectTypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer, Nothing] {
+object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, Nothing] {
 
-    final val ConfigKeyPrefix = "org.opalj.br.analyses.DirectTypeExtensibilityKey."
+    final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.ClassExtensibilityKey."
 
-    final val DefaultExtensibilityAnalysis = {
-        "org.opalj.br.analyses.DirectTypeExtensibilityInformation"
+    final val DefaultClassExtensibilityAnalysis = {
+        "org.opalj.br.analyses.cg.DefaultClassExtensibility"
     }
 
     /**
-     * The [[DirectTypeExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
+     * The [[ClassExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
      */
-    override protected def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
+    def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
      * Computes the direct type extensibility information for the given project.
      */
-    override protected def compute(project: SomeProject): ObjectType ⇒ Answer = {
-        implicit val logContext = project.logContext
-
+    override protected def compute(project: SomeProject): ClassExtensibility = {
         val configKey = ConfigKeyPrefix+"analysis"
         try {
-            reify(
-                project,
-                project.config.as[Option[String]](configKey).getOrElse(DefaultExtensibilityAnalysis)
-            )
+            val configuredAnalysis = project.config.as[Option[String]](configKey)
+            val analysisClassName = configuredAnalysis.getOrElse(DefaultClassExtensibilityAnalysis)
+            val constructor = Class.forName(analysisClassName).getConstructors.head
+            constructor.newInstance(project).asInstanceOf[ClassExtensibility]
         } catch {
             case t: Throwable ⇒
-                error(
-                    "project configuration",
-                    "failed to compute \"direct extensibility information\""+
-                        "; \"Unknown extensibility\" will now be used as the fallback",
-                    t
-                )
-                (o: ObjectType) ⇒ Unknown
+                val m = "cannot compute the extensibility of classes; extensibility will be unknown"
+                OPALLogger.error("project configuration", m, t)(project.logContext)
+                new ClassExtensibility {
+                    def isClassExtensible(t: ObjectType): Answer = Unknown
+                }
         }
     }
 
-    /**
-     * Reflectively instantiates the configured analysis. The instantiated class has to satisfy the
-     * interface and has to provide a single constructor parameterized over a [[Project]].
-     */
-    private[this] def reify(project: SomeProject, analysisName: String): ObjectType ⇒ Answer = {
-        val constructor = Class.forName(analysisName).getConstructors.head
-        constructor.newInstance(project).asInstanceOf[ObjectType ⇒ Answer]
-    }
 }

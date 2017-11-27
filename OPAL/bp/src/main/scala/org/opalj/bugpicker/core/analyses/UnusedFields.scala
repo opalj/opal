@@ -32,12 +32,12 @@ package core
 package analyses
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.TypeExtensibilityKey
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.ConstantString
 import org.opalj.br.analyses.StringConstantsInformation
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.issues.Issue
 import org.opalj.issues.Relevance
 import org.opalj.issues.IssueKind
