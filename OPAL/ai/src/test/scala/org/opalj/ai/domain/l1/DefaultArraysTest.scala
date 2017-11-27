@@ -44,6 +44,7 @@ import org.opalj.br.{LongType, FloatType, DoubleType}
 import org.opalj.br.{BooleanType, CharType}
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.io.OpeningFileFailedException
 
 /**
  * Tests the ArrayValues domain.
@@ -63,7 +64,13 @@ class DefaultArraysTest extends FunSpec with Matchers {
         val code = method.body.get
         val result = BaseAI(method, domain)
 
-        dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) { f(domain) }
+        try {
+            dumpOnFailureDuringValidation(Some(classFile), Some(method), code, result) {
+                f(domain)
+            }
+        } catch {
+            case t: OpeningFileFailedException ⇒ info(s"ignored ${t.toString}")
+        }
     }
 
     describe("array initializations") {

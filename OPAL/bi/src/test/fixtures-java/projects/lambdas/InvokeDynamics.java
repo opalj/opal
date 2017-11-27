@@ -26,34 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.reader
+package lambdas;
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import java.util.concurrent.Callable;
 
 /**
- * This test loads all classes found in the Sala 2.12.2 libraries and verifies that all
- * suported [[INVOKEDYNAMIC]] instructions can be resolved.
- *
- * @author Arne Lottmann
- * @author Andreas Amuttsch
- * @author Michael Eichberg
+ * Simple lambda add test with main method
  */
-class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+public class InvokeDynamics {
 
-    test("rewriting of invokedynamic instructions in Scala 2.12.2 library") {
-        val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
+    public int simpleLambdaAdd(int x, int y) throws Exception {
+        Callable<Integer> c = () -> x+y;
 
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
-            method.body.get.collect {
-                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
-            }
+        return c.call();
+    }
+
+    public static void main(String[] args) {
+        InvokeDynamics id = new InvokeDynamics();
+        int result = 0;
+        try {
+            result = id.simpleLambdaAdd(2, 2);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        if (invokedynamics.nonEmpty) {
-            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
-        }
+        System.out.println("Result is " + result);
     }
 }

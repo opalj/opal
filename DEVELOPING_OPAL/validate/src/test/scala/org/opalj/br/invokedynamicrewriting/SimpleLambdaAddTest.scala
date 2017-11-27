@@ -26,34 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.reader
+package org.opalj.br.invokedynamicrewriting
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.FixturesTest
 
 /**
- * This test loads all classes found in the Sala 2.12.2 libraries and verifies that all
- * suported [[INVOKEDYNAMIC]] instructions can be resolved.
+ * Test if OPAL is able to rewrite a simple lambda expression and check if the rewritten bytecode
+ * is executable.
  *
- * @author Arne Lottmann
- * @author Andreas Amuttsch
- * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
-class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+class SimpleLambdaAddTest extends FixturesTest {
+    val fixtureFiles = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
-    test("rewriting of invokedynamic instructions in Scala 2.12.2 library") {
-        val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
+    describe("a simple lambda add") {
+        it("should calculate 2+2 correctly") {
+            val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
+            val instance = c.newInstance()
+            val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
+            val res = m.invoke(instance, new Integer(2), new Integer(2))
 
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
-            method.body.get.collect {
-                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
-            }
-        }
-
-        if (invokedynamics.nonEmpty) {
-            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
+            assert(res.asInstanceOf[Integer] == 4)
         }
     }
 }

@@ -26,34 +26,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.reader
+package org.opalj.br.jcg
+
+import java.io.{ByteArrayOutputStream, File, PrintStream}
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.FixturesTest
 
 /**
- * This test loads all classes found in the Sala 2.12.2 libraries and verifies that all
- * suported [[INVOKEDYNAMIC]] instructions can be resolved.
+ * Tests for resolving various lambda expressions using the Java Call Graph library.
  *
- * @author Arne Lottmann
- * @author Andreas Amuttsch
- * @author Michael Eichberg
+ * See: https://bitbucket.org/delors/jcg
+ *
+ * @author Andreas Muttscheller
  */
-class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+class LambdaExpressions extends FixturesTest {
+    val fixtureFiles: File = locateTestResources("classfiles/lambda_expressions.jar", "bi")
 
-    test("rewriting of invokedynamic instructions in Scala 2.12.2 library") {
-        val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
+    describe("JCG lambda_expressions test") {
+        it("should execute main successfully") {
+            val c = inMemoryClassLoader.loadClass("app.ExpressionPrinter")
+            val m = c.getMethod("main", classOf[Array[String]])
 
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
-            method.body.get.collect {
-                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
-            }
-        }
+            // Intercept output
+            val baos = new ByteArrayOutputStream()
+            val defaultOut = System.out
+            System.setOut(new PrintStream(baos))
 
-        if (invokedynamics.nonEmpty) {
-            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
+            m.invoke(null, Array("lambda_expressions.jar"))
+            assert(baos.toString == "Id(((1)++)²)\n")
+
+            // Reset System.out
+            System.setOut(defaultOut)
         }
     }
 }

@@ -26,34 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.reader
+package org.opalj.br
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import java.io.File
+import java.net.URL
+
+import org.opalj.br.analyses.{Project, ProjectBasedInMemoryClassLoader}
+import org.opalj.bytecode.RTJar
+import org.scalatest.{FunSpec, Matchers}
 
 /**
- * This test loads all classes found in the Sala 2.12.2 libraries and verifies that all
- * suported [[INVOKEDYNAMIC]] instructions can be resolved.
+ * Simple trait for creating an OPAL project to test br fixtures.
  *
- * @author Arne Lottmann
- * @author Andreas Amuttsch
- * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
-class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+trait FixturesTest extends FunSpec with Matchers {
 
-    test("rewriting of invokedynamic instructions in Scala 2.12.2 library") {
-        val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
+    val fixtureFiles: File
 
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
-            method.body.get.collect {
-                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
-            }
-        }
+    def fixtureFilter(cfSrc: (ClassFile, URL)): Boolean = true
 
-        if (invokedynamics.nonEmpty) {
-            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
-        }
+    final lazy val FixtureProject: Project[URL] = {
+        val classFileReader = Project.JavaClassFileReader()
+        import classFileReader.ClassFiles
+        val fixtureClassFiles = ClassFiles(fixtureFiles)
+
+        val projectClassFiles = fixtureClassFiles.filter(fixtureFilter)
+
+        val libraryClassFiles = ClassFiles(RTJar)
+
+        info(s"the test fixture project consists of ${projectClassFiles.size} class files")
+        Project(
+            projectClassFiles,
+            libraryClassFiles,
+            libraryClassFilesAreInterfacesOnly = false
+        )
     }
+
+    final lazy val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(FixtureProject)
 }

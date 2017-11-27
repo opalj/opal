@@ -36,7 +36,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
-
+import org.opalj.bi.AccessFlags
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
@@ -118,7 +118,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
-        s"Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
+        s"${surroundingType.packageName}/Lambda$$${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -130,7 +130,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
-        val updatedClassFile =
+        var updatedClassFile =
             super.deferredInvokedynamicResolution(
                 classFile,
                 cp,
@@ -142,9 +142,40 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         if (!performJava8LambdaExpressionsRewriting)
             return updatedClassFile;
 
+        // We have to rewrite the synthetic lambda methods to be accessible from the same package.
+        // This is necessary, because the java / scala compiler introduces a private synthetic
+        // method which handles primitive type handling. Since the new proxyclass is a different
+        // class, we have to make the synthetic method accessible from the proxy class.
+        updatedClassFile = updatedClassFile.copy(
+            methods = classFile.methods.map { m ⇒
+                if (m.name.startsWith("lambda$") &&
+                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
+                    val syntheticLambdaMethodAccessFlags =
+                        if (updatedClassFile.isInterfaceDeclaration) {
+                            // An interface method must have either ACC_PUBLIC or ACC_PRIVATE and
+                            // NOT have ACC_FINAL set. Since the lambda class is in a different
+                            // class in the same package, we have to declare the method as public.
+                            // For more information see:
+                            //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
+                            (m.accessFlags & ~bi.ACC_PRIVATE.mask) | bi.ACC_PUBLIC.mask
+                        } else {
+                            // Make the class package private if it is private, so the lambda can
+                            // access its methods.
+                            // Note: No access modifier means package private
+                            m.accessFlags & ~bi.ACC_PRIVATE.mask
+                        }
+                    m.copy(accessFlags = syntheticLambdaMethodAccessFlags)
+                } else {
+                    m.copy()
+                }
+            }
+        )
+
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
+            scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else {
@@ -189,15 +220,94 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             )
 
         if (logJava8LambdaExpressionsRewrites) {
-            info(
-                "load-time transformation",
-                s"rewriting Scala Symbols related invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-            )
+            info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
+
         instructions(pc) = LDC(bootstrapArguments.head.asInstanceOf[ConstantString])
         instructions(pc + 2) = newInvokestatic
 
         classFile
+    }
+
+    /**
+     * The scala compiler (and possibly other JVM bytecode compilers) add a
+     * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
+     * Serializable. This method is called when the serialized lambda is deserialized.
+     * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
+     * calls to `LambdaDeserialize::deserializeLambda`, which is what the INVOKEDYNAMIC instruction
+     * refers to, see [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java#L29].
+     * This is done to reduce the size of `$deserializeLambda$`.
+     *
+     * @note   SerializedLambda has a readResolve method that looks for a (possibly private) static
+     *         method called $deserializeLambda$(SerializedLambda) in the capturing class, invokes
+     *         that with itself as the first argument, and returns the result. Lambda classes
+     *         implementing $deserializeLambda$ are responsible for validating that the properties
+     *         of the SerializedLambda are consistent with a lambda actually captured by that class.
+     *          See: [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html]
+     *
+     * @see     More information about lambda deserialization:
+     *           - [https://zeroturnaround.com/rebellabs/java-8-revealed-lambdas-default-methods-and-bulk-data-operations/4/]
+     *           - [http://mail.openjdk.java.net/pipermail/mlvm-dev/2016-August/006699.html]
+     *           - [https://github.com/scala/scala/blob/v2.12.2/src/library/scala/runtime/LambdaDeserialize.java]
+     *
+     * @param classFile The classfile to parse
+     * @param instructions The instructions of the method we are currently parsing
+     * @param pc The program counter of the current instruction
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     */
+    private def scalaLambdaDeserializeResolution(
+        classFile:     ClassFile,
+        instructions:  Array[Instruction],
+        pc:            PC,
+        invokedynamic: INVOKEDYNAMIC
+    ): ClassFile = {
+        val bootstrapArguments = invokedynamic.bootstrapMethod.arguments
+
+        assert(
+            bootstrapArguments.isEmpty || bootstrapArguments.head
+                .isInstanceOf[InvokeStaticMethodHandle],
+            "ensures that the test isScalaLambdaDeserialize was executed"
+        )
+
+        val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
+        val typeDeclaration = TypeDeclaration(
+            ObjectType(newLambdaTypeName(classFile.thisType)),
+            isInterfaceType = false,
+            Some(ObjectType.Object), // we basically create a "CallSiteObject"
+            superInterfaceTypes
+        )
+
+        val proxy: ClassFile = ClassFileFactory.DeserializeLambdaProxy(
+            typeDeclaration,
+            bootstrapArguments,
+            DefaultDeserializeLambdaStaticMethodName
+        )
+
+        val factoryMethod = proxy.findMethod(DefaultDeserializeLambdaStaticMethodName).head
+
+        val newInvokestatic = INVOKESTATIC(
+            proxy.thisType,
+            isInterface = false, // the created proxy class is always a concrete class
+            factoryMethod.name,
+            MethodDescriptor(
+                IndexedSeq(ObjectType.SerializedLambda),
+                ObjectType.Object
+            )
+        )
+
+        if (logJava8LambdaExpressionsRewrites) {
+            info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
+        }
+
+        instructions(pc) = newInvokestatic
+        // since invokestatic is two bytes shorter than invokedynamic, we need to fill
+        // the two-byte gap following the invokestatic with NOPs
+        instructions(pc + 3) = NOP
+        instructions(pc + 4) = NOP
+
+        val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
+        storeProxy(classFile, proxy, reason)
     }
 
     private def java8LambdaResolution(
@@ -215,18 +325,52 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // TODO: Why can they be ignored
         val Seq(
             functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
-            invokeTargetMethodHandle: MethodCallMethodHandle,
+            tempInvokeTargetMethodHandle: MethodCallMethodHandle,
             functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*
             ) =
             bootstrapArguments
+        var invokeTargetMethodHandle = tempInvokeTargetMethodHandle
 
         val MethodCallMethodHandle(
             targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
             ) = invokeTargetMethodHandle
 
+        // Check if the target method is accessible from the lambda. If not, make it package
+        // private, so the lambda can access it.
+        val updatedClassFile = classFile.copy(
+            methods = classFile.methods.map { m ⇒
+                if (m.isPrivate &&
+                    classFile.findMethod(targetMethodName, targetMethodDescriptor).isDefined) {
+                    // Interface methods must be either public or private, see
+                    //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
+                    if (classFile.isInterfaceDeclaration) {
+                        m.copy(
+                            accessFlags = (m.accessFlags & ~bi.ACC_PRIVATE.mask) | bi.ACC_PUBLIC.mask
+                        )
+                    } else {
+                        m.copy(
+                            accessFlags = m.accessFlags & ~bi.ACC_PRIVATE.mask
+                        )
+                    }
+                } else {
+                    m.copy()
+                }
+            }
+        )
+
+        // In case of nested classes, we have to change the invoke instruction from
+        // invokespecial to invokevirtual, because the special handling used for private
+        // methods doesn't apply anymore.
+        if (invokeTargetMethodHandle.isInstanceOf[InvokeSpecialMethodHandle]) {
+            invokeTargetMethodHandle = InvokeVirtualMethodHandle(
+                invokeTargetMethodHandle.receiverType,
+                invokeTargetMethodHandle.name,
+                invokeTargetMethodHandle.methodDescriptor
+            )
+        }
+
         val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
-            // ObjectType(newLambdaTypeName(targetMethodOwner)),
             ObjectType(newLambdaTypeName(classFile.thisType)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
@@ -395,8 +539,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         )
 
         if (logJava8LambdaExpressionsRewrites) {
-            val m = s"rewriting invokedynamic: $invokedynamic ⇒ $newInvokestatic"
-            info("analysis", m)
+            info("rewriting invokedynamic", s"Java: $invokedynamic ⇒ $newInvokestatic")
         }
 
         instructions(pc) = newInvokestatic
@@ -405,8 +548,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         instructions(pc + 3) = NOP
         instructions(pc + 4) = NOP
 
-        val reason = Some((classFile, instructions, pc, invokedynamic, newInvokestatic))
-        storeProxy(classFile, proxy, reason)
+        val reason = Some((updatedClassFile, instructions, pc, invokedynamic, newInvokestatic))
+        storeProxy(updatedClassFile, proxy, reason)
     }
 
     def storeProxy(
@@ -429,9 +572,9 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
 object Java8LambdaExpressionsRewriting {
 
-    final val LambdaNameRegEx = "^Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+    final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
-    final val LambdaDeserializeNameRegEx = "^LambdaDeserialize\\$[0-9a-f]+:[0-9a-f]+$"
+    final val LambdaNameRegEx = "[a-z0-9\\/.]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
     final val Java8LambdaExpressionsConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
@@ -458,6 +601,17 @@ object Java8LambdaExpressionsRewriting {
                 } else {
                     name == "altMetafactory" && descriptor == LambdaAltMetafactoryDescriptor
                 }
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaLambdaDeserializeExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        import MethodDescriptor.ScalaLambdaDeserializeDescriptor
+        import ObjectType.ScalaLambdaDeserialize
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaLambdaDeserialize, false, "bootstrap", ScalaLambdaDeserializeDescriptor
+                ) ⇒ true
             case _ ⇒ false
         }
     }

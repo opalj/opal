@@ -59,8 +59,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
     }
 
     protected def isProxyFactoryCall(declaringClassFQN: String): Boolean = {
-        declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
-            declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx)
+        declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
     }
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {

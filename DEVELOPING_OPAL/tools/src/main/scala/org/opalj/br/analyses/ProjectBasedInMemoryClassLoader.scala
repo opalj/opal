@@ -26,34 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.reader
+package org.opalj.br.analyses
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.ProjectSerializer
 
 /**
- * This test loads all classes found in the Sala 2.12.2 libraries and verifies that all
- * suported [[INVOKEDYNAMIC]] instructions can be resolved.
+ * A simple `ClassLoader` that looks-up the available classes from the given Project.
  *
- * @author Arne Lottmann
- * @author Andreas Amuttsch
- * @author Michael Eichberg
+ * @author Andreas Muttscheller
  */
-class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+class ProjectBasedInMemoryClassLoader(
+        val project: SomeProject,
+        parent:      ClassLoader = getClass.getClassLoader
+) extends ClassLoader(parent) {
 
-    test("rewriting of invokedynamic instructions in Scala 2.12.2 library") {
-        val project = load(locateTestResources("classfiles/scala-2.12.2", "bi"))
-
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
-            method.body.get.collect {
-                case i: INVOKEDYNAMIC if Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    Java8LambdaExpressionsRewriting.isScalaSymbolExpression(i) ⇒ i
-            }
-        }
-
-        if (invokedynamics.nonEmpty) {
-            fail(invokedynamics.mkString("Could not resolve:", "\n", "\n"))
+    @throws[ClassNotFoundException]
+    override def findClass(name: String): Class[_] = {
+        project.allProjectClassFiles.find(_.thisType.toJava == name) match {
+            case Some(data) ⇒
+                val bytes = ProjectSerializer.classToByte(data)
+                defineClass(name, bytes, 0, bytes.length)
+            case None ⇒ throw new ClassNotFoundException(name)
         }
     }
 }
