@@ -122,7 +122,7 @@ class FactoryMethodAnalysis private (val project: SomeProject) extends FPCFAnaly
 /**
  * Companion object for the [[FactoryMethodAnalysis]] class.
  */
-object FactoryMethodAnalysis extends FPCFAnalysisRunner {
+object FactoryMethodAnalysis extends FPCFEagerAnalysisScheduler {
 
     def derivedProperties: Set[PropertyKind] = Set(FactoryMethod)
 

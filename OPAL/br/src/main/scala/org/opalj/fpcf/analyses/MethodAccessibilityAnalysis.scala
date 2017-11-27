@@ -137,7 +137,15 @@ class MethodAccessibilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 /**
  * Companion object for the [[MethodAccessibilityAnalysis]] class.
  */
-object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
+object MethodAccessibilityAnalysis extends FPCFEagerAnalysisScheduler {
+
+    override def usedProperties: Set[PropertyKind] = {
+        Set(ClientCallable.Key)
+    }
+
+    override def derivedProperties: Set[PropertyKind] = {
+        Set(ProjectAccessibility.Key)
+    }
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new MethodAccessibilityAnalysis(project)
@@ -152,11 +160,4 @@ object MethodAccessibilityAnalysis extends FPCFAnalysisRunner {
         analysis
     }
 
-    override def derivedProperties: Set[PropertyKind] = {
-        Set(ProjectAccessibility.Key)
-    }
-
-    override def usedProperties: Set[PropertyKind] = {
-        Set(ClientCallable.Key)
-    }
 }

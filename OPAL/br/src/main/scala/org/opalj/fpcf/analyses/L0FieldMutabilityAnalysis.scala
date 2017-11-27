@@ -114,7 +114,7 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
 /**
  * Factory object to create instances of the FieldMutabilityAnalysis.
  */
-object L0FieldMutabilityAnalysis extends FPCFAnalysisRunner {
+object L0FieldMutabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
     def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
 

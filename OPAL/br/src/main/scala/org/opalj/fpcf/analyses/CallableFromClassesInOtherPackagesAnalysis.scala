@@ -174,7 +174,7 @@ class CallableFromClassesInOtherPackagesAnalysis private (
     }
 }
 
-object CallableFromClassesInOtherPackagesAnalysis extends FPCFAnalysisRunner {
+object CallableFromClassesInOtherPackagesAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(ClientCallable.Key)
 

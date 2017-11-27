@@ -208,16 +208,16 @@
 ///**
 // * Companion object for the [[InstantiabilityAnalysis]] class.
 // */
-//object InstantiabilityAnalysis extends FPCFAnalysisRunner {
+//object InstantiabilityAnalysis extends FPCFAnalysisScheduler {
 //
 //    final def entitySelector: PartialFunction[Entity, ClassFile] =
-//        FPCFAnalysisRunner.ClassFileSelector
+//        FPCFAnalysisScheduler.ClassFileSelector
 //
 //    override def derivedProperties: Set[PropertyKind] = Set(Instantiability)
 //
 //    override def usedProperties: Set[PropertyKind] = Set(FactoryMethod)
 //
-//    override def recommendations: Set[FPCFAnalysisRunner] = Set(FactoryMethodAnalysis)
+//    override def recommendations: Set[FPCFAnalysisScheduler] = Set(FactoryMethodAnalysis)
 //
 //    protected[analysis] def start(
 //        project:       SomeProject,

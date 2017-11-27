@@ -38,7 +38,6 @@ import org.opalj.br.BooleanType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions._
 
 /**
  * Specifies for each method the exceptions that are potentially thrown by the respective method.
@@ -74,12 +73,38 @@ sealed abstract class ThrownExceptions extends Property {
 object ThrownExceptions {
 
     private[this] final val cycleResolutionStrategy = (
-        _: PropertyStore,
+        ps: PropertyStore,
         epks: Iterable[SomeEPK]
     ) ⇒ {
         // IMPROVE We should have support to handle cycles of "ThrownExceptions"
-        val e = epks.find(_.pk == Key).get
-        val p = ThrownExceptionsAreUnknown.UnresolvableCycle
+        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+
+        var unknownExceptions: String = null
+        epks.foreach {
+            case EPK(e, ThrownExceptionsByOverridingMethods.Key) ⇒
+                ps(e, ThrownExceptionsByOverridingMethods.Key).p match {
+                    case UnknownThrownExceptionsByOverridingMethods ⇒
+                        unknownExceptions = "Overridden method throw unknown exceptions"
+                    case c: AllThrownExceptionsByOverridingMethods ⇒
+                        exceptions ++= c.exceptions.concreteTypes
+                }
+
+            case EPK(e, Key) ⇒
+                ps(e, Key).p match {
+                    case u: ThrownExceptionsAreUnknown ⇒ unknownExceptions = u.reason
+                    case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
+                }
+        }
+
+        val p = if (unknownExceptions != null) {
+            ThrownExceptionsAreUnknown(unknownExceptions)
+        } else if (exceptions.nonEmpty) {
+            new AllThrownExceptions(exceptions, false)
+        } else {
+            NoExceptionsAreThrown.NoInstructionThrowsExceptions
+        }
+
+        val e = epks.find(_.pk == Key).get.e
         Iterable(Result(e, p))
     }
 
@@ -92,7 +117,7 @@ object ThrownExceptions {
     }
 }
 
-sealed class AllThrownExceptions(
+class AllThrownExceptions(
         val types:        BRTypesSet,
         val isRefineable: Boolean
 ) extends ThrownExceptions {
@@ -163,6 +188,98 @@ object ThrownExceptionsAreUnknown {
         )
     }
 
+    final val SubclassesHaveUnknownExceptions = {
+        ThrownExceptionsAreUnknown(
+            "one or more subclass throw unknown exceptions"
+        )
+    }
+
+}
+
+/**
+ * This property stores information about the exceptions a certain method throw, including
+ * the exceptions a possible overridden method in a subclass throws.
+ * It uses the ThrownExceptions property to gather information about the exceptions thrown in a
+ * particular method. It also includes the thrown exceptions of the respective method in all
+ * subclasses.
+ *
+ * Results can either be `AllThrownExceptionsByOverridingMethods`, which contains a set of possible
+ * exceptions thrown in the current classes method or its subclasses. If we aren't able to collect
+ * all exceptions, `UnknownThrownExceptionsByOverridingMethods` will be returned. This is the case
+ * if the analysis encounters a ATHROW instruction for example.
+ *
+ * The cycle resolution collects the properties from the given entities and constructs a final
+ * result. Possible properties can be `ThrownExceptionsByOverridingMethods` as well as
+ * `ThrownExceptions`. The result will be saved in the PropertyStore and propagated to the dependees.
+ */
+object ThrownExceptionsByOverridingMethods {
+
+    private[this] final val cycleResolutionStrategy = (
+        ps: PropertyStore,
+        epks: Iterable[SomeEPK]
+    ) ⇒ {
+        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        var hasUnknownExceptions = false
+        epks.foreach {
+            case EPK(e, Key) ⇒
+                ps(e, Key).p match {
+                    case c: AllThrownExceptionsByOverridingMethods ⇒
+                        exceptions ++= c.exceptions.concreteTypes
+                    case UnknownThrownExceptionsByOverridingMethods ⇒
+                        hasUnknownExceptions = true
+                    case _ ⇒ throw new UnknownError(s"Cycle involving unknown keys: $e")
+                }
+
+            case EPK(e, ThrownExceptions.Key) ⇒
+                ps(e, ThrownExceptions.Key).p match {
+                    case _: ThrownExceptionsAreUnknown ⇒ hasUnknownExceptions = true
+                    case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
+                }
+        }
+        val entity = epks.find(_.pk == Key).get.e
+        val p = if (hasUnknownExceptions)
+            UnknownThrownExceptionsByOverridingMethods
+        else
+            AllThrownExceptionsByOverridingMethods(exceptions)
+
+        Iterable(Result(entity, p))
+    }
+
+    final val Key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
+        PropertyKey.create[ThrownExceptionsByOverridingMethods](
+            "ThrownExceptionsByOverridingMethodsProperty",
+            AllThrownExceptionsByOverridingMethods(),
+            cycleResolutionStrategy
+        )
+    }
+}
+
+sealed abstract class ThrownExceptionsByOverridingMethods extends Property {
+    final type Self = ThrownExceptionsByOverridingMethods
+    final def key = ThrownExceptionsByOverridingMethods.Key
+}
+
+case class AllThrownExceptionsByOverridingMethods(
+        exceptions:   BRTypesSet = BRTypesSet.empty,
+        isRefineable: Boolean    = false
+) extends ThrownExceptionsByOverridingMethods {
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: AllThrownExceptionsByOverridingMethods ⇒
+                this.isRefineable == that.isRefineable &&
+                    this.exceptions == that.exceptions
+            case _ ⇒ false
+        }
+    }
+
+    override def hashCode: Int = 13 * exceptions.hashCode +
+        (if (isRefineable) 41 else 53)
+}
+
+case object UnknownThrownExceptionsByOverridingMethods
+    extends ThrownExceptionsByOverridingMethods {
+    final val isRefineable = false
 }
 
 //

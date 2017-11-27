@@ -114,8 +114,8 @@ class CLASS[T](
             }
         val brAnnotationsMap = brAnnotations.toMap
 
-        if (annotationsMap.nonEmpty)
-            println(annotationsMap.mkString("\n")+" ===>\n"+brAnnotations+"\n"+classFile.methods)
+        // if (annotationsMap.nonEmpty)
+        //    println(annotationsMap.mkString("\n")+" ===>\n"+brAnnotations+"\n"+classFile.methods)
 
         (classFile, brAnnotationsMap)
     }

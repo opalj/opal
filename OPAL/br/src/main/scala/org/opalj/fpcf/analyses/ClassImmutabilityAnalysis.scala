@@ -376,7 +376,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
  *
  * @author Michael Eichberg
  */
-object ClassImmutabilityAnalysis extends FPCFAnalysisRunner {
+object ClassImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(ClassImmutability)
 

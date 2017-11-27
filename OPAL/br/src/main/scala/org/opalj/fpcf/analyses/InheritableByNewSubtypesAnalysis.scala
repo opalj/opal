@@ -142,7 +142,7 @@ class InheritableByNewSubtypesAnalysis private (val project: SomeProject) extend
     }
 }
 
-object InheritableByNewSubtypesAnalysis extends FPCFAnalysisRunner {
+object InheritableByNewSubtypesAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(InheritableByNewTypes.Key)
 
