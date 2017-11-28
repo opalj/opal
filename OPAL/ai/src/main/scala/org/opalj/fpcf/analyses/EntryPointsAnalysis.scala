@@ -76,13 +76,9 @@ object EntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
                 val analysis = new EntryPointsAnalysis(project)
                 propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
                 analysis
-            case JEE6WebApplication ⇒
-                val jEEAnalysis = new JavaEEEntryPointsAnalysis(project)
-                propertyStore.scheduleForEntities(project.allClassFiles)(
-                    jEEAnalysis.determineEntrypoints
-                )
-                jEEAnalysis
-            case (CPA | OPA) ⇒
+            case _ ⇒
+                // In all other cases we simply fallback to treat the code base as a "library"
+                // this should soundly overapproximate the set of entry points.
                 SimpleInstantiabilityAnalysis(project)
                 val analysisRunner = project.get(FPCFAnalysesManagerKey)
                 analysisRunner.run(CallableFromClassesInOtherPackagesAnalysis)
