@@ -50,27 +50,42 @@ public class ExceptionUsages {
         return 1;
     }
 
-    @DoesNotThrowException(reason="infinite self-recursive call", requires={})
+    @DoesNotThrowException(
+            reason="infinite self-recursive call",
+            requires = {L1ThrownExceptionsAnalysis.class}
+    )
     public static int staticCallDoesNotThrowException() {
         staticCallDoesNotThrowException();
         return 1337;
     }
 
-    @ThrownExceptionsAreUnknown(reason="just returns constant", requires={})
+    @DoesNotThrowException(
+            reason="just returns constant",
+            requires={}
+    )
     public int doesNotThrowException() {
         return 2;
     }
 
+    @DoesNotThrowException(
+            reason="just returns constant, is final, may not be overridden",
+            requires={}
+    )
+    public final int finalDoesNotThrowException() {
+        return 2;
+    }
+
     @ThrownExceptionsAreUnknown(
-            reason = "callee does not throw exception",
-            requires = {L1ThrownExceptionsAnalysis.class}
+            reason = "callee does not throw exception, but method may be overridden",
+            requires = {}
     )
     public int callDoesNotThrowException() {
         return doesNotThrowException();
     }
 
     @ThrownExceptionsAreUnknown(
-            reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)",
+            reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)," +
+                    " may be overridden",
             requires = {}
     )
     public int selfRecursiveMethod(boolean b) {
@@ -82,7 +97,8 @@ public class ExceptionUsages {
     }
 
     @ThrownExceptionsAreUnknown(
-            reason = "mutual recursive method calls which throw no exception",
+            reason = "mutual recursive method calls which throw no exception, call may be " +
+                    "overridden",
             requires = {}
     )
     public int cycleA(boolean b) {
@@ -93,7 +109,8 @@ public class ExceptionUsages {
     }
 
     @ThrownExceptionsAreUnknown(
-            reason = "mutual recursive method calls which throw no exception",
+            reason = "mutual recursive method calls which throw no exception, call may be " +
+                    "overridden",
             requires = {}
     )
     public int cycleB() {
@@ -117,6 +134,18 @@ public class ExceptionUsages {
         return 42;
     }
 
+    @ExpectedExceptions()
+    public static final int staticFinalThrowsException() {
+        throw new NullPointerException();
+    }
+
+
+    @ExpectedExceptions()
+    public static final int staticFinalCallThrowsException() {
+        staticThrowsException();
+        return 42;
+    }
+
 
     @ExpectedExceptions()
     public int throwException() {
@@ -124,7 +153,10 @@ public class ExceptionUsages {
     }
 
 
-    @ExpectedExceptions()
+    @ThrownExceptionsAreUnknown(
+            reason="method call, may be overridden by unknown class",
+            requires={}
+    )
     public int callThrowException() {
         return throwException();
     }
@@ -139,28 +171,88 @@ public class ExceptionUsages {
         return 42;
     }
 
-
-
-    // TODO Add tests for cycles, a->a and a->b->a
-
-
     private static class Foo {
+        @ExpectedExceptions()
         public int baz() {
             throw new NullPointerException();
         }
 
+        @DoesNotThrowException(
+            reason="just returns constant, is not final, class is private, may not be overridden",
+            requires={}
+        )
         public int qux() {
+            return 42;
+        }
+
+        @ExpectedExceptions()
+        final public int finalBaz() {
+            throw new NullPointerException();
+        }
+
+        @DoesNotThrowException(
+                reason="just returns constant, is final, may not be overridden",
+                requires={}
+        )
+        final public int finalQux() {
             return 42;
         }
     }
 
     private final static class FooBar extends Foo {
         @Override
+        @DoesNotThrowException(
+            reason="just returns constant, class is final and private, may not be overridden",
+            requires={}
+        )
         public int baz() {
             return 42;
         }
 
         @Override
+        @ExpectedExceptions()
+        public int qux() {
+            throw new NullPointerException();
+        }
+    }
+
+    public static class PublicFooBar extends Foo {
+        @Override
+        @ThrownExceptionsAreUnknown(
+            reason = "just returns constant, is not final, class is public and not final",
+            requires = {}
+        )
+        public int baz() {
+            return 42;
+        }
+
+        @Override
+        @ExpectedExceptions()
+        public int qux() {
+            throw new NullPointerException();
+        }
+
+        @DoesNotThrowException(
+                reason="just returns constant, is final, class is not final, may not be overridden",
+                requires={}
+        )
+        public final int publicFinalQux() {
+            return 42;
+        }
+    }
+
+    public final static class PublicFinalFooBar extends Foo {
+        @Override
+        @DoesNotThrowException(
+                reason="just returns constant, is not final, class is final, may not be overridden",
+                requires={}
+        )
+        public int baz() {
+            return 42;
+        }
+
+        @Override
+        @ExpectedExceptions()
         public int qux() {
             throw new NullPointerException();
         }
