@@ -117,7 +117,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
         val project = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
 
-        it("a package visible class should be transitively extensible when it has a public subclass") {
+        it("a package visible class is transitively extensible when it has a public subclass") {
             val objectType = ObjectType(s"${testPackage}case1/Class")
             isExtensible(objectType) should be(Yes)
         }
@@ -169,7 +169,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(case2_interfaceOt) should be(Yes)
         }
 
-        it("the extensibility of an unknown type from which an application type inherits from is (obviously) yes") {
+        it("a type from which an application type inherits from is (obviously) extensible") {
             val hashSetObjectType = ObjectType("java/util/HashSet")
             assert(project.classFile(hashSetObjectType).isEmpty)
             assert(isClassExtensible(hashSetObjectType) == Unknown)

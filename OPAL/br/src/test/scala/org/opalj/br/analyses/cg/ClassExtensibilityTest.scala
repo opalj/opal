@@ -47,17 +47,19 @@ class ClassExtensibilityTest extends FunSpec with Matchers {
      */
     val testPackage = "extensible_classes/visibility/"
 
-    val PublicInterface = ObjectType(testPackage+"PublicInterface")
-    val Interface = ObjectType(testPackage+"Interface")
-    val Annotation = ObjectType(testPackage+"Annotation")
-    val PublicAnnotation = ObjectType(testPackage+"PublicAnnotation")
-    val FinalClass = ObjectType(testPackage+"FinalClass")
-    val Class = ObjectType(testPackage+"Class")
-    val PublicFinalClass = ObjectType(testPackage+"PublicFinalClass")
-    val PublicClass = ObjectType(testPackage+"PublicClass")
-    val PublicClassWithPrivateConstructor = ObjectType(testPackage+"PublicClassWithPrivateConstructor")
-    val PublicEnum = ObjectType(testPackage+"PublicEnum")
-    val Enum = ObjectType(testPackage+"Enum")
+    private def TypeFixture(simpleName : String) = ObjectType(testPackage+simpleName)
+
+    val PublicInterface = TypeFixture("PublicInterface")
+    val Interface = TypeFixture("Interface")
+    val Annotation = TypeFixture("Annotation")
+    val PublicAnnotation = TypeFixture("PublicAnnotation")
+    val FinalClass = TypeFixture("FinalClass")
+    val Class = TypeFixture("Class")
+    val PublicFinalClass = TypeFixture("PublicFinalClass")
+    val PublicClass = TypeFixture("PublicClass")
+    val PublicClassWithPrivateConstructor = TypeFixture("PublicClassWithPrivateConstructor")
+    val PublicEnum = TypeFixture("PublicEnum")
+    val Enum = TypeFixture("Enum")
 
     def mergeConfigString(extConf: String, pkgConf: String): String = extConf+"\n"+pkgConf
 
