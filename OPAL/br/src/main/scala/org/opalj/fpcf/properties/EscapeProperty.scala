@@ -31,7 +31,6 @@ package fpcf
 package properties
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.PropertyKey.SomeEPKs
 
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
@@ -141,9 +140,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-    extends OrderedProperty
-    with ExplicitlyNamedProperty
-    with EscapePropertyMetaInformation {
+        extends OrderedProperty
+        with ExplicitlyNamedProperty
+        with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -205,22 +204,21 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      */
     val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            Iterable(
-                Result(
-                    epks.head.e,
-                    epks.foldLeft(NoEscape: EscapeProperty) {
-                        (escapeState, epk) ⇒
-                            epk match {
-                                case EPK(e, `key`) ⇒
-                                    ps(e, key).p match {
-                                        case Conditional(property) ⇒ escapeState meet property
-                                        case _                     ⇒ throw new RuntimeException("Non-conditional in cycle")
-                                    }
-                                case _ ⇒ throw new RuntimeException(s"$epks") //TODO AtMost(NoEscape)
-                            }
-                    }
-                )
-            )
+            val e = epks.head.e
+            val eps = epks map { epk ⇒
+                ps(epk.e, key).p match {
+                    case Conditional(p) ⇒ EP(epk.e, Conditional(p))
+                    case _              ⇒ throw new RuntimeException("non-conditional in cycle")
+                }
+            }
+            // TODO remove the assertion
+            assert(eps.forall(_.p.property.isRefineable) || eps.forall(_.p.property.isFinal))
+            val ep = ps(e, key)
+            ep.p match {
+                case Conditional(AtMost(property)) ⇒ Iterable(RefineableResult(e, AtMost(property)))
+                case Conditional(property)         ⇒ Iterable(Result(e, property))
+                case _                             ⇒ throw new RuntimeException("Non-conditional in cycle")
+            }
         }
 
     final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(
@@ -908,7 +906,7 @@ object Conditional {
             case AtMost(EscapeViaParameterAndAbnormalReturn) ⇒ AtMostConditionalEscapeViaParameterAndAbnormalReturn
             case AtMost(EscapeViaNormalAndAbnormalReturn) ⇒ AtMostConditionalEscapeViaNormalAndAbnormalReturn
             case AtMost(EscapeViaParameterAndNormalAndAbnormalReturn) ⇒ AtMostConditionalEscapeViaParameterAndNormalAndAbnormalReturn
-            case _ ⇒ throw new RuntimeException(s"Unsupported property: $property") //TODO enhance types
+            case _ ⇒ throw new RuntimeException(s"Unsupported property: $property")
         }
     }
 }

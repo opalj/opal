@@ -94,7 +94,7 @@ trait AbstractEntityEscapeAnalysis {
     //
     val project: SomeProject
     val propertyStore: PropertyStore
-    val m: VirtualMethod //TODO rename and to method
+    val targetMethod: VirtualMethod
     val params: Parameters[TACMethodParameter]
     val code: Array[Stmt[V]]
     val cfg: CFG
@@ -102,7 +102,7 @@ trait AbstractEntityEscapeAnalysis {
     val formalParameters: FormalParameters
     val virtualFormalParameters: VirtualFormalParameters
 
-    val e: Entity //TODO rename
+    val entity: Entity
     val uses: IntTrieSet
     val defSite: ValueOrigin
 
@@ -117,7 +117,6 @@ trait AbstractEntityEscapeAnalysis {
         for (use ← uses) {
             checkStmtForEscape(code(use))
         }
-
         returnResult
     }
 
@@ -236,7 +235,9 @@ trait AbstractEntityEscapeAnalysis {
             if (usesDefSite(call.receiver)) {
                 handleThisLocalOfConstructor(call)
             }
+            //TODO might be correct in an else branch
             handleParameterOfConstructor(call)
+
         } else {
             handleNonVirtualAndNonConstructorCall(call)
         }
@@ -252,14 +253,14 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.tac.ExprStmt]] can contain function calls, so they have to handle them.
      */
     protected[this] def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
-        handleExpression(exprStmt.expr, None)
+        handleExpression(exprStmt.expr, hasAssignment = false)
     }
 
     /**
      * [[org.opalj.tac.Assignment]]s can contain function calls, so they have to handle them.
      */
     protected[this] def handleAssignment(assignment: Assignment[V]): Unit = {
-        handleExpression(assignment.expr, Some(assignment))
+        handleExpression(assignment.expr, hasAssignment = true)
     }
 
     /**
@@ -268,16 +269,16 @@ trait AbstractEntityEscapeAnalysis {
      * [[org.opalj.fpcf.analyses.escape.AbstractEntityEscapeAnalysis.handleOtherKindsOfExpressions]]
      * will be called.
      */
-    protected[this] def handleExpression(expr: Expr[V], assignment: Option[Assignment[V]]): Unit = {
+    protected[this] def handleExpression(expr: Expr[V], hasAssignment: Boolean): Unit = {
         (expr.astID: @switch) match {
             case NonVirtualFunctionCall.ASTID ⇒
-                handleNonVirtualFunctionCall(expr.asNonVirtualFunctionCall, assignment)
+                handleNonVirtualFunctionCall(expr.asNonVirtualFunctionCall, hasAssignment)
             case VirtualFunctionCall.ASTID ⇒
-                handleVirtualFunctionCall(expr.asVirtualFunctionCall, assignment)
+                handleVirtualFunctionCall(expr.asVirtualFunctionCall, hasAssignment)
             case StaticFunctionCall.ASTID ⇒
-                handleStaticFunctionCall(expr.asStaticFunctionCall, assignment)
+                handleStaticFunctionCall(expr.asStaticFunctionCall, hasAssignment)
             case Invokedynamic.ASTID ⇒
-                handleInvokeDynamic(expr.asInvokedynamic, assignment)
+                handleInvokeDynamic(expr.asInvokedynamic, hasAssignment)
 
             case _ ⇒ handleOtherKindsOfExpressions(expr)
         }
@@ -290,7 +291,7 @@ trait AbstractEntityEscapeAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleVirtualFunctionCall(
-        call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
+        call: VirtualFunctionCall[V], hasAssignment: Boolean
     ): Unit
 
     /**
@@ -300,7 +301,7 @@ trait AbstractEntityEscapeAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleStaticFunctionCall(
-        call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
+        call: StaticFunctionCall[V], hasAssignment: Boolean
     ): Unit
 
     /**
@@ -310,7 +311,7 @@ trait AbstractEntityEscapeAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
+        call: NonVirtualFunctionCall[V], hasAssignment: Boolean
     ): Unit
 
     /**
@@ -320,7 +321,7 @@ trait AbstractEntityEscapeAnalysis {
      * $JustIntraProcedural
      */
     protected[this] def handleInvokeDynamic(
-        call: Invokedynamic[V], assignment: Option[Assignment[V]]
+        call: Invokedynamic[V], hasAssignment: Boolean
     ): Unit
 
     /**
@@ -355,14 +356,13 @@ trait AbstractEntityEscapeAnalysis {
         // note: replace by global escape
         if (dependees.isEmpty || mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
-            //TODO do not remove the dependency in this case
             if (mostRestrictiveProperty.isRefineable) {
-                RefineableResult(e, mostRestrictiveProperty)
+                RefineableResult(entity, mostRestrictiveProperty)
             } else {
-                ImmediateResult(e, mostRestrictiveProperty)
+                ImmediateResult(entity, mostRestrictiveProperty)
             }
         } else {
-            IntermediateResult(e, Conditional(mostRestrictiveProperty), dependees, c)
+            IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
         }
     }
 
@@ -378,7 +378,7 @@ trait AbstractEntityEscapeAnalysis {
         val newEP = EP(other, p)
         dependees = dependees.filter(_.e ne other) + newEP
         meetMostRestrictive(intermediateProperty)
-        IntermediateResult(e, Conditional(mostRestrictiveProperty), dependees, c)
+        IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
     }
 
     /**
@@ -414,11 +414,11 @@ trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     }
 
     protected[this] override def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
-        handleExpression(exprStmt.expr, None)
+        handleExpression(exprStmt.expr, hasAssignment = false)
     }
 
     protected[this] override def handleAssignment(assignment: Assignment[V]): Unit = {
-        handleExpression(assignment.expr, Some(assignment))
+        handleExpression(assignment.expr, hasAssignment = true)
     }
 
     protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
@@ -439,28 +439,28 @@ trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     }
 
     protected[this] override def handleVirtualFunctionCall(
-        call: VirtualFunctionCall[V], assignment: Option[Assignment[V]]
+        call: VirtualFunctionCall[V], hasAssignment: Boolean
     ): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
             meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], assignment: Option[Assignment[V]]
+        call: NonVirtualFunctionCall[V], hasAssignment: Boolean
     ): Unit = {
         if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
             meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleStaticFunctionCall(
-        call: StaticFunctionCall[V], assignment: Option[Assignment[V]]
+        call: StaticFunctionCall[V], hasAssignment: Boolean
     ): Unit = {
         if (anyParameterUsesDefSite(call.params))
             meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleInvokeDynamic(
-        call: Invokedynamic[V], assignment: Option[Assignment[V]]
+        call: Invokedynamic[V], hasAssignment: Boolean
     ): Unit = {
         if (anyParameterUsesDefSite(call.params))
             meetMostRestrictive(AtMost(EscapeInCallee))

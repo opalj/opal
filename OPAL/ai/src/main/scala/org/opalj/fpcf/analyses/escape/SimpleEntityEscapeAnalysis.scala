@@ -57,7 +57,6 @@ import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
-import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
@@ -82,24 +81,24 @@ import org.opalj.tac.Throw
  * @author Florian Kuebler
  */
 class SimpleEntityEscapeAnalysis(
-        val e:                       Entity,
-        val defSite:                 ValueOrigin,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val params:                  Parameters[TACMethodParameter],
-        val cfg:                     CFG,
-        val handlers:                ExceptionHandlers,
-        val aiResult:                AIResult,
-        val formalParameters:        FormalParameters,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val m:                       VirtualMethod,
-        val propertyStore:           PropertyStore,
-        val project:                 SomeProject
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val params:                  Parameters[TACMethodParameter],
+    val cfg:                     CFG,
+    val handlers:                ExceptionHandlers,
+    val aiResult:                AIResult,
+    val formalParameters:        FormalParameters,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val targetMethod:            VirtualMethod,
+    val propertyStore:           PropertyStore,
+    val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntityEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntityEscapeAnalysis
 
 /**
  * Handling for exceptions, that are allocated within the current method.
@@ -115,11 +114,11 @@ trait ExceptionAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
             }
             val successors = cfg.bb(index).successors
 
-            var isCatched = false
+            var isCaught = false
             var abnormalReturned = false
             for (pc ← successors) {
                 if (pc.isCatchNode) {
-                    val exceptionType = e match {
+                    val exceptionType = entity match {
                         case as: AllocationSite ⇒ as.allocatedType
                         case FormalParameter(callee, -1) ⇒
                             callee.classFile.thisType
@@ -130,14 +129,14 @@ trait ExceptionAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
                     pc.asCatchNode.catchType match {
                         case Some(catchType) ⇒
                             if (project.classHierarchy.isSubtypeOf(exceptionType, catchType).isYes)
-                                isCatched = true
+                                isCaught = true
                         case None ⇒
                     }
                 } else if (pc.isAbnormalReturnExitNode) {
                     abnormalReturned = true
                 }
             }
-            if (abnormalReturned && !isCatched) {
+            if (abnormalReturned && !isCaught) {
                 meetMostRestrictive(EscapeViaAbnormalReturn)
             }
         }
@@ -167,15 +166,15 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
      */
     private[this] def handleFieldLike(referenceDefSites: IntTrieSet): Unit = {
         // the definition sites to handle
-        var worklist = referenceDefSites
+        var workset = referenceDefSites
 
         // the definition sites that were already handled
         var seen: IntTrieSet = EmptyIntTrieSet
 
-        while (worklist.nonEmpty) {
-            val referenceDefSite = worklist.head
-            worklist = worklist - referenceDefSite
-            seen = seen + referenceDefSite
+        while (workset.nonEmpty) {
+            val (referenceDefSite, newWorklist) = workset.getAndRemove
+            workset = newWorklist
+            seen += referenceDefSite
 
             // do not check the escape state of the entity (defSite) whose escape state we are
             // currently computing to avoid endless loops
@@ -206,16 +205,18 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                             meetMostRestrictive(EscapeViaHeapObject)
                         case Assignment(_, _, GetField(_, _, _, _, objRef)) ⇒
                             objRef.asVar.definedBy foreach { x ⇒
-                                if (!seen.contains(x)) worklist = worklist + x
+                                if (!seen.contains(x))
+                                    workset += x
                             }
                         case Assignment(_, _, ArrayLoad(_, _, arrayRef)) ⇒
                             arrayRef.asVar.definedBy foreach { x ⇒
-                                if (!seen.contains(x)) worklist = worklist + x
+                                if (!seen.contains(x))
+                                    workset += x
                             }
                         // we are not inter-procedural
                         case Assignment(_, _, _: FunctionCall[_]) ⇒ meetMostRestrictive(AtMost(NoEscape))
-                        case Assignment(_, _, _: Const)           ⇒ // must be null
-                        case _                                    ⇒ throw new RuntimeException("not yet implemented")
+                        case Assignment(_, _, _: Const)           ⇒
+                        case s                                    ⇒ throw new UnknownError(s"Unexpected tac: $s")
                     }
 
                 } else if (referenceDefSite >= ai.VMLevelValuesOriginOffset) {
@@ -231,7 +232,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         case EP(_, p) if p.isFinal  ⇒
                         case _                      ⇒ dependees += escapeState
                     }*/
-                } else throw new RuntimeException("not yet implemented")
+                } else throw new UnknownError(s"Unexpected origin $referenceDefSite")
             }
         }
     }
@@ -305,42 +306,52 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
         assert(usesDefSite(call.receiver))
 
         // the object constructor will not escape the this local
-        if (call.declaringClass.asObjectType != ObjectType.Object) {
-            // resolve the constructor
-            project.specialCall(
-                call.declaringClass.asObjectType,
-                call.isInterface,
-                "<init>",
-                call.descriptor
-            ) match {
-                    case Success(callee) ⇒
-                        // check if the this local escapes in the callee
-                        val escapeState = propertyStore(formalParameters(callee)(0), EscapeProperty.key)
-                        escapeState match {
-                            case EP(_, NoEscape)                                    ⇒ //NOTHING TO DO
-                            case EP(_, GlobalEscape)                                ⇒ meetMostRestrictive(GlobalEscape)
-                            case EP(_, EscapeViaStaticField)                        ⇒ meetMostRestrictive(EscapeViaStaticField)
-                            case EP(_, EscapeViaHeapObject)                         ⇒ meetMostRestrictive(EscapeViaHeapObject)
-                            case EP(_, EscapeInCallee)                              ⇒ meetMostRestrictive(EscapeInCallee)
-                            case EP(_, AtMost(EscapeInCallee))                      ⇒ meetMostRestrictive(AtMost(EscapeInCallee))
-                            case EP(_, EscapeViaParameter)                          ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case EP(_, EscapeViaAbnormalReturn)                     ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case EP(_, EscapeViaParameterAndAbnormalReturn)         ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(NoEscape))                            ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(EscapeViaParameter))                  ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(EscapeViaAbnormalReturn))             ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case EP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ meetMostRestrictive(AtMost(NoEscape))
-                            case ep @ EP(_, Conditional(_)) ⇒
-                                dependees += ep
-                            case EP(_, p) ⇒
-                                throw new UnknownError(s"unexpected escape property ($p) for constructors")
-                            // result not yet finished
-                            case epk ⇒
-                                dependees += epk
-                        }
-                    case /* unknown method */ _ ⇒ meetMostRestrictive(AtMost(NoEscape))
-                }
-        }
+        if (call.declaringClass eq ObjectType.Object)
+            return ;
+
+        // resolve the constructor
+        project.specialCall(
+            call.declaringClass,
+            call.isInterface,
+            "<init>",
+            call.descriptor
+        ) match {
+                case Success(callee) ⇒
+                    // check if the this local escapes in the callee
+                    val escapeState = propertyStore(formalParameters(callee)(0), EscapeProperty.key)
+                    escapeState match {
+                        case EP(_, NoEscape)                                    ⇒ //NOTHING TO DO
+                        case EP(_, GlobalEscape)                                ⇒ meetMostRestrictive(GlobalEscape)
+                        case EP(_, EscapeViaStaticField)                        ⇒ meetMostRestrictive(EscapeViaStaticField)
+                        case EP(_, EscapeViaHeapObject)                         ⇒ meetMostRestrictive(EscapeViaHeapObject)
+                        case EP(_, EscapeInCallee)                              ⇒ meetMostRestrictive(EscapeInCallee)
+                        case EP(_, AtMost(EscapeInCallee))                      ⇒ meetMostRestrictive(AtMost(EscapeInCallee))
+                        case EP(_, EscapeViaParameter)                          ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case EP(_, EscapeViaAbnormalReturn)                     ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case EP(_, EscapeViaParameterAndAbnormalReturn)         ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case EP(_, AtMost(NoEscape))                            ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case EP(_, AtMost(EscapeViaParameter))                  ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case EP(_, AtMost(EscapeViaAbnormalReturn))             ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case EP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ meetMostRestrictive(AtMost(NoEscape))
+                        case ep @ EP(_, Conditional(NoEscape)) ⇒
+                            dependees += ep
+                        case ep @ EP(_, Conditional(EscapeInCallee)) ⇒
+                            meetMostRestrictive(EscapeInCallee)
+                            dependees += ep
+                        case ep @ EP(_, Conditional(AtMost(EscapeInCallee))) ⇒
+                            meetMostRestrictive(AtMost(EscapeInCallee))
+                            dependees += ep
+                        case ep @ EP(_, Conditional(_)) ⇒
+                            meetMostRestrictive(AtMost(NoEscape))
+                            dependees += ep
+                        case EP(_, p) ⇒
+                            throw new UnknownError(s"unexpected escape property ($p) for constructors")
+                        // result not yet finished
+                        case epk ⇒
+                            dependees += epk
+                    }
+                case /* unknown method */ _ ⇒ meetMostRestrictive(AtMost(NoEscape))
+            }
     }
 
     abstract override protected[this] def c(
@@ -349,11 +360,11 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
         other match {
             case FormalParameter(method, -1) if method.isConstructor ⇒ p match {
 
-                case GlobalEscape         ⇒ Result(e, GlobalEscape)
+                case GlobalEscape         ⇒ Result(entity, GlobalEscape)
 
-                case EscapeViaStaticField ⇒ Result(e, EscapeViaStaticField)
+                case EscapeViaStaticField ⇒ Result(entity, EscapeViaStaticField)
 
-                case EscapeViaHeapObject  ⇒ Result(e, EscapeViaHeapObject)
+                case EscapeViaHeapObject  ⇒ Result(entity, EscapeViaHeapObject)
 
                 case NoEscape             ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
 
@@ -380,14 +391,6 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                     //assert(u ne IntermediateUpdate)
                     removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
 
-                case p @ (Conditional(EscapeViaParameter) | Conditional(EscapeViaAbnormalReturn) |
-                    Conditional(EscapeViaParameterAndAbnormalReturn) |
-                    Conditional(AtMost(EscapeViaParameter)) |
-                    Conditional(AtMost(EscapeViaAbnormalReturn)) |
-                    Conditional(AtMost(EscapeViaNormalAndAbnormalReturn))) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p.asInstanceOf[EscapeProperty], AtMost(NoEscape))
-
                 case p @ Conditional(NoEscape) ⇒
                     assert(u eq IntermediateUpdate)
                     performIntermediateUpdate(other, p, NoEscape)
@@ -396,13 +399,13 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                     assert(u eq IntermediateUpdate)
                     performIntermediateUpdate(other, p, EscapeInCallee)
 
-                case p @ Conditional(AtMost(NoEscape)) ⇒
-                    assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p, AtMost(NoEscape))
-
                 case p @ Conditional(AtMost(EscapeInCallee)) ⇒
                     assert(u eq IntermediateUpdate)
                     performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+
+                case p @ Conditional(_) ⇒
+                    assert(u eq IntermediateUpdate)
+                    performIntermediateUpdate(other, p, AtMost(NoEscape))
 
                 case _ ⇒
                     throw new UnknownError(s"unexpected escape property ($p) for constructors")
