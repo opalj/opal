@@ -76,7 +76,6 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.Assignment
 
 trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
