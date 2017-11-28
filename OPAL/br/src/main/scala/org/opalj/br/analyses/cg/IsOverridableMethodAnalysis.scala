@@ -59,6 +59,7 @@ private[analyses] class IsOverridableMethodAnalysis(
     //private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
 
     private[this] def isAlwaysFinallyOverridden(objectType: ObjectType, method: Method): Answer = {
+        // FIXME We should handle final methods!
         if (isClassExtensible(objectType).isYes && !method.isFinal)
             return No;
 
@@ -115,7 +116,7 @@ private[analyses] class IsOverridableMethodAnalysis(
     }
 
     def apply(method: Method): Answer = {
-        if (method.isPrivate || method.isStatic || method.isInitializer)
+        if (method.isPrivate || method.isStatic || method.isInitializer || method.isFinal)
             return No;
 
         //cache.computeIfAbsent(
