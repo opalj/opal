@@ -66,7 +66,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         org.opalj.br.analyses.PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
         val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
+        ps.waitOnPropertyComputationCompletion()
         (p, ps, as)
     }
 
