@@ -34,6 +34,8 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import org.opalj.util.ScalaMajorVersion
+import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -45,13 +47,11 @@ import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
-import org.opalj.bytecode.RTJar
+import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.fpcf.properties.PropertyMatcher
-import org.opalj.util.ScalaMajorVersion
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -229,7 +229,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
-        val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
+        val ps = p.get(PropertyStoreKey)
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion(
             resolveCycles = true,

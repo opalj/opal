@@ -67,7 +67,7 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
     ): Project[URL] = {
         val baseConfig = lambdasRewritingConfig(rewrite = false, logRewrites = true)
         val config = baseConfig.withFallback(fallbackConfiguration)
-        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, analysisMode, config)
+        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, projectType, config)
     }
 
     override def description: String = "Prints information about invokedynamic instructions."

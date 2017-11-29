@@ -33,10 +33,10 @@ package info
 import java.net.URL
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.EP

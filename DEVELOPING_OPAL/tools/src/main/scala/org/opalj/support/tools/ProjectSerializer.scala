@@ -29,13 +29,18 @@
 package org.opalj
 package support
 
-import java.io.{BufferedOutputStream, File, FileOutputStream}
+import java.io.File
+import java.io.FileOutputStream
+import java.io.BufferedOutputStream
 
+import org.opalj.io.process
+
+import org.opalj.bytecode.RTJar
 import org.opalj.ba
 import org.opalj.bc.Assembler
-import org.opalj.br.analyses.{Project, SomeProject}
-import org.opalj.bytecode.RTJar
-import org.opalj.io.process
+import org.opalj.br.ClassFile
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Program to export a project loaded with OPAL with all code rewriting, for example INVOKEDYNAMIC

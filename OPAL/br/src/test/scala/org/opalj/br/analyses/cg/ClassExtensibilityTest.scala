@@ -47,7 +47,7 @@ class ClassExtensibilityTest extends FunSpec with Matchers {
      */
     val testPackage = "extensible_classes/visibility/"
 
-    private def TypeFixture(simpleName : String) = ObjectType(testPackage+simpleName)
+    private def TypeFixture(simpleName: String) = ObjectType(testPackage + simpleName)
 
     val PublicInterface = TypeFixture("PublicInterface")
     val Interface = TypeFixture("Interface")

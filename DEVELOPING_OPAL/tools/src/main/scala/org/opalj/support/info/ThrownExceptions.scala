@@ -36,10 +36,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.AllThrownExceptions
-import org.opalj.fpcf.properties.ThrownExceptionsFallbackAnalysis
+import org.opalj.fpcf.properties.ThrownExceptionsFallback
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
 
@@ -74,7 +74,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
             // IMPROVE ThrownExceptionsByOverridingMethods.startLazily(project, ps) is for no apparent reason totally crashing..
             ThrownExceptionsByOverridingMethodsAnalysis.start(project, ps)
         } else {
-            val fallbackAnalysis = new ThrownExceptionsFallbackAnalysis(ps)
+            val fallbackAnalysis = new ThrownExceptionsFallback(ps)
             ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
         }
 
