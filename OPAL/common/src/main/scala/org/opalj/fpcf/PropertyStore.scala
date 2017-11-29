@@ -91,7 +91,7 @@ import scala.reflect.runtime.universe.typeOf
  * - pk =        Property Key
  * - pc =        Property Computation
  * - lpc =       Lazy Property Computation
- * - c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
+ * - c =         Continuation (The part of the analysis that factors in all properties of dependees)
  * - EPK =       Entity and a PropertyKey
  * - EP =        Entity and an associated Property
  * - EOptionP =  Entity and either a PropertyKey or (if available) a Property
@@ -139,7 +139,7 @@ abstract class PropertyStore {
     }
 
     /**
-     * Generally called by the property store to test if if should stop the execution of (new)
+     * Generally called by the property store to test if it should stop the execution of (new)
      * tasks. This function can be called by 3rd party code.
      */
     final def checkIsInterrupted: Boolean = isInterrupted()

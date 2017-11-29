@@ -37,7 +37,7 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 }
 
 /**
- * Specifies the mutability of instances of a specific class.
+ * Specifies the (im)mutability of instances of a specific class.
  * The highest rating is "Immutable", then "Conditionally Immutable", then "Mutable".
  *
  * An instance of a class is rated as immutable if the state of the object does not change after

@@ -50,15 +50,6 @@ import org.opalj.collection.mutable.ArrayMap
  * relationships, it is necessary to add these particular classes to the computed set of
  * extensible classes.
  *
- * == Extensibility w.r.t. Open Packages ==
- * A class is extensible if:
- *  - the class is not (effectively) final
- *
- * == Extensibility w.r.t. Closed Packages ==
- * A class is extensible if:
- *  - the class is public and not (effectively) final
- *  - one of its subclasses is extensible
- *
  * @author Michael Reif
  */
 class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType ⇒ Answer) {

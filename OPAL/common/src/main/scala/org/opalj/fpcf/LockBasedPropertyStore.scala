@@ -547,6 +547,7 @@ class LockBasedPropertyStore private (
                             case Right(p)                             ⇒ FinalEP(e, p.asInstanceOf[P])
                         }
                     } else {
+                        // So far no one want to compute a result, but this may still change.
                         EPK(e, pk)
                     }
                 }

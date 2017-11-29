@@ -38,8 +38,8 @@ import net.ceedubs.ficus.Ficus._
 import org.opalj.collection.mutable.ArrayMap
 
 /**
- * Determines whether a class or interface is directly extensible by a (yet unknown)
- * client application/library. A class/interface is directly extensible if a developer can
+ * Determines whether a class or interface is '''directly extensible by a (yet unknown)
+ * client application/library'''. A class/interface is directly extensible if a developer can
  * define a direct - not transitive - subtype that is not part of the given application/library.
  *
  * This analysis uses the [[ClosedPackages]] information.
