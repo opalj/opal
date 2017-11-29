@@ -64,7 +64,7 @@ class FormalParameters private[analyses] (val data: Map[Method, ConstArray[Forma
 /**
  * The ''key'' object to get information about all formal parameters.
  *
- * @note See [[org.opalj.br.analyses.FormalParameter]] and [[FormalParameters]] for further details.
+ * @note See [[org.opalj.br.FormalParameter]] and [[FormalParameters]] for further details.
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in
  *          `this` object.
  * @author Florian Kuebler
@@ -106,29 +106,6 @@ object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothi
             }
         }
         errors.foreach { e ⇒ error("formal parameters", "collecting formal parameters failed", e) }
-        /*
-        p.allMethods.par foreach { m ⇒
-            try {
-                val md = m.descriptor
-                val parametersCount = md.parametersCount
-                if (m.isStatic && parametersCount == 0) {
-                    sites.add(m → ConstArray.empty)
-                } else {
-                    val formalParameters = new Array[FormalParameter](parametersCount + 1)
-                    if (!m.isStatic) formalParameters(0) = new FormalParameter(m, -1)
-                    var p = 1
-                    while (p <= parametersCount) {
-                        formalParameters(p) = new FormalParameter(m, -p - 1)
-                        p += 1
-                    }
-                    sites.add(m → ConstArray(formalParameters))
-                }
-            } catch {
-                case e: Throwable ⇒
-                    error("formal parameters", "collecting formal parameters failed", e)
-            }
-        }
-        */
 
         new FormalParameters(sites.asScala.toMap)
     }
