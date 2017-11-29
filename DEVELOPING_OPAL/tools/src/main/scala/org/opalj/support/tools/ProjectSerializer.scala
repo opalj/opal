@@ -28,6 +28,7 @@
  */
 package org.opalj
 package support
+package tools
 
 import java.io.File
 import java.io.FileOutputStream

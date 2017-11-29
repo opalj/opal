@@ -26,25 +26,63 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.jcg
+package org.opalj
+package br
 
-import java.io.{ByteArrayOutputStream, File, PrintStream}
+import java.net.URL
+import java.io.File
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.FixturesTest
+import org.opalj.bytecode.RTJar
+import org.opalj.br.analyses.Project
+import org.opalj.support.tools.ProjectBasedInMemoryClassLoader
 
 /**
- * Tests for resolving various lambda expressions using the Java Call Graph library.
- *
- * See: https://bitbucket.org/delors/jcg
+ * Test if OPAL is able to rewrite a simple lambda expression and check if the rewritten bytecode
+ * is executable.
  *
  * @author Andreas Muttscheller
  */
-class LambdaExpressions extends FixturesTest {
-    val fixtureFiles: File = locateTestResources("classfiles/lambda_expressions.jar", "bi")
+class InvokedynamicRewritingTest extends FunSpec with Matchers {
+
+    def FixtureProject(fixtureFiles: File): Project[URL] = {
+        val classFileReader = Project.JavaClassFileReader()
+        import classFileReader.ClassFiles
+        val projectClassFiles = ClassFiles(fixtureFiles)
+        val libraryClassFiles = ClassFiles(RTJar)
+
+        info(s"the test fixture project consists of ${projectClassFiles.size} class files")
+        Project(
+            projectClassFiles,
+            libraryClassFiles,
+            libraryClassFilesAreInterfacesOnly = false
+        )
+    }
+
+    describe("a simple lambda add") {
+        it("should calculate 2+2 correctly") {
+            val r = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+            val p = FixtureProject(r)
+            val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
+            val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
+            val instance = c.newInstance()
+            val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
+            val res = m.invoke(instance, new Integer(2), new Integer(2))
+
+            assert(res.asInstanceOf[Integer] == 4)
+        }
+    }
 
     describe("JCG lambda_expressions test") {
         it("should execute main successfully") {
+            val p = FixtureProject(locateTestResources("classfiles/lambda_expressions.jar", "bi"))
+            val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
+
             val c = inMemoryClassLoader.loadClass("app.ExpressionPrinter")
             val m = c.getMethod("main", classOf[Array[String]])
 
