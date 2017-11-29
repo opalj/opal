@@ -59,7 +59,6 @@ private[analyses] class IsOverridableMethodAnalysis(
     //private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
 
     private[this] def isAlwaysFinallyOverridden(objectType: ObjectType, method: Method): Answer = {
-        // FIXME We should handle final methods!
         if (isClassExtensible(objectType).isYes && !method.isFinal)
             return No;
 
@@ -80,8 +79,7 @@ private[analyses] class IsOverridableMethodAnalysis(
             if (isTypeExtensible(ot).isYesOrUnknown) {
                 val cf = project.classFile(ot)
                 val subtypeMethod = cf.flatMap(_.findMethod(methodName, methodDescriptor))
-                if (subtypeMethod.isEmpty ||
-                    !subtypeMethod.get.isFinal ||
+                if (subtypeMethod.isEmpty || !subtypeMethod.get.isFinal ||
                     (
                         // let's test if this "final override", is for a different method...
                         method.isPackagePrivate &&
@@ -99,7 +97,7 @@ private[analyses] class IsOverridableMethodAnalysis(
                             candidateMethods.exists(mdc ⇒ mdc.packageName == methodPackageName)
                         }
                     )) {
-                    // the type as a whole is extensible...
+                    // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...
                     isClassExtensible(ot) match {
                         case Yes     ⇒ return No;
@@ -119,9 +117,6 @@ private[analyses] class IsOverridableMethodAnalysis(
         if (method.isPrivate || method.isStatic || method.isInitializer || method.isFinal)
             return No;
 
-        //cache.computeIfAbsent(
-        //    method,
-        //    (method: Method) ⇒ {
         val ot = method.declaringClassFile.thisType
         val isExtensibleType = isTypeExtensible(ot)
 
@@ -131,7 +126,5 @@ private[analyses] class IsOverridableMethodAnalysis(
 
         // the type is extensible... Let's check the method:
         isAlwaysFinallyOverridden(ot, method).negate
-        //    }
-        //)
     }
 }
