@@ -27,20 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package br
 package analyses
+package cg
 
-import scala.collection.mutable
-import scala.collection.parallel.ParIterable
+import org.opalj.concurrent.defaultIsInterrupted
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.{PropertyStoreKey, SomeProject}
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.fpcf.properties.NotInstantiable
-import org.opalj.fpcf.properties.Instantiable
-import org.opalj.fpcf.properties.Instantiability
+/**
+ * The ''key'' object to get information about the classes of which we could have an
+ * instance at runtime.
+ *
+ * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
+ *
+ * @author Michael Eichberg
+ */
+object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
 
+    /**
+     * The [[InstantiableClasses]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+
+    /**
+     * Computes the information which classes are (not) instantiable.
+     *
+     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
+     */
+    override protected def compute(project: SomeProject): InstantiableClasses = {
+        // The "MayHaveInstancesAnalysis" considers the information of the [[TypeExtensibilityAnalysis]].
+        InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
+    }
+}
+
+/* ******************************* OLD *****************************
 /**
  * This analysis determines which classes can never be instantiated (e.g.,
  * `java.lang.Math`).
@@ -213,3 +234,4 @@ object SimpleInstantiabilityAnalysis {
         run(project).foreach(ep ⇒ ps.set(ep.e, ep.p))
     }
 }
+*/ 

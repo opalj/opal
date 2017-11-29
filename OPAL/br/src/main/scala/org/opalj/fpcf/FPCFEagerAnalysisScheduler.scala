@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * Factory for FPCF analyses which should be directly started/scheduled.

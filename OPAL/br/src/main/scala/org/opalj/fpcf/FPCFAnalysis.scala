@@ -29,44 +29,12 @@
 package org.opalj
 package fpcf
 
-import org.opalj.log.LogContext
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
-import AnalysisModes._
+import org.opalj.br.analyses.ProjectBasedAnalysis
 
 /**
- * Common super trait of all analyses that use the fixpoint
- * computations framework. In general, an analysis computes a
- * [[org.opalj.fpcf.Property]] by processing some entities, e.g.: ´classes´, ´methods´
- * or ´fields´.
- *
- * @author Michael Reif
- * @author Michael Eichberg
+ * Common super-trait of all analysis which use MISAF.
+ * (Formerly known as Fixpoint-Computations Framework/PropertyStore.)
  */
-// TODO Move the interface to org.opalj.br.analyses
-trait ProjectBasedAnalysis {
-
-    implicit val project: SomeProject
-    final def p = project
-
-    final implicit val classHierarchy = project.classHierarchy
-    final def ch = classHierarchy
-
-    final implicit val logContext: LogContext = project.logContext
-
-    // def getEPKCache(e : Entity, pk : PropertyKey) : EOption[]
-
-    // The project type:
-    /** @migration won't be available in the near future*/
-    final def isOpenLibrary: Boolean = project.analysisMode eq OPA
-    /** @migration won't be available in the near future*/
-    final def isClosedLibrary: Boolean = project.analysisMode eq CPA
-    /** @migration won't be available in the near future*/
-    final def isDesktopApplication: Boolean = project.analysisMode eq DesktopApplication
-    /** @migration won't be available in the near future*/
-    final def isJEEApplication: Boolean = project.analysisMode eq JEE6WebApplication
-}
-
 trait FPCFAnalysis extends ProjectBasedAnalysis {
 
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)

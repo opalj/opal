@@ -30,54 +30,56 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.AnalysisModes._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 
 /**
- * Factory to create `Config` objects with a given analysis mode.
- * This is particularly useful for testing purposes as it facilitates `Config` file independent
- * tests.
+ * Factory to create `Config` objects with a given project type
+ * (see [[org.opalj.ProjectTypes]]).
+ *
+ * This is particularly useful for testing purposes as it facilitates tests which
+ * are independent of the current (default) configuration.
  */
-object AnalysisModeConfigFactory {
+object ProjectTypeConfigFactory {
 
     private[this] final def createConfig(mode: String) = {
-        s"""org.opalj { analysisMode = "$mode"}"""
+        s"""org.opalj.project { type = "$mode"}"""
     }
 
-    private[this] final val cpaConfig: String = {
-        createConfig("library with closed packages assumption")
+    private[this] final def libraryConfig: String = {
+        createConfig("library")
     }
 
-    private[this] final val opaConfig: String = {
-        createConfig("library with open packages assumption")
+    private[this] final def guiApplicationConfig: String = {
+        createConfig("gui application")
     }
 
-    private[this] final val desktopAppConfig: String = {
-        createConfig("desktop pplication")
+    private[this] final def commandLineApplicationConfig: String = {
+        createConfig("command-line application")
     }
 
-    private[this] final val jee6WebAppConfig: String = {
-        createConfig("jee6 web application")
+    private[this] final def jee6WebApplicationConfig: String = {
+        createConfig("jee6+ web application")
     }
 
-    def createConfig(value: AnalysisMode): Config = {
+    def createConfig(value: ProjectType): Config = {
+        import ProjectTypes._
         ConfigFactory.parseString(
             value match {
-                case LibraryWithOpenPackagesAssumption   ⇒ opaConfig
-                case LibraryWithClosedPackagesAssumption ⇒ cpaConfig
-                case DesktopApplication                  ⇒ desktopAppConfig
-                case JEE6WebApplication                  ⇒ jee6WebAppConfig
+                case Library                ⇒ libraryConfig
+                case CommandLineApplication ⇒ commandLineApplicationConfig
+                case GUIApplication         ⇒ guiApplicationConfig
+                case JEE6WebApplication     ⇒ jee6WebApplicationConfig
             }
         )
     }
 
-    def resetAnalysisMode[Source](
+    def resetProjectType[Source](
         project:                Project[Source],
-        newAnalysisMode:        AnalysisMode,
+        newProjectType:         ProjectType,
         useOldConfigAsFallback: Boolean         = true
     ): Project[Source] = {
-        val testConfig = AnalysisModeConfigFactory.createConfig(newAnalysisMode)
+        val testConfig = ProjectTypeConfigFactory.createConfig(newProjectType)
         Project.recreate(project, testConfig, useOldConfigAsFallback)
     }
 }

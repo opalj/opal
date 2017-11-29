@@ -27,45 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package properties
+package br
+package analyses
 
-sealed trait FactoryMethodPropertyMetaInformation extends PropertyMetaInformation {
+import org.opalj.log.LogContext
 
-    final type Self = FactoryMethod
+/**
+ * Common super trait of all analyses that use the fixpoint
+ * computations framework. In general, an analysis computes a
+ * [[org.opalj.fpcf.Property]] by processing some entities, e.g.: ´classes´, ´methods´
+ * or ´fields´.
+ *
+ * @author Michael Reif
+ * @author Michael Eichberg
+ */
+trait ProjectBasedAnalysis {
+
+    implicit val project: SomeProject
+    final def p = project
+
+    final implicit val classHierarchy = project.classHierarchy
+    final def ch = classHierarchy
+
+    final implicit val logContext: LogContext = project.logContext
+
 }
-
-/**
- * Common super trait of all factory method properties.
- */
-sealed trait FactoryMethod extends Property with FactoryMethodPropertyMetaInformation {
-
-    final def key = FactoryMethod.key
-
-}
-/**
- * A companion object for the ProjectAccessibility trait. It holds the key, which is shared by
- * all properties derived from the ProjectAccessibility property, as well as it defines defines
- * the (sound) fall back if the property is not computed but requested by another analysis.
- */
-object FactoryMethod extends FactoryMethodPropertyMetaInformation {
-
-    /**
-     * The key associated with every FactoryMethod property.
-     * It contains the unique name of the property and the default property that
-     * will be used if no analysis is able to (directly) compute the respective property.
-     * `IsFactoryMethod` is chosen as default because we have to define a sound default value for
-     * all depended analyses.
-     */
-    final val key: PropertyKey[FactoryMethod] = PropertyKey.create("FactoryMethod", IsFactoryMethod)
-}
-
-/**
- * The respective method is a factory method.
- */
-case object IsFactoryMethod extends FactoryMethod { final val isRefineable: Boolean = false }
-
-/**
- * The respective method is not a factory method.
- */
-case object NotFactoryMethod extends FactoryMethod { final val isRefineable: Boolean = false }

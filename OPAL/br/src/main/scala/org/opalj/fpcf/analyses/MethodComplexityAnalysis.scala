@@ -35,7 +35,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Method
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties.MethodComplexity
-import org.opalj.ai.PC
+import org.opalj.br.PC
 
 /**
  * A shallow analysis that tries to identify methods that are relatively simple, that is,

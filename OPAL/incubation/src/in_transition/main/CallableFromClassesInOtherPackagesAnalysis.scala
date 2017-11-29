@@ -28,8 +28,9 @@
  */
 
 package org.opalj
-package fpcf
+package br
 package analyses
+package cg
 
 import scala.collection.mutable
 
@@ -62,11 +63,7 @@ import org.opalj.fpcf.properties.ClientCallable
  */
 class CallableFromClassesInOtherPackagesAnalysis private (
         val project: SomeProject
-) extends FPCFAnalysis {
-
-    def propertyComputation(e: Entity): PropertyComputationResult = {
-        ImmediateResult(e, determineProperty(e))
-    }
+) extends ProjectBasedAnalysis {
 
     /**
      * Determines the [[org.opalj.fpcf.properties.ClientCallable]] property of non-static methods.
@@ -79,8 +76,9 @@ class CallableFromClassesInOtherPackagesAnalysis private (
      * - if CPA is met, methods in package visible classes are not visible by default.
      *
      */
-    def determineProperty(e: Entity): Property = {
-        val method = e.asInstanceOf[Method]
+    def isClientCallable(method: Method): Boolean = {
+        val IsClientCallable = true
+        val NotClientCallable = false
 
         if (method.isPrivate)
             /* private methods are only visible in the scope of the class */
@@ -174,20 +172,6 @@ class CallableFromClassesInOtherPackagesAnalysis private (
     }
 }
 
-object CallableFromClassesInOtherPackagesAnalysis extends FPCFEagerAnalysisScheduler {
+object CallableFromClassesInOtherPackagesAnalysis {
 
-    override def derivedProperties: Set[PropertyKind] = Set(ClientCallable.Key)
-
-    protected[fpcf] def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore
-    ): FPCFAnalysis = {
-
-        val analysis = new CallableFromClassesInOtherPackagesAnalysis(project)
-        propertyStore.scheduleLazyPropertyComputation(
-            ClientCallable.Key,
-            analysis.propertyComputation
-        )
-        analysis
-    }
 }

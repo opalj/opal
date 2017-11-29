@@ -27,8 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package fpcf
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -39,9 +38,14 @@ import scala.collection.JavaConverters._
 
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.LockBasedPropertyStore
-import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.br.Method
+import org.opalj.br.Field
+import org.opalj.br.ClassFile
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.AllocationSitesKey
+import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.analyses.EntityDerivationFunction
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].

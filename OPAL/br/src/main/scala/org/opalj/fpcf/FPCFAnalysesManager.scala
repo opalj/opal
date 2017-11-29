@@ -37,7 +37,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.log.OPALLogger.error
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * @author Michael Reif

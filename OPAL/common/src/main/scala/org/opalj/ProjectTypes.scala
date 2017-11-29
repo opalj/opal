@@ -27,41 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package properties
-
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
 
 /**
- * Determines for each method if it potentially can be directly called by a client.
- * This can happens if:
- * - the method is directly visible to the client
- * - the method can become visible by a visible subclass which inherits the respective method
- * - the method can become pseudo-visible by a call on a superclass/interface (if the class is upcasted)
+ * The project type specifies the type of the project/the kind of sources which will be
+ * analyzed.
  *
- * @author Michael Reif
+ * Basically an enumeration of the modes that can be used by the subsequent analyses.
+ *
+ * @author Michael Eichberg
  */
-// IMPROVE Make this a regular project information.
-sealed trait ClientCallable extends Property {
-    final type Self = ClientCallable
+object ProjectTypes extends Enumeration {
 
-    final def key = ClientCallable.Key
+    final val Library = Value("library")
 
-    final def isRefineable = false
+    /**
+     * This mode shall be used if a standard Java GUI application is analyzed which is started by
+     * the JVM by calling the application's main method.
+     */
+    final val CommandLineApplication = Value("command-line application")
+
+    final val GUIApplication = Value("gui application")
+
+    final val JEE6WebApplication = Value("jee6+ web application")
+
 }
 
-object ClientCallable {
-
-    final val Key = {
-        PropertyKey.create[ClientCallable](
-            "ClientCallable",
-            IsClientCallable,
-            IsClientCallable
-        )
-    }
+/**
+ * Common constants related to the project type.
+ *
+ * @note The package defines the type `ProjectType`.
+ */
+object ProjectType {
+    final val ConfigKey = "org.opalj.project.type"
 }
-
-case object IsClientCallable extends ClientCallable
-
-case object NotClientCallable extends ClientCallable

@@ -32,7 +32,6 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport

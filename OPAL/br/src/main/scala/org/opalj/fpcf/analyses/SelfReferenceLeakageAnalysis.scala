@@ -32,7 +32,7 @@ package analyses
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.br.{ClassFile, Method, ObjectType}
-import org.opalj.br.analyses.{PropertyStoreKey, SomeProject}
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{AASTORE, ATHROW, FieldWriteAccess, INVOKEDYNAMIC, INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, MethodInvocationInstruction, PUTFIELD, PUTSTATIC}
 import org.opalj.fpcf.properties.{DoesNotLeakSelfReference, LeaksSelfReference, SelfReferenceLeakage}
 import org.opalj.log.OPALLogger

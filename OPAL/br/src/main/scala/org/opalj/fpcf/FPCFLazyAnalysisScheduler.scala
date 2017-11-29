@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  *  The underlying analysis will only be registered with the property store and

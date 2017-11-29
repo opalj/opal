@@ -27,8 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package fpcf
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -38,7 +37,20 @@ import org.scalatest.Matchers
 import org.opalj.collection.immutable.Chain
 
 import org.opalj.br.TestSupport.biProject
+
+import org.opalj.br.PC
+import org.opalj.br.Method
+import org.opalj.br.Field
+import org.opalj.br.ClassFile
+import org.opalj.br.AllocationSite
+import org.opalj.br.ObjectAllocationSite
+import org.opalj.br.FormalParameter
 import org.opalj.br.instructions.NEW
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.AllocationSites
+import org.opalj.br.analyses.AllocationSitesKey
+import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.analyses.FormalParametersKey
 
 /**
  * Tests the `ProjectIndex`.
@@ -130,7 +142,7 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
                 } else {
                     // check that the method does not contain a new instruction
                     code.iterate { (pc, i) ⇒
-                        if (i.opcode == instructions.NEW.opcode) {
+                        if (i.opcode == NEW.opcode) {
                             info("allocation sites: "+mToPCToAs.mkString("\n"))
                             val error = m.toJava(s"missing allocation site $pc:$i")
                             fail(error)

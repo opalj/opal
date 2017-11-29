@@ -59,7 +59,7 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        analysisMode:            AnalysisMode,
+        projectType:             ProjectType,
         fallbackConfiguration:   Config
     )(
         implicit

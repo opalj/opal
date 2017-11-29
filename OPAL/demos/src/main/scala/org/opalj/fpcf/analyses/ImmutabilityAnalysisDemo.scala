@@ -37,7 +37,6 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport

@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
+package support
 
 import java.io.{BufferedOutputStream, File, FileOutputStream}
 
@@ -130,3 +131,25 @@ object ProjectSerializer {
         Assembler(ba.toDA(c))
     }
 }
+
+/**
+ * A simple `ClassLoader` that looks-up the available classes from the given Project.
+ *
+ * @author Andreas Muttscheller
+ */
+class ProjectBasedInMemoryClassLoader(
+        val project: SomeProject,
+        parent:      ClassLoader = getClass.getClassLoader
+) extends ClassLoader(parent) {
+
+    @throws[ClassNotFoundException]
+    override def findClass(name: String): Class[_] = {
+        project.allProjectClassFiles.find(_.thisType.toJava == name) match {
+            case Some(data) ⇒
+                val bytes = ProjectSerializer.classToByte(data)
+                defineClass(name, bytes, 0, bytes.length)
+            case None ⇒ throw new ClassNotFoundException(name)
+        }
+    }
+}
+

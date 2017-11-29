@@ -28,7 +28,6 @@
  */
 package org.opalj
 package br
-package analyses
 
 /**
  * Explicitly models a formal parameter of a method to make it possible to store it in the

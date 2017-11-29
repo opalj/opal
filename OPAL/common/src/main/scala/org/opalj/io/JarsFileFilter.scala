@@ -27,42 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-package cg
+package io
 
-import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.fpcf.analyses.LibraryInstantiableClassesAnalysis
+import java.io.File
+import java.io.FileFilter
 
-/**
- * The ''key'' object to get information about the classes that could be instantiated
- * (either, directly or indirectly).
- *
- * @example To get the index use the [[Project]]'s `get` method and pass in `this` object.
- *
- * @author Michael Eichberg
- */
-object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses, Nothing] {
+object JARsFileFilter extends FileFilter {
 
-    /**
-     * The [[InstantiableClasses]] has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
-
-    /**
-     * Computes the information which classes are (not) instantiable.
-     *
-     * @see [[InstantiableClasses]] and [[InstantiableClassesAnalysis]]
-     */
-    override protected def compute(project: SomeProject): InstantiableClasses = {
-        //FIX ME
-        val isLibrary = AnalysisModes.isLibraryLike(project.analysisMode)
-        if (isLibrary)
-            LibraryInstantiableClassesAnalysis.doAnalyze(project)
-        else
-            InstantiableClassesAnalysis.doAnalyze(project, defaultIsInterrupted)
+    def accept(path: File): Boolean = {
+        path.isFile && path.getName.endsWith(".jar") && path.canRead
     }
-}
 
+}
