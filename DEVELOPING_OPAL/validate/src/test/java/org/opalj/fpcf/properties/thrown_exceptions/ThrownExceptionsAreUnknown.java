@@ -26,39 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj.fpcf.properties.thrown_exceptions;
 
-import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.FPCFAnalysis;
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Annotation to state the (transitivley) thrown exceptions.
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-class ThrownExceptionsAnalysisTests extends PropertiesTest {
+@PropertyValidator(key = "ThrownExceptionsAreUnknown",validator = ThrownExceptionsAreUnknownMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface ThrownExceptionsAreUnknown {
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(
-            as,
-            methodsWithAnnotations,
-            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
-        )
-    }
+    /**
+     * A short reasoning of this property.
+     */
+    String reason();
 
-    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
-        val as = executeAnalyses(Set(
-            ThrownExceptionsByOverridingMethodsAnalysis,
-            L1ThrownExceptionsAnalysis
-        ))
-        validateProperties(
-            as,
-            methodsWithAnnotations,
-            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
-        )
-    }
-
+    /** The (set of) analyses that strictly need to be executed before the test makes sense. */
+    Class<? extends FPCFAnalysis>[] requires() default {};
 }
