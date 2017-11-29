@@ -46,8 +46,8 @@ import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 
 /**
- * Provides support for rewriting Java 8 lambda or method reference expressions that
- * werwe compiled to [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions.
+ * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
+ * were compiled to [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions.
  * This trait should be mixed in alongside a [[BytecodeReaderAndBinding]], which extracts
  * basic `invokedynamic` information from the [[BootstrapMethodTable]].
  *
@@ -62,13 +62,13 @@ import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
  * @author Michael Eichberg
  * @author Andreas Muttscheller
  */
-trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
+trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
 
-    import Java8LambdaExpressionsRewriting._
+    import LambdaExpressionsRewriting._
 
-    val performJava8LambdaExpressionsRewriting: Boolean = {
-        import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsRewritingConfigKey ⇒ Key}
+    val performLambdaExpressionsRewriting: Boolean = {
+        import LambdaExpressionsRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
             info("class file reader", "Java 8 invokedynamics are rewritten")
@@ -78,8 +78,8 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         rewrite
     }
 
-    val logJava8LambdaExpressionsRewrites: Boolean = {
-        import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
+    val logLambdaExpressionsRewrites: Boolean = {
+        import LambdaExpressionsRewriting.{LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
             info("class file reader", "Java 8 invokedynamic rewrites are logged")
@@ -90,7 +90,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     val logUnknownInvokeDynamics: Boolean = {
-        import Java8LambdaExpressionsRewriting.{Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
+        import LambdaExpressionsRewriting.{LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
         val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logUnknownInvokeDynamics) {
             info("class file reader", "unknown invokedynamics are logged")
@@ -139,7 +139,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 pc
             )
 
-        if (!performJava8LambdaExpressionsRewriting)
+        if (!performLambdaExpressionsRewriting)
             return updatedClassFile;
 
         // We have to rewrite the synthetic lambda methods to be accessible from the same package.
@@ -172,7 +172,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         )
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
-        if (Java8LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
+        if (LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
             scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
@@ -219,7 +219,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 MethodDescriptor(IndexedSeq(ObjectType.String), ObjectType.ScalaSymbol)
             )
 
-        if (logJava8LambdaExpressionsRewrites) {
+        if (logLambdaExpressionsRewrites) {
             info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
 
@@ -296,7 +296,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             )
         )
 
-        if (logJava8LambdaExpressionsRewrites) {
+        if (logLambdaExpressionsRewrites) {
             info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
 
@@ -538,7 +538,7 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             factoryDescriptor.copy(returnType = proxy.thisType)
         )
 
-        if (logJava8LambdaExpressionsRewrites) {
+        if (logLambdaExpressionsRewrites) {
             info("rewriting invokedynamic", s"Java: $invokedynamic ⇒ $newInvokestatic")
         }
 
@@ -570,26 +570,26 @@ trait Java8LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 }
 
-object Java8LambdaExpressionsRewriting {
+object LambdaExpressionsRewriting {
 
     final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
     final val LambdaNameRegEx = "[a-z0-9\\/.]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
-    final val Java8LambdaExpressionsConfigKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"Java8LambdaExpressions."
+    final val LambdaExpressionsConfigKeyPrefix = {
+        ClassFileReaderConfiguration.ConfigKeyPrefix+"LambdaExpressions."
     }
 
-    final val Java8LambdaExpressionsRewritingConfigKey = {
-        Java8LambdaExpressionsConfigKeyPrefix+"rewrite"
+    final val LambdaExpressionsRewritingConfigKey = {
+        LambdaExpressionsConfigKeyPrefix+"rewrite"
     }
 
-    final val Java8LambdaExpressionsLogRewritingsConfigKey = {
-        Java8LambdaExpressionsConfigKeyPrefix+"logRewrites"
+    final val LambdaExpressionsLogRewritingsConfigKey = {
+        LambdaExpressionsConfigKeyPrefix+"logRewrites"
     }
 
-    final val Java8LambdaExpressionsLogUnknownInvokeDynamicsConfigKey = {
-        Java8LambdaExpressionsConfigKeyPrefix+"logUnknownInvokeDynamics"
+    final val LambdaExpressionsLogUnknownInvokeDynamicsConfigKey = {
+        LambdaExpressionsConfigKeyPrefix+"logUnknownInvokeDynamics"
     }
 
     def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
@@ -633,8 +633,8 @@ object Java8LambdaExpressionsRewriting {
      */
     def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = Java8LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = Java8LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = LambdaExpressionsLogRewritingsConfigKey
         baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))

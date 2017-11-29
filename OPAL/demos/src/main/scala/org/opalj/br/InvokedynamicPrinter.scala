@@ -43,7 +43,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting.{defaultConfig ⇒ lambdasRewritingConfig}
+import org.opalj.br.reader.LambdaExpressionsRewriting.{defaultConfig ⇒ lambdasRewritingConfig}
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.

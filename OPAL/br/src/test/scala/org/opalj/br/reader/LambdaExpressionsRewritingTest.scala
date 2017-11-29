@@ -54,7 +54,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  * @author Andreas Muttscheller
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
+class LambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
@@ -69,7 +69,7 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
             method ← classFile.findMethod(name)
             body ← method.body
             factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
-            if factoryCall.declaringClass.fqn.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
+            if factoryCall.declaringClass.fqn.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
             annotations = method.runtimeVisibleAnnotations
         } {
             successFull = true
@@ -316,8 +316,8 @@ class Java8LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         val cache = new BytecodeInstructionsCache
         implicit val logContext: LogContext = GlobalLogContext
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
         val testConfig = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))

@@ -35,7 +35,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.opalj.av.checking._
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting
+import org.opalj.br.reader.LambdaExpressionsRewriting
 
 /**
  * Tests that the implemented architecture of the dependency extraction
@@ -55,7 +55,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             .filterNot { cfSrc ⇒
                 // Ignore the rewritten lambda expressions
                 val (cf, _) = cfSrc
-                cf.thisType.toJava.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
+                cf.thisType.toJava.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
             }
         val expected =
             new Specification(

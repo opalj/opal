@@ -118,7 +118,8 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                 val jarEntry = jarEntries.nextElement
                 if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
                     val data = new Array[Byte](jarEntry.getSize.toInt)
-                    process(new DataInputStream(jarFile.getInputStream(jarEntry)))(_.readFully(data))
+                    val entryInputStream =jarFile.getInputStream(jarEntry)
+                    process(new DataInputStream(entryInputStream))(_.readFully(data))
                     import Java9Framework.ClassFile
                     val classFiles1 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                     val classFiles2 = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))

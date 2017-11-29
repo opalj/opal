@@ -59,7 +59,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
     }
 
     protected def isProxyFactoryCall(declaringClassFQN: String): Boolean = {
-        declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx)
+        declaringClassFQN.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
     }
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
@@ -90,8 +90,8 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
      */
     protected def project(libraryPath: java.io.File): (SomeProject, Iterable[INVOKESTATIC]) = {
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
         val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.

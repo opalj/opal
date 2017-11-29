@@ -46,7 +46,7 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.reader.Java8LambdaExpressionsRewriting.LambdaNameRegEx
+import org.opalj.br.reader.LambdaExpressionsRewriting.LambdaNameRegEx
 import org.opalj.ai.BaseAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.Domain
@@ -60,7 +60,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
+class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
 
     def verifyMethod(
         testProject:   SomeProject,
@@ -132,7 +132,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         describe("testing the rewritten methods of the lambdas test project") {
             val lambdasJarName = "lambdas-1.8-g-parameters-genericsignature.jar"
             val lambdasJar = locateTestResources(lambdasJarName, "bi")
-            val config = Java8LambdaExpressionsRewriting.defaultConfig(
+            val config = LambdaExpressionsRewriting.defaultConfig(
                 rewrite = true,
                 logRewrites = false
             ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
@@ -147,7 +147,7 @@ class Java8LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with M
         if (org.opalj.bi.isCurrentJREAtLeastJava8) {
             describe("testing the rewritten methods of the rewritten JRE") {
                 val jrePath = org.opalj.bytecode.JRELibraryFolder
-                val config = Java8LambdaExpressionsRewriting.defaultConfig(
+                val config = LambdaExpressionsRewriting.defaultConfig(
                     rewrite = true,
                     logRewrites = false
                 ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)

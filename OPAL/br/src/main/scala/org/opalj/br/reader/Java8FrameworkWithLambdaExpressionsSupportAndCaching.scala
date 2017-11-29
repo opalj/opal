@@ -41,4 +41,4 @@ package reader
  */
 class Java8FrameworkWithLambdaExpressionsSupportAndCaching(
         cache: BytecodeInstructionsCache
-) extends Java8FrameworkWithCaching(cache) with Java8LambdaExpressionsRewriting
+) extends Java8FrameworkWithCaching(cache) with LambdaExpressionsRewriting
