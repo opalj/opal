@@ -81,6 +81,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 
     //TODO Move to non entity based analysis
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    val virtualFormalParameters: VirtualFormalParameters
 
     // STATE MUTATED DURING THE ANALYSIS
     private[this] val dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()

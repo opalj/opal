@@ -89,7 +89,6 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
             handlers,
             aiResult,
             formalParameters,
-            virtualFormalParameters,
             m,
             propertyStore,
             project

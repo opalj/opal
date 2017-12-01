@@ -42,7 +42,6 @@ import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -90,7 +89,6 @@ class SimpleEntityEscapeAnalysis(
     val handlers:                ExceptionHandlers,
     val aiResult:                AIResult,
     val formalParameters:        FormalParameters,
-    val virtualFormalParameters: VirtualFormalParameters,
     val targetMethod:            VirtualMethod,
     val propertyStore:           PropertyStore,
     val project:                 SomeProject

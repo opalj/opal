@@ -40,7 +40,6 @@ import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
@@ -100,7 +99,6 @@ trait AbstractEntityEscapeAnalysis {
     val cfg: CFG
     val aiResult: AIResult
     val formalParameters: FormalParameters
-    val virtualFormalParameters: VirtualFormalParameters
 
     val entity: Entity
     val uses: IntTrieSet
