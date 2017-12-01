@@ -33,6 +33,7 @@ import java.io.File
 import java.io.PrintWriter
 import java.io.FileOutputStream
 import java.net.URL
+import java.util.Calendar
 
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
@@ -64,10 +65,21 @@ import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.Seconds
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.log.{LogContext, LogMessage, OPALLogger}
+import org.opalj.log.GlobalLogContext
+
+class DevNullLogger extends OPALLogger {
+    override def log(message: LogMessage)(implicit ctx: LogContext): Unit = {}
+}
 
 object EscapeEvaluation {
 
     def main(args: Array[String]): Unit = {
+        OPALLogger.updateLogger(GlobalLogContext, new DevNullLogger())
+
+        val begin = Calendar.getInstance()
+        println(begin.getTime)
+
         val path = args(0)
         val d = new File(path)
         val projects = if (d.exists && d.isDirectory) {
@@ -135,9 +147,9 @@ object EscapeEvaluation {
                 try {
                     if (timesNew) {
                         times.createNewFile()
-                        outTimes.println("project,tac,propertyStore,analysis")
+                        outTimes.println("project;tac;propertyStore;analysis")
                     }
-                    outTimes.println(s"$projectTime,$tacTime,$propertyStoreTime,$analysisTime")
+                    outTimes.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime")
                 } finally {
                     if (outTimes != null) outTimes.close()
                 }
@@ -204,6 +216,10 @@ object EscapeEvaluation {
                 }
             }
         }
+
+        val end = Calendar.getInstance()
+
+        println(end.getTime)
     }
 
     def setDomain(project: Project[URL], level: Int): Unit = {
