@@ -204,42 +204,34 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // the receiver is null, the method is not invoked and the object does not escape
             }
         } else {
-            val methodO = project.instanceCall(targetMethod.declaringClassType.asObjectType, dc, name, descr)
-            if (methodO.isEmpty || isMethodOverridable(methodO.value).isNotNo) {
+            val target = project.instanceCall(targetMethod.declaringClassType.asObjectType, dc, name, descr)
+            if (target.isEmpty || isMethodOverridable(target.value).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
                 // TODO: to optimize performance, we do not let the analysis run against the existing methods
                 meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val target = project.instanceCall(
-                    targetMethod.declaringClassType.asObjectType,
-                    dc,
-                    name,
-                    descr
-                )
-                if (target.hasValue) {
-                    val vm = VirtualForwardingMethod(dc, name, descr, target.value)
-                    if (project.isSignaturePolymorphic(vm.target.classFile.thisType, vm.target)) {
-                        //IMPROVE
-                        meetMostRestrictive(AtMost(EscapeInCallee))
-                        //TODO check if this is to much (param contains def-site)
-                    } else {
-                        if (usesDefSite(receiver)) {
-                            val fp = virtualFormalParameters(vm)
-                            handleEscapeState(fp(0), hasAssignment)
+                val vm = VirtualForwardingMethod(dc, name, descr, target.value)
+                if (project.isSignaturePolymorphic(vm.target.classFile.thisType, vm.target)) {
+                    //IMPROVE
+                    meetMostRestrictive(AtMost(EscapeInCallee))
+                    //TODO check if this is to much (param contains def-site)
+                } else {
+                    if (usesDefSite(receiver)) {
+                        val fp = virtualFormalParameters(vm)
+                        assert(fp(0) ne null)
+                        handleEscapeState(fp(0), hasAssignment)
 
-                        }
-                        for (i ← params.indices) {
-                            if (usesDefSite(params(i))) {
-                                val fp = virtualFormalParameters(vm)
-                                handleEscapeState(fp(i + 1), hasAssignment)
-                            }
+                    }
+                    for (i ← params.indices) {
+                        if (usesDefSite(params(i))) {
+                            val fp = virtualFormalParameters(vm)
+                            assert(fp(i+1) ne null)
+                            handleEscapeState(fp(i + 1), hasAssignment)
                         }
                     }
-                } else {
-                    // the method is unknown, so we have to stop here
-                    meetMostRestrictive(AtMost(EscapeInCallee))
                 }
+
 
             }
         }

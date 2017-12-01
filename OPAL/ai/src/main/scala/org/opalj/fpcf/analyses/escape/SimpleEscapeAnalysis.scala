@@ -50,12 +50,7 @@ import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.tac.Parameters
-import org.opalj.tac.DVar
 import org.opalj.tac.TACode
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.Assignment
-import org.opalj.tac.New
-import org.opalj.tac.NewArray
 import org.opalj.tac.DUVar
 
 /**
@@ -120,14 +115,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
 
                 // check if the allocation site is not dead
                 if (index != -1)
-                    code(index) match {
-                        case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
-                        case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
-                            ImmediateResult(e, NoEscape)
-                        case stmt ⇒
-                            throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
-                    }
+                    findUsesOfASAndAnalyze(as, index, code, params, cfg, handlers)
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, AtMost(NoEscape))
             case FormalParameter(m, -1) if m.name == "<init>" ⇒

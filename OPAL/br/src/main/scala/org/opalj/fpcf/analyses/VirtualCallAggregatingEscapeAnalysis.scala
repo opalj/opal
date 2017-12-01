@@ -44,13 +44,13 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
     private[this] val formalParameters = propertyStore.context[FormalParameters]
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
-        val m = fp.method
+        val vm = fp.method
         var escapeState: EscapeProperty = NoEscape
         var dependees: Set[EOptionP[FormalParameter, EscapeProperty]] = Set.empty
         val methods = project.virtualCall(
             /* use the package in which the concrete method context is defined */
-            m.target.classFile.thisType.packageName,
-            m.classType, m.name, m.descriptor
+            vm.target.classFile.thisType.packageName,
+            vm.classType, vm.name, vm.descriptor
         )
         for (method ← methods) {
             propertyStore(formalParameters(method)(-1 - fp.origin), EscapeProperty.key) match {

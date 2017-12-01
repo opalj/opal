@@ -46,13 +46,8 @@ import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties._
-import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
-import org.opalj.tac.DVar
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.New
-import org.opalj.tac.NewArray
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.Parameters
@@ -108,14 +103,7 @@ class InterProceduralEscapeAnalysis private (
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
-                    code(index) match {
-                        case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                            doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
-                        case ExprStmt(`pc`, NewArray(`pc`, _, _)) ⇒
-                            ImmediateResult(e, NoEscape)
-                        case stmt ⇒
-                            throw new RuntimeException(s"This analysis can't handle entity: $e for $stmt")
-                    }
+                    findUsesOfASAndAnalyze(as, index, code, params, cfg, handlers)
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
 
             case FormalParameter(m, _) if m.body.isEmpty ⇒ RefineableResult(e, AtMost(NoEscape))

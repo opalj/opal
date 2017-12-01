@@ -39,16 +39,25 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
+import org.opalj.br.AllocationSite
+import org.opalj.br.PC
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.Parameters
 import org.opalj.tac.Stmt
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACode
+import org.opalj.tac.NewArray
+import org.opalj.tac.DVar
+import org.opalj.tac.CaughtException
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.Assignment
+import org.opalj.tac.New
 
 /**
  * A trait for different implementations of escape analyses. Provides a factory method for the
@@ -116,6 +125,26 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * For some entities a result might be returned immediately.
      */
     def determineEscape(e: Entity): PropertyComputationResult
+
+    protected[this] final def findUsesOfASAndAnalyze(
+        as:     AllocationSite,
+        index:  PC,
+        code:   Array[Stmt[V]],
+        params: Parameters[TACMethodParameter],
+        cfg:    CFG, handlers: ExceptionHandlers
+    ): PropertyComputationResult = {
+        val pc = as.pc
+        val m = as.method
+        code(index) match {
+            case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
+                doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
+            case ExprStmt(`pc`, New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
+                ImmediateResult(as, NoEscape)
+            case CaughtException(`pc`, _, _) ⇒ findUsesOfASAndAnalyze(as, index + 1, code, params, cfg, handlers)
+            case stmt ⇒
+                throw new RuntimeException(s"This analysis can't handle entity: $as for $stmt")
+        }
+    }
 
     protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
     protected[this] val aiProvider = project.get(SimpleAIKey)
