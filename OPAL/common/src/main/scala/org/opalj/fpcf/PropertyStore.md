@@ -1,6 +1,6 @@
 # The PropertyStore
 
-The property store is responsible for concurrently executing a set of computations that derive properties of different kinds for some entities.
+The property store is responsible for (optionally concurrently) executing a set of computations that derive properties of different kinds for some entities.
 Properties computed for entities always have to have (at least conceptually) an underlying lattice which puts all properties in a partial order. Furthermore, properties can be final or refineable. Additionally, it is possible to state that - though the property is conceptually refineable – it is actually final in the context of the running analysis. I.e., an analysis depending on a specific property may be informed that the result (whose extension has not changed) has become final.
 
 In case that we have entities for which no analyses are scheduled, it is possible to let the store automatically fill in default values (fallback).
@@ -9,7 +9,7 @@ Additionally, if cycles between computations are detected the store offers appro
 
 Fallbacks are configurable and can be postponed.
 
-## Programming Model 
+## Programming Model
 A computation of a property must never stop and wait for the result of a dependee, instead it must collect all dependees which have refineable property of relevance and give this information to the store when it stores (a next) intermediate result.
 
 ## Scheduling property computations

@@ -37,14 +37,14 @@ import scala.reflect.runtime.universe.typeOf
  * A property store manages the execution of computations of properties related to specific
  * entities (e.g., methods, fields and classes of a program). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
- * to handle the dependencies between the entities. Furthermore, the property store parallelizes
+ * to handle the dependencies between the entities. Furthermore, the property store may parallelizes
  * the computation of the properties as far as possible without requiring users to take care of it;
  * users are also generally not required to think about the concurrency when implementing an
  * analysis.
  *
  * ==Usage==
- * The general strategy, when using the PropertyStore, is to always continue computing the property
- * of an entity and to collect the dependencies on those elements that are relevant.
+ * The correct strategy, when using the PropertyStore, is to always continue computing the property
+ * of an entity and to collect the dependencies on those elements that are (still) relevant.
  * I.e., if some information is not or just not completely available, the analysis should
  * still continue using the provided information and (internally) records the dependency.
  * Later on, when the analysis has computed its result, it reports the same and informs the
@@ -69,7 +69,7 @@ import scala.reflect.runtime.universe.typeOf
  *    a specific element then the result must be equal or more specific within one execution
  *    phase.
  *
- * ===Cyclic Dependencies===
+ * ===Closed-strongly Connected Component Dependencies===
  * In general, it may happen that some analyses cannot make any progress, because
  * they are mutually dependent. In this case the computation of a property `p` of an entity `e1`
  * depends on the property `p'` of an entity `e2` that requires the property `p` of the entity `e1`.
@@ -80,14 +80,10 @@ import scala.reflect.runtime.universe.typeOf
  * ==Thread Safety==
  * A PropertyStore is thread-safe.
  *
- * ==Multi-Threading==
- * The PropertyStore uses its own fixed size ThreadPool with at most
- * [[org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks]] threads.
- *
  * ==Common Abbreviations==
  * - e =         Entity
  * - p =         Property
- * - ps =        Properties (the properties of an entity)
+ * - ps =        Properties (the properties of an entity - one per kind)
  * - pk =        Property Key
  * - pc =        Property Computation
  * - lpc =       Lazy Property Computation
@@ -110,14 +106,13 @@ abstract class PropertyStore {
     /** Immutable map which stores the context objects given at initialization time. */
     val ctx: Map[Type, AnyRef]
 
-    /** Looks up the context object of the given type. */
+    /**
+     * Looks up the context object of the given type. This is a comparatively expensive operation;
+     * the result should be cached.
+     */
     final def context[T: TypeTag]: T = {
         val t = typeOf[T]
         ctx.getOrElse(t, { throw ContextNotAvailableException(t, ctx) }).asInstanceOf[T]
-    }
-
-    @volatile private[this] var isInterrupted: () ⇒ Boolean = {
-        () ⇒ Thread.currentThread.isInterrupted()
     }
 
     //
@@ -127,12 +122,16 @@ abstract class PropertyStore {
     //
     //
 
+    @volatile private[this] var isInterrupted: () ⇒ Boolean = {
+        () ⇒ Thread.currentThread.isInterrupted()
+    }
+
     /**
      * Sets the callback function that is regularly called by the property store to test if
      * the property store should stop executing new tasks. Given that the given method is
      * called frequently, it should be reasonbily efficient. The method has to be thread-safe.
      *
-     * The default method
+     * The default method test if the current thread is interrupted.
      */
     final def setIsInterrupted(isInterrupted: () ⇒ Boolean): Unit = {
         this.isInterrupted = isInterrupted
@@ -167,8 +166,6 @@ abstract class PropertyStore {
     // CORE FUNCTIONALITY
     //
     //
-
-    // We have to register the cycle resolution strategies with the store as such unless the cycle only consists of elements with the same PK!
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -228,7 +225,7 @@ abstract class PropertyStore {
     /**
      * Returns an iterator of the different properties associated with the given element.
      *
-     * This method is the preferred way to get a snapshot all properties of an entity and should
+     * This method is the preferred way to get a snapshot of all properties of an entity and should
      * be used if you know that all properties are already computed. Using this method '''will not
      * trigger''' the computation of a property.
      *
@@ -271,7 +268,7 @@ abstract class PropertyStore {
      * `e` if `e` has no property of the respective kind. The property is treated as being final.
      *
      * @note    This method must not be used '''if there might be another computation that
-     *          computes the property kind `pk` for `e` and which return the respective property
+     *          computes the property kind `pk` for `e` and whichs return the respective property
      *          as a result'''.
      *
      * A use case is an analysis that does not interact with the property store while
@@ -331,11 +328,13 @@ abstract class PropertyStore {
     /**
      * Awaits the completion of all property computation functions which were previously registered.
      *
-     * @note  If a second thread is used to register [[PropertyComputation]] functions
-     *        no guarantees are given; it is recommended to schedule all property computation
-     *        functions using one thread and using that thread to call this method.
+     * @note   If a second thread is used to register [[PropertyComputation]] functions
+     *         no guarantees are given; it is recommended to schedule all property computation
+     *         functions using one thread and using that thread to call this method.
      *
-     * @param resolveCycles If `true`, cycles will be resolved.
+     * @param  resolveCycles If `true`, closed strongly connected components will be resolved.
+     * @param  useFallbacksForIncomputableProperties If `true`, fallbacks are used for
+     *         incomputable properties.
      */
     def waitOnPropertyComputationCompletion(
         resolveCycles:                         Boolean = true,
