@@ -131,7 +131,9 @@ object EscapeEvaluation {
             val propertyStore = time {
                 PropertyStoreKey.makeAllocationSitesAvailable(project)
                 PropertyStoreKey.makeFormalParametersAvailable(project)
-                PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
+                if (analysis eq InterProceduralEscapeAnalysis) {
+                    PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
+                }
                 project.get(PropertyStoreKey)
             } { t ⇒ propertyStoreTime = t.toSeconds }
 
@@ -140,7 +142,7 @@ object EscapeEvaluation {
                 propertyStore.waitOnPropertyComputationCompletion()
             } { t ⇒ analysisTime = t.toSeconds }
 
-            if(i != 0) {
+            if (i != 0) {
                 val times = new File(dir, "timings.csv")
                 val timesNew = !times.exists()
                 val outTimes = new PrintWriter(new FileOutputStream(times, true))
@@ -178,7 +180,7 @@ object EscapeEvaluation {
                 val as = new File(dir, "allocation-sites.csv")
                 val outAS = new PrintWriter(as)
                 try {
-                    outAS.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p},{s}")
+                    outAS.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p};{s}")
                     outAS.println(s"!;${countAS(no)};${countAS(c)};${countAS(r)};${countAS(a)};${countAS(p)};${countAS(ar)};${countAS(pr)};${countAS(ap)};${countAS(rap)};${countAS(s)}")
                     outAS.println(s"?;${countAS(atNo)};${countAS(atC)};${countAS(atR)};${countAS(atA)};${countAS(atP)};${countAS(atAR)};${countAS(atPR)};${countAS(atAP)};${countAS(atRAP)};")
                 } finally {
@@ -188,7 +190,7 @@ object EscapeEvaluation {
                 val arrays = new File(dir, "arrays.csv")
                 val outAR = new PrintWriter(arrays)
                 try {
-                    outAR.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p},{s}")
+                    outAR.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p};{s}")
                     outAR.println(s"!;${countAr(no)};${countAr(c)};${countAr(r)};${countAr(a)};${countAr(p)};${countAr(ar)};${countAr(pr)};${countAr(ap)};${countAr(rap)};${countAr(s)}")
                     outAR.println(s"?;${countAr(atNo)};${countAr(atC)};${countAr(atR)};${countAr(atA)};${countAr(atP)};${countAr(atAR)};${countAr(atPR)};${countAr(atAP)};${countAr(atRAP)};")
                 } finally {
@@ -198,17 +200,17 @@ object EscapeEvaluation {
                 val fp = new File(dir, "formal-parameters.csv")
                 val outFP = new PrintWriter(fp)
                 try {
-                    outFP.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p},{s}")
+                    outFP.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p};{s}")
                     outFP.println(s"!;${countFP(no)};${countFP(c)};${countFP(r)};${countFP(a)};${countFP(p)};${countFP(ar)};${countFP(pr)};${countFP(ap)};${countFP(rap)};${countFP(s)}")
                     outFP.println(s"?;${countFP(atNo)};${countFP(atC)};${countFP(atR)};${countFP(atA)};${countFP(atP)};${countFP(atAR)};${countFP(atPR)};${countFP(atAP)};${countFP(atRAP)};")
                 } finally {
                     if (outFP != null) outFP.close()
                 }
 
-                val vfp = new File(dir, "formal-parameters.csv")
+                val vfp = new File(dir, "virtual-formal-parameters.csv")
                 val outVFP = new PrintWriter(vfp)
                 try {
-                    outVFP.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p},{s}")
+                    outVFP.println("!/?;{};{c};{r};{a};{p};{r,a};{r,p};{a,p};{r,a,p};{s}")
                     outVFP.println(s"!;${countVFP(no)};${countVFP(c)};${countVFP(r)};${countVFP(a)};${countVFP(p)};${countVFP(ar)};${countVFP(pr)};${countVFP(ap)};${countVFP(rap)};${countVFP(s)}")
                     outVFP.println(s"?;${countVFP(atNo)};${countVFP(atC)};${countVFP(atR)};${countVFP(atA)};${countVFP(atP)};${countVFP(atAR)};${countVFP(atPR)};${countVFP(atAP)};${countVFP(atRAP)};")
                 } finally {
