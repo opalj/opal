@@ -146,7 +146,7 @@ sealed abstract class EscapeProperty
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    def isValidSuccessorOf(old: OrderedProperty): Option[String] = {
+    override def isValidSuccessorOf(old: OrderedProperty): Option[String] = {
         old match {
             case Conditional(oldP) if this lessOrEqualRestrictive oldP ⇒ None
             case AtMost(oldP) if this lessOrEqualRestrictive oldP ⇒ None
@@ -205,14 +205,6 @@ object EscapeProperty extends EscapePropertyMetaInformation {
     val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
             val e = epks.head.e
-            val eps = epks map { epk ⇒
-                ps(epk.e, key).p match {
-                    case Conditional(p) ⇒ EP(epk.e, Conditional(p))
-                    case _              ⇒ throw new RuntimeException("non-conditional in cycle")
-                }
-            }
-            // TODO remove the assertion
-            assert(eps.forall(_.p.property.isRefineable) || eps.forall(_.p.property.isFinal))
             val ep = ps(e, key)
             ep.p match {
                 case Conditional(AtMost(property)) ⇒ Iterable(RefineableResult(e, AtMost(property)))
