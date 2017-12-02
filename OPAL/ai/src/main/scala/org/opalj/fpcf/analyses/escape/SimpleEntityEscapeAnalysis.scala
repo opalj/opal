@@ -32,13 +32,10 @@ package analyses
 package escape
 
 import org.opalj.ai.Domain
-import org.opalj.ai.AIResult
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ObjectType
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.AllocationSite
-import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
@@ -61,8 +58,6 @@ import org.opalj.tac.ArrayStore
 import org.opalj.tac.PutField
 import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
-import org.opalj.tac.Parameters
-import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DUVar
 import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
@@ -84,12 +79,8 @@ class SimpleEntityEscapeAnalysis(
     val defSite:                 ValueOrigin,
     val uses:                    IntTrieSet,
     val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:                  Parameters[TACMethodParameter],
     val cfg:                     CFG,
-    val handlers:                ExceptionHandlers,
-    val aiResult:                AIResult,
     val formalParameters:        FormalParameters,
-    val targetMethod:            VirtualMethod,
     val propertyStore:           PropertyStore,
     val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
@@ -105,6 +96,10 @@ class SimpleEntityEscapeAnalysis(
  * the escape state remains the same.
  */
 trait ExceptionAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+
+    val cfg: CFG
+    val project: SomeProject
+
     override protected[this] def handleThrow(aThrow: Throw[V]): Unit = {
         if (usesDefSite(aThrow.exception)) {
             val index = code indexWhere {
@@ -298,6 +293,9 @@ object ConfigurationBasedConstructorEscapeAnalysis {
  * returned whenever the receiver or a parameter is a use of defSite.
  */
 trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    val project: SomeProject
+    val propertyStore: PropertyStore
+    val formalParameters: FormalParameters
 
     abstract protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         assert(call.name == "<init>")

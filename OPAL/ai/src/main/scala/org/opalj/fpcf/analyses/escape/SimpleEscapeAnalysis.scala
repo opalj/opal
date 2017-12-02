@@ -33,11 +33,8 @@ package escape
 
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
-import org.opalj.ai.AIResult
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.tac.TACMethodParameter
 import org.opalj.br.AllocationSite
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
@@ -49,7 +46,6 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.AtMost
-import org.opalj.tac.Parameters
 import org.opalj.tac.TACode
 import org.opalj.tac.DUVar
 
@@ -73,10 +69,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         defSite:  ValueOrigin,
         uses:     IntTrieSet,
         code:     Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        params:   Parameters[TACMethodParameter],
         cfg:      CFG,
-        handlers: ExceptionHandlers,
-        aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
         new SimpleEntityEscapeAnalysis(
@@ -84,12 +77,8 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
             defSite,
             uses,
             code,
-            params,
             cfg,
-            handlers,
-            aiResult,
             formalParameters,
-            m,
             propertyStore,
             project
         )
@@ -108,19 +97,19 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         e match {
             // for allocation sites, find the code containing the allocation site
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
+                val TACode(_, code, cfg, _, _) = tacaiProvider(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 // check if the allocation site is not dead
                 if (index != -1)
-                    findUsesOfASAndAnalyze(as, index, code, params, cfg, handlers)
+                    findUsesOfASAndAnalyze(as, index, code, cfg)
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
             case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, AtMost(NoEscape))
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
-                val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
+                val TACode(params, code, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(e, -1, useSites, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
+                doDetermineEscape(e, -1, useSites, code, cfg, m.asVirtualMethod)
             case FormalParameter(_, _) ⇒ RefineableResult(e, AtMost(NoEscape))
         }
     }

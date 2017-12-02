@@ -33,10 +33,7 @@ package escape
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.AIResult
-import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
 import org.opalj.br.AllocationSite
@@ -48,7 +45,6 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.Parameters
 import org.opalj.tac.Stmt
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACode
@@ -83,10 +79,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         defSite:  ValueOrigin,
         uses:     IntTrieSet,
         code:     Array[Stmt[V]],
-        params:   Parameters[TACMethodParameter],
         cfg:      CFG,
-        handlers: ExceptionHandlers,
-        aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis
 
@@ -100,10 +93,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         defSite:  ValueOrigin,
         uses:     IntTrieSet,
         code:     Array[Stmt[V]],
-        params:   Parameters[TACMethodParameter],
         cfg:      CFG,
-        handlers: ExceptionHandlers,
-        aiResult: AIResult,
         m:        VirtualMethod
     ): PropertyComputationResult = {
         val analysis = entityEscapeAnalysis(
@@ -111,10 +101,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             defSite,
             uses,
             code,
-            params,
             cfg,
-            handlers,
-            aiResult,
             m
         )
         analysis.doDetermineEscape()
@@ -130,24 +117,22 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         as:     AllocationSite,
         index:  PC,
         code:   Array[Stmt[V]],
-        params: Parameters[TACMethodParameter],
-        cfg:    CFG, handlers: ExceptionHandlers
+        cfg:    CFG
     ): PropertyComputationResult = {
         val pc = as.pc
         val m = as.method
         code(index) match {
             case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                doDetermineEscape(as, index, uses, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
+                doDetermineEscape(as, index, uses, code, cfg, m.asVirtualMethod)
             case ExprStmt(`pc`, New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
                 ImmediateResult(as, NoEscape)
-            case CaughtException(`pc`, _, _) ⇒ findUsesOfASAndAnalyze(as, index + 1, code, params, cfg, handlers)
+            case CaughtException(`pc`, _, _) ⇒ findUsesOfASAndAnalyze(as, index + 1, code, cfg)
             case stmt ⇒
                 throw new RuntimeException(s"This analysis can't handle entity: $as for $stmt")
         }
     }
 
     protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
-    protected[this] val aiProvider = project.get(SimpleAIKey)
     protected[this] lazy val formalParameters: FormalParameters = propertyStore.context[FormalParameters]
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = propertyStore.context[VirtualFormalParameters]
 }

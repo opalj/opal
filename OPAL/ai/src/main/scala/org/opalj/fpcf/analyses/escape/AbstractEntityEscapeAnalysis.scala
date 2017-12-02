@@ -33,15 +33,10 @@ package escape
 
 import scala.annotation.switch
 import org.opalj.ai.Domain
-import org.opalj.ai.AIResult
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.VirtualMethod
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.FormalParameters
-import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
@@ -64,8 +59,6 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.ArrayStore
-import org.opalj.tac.Parameters
-import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Invokedynamic
@@ -91,15 +84,7 @@ trait AbstractEntityEscapeAnalysis {
     //
     // STATE DEFINING THE ANALYSIS CONTEXT
     //
-    val project: SomeProject
-    val propertyStore: PropertyStore
-    val targetMethod: VirtualMethod
-    val params: Parameters[TACMethodParameter]
     val code: Array[Stmt[V]]
-    val cfg: CFG
-    val aiResult: AIResult
-    val formalParameters: FormalParameters
-
     val entity: Entity
     val uses: IntTrieSet
     val defSite: ValueOrigin

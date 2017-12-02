@@ -33,9 +33,7 @@ package escape
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.AIResult
 import org.opalj.br.AllocationSite
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.SomeProject
@@ -50,8 +48,6 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
-import org.opalj.tac.Parameters
-import org.opalj.tac.TACMethodParameter
 //import org.opalj.util.PerformanceEvaluation.time
 //import org.opalj.log.OPALLogger.info
 
@@ -69,10 +65,7 @@ class InterProceduralEscapeAnalysis private (
         defSite:  ValueOrigin,
         uses:     IntTrieSet,
         code:     Array[Stmt[V]],
-        params:   Parameters[TACMethodParameter],
         cfg:      CFG,
-        handlers: ExceptionHandlers,
-        aiResult: AIResult,
         m:        VirtualMethod
     ): AbstractEntityEscapeAnalysis =
         new InterProceduralEntityEscapeAnalysis(
@@ -80,10 +73,7 @@ class InterProceduralEscapeAnalysis private (
             defSite,
             uses,
             code,
-            params,
             cfg,
-            handlers,
-            aiResult,
             formalParameters,
             virtualFormalParameters,
             m,
@@ -98,25 +88,25 @@ class InterProceduralEscapeAnalysis private (
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(params, code, cfg, handlers, _) = tacaiProvider(m)
+                val TACode(_, code, cfg, _, _) = tacaiProvider(m)
 
                 val index = code indexWhere { stmt ⇒ stmt.pc == pc }
 
                 if (index != -1)
-                    findUsesOfASAndAnalyze(as, index, code, params, cfg, handlers)
+                    findUsesOfASAndAnalyze(as, index, code, cfg)
                 else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
 
             case FormalParameter(m, _) if m.body.isEmpty ⇒ RefineableResult(e, AtMost(NoEscape))
             case FormalParameter(m, -1) ⇒
-                val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
-                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
+                doDetermineEscape(e, param.origin, param.useSites, code, cfg, m.asVirtualMethod)
             case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
                 RefineableResult(e, AtMost(NoEscape))
             case FormalParameter(m, i) ⇒
-                val TACode(params, code, cfg, handlers, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                doDetermineEscape(e, param.origin, param.useSites, code, params, cfg, handlers, aiProvider(m), m.asVirtualMethod)
+                doDetermineEscape(e, param.origin, param.useSites, code, cfg, m.asVirtualMethod)
         }
     }
 }

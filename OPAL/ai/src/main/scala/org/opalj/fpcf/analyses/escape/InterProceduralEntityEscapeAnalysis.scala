@@ -34,14 +34,12 @@ package escape
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.ExceptionHandlers
 import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.Domain
-import org.opalj.ai.AIResult
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.VirtualForwardingMethod
@@ -68,8 +66,6 @@ import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
-import org.opalj.tac.Parameters
-import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.NonVirtualFunctionCall
@@ -78,6 +74,10 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 
 trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    val project: SomeProject
+    val formalParameters: FormalParameters
+    val targetMethod: VirtualMethod
+    val propertyStore: PropertyStore
 
     //TODO Move to non entity based analysis
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
@@ -227,12 +227,11 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                     for (i ← params.indices) {
                         if (usesDefSite(params(i))) {
                             val fp = virtualFormalParameters(vm)
-                            assert(fp(i+1) ne null)
+                            assert(fp(i + 1) ne null)
                             handleEscapeState(fp(i + 1), hasAssignment)
                         }
                     }
                 }
-
 
             }
         }
@@ -392,10 +391,7 @@ class InterProceduralEntityEscapeAnalysis(
     val defSite:                 ValueOrigin,
     val uses:                    IntTrieSet,
     val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val params:                  Parameters[TACMethodParameter],
     val cfg:                     CFG,
-    val handlers:                ExceptionHandlers,
-    val aiResult:                AIResult,
     val formalParameters:        FormalParameters,
     val virtualFormalParameters: VirtualFormalParameters,
     val targetMethod:            VirtualMethod,
