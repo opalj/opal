@@ -209,26 +209,31 @@ object Purity extends PurityPropertyMetaInformation {
         propertyStore: PropertyStore,
         epks:          SomeEPKs
     ): Iterable[Result] = {
-        // When we have a cycle, we can leverage the "purity" if all properties are either
-        // conditionally pure or conditionally side-effect free
+        // When we have a cycle, we can leverage the "purity" if all properties have a conditional
+        // purity level
 
-        val purity = epks.foldLeft(PureWithoutAllocations: Purity) { (purity, epk) ⇒
+        val allConditional = epks.forall { epk ⇒
             epk match {
                 case EPK(e, `key`) ⇒
                     val p = propertyStore(e, key).p
                     assert(p.isConditional) // a cycle must not contain a final property
-                    purity combine p.unconditional
+                    true
 
                 case _ ⇒
                     // We have a complex cycle which involves other properties...
                     // let's give up.
-                    LBImpureDueToUnknownProperty
+                    false
             }
         }
+
         // NOTE
-        // We DO NOT increase the pureness of all methods as this will happen automatically
-        // as a sideeffect of setting the pureness of one method!
-        Iterable(Result(epks.head.e, purity))
+        // We DO NOT increase the purity of all methods as this will happen automatically as a
+        // sideeffect of setting the purity of one method!
+        val e = epks.head.e
+        if(allConditional)
+            Iterable(Result(e, propertyStore(e, key).p.unconditional))
+        else
+            Iterable(Result(e, LBImpureDueToUnknownProperty))
     }
 
     /**
