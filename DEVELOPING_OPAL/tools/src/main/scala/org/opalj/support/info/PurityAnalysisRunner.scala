@@ -45,9 +45,9 @@ import org.opalj.fpcf.analyses.TypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.L1PurityAnalysis
 import org.opalj.fpcf.analyses.L0PurityAnalysis
-import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.LBSideEffectFree
 
 /**
  * Executes a purity analysis for a given code base.
@@ -103,8 +103,8 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val result = methodInfo +
             propertyStore.toString(false)+
-            "\nPure methods:             "+methodsWithPurityProperty.count(m ⇒ m._2 == Pure)+
-            "\nSide-effect free methods: "+methodsWithPurityProperty.count(m ⇒ m._2 == SideEffectFree)
+            "\nPure methods:             "+methodsWithPurityProperty.count(m ⇒ m._2 == LBPure)+
+            "\nSide-effect free methods: "+methodsWithPurityProperty.count(m ⇒ m._2 == LBSideEffectFree)
 
         BasicReport(result)
     }

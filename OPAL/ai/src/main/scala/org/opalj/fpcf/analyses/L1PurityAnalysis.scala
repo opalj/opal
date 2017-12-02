@@ -49,20 +49,20 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
 import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.ConditionallyPure
-import org.opalj.fpcf.properties.ConditionallySideEffectFree
+import org.opalj.fpcf.properties.CLBPure
+import org.opalj.fpcf.properties.CLBSideEffectFree
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.ImpureBase.Impure
+import org.opalj.fpcf.properties.LBImpureBase.LBImpure
 import org.opalj.fpcf.properties.MaybePure
-import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.LBSideEffectFree
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.ImpureBase
+import org.opalj.fpcf.properties.LBImpureBase
 import org.opalj.tac._
 
 /**
@@ -76,16 +76,17 @@ import org.opalj.tac._
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
  *       types of expressions other than [[org.opalj.tac.Var]]s and also not check them for locality.
  *
- * @note This analysis only derives the properties [[org.opalj.fpcf.properties.Pure$]],
- *       [[org.opalj.fpcf.properties.SideEffectFree$]] and [[org.opalj.fpcf.properties.Impure$]]. It
- *       does not provide any reasoning on why a method was considered `Impure`.
+ * @note This analysis only derives the properties [[org.opalj.fpcf.properties.LBPure]],
+ *       [[org.opalj.fpcf.properties.LBSideEffectFree]] and
+ *       [[org.opalj.fpcf.properties.LBImpureBase]]. It does not provide any reasoning on why a
+ *       method was considered `LBImpure`.
  *       Compared to the `L0PurityAnalysis`, it deals with all methods, even if their reference type
  *       parameters are mutable. It can handle accesses of (effectively) final instance fields,
  *       array loads, array length and virtual/interface calls. Array stores and field writes as
  *       well as (useless) synchronization on locally created, non-escaping objects/arrays are also
  *       handled. Newly allocated objects/arrays returned from callees are not identified.
- *       VMExceptions are treated as `SideEffectFree`, explicit exceptions are treated as `Impure`,
- *       as the `Throwable` constructor calls the overridable `fillInStackTrace` method.
+ *       VMExceptions are treated as `SideEffectFree`, explicit exceptions are treated as
+ *       `LBImpure`, as the `Throwable` constructor calls the overridable `fillInStackTrace` method.
  *
  * @author Dominik Helm
  */
@@ -148,7 +149,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     def determinePurity(method: Method): PropertyComputationResult = {
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return ImmediateResult(method, Impure);
+            return ImmediateResult(method, LBImpure);
 
         implicit val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
@@ -158,12 +159,12 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
          * Current purity level for this method.
          * The checkPurityOfX methods will assign to this var to aggregate the purity.
          */
-        var maxPurity: Purity = Pure
+        var maxPurity: Purity = LBPure
 
         // Creating implicit exceptions is side-effect free (except for the fillInStackTrace)
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         if (bbsCausingExceptions.exists(bb ⇒ isImmediateVMException(bb.asBasicBlock.endPC))) {
-            maxPurity = SideEffectFree
+            maxPurity = LBSideEffectFree
         }
 
         /**
@@ -247,7 +248,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     // Creating implicit exceptions is side-effect free because the Throwable
                     // constructor will add the non-deterministic stack trace via fillInStackTrace
                     if (stmt.asCaughtException.origins.exists(isImmediateVMException))
-                        maxPurity = SideEffectFree
+                        maxPurity = LBSideEffectFree
                     true
 
                 // The following statements do not further influence purity
@@ -294,7 +295,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     true
                 case ArrayLoad.ASTID ⇒
                     val arrayRef = expr.asArrayLoad.arrayRef
-                    if (!isLocal(arrayRef)) maxPurity = SideEffectFree
+                    if (!isLocal(arrayRef)) maxPurity = LBSideEffectFree
                     true
 
                 // We don't handle unresolved Invokedynamic - either OPAL removes it or we forget about it
@@ -382,15 +383,15 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                         else {
                             val calleePurity = propertyStore(callee, Purity.key)
                             calleePurity match {
-                                case EP(_, Pure) ⇒ true
-                                case EP(_, SideEffectFree) ⇒
-                                    maxPurity = SideEffectFree
+                                case EP(_, LBPure) ⇒ true
+                                case EP(_, LBSideEffectFree) ⇒
+                                    maxPurity = LBSideEffectFree
                                     true
-                                case ep @ EP(_, ConditionallySideEffectFree) ⇒
+                                case ep @ EP(_, CLBSideEffectFree) ⇒
                                     dependees += ep
-                                    maxPurity = SideEffectFree
+                                    maxPurity = LBSideEffectFree
                                     true
-                                case ep @ EP(_, ConditionallyPure) ⇒
+                                case ep @ EP(_, CLBPure) ⇒
                                     dependees += ep
                                     true
                                 case EP(_, _) ⇒ false // Impure or unknown purity level
@@ -414,17 +415,17 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             name:           String,
             fieldType:      FieldType
         ): Unit = {
-            if (maxPurity != SideEffectFree) { // Don't do dependee checks if already not pure
+            if (maxPurity != LBSideEffectFree) { // Don't do dependee checks if already not pure
                 project.resolveFieldReference(declaringClass, name, fieldType) match {
                     case Some(field) if field.isFinal ⇒ // constants do not impede purity!
                     case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
                         val fieldMutability = propertyStore(field, FieldMutability.key)
                         fieldMutability match {
                             case EP(_, _: FinalField) ⇒ // Final fields don't impede purity
-                            case EP(_, _)             ⇒ maxPurity = SideEffectFree
+                            case EP(_, _)             ⇒ maxPurity = LBSideEffectFree
                             case epk                  ⇒ dependees += epk
                         }
-                    case _ ⇒ maxPurity = SideEffectFree // Mutable or unknown field
+                    case _ ⇒ maxPurity = LBSideEffectFree // Mutable or unknown field
                 }
             }
         }
@@ -442,14 +443,14 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                 return ;
 
             // If the method can't be pure, the return value is not important.
-            if (maxPurity == SideEffectFree)
+            if (maxPurity == LBSideEffectFree)
                 return ;
 
             if (!returnValue.isVar) {
                 // The expression could refer to further expressions in a non-flat
                 // representation. To avoid special handling, we just fallback to SideEffectFree
                 // here as the analysis is intended to be used on flat representations anyway.
-                maxPurity = SideEffectFree
+                maxPurity = LBSideEffectFree
                 return ;
             }
 
@@ -460,21 +461,21 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
             if (value.upperTypeBound.exists(_.isArrayType)) {
                 // Arrays are always mutable
-                maxPurity = SideEffectFree
+                maxPurity = LBSideEffectFree
                 return ;
             }
 
             if (value.isPrecise) { // Precise class known, use ClassImmutability
                 val cfo = project.classFile(value.upperTypeBound.head.asObjectType)
                 if (cfo.isEmpty)
-                    maxPurity = SideEffectFree // Unknown class, might be mutable
+                    maxPurity = LBSideEffectFree // Unknown class, might be mutable
                 else
                     propertyStore(cfo.get, ClassImmutability.key) match {
                         case EP(_, ImmutableObject) ⇒
                         // Returning immutable objects is pure
                         case ep @ EP(_, AtLeastConditionallyImmutableObject) ⇒
                             dependees += ep
-                        case EP(_, _) ⇒ maxPurity = SideEffectFree
+                        case EP(_, _) ⇒ maxPurity = LBSideEffectFree
                         case epk      ⇒ dependees += epk
                     }
             } else { // Precise class unknown, use TypeImmutability
@@ -483,7 +484,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     project.classFile(tpe.asObjectType)
                 }
                 if (cfos.exists(_.isEmpty))
-                    maxPurity = SideEffectFree // Unknown class, might be mutable
+                    maxPurity = LBSideEffectFree // Unknown class, might be mutable
                 else {
                     cfos.forall { cfo ⇒
                         propertyStore(cfo.get, TypeImmutability.key) match {
@@ -493,7 +494,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                                 dependees += ep
                                 true
                             case EP(_, _) ⇒
-                                maxPurity = SideEffectFree
+                                maxPurity = LBSideEffectFree
                                 false // Return early if we are already side-effect free
                             case epk ⇒
                                 dependees += epk
@@ -516,42 +517,42 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
             dependees = dependees.filter(_.e ne e)
             p match {
                 // Cases resulting in conditional purity
-                case ConditionallyPure |
+                case CLBPure |
                     AtLeastConditionallyImmutableType | AtLeastConditionallyImmutableObject ⇒
                     val newEP = EP(e, p)
                     dependees += newEP // For conditional result, keep the dependence
 
                 // Cases resulting in conditional side-effect freeness
-                case ConditionallySideEffectFree ⇒
+                case CLBSideEffectFree ⇒
                     val newEP = EP(e, p)
                     dependees += newEP // For conditional result, keep the dependence
-                    maxPurity = SideEffectFree
+                    maxPurity = LBSideEffectFree
 
                 // Cases that are pure
-                case Pure | // Call to pure method
+                case LBPure | // Call to pure method
                     EffectivelyFinalField | // Reading eff. final fields
                     ImmutableType | ImmutableObject ⇒ // Returning immutable reference
 
                 // Cases resulting in side-effect freeness
-                case SideEffectFree | // Call to side-effect free method
+                case LBSideEffectFree | // Call to side-effect free method
                     _: FieldMutability | // Reading non-final field
                     _: TypeImmutability | _: ClassImmutability ⇒ // Returning mutable reference
-                    maxPurity = SideEffectFree
+                    maxPurity = LBSideEffectFree
 
                 // Cases resulting in impurity
-                case ImpureBase(_) | MaybePure | // Call to impure method
+                case LBImpureBase(_) | MaybePure | // Call to impure method
                     _ ⇒ // Unknown property
                     impure = true
             }
 
             if (impure) {
-                Result(method, Impure)
+                Result(method, LBImpure)
             } else if (dependees.isEmpty) {
                 Result(method, maxPurity)
-            } else if (maxPurity == Pure) {
-                IntermediateResult(method, ConditionallyPure, dependees, c)
+            } else if (maxPurity == LBPure) {
+                IntermediateResult(method, CLBPure, dependees, c)
             } else {
-                IntermediateResult(method, ConditionallySideEffectFree, dependees, c)
+                IntermediateResult(method, CLBSideEffectFree, dependees, c)
             }
         }
 
@@ -559,7 +560,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         var s = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return ImmediateResult(method, Impure)
+                return ImmediateResult(method, LBImpure)
             s += 1
         }
 
@@ -567,10 +568,10 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         // (conditionally) side-effect free.
         if (dependees.isEmpty) {
             ImmediateResult(method, maxPurity)
-        } else if (maxPurity == Pure) {
-            IntermediateResult(method, ConditionallyPure, dependees, c)
+        } else if (maxPurity == LBPure) {
+            IntermediateResult(method, CLBPure, dependees, c)
         } else {
-            IntermediateResult(method, ConditionallySideEffectFree, dependees, c)
+            IntermediateResult(method, CLBSideEffectFree, dependees, c)
         }
     }
 }
