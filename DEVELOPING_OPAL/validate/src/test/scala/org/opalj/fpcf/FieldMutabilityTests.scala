@@ -29,8 +29,8 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -46,13 +46,13 @@ class FieldMutabilityTests extends PropertiesTest {
         validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
     }
 
-    describe("the org.opalj.fpcf.analyses.FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(FieldMutabilityAnalysis))
+    describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(Set(L0FieldMutabilityAnalysis))
         validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
     }
 
-    describe("the org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(AdvancedFieldMutabilityAnalysis))
+    describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(Set(L1FieldMutabilityAnalysis))
         validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
     }
 

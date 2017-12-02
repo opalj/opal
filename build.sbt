@@ -133,7 +133,7 @@ lazy val opal = Project(
         bc,
         ba,
         ai,
-        bp,
+  // DISABLE BUGPICKER      bp,
         de,
         av,
         DeveloperTools,
@@ -270,6 +270,7 @@ lazy val de = Project(
     .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
+/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG  ANALYSIS AGAIN!
 lazy val bp = Project(
     id = "BugPicker",
     base = file("OPAL/bp"),
@@ -279,6 +280,7 @@ lazy val bp = Project(
         fork := true))
     .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
+*/
 
 lazy val av = Project(
     id = "ArchitectureValidation",
@@ -303,7 +305,7 @@ lazy val DeveloperTools = Project(
     ))
     .dependsOn(
         av % "test->test;compile->compile",
-        bp % "test->test;compile->compile",
+  // DISABLED BUGPICKER      bp % "test->test;compile->compile",
         ba % "test->test;compile->compile;it->it")
     .configs(IntegrationTest)
 

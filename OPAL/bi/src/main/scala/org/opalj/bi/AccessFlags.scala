@@ -31,8 +31,6 @@ package bi
 
 /**
  * Convenience methods related to access flags.
- *
- * @author Michael Eichberg
  */
 object AccessFlags {
 
@@ -43,6 +41,8 @@ object AccessFlags {
     final val ACC_SYNTHETIC_PUBLIC_SUPER = ACC_SYNTHETIC.mask | ACC_PUBLIC.mask | ACC_SUPER.mask
 
     final val ACC_SYNTHETIC_STATIC_PUBLIC = ACC_SYNTHETIC.mask | ACC_STATIC.mask | ACC_PUBLIC.mask
+
+    final val ACC_SYNTHETIC_STATIC_PRIVATE = ACC_SYNTHETIC.mask | ACC_STATIC.mask | ACC_PRIVATE.mask
 
     /**
      * Returns the names of the access flags set in a respective vector.

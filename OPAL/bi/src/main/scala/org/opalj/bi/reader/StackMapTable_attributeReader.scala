@@ -30,9 +30,10 @@ package org.opalj
 package bi
 package reader
 
+import scala.reflect.ClassTag
+
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
 import org.opalj.control.repeat
 
 /**
@@ -84,11 +85,8 @@ trait StackMapTable_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val number_of_entries = in.readUnsignedShort()
         if (number_of_entries > 0 || reifyEmptyAttributes) {
-            StackMapTable_attribute(
-                cp,
-                attribute_name_index,
-                repeat(number_of_entries) { StackMapFrame(cp, in) }
-            )
+            val frames = repeat(number_of_entries) { StackMapFrame(cp, in) }
+            StackMapTable_attribute(cp, attribute_name_index, frames)
         } else {
             null
         }

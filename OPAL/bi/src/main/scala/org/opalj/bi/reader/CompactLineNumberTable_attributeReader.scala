@@ -35,8 +35,6 @@ import java.io.DataInputStream
 /**
  * Generic parser for the ''LineNumberTable'' attribute that does not unpack the
  * line number table.
- *
- * @author Michael Eichberg
  */
 trait CompactLineNumberTable_attributeReader extends AttributeReader {
 
@@ -74,15 +72,9 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val table_length = in.readUnsignedShort()
         if (table_length > 0 || reifyEmptyAttributes) {
-            LineNumberTable_attribute(
-                cp,
-                attribute_name_index,
-                {
-                    val data = new Array[Byte](table_length * 4)
-                    in.readFully(data)
-                    data
-                }
-            )
+            val data = new Array[Byte](table_length * 4)
+            in.readFully(data)
+            LineNumberTable_attribute(cp, attribute_name_index, data)
         } else {
             null
         }

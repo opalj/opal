@@ -105,7 +105,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
  * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[ArgEscape]].
  *
- * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
+ * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.

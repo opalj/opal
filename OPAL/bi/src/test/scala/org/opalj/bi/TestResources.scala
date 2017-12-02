@@ -30,12 +30,12 @@ package org.opalj
 package bi
 
 import java.io.File
-import java.io.FileFilter
 
+import org.opalj.io.JARsFileFilter
 import org.opalj.util.ScalaMajorVersion
 
 /**
- * Common functionality required by many tests.
+ * Common functionality to find resources required by many tests.
  *
  * @author Michael Eichberg
  */
@@ -148,13 +148,5 @@ object TestResources {
      * @note This set never includes the JRE.
      */
     def allBITestJARs(): Traversable[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs
-
-}
-
-object JARsFileFilter extends FileFilter {
-
-    def accept(path: File): Boolean = {
-        path.isFile && path.getName.endsWith(".jar") && path.canRead
-    }
 
 }

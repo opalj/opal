@@ -69,8 +69,6 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * This enables a very high-level of adaptability.
  *
  * For further details see the JVM Specification: The ClassFile Structure.
- *
- * @author Michael Eichberg
  */
 trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbstractions {
 
@@ -633,7 +631,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 val filename = file.getName
                 (
                     if (isClassFileRepository(filename)) {
-                        if (!filename.endsWith("-javadoc.jar") && !filename.endsWith("-sources.jar")) {
+                        if (!filename.endsWith("-javadoc.jar") &&
+                            !filename.endsWith("-sources.jar")) {
                             progressReporter(file)
                             processJar(file)
                         } else {
@@ -671,10 +670,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         Right(classNames)
     }
 }
+
 /**
  * Helper methods related to reading class files.
- *
- * @author Michael Eichberg
  */
 object ClassFileReader {
 

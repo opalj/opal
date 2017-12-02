@@ -107,15 +107,15 @@ trait AnalysisExecutor {
      * the set of specified parameters is not valid.
      */
     protected def printUsage(implicit logContext: LogContext): Unit = {
-        val analysisModes = AnalysisModes.values.map(_.toString.replace(" ", "_")).mkString(",")
+        val projectTypes = ProjectTypes.values.map(_.toString.replace(" ", "_")).mkString(",")
         OPALLogger.info(
             "usage",
             "java "+
                 this.getClass().getName()+"\n"+
-                "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
+                "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
-                "[-analysisMode=<the kind of project ("+analysisModes+")>]\n"+
-                "[-completelyLoadLibraries=<true|false> (The default is false.)]\n"+
+                "[-projectType=<the kind of project ("+projectTypes+")>]\n"+
+                "[-completelyLoadLibraries=<true|false> (Default: false.)]\n"+
                 analysisSpecificParametersDescription
         )
         OPALLogger.info("general", "description: "+analysis.description)
@@ -208,13 +208,13 @@ trait AnalysisExecutor {
         }
         val libcpFiles = verifyFiles(libcp)
 
-        val (analysisMode, args3) = try {
-            args2.partition(_.startsWith("-analysisMode=")) match {
+        val (projectType, args3) = try {
+            args2.partition(_.startsWith("-projectType=")) match {
                 case (Array(), args3) ⇒
-                    (AnalysisModes.DesktopApplication, args3)
-                case (Array(analysisModeParameter), args3) ⇒
-                    val analysisMode = analysisModeParameter.substring(14).replace("_", " ")
-                    (AnalysisModes.withName(analysisMode), args3)
+                    (ProjectTypes.Library, args3)
+                case (Array(projectTypeParameter), args3) ⇒
+                    val projectType = projectTypeParameter.substring(14).replace("_", " ")
+                    (ProjectTypes.withName(projectType), args3)
             }
 
         } catch {
@@ -224,7 +224,7 @@ trait AnalysisExecutor {
                 printUsage
                 sys.exit(2)
         }
-        OPALLogger.info("project configuration", s"the analysis mode is $analysisMode")
+        OPALLogger.info("project configuration", s"the project type is $projectType")
 
         val (completelyLoadLibraries, args4) = try {
             args3.partition(_.startsWith("-completelyLoadLibraries=")) match {
@@ -258,7 +258,7 @@ trait AnalysisExecutor {
         val project: Project[URL] = try {
             setupProject(
                 cpFiles, libcpFiles, completelyLoadLibraries,
-                analysisMode,
+                projectType,
                 ConfigFactory.load()
             )
         } catch {
@@ -295,16 +295,16 @@ trait AnalysisExecutor {
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        analysisMode:            AnalysisMode,
+        projectType:             ProjectType,
         fallbackConfiguration:   Config
     )(
         implicit
         initialLogContext: LogContext
     ): Project[URL] = {
 
-        val analysisModeSpecification = s"${AnalysisMode.ConfigKey} = $analysisMode"
-        val analysisModeConfig = ConfigFactory.parseString(analysisModeSpecification)
-        val configuredConfig = analysisModeConfig.withFallback(fallbackConfiguration)
+        val projectTypeSpecification = s"${ProjectType.ConfigKey} = $projectType"
+        val projectTypeConfig = ConfigFactory.parseString(projectTypeSpecification)
+        val configuredConfig = projectTypeConfig.withFallback(fallbackConfiguration)
 
         OPALLogger.info("creating project", "reading project class files")
         val JavaClassFileReader = Project.JavaClassFileReader(theConfig = configuredConfig)

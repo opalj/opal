@@ -48,8 +48,6 @@ import org.opalj.log.LogContext
  * } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
  * new ConfiguredFramework
  * }}}
- *
- * @author Michael Eichberg
  */
 trait ClassFileReaderConfiguration {
 

@@ -46,6 +46,10 @@ trait Property extends PropertyMetaInformation {
     /**
      * Returns `true` if the current property may be refined in the future and it is therefore
      * necessary to wait for updates.
+     *
+     * @note isRefineable is only used for consistency checks and debugging purposes.
+     *        The property store relies on the type of the result to determine if a property
+     *        is final or not.
      */
     def isRefineable: Boolean
 

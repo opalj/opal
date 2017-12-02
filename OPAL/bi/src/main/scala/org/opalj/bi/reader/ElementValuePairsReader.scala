@@ -37,8 +37,6 @@ import org.opalj.control.repeat
 
 /**
  * Generic parser for an annotation's element-value pairs.
- *
- * @author Michael Eichberg
  */
 trait ElementValuePairsReader extends AnnotationAbstractions {
 
@@ -137,8 +135,9 @@ trait ElementValuePairsReader extends AnnotationAbstractions {
         }
     }
 
-    def ElementValuePair(cp: Constant_Pool, in: DataInputStream): ElementValuePair =
+    def ElementValuePair(cp: Constant_Pool, in: DataInputStream): ElementValuePair = {
         ElementValuePair(cp, in.readUnsignedShort, ElementValue(cp, in))
+    }
 
     /**
      * Parses an element value.

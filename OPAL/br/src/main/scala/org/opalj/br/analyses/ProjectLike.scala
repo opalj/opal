@@ -627,10 +627,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Returns true if the method defined by the given class type is a signature polymorphic
-     * method. (See JVM 8 Spec. for details.)
+     * method. (See JVM 8 Spec. for details.) //TODO JAVA 8+
      */
+    //TODO add method that lookup the defining class type
     def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
-        (definingClassType eq ObjectType.MethodHandle) &&
+        (
+            (definingClassType eq ObjectType.MethodHandle) ||
+            (definingClassType eq ObjectType.VarHandle)
+        ) &&
             method.isNativeAndVarargs &&
             method.descriptor == SignaturePolymorphicMethodDescriptor
     }
@@ -700,7 +704,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      */
     def specialCall(
         declaringClassType: ObjectType, // an interface or class type to be precise
-        isInterface:        Boolean, // TODO is isInterface needed - isn't it contained in "instancemethods" ?
+        isInterface:        Boolean,
         name:               String, // an interface or class type to be precise
         descriptor:         MethodDescriptor
     ): Result[Method] = {
@@ -754,7 +758,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * This method supports default methods and signature polymorphic calls; i.e., the
      * descriptor of the retuned methods may not be equal to the given method descriptor.
      *
-     * @param   callerType The object type which defines the method which performs the call.
+     * @param   callerClassType The object type which defines the method which performs the call.
      *          This information is required if the call target has (potentially) default
      *          visibility. (Note that this - in general - does not replace the need to perform an
      *          accessibility check.)
@@ -847,13 +851,21 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         methods
     }
 
+    /**
+     * Convience method; see `virtualCall(callerPackageName:String,declaringType:ReferenceType*`
+     * for details.
+     */
     def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {
         virtualCall(callerPackageName, i.declaringClass, i.name, i.methodDescriptor)
     }
 
     /**
      * Returns the set of methods that may be called by an invokevirtual call, if
-     * the receiver type is unknown or effectively encompasses all subtypes.
+     * the receiver type is unknown or effectively encompasses all subtypes it
+     * is recommended to use [[instanceCall]].
+     *
+     * @note    As in case of instance call, the returned method may have a different
+     *          descriptor if we have a signature polymorphic call!
      */
     def virtualCall(
         callerPackageName: String,

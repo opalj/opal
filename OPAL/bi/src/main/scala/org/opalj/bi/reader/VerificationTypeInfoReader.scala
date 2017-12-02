@@ -32,10 +32,6 @@ package reader
 
 import java.io.DataInputStream
 
-/**
- *
- * @author Michael Eichberg
- */
 trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
     //
@@ -123,4 +119,3 @@ object VerificationTypeInfoItem extends Enumeration {
     final val ITEM_Object = Value(7)
     final val ITEM_Unitialized = Value(8)
 }
-

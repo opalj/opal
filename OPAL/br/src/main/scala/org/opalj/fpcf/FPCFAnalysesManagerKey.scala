@@ -31,7 +31,6 @@ package fpcf
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.PropertyStoreKey
 
 /**
  * The ''key'' object to get the [[FPCFAnalysesManager]].

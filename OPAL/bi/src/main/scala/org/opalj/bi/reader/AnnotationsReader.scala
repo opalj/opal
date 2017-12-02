@@ -39,8 +39,6 @@ import org.opalj.control.repeat
  * Generic parser to parse a list of annotations. This
  * reader is intended to be used in conjunction with the
  * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
- *
- * @author Michael Eichberg
  */
 trait AnnotationsReader extends AnnotationAbstractions {
 

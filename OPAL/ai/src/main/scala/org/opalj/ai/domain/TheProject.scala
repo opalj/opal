@@ -33,7 +33,7 @@ package domain
 import org.opalj.log.LogContext
 import org.opalj.br.{ClassHierarchy ⇒ BRClassHierarchy}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 
 /**
  * Provides information about the underlying project.

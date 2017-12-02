@@ -32,8 +32,6 @@ package reader
 
 /**
  * Common interface of all entries in the constant pool.
- *
- * @author Michael Eichberg
  */
 trait ConstantPoolEntry {
 

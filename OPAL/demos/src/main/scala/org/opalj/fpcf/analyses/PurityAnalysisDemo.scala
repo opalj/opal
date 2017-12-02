@@ -32,7 +32,6 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -107,24 +106,22 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
 
-        val projectStore = time {
+        val propertyStore = time {
             PropertyStoreKey.parallelismLevel = parallelismLevel
             get(PropertyStoreKey)
         } { r ⇒ setupTime = r }
 
-        val manager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(FieldMutabilityAnalysis)
-
         time {
-            manager.runAll(PurityAnalysis);
-            projectStore.waitOnPropertyComputationCompletion(true)
+            L0FieldMutabilityAnalysis.start(project, propertyStore)
+            L0PurityAnalysis.start(project, propertyStore)
+            propertyStore.waitOnPropertyComputationCompletion(true)
         } { r ⇒ analysisTime = r }
 
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
         () ⇒ {
             val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
-                projectStore.entities(FieldMutability.key)
+                propertyStore.entities(FieldMutability.key)
 
             val effectivelyFinalFields: Traversable[(Field, Property)] =
                 effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
@@ -132,7 +129,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
             val effectivelyFinalFieldsAsStrings =
                 effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava)
 
-            val pureEntities: Traversable[EP[Entity, Purity]] = projectStore.entities(Purity.key)
+            val pureEntities: Traversable[EP[Entity, Purity]] = propertyStore.entities(Purity.key)
             val pureMethods: Traversable[(Method, Property)] =
                 pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
             val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
@@ -151,7 +148,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                     s"\nTotal: ${pureMethods.size}\n"
                 )
 
-            fieldInfo + methodInfo + projectStore.toString(false)+
+            fieldInfo + methodInfo + propertyStore.toString(false)+
                 "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
         }
     }

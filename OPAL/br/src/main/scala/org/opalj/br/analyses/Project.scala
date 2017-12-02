@@ -170,7 +170,7 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
-        final val analysisMode:                       AnalysisMode
+        final val projectType:                        ProjectType
 )(
         implicit
         final val logContext: LogContext,
@@ -214,7 +214,7 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
-            analysisMode
+            projectType
         )(
             newLogContext,
             config
@@ -586,7 +586,7 @@ class Project[Source] private (
      * class files.
      */
     def extend(other: Project[Source]): Project[Source] = {
-        if (this.analysisMode != other.analysisMode) {
+        if (this.projectType != other.projectType) {
             throw new IllegalArgumentException("the projects have different analysis modes");
         }
 
@@ -947,7 +947,7 @@ class Project[Source] private (
 
         classDescriptions.mkString(
             "Project("+
-                "\n\tanalysisMode="+analysisMode+
+                "\n\tprojectType="+projectType+
                 "\n\tlibraryClassFilesAreInterfacesOnly="+libraryClassFilesAreInterfacesOnly+
                 "\n\t",
             "\n\t",
@@ -1276,7 +1276,7 @@ object Project {
 
         implicit val classFileRepository = new ClassFileRepository {
             override implicit def logContext: LogContext = theLogContext
-            override def analysisMode: AnalysisMode = ???
+            override def projectType: ProjectType = ???
             override def classFile(objectType: ObjectType): Option[ClassFile] = {
                 objectTypeToClassFile.get(objectType)
             }
@@ -1852,7 +1852,7 @@ object Project {
                 classHierarchy,
                 Await.result(instanceMethodsFuture, Duration.Inf),
                 Await.result(overridingMethodsFuture, Duration.Inf),
-                /*TODO Delete*/ AnalysisModes.withName(config.as[String](AnalysisMode.ConfigKey))
+                ProjectTypes.withName(config.as[String](ProjectType.ConfigKey))
             )
 
             time {

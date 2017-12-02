@@ -277,13 +277,257 @@ object ClassFileFactory {
             )
         }
 
+        // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
+        // instruction on a static interface method.
+        // Given that none of the generated methods contains any control-flow instructions
+        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
         ClassFile(
-            0, 49,
+            0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toSeq,
             fields,
+            methods,
+            IndexedSeq(VirtualTypeFlag)
+        )
+    }
+
+    def DeserializeLambdaProxy(
+        definingType:       TypeDeclaration,
+        bootstrapArguments: BootstrapArguments,
+        staticMethodName:   String
+    ): ClassFile = {
+
+        /*
+            Instructions of LambdaDeserialize::bootstrap. This method will be reimplemented in the
+            constructor of the new LambdaDeserializeProxy class.
+
+            PC  Line  Instruction
+            0   36    invokestatic java.lang.invoke.MethodHandles { java.lang.invoke.MethodHandles$Lookup lookup () }
+            3   |     astore_2
+            4   38    ldc java.lang.Object.class
+            6   39    ldc java.lang.invoke.SerializedLambda.class
+            8   |     invokestatic java.lang.invoke.MethodType { java.lang.invoke.MethodType methodType (java.lang.Class, java.lang.Class) }
+            11  |     astore_3
+            12  42    aload_2
+            13  43    aload_0
+            14  |     invokevirtual java.lang.invoke.SerializedLambda { java.lang.String getImplMethodName () }
+            17  44    aload_3
+            18  |     iconst_1
+            19  |     anewarray java.lang.invoke.MethodHandle
+            22  |     dup
+            23  |     iconst_0
+            24  45    aconst_null
+            25  |     aastore
+            26  |     invokestatic scala.runtime.LambdaDeserialize { java.lang.invoke.CallSite bootstrap (java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle[]) }
+            29  |     astore 4
+            31  59    aload 4
+            33  |     invokevirtual java.lang.invoke.CallSite { java.lang.invoke.MethodHandle getTarget () }
+            36  |     aload_0
+            37  |     invokevirtual java.lang.invoke.MethodHandle { java.lang.Object invoke (java.lang.invoke.SerializedLambda) }
+            40  |     areturn
+            */
+        // val a = new ArrayBuffer[Object](100)
+        var buildMethodType: Array[Instruction] = Array() // IMPROVE: Use ArrayBuffer
+
+        bootstrapArguments.foreach { arg ⇒
+            val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
+
+            // lookup.findStatic parameters
+            def getParameterTypeInstruction(t: Type): Array[Instruction] =
+                if (t.isReferenceType) {
+                    Array(LDC(ConstantClass(t.asReferenceType)), null)
+                } else if (t.isBaseType) {
+                    // Primitive type handling
+                    Array(
+                        GETSTATIC(t.asBaseType.WrapperType, "TYPE", ObjectType.Class),
+                        null, null
+                    )
+                } else {
+                    // Handling for void type
+                    Array(
+                        GETSTATIC(
+                            VoidType.WrapperType,
+                            "TYPE",
+                            ObjectType.Class
+                        ), null, null
+                    )
+                }
+            buildMethodType ++= Array(
+                LDC(ConstantClass(staticHandle.receiverType)), null, // reference class
+                LDC(ConstantString(staticHandle.name)), null // method name
+            // next parameter is the method type, put parameters on stack
+            )
+            buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.returnType) // rtype
+
+            if (staticHandle.methodDescriptor.parametersCount == 0) {
+                // We have ZERO parameters, call MethodType.methodType with return parameter only
+                // IMPROVE: check if LDC method type can be used
+                buildMethodType ++= Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodType,
+                        false,
+                        "methodType",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.Class),
+                            ObjectType.MethodType
+                        )
+                    ), null, null
+                )
+            } else if (staticHandle.methodDescriptor.parametersCount == 1) {
+                // We have ONE parameters, call MethodType.methodType with return and one parameter only
+                buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.parameterType(0))
+                buildMethodType ++= Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodType,
+                        false,
+                        "methodType",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.Class, ObjectType.Class),
+                            ObjectType.MethodType
+                        )
+                    ), null, null
+                )
+            } else {
+                // We have MULTIPLE parameters
+                buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.parameterType(0))
+                buildMethodType ++= Array(
+                    // The first parameter has its own parameter field
+                    ICONST_4,
+                    ANEWARRAY(ObjectType.Class), null, null
+                )
+
+                // The following parameters are put into an array of Class
+                staticHandle.methodDescriptor.parameterTypes.tail.zipWithIndex.foreach { pt ⇒
+                    val (param, i) = pt
+                    buildMethodType ++= Array(
+                        DUP,
+                        BIPUSH(i), null // Use BIPUSH instead of ICONST_<i>, it is equivalent, see https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iconst_i
+                    ) ++ getParameterTypeInstruction(param) ++ Array(
+                            AASTORE
+                        )
+                }
+
+                buildMethodType ++= Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodType,
+                        false,
+                        "methodType",
+                        MethodDescriptor(
+                            IndexedSeq(
+                                ObjectType.Class,
+                                ObjectType.Class,
+                                ArrayType(ObjectType.Class)
+                            ),
+                            ObjectType.MethodType
+                        )
+                    ), null, null
+                )
+            }
+        }
+
+        val instructions: Array[Instruction] =
+            Array(
+                INVOKESTATIC(
+                    ObjectType.MethodHandles,
+                    false,
+                    "lookup",
+                    MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
+                ), null, null,
+                ASTORE_2,
+                LDC(ConstantClass(ObjectType.Object)), null,
+                LDC(ConstantClass(ObjectType.SerializedLambda)), null,
+                INVOKESTATIC(
+                    ObjectType.MethodType,
+                    false,
+                    "methodType",
+                    MethodDescriptor(
+                        IndexedSeq(ObjectType.Class, ObjectType.Class),
+                        ObjectType.MethodType
+                    )
+                ), null, null,
+                ASTORE_3,
+                ALOAD_2,
+                ALOAD_0,
+                INVOKEVIRTUAL(
+                    ObjectType.SerializedLambda,
+                    "getImplMethodName",
+                    MethodDescriptor.JustReturnsString
+                ), null, null,
+                ALOAD_3,
+                ICONST_1,
+                ANEWARRAY(
+                    ObjectType.MethodHandle
+                ), null, null,
+                DUP,
+                ICONST_0,
+                ALOAD_2
+            ) ++
+                // *** START Add lookup for each argument ***
+                //  buildMethodType ++
+                // *** END Add lookup for each argument ***
+                Array(
+                    INVOKESTATIC(
+                        ObjectType.ScalaLambdaDeserialize,
+                        false,
+                        "bootstrap",
+                        MethodDescriptor(
+                            IndexedSeq(
+                                ObjectType.MethodHandles$Lookup,
+                                ObjectType.String,
+                                ObjectType.MethodType,
+                                ArrayType(ObjectType.MethodHandle)
+                            ),
+                            ObjectType.CallSite
+                        )
+                    ), null, null,
+                    ASTORE(4), null,
+                    ALOAD(4), null,
+                    INVOKEVIRTUAL(
+                        ObjectType.CallSite,
+                        "getTarget",
+                        MethodDescriptor.withNoArgs(ObjectType.MethodHandle)
+                    ), null, null,
+                    ALOAD_0,
+                    INVOKEVIRTUAL(
+                        ObjectType.MethodHandle,
+                        "invoke",
+                        MethodDescriptor(
+                            ObjectType.SerializedLambda, // Parameter
+                            ObjectType.Object // Return
+                        )
+                    ), null, null,
+                    ARETURN
+                )
+
+        val maxStack = Code.computeMaxStack(instructions)
+
+        val methods: Array[MethodTemplate] = Array(
+            Method(
+                bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
+                staticMethodName,
+                MethodDescriptor(
+                    IndexedSeq(ObjectType.SerializedLambda),
+                    ObjectType.Object
+                ),
+                Seq(
+                    Code(maxStack, maxLocals = 5, instructions, IndexedSeq.empty, Seq.empty)
+                )
+            )
+        )
+
+        // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
+        // instruction on a static interface method.
+        // Given that none of the generated methods contains any control-flow instructions
+        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
+        ClassFile(
+            0, 52,
+            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
+            definingType.objectType,
+            definingType.theSuperclassType,
+            definingType.theSuperinterfaceTypes.toSeq,
+            IndexedSeq.empty[FieldTemplate], // Class fields
             methods,
             IndexedSeq(VirtualTypeFlag)
         )

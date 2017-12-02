@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Generic infrastructure for reading the "@deprecated" attribute.
- *
- * @author Michael Eichberg
  */
 trait Deprecated_attributeReader extends AttributeReader {
 

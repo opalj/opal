@@ -35,6 +35,7 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.Date
+
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.collection.JavaConverters._
 import scala.util.control.ControlThrowable
@@ -51,7 +52,6 @@ import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
-import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.AnalysisException
@@ -74,6 +74,7 @@ import org.opalj.issues.IssueOrdering
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
+import org.opalj.br.analyses.cg.InstantiableClassesKey
 import org.opalj.issues.Relevance
 
 /**

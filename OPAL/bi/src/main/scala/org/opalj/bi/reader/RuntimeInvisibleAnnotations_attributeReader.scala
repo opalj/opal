@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Generic parser for the `RuntimeInvisibleAnnotations` attribute.
- *
- * @author Michael Eichberg
  */
 trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
 
@@ -75,9 +73,7 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
         /*val attribute_length = */ in.readInt()
         val annotations = Annotations(cp, in)
         if (annotations.nonEmpty || reifyEmptyAttributes) {
-            RuntimeInvisibleAnnotations_attribute(
-                cp, attribute_name_index, annotations
-            )
+            RuntimeInvisibleAnnotations_attribute(cp, attribute_name_index, annotations)
         } else {
             null
         }

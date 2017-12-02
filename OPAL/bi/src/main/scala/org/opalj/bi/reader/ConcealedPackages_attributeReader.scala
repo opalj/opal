@@ -33,12 +33,11 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''ConcealedPackages'' attribute (Java 9).
- *
- * @author Michael Eichberg
  */
 trait ConcealedPackages_attributeReader extends AttributeReader {
 

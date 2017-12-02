@@ -30,13 +30,12 @@ package org.opalj
 package de
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-
 import org.opalj.av.checking._
+import org.opalj.br.reader.LambdaExpressionsRewriting
 
 /**
  * Tests that the implemented architecture of the dependency extraction
@@ -51,9 +50,16 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     behavior of "the Dependency Extraction Library's implemented architecture"
 
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
+        val deTargetClasses = Specification
+            .ProjectDirectory("OPAL/de/target/scala-2.12/classes")
+            .filterNot { cfSrc ⇒
+                // Ignore the rewritten lambda expressions
+                val (cf, _) = cfSrc
+                cf.thisType.toJava.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
+            }
         val expected =
             new Specification(
-                Specification.ProjectDirectory("OPAL/de/target/scala-2.12/classes"),
+                deTargetClasses,
                 useAnsiColors = true
             ) {
 

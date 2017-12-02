@@ -315,6 +315,8 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     final val id = Int.MinValue
 
+    final def WrapperType: ObjectType = ObjectType.Void
+
     final override def isVoidType: Boolean = true
 
     final override def computationalType: ComputationalType =
@@ -326,8 +328,9 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJava: String = "void"
 
-    override def toBinaryJavaName: String =
+    override def toBinaryJavaName: String = {
         throw new UnsupportedOperationException("void does not have a binary name")
+    }
 
     override def toJVMTypeName: String = "V"
 
@@ -1154,12 +1157,14 @@ object ObjectType {
     final val Double = ObjectType("java/lang/Double")
     require(Double.id - Boolean.id == 7)
 
+    final val Void = ObjectType("java/lang/Void")
+
     final val String = ObjectType("java/lang/String")
-    final val StringId = 9
+    final val StringId = 10
 
     final val Class = ObjectType("java/lang/Class")
-    final val ClassId = 10
-    require(Class.id == 10)
+    final val ClassId = 11
+    require(Class.id == ClassId)
 
     final val System = ObjectType("java/lang/System")
 

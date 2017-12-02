@@ -47,8 +47,6 @@ import java.io.DataInputStream
  *  u2 constantvalue_index;
  * }
  * </pre>
- *
- * @author Michael Eichberg
  */
 trait ConstantValue_attributeReader extends AttributeReader {
 
