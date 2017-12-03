@@ -56,9 +56,9 @@ class EntryPointsAnalysis private (val project: SomeProject) extends FPCFAnalysi
     def determineEntrypoints(method: Method): PropertyComputationResult = {
         if (method.isStatic && method.isPublic && method.descriptor == MainMethodDescriptor &&
             method.name == "main")
-            ImmediateResult(method, IsEntryPoint)
+            Result(method, IsEntryPoint)
         else
-            ImmediateResult(method, NoEntryPoint)
+            Result(method, NoEntryPoint)
     }
 }
 

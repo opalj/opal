@@ -248,7 +248,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 else
                     superClassMutability
             }
-            return createIncrementalResult(cf, immutability, ImmediateResult(cf, immutability));
+            return createIncrementalResult(cf, immutability, Result(cf, immutability));
         }
 
         var currentSuperClassMutability = superClassMutability
@@ -260,7 +260,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 AtLeastConditionallyImmutableObject
         }
 
-        def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             //[DEBUG]             val oldDependees = dependees
             e match {
                 // Field Mutability related dependencies:
@@ -395,12 +395,12 @@ object ClassImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
         // 1.1
         // java.lang.Object is by definition immutable.
         val objectClassFileOption = project.classFile(ObjectType.Object)
-        objectClassFileOption.foreach(cf ⇒ handleResult(ImmediateResult(cf, ImmutableObject)))
+        objectClassFileOption.foreach(cf ⇒ handleResult(Result(cf, ImmutableObject)))
 
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        handleResult(ImmediateMultiResult(allInterfaces.map(cf ⇒ EP(cf, ImmutableObject))))
+        handleResult(MultiResult(allInterfaces.map(cf ⇒ EP(cf, ImmutableObject))))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
@@ -416,7 +416,7 @@ object ClassImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
             // immutability
             filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
             foreach(ot ⇒ project.classFile(ot) foreach { cf ⇒
-                handleResult(ImmediateResult(cf, MutableObjectDueToUnknownSupertypes))
+                handleResult(Result(cf, MutableObjectDueToUnknownSupertypes))
             })
 
         // 3.
@@ -437,7 +437,7 @@ object ClassImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
                         s"${t.toJava}'s class file is not available"
                     )
                     allSubtypes(t, reflexive = true).foreach(project.classFile(_).foreach { cf ⇒
-                        handleResult(ImmediateResult(cf, MutableObjectDueToUnknownSupertypes))
+                        handleResult(Result(cf, MutableObjectDueToUnknownSupertypes))
                     })
             }
 

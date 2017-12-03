@@ -67,12 +67,12 @@ class L1ThrownExceptionsAnalysis private (
      */
     def determineThrownExceptions(m: Method): PropertyComputationResult = {
         if (m.isNative)
-            return ImmediateResult(m, ThrownExceptionsAreUnknown.MethodIsNative);
+            return Result(m, ThrownExceptionsAreUnknown.MethodIsNative);
         if (m.isAbstract)
-            return ImmediateResult(m, NoExceptionsAreThrown.MethodIsAbstract);
+            return Result(m, NoExceptionsAreThrown.MethodIsAbstract);
         val body = m.body
         if (body.isEmpty)
-            return ImmediateResult(m, ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable);
+            return Result(m, ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable);
 
         // If an unknown subclass can override this method we cannot gather information about
         // the thrown exceptions. Return the analysis immediately.
@@ -284,7 +284,7 @@ class L1ThrownExceptionsAnalysis private (
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             p match {
                 case e: NoExceptionsAreThrown ⇒
                     if (exceptions.isEmpty)

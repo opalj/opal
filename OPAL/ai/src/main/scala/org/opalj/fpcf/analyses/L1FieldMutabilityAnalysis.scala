@@ -139,7 +139,7 @@ class L1FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
                 EP(f, NonFinalFieldByAnalysis)
         }
 
-        ImmediateMultiResult(
+        MultiResult(
             pnfFieldsEPs ++ fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
         )
     }

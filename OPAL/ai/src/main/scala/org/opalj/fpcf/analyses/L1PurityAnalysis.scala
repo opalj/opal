@@ -149,7 +149,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     def determinePurity(method: Method): PropertyComputationResult = {
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return ImmediateResult(method, LBImpure);
+            return Result(method, LBImpure);
 
         implicit val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
@@ -560,14 +560,14 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         var s = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return ImmediateResult(method, LBImpure)
+                return Result(method, LBImpure)
             s += 1
         }
 
         // Every method that is not identified as being impure is (conditionally) pure or
         // (conditionally) side-effect free.
         if (dependees.isEmpty) {
-            ImmediateResult(method, maxPurity)
+            Result(method, maxPurity)
         } else if (maxPurity == LBPure) {
             IntermediateResult(method, CLBPure, dependees, c)
         } else {

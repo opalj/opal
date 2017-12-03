@@ -73,31 +73,6 @@ package object collection {
     //
 
     /**
-     * If the `ConcurrentHashMap` (map) contains the key, the respective value is
-     * returned. Otherwise, the given function `f` is evaluated and that value is
-     * stored in the map and also returned.
-     *
-     * @note    It is possible that `f` is evaluated but the result is not used, if
-     *          another thread has already associated a value with the respective key.
-     *          In that case the result of the evaluation of `f` is thrown away.
-     * @migration With Java 8 the ConcurrentHashMap natively provides such functionality
-     *           and that functionality should be used.
-     */
-    def putIfAbsentAndGet[K, V](map: ConcurrentHashMap[K, V], key: K, f: ⇒ V): V = {
-        val value = map.get(key)
-        if (value != null) {
-            value
-        } else {
-            val newValue = f // we may evaluate f multiple times w.r.t. the same key
-            val existingValue = map.putIfAbsent(key, newValue)
-            if (existingValue != null)
-                existingValue
-            else
-                newValue
-        }
-    }
-
-    /**
      * Converts a multi-map (a Map that contains Maps) based on
      * `java.util.concurrent.ConcurrentHashMap`s into a corresponding multi-map
      * based on `scala.collection.immutable.HashMap`s.

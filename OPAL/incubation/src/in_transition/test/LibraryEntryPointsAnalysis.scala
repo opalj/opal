@@ -63,24 +63,24 @@ private[analyses] class LibraryEntryPointsAnalysis private[analyses] (
         if (project.libraryClassFilesAreInterfacesOnly && project.isLibraryType(classFile))
             // if the analyze the library with the the public interface of third party libraries
             // we don't want the public API only as entry points.
-            return ImmediateResult(method, NoEntryPoint);
+            return Result(method, NoEntryPoint);
 
         if (classFile.isInterfaceDeclaration) {
             if (isOpenLibrary || classFile.isPublic)
-                return ImmediateResult(method, IsEntryPoint);
+                return Result(method, IsEntryPoint);
             else {
                 val epProperty = isClientCallable(method)
-                return ImmediateResult(method, epProperty);
+                return Result(method, epProperty);
             }
         }
 
         /* Code from CallGraphFactory.defaultEntryPointsForLibraries */
         if (CallGraphFactory.isPotentiallySerializationRelated(method)(project.classHierarchy)) {
-            return ImmediateResult(method, IsEntryPoint);
+            return Result(method, IsEntryPoint);
         }
 
         if (method.isPrivate || (isClosedLibrary && method.isPackagePrivate))
-            return ImmediateResult(method, NoEntryPoint);
+            return Result(method, NoEntryPoint);
 
         // Now: the method is neither an (static or default) interface method nor a method
         // which relates somehow to object serialization.

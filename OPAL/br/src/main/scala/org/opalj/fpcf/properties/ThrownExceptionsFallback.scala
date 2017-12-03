@@ -240,7 +240,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
 class ThrownExceptionsFallback(ps: PropertyStore) extends PropertyComputation[Method] {
 
     def apply(m: Method): PropertyComputationResult = {
-        ImmediateResult(m, ThrownExceptionsFallback(ps, m))
+        Result(m, ThrownExceptionsFallback(ps, m))
     }
 
 }

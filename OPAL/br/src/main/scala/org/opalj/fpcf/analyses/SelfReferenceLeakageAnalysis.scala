@@ -34,7 +34,10 @@ import net.ceedubs.ficus.Ficus._
 import org.opalj.br.{ClassFile, Method, ObjectType}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{AASTORE, ATHROW, FieldWriteAccess, INVOKEDYNAMIC, INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, MethodInvocationInstruction, PUTFIELD, PUTSTATIC}
-import org.opalj.fpcf.properties.{DoesNotLeakSelfReference, LeaksSelfReference, SelfReferenceLeakage}
+import org.opalj.fpcf.properties.DoesNotLeakSelfReference
+import org.opalj.fpcf.properties.MayNotLeakSelfReference
+import org.opalj.fpcf.properties.LeaksSelfReference
+import org.opalj.fpcf.properties.SelfReferenceLeakage
 import org.opalj.log.OPALLogger
 
 /**
@@ -158,7 +161,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
                     s"${classFile.thisType.toJava} leaks its self reference"
                 )
             if (immediateResult)
-                ImmediateResult(classFile, LeaksSelfReference)
+                Result(classFile, LeaksSelfReference)
             else
                 Result(classFile, LeaksSelfReference)
         } else {
@@ -168,7 +171,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
                     s"${classFile.thisType.toJava} does not leak its self reference"
                 )
             if (immediateResult)
-                ImmediateResult(classFile, DoesNotLeakSelfReference)
+                Result(classFile, DoesNotLeakSelfReference)
             else
                 Result(classFile, DoesNotLeakSelfReference)
         }
@@ -188,7 +191,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
                     "analysis result",
                     "java.lang.Object does not leak its self reference [configured]"
                 )
-            return ImmediateResult(classFile, DoesNotLeakSelfReference);
+            return Result(classFile, DoesNotLeakSelfReference);
         }
 
         // Let's check the supertypes w.r.t. their leakage property.
@@ -203,7 +206,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
                     "analysis result",
                     s"${classFile.thisType.toJava} leaks self reference [super type information is incomplete]"
                 )
-            return ImmediateResult(classFile, LeaksSelfReference);
+            return Result(classFile, LeaksSelfReference);
         }
 
         // Given that we have Java 8, we may have a default method that leaks
@@ -229,7 +232,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
                             "analysis result",
                             s"${classFile.thisType.toJava} leaks its self reference via a supertype"
                         )
-                    return ImmediateResult(classFile, LeaksSelfReference);
+                    return Result(classFile, LeaksSelfReference);
                 case epk: EPK[_, _]                  ⇒ dependees ::= epk
                 case EP(e, DoesNotLeakSelfReference) ⇒ // OK!
             }
@@ -237,8 +240,8 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
             if (dependees.isEmpty) {
                 determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
             } else {
-                val thisEPK = EPK(classFile, SelfReferenceLeakage)
-                def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                val thisEPK = EP(classFile, MayNotLeakSelfReference)
+                def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
                     p match {
                         case LeaksSelfReference ⇒
                             Result(e, LeaksSelfReference)

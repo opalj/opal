@@ -265,7 +265,8 @@ abstract class PropertyStore {
 
     /**
      * Directly associates the given property `p` with property kind `pk` with the given entity
-     * `e` if `e` has no property of the respective kind. The property is treated as being final.
+     * `e` if `e` has no property of the respective kind. The property is always treated as being
+     * final.
      *
      * @note    This method must not be used '''if there might be another computation that
      *          computes the property kind `pk` for `e` and whichs return the respective property

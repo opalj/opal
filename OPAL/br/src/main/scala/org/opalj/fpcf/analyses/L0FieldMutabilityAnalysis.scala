@@ -107,7 +107,7 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
                 EP(f, NonFinalFieldByAnalysis)
         }
 
-        ImmediateMultiResult(psnfFieldsAnalysisResult ++ finalFields)
+        MultiResult(psnfFieldsAnalysisResult ++ finalFields)
     }
 }
 
