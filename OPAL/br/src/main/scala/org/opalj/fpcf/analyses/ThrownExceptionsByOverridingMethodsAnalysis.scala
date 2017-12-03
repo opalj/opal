@@ -110,7 +110,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
                 case epk ⇒ dependees += epk
             }
 
-        def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             methodIsRefinable = false
             p match {
                 case c: AllThrownExceptionsByOverridingMethods ⇒

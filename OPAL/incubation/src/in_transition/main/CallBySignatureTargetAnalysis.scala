@@ -64,7 +64,7 @@ class CallBySignatureTargetAnalysis private (val project: SomeProject) extends F
     )(
         e: Entity
     ): PropertyComputationResult = {
-        ImmediateResult(e, determineCallBySignatureTargets(projectIndex, isApplicationMode)(e))
+        Result(e, determineCallBySignatureTargets(projectIndex, isApplicationMode)(e))
     }
 
     def determineCallBySignatureTargets(

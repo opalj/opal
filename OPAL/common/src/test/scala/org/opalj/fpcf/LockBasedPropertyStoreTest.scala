@@ -38,7 +38,6 @@ import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterEach
 
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -94,18 +93,27 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     final val PalindromeKey = {
         PropertyKey.create[PalindromeProperty](
             "Palindrome",
-            (ps: PropertyStore, e: Entity) ⇒ ???,
+            (ps: PropertyStore, e: Entity) ⇒ PalindromeIncomputable,
             (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
         )
     }
     sealed trait PalindromeProperty extends Property {
         type Self = PalindromeProperty
         def key = PalindromeKey
-        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
-    case object Palindrome extends PalindromeProperty
-    case object NoPalindrome extends PalindromeProperty
+    case object Palindrome extends PalindromeProperty {
+        def isRefineable: Boolean = false
+    }
+    case object NoPalindrome extends PalindromeProperty {
+        def isRefineable: Boolean = false
+    }
+    case object MaybePalindrome extends PalindromeProperty {
+        def isRefineable: Boolean = true
+    }
+    case object PalindromeIncomputable extends PalindromeProperty {
+        def isRefineable: Boolean = false
+    }
 
     /**
      * The number of bits of something...
@@ -151,11 +159,17 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     sealed trait TaintedProperty extends Property {
         type Self = TaintedProperty
         def key = TaintedKey
-        def isRefineable: Boolean = false
     }
     // Multiple properties can share the same property instance
-    case object Tainted extends TaintedProperty
-    case object NotTainted extends TaintedProperty
+    case object Tainted extends TaintedProperty {
+        def isRefineable: Boolean = false
+    }
+    case object NotTainted extends TaintedProperty {
+        def isRefineable: Boolean = false
+    }
+    case object MaybeTainted extends TaintedProperty {
+        def isRefineable: Boolean = true
+    }
 
     final val StringLengthKey: PropertyKey[StringLength] = {
         PropertyKey.create(
@@ -342,7 +356,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             //  - an on property derivation function
             ps schedule { e: Entity ⇒
                 val property = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
-                ImmediateResult(e, property)
+                Result(e, property)
             }
             ps.waitOnPropertyComputationCompletion(true)
 
@@ -364,7 +378,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         ps schedule { e: Entity ⇒
             triggeredComputations.incrementAndGet()
             Thread.sleep(50)
-            ImmediateResult(e, BitsProperty(Integer.bitCount(e.asInstanceOf[Integer])))
+            Result(e, BitsProperty(Integer.bitCount(e.asInstanceOf[Integer])))
         }
         doInterrupt = true
         ps.waitOnPropertyComputationCompletion(false)
@@ -379,7 +393,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             it("every element can have an individual property instance") {
                 val ps = psStrings
 
-                ps schedule { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
+                ps schedule { e: Entity ⇒ Result(e, StringLength(e.toString.length())) }
 
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -397,9 +411,9 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
                 ps schedule { e: Entity ⇒
                     IntermediateResult(
-                        EPK(e, PalindromeKey),
+                        EP(e, MaybePalindrome),
                         Seq(ps(e, TaintedKey)),
-                        (Entity, Property, UserUpdateType) ⇒ { NoResult }: PropertyComputationResult
+                        (Entity, Property, UpdateType) ⇒ { NoResult }: PropertyComputationResult
                     )
                 }
 
@@ -409,7 +423,6 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     ps(e, TaintedKey).p should be(Tainted)
                 }
             }
-
         }
 
         describe("computations for groups of entities") {
@@ -439,9 +452,9 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
                 ps schedule { e: Entity ⇒
                     if (e.toString.reverse == e.toString())
-                        ImmediateResult(e, Palindrome)
+                        Result(e, Palindrome)
                     else
-                        ImmediateResult(e, NoPalindrome)
+                        Result(e, NoPalindrome)
                 }
 
                 ps.onPropertyChange(PalindromeKey)((e, p) ⇒ results.synchronized {
@@ -470,10 +483,13 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 })
 
                 ps schedule { e: Entity ⇒
-                    if (e.toString.reverse == e.toString())
-                        ImmediateResult(e, Palindrome)
-                    else
-                        ImmediateResult(e, NoPalindrome)
+                    Result(
+                        e,
+                        if (e.toString.reverse == e.toString())
+                            Palindrome
+                        else
+                            NoPalindrome
+                    )
                 }
 
                 ps.waitOnPropertyComputationCompletion(true)
@@ -497,7 +513,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     s.foreach { e ⇒
                         ps.put(e, if (e.toString.reverse == e.toString) Palindrome else NoPalindrome)
                     }
-                    ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
+                    Result(s, BitsProperty(Integer.bitCount(s.size)))
                 }
 
                 ps.waitOnPropertyComputationCompletion(true)
@@ -511,55 +527,6 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     "aaaffffffffffffffffaaa"
                 )
                 mutable.SortedSet.empty[String] ++ ps.entities(Palindrome) should be(expectedResult)
-            }
-
-            it("should be possible to compute the information about some properties collaboratively and concurrently") {
-                val ps = psStringsAndSetsOfStrings
-                time {
-                    ps.scheduleForCollected { case s: Set[String @unchecked] ⇒ s } { s: Set[String] ⇒
-                        // the following property is derived concurrently and multiple
-                        // times
-                        val count = s.foldLeft(0) { (c, e) ⇒
-                            c + e.foldLeft(0) { (c, n) ⇒ c + (if (n == 'a') 1 else 0) }
-                        }
-                        val primaryResult = ImmediateResult(s, BitsProperty(Integer.bitCount(s.size)))
-
-                        if (count == 0)
-                            primaryResult
-                        else {
-                            val secondaryResult = ConcurrentResult[String, Count](
-                                "a",
-                                CountKey,
-                                { (e, pOpt) ⇒
-                                    pOpt match {
-                                        case Some(Count(oldCount)) ⇒
-                                            Some((
-                                                Count(oldCount + count),
-                                                IntermediateUpdate
-                                            ))
-                                        case None ⇒
-                                            Some((
-                                                Count(count),
-                                                IntermediateUpdate
-                                            ))
-                                    }
-                                }
-                            )
-                            Results(primaryResult, secondaryResult)
-                        }
-                    }
-
-                    ps.waitOnPropertyComputationCompletion(true)
-                } { t ⇒ info(s"the analysis took:${t.toSeconds}") }
-                // the expected result is computed sequentiall using:
-                // allEntities.
-                //      filter(_.isInstanceOf[Set[String]]).
-                //      map(s => s.asInstanceOf[Set[String]].foldLeft(0) { (c, e) ⇒
-                //               c + e.foldLeft(0) { (c, n) ⇒ c + (if (n == 'a') 1 else 0) }
-                //          }
-                //      ).
-                //      sum
-                ps.entities(CountKey).map(_.p.count).sum should be(3276800)
             }
 
         }
@@ -596,35 +563,43 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
                 // Here, only if data is tainted we check if it is a palindrome...
                 ps schedule { e: Entity ⇒
+                    def c: OnUpdateContinuation = (e: Entity, p: Property, ut: UpdateType) ⇒ {
+                        if (p == Tainted) {
+                            if (e.toString.reverse == e.toString())
+                                Result(e, Palindrome)
+                            else
+                                Result(e, NoPalindrome)
+                        } else if (p == MaybeTainted) {
+                            IntermediateResult(
+                                e, MaybePalindrome,
+                                Seq(EP(e, p)),
+                                c
+                            )
+                        } else {
+                            NoResult // => let's kill the computation
+                        }
+                    }: PropertyComputationResult
+
                     IntermediateResult(
-                        EPK(e, PalindromeKey), Seq(ps(e, TaintedKey)),
-                        (e: Entity, p: Property, UserUpdateType) ⇒ {
-                            if (p == Tainted) {
-                                if (e.toString.reverse == e.toString())
-                                    ImmediateResult(e, Palindrome)
-                                else
-                                    ImmediateResult(e, NoPalindrome)
-                            } else {
-                                NoResult
-                            }
-                        }: PropertyComputationResult
+                        EP(e, MaybePalindrome), Seq(ps(e, TaintedKey)),
+                        c
                     )
                 }
 
                 ps schedule { e: Entity ⇒
                     IntermediateResult(
-                        EPK(e, TaintedKey), Seq(ps(e, StringLengthKey)),
-                        (e: Entity, p: Property, UserUpdateType) ⇒ {
+                        EP(e, MaybeTainted), Seq(ps(e, StringLengthKey)),
+                        (e: Entity, p: Property, UpdateType) ⇒ {
                             if (p.asInstanceOf[StringLength].length % 2 == 0) {
-                                ImmediateResult(e, Tainted)
+                                Result(e, Tainted)
                             } else {
-                                ImmediateResult(e, NotTainted)
+                                Result(e, NotTainted)
                             }
                         }: PropertyComputationResult
                     )
                 }
 
-                ps schedule { e: Entity ⇒ ImmediateResult(e, StringLength(e.toString.length())) }
+                ps schedule { e: Entity ⇒ Result(e, StringLength(e.toString.length())) }
 
                 ps.waitOnPropertyComputationCompletion(true)
 
@@ -632,7 +607,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     ps(e, TaintedKey).p should be(if (e.length % 2 == 0) Tainted else NotTainted)
                     ps(e, StringLengthKey).p should be(StringLength(e.length))
                     if (ps(e, TaintedKey).p == NotTainted) {
-                        ps(e, PalindromeKey) should be(EPK(e, PalindromeKey))
+                        ps(e, PalindromeKey) should be(EP(e, MaybePalindrome))
                     }
                 }
 
@@ -651,7 +626,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     def analysis(level: Int)(n: Node): PropertyComputationResult = {
                         val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
                             n.targets.map(t ⇒ (analysis(level + 1) _, t))
-                        IncrementalResult(ImmediateResult(n, TreeLevel(level)), nextPCs)
+                        IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
                     }
 
                     // the dot in ".<||<" is necessary to shut-up scalariform...
@@ -707,7 +682,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     def c(node: Node) =
                         new OnUpdateContinuation { c ⇒
                             def apply(
-                                e: Entity, p: Property, ut: UserUpdateType
+                                e: Entity, p: Property, ut: UpdateType
                             ): PropertyComputationResult = {
                                 purityAnalysis(node)
                             }
@@ -753,7 +728,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     def analysis(n: Node): PropertyComputationResult = {
                         val nTargets = n.targets
                         if (nTargets.isEmpty)
-                            return ImmediateResult(n, NoReachableNodes);
+                            return Result(n, NoReachableNodes);
 
                         val allDependees: mutable.Set[Node] = nTargets.clone - n // self-dependencies are ignored!
                         var dependeePs: Traversable[EOptionP[Entity, _ <: ReachableNodes]] = ps(allDependees, ReachableNodesKey)
@@ -853,7 +828,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     def analysis(n: Node): PropertyComputationResult = {
                         val nTargets = n.targets
                         if (nTargets.isEmpty)
-                            return ImmediateResult(n, NoReachableNodes);
+                            return Result(n, NoReachableNodes);
 
                         val remainingDependees: mutable.Set[Node] = nTargets.clone - n
                         val c = new Function3[Entity, Property, UpdateType, PropertyComputationResult] {
@@ -959,7 +934,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 @volatile var stringLengthTriggered = false
                 val stringLengthPC: PropertyComputation[String] = (e: String) ⇒ {
                     stringLengthTriggered = true
-                    ImmediateResult(e, StringLength(e.size))
+                    Result(e, StringLength(e.size))
                 }
                 ps scheduleLazyPropertyComputation (StringLengthKey, stringLengthPC)
 
@@ -974,13 +949,13 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 val stringLengthPC: PropertyComputation[String] = (e: String) ⇒ {
                     if (stringLengthTriggered) fail("computation is already triggered")
                     stringLengthTriggered = true
-                    ImmediateResult(e, StringLength(e.size))
+                    Result(e, StringLength(e.size))
                 }
                 ps scheduleLazyPropertyComputation (StringLengthKey, stringLengthPC)
 
                 val palindromePC: PropertyComputation[String] = (e: String) ⇒ {
                     val s = e.toString
-                    ImmediateResult(e, if (s.reverse == s) Palindrome else NoPalindrome)
+                    Result(e, if (s.reverse == s) Palindrome else NoPalindrome)
                 }
                 ps scheduleLazyPropertyComputation (PalindromeKey, palindromePC)
 

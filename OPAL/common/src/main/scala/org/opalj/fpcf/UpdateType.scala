@@ -36,20 +36,16 @@ package org.opalj.fpcf
 sealed abstract class UpdateType(val name: String) {
     val id: Int
 
-    def asUserUpdateType: UserUpdateType
-}
-
-sealed abstract class UserUpdateType(name: String) extends UpdateType(name) {
-    final override def asUserUpdateType: this.type = this
-
     def isIntermediateUpdate: Boolean
     def isFinalUpdate: Boolean
 }
 
 /**
  * The result is just an intermediate result that may be refined in the future.
+ *
+ * @note Refineable results are - downstream - only intermediate updates.
  */
-case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
+case object IntermediateUpdate extends UpdateType("Intermediate Update") {
     final val id = 1
     final override def isIntermediateUpdate: Boolean = true
     final override def isFinalUpdate: Boolean = false
@@ -58,16 +54,9 @@ case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
 /**
  * The result is the final result and was computed using other information.
  */
-case object FinalUpdate extends UserUpdateType("Final Update") {
+case object FinalUpdate extends UpdateType("Final Update") {
     final val id = 2
     final override def isIntermediateUpdate: Boolean = false
     final override def isFinalUpdate: Boolean = true
 }
 
-/**
- * The result is the final result and was computed without requiring any other information.
- */
-private[fpcf] case object OneStepFinalUpdate extends UpdateType("Final Update Without Dependencies") {
-    final val id = 3
-    final override def asUserUpdateType: FinalUpdate.type = FinalUpdate
-}

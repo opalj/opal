@@ -77,7 +77,7 @@ package object fpcf {
 
     type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    type OnUpdateContinuation = (Entity, Property, UserUpdateType) ⇒ PropertyComputationResult
+    type OnUpdateContinuation = (Entity, Property, UpdateType) ⇒ PropertyComputationResult
 
     /**
      * A function that continues the computation of a property. It takes

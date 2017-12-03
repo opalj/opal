@@ -65,20 +65,6 @@ case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult
 private[fpcf] object Result { private[fpcf] final val id = 3 }
 
 /**
- * Encapsulates the '''final result''' of a computation of a property that '''required
- * no intermediate results'''; i.e. it can only be used if the analysis has no open dependencies
- * on other elements.
- *
- * @see [[FinalPropertyComputationResult]] for further information.
- */
-case class ImmediateResult(e: Entity, p: Property) extends FinalPropertyComputationResult {
-
-    private[fpcf] final def id = ImmediateResult.id
-
-}
-private[fpcf] object ImmediateResult { private[fpcf] final val id = 4 }
-
-/**
  * Encapsulates the '''final results''' of the computation of a set of properties.
  *
  * The encapsulated results are not atomically set; they are set one after another.
@@ -91,21 +77,6 @@ case class MultiResult(properties: ComputationResults) extends FinalPropertyComp
 
 }
 private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
-
-/**
- * Encapsulates the '''final results''' of the computation of a set of properties that
- * required no intermediate steps.
- *
- * @see [[FinalPropertyComputationResult]] for further information.
- */
-case class ImmediateMultiResult(
-        properties: ComputationResults
-) extends FinalPropertyComputationResult {
-
-    private[fpcf] final def id = ImmediateMultiResult.id
-
-}
-private[fpcf] object ImmediateMultiResult { private[fpcf] final val id = 2 }
 
 /**
  * Used if the analysis found no entities for which a property could be computed.
@@ -124,21 +95,26 @@ object NoResult extends PropertyComputationResult {
  * All current computations that depend on the property of the entity will be invoked.
  *
  * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
- *      entity/property kind must occur at most once in the list.
+ *      entity/property kind must occur at most once in the list, the current entity/propertykind
+ *      must not occur; i.e., self-reference are forbidden!
  *
  * @param c
  *      The function which is called if a property of any of the dependees is updated.
  *      `c` does not have to be thread safe unless the same instance of `c` is returned multiple
- *      times for different entities (`e`).
+ *      times for different entities (`e`) which should be avoided.
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  *      before (using one of the `apply` functions of the property store.)
  */
 case class IntermediateResult(
-        eOptP:     SomeEOptionP,
+        ep:        SomeEP,
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
+
+    assert(ep.p.isRefineable, s"intermediate result $this used to store final property")
+    assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
+    assert(c ne null, "onUpdateContinuation is null")
 
     // TODO Make it possible to activate the assertions!
     //    // End-User oriented assertion:
@@ -156,22 +132,22 @@ case class IntermediateResult(
 
     private[fpcf] final def id = IntermediateResult.id
 
-    override def hashCode: Int = eOptP.hashCode * 17 + dependees.hashCode
+    override def hashCode: Int = ep.hashCode * 17 + dependees.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(otherEOptP, otherDependeeEs, _) ⇒
-                this.eOptP == otherEOptP && {
-                    val dependees = this.dependees
-                    dependees.forall(thisDependee ⇒ otherDependeeEs.exists(_ == thisDependee)) &&
-                        dependees.size == otherDependeeEs.size
-                }
-            case _ ⇒ false
+            case IntermediateResult(`ep`, otherDependeeEs, _) ⇒
+                val dependees = this.dependees
+                dependees.size == otherDependeeEs.size &&
+                    dependees.forall(thisDependee ⇒ otherDependeeEs.exists(_ == thisDependee))
+
+            case _ ⇒
+                false
         }
     }
 
     override def toString: String = {
-        s"IntermediateResult($eOptP,dependees=${dependees.mkString("{", ",", "}")})"
+        s"IntermediateResult($ep,dependees=${dependees.mkString("{", ",", "}")})"
     }
 }
 private[fpcf] object IntermediateResult {
@@ -234,37 +210,6 @@ private[fpcf] object Results {
 }
 
 /**
- * Encapsulates the incremental result of the computation of a property that may have
- * been computed concurrently. I.e., it may be the case that multiple analyses did derive some
- * knowledge concurrently; this generally happens if - during the analysis of an
- * entity A - some knowledge may be derived about an entity B and if there maybe an entity
- * C, which, when analyzed, will also derive the same knowledge about B.
- *
- * @note    In simple cases, i.e., where a property is always unknown or has one specific
- *          value, it may be easier and more efficient to just `set` or `put` the value directly.
- *
- * @param   f A function that is given the current property associated with e and
- *          which computes the new property or leaves the property unchanged.
- *          `f` is guaranteed to be the only function that is currently processing
- *          e's property and every other function that may query e's property later
- *          will receive the updated value.
- *          '''`f` is not expected to query the propert store; the behavior is undefined!'''
- *          `f` must return some property if e is currently not associated with a
- *          property. Furthermore, the value must be more precise.
- */
-case class ConcurrentResult[E <: Entity, P <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        f:  (E, Option[P]) ⇒ Option[(P, UpdateType)]
-) extends PropertyComputationResult {
-
-    private[fpcf] final def id = ConcurrentResult.id
-
-}
-
-private[fpcf] object ConcurrentResult { private[fpcf] final val id = 9 }
-
-/**
  * If an analysis is finished and will not return more precise results, but a subsequent
  * analysis may refine the results, a ```RefineableResult``` has to be used.
  *
@@ -273,55 +218,9 @@ private[fpcf] object ConcurrentResult { private[fpcf] final val id = 9 }
  */
 case class RefineableResult(e: Entity, p: Property) extends PropertyComputationResult {
 
+    assert(p.isRefineable)
+
     private[fpcf] final def id = RefineableResult.id
 
 }
 private[fpcf] object RefineableResult { private[fpcf] final val id = 10 }
-
-//
-//
-// PropertyStore PRIVATE (INTERNALLY USED) PropertyComputationResult OBJECTS
-//
-//
-
-/**
- * Represents a suspended computation.
- *
- * @param dependeeE The entity about which some knowledge is required by this
- *      computation before the computation can be continued.
- * @param dependeePK The property kind of the given entity about which some knowledge
- *      is required.
- */
-abstract class SuspendedPC[DependeeP <: Property] private[fpcf] (
-        val e:          Entity,
-        val pk:         SomePropertyKey,
-        val dependeeE:  Entity,
-        val dependeePK: PropertyKey[DependeeP]
-) extends PropertyComputationResult {
-
-    /**
-     * Called by the framework when the property of the element `dependeeE` on which
-     * this computation is depending on was computed.
-     */
-    def continue(dependeeP: DependeeP): PropertyComputationResult
-
-    private[fpcf] final def id = SuspendedPC.id
-
-    override def toString: String = {
-        s"SuspendedPropertyComputation(DependerEPK($e,$pk),DependeeEPK($dependeeE,$dependeePK))"
-    }
-}
-
-/**
- * Factory for creating [[Suspended]] computations.
- */
-private[fpcf] object SuspendedPC {
-
-    private[fpcf] final val id = 11
-
-    def unapply[DependeeP <: Property](
-        c: SuspendedPC[DependeeP]
-    ): Some[(Entity, SomePropertyKey, Entity, PropertyKey[DependeeP])] =
-        Some((c.e, c.pk, c.dependeeE, c.dependeePK))
-
-}

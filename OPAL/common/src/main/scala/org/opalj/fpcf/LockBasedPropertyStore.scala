@@ -29,7 +29,6 @@
 package org.opalj
 package fpcf
 
-import scala.language.existentials
 import java.util.{HashMap ⇒ DataMap}
 import java.util.{Set ⇒ JSet}
 import java.util.concurrent.atomic.AtomicLong
@@ -540,7 +539,7 @@ class LockBasedPropertyStore private (
                         } match {
                             case Left(computationLatch) ⇒
                                 val p = dpc(e).asInstanceOf[P]
-                                handleResult(ImmediateResult(e, p))
+                                handleResult(Result(e, p))
                                 computationLatch.countDown()
                                 FinalEP(e, p)
                             case Right(p: PropertyIsDirectlyComputed) ⇒ awaitComputationResult(p)
@@ -643,7 +642,7 @@ class LockBasedPropertyStore private (
                 // Check that there is no property and no property is currently computed.
                 if ((pos eq null) || (pos.p eq null)) {
                     // we do not have a property...
-                    handleResult(ImmediateResult(e, p))
+                    handleResult(Result(e, p))
                     return ;
                 }
                 pos.p
@@ -706,12 +705,12 @@ class LockBasedPropertyStore private (
                 val pos = ps(pkId)
                 // Check that there is no property and no property is currently computed.
                 if (pos eq null) {
-                    handleResult(ImmediateResult(e, p))
+                    handleResult(Result(e, p))
                     true
                 } else {
                     val currentP = pos.p
                     if (currentP eq null) {
-                        handleResult(ImmediateResult(e, p))
+                        handleResult(Result(e, p))
                         true
                     } else if (currentP ne p) {
                         val message = s"$e:illegal property update: $currentP => $p"
@@ -840,9 +839,7 @@ class LockBasedPropertyStore private (
      * thread when the property is requested for the first time. After that the computed value
      * is cached and returned the next time the property is requested.
      *
-     * I.e., compared to a lazy computation the caller can always immediately get the final
-     * result and the DPC function just computes a `Property`. However, a DPC has to satisfy
-     * the following constraints:
+     * A DPC has to satisfy the following constraints:
      *  - a DPC may depend on other properties that are computed
      *    using DPCs if and only if the other properties are guaranteed to never have a direct or
      *    indirect dependency on the computed property. (This in particular excludes cyclic
@@ -851,7 +848,7 @@ class LockBasedPropertyStore private (
      *    requires only information about the subclasses (or the superclasses, but not both at the
      *    same time) then it is possible to use a DPC.
      *    (A DPC may use all properties that are fully computed before the computation is registered.)
-     *  - the computation must not create dependencies (i.e., an ImmediateResult)
+     *  - the computation must not create dependencies
      *
      * @note In general, using DPCs is most useful for analyses that have no notion of more/less
      *      precise/sound. In this case client's of properties computed using DPCs can query the
@@ -1395,7 +1392,7 @@ class LockBasedPropertyStore private (
     private[this] def scheduleContinuation(
         dependeeE:  Entity,
         dependeeP:  Property,
-        updateType: UserUpdateType,
+        updateType: UpdateType,
         c:          OnUpdateContinuation
     ): Unit = {
         scheduleRunnable { handleResult(c(dependeeE, dependeeP, updateType)) }
@@ -1562,7 +1559,7 @@ class LockBasedPropertyStore private (
                 if (pos eq null) {
                     // No one was interested in this property so far...
                     (updateTypeId: @scala.annotation.switch) match {
-                        case OneStepFinalUpdate.id | FinalUpdate.id ⇒
+                        case FinalUpdate.id ⇒
                             // Note that it is possible to have a Final Update though the underlying
                             // property is refineable. This is the case whenever the analysis knows
                             // that no further refinement may happen (given the current program).
@@ -1602,20 +1599,6 @@ class LockBasedPropertyStore private (
                     var os: Seq[PropertyObserver] = pos.os
 
                     (updateTypeId: @scala.annotation.switch) match {
-                        case OneStepFinalUpdate.id ⇒
-                            if (ValidateConsistency) assert(
-                                (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
-                                s"$e: the old property $oldP is final; refinement to $p is not supported"
-                            )
-                            /*internal*/ // assert(clearAllDependeeObservers(EPK(e, pk)) == false)
-                            // The computation did not create any (still living) dependencies!
-                            ps(pkId) = new PropertyAndObservers(p, null /* there will be no further observers */ )
-                            /*internal*/ /* assert(
-                                ps(p.key.id).p == p,
-                                s"the property store $pos does not contain the new property $p"
-                            ) */
-                            if (oldP.isInstanceOf[PropertyIsDirectlyComputed]) os = Nil /* => there are no observers */
-
                         case FinalUpdate.id ⇒
                             if (ValidateConsistency) assert(
                                 (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
@@ -1655,7 +1638,7 @@ class LockBasedPropertyStore private (
                 }
             }
             /*internal*/ //  assert(os ne null, s"$e($updateType => $p): os is null")
-            if (os.nonEmpty) {
+            if (os != null && os.nonEmpty) {
                 // inform all (previously registered) observers about the value
                 scheduleRunnable { os foreach { o ⇒ o(e, p, updateType) } }
             }
@@ -1691,14 +1674,6 @@ class LockBasedPropertyStore private (
                             s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
                         ) */
 
-                case ImmediateResult.id ⇒
-                    val ImmediateResult(e, p) = r
-                    update(e, p, OneStepFinalUpdate)
-                /*internal*/ /* assert(
-                        { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                        s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                    ) */
-
                 case IncrementalResult.id ⇒
                     val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                     handleResult(ir)
@@ -1708,10 +1683,6 @@ class LockBasedPropertyStore private (
                     val IntermediateResult(dependerEOptP, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
                     val dependerE = dependerEOptP.e
                     val dependerPK = dependerEOptP.pk
-                    assert(
-                        dependerEOptP.hasNoProperty || dependerEOptP.p.isRefineable,
-                        s"intermediate result $r used to store final property ${dependerEOptP.p}"
-                    )
 
                     if (ValidateConsistency) assert(
                         { val epk = EPK(dependerE, dependerPK); !dependees.exists(_ == epk) },
@@ -1802,7 +1773,7 @@ class LockBasedPropertyStore private (
                                         s"failed to delete all observers for $dependerEPK"
                                     ) */
                                     propagationCount.incrementAndGet()
-                                    scheduleContinuation(e, p, u.asUserUpdateType, c)
+                                    scheduleContinuation(e, p, u, c)
                                 }
                             }
 
@@ -1831,91 +1802,6 @@ class LockBasedPropertyStore private (
                             update(dependerE, dependerEOptP.p, IntermediateUpdate)
                     }
 
-                case ConcurrentResult.id ⇒
-                    val ConcurrentResult(e, pk, f) = r
-                    // e: Entity,
-                    // pk: PropertyKey[P],
-                    // f: (e: Entity, Option[P]) => Option[(P,UpdateType)]
-
-                    val pkId = pk.id
-                    val eps = data.get(e)
-                    withWriteLock(eps.l) {
-                        val ps = eps.ps
-                        val pos = ps(pkId)
-                        if ((pos eq null) || (pos.p eq null)) {
-                            // we don't have a property
-                            val (p, updateType) = f(e, None).get
-                            update(e, p, updateType)
-                        } else {
-                            f(e, Some(pos.p)).map { result ⇒
-                                val (newP, updateType) = result
-                                update(e, newP, updateType)
-                            }
-                        }
-                    }
-
-                case SuspendedPC.id ⇒
-                    val suspended @ SuspendedPC(dependerE, dependerPK, dependeeE, dependeePK) = r
-                    // CONCEPT
-                    // First, let's get the property, then...
-                    //  - If we now have a property, let's immediately continue
-                    //    the computation.
-                    //  - If the property is still not computed, register an
-                    //    observer that will schedule the computation when the
-                    //    property was computed.
-
-                    def createAndRegisterObserver(): PropertyObserver = {
-                        val dependerEPK = EPK(dependerE, dependerPK)
-                        val dependeeEPK = EPK(dependeeE, dependeePK)
-                        val o = new DependeePropertyObserver(dependerEPK, clearAllDependeeObservers) {
-                            def propertyChanged(e: Entity, p: Property, u: UpdateType): Unit = {
-                                propagationCount.incrementAndGet()
-                                val suspendedPC = suspended.asInstanceOf[SuspendedPC[Property]]
-                                val pc = (e: AnyRef) ⇒ suspendedPC.continue(p)
-                                scheduleComputation(dependerE, pc)
-                            }
-                        }
-                        registerDependeeObserverWithItsDepender(dependeeEPK, o)
-                        o
-                    }
-
-                    val dependeeEPs = data.get(dependeeE)
-                    val dependeeL = dependeeEPs.l
-                    val dependeePs = dependeeEPs.ps
-                    val dependeePKId = dependeePK.id
-                    val p = withWriteLock(dependeeL) {
-                        dependeePs(dependeePKId) match {
-                            case null ⇒
-                                // this computation is the first one which is interested
-                                // in the property
-                                val os = Buffer(createAndRegisterObserver())
-                                dependeePs(dependeePKId) = new PropertyAndObservers(null, os)
-                                null
-
-                            case PropertyAndObservers(dependeeP, dependeeOs) ⇒
-                                if ((dependeeP eq null) || dependeeP.isBeingComputed) {
-                                    // we have other computations that are also waiting...
-                                    dependeeOs += createAndRegisterObserver()
-                                    null
-                                } else {
-                                    // the property was computed in the meantime...
-                                    // but we don't want to call the continuation while we
-                                    // still hold the lock on dependee
-                                    if (ValidateConsistency) logDebug(
-                                        "analysis progress",
-                                        "immediately continued the suspended computation of "+
-                                            s"$dependerE($dependerPK) using $dependeeE($dependeeP)"
-                                    )
-                                    dependeeP
-                                }
-                        }
-                    }
-                    if (p ne null) {
-                        /* immediately execute */
-                        val suspendedPC = suspended.asInstanceOf[SuspendedPC[Property]]
-                        handleResult(suspendedPC.continue(p))
-                    }
-
                 case Results.id ⇒
                     val Results(results) = r
                     results.foreach(handleResult(_))
@@ -1930,18 +1816,6 @@ class LockBasedPropertyStore private (
                                     { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
                                     s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
                                 ) */
-                    }
-
-                case ImmediateMultiResult.id ⇒
-                    val ImmediateMultiResult(results) = r
-                    results foreach { ep ⇒
-                        val e = ep.e
-                        val p = ep.p
-                        update(e, p, OneStepFinalUpdate)
-                        /*internal*/ /* assert(
-                            { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },
-                            s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
-                        ) */
                     }
 
             }
