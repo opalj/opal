@@ -32,7 +32,7 @@ package de
 import java.util.concurrent.{ConcurrentHashMap ⇒ CMap}
 import scala.collection.mutable.Set
 
-import org.opalj.collection.{asScala, putIfAbsentAndGet}
+import org.opalj.collection.asScala
 import org.opalj.br._
 
 /**
@@ -77,13 +77,12 @@ class DependencyCollectingDependencyProcessor(
     ): Unit = {
 
         val targets =
-            putIfAbsentAndGet(
-                deps,
+            deps.computeIfAbsent(
                 source,
-                new CMap[VirtualSourceElement, Set[DependencyType]](16)
+                (_) ⇒ new CMap[VirtualSourceElement, Set[DependencyType]](16)
             )
 
-        val dependencyTypes = putIfAbsentAndGet(targets, target, Set.empty[DependencyType])
+        val dependencyTypes = targets.computeIfAbsent(target, (_) ⇒ Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
@@ -99,14 +98,13 @@ class DependencyCollectingDependencyProcessor(
     ): Unit = {
 
         val arrayTypes =
-            putIfAbsentAndGet(
-                depsOnArrayTypes,
+            depsOnArrayTypes.computeIfAbsent(
                 source,
-                new CMap[ArrayType, Set[DependencyType]](16)
+                (_) ⇒ new CMap[ArrayType, Set[DependencyType]](16)
             )
 
         val dependencyTypes =
-            putIfAbsentAndGet(arrayTypes, arrayType, Set.empty[DependencyType])
+            arrayTypes.computeIfAbsent(arrayType, (_) ⇒ Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
@@ -122,13 +120,12 @@ class DependencyCollectingDependencyProcessor(
     ): Unit = {
 
         val baseTypes =
-            putIfAbsentAndGet(
-                depsOnBaseTypes,
+            depsOnBaseTypes.computeIfAbsent(
                 source,
-                new CMap[BaseType, Set[DependencyType]](16)
+                (_) ⇒ new CMap[BaseType, Set[DependencyType]](16)
             )
 
-        val dependencyTypes = putIfAbsentAndGet(baseTypes, baseType, Set.empty[DependencyType])
+        val dependencyTypes = baseTypes.computeIfAbsent(baseType, (_) ⇒ Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
