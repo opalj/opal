@@ -302,7 +302,7 @@ package object graphs {
             var nextDFSNum = thisPathFirstDFSNum
             var nextCSCCId = 1
             val path = mutable.ArrayBuffer.empty[N]
-            val worklist = mutable.Stack.empty[N]
+            val worklist = mutable.Stack.empty[N] // IMPROVE replace by AnyRefArrayStack
 
             // HELPER METHODS
             def addToPath(n: N): DFSNum = {
@@ -423,7 +423,7 @@ package object graphs {
     /**
      * Implementation of Tarjan's algorithm for finding strongly connected components. Compared
      * to the standard implementation using non-tail recursive calls, this one uses an explicit
-     * stack to make the implementation to scale to very large (degenerated) graphs. E.g.,
+     * stack to make the implementation scale to very large (degenerated) graphs. E.g.,
      * this implementation can handle graphs containing up to XXX nodes in a single cycle.
      *
      * @example

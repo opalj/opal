@@ -31,6 +31,7 @@ package bi
 package reader
 
 import java.io.DataInputStream
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
@@ -39,8 +40,6 @@ import org.opalj.log.OPALLogger
  *
  * The Signature attribute is an optional attribute in the
  * attributes table of a ClassFile, field_info or method_info structure.
- *
- *  @author Michael Eichberg
  */
 trait Signature_attributeReader extends AttributeReader {
 

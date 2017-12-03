@@ -30,9 +30,10 @@ package org.opalj
 package bi
 package reader
 
+import scala.reflect.ClassTag
+
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
 import org.opalj.control.repeat
 
 /**
@@ -42,8 +43,6 @@ import org.opalj.control.repeat
  * The `BootstrapMethods` attribute is a variable-length attribute in the
  * attributes table of a `ClassFile` structure. The `BootstrapMethods` attribute
  * records bootstrap method specifiers referenced by `invokedynamic` instructions.
- *
- * @author Michael Eichberg
  */
 trait BootstrapMethods_attributeReader extends AttributeReader {
 

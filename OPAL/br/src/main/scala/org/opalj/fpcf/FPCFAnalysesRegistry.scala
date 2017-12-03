@@ -33,7 +33,9 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -54,7 +56,9 @@ import org.opalj.log.OPALLogger
  */
 object FPCFAnalysesRegistry {
 
-    private[this] var idToFactory: Map[String, FPCFAnalysisRunner] = Map.empty
+    private[this] implicit def logContext: LogContext = GlobalLogContext
+
+    private[this] var idToFactory: Map[String, FPCFAnalysisScheduler] = Map.empty
     private[this] var idToDescription: Map[String, String] = Map.empty
 
     /**
@@ -74,28 +78,22 @@ object FPCFAnalysesRegistry {
         if (analysisRunner.nonEmpty) {
             idToFactory += ((analysisID, analysisRunner.get))
             idToDescription += ((analysisID, analysisDescription))
-            OPALLogger.info(
-                "OPAL Setup", s"registered analysis: $analysisID ($analysisDescription)"
-            )(GlobalLogContext)
+            info("OPAL Setup", s"registered analysis: $analysisID ($analysisDescription)")
         } else {
-            OPALLogger.error(
-                "OPAL Setup", s"unknown analysis implementation: $analysisFactory"
-            )(GlobalLogContext)
+            error("OPAL Setup", s"unknown analysis implementation: $analysisFactory")
         }
     }
 
-    private[this] def resolveAnalysisRunner(fqn: String): Option[FPCFAnalysisRunner] = {
+    private[this] def resolveAnalysisRunner(fqn: String): Option[FPCFAnalysisScheduler] = {
         import scala.reflect.runtime.universe.runtimeMirror
         val mirror = runtimeMirror(getClass.getClassLoader)
-        var result = Option.empty[FPCFAnalysisRunner]
+        var result = Option.empty[FPCFAnalysisScheduler]
         try {
             val module = mirror.staticModule(fqn)
-            result = Some(mirror.reflectModule(module).instance.asInstanceOf[FPCFAnalysisRunner])
+            result = Some(mirror.reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
         } catch {
-            case sre: ScalaReflectionException ⇒
-                OPALLogger.error("FPCF registry", "resolve failed", sre)(GlobalLogContext)
-            case cce: ClassCastException ⇒
-                OPALLogger.error("FPCF registry", "resolve failed", cce)(GlobalLogContext)
+            case sre: ScalaReflectionException ⇒ error("FPCF registry", "resolve failed", sre)
+            case cce: ClassCastException       ⇒ error("FPCF registry", "resolve failed", cce)
         }
         result
     }
@@ -126,41 +124,30 @@ object FPCFAnalysesRegistry {
                 register(id, description, factory)
             }
         } catch {
-            case e: Exception ⇒
-                OPALLogger.error(
-                    "OPAL Setup", "initialization of the FPCF Analysis Registry failed", e
-                )(GlobalLogContext)
+            case e: Exception ⇒ error("OPAL Setup", "initialization of analysis registry failed", e)
         }
     }
 
     /**
      * Returns the ids of the registered analyses.
      */
-    def analysisIDs(): Iterable[String] = this.synchronized {
-        idToFactory.keys
-    }
+    def analysisIDs(): Iterable[String] = this.synchronized { idToFactory.keys }
 
     /**
      * Returns the descriptions of the registered analyses. These descriptions are
      * expected to be useful to the end-users.
      */
-    def analysisDescriptions(): Iterable[String] = this.synchronized {
-        idToDescription.values
-    }
+    def analysisDescriptions(): Iterable[String] = this.synchronized { idToDescription.values }
 
     /**
      * Returns the current view of the registry.
      */
-    def factories: Iterable[FPCFAnalysisRunner] = this.synchronized {
-        idToFactory.values
-    }
+    def factories: Iterable[FPCFAnalysisScheduler] = this.synchronized { idToFactory.values }
 
     /**
      * Returns the factory for analysis with a matching description.
      */
-    def factory(id: String): FPCFAnalysisRunner = this.synchronized {
-        idToFactory(id)
-    }
+    def factory(id: String): FPCFAnalysisScheduler = this.synchronized { idToFactory(id) }
 
     //initialize the registry with the known default analyses
     registerFromConfig()

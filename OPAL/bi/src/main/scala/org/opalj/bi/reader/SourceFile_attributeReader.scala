@@ -35,8 +35,6 @@ import java.io.DataInputStream
 /**
  * The SourceFile attribute is an optional attribute in the
  * attributes table of a ClassFile structure.
- *
- * @author Michael Eichberg
  */
 trait SourceFile_attributeReader extends AttributeReader {
 

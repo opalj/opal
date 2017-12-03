@@ -2726,12 +2726,6 @@ object ClassHierarchy {
                     ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))
             }
         )
-        assert(
-            knownTypesMap.indices forall { i ⇒
-                (knownTypesMap(i) eq null) ||
-                    ((subclassTypesMap(i) ne null) && (subinterfaceTypesMap(i) ne null))
-            }
-        )
 
         // _____________________________________________________________________________________
         //

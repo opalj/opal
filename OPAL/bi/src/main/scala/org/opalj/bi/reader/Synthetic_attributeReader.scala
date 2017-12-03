@@ -35,8 +35,6 @@ import java.io.DataInputStream
 /**
  * The Synthetic attribute is an attribute in the attributes table
  * of a ClassFile, field_info or method_info structure.
- *
- * @author Michael Eichberg
  */
 trait Synthetic_attributeReader extends AttributeReader {
 

@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Generic parser for Java 8's `RuntimeVisibleTypeAnnotations` attribute.
- *
- * @author Michael Eichberg
  */
 trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
@@ -74,9 +72,7 @@ trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
         /*val attribute_length = */ in.readInt()
         val annotations = TypeAnnotations(cp, in)
         if (annotations.nonEmpty || reifyEmptyAttributes) {
-            RuntimeVisibleTypeAnnotations_attribute(
-                cp, attribute_name_index, annotations
-            )
+            RuntimeVisibleTypeAnnotations_attribute(cp, attribute_name_index, annotations)
         } else {
             null
         }

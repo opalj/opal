@@ -28,7 +28,7 @@
  */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
 import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
 import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
@@ -39,7 +39,7 @@ public class PrivateFieldUpdater {
 
     @EffectivelyFinal(
             value = "only initialized by the constructor",
-            analyses = { AdvancedFieldMutabilityAnalysis.class }
+            analyses = { L1FieldMutabilityAnalysis.class }
             )
     private String name;
 

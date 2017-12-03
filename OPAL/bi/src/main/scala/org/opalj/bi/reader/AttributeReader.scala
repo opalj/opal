@@ -35,8 +35,6 @@ import java.io.DataInputStream
 /**
  * Generic infrastructure used by specific parsers of class file attributes to register
  * with the overall framework ([[org.opalj.bi.reader.AttributesReader]]).
- *
- * @author Michael Eichberg
  */
 trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstractions {
 

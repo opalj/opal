@@ -292,11 +292,4 @@ object DomainRegistry {
         (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
     )
 
-    register(
-        "reuses information provided by some pre analyses",
-        classOf[domain.la.DefaultDomain[_]],
-        Set(classOf[domain.l1.DefaultDomain[_]]),
-        (project: SomeProject, method: Method) ⇒ new domain.l1.DefaultDomain(project, method)
-    )
-
 }

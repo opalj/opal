@@ -38,8 +38,6 @@ import org.opalj.log.GlobalLogContext
 /**
  * Template method to skip an unknown attribute. I.e., the information will
  * not be represented at runtime.
- *
- * @author Michael Eichberg
  */
 trait SkipUnknown_attributeReader extends Unknown_attributeAbstractions {
     this: Constant_PoolReader ⇒

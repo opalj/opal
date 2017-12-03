@@ -37,7 +37,7 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 }
 
 /**
- * Specifies the mutability of instances of a specific class.
+ * Specifies the (im)mutability of instances of a specific class.
  * The highest rating is "Immutable", then "Conditionally Immutable", then "Mutable".
  *
  * An instance of a class is rated as immutable if the state of the object does not change after
@@ -84,7 +84,7 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * ==Native Methods==
  * Unknown native methods are considered as mutating the state unless all state is
  * explicitly final; however, this is already handled by the
- * [[org.opalj.fpcf.analyses.FieldMutabilityAnalysis]].
+ * [[org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis]].
  *
  * ==Identifying Immutable Objects in Practice==
  * Identifying real world immutable classes as such by means of an analysis is in general a

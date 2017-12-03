@@ -30,10 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-
 sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeImmutability
@@ -48,7 +44,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
  * collection. If this is not the case, the collection is only conditionally immutable.
  *
  * This property is of particular interest if the precise type cannot be computed statically. This
- * property basically depends on the [[org.opalj.br.analyses.TypeExtensibilityKey]] and
+ * property basically depends on the [[org.opalj.br.analyses.cg.TypeExtensibilityKey]] and
  * [[ClassImmutability]].
  *
  * @author Michael Eichberg

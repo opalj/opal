@@ -37,8 +37,6 @@ import org.opalj.control.repeat
  * Generic parser for the `target_type` and `target_info` fields of type annotations.
  * This reader is intended to be used in conjunction with the
  * [[TypeAnnotationsReader]].
- *
- * @author Michael Eichberg
  */
 trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
 

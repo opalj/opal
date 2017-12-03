@@ -30,15 +30,12 @@ package org.opalj
 package bi
 package reader
 
+import scala.reflect.ClassTag
+
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
 import org.opalj.control.repeat
 
-/**
- *
- * @author Michael Eichberg
- */
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
     //

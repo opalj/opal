@@ -29,8 +29,8 @@
 package org.opalj.fpcf.properties.field_mutability;
 
 import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.AdvancedFieldMutabilityAnalysis;
-import org.opalj.fpcf.analyses.FieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
@@ -51,5 +51,5 @@ public @interface EffectivelyFinal{
      */
     String value() ; // default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default {FieldMutabilityAnalysis.class, AdvancedFieldMutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class};
 }

@@ -195,8 +195,13 @@ sealed trait Type extends UIDValue with Ordered[Type] {
         throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType")
     }
 
-    @throws[ClassCastException]("if this is not a numeric type")
+    @throws[ClassCastException]("if this is not an int like type")
     def asIntLikeType: IntLikeType = {
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
+    }
+
+    @throws[ClassCastException]("if this is not a boolean type")
+    def asBooleanType: BooleanType = {
         throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
     }
 
@@ -310,6 +315,8 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     final val id = Int.MinValue
 
+    final def WrapperType: ObjectType = ObjectType.Void
+
     final override def isVoidType: Boolean = true
 
     final override def computationalType: ComputationalType =
@@ -321,8 +328,9 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJava: String = "void"
 
-    override def toBinaryJavaName: String =
+    override def toBinaryJavaName: String = {
         throw new UnsupportedOperationException("void does not have a binary name")
+    }
 
     override def toJVMTypeName: String = "V"
 
@@ -641,10 +649,9 @@ sealed abstract class CharType private () extends IntLikeType {
         }
     }
 
-    override def boxValue[T](
-        implicit
-        typeConversionFactory: TypeConversionFactory[T]
-    ): T = { typeConversionFactory.PrimitiveCharToLangCharacter }
+    override def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
+        typeConversionFactory.PrimitiveCharToLangCharacter
+    }
 
 }
 case object CharType extends CharType
@@ -929,6 +936,8 @@ sealed abstract class BooleanType private () extends CTIntType {
 
     final override def isBooleanType: Boolean = true
 
+    final override def asBooleanType: BooleanType = this
+
     final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
@@ -1148,12 +1157,14 @@ object ObjectType {
     final val Double = ObjectType("java/lang/Double")
     require(Double.id - Boolean.id == 7)
 
+    final val Void = ObjectType("java/lang/Void")
+
     final val String = ObjectType("java/lang/String")
-    final val StringId = 9
+    final val StringId = 10
 
     final val Class = ObjectType("java/lang/Class")
-    final val ClassId = 10
-    require(Class.id == 10)
+    final val ClassId = 11
+    require(Class.id == ClassId)
 
     final val System = ObjectType("java/lang/System")
 

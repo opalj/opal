@@ -41,6 +41,9 @@ sealed abstract class UpdateType(val name: String) {
 
 sealed abstract class UserUpdateType(name: String) extends UpdateType(name) {
     final override def asUserUpdateType: this.type = this
+
+    def isIntermediateUpdate: Boolean
+    def isFinalUpdate: Boolean
 }
 
 /**
@@ -48,6 +51,8 @@ sealed abstract class UserUpdateType(name: String) extends UpdateType(name) {
  */
 case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
     final val id = 1
+    final override def isIntermediateUpdate: Boolean = true
+    final override def isFinalUpdate: Boolean = false
 }
 
 /**
@@ -55,6 +60,8 @@ case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
  */
 case object FinalUpdate extends UserUpdateType("Final Update") {
     final val id = 2
+    final override def isIntermediateUpdate: Boolean = false
+    final override def isFinalUpdate: Boolean = true
 }
 
 /**

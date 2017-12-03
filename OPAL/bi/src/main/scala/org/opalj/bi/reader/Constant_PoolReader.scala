@@ -39,8 +39,6 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Defines a template method to read in a class file's constant pool.
- *
- * @author Michael Eichberg
  */
 trait Constant_PoolReader extends Constant_PoolAbstractions {
 

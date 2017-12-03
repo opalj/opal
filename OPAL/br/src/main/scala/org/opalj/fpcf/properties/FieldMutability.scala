@@ -41,7 +41,7 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
 /**
  * Identifies those fields which are effectively final; that is, those fields which are not
  * read before the final value is set. Field reads which are just done to test if the field
- * still contains the default JVM value are ignored if no other field read can bypass the test.
+ * still contains the default JVM value are ignored if no other field-read can bypass the test.
  * As in case of `final` fields, field writes done by (static) initializers w.r.t. the currently
  * constructed (class) object generally do not prevent the field from being effectively final.
  *
@@ -79,6 +79,8 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
  * - non-final
  *   - a field is non final if non of the the previous cases holds
  *   - e.g. not all reads and writes of the field are known
+ *
+ * @note A field's mutability is unrelated to the immutability of the referenced objects!
  *
  * @author Michael Eichberg
  * @author Michael Reif

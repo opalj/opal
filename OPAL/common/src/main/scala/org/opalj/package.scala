@@ -117,9 +117,9 @@ package object opalj {
     final val WEBPAGE = "http://www.opal-project.de"
 
     /**
-     * The type of a concrete analysis mode.
+     * The type of a project.
      */
-    final type AnalysisMode = AnalysisModes.Value
+    final type ProjectType = ProjectTypes.Value
 
     /**
      * The type of the predefined relational operators.

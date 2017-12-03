@@ -78,7 +78,7 @@ import org.opalj.ai.domain.TheCode
 import org.opalj.ai.analyses.cg.CallGraph
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.EP
-import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.ai.analyses.cg.CallGraphFactory
 
@@ -195,7 +195,7 @@ object UnusedLocalVariables {
                         try {
                             val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
                             // IMPROVE Use a more precise method to determine if a method has a side effect "pureness" is actually too strong.
-                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == EP(m, Pure))) {
+                            if (resolvedMethod.exists(m ⇒ propertyStore(m, Purity.key) == EP(m, LBPure))) {
                                 issue = "the return value of the call of "+invoke.declaringClass.toJava+
                                     "{ "+
                                     invoke.methodDescriptor.toJava(invoke.name)+

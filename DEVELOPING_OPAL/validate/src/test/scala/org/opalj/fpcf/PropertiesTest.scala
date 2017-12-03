@@ -34,6 +34,8 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import org.opalj.util.ScalaMajorVersion
+import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -45,13 +47,11 @@ import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
-import org.opalj.bytecode.RTJar
+import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.fpcf.properties.PropertyMatcher
-import org.opalj.util.ScalaMajorVersion
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -63,6 +63,9 @@ import org.opalj.util.ScalaMajorVersion
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
+    /**
+     * The representation of the fixture project.
+     */
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
@@ -94,7 +97,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
     /**
      * Returns the [[org.opalj.fpcf.properties.PropertyMatcher]] associated with the annotation -
-     * if the annotation specifies an expected property currently relevant; i.e,  if the
+     * if the annotation specifies an expected property currently relevant; i.e, if the
      * property kind specified by the annotation is in the set `propertyKinds`.
      *
      * @param p The current project.
@@ -124,6 +127,15 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
+    /**
+     * Called by tests to trigger the validation of the derived properties against the
+     * specified ones.
+     *
+     * @param  context The validation context; typically the return value of [[executeAnalyses]].
+     * @param  eas An iterator over the relevant entities along with the found annotations.
+     * @param  propertyKinds The kinds of properties (as specified by the annotations) that are
+     *         to be tested.
+     */
     def validateProperties(
         context:       (Project[URL], PropertyStore, Set[FPCFAnalysis]),
         eas:           TraversableOnce[(Entity, /*the processed annotation*/ String ⇒ String /* a String identifying the entity */ , Traversable[AnnotationLike])],
@@ -141,20 +153,31 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val matcherClass = Class.forName(matcherType.toJava)
             val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
             if (matcher.isRelevant(p, ats, e, annotation)) {
+
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val properties = ps.properties(e)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
-                            fail(propertiesAsStrings.mkString("actual: ", ", ", "\nexpectation: "+error))
+                            val m = propertiesAsStrings.mkString(
+                                "actual: ",
+                                ", ",
+                                "\nexpectation: "+error
+                            )
+                            fail(m)
                         case None   ⇒ /* OK */
                         case result ⇒ fail("matcher returned unexpected result: "+result)
                     }
                 }
+
             }
         }
     }
+
+    //
+    // CONVENIENCE METHODS
+    //
 
     def fieldsWithAnnotations: Traversable[(Field, String ⇒ String, Annotations)] = {
         for {
@@ -202,11 +225,12 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     def executeAnalyses(
-        analysisRunners: Set[FPCFAnalysisRunner]
+        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
+        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
-        val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
-        val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
+        val ps = p.get(PropertyStoreKey)
+        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion(
             resolveCycles = true,
             useFallbacksForIncomputableProperties = true

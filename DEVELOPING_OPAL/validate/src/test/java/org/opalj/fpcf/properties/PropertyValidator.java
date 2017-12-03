@@ -44,7 +44,7 @@ public @interface PropertyValidator{
     /**
      * The key (name) of the respective property kind.
      *
-     * The name is used to find the property validator that will be used to validate the property.
+     * The name is used to filer the property validators that will be used to validate the property.
      */
     String key();
 

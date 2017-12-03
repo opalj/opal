@@ -45,6 +45,7 @@ abstract class EOptionP[+E <: Entity, +P <: Property] private[fpcf] () {
      */
     def pk: PropertyKey[P]
 
+    /** This EOptionP as a pair of an entity and a property key. */
     def toEPK: EPK[E, P]
 
     /**
