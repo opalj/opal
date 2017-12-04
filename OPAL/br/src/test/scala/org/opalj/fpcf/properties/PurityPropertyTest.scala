@@ -1171,14 +1171,14 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             (LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
             "LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
                 s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty})"
->>>>>>> f75a3b6c630b1fe1fd4e349685d5a8d39a6dc58b
+                >>>>>>> f75a3b6c630b1fe1fd4e349685d5a8d39a6dc58b
         )
     }
 
     it should "return the correct purity levels for conditional levels" in {
         assert(
-<<<<<<< HEAD
-            (ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations) == ConditionallySideEffectFreeWithoutAllocations,
+            <<<<<<< HEAD
+                (ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations) == ConditionallySideEffectFreeWithoutAllocations,
             "ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations was not ConditionallySideEffectFreeWithoutAllocations"+
                 s" (was ${ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations})"
         )
@@ -1791,8 +1791,8 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             (MaybePure meet ImpureDueToUnknownProperty) == MaybePure,
             "MaybePure meet ImpureDueToUnknownProperty was not MaybePure"+
                 s" (was ${MaybePure meet ImpureDueToUnknownProperty})"
-=======
-            (CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFreeWithoutAllocations,
+                =======
+                (CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFreeWithoutAllocations,
             "CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations was not CLBSideEffectFreeWithoutAllocations"+
                 s" (was ${CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations})"
         )

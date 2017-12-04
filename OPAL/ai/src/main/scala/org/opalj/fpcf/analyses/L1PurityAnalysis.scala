@@ -55,14 +55,13 @@ import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.LBImpureBase.LBImpure
+import org.opalj.fpcf.properties.LBImpure
 import org.opalj.fpcf.properties.MaybePure
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBSideEffectFree
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.LBImpureBase
 import org.opalj.tac._
 
 /**
@@ -71,15 +70,16 @@ import org.opalj.tac._
  * @note This analysis is sound only up to the usual standards, i.e. it does not cope with
  *       VirtualMachineErrors and may be unsound in the presence of native code, reflection or
  *       `sun.misc.Unsafe`.
+ *       TODO Document how native methods (which do not use "Unsafe or reflection" could have
+ *       a negative impact on the soundness).
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
- *       types of expressions other than [[org.opalj.tac.Var]]s and also not check them for locality.
+ *       types of expressions other than [[org.opalj.tac.Var]]s.
  *
  * @note This analysis only derives the properties [[org.opalj.fpcf.properties.LBPure]],
  *       [[org.opalj.fpcf.properties.LBSideEffectFree]] and
- *       [[org.opalj.fpcf.properties.LBImpureBase]]. It does not provide any reasoning on why a
- *       method was considered `LBImpure`.
+ *       [[org.opalj.fpcf.properties.LBImpureBase]].
  *       Compared to the `L0PurityAnalysis`, it deals with all methods, even if their reference type
  *       parameters are mutable. It can handle accesses of (effectively) final instance fields,
  *       array loads, array length and virtual/interface calls. Array stores and field writes as
@@ -94,9 +94,12 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
-    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey) // IMPROVE Use MethodExtensibility once the method extensibility key is available (again)
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = 
+        project.get(DefaultTACAIKey)
 
+    // IMPROVE Use MethodExtensibility once the method extensibility key is available (again)
+    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey) 
+    
     /**
      * Checks whether the statement, which is the origin of an exception, directly created the
      * exception or if the VM instantiated the exception. Here, we are only concerned about the
