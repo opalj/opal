@@ -86,28 +86,30 @@ class ReturnValueFreshnessAnalysis private(final val project: SomeProject) exten
                 ReturnValue(_, expr) ← code
                 defSite ← expr.asVar.definedBy
             } {
-                val stmt = code(defSite)
-                stmt match {
-                    // if the def-site of the return-value statement is a new, we check the escape state
-                    case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
-                        val allocationSite = allocationSites(m)(pc)
-                        val resultState = propertyStore(allocationSite, EscapeProperty.key)
-                        resultState match {
-                            case EP(_, EscapeViaReturn)              ⇒
-                            case EP(_, NoEscape | EscapeInCallee)    ⇒ throw new RuntimeException("unexpected result")
-                            case EP(_, p) if p.isFinal               ⇒ return Result(m, NoFreshReturnValue)
-                            case EP(_, AtMost(_))                    ⇒ return Result(m, NoFreshReturnValue)
-                            case EP(_, Conditional(NoEscape))        ⇒ throw new RuntimeException("unexpected result")
-                            case EP(_, Conditional(EscapeInCallee))  ⇒ throw new RuntimeException("unexpected result")
-                            case EP(_, Conditional(EscapeViaReturn)) ⇒ dependees += resultState
-                            case _                                   ⇒ dependees += resultState
-                        }
-                    // const values are handled as fresh
-                    case Assignment(_, _, _: Const) ⇒
+                if (defSite >= 0) {
+                    val stmt = code(defSite)
+                    stmt match {
+                        // if the def-site of the return-value statement is a new, we check the escape state
+                        case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
+                            val allocationSite = allocationSites(m)(pc)
+                            val resultState = propertyStore(allocationSite, EscapeProperty.key)
+                            resultState match {
+                                case EP(_, EscapeViaReturn)              ⇒
+                                case EP(_, NoEscape | EscapeInCallee)    ⇒ throw new RuntimeException("unexpected result")
+                                case EP(_, p) if p.isFinal               ⇒ return Result(m, NoFreshReturnValue)
+                                case EP(_, AtMost(_))                    ⇒ return Result(m, NoFreshReturnValue)
+                                case EP(_, Conditional(NoEscape))        ⇒ throw new RuntimeException("unexpected result")
+                                case EP(_, Conditional(EscapeInCallee))  ⇒ throw new RuntimeException("unexpected result")
+                                case EP(_, Conditional(EscapeViaReturn)) ⇒ dependees += resultState
+                                case _                                   ⇒ dependees += resultState
+                            }
+                        // const values are handled as fresh
+                        case Assignment(_, _, _: Const) ⇒
 
-                    // other kinds of assignments came from other methods, fields etc, which we do not track
-                    case Assignment(_, _, _)        ⇒ return Result(m, NoFreshReturnValue)
-                    case _                          ⇒ throw new RuntimeException("not yet implemented")
+                        // other kinds of assignments came from other methods, fields etc, which we do not track
+                        case Assignment(_, _, _)        ⇒ return Result(m, NoFreshReturnValue)
+                        case _                          ⇒ throw new RuntimeException("not yet implemented")
+                    }
                 }
 
             }

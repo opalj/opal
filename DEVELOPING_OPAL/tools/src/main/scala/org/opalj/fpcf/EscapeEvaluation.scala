@@ -48,6 +48,9 @@ import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.analyses.AllocationSites
+import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.TypeEscapeAnalysis
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeViaParameter
@@ -62,11 +65,23 @@ import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.GlobalEscape
+import org.opalj.fpcf.properties.MaybePackageLocalType
+import org.opalj.fpcf.properties.PackageLocalType
+import org.opalj.fpcf.properties.GlobalType
+import org.opalj.fpcf.properties.FreshReturnValue
+import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.Seconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.log.{LogContext, LogMessage, OPALLogger}
+import org.opalj.log.LogContext
+import org.opalj.log.LogMessage
+import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.tac.NewArray
+import org.opalj.tac.Assignment
+import org.opalj.tac.MonitorEnter
+import org.opalj.tac.New
+import org.opalj.tac.DVar
 
 class DevNullLogger extends OPALLogger {
     override def log(message: LogMessage)(implicit ctx: LogContext): Unit = {}
@@ -115,6 +130,9 @@ object EscapeEvaluation {
             var tacTime: Seconds = Seconds.None
             var propertyStoreTime: Seconds = Seconds.None
             var analysisTime: Seconds = Seconds.None
+            var synchTime: Seconds = Seconds.None
+            var returnTime: Seconds = Seconds.None
+            var typeTime: Seconds = Seconds.None
 
             val project = time {
                 val p = Project(target)
@@ -122,10 +140,11 @@ object EscapeEvaluation {
                 p
             } { t ⇒ projectTime = t.toSeconds }
 
-            time {
+            val tacai = time {
                 val tacai = project.get(DefaultTACAIKey)
                 val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
                 errors.foreach { e ⇒ println(s"generating 3-address code failed: $e") }
+                tacai
             } { t ⇒ tacTime = t.toSeconds }
 
             val propertyStore = time {
@@ -142,6 +161,38 @@ object EscapeEvaluation {
                 propertyStore.waitOnPropertyComputationCompletion()
             } { t ⇒ analysisTime = t.toSeconds }
 
+            time {
+                ReturnValueFreshnessAnalysis.start(project, propertyStore)
+                propertyStore.waitOnPropertyComputationCompletion()
+            } { t ⇒ returnTime = t.toSeconds }
+
+            time {
+                TypeEscapeAnalysis.start(project, propertyStore)
+                propertyStore.waitOnPropertyComputationCompletion()
+            } { t ⇒ typeTime = t.toSeconds }
+
+            val allocationSites = propertyStore.context[AllocationSites]
+            val objects = time {
+                for {
+                    method ← project.allMethodsWithBody
+                    (_, as) ← allocationSites(method)
+                    EP(_, escape) = propertyStore(as, EscapeProperty.key)
+                    if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
+                    code = tacai(method).stmts
+                    defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)
+                    if defSite != -1
+                    stmt = code(defSite)
+                    if stmt.astID == Assignment.ASTID
+                    Assignment(_, DVar(_, uses), New(_, _) | NewArray(_, _, _)) = code(defSite)
+                    if uses exists { use ⇒
+                        code(use) match {
+                            case MonitorEnter(_, v) if v.asVar.definedBy.contains(defSite) ⇒ true
+                            case _ ⇒ false
+                        }
+                    }
+                } yield as
+            } { t ⇒ synchTime = t.toSeconds }
+
             if (i != 0) {
                 val times = new File(dir, "timings.csv")
                 val timesNew = !times.exists()
@@ -155,6 +206,46 @@ object EscapeEvaluation {
                 } finally {
                     if (outTimes != null) outTimes.close()
                 }
+
+                val typeTimeFile = new File(dir, "type-timings.csv")
+                val typeNew = !typeTimeFile.exists()
+                val outTypeTimes = new PrintWriter(new FileOutputStream(typeTimeFile, true))
+                try {
+                    if (typeNew) {
+                        typeTimeFile.createNewFile()
+                        outTypeTimes.println("project;tac;propertyStore;escape;types")
+                    }
+                    outTypeTimes.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime;$typeTime")
+                } finally {
+                    if (outTypeTimes != null) outTypeTimes.close()
+                }
+
+                val returnTimeFile = new File(dir, "return-timings.csv")
+                val returnNew = !returnTimeFile.exists()
+                val outReturnTimes = new PrintWriter(new FileOutputStream(returnTimeFile, true))
+                try {
+                    if (returnNew) {
+                        returnTimeFile.createNewFile()
+                        outReturnTimes.println("project;tac;propertyStore;escape;return")
+                    }
+                    outReturnTimes.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime;$returnTime")
+                } finally {
+                    if (outReturnTimes != null) outReturnTimes.close()
+                }
+
+                val synchTimeFile = new File(dir, "synch-timings.csv")
+                val synchNew = !synchTimeFile.exists()
+                val outSynchTimes = new PrintWriter(new FileOutputStream(synchTimeFile, true))
+                try {
+                    if (synchNew) {
+                        synchTimeFile.createNewFile()
+                        outSynchTimes.println("project;tac;propertyStore;escape;synch")
+                    }
+                    outSynchTimes.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime;$synchTime")
+                } finally {
+                    if (outSynchTimes != null) outSynchTimes.close()
+                }
+
             } else {
                 val no = propertyStore.entities(NoEscape)
                 val c = propertyStore.entities(EscapeInCallee)
@@ -216,6 +307,41 @@ object EscapeEvaluation {
                 } finally {
                     if (outVFP != null) outVFP.close()
                 }
+
+                val synchFile = new File(dir, "synchronization.csv")
+                val outSynch = new PrintWriter(synchFile)
+                try {
+                    outSynch.println("objects")
+                    for (ob ← objects) {
+                        outSynch.println(ob)
+                    }
+                } finally {
+                    if (outSynch != null) outSynch.close()
+                }
+
+                val typeFile = new File(dir, "type.csv")
+                val outType = new PrintWriter(typeFile)
+                try {
+                    val globalType = propertyStore.entities(GlobalType)
+                    val localType = propertyStore.entities(PackageLocalType)
+                    val maybeLocalType = propertyStore.entities(MaybePackageLocalType)
+                    outType.println("local;global;maybe")
+                    outType.println(s"${localType.size};${globalType.size};${maybeLocalType.size}")
+                } finally {
+                    if (outType != null) outType.close()
+                }
+
+                val returnFile = new File(dir, "return.csv")
+                val outReturn = new PrintWriter(returnFile)
+                try {
+                    val fresh = propertyStore.entities(FreshReturnValue)
+                    val notFresh = propertyStore.entities(NoFreshReturnValue)
+                    outReturn.println("fresh;not fresh")
+                    outReturn.println(s"${fresh.size};${notFresh.size}")
+                } finally {
+                    if (outReturn != null) outReturn.close()
+                }
+
             }
         }
 
@@ -234,8 +360,8 @@ object EscapeEvaluation {
         project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain)
     }
 
-    def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[ObjectAllocationSite])
-    def countAr(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[ArrayAllocationSite])
-    def countFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[FormalParameter])
-    def countVFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[VirtualFormalParameter])
+    def countAS(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[ObjectAllocationSite])
+    def countAr(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[ArrayAllocationSite])
+    def countFP(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[FormalParameter])
+    def countVFP(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[VirtualFormalParameter])
 }

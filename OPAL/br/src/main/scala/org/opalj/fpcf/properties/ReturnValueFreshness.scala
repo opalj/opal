@@ -45,10 +45,9 @@ sealed abstract class ReturnValueFreshness extends Property
 }
 
 object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation {
-    PropertyKey.create("MethodEscapeProperty", NoFreshReturnValue, NoFreshReturnValue)
     final lazy val key: PropertyKey[ReturnValueFreshness] = PropertyKey.create(
         // Name of the property
-        "MethodEscapeProperty",
+        "ReturnValueFreshness",
         // fallback value
         NoFreshReturnValue,
         // cycle-resolution strategy

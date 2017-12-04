@@ -153,7 +153,6 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
                 local ← localType
                 cf = local.asInstanceOf[ClassFile]
                 mOfClass ← cf.methods
-                //cg = project.get(CHACallGraphKey).callGraph
             } {
                 val errors = project.parForeachMethod() { m ⇒
                     if (!m.isStatic && !m.isPrivate && !m.isInitializer) {
