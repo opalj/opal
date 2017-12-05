@@ -97,7 +97,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = 
         project.get(DefaultTACAIKey)
 
-    // IMPROVE Use MethodExtensibility once the method extensibility key is available (again)
+    // TODO Use MethodExtensibility once the method extensibility key is available (again)
     val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey) 
     
     /**
@@ -152,7 +152,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     def determinePurity(method: Method): PropertyComputationResult = {
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return Result(method, LBImpure);
+            return Result(method, LBImpure.Synchronization);
 
         implicit val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
@@ -542,10 +542,8 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     _: TypeImmutability | _: ClassImmutability ⇒ // Returning mutable reference
                     maxPurity = LBSideEffectFree
 
-                // Cases resulting in impurity
-                case LBImpureBase(_) | MaybePure | // Call to impure method
-                    _ ⇒ // Unknown property
-                    impure = true
+                // Cases resulting in impurity LBImpure | MaybePure | // Call to impure method
+                case _ ⇒ impure = true
             }
 
             if (impure) {
@@ -563,7 +561,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         var s = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(method, LBImpure)
+                return Result(method, LBImpure.ImpureInstruction)
             s += 1
         }
 
