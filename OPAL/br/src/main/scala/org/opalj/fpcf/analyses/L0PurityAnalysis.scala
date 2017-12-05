@@ -179,7 +179,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                 case ARETURN.opcode |
                     IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
                     RETURN.opcode ⇒
-                // if we have a monitor instruction the method is pure anyway..
+                // if we have a monitor instruction the method is impure anyway..
                 // hence, we can ignore the monitor related implicit exception
 
                 case _ ⇒
