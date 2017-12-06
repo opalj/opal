@@ -34,7 +34,7 @@ import org.opalj.br.analyses.Project
 import java.net.URL
 
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.AllocationSite
 import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
@@ -86,7 +86,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             project.getOrCreateProjectInformationKeyInitializationData(
                 SimpleAIKey,
                 (m: Method) ⇒ {
-                    new DefaultDomainWithCFGAndDefUse(project, m) //new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding //primitivetacidomain
+                    new PrimitiveTACAIDomain(project, m)//new DefaultDomainWithCFGAndDefUse(project, m) //new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding //primitivetacidomain
                 }
             )
             PropertyStoreKey.makeAllocationSitesAvailable(project)
