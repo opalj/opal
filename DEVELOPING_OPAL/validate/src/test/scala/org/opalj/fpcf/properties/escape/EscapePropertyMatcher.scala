@@ -40,7 +40,7 @@ import org.opalj.br.AllocationSite
 import org.opalj.br.BooleanValue
 import org.opalj.br.analyses.FormalParameter
 
-abstract class EscapeMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
+abstract class EscapePropertyMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
     override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
         // check whether the analyses specified in the annotation are present
         val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
@@ -93,25 +93,25 @@ abstract class EscapeMatcher(val property: EscapeProperty) extends AbstractPrope
     }
 }
 
-class NoEscapeMatcher extends EscapeMatcher(org.opalj.fpcf.properties.NoEscape)
-class EscapeInCalleeMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeInCallee)
-class EscapeViaParameterMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaParameter)
-class EscapeViaReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaReturn)
-class EscapeViaAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaAbnormalReturn)
-class EscapeViaParameterAndReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndReturn)
-class EscapeViaParameterAndAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn)
-class EscapeViaNormalAndAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn)
-class EscapeViaParameterAndNormalAndAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn)
-class MaybeNoEscapeMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.NoEscape))
-class MaybeEscapeInCalleeMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeInCallee))
-class MaybeEscapeViaParameterMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameter))
-class MaybeEscapeViaReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaReturn))
-class MaybeEscapeViaAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaAbnormalReturn))
-class MaybeEscapeViaParameterAndReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndReturn))
-class MaybeEscapeViaParameterAndAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn))
-class MaybeEscapeViaNormalAndAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn))
-class MaybeEscapeViaParameterAndNormalAndAbnormalReturnMatcher extends EscapeMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn))
-class EscapeViaStaticFieldMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaStaticField)
-class EscapeViaHeapObjectMatcher extends EscapeMatcher(org.opalj.fpcf.properties.EscapeViaHeapObject)
-class GlobalEscapeMatcher extends EscapeMatcher(org.opalj.fpcf.properties.GlobalEscape)
+class NoEscapeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.NoEscape)
+class EscapeInCalleeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeInCallee)
+class EscapeViaParameterMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameter)
+class EscapeViaReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaReturn)
+class EscapeViaAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaAbnormalReturn)
+class EscapeViaParameterAndReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndReturn)
+class EscapeViaParameterAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn)
+class EscapeViaNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn)
+class EscapeViaParameterAndNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn)
+class MaybeNoEscapeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.NoEscape))
+class MaybeEscapeInCalleeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeInCallee))
+class MaybeEscapeViaParameterMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameter))
+class MaybeEscapeViaReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaReturn))
+class MaybeEscapeViaAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaAbnormalReturn))
+class MaybeEscapeViaParameterAndReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndReturn))
+class MaybeEscapeViaParameterAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn))
+class MaybeEscapeViaNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn))
+class MaybeEscapeViaParameterAndNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn))
+class EscapeViaStaticFieldMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaStaticField)
+class EscapeViaHeapObjectMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaHeapObject)
+class GlobalEscapeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.GlobalEscape)
 
