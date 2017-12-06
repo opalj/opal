@@ -152,8 +152,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         }
 
         println(
-            pc + line(domain, pc)+":"+instruction.toString(pc)+
-                " [\n"+os + ls + ps+"\t]"
+            Console.BLUE + pc + line(domain, pc) + Console.RESET+
+                ":" ++ Console.YELLOW_B + instruction.toString(pc) + Console.RESET+
+                "; state before execution:[\n"+os + ls + ps+"\t]"
         )
     }
 
