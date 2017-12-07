@@ -2105,15 +2105,20 @@ class ClassHierarchy private (
             return upperTypeBound;
         }
 
-        if (upperTypeBoundB contains (upperTypeBoundA))
-            // the upperTypeBoundB contains more than one type; hence, considering
-            // "reflexive" is no longer necessary
+        if (upperTypeBoundB contains (upperTypeBoundA)) {
+            // The upperTypeBoundB contains more than one type; hence, considering
+            // "reflexive" is no longer necessary...
+            // if (isKnownToBeFinal(upperTypeBoundA)) the upper type bound (hopefully)
+            // deliberately contains types which are guaranteed to be in a super-/subtype
+            // relation, but which are not part of the analyzed code base. Nevertheless,
+            // we are performing a join and therefore, drop the information...
             return new UIDSet1(upperTypeBoundA);
+        }
+
 
         if (isUnknown(upperTypeBoundA)) {
             OPALLogger.logOnce(Warn(
-                "project configuration - class hierarchy",
-                "type unknown: "+upperTypeBoundA.toJava
+                "project configuration - class hierarchy", "type unknown: "+upperTypeBoundA.toJava
             ))
             // there is nothing that we can do...
             return new UIDSet1(ObjectType.Object);
