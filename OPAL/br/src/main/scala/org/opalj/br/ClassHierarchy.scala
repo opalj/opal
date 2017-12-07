@@ -2115,7 +2115,6 @@ class ClassHierarchy private (
             return new UIDSet1(upperTypeBoundA);
         }
 
-
         if (isUnknown(upperTypeBoundA)) {
             OPALLogger.logOnce(Warn(
                 "project configuration - class hierarchy", "type unknown: "+upperTypeBoundA.toJava
