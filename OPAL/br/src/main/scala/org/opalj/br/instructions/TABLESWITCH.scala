@@ -129,14 +129,14 @@ case class TABLESWITCH(
     }
 
     override def toString: String = {
-        "TABLESWITCH("+
+        s"TABLESWITCH($low -> $high; "+
             (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
     }
 
     override def toString(pc: PC): String = {
-        "TABLESWITCH("+
+        s"TABLESWITCH($low -> $high; "+
             (low to high).zip(jumpOffsets).map { keyOffset ⇒
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")

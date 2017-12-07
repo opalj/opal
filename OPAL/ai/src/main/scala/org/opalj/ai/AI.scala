@@ -1889,10 +1889,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val remainingOperands = operands.tail
                         val low = tableswitch.low
                         val high = tableswitch.high
-                        var v = low
-                        while (v <= high) {
+                        var i = low.toLong // if low == high == Int.MaxValue...
+                        while (i <= high) {
+                            val v = i.toInt
                             if (intIsSomeValueInRange(pc, index, v, v).isYesOrUnknown) {
-                                val branchTargetPC = pc + tableswitch.jumpOffsets(v - low)
+                                val jumpOffsetIndex = v - low
+                                val branchTargetPC = pc + tableswitch.jumpOffsets(jumpOffsetIndex)
                                 val (updatedOperands, updatedLocals) =
                                     theDomain.intEstablishValue(
                                         branchTargetPC, v, index, remainingOperands, locals
@@ -1913,7 +1915,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     updatedOperands, updatedLocals
                                 )
                             }
-                            v = v + 1
+                            i = i + 1
                         }
                         if (intIsSomeValueNotInRange(pc, index, low, high).isYesOrUnknown) {
 
