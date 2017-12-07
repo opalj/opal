@@ -2602,7 +2602,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else {
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is a subtype or if null is Unknown => UNCHANGED
+                                    // if objectref is a subtype => UNCHANGED
                                     fallThrough()
 
                                 case No ⇒
