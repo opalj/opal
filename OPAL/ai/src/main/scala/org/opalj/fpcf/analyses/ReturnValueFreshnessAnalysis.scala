@@ -47,6 +47,7 @@ import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
+import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
@@ -76,7 +77,7 @@ class ReturnValueFreshnessAnalysis private(final val project: SomeProject) exten
     def determineFreshness(m: Method): PropertyComputationResult = {
         // base types are always fresh
         if (m.returnType.isInstanceOf[BaseType]) {
-            ImmediateResult(m, FreshReturnValue)
+            ImmediateResult(m, PrimitiveReturnValue)
         } else {
             var dependees: Set[EOptionP[AllocationSite, EscapeProperty]] = Set.empty
             val code = tacaiProvider(m).stmts

@@ -59,6 +59,10 @@ case object FreshReturnValue extends ReturnValueFreshness {
     override def isRefineable = false
 }
 
+case object PrimitiveReturnValue extends ReturnValueFreshness {
+    override def isRefineable = false
+}
+
 case object NoFreshReturnValue extends ReturnValueFreshness {
     override def isRefineable = true
 }
