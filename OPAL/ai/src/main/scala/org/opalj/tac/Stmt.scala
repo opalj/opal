@@ -73,7 +73,8 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asReturnValue: ReturnValue[V] = throw new ClassCastException();
     def asReturn: Return = throw new ClassCastException();
     def asNop: Nop = throw new ClassCastException();
-    def asMonitorEnter: MonitorEnter[V] = throw new ClassCastException();
+    def asSynchronizationStatement: SynchronizationStatement[V] = throw new ClassCastException();
+        def asMonitorEnter: MonitorEnter[V] = throw new ClassCastException();
     def asMonitorExit: MonitorExit[V] = throw new ClassCastException();
     def asArrayStore: ArrayStore[V] = throw new ClassCastException();
     def asThrow: Throw[V] = throw new ClassCastException();
@@ -359,6 +360,8 @@ object Nop {
 }
 
 sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
+
+    final override def asSynchronizationStatement: this.type = this
 
     def objRef: Expr[V]
 
