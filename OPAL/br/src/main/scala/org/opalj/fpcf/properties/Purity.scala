@@ -188,7 +188,18 @@ sealed abstract class Purity extends Property with PurityPropertyMetaInformation
 
     /** (Some of) the reasons of the current rating. */
     def reasons: Set[String]
-
+    
+    /**
+     * Combines this purity value with another one to represent the progress by a purity
+     * analysis in one phase.
+     * Conditional as well as unconditional values are combined to the purity level that expresses
+     * a weaker purity, thereby incorporating the effect of counter-examples to a stronger purity.
+     * Thus, the result of this operation is used to represent a (potentially conditional) upper
+     * bound on the possible final result of the purity analysis that performs this operation.
+     * If one of the combined purity values is conditional and the other is not, the result will be
+     * the same as if the conditional purity value was combined with the conditional value that
+     * corresponds to the unconditional value.
+     */
     def combine(other: Purity): Purity = {
         other match {
             case that: ClassifiedImpure ⇒ 
