@@ -141,12 +141,12 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 )
             else
                 assert(
-                    prop.withoutExternal.flags == (prop.flags & ~Purity.MODIFIES_RECEIVER),
+                    prop.withoutExternal.flags == (prop.flags & ~Purity.ModifiesReceiver),
                     s"$prop.withoutExternal was incorrect (was ${prop.withoutExternal})"
                 )
             if (conditional.contains(prop))
                 assert(
-                    prop.unconditional.flags == (prop.flags & ~Purity.IS_CONDITIONAL),
+                    prop.unconditional.flags == (prop.flags & ~Purity.IsConditional),
                     s"$prop.unconditional was incorrect (was ${prop.unconditional})"
                 )
             else

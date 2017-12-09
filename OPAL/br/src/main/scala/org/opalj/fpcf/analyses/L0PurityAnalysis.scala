@@ -110,7 +110,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                                 if (fieldClassType.isDefined)
                                     dependees += EPK(fieldClassType.get, TypeImmutability.key)
                                 else
-                                    return Result(method, LBImpure.HeapModification);
+                                    return Result(method, LBImpure.Access...);
                             }
                             if (field.isNotFinal) {
                                 dependees += EPK(field, FieldMutability.key)
@@ -226,7 +226,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                 case AtLeastConditionallyImmutableType ⇒
                     // The result remains as it is..., however, we have to update the dependee
                     // w.r.t. the last seen property.
-                    dependees = dependees.filter(eOptP ⇒ eOptP.e eq e) + EP(e.asInstanceOf[SourceElement], p)
+                    dependees = dependees.filter(eOptP ⇒ eOptP.e ne e) + EP(e.asInstanceOf[SourceElement], p)
                     IntermediateResult(lastResult, dependees, c)
 
                 // The type is at most conditionally immutable.
@@ -239,7 +239,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                         // this method can still be impure if a field is not final or a
                         // type is not immutable!
                         // => we have to clear all Purity related dependencies
-                        dependees = dependees.filter(_.pk != Purity.key)
+                 xxx       dependees = dependees.filter(_.pk != Purity.key)
                         if (dependees.isEmpty)
                             Result(method, bestPossiblePurity)
                         else {
@@ -328,7 +328,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
-            case m: Method ⇒ doDeterminePurity(m)
+            case m: Method ⇒ determinePurity(m)
             case e         ⇒ throw new UnknownError("purity is only defined for methods")
         }
     }

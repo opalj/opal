@@ -94,12 +94,12 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = 
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] =
         project.get(DefaultTACAIKey)
 
     // TODO Use MethodExtensibility once the method extensibility key is available (again)
-    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey) 
-    
+    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
+
     /**
      * Checks whether the statement, which is the origin of an exception, directly created the
      * exception or if the VM instantiated the exception. Here, we are only concerned about the
