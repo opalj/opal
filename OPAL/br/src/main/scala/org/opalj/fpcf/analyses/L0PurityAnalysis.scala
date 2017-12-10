@@ -48,7 +48,7 @@ import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
 
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBImpure
-import org.opalj.fpcf.properties.MaybePure
+import org.opalj.fpcf.properties.LBImpure.MaybePure
 import org.opalj.fpcf.properties.CPureWithoutAllocations
 import org.opalj.fpcf.properties.PureWithoutAllocations
 
@@ -110,7 +110,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                                 if (fieldClassType.isDefined)
                                     dependees += EPK(fieldClassType.get, TypeImmutability.key)
                                 else
-                                    return Result(method, LBImpure.Access...);
+                                    return Result(method, LBImpure.AccessOfMutableState);
                             }
                             if (field.isNotFinal) {
                                 dependees += EPK(field, FieldMutability.key)
@@ -237,24 +237,23 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                     if (ut.isFinalUpdate) {
                         // => the best possible result is conditionally pure, but
                         // this method can still be impure if a field is not final or a
-                        // type is not immutable!
+                        // type is not immutable or if method becomes impure!
                         // => we have to clear all Purity related dependencies
-                 xxx       dependees = dependees.filter(_.pk != Purity.key)
+                        bestPossiblePurity = CPureWithoutAllocations
+                        dependees = dependees.filter(_.e ne e)
                         if (dependees.isEmpty)
                             Result(method, bestPossiblePurity)
                         else {
-                            bestPossiblePurity = CPureWithoutAllocations
                             IntermediateResult(lastResult, dependees, c)
                         }
                     } else {
                         val newEP = EP(e.asInstanceOf[Method], p)
                         dependees = dependees.filter(_.e ne e) + newEP
-
                         IntermediateResult(lastResult, dependees, c)
                     }
 
                 case PureWithoutAllocations ⇒
-                    dependees = dependees.filter { _.e ne e }
+                    dependees = dependees.filter(_.e ne e)
                     if (dependees.isEmpty)
                         Result(method, PureWithoutAllocations)
                     else {
