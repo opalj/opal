@@ -41,6 +41,7 @@ package ba
  * @author Malte Limmeroth
  */
 trait ExceptionHandlerElement extends PseudoInstruction {
+    final override def isExceptionHandlerElement: Boolean = true
     def id: Symbol
 }
 
@@ -63,9 +64,9 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement
  *
  * @see [[ExceptionHandlerElement]]
  */
-class CATCH private (
-        val id:          Symbol,
-        val handlerType: Option[br.ObjectType]
+case class CATCH private (
+        id:          Symbol,
+        handlerType: Option[br.ObjectType]
 ) extends ExceptionHandlerElement
 
 /**

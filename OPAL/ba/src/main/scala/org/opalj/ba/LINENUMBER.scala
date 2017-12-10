@@ -35,4 +35,8 @@ package ba
  *
  * @author Malte Limmeroth
  */
-case class LINENUMBER(lineNumber: Int) extends PseudoInstruction
+case class LINENUMBER(lineNumber: Int) extends PseudoInstruction {
+
+    final override def isExceptionHandlerElement: Boolean = false
+
+}

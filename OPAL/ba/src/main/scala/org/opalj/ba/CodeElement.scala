@@ -43,7 +43,10 @@ import org.opalj.br.instructions.LabeledInstruction
  *
  * @author Malte Limmeroth
  */
-trait CodeElement[+T]
+trait CodeElement[+T] {
+
+    def isExceptionHandlerElement: Boolean
+}
 
 /**
  * Implicit conversions to [[CodeElement]].
