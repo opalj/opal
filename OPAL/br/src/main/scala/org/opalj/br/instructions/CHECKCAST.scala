@@ -39,7 +39,7 @@ import org.opalj.collection.immutable.Chain
  */
 case class CHECKCAST(
         referenceType: ReferenceType
-) extends Instruction with ConstantLengthInstruction {
+) extends Instruction with ConstantLengthInstruction with NoLabels {
 
     final override def isCheckcast: Boolean = true
 

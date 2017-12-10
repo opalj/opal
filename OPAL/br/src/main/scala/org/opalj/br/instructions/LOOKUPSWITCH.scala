@@ -75,6 +75,16 @@ case class LOOKUPSWITCH(
 
     final override def asLOOKUPSWITCH: this.type = this
 
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledLOOKUPSWITCH(
+            Symbol((currentPC + defaultOffset).toString),
+            npairs.map { e ⇒
+                val (v, branchoffset) = e
+                (v, Symbol((currentPC + branchoffset).toString))
+            }
+        )
+    }
+
     override def tableSize: Int = npairs.size
 
     def jumpOffsets: Iterable[Int] = npairs.view.map(_._2)

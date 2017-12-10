@@ -54,6 +54,10 @@ case class IFGE(branchoffset: Int) extends IF0Instruction[IFGE] with IFGELike {
     def negate(newBranchoffset: Int = branchoffset): IFLT = {
         IFLT(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIFGE(Symbol((currentPC + branchoffset).toString))
+    }
 }
 
 /**

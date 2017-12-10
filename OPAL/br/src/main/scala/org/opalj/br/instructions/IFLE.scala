@@ -54,6 +54,10 @@ case class IFLE(branchoffset: Int) extends IF0Instruction[IFLE] with IFLELike {
     def negate(newBranchoffset: Int = branchoffset): IFGT = {
         IFGT(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIFLE(Symbol((currentPC + branchoffset).toString))
+    }
 }
 
 /**

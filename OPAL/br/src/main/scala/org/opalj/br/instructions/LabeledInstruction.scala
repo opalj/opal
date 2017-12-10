@@ -42,4 +42,26 @@ trait LabeledInstruction extends InstructionLike {
 
     def branchTargets: Seq[Symbol]
 
+    /**
+     * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced
+     * by the branchoffsets and an [[Instruction]] is returned. If this instruction already
+     * has concrete branchoffsets nothing special will happen.
+     *
+     * If this instruction already has concrete jump targets nothing special will happen.
+     *
+     * @param   pc The final pc of this instruction in the code array.
+     * @param   pcs The map which maps all symbols to their final pcs.
+     */
+    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction
+
+}
+
+private[instructions] trait NoLabels extends LabeledInstruction { this: Instruction ⇒
+
+    final override def branchTargets: Seq[Symbol] = Nil
+
+    final override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction = this
+
+    final def toLabeledInstruction(currentPC: PC): LabeledInstruction = this
+
 }

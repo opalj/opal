@@ -35,7 +35,10 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArrayAccessInstruction extends Instruction with ConstantLengthInstruction {
+abstract class ArrayAccessInstruction
+    extends Instruction
+        with ConstantLengthInstruction
+        with NoLabels {
 
     final def length: Int = 1
 

@@ -54,6 +54,10 @@ case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction[IF_ICMPGE] wit
     def negate(newBranchoffset: Int = branchoffset): IF_ICMPLT = {
         IF_ICMPLT(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIF_ICMPGE(Symbol((currentPC + branchoffset).toString))
+    }
 }
 
 object IF_ICMPGE {

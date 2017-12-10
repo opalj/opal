@@ -53,6 +53,10 @@ case class IFNE(branchoffset: Int) extends IF0Instruction[IFNE] with IFNELike {
     def negate(newBranchoffset: Int = branchoffset): IFEQ = {
         IFEQ(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIFNE(Symbol((currentPC + branchoffset).toString))
+    }
 }
 
 /**

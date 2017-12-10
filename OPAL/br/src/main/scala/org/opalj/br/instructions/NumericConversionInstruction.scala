@@ -38,7 +38,10 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-abstract class NumericConversionInstruction extends Instruction with ConstantLengthInstruction {
+abstract class NumericConversionInstruction
+    extends Instruction
+    with ConstantLengthInstruction
+    with NoLabels {
 
     final def jvmExceptions: List[ObjectType] = Nil
 

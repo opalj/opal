@@ -38,7 +38,7 @@ import org.opalj.collection.immutable.Naught
  *
  * @author Michael Eichberg
  */
-case object ATHROW extends Instruction {
+case object ATHROW extends Instruction with NoLabels {
 
     final val opcode = 191
 

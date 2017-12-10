@@ -46,7 +46,12 @@ trait GOTOLike extends GotoInstructionLike {
     final def stackSlotsChange: Int = 0
 }
 
-case class GOTO(branchoffset: Int) extends GotoInstruction with GOTOLike
+case class GOTO(branchoffset: Int) extends GotoInstruction with GOTOLike {
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledGOTO(Symbol((currentPC + branchoffset).toString))
+    }
+}
 
 /**
  * Defines constants and factory methods.

@@ -44,7 +44,12 @@ trait JSRLike extends JSRInstructionLike {
     final def length: Int = 3
 }
 
-case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike
+case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike {
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledJSR(Symbol((currentPC + branchoffset).toString))
+    }
+}
 
 /**
  * Defines constants and factory methods.
