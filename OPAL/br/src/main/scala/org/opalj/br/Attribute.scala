@@ -87,7 +87,7 @@ trait Attribute {
     def kindId: Int
 
     /**
-     * Returns true if this attribute and the given one will is guaranteed to be indistinguishable
+     * Returns true if this attribute and the given one are guaranteed to be indistinguishable
      * at runtime.
      *
      * @note   If this class is implemented as a proper `case class`, this method can often be
