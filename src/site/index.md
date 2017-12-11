@@ -1,19 +1,21 @@
+## OPAL
+
+OPAL is an extensible, Java bytecode processing, engineering, manipulation and analysis library written in Scala 2.12.x. OPAL supports Java 8 Bytecode and has preliminary support for Java 9; OPAL in particular provides support to facilitate the analysis of Java 8 lambda expressions (*Invokedynamic* instructions). 
+
+The latest release is *1.0.0*, the latest snapshot version is *1.1.0-SNAPSHOT*. Both versions are found on Maven central. If you want to use the snapshot version do not forget to add the respective resolver:
+
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
 If you want to use OPAL for the development of static analyes, you can either use the latest release found on Maven Central or just checkout and build the current development snapshot of OPAL found one BitBucket. In general, using the development snapshot; i.e., the `develop` branch of OPAL is very safe and gives you access to the latest features, improvements and bug fixes.
 
-# Using Latest Development Snapshot
+# Using The Latest Development Snapshot
 
 Go to [BitBucket](https://bitbucket.org/delors/opal) to checkout OPAL and to read how to compile and deploy it.
 
 
-# Using Latest Release
+# Using The Latest Release
 
-The latest release is always found on [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cde.opal-project) and can therefore added to you project as standard library dependecy.
-
-## OPAL
-
-OPAL is an extensible, Java bytecode processing and analysis library written in Scala 2.12.4. OPAL supports Java 8 Bytecode and has preliminary support for Java 9; OPAL in particular provides support to facilitate the analysis of Java 8 lambda expressions (*Invokedynamic* instructions). The latest release is *1.0.0*, the latest snapshot version is *1.1.0-SNAPSHOT*. Both versions are found on Maven central. If you want to use the snapshot version do not forget to add the respective resolver:
-
-    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+The latest release is always found on [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cde.opal-project) and can therefore be added to your project as standard library dependency.
 
 OPAL consists of multiple sub projects and tools which are described in the following.
 
