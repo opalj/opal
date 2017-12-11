@@ -112,7 +112,7 @@ case class IntermediateResult(
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
 
-    assert(ep.p.isRefineable, s"intermediate result $this used to store final property")
+    assert(ep.p.isRefinable, s"intermediate result $this used to store final property")
     assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
     assert(c ne null, "onUpdateContinuation is null")
 
@@ -211,16 +211,16 @@ private[fpcf] object Results {
 
 /**
  * If an analysis is finished and will not return more precise results, but a subsequent
- * analysis may refine the results, a ```RefineableResult``` has to be used.
+ * analysis may refine the results, a ```RefinableResult``` has to be used.
  *
- * @note If the given property is not refineable a (Immediate)Result has to be used.
+ * @note If the given property is not refinable a (Immediate)Result has to be used.
  *
  */
-case class RefineableResult(e: Entity, p: Property) extends PropertyComputationResult {
+case class RefinableResult(e: Entity, p: Property) extends PropertyComputationResult {
 
-    assert(p.isRefineable)
+    assert(p.isRefinable)
 
-    private[fpcf] final def id = RefineableResult.id
+    private[fpcf] final def id = RefinableResult.id
 
 }
-private[fpcf] object RefineableResult { private[fpcf] final val id = 10 }
+private[fpcf] object RefinableResult { private[fpcf] final val id = 10 }

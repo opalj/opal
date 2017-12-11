@@ -458,7 +458,7 @@ class LockBasedPropertyStore private (
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
      *      `EP(e,Property)` otherwise; in the later case `EP` may encapsulate a property that
      *      is the final result of a computation `ep.isPropertyFinal === true` even though the
-     *      property as such is in general refineable. Hence, to determine if the property in
+     *      property as such is in general refinable. Hence, to determine if the property in
      *      the current analysis context is final it is necessary to call the `EP` object's
      *      `isPropertyFinal` method.
      */
@@ -1561,7 +1561,7 @@ class LockBasedPropertyStore private (
                     (updateTypeId: @scala.annotation.switch) match {
                         case FinalUpdate.id ⇒
                             // Note that it is possible to have a Final Update though the underlying
-                            // property is refineable. This is the case whenever the analysis knows
+                            // property is refinable. This is the case whenever the analysis knows
                             // that no further refinement may happen (given the current program).
                             ps(pkId) = new PropertyAndObservers(p, null)
                         /*internal*/ /* assert(
@@ -1570,7 +1570,7 @@ class LockBasedPropertyStore private (
                             ) */
 
                         case IntermediateUpdate.id ⇒
-                            assert(p.isRefineable, s"$e: intermediate update of final property $p")
+                            assert(p.isRefinable, s"$e: intermediate update of final property $p")
                             ps(pkId) = new PropertyAndObservers(p, Buffer.empty)
                         /*internal*/ /* assert(
                                 ps(p.key.id).p == p,
@@ -1601,7 +1601,7 @@ class LockBasedPropertyStore private (
                     (updateTypeId: @scala.annotation.switch) match {
                         case FinalUpdate.id ⇒
                             if (ValidateConsistency) assert(
-                                (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
+                                (oldP eq null) || oldP.isBeingComputed || (oldP.isRefinable && (os ne null)),
                                 s"$e: the old property $oldP is final; refinement to $p is not supported"
                             )
                             clearAllDependeeObservers(EPK(e, pk))
@@ -1613,11 +1613,11 @@ class LockBasedPropertyStore private (
 
                         case IntermediateUpdate.id ⇒
                             if (ValidateConsistency) assert(
-                                (oldP eq null) || oldP.isBeingComputed || (oldP.isRefineable && (os ne null)),
+                                (oldP eq null) || oldP.isBeingComputed || (oldP.isRefinable && (os ne null)),
                                 s"$e: impossible intermediate update of the old property $oldP with $p (os=$os)"
                             )
                             if (ValidateConsistency) assert(
-                                p.isRefineable, s"$e: intermediate update using a final property $p"
+                                p.isRefinable, s"$e: intermediate update using a final property $p"
                             )
                             if (oldP != p) {
                                 if (ValidateConsistency) assert(p != oldP, s"equals is not reflexive: $p <=> $oldP")
@@ -1666,8 +1666,8 @@ class LockBasedPropertyStore private (
                         s"observers of ${EPK(e, p.key)} should be empty, but contains ${observers.get(EPK(e, p.key))}"
                     ) */
 
-                case RefineableResult.id ⇒
-                    val RefineableResult(e, p) = r
+                case RefinableResult.id ⇒
+                    val RefinableResult(e, p) = r
                     update(e, p, IntermediateUpdate)
                 /*internal*/ /* assert(
                             { val os = observers.get(EPK(e, p.key)); (os eq null) || (os.isEmpty) },

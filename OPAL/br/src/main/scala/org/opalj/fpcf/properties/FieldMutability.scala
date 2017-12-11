@@ -89,7 +89,7 @@ sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaIn
 
     final def key = FieldMutability.key // All instances have to share the SAME key!
 
-    final def isRefineable: Boolean = false
+    final def isRefinable: Boolean = false
 
     def isEffectivelyFinal: Boolean
 }

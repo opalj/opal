@@ -303,7 +303,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                 case epk: EPK[_, _]       ⇒ dependees += epk
 
                 case ep @ EP(_, immutability) ⇒
-                    if (immutability.isRefineable)
+                    if (immutability.isRefinable)
                         dependees += ep
                     else
                         return Result(method, LBImpure.AccessOfMutableState);

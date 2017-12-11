@@ -66,7 +66,7 @@ sealed abstract class ThrownExceptions extends Property {
 
     /**
      * Returns `true` if and only if the method does not yet throw exceptions. I.e., if the
-     * this property is still refineable then this property may still change. Otherwise,
+     * this property is still refinable then this property may still change. Otherwise,
      * the analysis was able to determine that no exceptions are thrown.
      */
     def throwsNoExceptions: Boolean
@@ -121,7 +121,7 @@ object ThrownExceptions {
 
 class AllThrownExceptions(
         val types:        BRTypesSet,
-        val isRefineable: Boolean
+        val isRefinable: Boolean
 ) extends ThrownExceptions {
 
     override def throwsNoExceptions: Boolean = types.isEmpty
@@ -131,18 +131,18 @@ class AllThrownExceptions(
     override def equals(other: Any): Boolean = {
         other match {
             case that: AllThrownExceptions ⇒
-                this.types == that.types && this.isRefineable == that.isRefineable
+                this.types == that.types && this.isRefinable == that.isRefinable
             case _ ⇒ false
         }
     }
 
-    override def hashCode: Int = 13 * types.hashCode + (if (isRefineable) 41 else 53)
+    override def hashCode: Int = 13 * types.hashCode + (if (isRefinable) 41 else 53)
 
 }
 
 final case class NoExceptionsAreThrown(
         explanation: String
-) extends AllThrownExceptions(BRTypesSet.empty, isRefineable = false) {
+) extends AllThrownExceptions(BRTypesSet.empty, isRefinable = false) {
 
     override def throwsNoExceptions: Boolean = true
 
@@ -163,7 +163,7 @@ final case class ThrownExceptionsAreUnknown(reason: String) extends ThrownExcept
 
     override def throwsNoExceptions: Boolean = false // <= they are unknown
 
-    def isRefineable: Boolean = false
+    def isRefinable: Boolean = false
 
 }
 

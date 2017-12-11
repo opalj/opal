@@ -188,7 +188,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 Result(cf, ConditionallyImmutableType)
                             } else {
                                 /* DEBUGGING
-                                assert(joinedImmutability.isRefineable)
+                                assert(joinedImmutability.isRefinable)
                                 assert(
                                     previousDependencies != dependencies ||
                                         previousJoinedImmutability != joinedImmutability,
@@ -255,7 +255,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
                 }
 
-                //[DEBUG] assert(joinedImmutability.isRefineable)
+                //[DEBUG] assert(joinedImmutability.isRefinable)
                 IntermediateResult(cf, joinedImmutability, dependencies, c)
             }
         }

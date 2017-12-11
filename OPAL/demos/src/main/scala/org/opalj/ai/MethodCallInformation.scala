@@ -68,7 +68,7 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
             val code = method.body.get
             foreachPCWithOperands(domain)(code, result.operandsArray) { (pc, instruction, ops) ⇒
 
-                def isPotentiallyRefineable(methodDescriptor: MethodDescriptor): Boolean = {
+                def isPotentiallyRefinable(methodDescriptor: MethodDescriptor): Boolean = {
                     methodDescriptor.parametersCount > 0 &&
                         methodDescriptor.parameterTypes.exists { t ⇒
                             t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
@@ -76,7 +76,7 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
                 }
 
                 instruction match {
-                    case invoke: MethodInvocationInstruction if isPotentiallyRefineable(invoke.methodDescriptor) ⇒
+                    case invoke: MethodInvocationInstruction if isPotentiallyRefinable(invoke.methodDescriptor) ⇒
                         callsCount.incrementAndGet()
                         val methodDescriptor = invoke.methodDescriptor
                         val parameterTypes = methodDescriptor.parameterTypes

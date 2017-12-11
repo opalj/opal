@@ -136,7 +136,7 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
 }
 
 case object UnknownClassImmutability extends ClassImmutability {
-    final val isRefineable = true
+    final val isRefinable = true
     final val correspondingTypeImmutability = UnknownTypeImmutability
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
@@ -158,11 +158,11 @@ case object UnknownClassImmutability extends ClassImmutability {
  *
  */
 case object ImmutableObject extends ClassImmutability {
-    final val isRefineable = false
+    final val isRefinable = false
     final val correspondingTypeImmutability = ImmutableType
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -177,11 +177,11 @@ case object ImmutableObject extends ClassImmutability {
  *
  */
 case object ConditionallyImmutableObject extends ClassImmutability {
-    final val isRefineable = false
+    final val isRefinable = false
     final val correspondingTypeImmutability = ConditionallyImmutableType
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -196,11 +196,11 @@ case object ConditionallyImmutableObject extends ClassImmutability {
  * make a final decision whether the class is immutable.
  */
 case object AtLeastConditionallyImmutableObject extends ClassImmutability {
-    final val isRefineable = true
+    final val isRefinable = true
     final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -210,12 +210,12 @@ case object AtLeastConditionallyImmutableObject extends ClassImmutability {
 }
 
 sealed trait MutableObject extends ClassImmutability {
-    final val isRefineable = false
+    final val isRefinable = false
     val reason: String
     final val correspondingTypeImmutability = MutableType
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
