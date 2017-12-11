@@ -315,8 +315,13 @@ class LabeledCode(
 
     def toCodeAttributeBuilder: CodeAttributeBuilder[AnyRef] = {
         val initialCodeAttributeBuilder = CODE(instructions)
+        // let's check if we have to compute a new StackMapTable attribute
+        // originalCode.cfJoins
+        // initialCodeAttributeBuilder.instructions
+
         // TODO We have to adapt the exiting attributes and we have to merge the line number tables
         // if necessary.
+
         initialCodeAttributeBuilder
     }
 

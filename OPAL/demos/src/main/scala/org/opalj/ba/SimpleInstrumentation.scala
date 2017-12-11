@@ -41,6 +41,12 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
+/*
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.IFGT
+import org.opalj.br.instructions.GOTO
+import org.opalj.br.instructions.LoadString
+*/
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
 
@@ -60,6 +66,7 @@ object SimpleInstrumentation extends App {
     // let's load the class
     val in = () ⇒ this.getClass.getResourceAsStream("SimpleInstrumentationDemo.class")
     val cf = Java8Framework.ClassFile(in).head // in this case we don't have invokedynamic resolution
+    // let's transform the methods
     val newMethods =
         for (m ← cf.methods) yield {
             m.body match {
@@ -69,7 +76,9 @@ object SimpleInstrumentation extends App {
                 case Some(code) ⇒
                     // let's search all "toString" calls
                     val lCode = CODE.toLabeledCode(code)
-                    for { (pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code } {
+                    var modified = false
+                    for ((pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code) {
+                        modified = true
                         // print out the result of toString
                         lCode.insert(
                             pc, InsertionPosition.After,
@@ -92,8 +101,36 @@ object SimpleInstrumentation extends App {
                             )
                         )
                     }
-                    val (newCode, _) = lCode.toCodeAttributeBuilder(m)
-                    m.copy(body = Some(newCode))
+                    // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
+                    // i.e., let's see how we add conditional logic.
+                    /* WE FIRST NEED TO FINISH THE GENERATION OF THE STACK_MAP TABLE ATTRIBUTE!
+                    for ((pc, IRETURN) ← code) {
+                        val gtTarget = Symbol(pc+":>")
+                        val printlnTarget = Symbol(pc+":println")
+                        lCode.insert(
+                            pc, InsertionPosition.Before,
+                            Seq(
+                                DUP, // duplicate the value
+                                GETSTATIC(SystemType, "out", PrintStreamType), // receiver
+                                SWAP, // the int value is on top now..
+                                IFGT(gtTarget),
+                                // value is less than 0
+                                LoadString("negative"), // top is the parameter, receiver is 2nd top most
+                                GOTO(printlnTarget),
+                                gtTarget, // this Symbol has to unique across all instrumentations of this method
+                                LoadString("positive"),
+                                printlnTarget,
+                                INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(IntegerType))
+                            )
+                        )
+                    }
+                    */
+                    if (modified) {
+                        val (newCode, _) = lCode.toCodeAttributeBuilder(m)
+                        m.copy(body = Some(newCode))
+                    } else {
+                        m.copy()
+                    }
             }
         }
     val newRawCF = Assembler(toDA(cf.copy(methods = newMethods)))
@@ -122,6 +159,8 @@ object SimpleInstrumentation extends App {
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
     newClass.getMethod("callsToString").invoke(instance)
+    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
+    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
 
 }
 
@@ -134,6 +173,13 @@ class SimpleInstrumentationDemo {
 
     def callsToString(): Unit = {
         println("the length of the toString representation is: "+this.toString().length())
+    }
+
+    def returnsValue(i: Int): Int = {
+        if (i % 2 == 0)
+            return -1;
+        else
+            return 2;
     }
 }
 

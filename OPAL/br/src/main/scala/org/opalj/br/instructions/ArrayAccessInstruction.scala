@@ -37,8 +37,8 @@ package instructions
  */
 abstract class ArrayAccessInstruction
     extends Instruction
-        with ConstantLengthInstruction
-        with NoLabels {
+    with ConstantLengthInstruction
+    with NoLabels {
 
     final def length: Int = 1
 
