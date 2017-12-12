@@ -120,7 +120,7 @@ object ThrownExceptions {
 }
 
 class AllThrownExceptions(
-        val types:        BRTypesSet,
+        val types:       BRTypesSet,
         val isRefinable: Boolean
 ) extends ThrownExceptions {
 

@@ -56,7 +56,7 @@ import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.LBImpure
-import org.opalj.fpcf.properties.MaybePure
+import org.opalj.fpcf.properties.LBImpure.MaybePure
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBSideEffectFree

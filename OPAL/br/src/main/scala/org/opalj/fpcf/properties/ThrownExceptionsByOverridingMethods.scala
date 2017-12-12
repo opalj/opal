@@ -98,7 +98,7 @@ sealed abstract class ThrownExceptionsByOverridingMethods extends Property {
 }
 
 case class AllThrownExceptionsByOverridingMethods(
-        exceptions:   BRTypesSet = BRTypesSet.empty,
+        exceptions:  BRTypesSet = BRTypesSet.empty,
         isRefinable: Boolean    = false
 ) extends ThrownExceptionsByOverridingMethods {
 

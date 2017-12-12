@@ -184,14 +184,11 @@ sealed abstract class Purity extends Property with PurityPropertyMetaInformation
 
     def flags: Int
 
-    val hasAllocations: Boolean = (flags & HasAllocations) != 0
-    val isDeterministic: Boolean = (flags & IsNonDeterministic) == 0
-    val modifiesReceiver: Boolean = (flags & ModifiesReceiver) != 0
-    val usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
-    val isConditional: Boolean = (flags & IsConditional) != 0
-
-    /** (Some of) the reasons of the current rating. */
-    def reasons: Set[String]
+    def hasAllocations: Boolean = (flags & HasAllocations) != 0
+    def isDeterministic: Boolean = (flags & IsNonDeterministic) == 0
+    def modifiesReceiver: Boolean = (flags & ModifiesReceiver) != 0
+    def usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
+    def isConditional: Boolean = (flags & IsConditional) != 0
 
     /**
      * Combines this purity value with another one to represent the progress by a purity
@@ -206,21 +203,17 @@ sealed abstract class Purity extends Property with PurityPropertyMetaInformation
      */
     def combine(other: Purity): Purity = {
         other match {
-            case that: ClassifiedImpure ⇒
-                that
-            case _ ⇒
-                Purity(this.flags | other.flags, this.reasons | other.reasons)
+            case that: ClassifiedImpure ⇒                that
+            case _ ⇒                Purity(this.flags | other.flags)
         }
     }
 
     def withoutExternal: Purity = {
-        if (modifiesReceiver) Purity(flags & ~ModifiesReceiver, reasons)
-        else this
+        if (modifiesReceiver) Purity(flags & ~ModifiesReceiver)        else this
     }
 
     def unconditional: Purity = {
-        if (isConditional) Purity(flags & ~IsConditional, reasons)
-        else this
+        if (isConditional) Purity(flags & ~IsConditional)        else this
     }
 }
 
@@ -259,7 +252,7 @@ object Purity extends PurityPropertyMetaInformation {
     final val PerformsDomainSpecificOperations = 0x8;
     final val IsConditional = 0x10;
 
-    def apply(flags: Int, reasons: Set[String]): Purity = {
+    def apply(flags: Int): Purity = {
         (flags: @switch) match {
             case PureWithoutAllocations.flags             ⇒ PureWithoutAllocations
             case LBSideEffectFreeWithoutAllocations.flags ⇒ LBSideEffectFreeWithoutAllocations
@@ -280,14 +273,14 @@ object Purity extends PurityPropertyMetaInformation {
                     }
                 } else {
                     ((flags & ~PerformsDomainSpecificOperations | HasAllocations): @switch) match {
-                        case LBPure.flags ⇒ LBDPure(reasons)
-                        case LBSideEffectFree.flags ⇒ LBDSideEffectFree(reasons)
-                        case LBExternallyPure.flags ⇒ LBDExternallyPure(reasons)
-                        case LBExternallySideEffectFree.flags ⇒ LBDExternallySideEffectFree(reasons)
-                        case CLBPure.flags ⇒ CLBDPure(reasons)
-                        case CLBSideEffectFree.flags ⇒ CLBDSideEffectFree(reasons)
-                        case CLBExternallyPure.flags ⇒ CLBDExternallyPure(reasons)
-                        case CLBExternallySideEffectFree.flags ⇒ CLBDExternallySideEffectFree(reasons)
+                        case LBPure.flags ⇒ LBDPure
+                        case LBSideEffectFree.flags ⇒ LBDSideEffectFree
+                        case LBExternallyPure.flags ⇒ LBDExternallyPure
+                        case LBExternallySideEffectFree.flags ⇒ LBDExternallySideEffectFree
+                        case CLBPure.flags ⇒ CLBDPure
+                        case CLBSideEffectFree.flags ⇒ CLBDSideEffectFree
+                        case CLBExternallyPure.flags ⇒ CLBDExternallyPure
+                        case CLBExternallySideEffectFree.flags ⇒ CLBDExternallySideEffectFree
                     }
                 }
         }
@@ -300,14 +293,9 @@ object Purity extends PurityPropertyMetaInformation {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object PureWithoutAllocations extends Purity {
-
     final def isRefinable = false
-
     final val flags = 0 // <=> no flag is set
-
-    def reasons: Set[String] = Set("no allocations and no non-deterministic operations are done")
-
-    override def combine(other: Purity) = other
+    override def combine(other: Purity) : Purity = other
 }
 
 /**
@@ -399,7 +387,7 @@ object DomainSpecific {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case class LBDPure extends Purity {
+case object LBDPure extends Purity {
     final val isRefinable = true
     final val flags = HasAllocations | PerformsDomainSpecificOperations
 }
@@ -410,7 +398,7 @@ case class LBDPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case class LBDSideEffectFree extends Purity {
+case object LBDSideEffectFree extends Purity {
     final val isRefinable = true
     final val flags = HasAllocations | IsNonDeterministic | PerformsDomainSpecificOperations
 }
@@ -422,7 +410,7 @@ case class LBDSideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case class LBDExternallyPure extends Purity {
+case object LBDExternallyPure extends Purity {
     final val isRefinable = true
     final val flags = HasAllocations | ModifiesReceiver | PerformsDomainSpecificOperations
 }
@@ -433,7 +421,7 @@ case class LBDExternallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case class LBDExternallySideEffectFree  extends Purity {
+case object LBDExternallySideEffectFree  extends Purity {
     final val isRefinable = true
     final val flags =
         HasAllocations | IsNonDeterministic | ModifiesReceiver | PerformsDomainSpecificOperations
@@ -569,7 +557,7 @@ case object CLBDExternallyPure extends ConditionalPurity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case class CLBDExternallySideEffectFree extends ConditionalPurity {
+case object CLBDExternallySideEffectFree extends ConditionalPurity {
     final val flags = {
         IsConditional |
             HasAllocations | IsNonDeterministic | ModifiesReceiver | PerformsDomainSpecificOperations
