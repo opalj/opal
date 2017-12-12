@@ -723,6 +723,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         ObjectValue(pc, objectType)
     }
 
+    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
+        ObjectValue(-1, objectType)
+    }
+
     override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, objectType)
     }
@@ -734,7 +738,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         if (upperTypeBound.isArrayType)
             ArrayValue(pc, upperTypeBound.asArrayType)
         else
-            InitializedObjectValue(pc, upperTypeBound.asObjectType)
+            ObjectValue(pc, upperTypeBound.asObjectType)
     }
 
     override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
@@ -785,8 +789,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * The properties of the domain value are:
      *
      *  - Initialized: '''Unknown'''
-     *    (I.e., it is not guaranteed that the constructor was called; unless newObject was
-     *    overridden!)
+     *    (I.e., it is not guaranteed that the constructor was called; unless `NewObject` was
+     *    overridden and returns DomainValues that are distinguishable!)
      *  - Type: '''Upper Bound'''
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
@@ -803,9 +807,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * ==Summary==
      * The properties of the domain value are:
      *
-     *  - Initialized: '''Unknown'''
-     *    (I.e., it is not guaranteed that the constructor was called; unless newObject was
-     *    overridden!)
+     *  - Initialized: '''Yes'''
+     *    (An Object with multiple bounds can only exist due to a merge, in this case, the objects
+     *    must have been initialized beforehand or the value is not used at all and actually
+     *    represents a dead variable.)
      *  - Type: '''Upper Bound'''
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
