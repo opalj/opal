@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Text
+import scala.xml.Node
 
 /**
  * @author Michael Eichberg
@@ -44,7 +45,7 @@ case class LocalVariableTable_attribute(
 
     def attribute_length: Int = 2 + (local_variable_table.size * 10)
 
-    override def toXHTML(implicit cp: Constant_Pool) = {
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
             <summary>LocalVariableTable</summary>
             {
@@ -56,4 +57,3 @@ case class LocalVariableTable_attribute(
         </details>
     }
 }
-

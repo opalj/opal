@@ -188,7 +188,9 @@ package object da {
                                 methodParameter.toXHTML(fti)
                             }
                         }
-                    spanParameters.tail.foldLeft(List(spanParameters.head))((r, n) ⇒ r ++ List(Text(", "), n))
+                    spanParameters.tail.foldLeft(List(spanParameters.head)) { (r, n) ⇒
+                        r ++ List(Text(", "), n)
+                    }
                 } else {
                     NodeSeq.Empty
                 }
