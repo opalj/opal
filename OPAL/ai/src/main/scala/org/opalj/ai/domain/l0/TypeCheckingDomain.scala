@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ai.domain.l0
+package org.opalj
+package ai
+package domain
+package l0
 
-import org.opalj.ai.TheClassHierarchy
-import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
-import org.opalj.ai.domain.IgnoreSynchronization
-import org.opalj.ai.domain.TheMethod
 import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
@@ -43,10 +42,20 @@ import org.opalj.br.analyses.SomeProject
 class TypeCheckingDomain(
         val classHierarchy: ClassHierarchy,
         val method:         Method
-) extends TypeLevelDomain
+) extends Domain
+    with DefaultDomainValueBinding
+    with DefaultTypeLevelIntegerValues
+    with DefaultTypeLevelLongValues
+    with TypeLevelLongValuesShiftOperators
+    with TypeLevelPrimitiveValuesConversions
+    with DefaultTypeLevelFloatValues
+    with DefaultTypeLevelDoubleValues
+    with TypeLevelFieldAccessInstructions
+    with TypeLevelInvokeInstructions
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization
     with DefaultTypeLevelHandlingOfMethodResults
+    with TypeCheckingReferenceValues // we override the handling for invokespecial...
     with TheClassHierarchy
     with TheMethod {
 

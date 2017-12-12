@@ -32,10 +32,10 @@ package domain
 package l0
 
 import scala.reflect.ClassTag
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
 
 /**
  * Default implementation for handling reference values in such a way that we can compute
@@ -45,7 +45,9 @@ import org.opalj.br.ObjectType
  */
 trait TypeCheckingReferenceValues
     extends DefaultTypeLevelReferenceValues
-    with DefaultExceptionsFactory {
+    with DefaultExceptionsFactory
+    with MethodCallsDomain
+    with PostEvaluationMemoryManagement {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type AReferenceValue = ReferenceValue
@@ -72,7 +74,6 @@ trait TypeCheckingReferenceValues
 
         // WIDENING OPERATION
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            val thisUpperTypeBound = this.theUpperTypeBound
             other match {
                 case _: UninitializedObjectValue ⇒ MetaInformationUpdateIllegalValue
                 case that                        ⇒ super.doJoin(pc, that)
@@ -118,6 +119,25 @@ trait TypeCheckingReferenceValues
             target.NewObject(origin, theUpperTypeBound)
         }
 
+        override def toString: String = s"${theType.toJava}(uninitialized;origin=$pc)"
+    }
+
+    abstract override def invokespecial(
+        pc:               PC,
+        declaringClass:   ObjectType,
+        isInterface:      Boolean,
+        name:             String,
+        methodDescriptor: MethodDescriptor,
+        operands:         Operands
+    ): MethodCallResult = {
+        if (name == "<init>") {
+            val receiver = operands.last
+            // the value is now initialized and we have to update the stack/locals
+            val UninitializedObjectValue(theType, _) = receiver
+            val initializedObjectValue = new InitializedObjectValue(theType)
+            updateAfterExecution(receiver, initializedObjectValue, TheIllegalValue)
+        }
+        super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
     }
 
     // -----------------------------------------------------------------------------------
