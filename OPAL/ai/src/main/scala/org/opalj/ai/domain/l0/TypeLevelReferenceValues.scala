@@ -738,7 +738,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         if (upperTypeBound.isArrayType)
             ArrayValue(pc, upperTypeBound.asArrayType)
         else
-            InitializedObjectValue(pc, upperTypeBound.asObjectType)
+            ObjectValue(pc, upperTypeBound.asObjectType)
     }
 
     override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
