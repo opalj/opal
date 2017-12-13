@@ -56,7 +56,6 @@ import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.LBImpure
-import org.opalj.fpcf.properties.LBImpure.MaybePure
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBSideEffectFree
@@ -152,7 +151,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     def determinePurity(method: Method): PropertyComputationResult = {
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return Result(method, LBImpure.Synchronization);
+            return Result(method, LBImpure);
 
         implicit val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
@@ -516,7 +515,6 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
          *     - classes files for class types returned (for their mutability)
          */
         def c(e: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
-            var impure = false
             dependees = dependees.filter(_.e ne e)
             p match {
                 // Cases resulting in conditional purity
@@ -542,13 +540,12 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     _: TypeImmutability | _: ClassImmutability ⇒ // Returning mutable reference
                     maxPurity = LBSideEffectFree
 
-                // Cases resulting in impurity LBImpure | MaybePure | // Call to impure method
-                case _ ⇒ impure = true
+                // Cases resulting in impurity LBImpure ...  call to impure method
+                case _ ⇒
+                    return Result(method, LBImpure)
             }
 
-            if (impure) {
-                Result(method, LBImpure)
-            } else if (dependees.isEmpty) {
+            if (dependees.isEmpty) {
                 Result(method, maxPurity)
             } else if (maxPurity == LBPure) {
                 IntermediateResult(method, CLBPure, dependees, c)
@@ -561,7 +558,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         var s = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(method, LBImpure.ImpureInstruction)
+                return Result(method, LBImpure)
             s += 1
         }
 

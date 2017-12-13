@@ -72,7 +72,6 @@ trait TypeCheckingReferenceValues
 
         // WIDENING OPERATION
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            val thisUpperTypeBound = this.theUpperTypeBound
             other match {
                 case _: UninitializedObjectValue ⇒ MetaInformationUpdateIllegalValue
                 case that                        ⇒ super.doJoin(pc, that)

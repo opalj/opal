@@ -30,17 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.properties.DomainSpecific.DomainSpecificReason
-import org.opalj.fpcf.properties.DomainSpecific.RaisesExceptions
-import org.opalj.fpcf.properties.DomainSpecific.UsesSystemOutOrErr
-import org.opalj.fpcf.properties.DomainSpecific.UsesLogging
-import org.opalj.fpcf.properties.LBImpureBase.LBImpureDueToUnknownEntity
-import org.opalj.fpcf.properties.LBImpureBase.LBImpureDueToFutureExtension
-import org.opalj.fpcf.properties.LBImpureBase.LBImpureDueToUnknownProperty
-import org.opalj.fpcf.properties.LBImpureBase.LBImpureDueToHeapModification
-import org.opalj.fpcf.properties.LBImpureBase.LBImpureDueToSynchronization
-import org.opalj.fpcf.properties.LBImpureBase.LBImpureDueToImpureCall
-import org.opalj.fpcf.properties.LBImpureBase.LBImpure
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
@@ -50,31 +39,32 @@ import org.scalatest.FlatSpec
  * @author Dominik Helm
  */
 class PurityPropertyTest extends FlatSpec with Matchers {
+
     val allPurities: List[Purity] = List(
-        PureWithoutAllocations, LBSideEffectFreeWithoutAllocations, LBPure, LBSideEffectFree,
-        LBExternallyPure, LBExternallySideEffectFree, LBDPure(Set.empty),
-        LBDSideEffectFree(Set.empty), LBDExternallyPure(Set.empty),
-        LBDExternallySideEffectFree(Set.empty), CPureWithoutAllocations,
+        PureWithoutAllocations, LBSideEffectFreeWithoutAllocations,
+        LBPure, LBSideEffectFree,
+        LBExternallyPure, LBExternallySideEffectFree, LBDPure,
+        LBDSideEffectFree, LBDExternallyPure,
+        LBDExternallySideEffectFree,
+        CPureWithoutAllocations,
         CLBSideEffectFreeWithoutAllocations, CLBPure, CLBSideEffectFree, CLBExternallyPure,
-        CLBExternallySideEffectFree, CLBDPure(Set.empty), CLBDSideEffectFree(Set.empty),
-        CLBDExternallyPure(Set.empty), CLBDExternallySideEffectFree(Set.empty), MaybePure,
-        LBImpure, LBImpureDueToSynchronization, LBImpureDueToHeapModification,
-        LBImpureDueToFutureExtension, LBImpureDueToImpureCall, LBImpureDueToUnknownEntity,
-        LBImpureDueToUnknownProperty
+        CLBExternallySideEffectFree, CLBDPure, CLBDSideEffectFree,
+        CLBDExternallyPure, CLBDExternallySideEffectFree,
+        MaybePure, LBImpure, Impure
     )
 
-    val doesntModifiyReceiver: Set[Purity] = Set(
+    val doesntModifyReceiver: Set[Purity] = Set(
         PureWithoutAllocations, LBSideEffectFreeWithoutAllocations, LBPure, LBSideEffectFree,
-        LBDPure(Set.empty), LBDSideEffectFree(Set.empty), CPureWithoutAllocations,
-        CLBSideEffectFreeWithoutAllocations, CLBPure, CLBSideEffectFree, CLBDPure(Set.empty),
-        CLBDSideEffectFree(Set.empty)
+        LBDPure, LBDSideEffectFree, CPureWithoutAllocations,
+        CLBSideEffectFreeWithoutAllocations, CLBPure, CLBSideEffectFree, CLBDPure,
+        CLBDSideEffectFree
     )
 
     val conditional: Set[Purity] = Set(
         CPureWithoutAllocations, CLBSideEffectFreeWithoutAllocations, CLBPure, CLBSideEffectFree,
-        CLBExternallyPure, CLBExternallySideEffectFree, CLBDPure(Set.empty),
-        CLBDSideEffectFree(Set.empty), CLBDExternallyPure(Set.empty),
-        CLBDExternallySideEffectFree(Set.empty)
+        CLBExternallyPure, CLBExternallySideEffectFree, CLBDPure,
+        CLBDSideEffectFree, CLBDExternallyPure,
+        CLBDExternallySideEffectFree
     )
 
     "purity levels" should "have the right properties" in {
@@ -91,9 +81,9 @@ class PurityPropertyTest extends FlatSpec with Matchers {
         }
 
         val deterministic: Set[Purity] = Set(
-            PureWithoutAllocations, LBPure, LBExternallyPure, LBDPure(Set.empty),
-            LBDExternallyPure(Set.empty), CPureWithoutAllocations, CLBPure, CLBExternallyPure,
-            CLBDPure(Set.empty), CLBDExternallyPure(Set.empty)
+            PureWithoutAllocations, LBPure, LBExternallyPure, LBDPure,
+            LBDExternallyPure, CPureWithoutAllocations, CLBPure, CLBExternallyPure,
+            CLBDPure, CLBDExternallyPure
         )
 
         for (prop ← allPurities) {
@@ -105,7 +95,7 @@ class PurityPropertyTest extends FlatSpec with Matchers {
 
         for (prop ← allPurities) {
             assert(
-                prop.modifiesReceiver != doesntModifiyReceiver.contains(prop),
+                prop.modifiesReceiver != doesntModifyReceiver.contains(prop),
                 s"$prop.modifiesReceiver was ${prop.modifiesReceiver}"
             )
         }
@@ -134,7 +124,7 @@ class PurityPropertyTest extends FlatSpec with Matchers {
 
     they should "be converted correctly" in {
         for { prop ← allPurities } {
-            if (doesntModifiyReceiver.contains(prop))
+            if (doesntModifyReceiver.contains(prop))
                 assert(
                     prop.withoutExternal == prop,
                     s"$prop.withoutExternal modified $prop (was ${prop.withoutExternal})"
@@ -157,55 +147,16 @@ class PurityPropertyTest extends FlatSpec with Matchers {
         }
     }
 
-    "domain specific reasons" should "be unioned correctly" in {
-        val domainSpecific = Set(
-            LBDPure, LBDSideEffectFree, LBDExternallyPure,
-            LBDExternallySideEffectFree, CLBDPure,
-            CLBDSideEffectFree, CLBDExternallyPure,
-            CLBDExternallySideEffectFree
-        )
-
-        val reasons: Set[DomainSpecificReason] =
-            Set(RaisesExceptions, UsesSystemOutOrErr, UsesLogging)
-
-        for {
-            p1 ← domainSpecific
-            p2 ← domainSpecific
-            reasons1 ← reasons.subsets
-            reasons2 ← reasons.subsets
-        } {
-            val prop1 = p1(reasons1)
-            val prop2 = p2(reasons2)
-            val result = prop1 combine prop2
-            assert(
-                result.reasons == (reasons1 | reasons2),
-                s"$prop1 combine $prop2 did not have the union of both reasons (was $result)"
-            )
-            assert(
-                result.getClass == (p1(Set.empty) combine p2(Set.empty)).getClass,
-                s"$prop1 combine $prop2 was not the correct purity level (was $result)"
-            )
-        }
-    }
-
     "the combine operator" should "be reflexive and symmetric" in {
         for (prop1 ← allPurities) {
             assert((prop1 combine prop1) == prop1, s"combine was not reflexive for $prop1")
             for (prop2 ← allPurities) {
                 val combine12 = prop1 combine prop2
                 val combine21 = prop2 combine prop1
-                (prop1, prop2) match {
-                    case (LBImpureBase(_), LBImpureBase(_)) ⇒
-                        assert(
-                            combine12 == prop1 || combine12 == prop2,
-                            s"$prop1 combine $prop2 was not one of the impure reasons (was $combine12)"
-                        )
-                    case _ ⇒
-                        assert(
-                            combine12 == combine21,
-                            s"$prop1 combine $prop2 was not symmetric (was $combine12 / $combine21)"
-                        )
-                }
+                assert(
+                    combine12 == combine21,
+                    s"$prop1 combine $prop2 was not symmetric (was $combine12 / $combine21)"
+                )
             }
         }
     }
@@ -219,368 +170,65 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             )
         }
 
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBPure) == LBSideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine LBPure was not LBSideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBPure})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBSideEffectFree) == LBSideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine LBSideEffectFree was not LBSideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBSideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBExternallyPure) == LBExternallySideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine LBExternallyPure was not LBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBExternallyPure})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBExternallySideEffectFree) == LBExternallySideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine LBExternallySideEffectFree was not LBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBExternallySideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBDPure(Set.empty)) == LBDSideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine LBDPure(Set.empty) was not LBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBDPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBDSideEffectFree(Set.empty)) == LBDSideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine LBDSideEffectFree(Set.empty) was not LBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBDExternallyPure(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine LBDExternallyPure(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CPureWithoutAllocations) == CLBSideEffectFreeWithoutAllocations,
-            "LBSideEffectFreeWithoutAllocations combine CPureWithoutAllocations was not CLBSideEffectFreeWithoutAllocations"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CPureWithoutAllocations})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFreeWithoutAllocations,
-            "LBSideEffectFreeWithoutAllocations combine CLBSideEffectFreeWithoutAllocations was not CLBSideEffectFreeWithoutAllocations"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBSideEffectFreeWithoutAllocations})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBPure) == CLBSideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine CLBPure was not CLBSideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBPure})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBSideEffectFree) == CLBSideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine CLBSideEffectFree was not CLBSideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBSideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBExternallyPure) == CLBExternallySideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine CLBExternallyPure was not CLBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBExternallyPure})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree,
-            "LBSideEffectFreeWithoutAllocations combine CLBExternallySideEffectFree was not CLBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBExternallySideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBDPure(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine CLBDPure(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBDPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine MaybePure) == MaybePure,
-            "LBSideEffectFreeWithoutAllocations combine MaybePure was not MaybePure"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine MaybePure})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBImpure) == LBImpure,
-            "LBSideEffectFreeWithoutAllocations combine LBImpure was not LBImpure"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBImpure})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBSideEffectFreeWithoutAllocations combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBSideEffectFreeWithoutAllocations combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBSideEffectFreeWithoutAllocations combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownProperty})"
-        )
+        assert((LBSideEffectFreeWithoutAllocations combine LBPure) == LBSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBSideEffectFree) == LBSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBExternallyPure) == LBExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBExternallySideEffectFree) == LBExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBDPure) == LBDSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBDSideEffectFree) == LBDSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBDExternallyPure) == LBDExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CPureWithoutAllocations) == CLBSideEffectFreeWithoutAllocations)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFreeWithoutAllocations)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBPure) == CLBSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBSideEffectFree) == CLBSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBExternallyPure) == CLBExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBDPure) == CLBDSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree) == CLBDSideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBDExternallyPure) == CLBDExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree)
+        assert((LBSideEffectFreeWithoutAllocations combine MaybePure) == MaybePure)
+        assert((LBSideEffectFreeWithoutAllocations combine LBImpure) == LBImpure)
 
-        assert(
-            (LBPure combine LBSideEffectFree) == LBSideEffectFree,
-            "LBPure combine LBSideEffectFree was not LBSideEffectFree"+
-                s" (was ${LBPure combine LBSideEffectFree})"
-        )
-        assert(
-            (LBPure combine LBExternallyPure) == LBExternallyPure,
-            "LBPure combine LBExternallyPure was not LBExternallyPure"+
-                s" (was ${LBPure combine LBExternallyPure})"
-        )
-        assert(
-            (LBPure combine LBExternallySideEffectFree) == LBExternallySideEffectFree,
-            "LBPure combine LBExternallySideEffectFree was not LBExternallySideEffectFree"+
-                s" (was ${LBPure combine LBExternallySideEffectFree})"
-        )
-        assert(
-            (LBPure combine LBDPure(Set.empty)) == LBDPure(Set.empty),
-            "LBPure combine LBDPure(Set.empty) was not LBDPure(Set.empty)"+
-                s" (was ${LBPure combine LBDPure(Set.empty)})"
-        )
-        assert(
-            (LBPure combine LBDSideEffectFree(Set.empty)) == LBDSideEffectFree(Set.empty),
-            "LBPure combine LBDSideEffectFree(Set.empty) was not LBDSideEffectFree(Set.empty)"+
-                s" (was ${LBPure combine LBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBPure combine LBDExternallyPure(Set.empty)) == LBDExternallyPure(Set.empty),
-            "LBPure combine LBDExternallyPure(Set.empty) was not LBDExternallyPure(Set.empty)"+
-                s" (was ${LBPure combine LBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBPure combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBPure combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBPure combine LBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBPure combine CPureWithoutAllocations) == CLBPure,
-            "LBPure combine CPureWithoutAllocations was not CLBPure"+
-                s" (was ${LBPure combine CPureWithoutAllocations})"
-        )
-        assert(
-            (LBPure combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFree,
-            "LBPure combine CLBSideEffectFreeWithoutAllocations was not CLBSideEffectFree"+
-                s" (was ${LBPure combine CLBSideEffectFreeWithoutAllocations})"
-        )
-        assert(
-            (LBPure combine CLBPure) == CLBPure,
-            "LBPure combine CLBPure was not CLBPure"+
-                s" (was ${LBPure combine CLBPure})"
-        )
-        assert(
-            (LBPure combine CLBSideEffectFree) == CLBSideEffectFree,
-            "LBPure combine CLBSideEffectFree was not CLBSideEffectFree"+
-                s" (was ${LBPure combine CLBSideEffectFree})"
-        )
-        assert(
-            (LBPure combine CLBExternallyPure) == CLBExternallyPure,
-            "LBPure combine CLBExternallyPure was not CLBExternallyPure"+
-                s" (was ${LBPure combine CLBExternallyPure})"
-        )
-        assert(
-            (LBPure combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree,
-            "LBPure combine CLBExternallySideEffectFree was not CLBExternallySideEffectFree"+
-                s" (was ${LBPure combine CLBExternallySideEffectFree})"
-        )
-        assert(
-            (LBPure combine CLBDPure(Set.empty)) == CLBDPure(Set.empty),
-            "LBPure combine CLBDPure(Set.empty) was not CLBDPure(Set.empty)"+
-                s" (was ${LBPure combine CLBDPure(Set.empty)})"
-        )
-        assert(
-            (LBPure combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBPure combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBPure combine CLBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBPure combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "LBPure combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBPure combine CLBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBPure combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBPure combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBPure combine CLBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBPure combine MaybePure) == MaybePure,
-            "LBPure combine MaybePure was not MaybePure"+
-                s" (was ${LBPure combine MaybePure})"
-        )
-        assert(
-            (LBPure combine LBImpure) == LBImpure,
-            "LBPure combine LBImpure was not LBImpure"+
-                s" (was ${LBPure combine LBImpure})"
-        )
-        assert(
-            (LBPure combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBPure combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBPure combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBPure combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBPure combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBPure combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBPure combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBPure combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBPure combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBPure combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBPure combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBPure combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBPure combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBPure combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBPure combine LBImpureDueToUnknownProperty})"
-        )
+        assert((LBPure combine LBSideEffectFree) == LBSideEffectFree)
+        assert((LBPure combine LBExternallyPure) == LBExternallyPure)
+        assert((LBPure combine LBExternallySideEffectFree) == LBExternallySideEffectFree)
+        assert((LBPure combine LBDPure) == LBDPure)
+        assert((LBPure combine LBDSideEffectFree) == LBDSideEffectFree)
+        assert((LBPure combine LBDExternallyPure) == LBDExternallyPure)
+        assert((LBPure combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree)
+        assert((LBPure combine CPureWithoutAllocations) == CLBPure)
+        assert((LBPure combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFree)
+        assert((LBPure combine CLBPure) == CLBPure)
+        assert((LBPure combine CLBSideEffectFree) == CLBSideEffectFree)
+        assert((LBPure combine CLBExternallyPure) == CLBExternallyPure)
+        assert((LBPure combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree)
+        assert((LBPure combine CLBDPure) == CLBDPure)
+        assert((LBPure combine CLBDSideEffectFree) == CLBDSideEffectFree)
+        assert((LBPure combine CLBDExternallyPure) == CLBDExternallyPure)
+        assert((LBPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree)
+        assert((LBPure combine MaybePure) == MaybePure)
+        assert((LBPure combine LBImpure) == LBImpure)
 
-        assert(
-            (LBSideEffectFree combine LBExternallyPure) == LBExternallySideEffectFree,
-            "LBSideEffectFree combine LBExternallyPure was not LBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFree combine LBExternallyPure})"
-        )
-        assert(
-            (LBSideEffectFree combine LBExternallySideEffectFree) == LBExternallySideEffectFree,
-            "LBSideEffectFree combine LBExternallySideEffectFree was not LBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFree combine LBExternallySideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFree combine LBDPure(Set.empty)) == LBDSideEffectFree(Set.empty),
-            "LBSideEffectFree combine LBDPure(Set.empty) was not LBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine LBDPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine LBDSideEffectFree(Set.empty)) == LBDSideEffectFree(Set.empty),
-            "LBSideEffectFree combine LBDSideEffectFree(Set.empty) was not LBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine LBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine LBDExternallyPure(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFree combine LBDExternallyPure(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine LBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFree combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine LBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine CPureWithoutAllocations) == CLBSideEffectFree,
-            "LBSideEffectFree combine CPureWithoutAllocations was not CLBSideEffectFree"+
-                s" (was ${LBSideEffectFree combine CPureWithoutAllocations})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFree,
-            "LBSideEffectFree combine CLBSideEffectFreeWithoutAllocations was not CLBSideEffectFree"+
-                s" (was ${LBSideEffectFree combine CLBSideEffectFreeWithoutAllocations})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBPure) == CLBSideEffectFree,
-            "LBSideEffectFree combine CLBPure was not CLBSideEffectFree"+
-                s" (was ${LBSideEffectFree combine CLBPure})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBSideEffectFree) == CLBSideEffectFree,
-            "LBSideEffectFree combine CLBSideEffectFree was not CLBSideEffectFree"+
-                s" (was ${LBSideEffectFree combine CLBSideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBExternallyPure) == CLBExternallySideEffectFree,
-            "LBSideEffectFree combine CLBExternallyPure was not CLBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFree combine CLBExternallyPure})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree,
-            "LBSideEffectFree combine CLBExternallySideEffectFree was not CLBExternallySideEffectFree"+
-                s" (was ${LBSideEffectFree combine CLBExternallySideEffectFree})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBDPure(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBSideEffectFree combine CLBDPure(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine CLBDPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBSideEffectFree combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine CLBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFree combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine CLBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBSideEffectFree combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBSideEffectFree combine CLBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBSideEffectFree combine MaybePure) == MaybePure,
-            "LBSideEffectFree combine MaybePure was not MaybePure"+
-                s" (was ${LBSideEffectFree combine MaybePure})"
-        )
-        assert(
-            (LBSideEffectFree combine LBImpure) == LBImpure,
-            "LBSideEffectFree combine LBImpure was not LBImpure"+
-                s" (was ${LBSideEffectFree combine LBImpure})"
-        )
-        assert(
-            (LBSideEffectFree combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBSideEffectFree combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBSideEffectFree combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBSideEffectFree combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBSideEffectFree combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBSideEffectFree combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBSideEffectFree combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBSideEffectFree combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBSideEffectFree combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBSideEffectFree combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBSideEffectFree combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBSideEffectFree combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBSideEffectFree combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBSideEffectFree combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBSideEffectFree combine LBImpureDueToUnknownProperty})"
-        )
+        assert((LBSideEffectFree combine LBExternallyPure) == LBExternallySideEffectFree)
+        assert((LBSideEffectFree combine LBExternallySideEffectFree) == LBExternallySideEffectFree)
+        assert((LBSideEffectFree combine LBDPure) == LBDSideEffectFree)
+        assert((LBSideEffectFree combine LBDSideEffectFree) == LBDSideEffectFree)
+        assert((LBSideEffectFree combine LBDExternallyPure) == LBDExternallySideEffectFree)
+        assert((LBSideEffectFree combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree)
+        assert((LBSideEffectFree combine CPureWithoutAllocations) == CLBSideEffectFree)
+        assert((LBSideEffectFree combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFree)
+        assert((LBSideEffectFree combine CLBPure) == CLBSideEffectFree)
+        assert((LBSideEffectFree combine CLBSideEffectFree) == CLBSideEffectFree)
+        assert((LBSideEffectFree combine CLBExternallyPure) == CLBExternallySideEffectFree)
+        assert((LBSideEffectFree combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree)
+        assert((LBSideEffectFree combine CLBDPure) == CLBDSideEffectFree)
+        assert((LBSideEffectFree combine CLBDSideEffectFree) == CLBDSideEffectFree)
+        assert((LBSideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree)
+        assert((LBSideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree)
+        assert((LBSideEffectFree combine MaybePure) == MaybePure)
+        assert((LBSideEffectFree combine LBImpure) == LBImpure)
 
         assert(
             (LBExternallyPure combine LBExternallySideEffectFree) == LBExternallySideEffectFree,
@@ -588,24 +236,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${LBExternallyPure combine LBExternallySideEffectFree})"
         )
         assert(
-            (LBExternallyPure combine LBDPure(Set.empty)) == LBDExternallyPure(Set.empty),
-            "LBExternallyPure combine LBDPure(Set.empty) was not LBDExternallyPure(Set.empty)"+
-                s" (was ${LBExternallyPure combine LBDPure(Set.empty)})"
+            (LBExternallyPure combine LBDPure) == LBDExternallyPure,
+            "LBExternallyPure combine LBDPure was not LBDExternallyPure"+
+                s" (was ${LBExternallyPure combine LBDPure})"
         )
         assert(
-            (LBExternallyPure combine LBDSideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBExternallyPure combine LBDSideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallyPure combine LBDSideEffectFree(Set.empty)})"
+            (LBExternallyPure combine LBDSideEffectFree) == LBDExternallySideEffectFree,
+            "LBExternallyPure combine LBDSideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBExternallyPure combine LBDSideEffectFree})"
         )
         assert(
-            (LBExternallyPure combine LBDExternallyPure(Set.empty)) == LBDExternallyPure(Set.empty),
-            "LBExternallyPure combine LBDExternallyPure(Set.empty) was not LBDExternallyPure(Set.empty)"+
-                s" (was ${LBExternallyPure combine LBDExternallyPure(Set.empty)})"
+            (LBExternallyPure combine LBDExternallyPure) == LBDExternallyPure,
+            "LBExternallyPure combine LBDExternallyPure was not LBDExternallyPure"+
+                s" (was ${LBExternallyPure combine LBDExternallyPure})"
         )
         assert(
-            (LBExternallyPure combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBExternallyPure combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallyPure combine LBDExternallySideEffectFree(Set.empty)})"
+            (LBExternallyPure combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree,
+            "LBExternallyPure combine LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBExternallyPure combine LBDExternallySideEffectFree})"
         )
         assert(
             (LBExternallyPure combine CPureWithoutAllocations) == CLBExternallyPure,
@@ -638,24 +286,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${LBExternallyPure combine CLBExternallySideEffectFree})"
         )
         assert(
-            (LBExternallyPure combine CLBDPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "LBExternallyPure combine CLBDPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBExternallyPure combine CLBDPure(Set.empty)})"
+            (LBExternallyPure combine CLBDPure) == CLBDExternallyPure,
+            "LBExternallyPure combine CLBDPure was not CLBDExternallyPure"+
+                s" (was ${LBExternallyPure combine CLBDPure})"
         )
         assert(
-            (LBExternallyPure combine CLBDSideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBExternallyPure combine CLBDSideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallyPure combine CLBDSideEffectFree(Set.empty)})"
+            (LBExternallyPure combine CLBDSideEffectFree) == CLBDExternallySideEffectFree,
+            "LBExternallyPure combine CLBDSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBExternallyPure combine CLBDSideEffectFree})"
         )
         assert(
-            (LBExternallyPure combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "LBExternallyPure combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBExternallyPure combine CLBDExternallyPure(Set.empty)})"
+            (LBExternallyPure combine CLBDExternallyPure) == CLBDExternallyPure,
+            "LBExternallyPure combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${LBExternallyPure combine CLBDExternallyPure})"
         )
         assert(
-            (LBExternallyPure combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBExternallyPure combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallyPure combine CLBDExternallySideEffectFree(Set.empty)})"
+            (LBExternallyPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBExternallyPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBExternallyPure combine CLBDExternallySideEffectFree})"
         )
         assert(
             (LBExternallyPure combine MaybePure) == MaybePure,
@@ -667,51 +315,26 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             "LBExternallyPure combine LBImpure was not LBImpure"+
                 s" (was ${LBExternallyPure combine LBImpure})"
         )
-        assert(
-            (LBExternallyPure combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBExternallyPure combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBExternallyPure combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBExternallyPure combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBExternallyPure combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBExternallyPure combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBExternallyPure combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBExternallyPure combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBExternallyPure combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBExternallyPure combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBExternallyPure combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBExternallyPure combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBExternallyPure combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBExternallyPure combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBExternallyPure combine LBImpureDueToUnknownProperty})"
-        )
 
         assert(
-            (LBExternallySideEffectFree combine LBDPure(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine LBDPure(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine LBDPure(Set.empty)})"
+            (LBExternallySideEffectFree combine LBDPure) == LBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine LBDPure was not LBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine LBDPure})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBDSideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine LBDSideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine LBDSideEffectFree(Set.empty)})"
+            (LBExternallySideEffectFree combine LBDSideEffectFree) == LBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine LBDSideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine LBDSideEffectFree})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBDExternallyPure(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine LBDExternallyPure(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine LBDExternallyPure(Set.empty)})"
+            (LBExternallySideEffectFree combine LBDExternallyPure) == LBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine LBDExternallyPure was not LBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine LBDExternallyPure})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine LBDExternallySideEffectFree(Set.empty)})"
+            (LBExternallySideEffectFree combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine LBDExternallySideEffectFree})"
         )
         assert(
             (LBExternallySideEffectFree combine CPureWithoutAllocations) == CLBExternallySideEffectFree,
@@ -744,24 +367,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${LBExternallySideEffectFree combine CLBExternallySideEffectFree})"
         )
         assert(
-            (LBExternallySideEffectFree combine CLBDPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine CLBDPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine CLBDPure(Set.empty)})"
+            (LBExternallySideEffectFree combine CLBDPure) == CLBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine CLBDPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine CLBDPure})"
         )
         assert(
-            (LBExternallySideEffectFree combine CLBDSideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine CLBDSideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine CLBDSideEffectFree(Set.empty)})"
+            (LBExternallySideEffectFree combine CLBDSideEffectFree) == CLBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine CLBDSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine CLBDSideEffectFree})"
         )
         assert(
-            (LBExternallySideEffectFree combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine CLBDExternallyPure(Set.empty)})"
+            (LBExternallySideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine CLBDExternallyPure})"
         )
         assert(
-            (LBExternallySideEffectFree combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBExternallySideEffectFree combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBExternallySideEffectFree combine CLBDExternallySideEffectFree(Set.empty)})"
+            (LBExternallySideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBExternallySideEffectFree combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBExternallySideEffectFree combine CLBDExternallySideEffectFree})"
         )
         assert(
             (LBExternallySideEffectFree combine MaybePure) == MaybePure,
@@ -773,1029 +396,286 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             "LBExternallySideEffectFree combine LBImpure was not LBImpure"+
                 s" (was ${LBExternallySideEffectFree combine LBImpure})"
         )
+
         assert(
-            (LBExternallySideEffectFree combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBExternallySideEffectFree combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBExternallySideEffectFree combine LBImpureDueToSynchronization})"
+            (LBDPure combine LBDSideEffectFree) == LBDSideEffectFree,
+            "LBDPure combine LBDSideEffectFree was not LBDSideEffectFree"+
+                s" (was ${LBDPure combine LBDSideEffectFree})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBExternallySideEffectFree combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBExternallySideEffectFree combine LBImpureDueToHeapModification})"
+            (LBDPure combine LBDExternallyPure) == LBDExternallyPure,
+            "LBDPure combine LBDExternallyPure was not LBDExternallyPure"+
+                s" (was ${LBDPure combine LBDExternallyPure})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBExternallySideEffectFree combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBExternallySideEffectFree combine LBImpureDueToFutureExtension})"
+            (LBDPure combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree,
+            "LBDPure combine LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBDPure combine LBDExternallySideEffectFree})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBExternallySideEffectFree combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBExternallySideEffectFree combine LBImpureDueToUnknownEntity})"
+            (LBDPure combine CPureWithoutAllocations) == CLBDPure,
+            "LBDPure combine CPureWithoutAllocations was not CLBDPure"+
+                s" (was ${LBDPure combine CPureWithoutAllocations})"
         )
         assert(
-            (LBExternallySideEffectFree combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBExternallySideEffectFree combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBExternallySideEffectFree combine LBImpureDueToUnknownProperty})"
+            (LBDPure combine CLBSideEffectFreeWithoutAllocations) == CLBDSideEffectFree,
+            "LBDPure combine CLBSideEffectFreeWithoutAllocations was not CLBDSideEffectFree"+
+                s" (was ${LBDPure combine CLBSideEffectFreeWithoutAllocations})"
+        )
+        assert(
+            (LBDPure combine CLBPure) == CLBDPure,
+            "LBDPure combine CLBPure was not CLBDPure"+
+                s" (was ${LBDPure combine CLBPure})"
+        )
+        assert(
+            (LBDPure combine CLBSideEffectFree) == CLBDSideEffectFree,
+            "LBDPure combine CLBSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${LBDPure combine CLBSideEffectFree})"
+        )
+        assert(
+            (LBDPure combine CLBExternallyPure) == CLBDExternallyPure,
+            "LBDPure combine CLBExternallyPure was not CLBDExternallyPure"+
+                s" (was ${LBDPure combine CLBExternallyPure})"
+        )
+        assert(
+            (LBDPure combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDPure combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDPure combine CLBExternallySideEffectFree})"
+        )
+        assert(
+            (LBDPure combine CLBDPure) == CLBDPure,
+            "LBDPure combine CLBDPure was not CLBDPure"+
+                s" (was ${LBDPure combine CLBDPure})"
+        )
+        assert(
+            (LBDPure combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "LBDPure combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${LBDPure combine CLBDSideEffectFree})"
+        )
+        assert(
+            (LBDPure combine CLBDExternallyPure) == CLBDExternallyPure,
+            "LBDPure combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${LBDPure combine CLBDExternallyPure})"
+        )
+        assert(
+            (LBDPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDPure combine CLBDExternallySideEffectFree})"
+        )
+        assert(
+            (LBDPure combine MaybePure) == MaybePure,
+            "LBDPure combine MaybePure was not MaybePure"+
+                s" (was ${LBDPure combine MaybePure})"
+        )
+        assert(
+            (LBDPure combine LBImpure) == LBImpure,
+            "LBDPure combine LBImpure was not LBImpure"+
+                s" (was ${LBDPure combine LBImpure})"
         )
 
         assert(
-            (LBDPure(Set.empty) combine LBDSideEffectFree(Set.empty)) == LBDSideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine LBDSideEffectFree(Set.empty) was not LBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine LBDSideEffectFree(Set.empty)})"
+            (LBDSideEffectFree combine LBDExternallyPure) == LBDExternallySideEffectFree,
+            "LBDSideEffectFree combine LBDExternallyPure was not LBDExternallySideEffectFree"+
+                s" (was ${LBDSideEffectFree combine LBDExternallyPure})"
         )
         assert(
-            (LBDPure(Set.empty) combine LBDExternallyPure(Set.empty)) == LBDExternallyPure(Set.empty),
-            "LBDPure(Set.empty) combine LBDExternallyPure(Set.empty) was not LBDExternallyPure(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine LBDExternallyPure(Set.empty)})"
+            (LBDSideEffectFree combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree,
+            "LBDSideEffectFree combine LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBDSideEffectFree combine LBDExternallySideEffectFree})"
         )
         assert(
-            (LBDPure(Set.empty) combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine LBDExternallySideEffectFree(Set.empty)})"
+            (LBDSideEffectFree combine CPureWithoutAllocations) == CLBDSideEffectFree,
+            "LBDSideEffectFree combine CPureWithoutAllocations was not CLBDSideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CPureWithoutAllocations})"
         )
         assert(
-            (LBDPure(Set.empty) combine CPureWithoutAllocations) == CLBDPure(Set.empty),
-            "LBDPure(Set.empty) combine CPureWithoutAllocations was not CLBDPure(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CPureWithoutAllocations})"
+            (LBDSideEffectFree combine CLBSideEffectFreeWithoutAllocations) == CLBDSideEffectFree,
+            "LBDSideEffectFree combine CLBSideEffectFreeWithoutAllocations was not CLBDSideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBSideEffectFreeWithoutAllocations})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBSideEffectFreeWithoutAllocations) == CLBDSideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine CLBSideEffectFreeWithoutAllocations was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBSideEffectFreeWithoutAllocations})"
+            (LBDSideEffectFree combine CLBPure) == CLBDSideEffectFree,
+            "LBDSideEffectFree combine CLBPure was not CLBDSideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBPure})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBPure) == CLBDPure(Set.empty),
-            "LBDPure(Set.empty) combine CLBPure was not CLBDPure(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBPure})"
+            (LBDSideEffectFree combine CLBSideEffectFree) == CLBDSideEffectFree,
+            "LBDSideEffectFree combine CLBSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBSideEffectFree})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBSideEffectFree) == CLBDSideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine CLBSideEffectFree was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBSideEffectFree})"
+            (LBDSideEffectFree combine CLBExternallyPure) == CLBDExternallySideEffectFree,
+            "LBDSideEffectFree combine CLBExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBExternallyPure})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBExternallyPure) == CLBDExternallyPure(Set.empty),
-            "LBDPure(Set.empty) combine CLBExternallyPure was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBExternallyPure})"
+            (LBDSideEffectFree combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDSideEffectFree combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBExternallySideEffectFree})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBExternallySideEffectFree})"
+            (LBDSideEffectFree combine CLBDPure) == CLBDSideEffectFree,
+            "LBDSideEffectFree combine CLBDPure was not CLBDSideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBDPure})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBDPure(Set.empty)) == CLBDPure(Set.empty),
-            "LBDPure(Set.empty) combine CLBDPure(Set.empty) was not CLBDPure(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBDPure(Set.empty)})"
+            (LBDSideEffectFree combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "LBDSideEffectFree combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBDSideEffectFree})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBDSideEffectFree(Set.empty)})"
+            (LBDSideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "LBDSideEffectFree combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBDExternallyPure})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "LBDPure(Set.empty) combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBDExternallyPure(Set.empty)})"
+            (LBDSideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDSideEffectFree combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDSideEffectFree combine CLBDExternallySideEffectFree})"
         )
         assert(
-            (LBDPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
+            (LBDSideEffectFree combine MaybePure) == MaybePure,
+            "LBDSideEffectFree combine MaybePure was not MaybePure"+
+                s" (was ${LBDSideEffectFree combine MaybePure})"
         )
         assert(
-            (LBDPure(Set.empty) combine MaybePure) == MaybePure,
-            "LBDPure(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${LBDPure(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (LBDPure(Set.empty) combine LBImpure) == LBImpure,
-            "LBDPure(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${LBDPure(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (LBDPure(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBDPure(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBDPure(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBDPure(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBDPure(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBDPure(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBDPure(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBDPure(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBDPure(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBDPure(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBDPure(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBDPure(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBDPure(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBDPure(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBDPure(Set.empty) combine LBImpureDueToUnknownProperty})"
+            (LBDSideEffectFree combine LBImpure) == LBImpure,
+            "LBDSideEffectFree combine LBImpure was not LBImpure"+
+                s" (was ${LBDSideEffectFree combine LBImpure})"
         )
 
         assert(
-            (LBDSideEffectFree(Set.empty) combine LBDExternallyPure(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine LBDExternallyPure(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBDExternallyPure(Set.empty)})"
+            (LBDExternallyPure combine LBDExternallySideEffectFree) == LBDExternallySideEffectFree,
+            "LBDExternallyPure combine LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
+                s" (was ${LBDExternallyPure combine LBDExternallySideEffectFree})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBDExternallySideEffectFree(Set.empty)})"
+            (LBDExternallyPure combine CPureWithoutAllocations) == CLBDExternallyPure,
+            "LBDExternallyPure combine CPureWithoutAllocations was not CLBDExternallyPure"+
+                s" (was ${LBDExternallyPure combine CPureWithoutAllocations})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CPureWithoutAllocations) == CLBDSideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CPureWithoutAllocations was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CPureWithoutAllocations})"
+            (LBDExternallyPure combine CLBSideEffectFreeWithoutAllocations) == CLBDExternallySideEffectFree,
+            "LBDExternallyPure combine CLBSideEffectFreeWithoutAllocations was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallyPure combine CLBSideEffectFreeWithoutAllocations})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBSideEffectFreeWithoutAllocations) == CLBDSideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBSideEffectFreeWithoutAllocations was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBSideEffectFreeWithoutAllocations})"
+            (LBDExternallyPure combine CLBPure) == CLBDExternallyPure,
+            "LBDExternallyPure combine CLBPure was not CLBDExternallyPure"+
+                s" (was ${LBDExternallyPure combine CLBPure})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBPure) == CLBDSideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBPure was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBPure})"
+            (LBDExternallyPure combine CLBSideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallyPure combine CLBSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallyPure combine CLBSideEffectFree})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBSideEffectFree) == CLBDSideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBSideEffectFree was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBSideEffectFree})"
+            (LBDExternallyPure combine CLBExternallyPure) == CLBDExternallyPure,
+            "LBDExternallyPure combine CLBExternallyPure was not CLBDExternallyPure"+
+                s" (was ${LBDExternallyPure combine CLBExternallyPure})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBExternallyPure) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBExternallyPure was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBExternallyPure})"
+            (LBDExternallyPure combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallyPure combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallyPure combine CLBExternallySideEffectFree})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBExternallySideEffectFree})"
+            (LBDExternallyPure combine CLBDPure) == CLBDExternallyPure,
+            "LBDExternallyPure combine CLBDPure was not CLBDExternallyPure"+
+                s" (was ${LBDExternallyPure combine CLBDPure})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBDPure(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBDPure(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBDPure(Set.empty)})"
+            (LBDExternallyPure combine CLBDSideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallyPure combine CLBDSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallyPure combine CLBDSideEffectFree})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBDSideEffectFree(Set.empty)})"
+            (LBDExternallyPure combine CLBDExternallyPure) == CLBDExternallyPure,
+            "LBDExternallyPure combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${LBDExternallyPure combine CLBDExternallyPure})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty)})"
+            (LBDExternallyPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallyPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallyPure combine CLBDExternallySideEffectFree})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDSideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
+            (LBDExternallyPure combine MaybePure) == MaybePure,
+            "LBDExternallyPure combine MaybePure was not MaybePure"+
+                s" (was ${LBDExternallyPure combine MaybePure})"
         )
         assert(
-            (LBDSideEffectFree(Set.empty) combine MaybePure) == MaybePure,
-            "LBDSideEffectFree(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (LBDSideEffectFree(Set.empty) combine LBImpure) == LBImpure,
-            "LBDSideEffectFree(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (LBDSideEffectFree(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBDSideEffectFree(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBDSideEffectFree(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBDSideEffectFree(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBDSideEffectFree(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBDSideEffectFree(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty})"
+            (LBDExternallyPure combine LBImpure) == LBImpure,
+            "LBDExternallyPure combine LBImpure was not LBImpure"+
+                s" (was ${LBDExternallyPure combine LBImpure})"
         )
 
         assert(
-            (LBDExternallyPure(Set.empty) combine LBDExternallySideEffectFree(Set.empty)) == LBDExternallySideEffectFree(Set.empty),
-            "LBDExternallyPure(Set.empty) combine LBDExternallySideEffectFree(Set.empty) was not LBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBDExternallySideEffectFree(Set.empty)})"
+            (LBDExternallySideEffectFree combine CPureWithoutAllocations) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CPureWithoutAllocations was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CPureWithoutAllocations})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CPureWithoutAllocations) == CLBDExternallyPure(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CPureWithoutAllocations was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CPureWithoutAllocations})"
+            (LBDExternallySideEffectFree combine CLBSideEffectFreeWithoutAllocations) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBSideEffectFreeWithoutAllocations was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBSideEffectFreeWithoutAllocations})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBSideEffectFreeWithoutAllocations) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBSideEffectFreeWithoutAllocations was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBSideEffectFreeWithoutAllocations})"
+            (LBDExternallySideEffectFree combine CLBPure) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBPure})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBPure) == CLBDExternallyPure(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBPure was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBPure})"
+            (LBDExternallySideEffectFree combine CLBSideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBSideEffectFree})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBSideEffectFree) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBSideEffectFree was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBSideEffectFree})"
+            (LBDExternallySideEffectFree combine CLBExternallyPure) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBExternallyPure})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBExternallyPure) == CLBDExternallyPure(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBExternallyPure was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBExternallyPure})"
+            (LBDExternallySideEffectFree combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBExternallySideEffectFree})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBExternallySideEffectFree})"
+            (LBDExternallySideEffectFree combine CLBDPure) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBDPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBDPure})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBDPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBDPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBDPure(Set.empty)})"
+            (LBDExternallySideEffectFree combine CLBDSideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBDSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBDSideEffectFree})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBDSideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBDSideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBDSideEffectFree(Set.empty)})"
+            (LBDExternallySideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBDExternallyPure})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBDExternallyPure(Set.empty)})"
+            (LBDExternallySideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "LBDExternallySideEffectFree combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${LBDExternallySideEffectFree combine CLBDExternallySideEffectFree})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallyPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallyPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
+            (LBDExternallySideEffectFree combine MaybePure) == MaybePure,
+            "LBDExternallySideEffectFree combine MaybePure was not MaybePure"+
+                s" (was ${LBDExternallySideEffectFree combine MaybePure})"
         )
         assert(
-            (LBDExternallyPure(Set.empty) combine MaybePure) == MaybePure,
-            "LBDExternallyPure(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${LBDExternallyPure(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (LBDExternallyPure(Set.empty) combine LBImpure) == LBImpure,
-            "LBDExternallyPure(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (LBDExternallyPure(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBDExternallyPure(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBDExternallyPure(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBDExternallyPure(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBDExternallyPure(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBDExternallyPure(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBDExternallyPure(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBDExternallyPure(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBDExternallyPure(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBDExternallyPure(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBDExternallyPure(Set.empty) combine LBImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CPureWithoutAllocations) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CPureWithoutAllocations was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CPureWithoutAllocations})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBSideEffectFreeWithoutAllocations) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBSideEffectFreeWithoutAllocations was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBSideEffectFreeWithoutAllocations})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBPure) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBPure was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBPure})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBSideEffectFree) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBSideEffectFree was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBSideEffectFree})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBExternallyPure) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBExternallyPure was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBExternallyPure})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBExternallySideEffectFree) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBExternallySideEffectFree was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBExternallySideEffectFree})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBDPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBDPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBDPure(Set.empty)})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBDSideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBDSideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBDSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty)})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "LBDExternallySideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine MaybePure) == MaybePure,
-            "LBDExternallySideEffectFree(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine LBImpure) == LBImpure,
-            "LBDExternallySideEffectFree(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${LBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty})"
-                >>>>>>> f75a3b6c630b1fe1fd4e349685d5a8d39a6dc58b
+            (LBDExternallySideEffectFree combine LBImpure) == LBImpure,
+            "LBDExternallySideEffectFree combine LBImpure was not LBImpure"+
+                s" (was ${LBDExternallySideEffectFree combine LBImpure})"
         )
     }
 
     it should "return the correct purity levels for conditional levels" in {
-        assert(
-            <<<<<<< HEAD
-                (ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations) == ConditionallySideEffectFreeWithoutAllocations,
-            "ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations was not ConditionallySideEffectFreeWithoutAllocations"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallySideEffectFreeWithoutAllocations})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyPure) == ConditionallyPure,
-            "ConditionallyPureWithoutAllocations meet ConditionallyPure was not ConditionallyPure"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyPure})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallySideEffectFree) == ConditionallySideEffectFree,
-            "ConditionallyPureWithoutAllocations meet ConditionallySideEffectFree was not ConditionallySideEffectFree"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallySideEffectFree})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyExternallyPure) == ConditionallyExternallyPure,
-            "ConditionallyPureWithoutAllocations meet ConditionallyExternallyPure was not ConditionallyExternallyPure"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyExternallyPure})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyExternallySideEffectFree) == ConditionallyExternallySideEffectFree,
-            "ConditionallyPureWithoutAllocations meet ConditionallyExternallySideEffectFree was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyExternallySideEffectFree})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificPure(Set.empty)) == ConditionallyDomainSpecificPure(Set.empty),
-            "ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificPure(Set.empty) was not ConditionallyDomainSpecificPure(Set.empty)"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallyPure(Set.empty),
-            "ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallyPure(Set.empty)"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet MaybePure) == MaybePure,
-            "ConditionallyPureWithoutAllocations meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyPureWithoutAllocations meet MaybePure})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet Impure) == Impure,
-            "ConditionallyPureWithoutAllocations meet Impure was not Impure"+
-                s" (was ${ConditionallyPureWithoutAllocations meet Impure})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyPureWithoutAllocations meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyPureWithoutAllocations meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyPureWithoutAllocations meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyPureWithoutAllocations meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyPureWithoutAllocations meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyPureWithoutAllocations meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyPureWithoutAllocations meet ImpureDueToUnknownProperty})"
-        )
 
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyPure) == ConditionallySideEffectFree,
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyPure was not ConditionallySideEffectFree"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyPure})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallySideEffectFree) == ConditionallySideEffectFree,
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallySideEffectFree was not ConditionallySideEffectFree"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallySideEffectFree})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyExternallyPure) == ConditionallyExternallySideEffectFree,
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyExternallyPure was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyExternallyPure})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyExternallySideEffectFree) == ConditionallyExternallySideEffectFree,
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyExternallySideEffectFree was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyExternallySideEffectFree})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificPure(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificPure(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet MaybePure) == MaybePure,
-            "ConditionallySideEffectFreeWithoutAllocations meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet MaybePure})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet Impure) == Impure,
-            "ConditionallySideEffectFreeWithoutAllocations meet Impure was not Impure"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet Impure})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallySideEffectFreeWithoutAllocations meet ImpureDueToUnknownProperty})"
-        )
+        assert((MaybePure combine Impure) == Impure)
 
-        assert(
-            (ConditionallyPure meet ConditionallySideEffectFree) == ConditionallySideEffectFree,
-            "ConditionallyPure meet ConditionallySideEffectFree was not ConditionallySideEffectFree"+
-                s" (was ${ConditionallyPure meet ConditionallySideEffectFree})"
-        )
-        assert(
-            (ConditionallyPure meet ConditionallyExternallyPure) == ConditionallyExternallyPure,
-            "ConditionallyPure meet ConditionallyExternallyPure was not ConditionallyExternallyPure"+
-                s" (was ${ConditionallyPure meet ConditionallyExternallyPure})"
-        )
-        assert(
-            (ConditionallyPure meet ConditionallyExternallySideEffectFree) == ConditionallyExternallySideEffectFree,
-            "ConditionallyPure meet ConditionallyExternallySideEffectFree was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallyPure meet ConditionallyExternallySideEffectFree})"
-        )
-        assert(
-            (ConditionallyPure meet ConditionallyDomainSpecificPure(Set.empty)) == ConditionallyDomainSpecificPure(Set.empty),
-            "ConditionallyPure meet ConditionallyDomainSpecificPure(Set.empty) was not ConditionallyDomainSpecificPure(Set.empty)"+
-                s" (was ${ConditionallyPure meet ConditionallyDomainSpecificPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPure meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallyPure meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyPure meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPure meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallyPure(Set.empty),
-            "ConditionallyPure meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallyPure(Set.empty)"+
-                s" (was ${ConditionallyPure meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPure meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyPure meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyPure meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyPure meet MaybePure) == MaybePure,
-            "ConditionallyPure meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyPure meet MaybePure})"
-        )
-        assert(
-            (ConditionallyPure meet Impure) == Impure,
-            "ConditionallyPure meet Impure was not Impure"+
-                s" (was ${ConditionallyPure meet Impure})"
-        )
-        assert(
-            (ConditionallyPure meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyPure meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyPure meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyPure meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyPure meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyPure meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyPure meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyPure meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyPure meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyPure meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyPure meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyPure meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyPure meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyPure meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyPure meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallySideEffectFree meet ConditionallyExternallyPure) == ConditionallyExternallySideEffectFree,
-            "ConditionallySideEffectFree meet ConditionallyExternallyPure was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallySideEffectFree meet ConditionallyExternallyPure})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ConditionallyExternallySideEffectFree) == ConditionallyExternallySideEffectFree,
-            "ConditionallySideEffectFree meet ConditionallyExternallySideEffectFree was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallySideEffectFree meet ConditionallyExternallySideEffectFree})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ConditionallyDomainSpecificPure(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallySideEffectFree meet ConditionallyDomainSpecificPure(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFree meet ConditionallyDomainSpecificPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallySideEffectFree meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFree meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallySideEffectFree meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFree meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallySideEffectFree meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallySideEffectFree meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet MaybePure) == MaybePure,
-            "ConditionallySideEffectFree meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallySideEffectFree meet MaybePure})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet Impure) == Impure,
-            "ConditionallySideEffectFree meet Impure was not Impure"+
-                s" (was ${ConditionallySideEffectFree meet Impure})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallySideEffectFree meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallySideEffectFree meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallySideEffectFree meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallySideEffectFree meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallySideEffectFree meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallySideEffectFree meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallySideEffectFree meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallySideEffectFree meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallySideEffectFree meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallySideEffectFree meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallySideEffectFree meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallyExternallyPure meet ConditionallyExternallySideEffectFree) == ConditionallyExternallySideEffectFree,
-            "ConditionallyExternallyPure meet ConditionallyExternallySideEffectFree was not ConditionallyExternallySideEffectFree"+
-                s" (was ${ConditionallyExternallyPure meet ConditionallyExternallySideEffectFree})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ConditionallyDomainSpecificPure(Set.empty)) == ConditionallyDomainSpecificExternallyPure(Set.empty),
-            "ConditionallyExternallyPure meet ConditionallyDomainSpecificPure(Set.empty) was not ConditionallyDomainSpecificExternallyPure(Set.empty)"+
-                s" (was ${ConditionallyExternallyPure meet ConditionallyDomainSpecificPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyExternallyPure meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyExternallyPure meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallyPure(Set.empty),
-            "ConditionallyExternallyPure meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallyPure(Set.empty)"+
-                s" (was ${ConditionallyExternallyPure meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyExternallyPure meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyExternallyPure meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet MaybePure) == MaybePure,
-            "ConditionallyExternallyPure meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyExternallyPure meet MaybePure})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet Impure) == Impure,
-            "ConditionallyExternallyPure meet Impure was not Impure"+
-                s" (was ${ConditionallyExternallyPure meet Impure})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyExternallyPure meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyExternallyPure meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyExternallyPure meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyExternallyPure meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyExternallyPure meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyExternallyPure meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyExternallyPure meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyExternallyPure meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyExternallyPure meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyExternallyPure meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyExternallyPure meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificPure(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificPure(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet MaybePure) == MaybePure,
-            "ConditionallyExternallySideEffectFree meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyExternallySideEffectFree meet MaybePure})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet Impure) == Impure,
-            "ConditionallyExternallySideEffectFree meet Impure was not Impure"+
-                s" (was ${ConditionallyExternallySideEffectFree meet Impure})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyExternallySideEffectFree meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyExternallySideEffectFree meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyExternallySideEffectFree meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyExternallySideEffectFree meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyExternallySideEffectFree meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyExternallySideEffectFree meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyExternallySideEffectFree meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificSideEffectFree(Set.empty)) == ConditionallyDomainSpecificSideEffectFree(Set.empty),
-            "ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificSideEffectFree(Set.empty) was not ConditionallyDomainSpecificSideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificSideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallyPure(Set.empty),
-            "ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallyPure(Set.empty)"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet MaybePure) == MaybePure,
-            "ConditionallyDomainSpecificPure(Set.empty) meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet MaybePure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet Impure) == Impure,
-            "ConditionallyDomainSpecificPure(Set.empty) meet Impure was not Impure"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet Impure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyDomainSpecificPure(Set.empty) meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ConditionallyDomainSpecificExternallyPure(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ConditionallyDomainSpecificExternallyPure(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ConditionallyDomainSpecificExternallyPure(Set.empty)})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet MaybePure) == MaybePure,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet MaybePure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet Impure) == Impure,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet Impure was not Impure"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet Impure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyDomainSpecificSideEffectFree(Set.empty) meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)) == ConditionallyDomainSpecificExternallySideEffectFree(Set.empty),
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) was not ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet ConditionallyDomainSpecificExternallySideEffectFree(Set.empty)})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet MaybePure) == MaybePure,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet MaybePure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet Impure) == Impure,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet Impure was not Impure"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet Impure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyDomainSpecificExternallyPure(Set.empty) meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet MaybePure) == MaybePure,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet MaybePure was not MaybePure"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet MaybePure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet Impure) == Impure,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet Impure was not Impure"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet Impure})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToSynchronization) == ImpureDueToSynchronization,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToSynchronization was not ImpureDueToSynchronization"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToHeapModification) == ImpureDueToHeapModification,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToHeapModification was not ImpureDueToHeapModification"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToFutureExtension) == ImpureDueToFutureExtension,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToFutureExtension was not ImpureDueToFutureExtension"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToUnknownEntity) == ImpureDueToUnknownEntity,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToUnknownEntity was not ImpureDueToUnknownEntity"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToUnknownProperty) == ImpureDueToUnknownProperty,
-            "ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToUnknownProperty was not ImpureDueToUnknownProperty"+
-                s" (was ${ConditionallyDomainSpecificExternallySideEffectFree(Set.empty) meet ImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (MaybePure meet Impure) == MaybePure,
-            "MaybePure meet Impure was not MaybePure"+
-                s" (was ${MaybePure meet Impure})"
-        )
-        assert(
-            (MaybePure meet ImpureDueToSynchronization) == MaybePure,
-            "MaybePure meet ImpureDueToSynchronization was not MaybePure"+
-                s" (was ${MaybePure meet ImpureDueToSynchronization})"
-        )
-        assert(
-            (MaybePure meet ImpureDueToHeapModification) == MaybePure,
-            "MaybePure meet ImpureDueToHeapModification was not MaybePure"+
-                s" (was ${MaybePure meet ImpureDueToHeapModification})"
-        )
-        assert(
-            (MaybePure meet ImpureDueToFutureExtension) == MaybePure,
-            "MaybePure meet ImpureDueToFutureExtension was not MaybePure"+
-                s" (was ${MaybePure meet ImpureDueToFutureExtension})"
-        )
-        assert(
-            (MaybePure meet ImpureDueToUnknownEntity) == MaybePure,
-            "MaybePure meet ImpureDueToUnknownEntity was not MaybePure"+
-                s" (was ${MaybePure meet ImpureDueToUnknownEntity})"
-        )
-        assert(
-            (MaybePure meet ImpureDueToUnknownProperty) == MaybePure,
-            "MaybePure meet ImpureDueToUnknownProperty was not MaybePure"+
-                s" (was ${MaybePure meet ImpureDueToUnknownProperty})"
-                =======
-                (CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations) == CLBSideEffectFreeWithoutAllocations,
-            "CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations was not CLBSideEffectFreeWithoutAllocations"+
-                s" (was ${CPureWithoutAllocations combine CLBSideEffectFreeWithoutAllocations})"
-        )
         assert(
             (CPureWithoutAllocations combine CLBPure) == CLBPure,
             "CPureWithoutAllocations combine CLBPure was not CLBPure"+
@@ -1817,24 +697,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${CPureWithoutAllocations combine CLBExternallySideEffectFree})"
         )
         assert(
-            (CPureWithoutAllocations combine CLBDPure(Set.empty)) == CLBDPure(Set.empty),
-            "CPureWithoutAllocations combine CLBDPure(Set.empty) was not CLBDPure(Set.empty)"+
-                s" (was ${CPureWithoutAllocations combine CLBDPure(Set.empty)})"
+            (CPureWithoutAllocations combine CLBDPure) == CLBDPure,
+            "CPureWithoutAllocations combine CLBDPure was not CLBDPure"+
+                s" (was ${CPureWithoutAllocations combine CLBDPure})"
         )
         assert(
-            (CPureWithoutAllocations combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CPureWithoutAllocations combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CPureWithoutAllocations combine CLBDSideEffectFree(Set.empty)})"
+            (CPureWithoutAllocations combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "CPureWithoutAllocations combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${CPureWithoutAllocations combine CLBDSideEffectFree})"
         )
         assert(
-            (CPureWithoutAllocations combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "CPureWithoutAllocations combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${CPureWithoutAllocations combine CLBDExternallyPure(Set.empty)})"
+            (CPureWithoutAllocations combine CLBDExternallyPure) == CLBDExternallyPure,
+            "CPureWithoutAllocations combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${CPureWithoutAllocations combine CLBDExternallyPure})"
         )
         assert(
-            (CPureWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CPureWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CPureWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CPureWithoutAllocations combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CPureWithoutAllocations combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CPureWithoutAllocations combine CLBDExternallySideEffectFree})"
         )
         assert(
             (CPureWithoutAllocations combine MaybePure) == MaybePure,
@@ -1845,31 +725,6 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             (CPureWithoutAllocations combine LBImpure) == LBImpure,
             "CPureWithoutAllocations combine LBImpure was not LBImpure"+
                 s" (was ${CPureWithoutAllocations combine LBImpure})"
-        )
-        assert(
-            (CPureWithoutAllocations combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CPureWithoutAllocations combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CPureWithoutAllocations combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CPureWithoutAllocations combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CPureWithoutAllocations combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CPureWithoutAllocations combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CPureWithoutAllocations combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CPureWithoutAllocations combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CPureWithoutAllocations combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CPureWithoutAllocations combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CPureWithoutAllocations combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CPureWithoutAllocations combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CPureWithoutAllocations combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CPureWithoutAllocations combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CPureWithoutAllocations combine LBImpureDueToUnknownProperty})"
         )
 
         assert(
@@ -1893,24 +748,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBExternallySideEffectFree})"
         )
         assert(
-            (CLBSideEffectFreeWithoutAllocations combine CLBDPure(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CLBSideEffectFreeWithoutAllocations combine CLBDPure(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDPure(Set.empty)})"
+            (CLBSideEffectFreeWithoutAllocations combine CLBDPure) == CLBDSideEffectFree,
+            "CLBSideEffectFreeWithoutAllocations combine CLBDPure was not CLBDSideEffectFree"+
+                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDPure})"
         )
         assert(
-            (CLBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CLBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree(Set.empty)})"
+            (CLBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "CLBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDSideEffectFree})"
         )
         assert(
-            (CLBSideEffectFreeWithoutAllocations combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBSideEffectFreeWithoutAllocations combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDExternallyPure(Set.empty)})"
+            (CLBSideEffectFreeWithoutAllocations combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "CLBSideEffectFreeWithoutAllocations combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDExternallyPure})"
         )
         assert(
-            (CLBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBSideEffectFreeWithoutAllocations combine CLBDExternallySideEffectFree})"
         )
         assert(
             (CLBSideEffectFreeWithoutAllocations combine MaybePure) == MaybePure,
@@ -1921,31 +776,6 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             (CLBSideEffectFreeWithoutAllocations combine LBImpure) == LBImpure,
             "CLBSideEffectFreeWithoutAllocations combine LBImpure was not LBImpure"+
                 s" (was ${CLBSideEffectFreeWithoutAllocations combine LBImpure})"
-        )
-        assert(
-            (CLBSideEffectFreeWithoutAllocations combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBSideEffectFreeWithoutAllocations combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBSideEffectFreeWithoutAllocations combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBSideEffectFreeWithoutAllocations combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBSideEffectFreeWithoutAllocations combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBSideEffectFreeWithoutAllocations combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBSideEffectFreeWithoutAllocations combine LBImpureDueToUnknownProperty})"
         )
 
         assert(
@@ -1964,24 +794,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${CLBPure combine CLBExternallySideEffectFree})"
         )
         assert(
-            (CLBPure combine CLBDPure(Set.empty)) == CLBDPure(Set.empty),
-            "CLBPure combine CLBDPure(Set.empty) was not CLBDPure(Set.empty)"+
-                s" (was ${CLBPure combine CLBDPure(Set.empty)})"
+            (CLBPure combine CLBDPure) == CLBDPure,
+            "CLBPure combine CLBDPure was not CLBDPure"+
+                s" (was ${CLBPure combine CLBDPure})"
         )
         assert(
-            (CLBPure combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CLBPure combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CLBPure combine CLBDSideEffectFree(Set.empty)})"
+            (CLBPure combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "CLBPure combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${CLBPure combine CLBDSideEffectFree})"
         )
         assert(
-            (CLBPure combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "CLBPure combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${CLBPure combine CLBDExternallyPure(Set.empty)})"
+            (CLBPure combine CLBDExternallyPure) == CLBDExternallyPure,
+            "CLBPure combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${CLBPure combine CLBDExternallyPure})"
         )
         assert(
-            (CLBPure combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBPure combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBPure combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBPure combine CLBDExternallySideEffectFree})"
         )
         assert(
             (CLBPure combine MaybePure) == MaybePure,
@@ -1992,31 +822,6 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             (CLBPure combine LBImpure) == LBImpure,
             "CLBPure combine LBImpure was not LBImpure"+
                 s" (was ${CLBPure combine LBImpure})"
-        )
-        assert(
-            (CLBPure combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBPure combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBPure combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBPure combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBPure combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBPure combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBPure combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBPure combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBPure combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBPure combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBPure combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBPure combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBPure combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBPure combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBPure combine LBImpureDueToUnknownProperty})"
         )
 
         assert(
@@ -2030,24 +835,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${CLBSideEffectFree combine CLBExternallySideEffectFree})"
         )
         assert(
-            (CLBSideEffectFree combine CLBDPure(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CLBSideEffectFree combine CLBDPure(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFree combine CLBDPure(Set.empty)})"
+            (CLBSideEffectFree combine CLBDPure) == CLBDSideEffectFree,
+            "CLBSideEffectFree combine CLBDPure was not CLBDSideEffectFree"+
+                s" (was ${CLBSideEffectFree combine CLBDPure})"
         )
         assert(
-            (CLBSideEffectFree combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CLBSideEffectFree combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFree combine CLBDSideEffectFree(Set.empty)})"
+            (CLBSideEffectFree combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "CLBSideEffectFree combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${CLBSideEffectFree combine CLBDSideEffectFree})"
         )
         assert(
-            (CLBSideEffectFree combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBSideEffectFree combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFree combine CLBDExternallyPure(Set.empty)})"
+            (CLBSideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "CLBSideEffectFree combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBSideEffectFree combine CLBDExternallyPure})"
         )
         assert(
-            (CLBSideEffectFree combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBSideEffectFree combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBSideEffectFree combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBSideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBSideEffectFree combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBSideEffectFree combine CLBDExternallySideEffectFree})"
         )
         assert(
             (CLBSideEffectFree combine MaybePure) == MaybePure,
@@ -2059,31 +864,6 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             "CLBSideEffectFree combine LBImpure was not LBImpure"+
                 s" (was ${CLBSideEffectFree combine LBImpure})"
         )
-        assert(
-            (CLBSideEffectFree combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBSideEffectFree combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBSideEffectFree combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBSideEffectFree combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBSideEffectFree combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBSideEffectFree combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBSideEffectFree combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBSideEffectFree combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBSideEffectFree combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBSideEffectFree combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBSideEffectFree combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBSideEffectFree combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBSideEffectFree combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBSideEffectFree combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBSideEffectFree combine LBImpureDueToUnknownProperty})"
-        )
 
         assert(
             (CLBExternallyPure combine CLBExternallySideEffectFree) == CLBExternallySideEffectFree,
@@ -2091,24 +871,24 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${CLBExternallyPure combine CLBExternallySideEffectFree})"
         )
         assert(
-            (CLBExternallyPure combine CLBDPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "CLBExternallyPure combine CLBDPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${CLBExternallyPure combine CLBDPure(Set.empty)})"
+            (CLBExternallyPure combine CLBDPure) == CLBDExternallyPure,
+            "CLBExternallyPure combine CLBDPure was not CLBDExternallyPure"+
+                s" (was ${CLBExternallyPure combine CLBDPure})"
         )
         assert(
-            (CLBExternallyPure combine CLBDSideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBExternallyPure combine CLBDSideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBExternallyPure combine CLBDSideEffectFree(Set.empty)})"
+            (CLBExternallyPure combine CLBDSideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBExternallyPure combine CLBDSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBExternallyPure combine CLBDSideEffectFree})"
         )
         assert(
-            (CLBExternallyPure combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "CLBExternallyPure combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${CLBExternallyPure combine CLBDExternallyPure(Set.empty)})"
+            (CLBExternallyPure combine CLBDExternallyPure) == CLBDExternallyPure,
+            "CLBExternallyPure combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${CLBExternallyPure combine CLBDExternallyPure})"
         )
         assert(
-            (CLBExternallyPure combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBExternallyPure combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBExternallyPure combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBExternallyPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBExternallyPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBExternallyPure combine CLBDExternallySideEffectFree})"
         )
         assert(
             (CLBExternallyPure combine MaybePure) == MaybePure,
@@ -2120,51 +900,26 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             "CLBExternallyPure combine LBImpure was not LBImpure"+
                 s" (was ${CLBExternallyPure combine LBImpure})"
         )
-        assert(
-            (CLBExternallyPure combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBExternallyPure combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBExternallyPure combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBExternallyPure combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBExternallyPure combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBExternallyPure combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBExternallyPure combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBExternallyPure combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBExternallyPure combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBExternallyPure combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBExternallyPure combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBExternallyPure combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBExternallyPure combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBExternallyPure combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBExternallyPure combine LBImpureDueToUnknownProperty})"
-        )
 
         assert(
-            (CLBExternallySideEffectFree combine CLBDPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBExternallySideEffectFree combine CLBDPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBExternallySideEffectFree combine CLBDPure(Set.empty)})"
+            (CLBExternallySideEffectFree combine CLBDPure) == CLBDExternallySideEffectFree,
+            "CLBExternallySideEffectFree combine CLBDPure was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBExternallySideEffectFree combine CLBDPure})"
         )
         assert(
-            (CLBExternallySideEffectFree combine CLBDSideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBExternallySideEffectFree combine CLBDSideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBExternallySideEffectFree combine CLBDSideEffectFree(Set.empty)})"
+            (CLBExternallySideEffectFree combine CLBDSideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBExternallySideEffectFree combine CLBDSideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBExternallySideEffectFree combine CLBDSideEffectFree})"
         )
         assert(
-            (CLBExternallySideEffectFree combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBExternallySideEffectFree combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBExternallySideEffectFree combine CLBDExternallyPure(Set.empty)})"
+            (CLBExternallySideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "CLBExternallySideEffectFree combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBExternallySideEffectFree combine CLBDExternallyPure})"
         )
         assert(
-            (CLBExternallySideEffectFree combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBExternallySideEffectFree combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBExternallySideEffectFree combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBExternallySideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBExternallySideEffectFree combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBExternallySideEffectFree combine CLBDExternallySideEffectFree})"
         )
         assert(
             (CLBExternallySideEffectFree combine MaybePure) == MaybePure,
@@ -2176,235 +931,85 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             "CLBExternallySideEffectFree combine LBImpure was not LBImpure"+
                 s" (was ${CLBExternallySideEffectFree combine LBImpure})"
         )
+
         assert(
-            (CLBExternallySideEffectFree combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBExternallySideEffectFree combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBExternallySideEffectFree combine LBImpureDueToSynchronization})"
+            (CLBDPure combine CLBDSideEffectFree) == CLBDSideEffectFree,
+            "CLBDPure combine CLBDSideEffectFree was not CLBDSideEffectFree"+
+                s" (was ${CLBDPure combine CLBDSideEffectFree})"
         )
         assert(
-            (CLBExternallySideEffectFree combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBExternallySideEffectFree combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBExternallySideEffectFree combine LBImpureDueToHeapModification})"
+            (CLBDPure combine CLBDExternallyPure) == CLBDExternallyPure,
+            "CLBDPure combine CLBDExternallyPure was not CLBDExternallyPure"+
+                s" (was ${CLBDPure combine CLBDExternallyPure})"
         )
         assert(
-            (CLBExternallySideEffectFree combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBExternallySideEffectFree combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBExternallySideEffectFree combine LBImpureDueToFutureExtension})"
+            (CLBDPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBDPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBDPure combine CLBDExternallySideEffectFree})"
         )
         assert(
-            (CLBExternallySideEffectFree combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBExternallySideEffectFree combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBExternallySideEffectFree combine LBImpureDueToUnknownEntity})"
+            (CLBDPure combine MaybePure) == MaybePure,
+            "CLBDPure combine MaybePure was not MaybePure"+
+                s" (was ${CLBDPure combine MaybePure})"
         )
         assert(
-            (CLBExternallySideEffectFree combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBExternallySideEffectFree combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBExternallySideEffectFree combine LBImpureDueToUnknownProperty})"
+            (CLBDPure combine LBImpure) == LBImpure,
+            "CLBDPure combine LBImpure was not LBImpure"+
+                s" (was ${CLBDPure combine LBImpure})"
         )
 
         assert(
-            (CLBDPure(Set.empty) combine CLBDSideEffectFree(Set.empty)) == CLBDSideEffectFree(Set.empty),
-            "CLBDPure(Set.empty) combine CLBDSideEffectFree(Set.empty) was not CLBDSideEffectFree(Set.empty)"+
-                s" (was ${CLBDPure(Set.empty) combine CLBDSideEffectFree(Set.empty)})"
+            (CLBDSideEffectFree combine CLBDExternallyPure) == CLBDExternallySideEffectFree,
+            "CLBDSideEffectFree combine CLBDExternallyPure was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBDSideEffectFree combine CLBDExternallyPure})"
         )
         assert(
-            (CLBDPure(Set.empty) combine CLBDExternallyPure(Set.empty)) == CLBDExternallyPure(Set.empty),
-            "CLBDPure(Set.empty) combine CLBDExternallyPure(Set.empty) was not CLBDExternallyPure(Set.empty)"+
-                s" (was ${CLBDPure(Set.empty) combine CLBDExternallyPure(Set.empty)})"
+            (CLBDSideEffectFree combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBDSideEffectFree combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBDSideEffectFree combine CLBDExternallySideEffectFree})"
         )
         assert(
-            (CLBDPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBDPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBDPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBDSideEffectFree combine MaybePure) == MaybePure,
+            "CLBDSideEffectFree combine MaybePure was not MaybePure"+
+                s" (was ${CLBDSideEffectFree combine MaybePure})"
         )
         assert(
-            (CLBDPure(Set.empty) combine MaybePure) == MaybePure,
-            "CLBDPure(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${CLBDPure(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (CLBDPure(Set.empty) combine LBImpure) == LBImpure,
-            "CLBDPure(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${CLBDPure(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (CLBDPure(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBDPure(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBDPure(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBDPure(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBDPure(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBDPure(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBDPure(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBDPure(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBDPure(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBDPure(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBDPure(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBDPure(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBDPure(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBDPure(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBDPure(Set.empty) combine LBImpureDueToUnknownProperty})"
+            (CLBDSideEffectFree combine LBImpure) == LBImpure,
+            "CLBDSideEffectFree combine LBImpure was not LBImpure"+
+                s" (was ${CLBDSideEffectFree combine LBImpure})"
         )
 
         assert(
-            (CLBDSideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBDSideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine CLBDExternallyPure(Set.empty)})"
+            (CLBDExternallyPure combine CLBDExternallySideEffectFree) == CLBDExternallySideEffectFree,
+            "CLBDExternallyPure combine CLBDExternallySideEffectFree was not CLBDExternallySideEffectFree"+
+                s" (was ${CLBDExternallyPure combine CLBDExternallySideEffectFree})"
         )
         assert(
-            (CLBDSideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBDSideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBDExternallyPure combine MaybePure) == MaybePure,
+            "CLBDExternallyPure combine MaybePure was not MaybePure"+
+                s" (was ${CLBDExternallyPure combine MaybePure})"
         )
         assert(
-            (CLBDSideEffectFree(Set.empty) combine MaybePure) == MaybePure,
-            "CLBDSideEffectFree(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (CLBDSideEffectFree(Set.empty) combine LBImpure) == LBImpure,
-            "CLBDSideEffectFree(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (CLBDSideEffectFree(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBDSideEffectFree(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBDSideEffectFree(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBDSideEffectFree(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBDSideEffectFree(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBDSideEffectFree(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBDSideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty})"
+            (CLBDExternallyPure combine LBImpure) == LBImpure,
+            "CLBDExternallyPure combine LBImpure was not LBImpure"+
+                s" (was ${CLBDExternallyPure combine LBImpure})"
         )
 
         assert(
-            (CLBDExternallyPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)) == CLBDExternallySideEffectFree(Set.empty),
-            "CLBDExternallyPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty) was not CLBDExternallySideEffectFree(Set.empty)"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine CLBDExternallySideEffectFree(Set.empty)})"
+            (CLBDExternallySideEffectFree combine MaybePure) == MaybePure,
+            "CLBDExternallySideEffectFree combine MaybePure was not MaybePure"+
+                s" (was ${CLBDExternallySideEffectFree combine MaybePure})"
         )
         assert(
-            (CLBDExternallyPure(Set.empty) combine MaybePure) == MaybePure,
-            "CLBDExternallyPure(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (CLBDExternallyPure(Set.empty) combine LBImpure) == LBImpure,
-            "CLBDExternallyPure(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (CLBDExternallyPure(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBDExternallyPure(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBDExternallyPure(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBDExternallyPure(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBDExternallyPure(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBDExternallyPure(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBDExternallyPure(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBDExternallyPure(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBDExternallyPure(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBDExternallyPure(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBDExternallyPure(Set.empty) combine LBImpureDueToUnknownProperty})"
-        )
-
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine MaybePure) == MaybePure,
-            "CLBDExternallySideEffectFree(Set.empty) combine MaybePure was not MaybePure"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine MaybePure})"
-        )
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine LBImpure) == LBImpure,
-            "CLBDExternallySideEffectFree(Set.empty) combine LBImpure was not LBImpure"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine LBImpure})"
-        )
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToSynchronization) == LBImpureDueToSynchronization,
-            "CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToSynchronization was not LBImpureDueToSynchronization"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToHeapModification) == LBImpureDueToHeapModification,
-            "CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToHeapModification was not LBImpureDueToHeapModification"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToFutureExtension) == LBImpureDueToFutureExtension,
-            "CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToFutureExtension was not LBImpureDueToFutureExtension"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity) == LBImpureDueToUnknownEntity,
-            "CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity was not LBImpureDueToUnknownEntity"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty) == LBImpureDueToUnknownProperty,
-            "CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty was not LBImpureDueToUnknownProperty"+
-                s" (was ${CLBDExternallySideEffectFree(Set.empty) combine LBImpureDueToUnknownProperty})"
+            (CLBDExternallySideEffectFree combine LBImpure) == LBImpure,
+            "CLBDExternallySideEffectFree combine LBImpure was not LBImpure"+
+                s" (was ${CLBDExternallySideEffectFree combine LBImpure})"
         )
 
         assert(
             (MaybePure combine LBImpure) == MaybePure,
             "MaybePure combine LBImpure was not MaybePure"+
                 s" (was ${MaybePure combine LBImpure})"
-        )
-        assert(
-            (MaybePure combine LBImpureDueToSynchronization) == MaybePure,
-            "MaybePure combine LBImpureDueToSynchronization was not MaybePure"+
-                s" (was ${MaybePure combine LBImpureDueToSynchronization})"
-        )
-        assert(
-            (MaybePure combine LBImpureDueToHeapModification) == MaybePure,
-            "MaybePure combine LBImpureDueToHeapModification was not MaybePure"+
-                s" (was ${MaybePure combine LBImpureDueToHeapModification})"
-        )
-        assert(
-            (MaybePure combine LBImpureDueToFutureExtension) == MaybePure,
-            "MaybePure combine LBImpureDueToFutureExtension was not MaybePure"+
-                s" (was ${MaybePure combine LBImpureDueToFutureExtension})"
-        )
-        assert(
-            (MaybePure combine LBImpureDueToUnknownEntity) == MaybePure,
-            "MaybePure combine LBImpureDueToUnknownEntity was not MaybePure"+
-                s" (was ${MaybePure combine LBImpureDueToUnknownEntity})"
-        )
-        assert(
-            (MaybePure combine LBImpureDueToUnknownProperty) == MaybePure,
-            "MaybePure combine LBImpureDueToUnknownProperty was not MaybePure"+
-                s" (was ${MaybePure combine LBImpureDueToUnknownProperty})"
         )
     }
 }

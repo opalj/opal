@@ -38,6 +38,12 @@ import org.opalj.fpcf.properties.Purity.IsNonDeterministic
 import org.opalj.fpcf.properties.Purity.ModifiesReceiver
 import org.opalj.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.fpcf.properties.Purity.IsConditional
+import org.opalj.fpcf.properties.Purity.PureFlags
+import org.opalj.fpcf.properties.Purity.ExternallyPureFlags
+import org.opalj.fpcf.properties.Purity.SideEffectFreeWithoutAllocationsFlags
+import org.opalj.fpcf.properties.Purity.SideEffectFreeFlags
+import org.opalj.fpcf.properties.Purity.ExternallySideEffectFreeFlags
+import org.opalj.fpcf.properties.Purity.ImpureFlags
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -125,9 +131,9 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * Analyses may return [[LBPure]] only if they are able to guarantee that a method fulfills these
  * requirements.
  *
- * [[LBSideEffectFreeWithoutAllocations]] and [[PureWithoutAllocations]] have the same requirements as
- * [[LBSideEffectFree]] and [[LBPure]], but invoking methods with these properties may not cause any
- * allocation of heap objects (including arrays).
+ * [[LBSideEffectFreeWithoutAllocations]] and [[PureWithoutAllocations]] have the same requirements
+ * as [[LBSideEffectFree]] and [[LBPure]], but invoking methods with these properties may not
+ * cause any allocation of heap objects (including arrays).
  *
  * [[LBExternallySideEffectFree]] and [[LBExternallyPure]] methods are also similar to
  * [[LBSideEffectFree]] and [[LBPure]] methods, respectively, but may modify their receiver object.
@@ -168,9 +174,9 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * [[LBDExternallySideEffectFree]] or [[LBDExternallyPure]], respectively.
  * They might also become anything below these, such as [[LBImpure]].
  *
- * [[Impure.Fallback]] is used as the fallback value if no purity information could be
+ * [[Impure]] is (also) used as the fallback value if no purity information could be
  * computed for a method (no analysis is scheduled). Conceptually, clients must treat this in the
- * same way as [[LBImpure]] except that a future refinement may be possible.
+ * same way as [[LBImpure]] except that a future refinement may be possible in case of [[LBImpure]].
  *
  * @author Michael Eichberg
  * @author Dominik Helm
@@ -182,7 +188,7 @@ sealed abstract class Purity extends Property with PurityPropertyMetaInformation
      */
     final def key: PropertyKey[Purity] = Purity.key
 
-    def flags: Int
+    val flags: Int
 
     def hasAllocations: Boolean = (flags & HasAllocations) != 0
     def isDeterministic: Boolean = (flags & IsNonDeterministic) == 0
@@ -203,18 +209,15 @@ sealed abstract class Purity extends Property with PurityPropertyMetaInformation
      */
     def combine(other: Purity): Purity = {
         other match {
-            case that: ClassifiedImpure ⇒                that
-            case _ ⇒                Purity(this.flags | other.flags)
+            case that: ClassifiedImpure ⇒ that
+            case _                      ⇒ Purity(this.flags | other.flags)
         }
     }
 
-    def withoutExternal: Purity = {
-        if (modifiesReceiver) Purity(flags & ~ModifiesReceiver)        else this
-    }
+    def withoutExternal: Purity = if (modifiesReceiver) Purity(flags & ~ModifiesReceiver) else this
 
-    def unconditional: Purity = {
-        if (isConditional) Purity(flags & ~IsConditional)        else this
-    }
+    def unconditional: Purity = if (isConditional) Purity(flags & ~IsConditional) else this
+
 }
 
 object Purity extends PurityPropertyMetaInformation {
@@ -240,46 +243,54 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure.Fallback".
      */
-    final val key = PropertyKey.create[Purity](
-        "Purity",
-        Impure.Fallback,
-        baseCycleResolutionStrategy _
-    )
+    final val key = PropertyKey.create[Purity]("Purity", Impure, baseCycleResolutionStrategy _)
 
     final val HasAllocations = 0x1;
     final val IsNonDeterministic = 0x2;
     final val ModifiesReceiver = 0x4;
     final val PerformsDomainSpecificOperations = 0x8;
+    // "Temporary Flags"
     final val IsConditional = 0x10;
 
+    final val PureFlags = HasAllocations
+    final val ExternallyPureFlags = PureFlags | ModifiesReceiver
+    final val SideEffectFreeWithoutAllocationsFlags = IsNonDeterministic
+    final val SideEffectFreeFlags = SideEffectFreeWithoutAllocationsFlags | PureFlags
+    final val ExternallySideEffectFreeFlags = SideEffectFreeFlags | ModifiesReceiver
+    // TODO Shortly reason why Impure does not require/have additional flags!
+    final val ImpureFlags = ExternallySideEffectFreeFlags
+
+    // TODO Document who is excepted to call this method in which case and what the expected output is. (In particular w.r.t. (LB)Impure...)
     def apply(flags: Int): Purity = {
+        // TODO Document why is it not necessary to take the IMPURE ones in consideration.
+        // i.e., document the underlying ideas/assumptions/....
         (flags: @switch) match {
-            case PureWithoutAllocations.flags             ⇒ PureWithoutAllocations
-            case LBSideEffectFreeWithoutAllocations.flags ⇒ LBSideEffectFreeWithoutAllocations
-            case LBPure.flags                             ⇒ LBPure
-            case LBSideEffectFree.flags                   ⇒ LBSideEffectFree
-            case CPureWithoutAllocations.flags            ⇒ CPureWithoutAllocations
-            case CLBSideEffectFreeWithoutAllocations.flags ⇒
-                CLBSideEffectFreeWithoutAllocations
-            case CLBPure.flags           ⇒ CLBPure
-            case CLBSideEffectFree.flags ⇒ CLBSideEffectFree
-            case _ =>
+            case PureWithoutAllocations.flags              ⇒ PureWithoutAllocations
+            case LBSideEffectFreeWithoutAllocations.flags  ⇒ LBSideEffectFreeWithoutAllocations
+            case LBPure.flags                              ⇒ LBPure
+            case LBSideEffectFree.flags                    ⇒ LBSideEffectFree
+            case CPureWithoutAllocations.flags             ⇒ CPureWithoutAllocations
+            case CLBSideEffectFreeWithoutAllocations.flags ⇒ CLBSideEffectFreeWithoutAllocations
+            case CLBPure.flags                             ⇒ CLBPure
+            case CLBSideEffectFree.flags                   ⇒ CLBSideEffectFree
+            case _ ⇒
+                // TODO explaing the conditions
                 if ((flags & PerformsDomainSpecificOperations) == 0) {
-                    (flags | HasAllocations: @switch) match {
-                        case LBExternallyPure.flags ⇒ LBExternallyPure
-                        case LBExternallySideEffectFree.flags ⇒ LBExternallySideEffectFree
-                        case CLBExternallyPure.flags ⇒ CLBExternallyPure
+                    ((flags | HasAllocations): @switch) match {
+                        case LBExternallyPure.flags            ⇒ LBExternallyPure
+                        case LBExternallySideEffectFree.flags  ⇒ LBExternallySideEffectFree
+                        case CLBExternallyPure.flags           ⇒ CLBExternallyPure
                         case CLBExternallySideEffectFree.flags ⇒ CLBExternallySideEffectFree
                     }
                 } else {
                     ((flags & ~PerformsDomainSpecificOperations | HasAllocations): @switch) match {
-                        case LBPure.flags ⇒ LBDPure
-                        case LBSideEffectFree.flags ⇒ LBDSideEffectFree
-                        case LBExternallyPure.flags ⇒ LBDExternallyPure
-                        case LBExternallySideEffectFree.flags ⇒ LBDExternallySideEffectFree
-                        case CLBPure.flags ⇒ CLBDPure
-                        case CLBSideEffectFree.flags ⇒ CLBDSideEffectFree
-                        case CLBExternallyPure.flags ⇒ CLBDExternallyPure
+                        case LBPure.flags                      ⇒ LBDPure
+                        case LBSideEffectFree.flags            ⇒ LBDSideEffectFree
+                        case LBExternallyPure.flags            ⇒ LBDExternallyPure
+                        case LBExternallySideEffectFree.flags  ⇒ LBDExternallySideEffectFree
+                        case CLBPure.flags                     ⇒ CLBDPure
+                        case CLBSideEffectFree.flags           ⇒ CLBDSideEffectFree
+                        case CLBExternallyPure.flags           ⇒ CLBDExternallyPure
                         case CLBExternallySideEffectFree.flags ⇒ CLBDExternallySideEffectFree
                     }
                 }
@@ -295,7 +306,8 @@ object Purity extends PurityPropertyMetaInformation {
 case object PureWithoutAllocations extends Purity {
     final def isRefinable = false
     final val flags = 0 // <=> no flag is set
-    override def combine(other: Purity) : Purity = other
+
+    override def combine(other: Purity): Purity = other
 }
 
 /**
@@ -304,8 +316,8 @@ case object PureWithoutAllocations extends Purity {
  *  @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBPure extends Purity {
-    final val isRefinable = true
-    final val flags = HasAllocations
+    final def isRefinable = true
+    final val flags = PureFlags
 }
 
 /**
@@ -316,8 +328,8 @@ case object LBPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBSideEffectFreeWithoutAllocations extends Purity {
-    final val isRefinable = true
-    final val flags = IsNonDeterministic
+    final def isRefinable = true
+    final val flags = SideEffectFreeWithoutAllocationsFlags
 }
 
 /**
@@ -327,8 +339,8 @@ case object LBSideEffectFreeWithoutAllocations extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBSideEffectFree extends Purity {
-    final val isRefinable = true
-    final val flags = HasAllocations | IsNonDeterministic
+    final def isRefinable = true
+    final val flags = SideEffectFreeFlags
 }
 
 /**
@@ -340,7 +352,7 @@ case object LBSideEffectFree extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBExternallyPure extends Purity {
-    final val isRefinable = true
+    final def isRefinable = true
     final val flags = HasAllocations | ModifiesReceiver
 }
 
@@ -354,31 +366,8 @@ case object LBExternallyPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBExternallySideEffectFree extends Purity {
-    final val isRefinable = true
-    final val flags = HasAllocations | IsNonDeterministic | ModifiesReceiver
-}
-
-/**
- * Reasons that explain why a method's purity is domain specific.
- * Analyses (or rather the `Rater` objects they use) may use the reasons below or use their own
- * for more reasons.
- */
-object DomainSpecific {
-
-    /**
-     * The method may raise exceptions.
-     */
-    final val RaisesExceptions = "raises exceptions"
-
-    /**
-     * The method uses `System.out` or `System.err`.
-     */
-    final val UsesSystemOutOrErr = "uses System.out or System.err"
-
-    /**
-     * The method uses some form of logging.
-     */
-    final val UsesLogging = "uses logging"
+    final def isRefinable = true
+    final val flags = ExternallySideEffectFreeFlags
 }
 
 /**
@@ -388,7 +377,7 @@ object DomainSpecific {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDPure extends Purity {
-    final val isRefinable = true
+    final def isRefinable = true
     final val flags = HasAllocations | PerformsDomainSpecificOperations
 }
 
@@ -399,8 +388,8 @@ case object LBDPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDSideEffectFree extends Purity {
-    final val isRefinable = true
-    final val flags = HasAllocations | IsNonDeterministic | PerformsDomainSpecificOperations
+    final def isRefinable = true
+    final val flags = SideEffectFreeFlags | PerformsDomainSpecificOperations
 }
 
 /**
@@ -411,7 +400,7 @@ case object LBDSideEffectFree extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDExternallyPure extends Purity {
-    final val isRefinable = true
+    final def isRefinable = true
     final val flags = HasAllocations | ModifiesReceiver | PerformsDomainSpecificOperations
 }
 
@@ -421,14 +410,13 @@ case object LBDExternallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDExternallySideEffectFree  extends Purity {
-    final val isRefinable = true
-    final val flags =
-        HasAllocations | IsNonDeterministic | ModifiesReceiver | PerformsDomainSpecificOperations
+case object LBDExternallySideEffectFree extends Purity {
+    final def isRefinable = true
+    final val flags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
 }
 
 trait ConditionalPurity extends Purity {
-    final val isRefinable = true // even in the context of a single phase
+    final def isRefinable = true // even in the context of a single phase
 }
 
 /**
@@ -441,7 +429,7 @@ trait ConditionalPurity extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object CPureWithoutAllocations extends ConditionalPurity  {
+case object CPureWithoutAllocations extends ConditionalPurity {
     final val flags = IsConditional
 }
 
@@ -509,7 +497,7 @@ case object CLBExternallyPure extends ConditionalPurity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object CLBExternallySideEffectFree extends ConditionalPurity {
-    final val flags = HasAllocations | IsNonDeterministic | ModifiesReceiver | IsConditional
+    final val flags = ExternallySideEffectFreeFlags | IsConditional
 }
 
 /**
@@ -531,9 +519,7 @@ case object CLBDPure extends ConditionalPurity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object CLBDSideEffectFree extends ConditionalPurity {
-    final val flags = {
-        HasAllocations | IsNonDeterministic | PerformsDomainSpecificOperations | IsConditional
-    }
+    final val flags = SideEffectFreeFlags | PerformsDomainSpecificOperations | IsConditional
 }
 
 /**
@@ -542,11 +528,9 @@ case object CLBDSideEffectFree extends ConditionalPurity {
  * purity is dependent on other anlysis results not yet available.
  *
  * @see [[Purity]] for further details regarding the purity levels.
-  */
+ */
 case object CLBDExternallyPure extends ConditionalPurity {
-    final val flags = {
-        HasAllocations | ModifiesReceiver | PerformsDomainSpecificOperations | IsConditional
-    }
+    final val flags = ExternallyPureFlags | PerformsDomainSpecificOperations | IsConditional
 }
 
 /**
@@ -559,8 +543,7 @@ case object CLBDExternallyPure extends ConditionalPurity {
  */
 case object CLBDExternallySideEffectFree extends ConditionalPurity {
     final val flags = {
-        IsConditional |
-            HasAllocations | IsNonDeterministic | ModifiesReceiver | PerformsDomainSpecificOperations
+        ExternallySideEffectFreeFlags | IsConditional | PerformsDomainSpecificOperations
     }
 }
 
@@ -570,87 +553,55 @@ case object CLBDExternallySideEffectFree extends ConditionalPurity {
  */
 abstract class ClassifiedImpure extends Purity {
 
-    final val flags = {
-        HasAllocations | IsNonDeterministic | ModifiesReceiver | PerformsDomainSpecificOperations
-    }
-
-}
-
-/** The method is impure. */
-case class Impure(reasons: Set[String]) extends ClassifiedImpure {
-
-    final override def isRefinable = false
-
-    override def combine(other: Purity) : Purity = this
-
-    override def toString : String = reasons.mkString("Impure(", ", ", ")")
-}
-object Impure {
-
-    /** The method is impure; no analysis is/was scheduled (this models the fallback.) */
-    final val Fallback = Impure(Set("fallback value"))
-
-}
-
-/** The method needs to be treated as impure for the time being. */
-case class LBImpure(reasons: Set[String]) extends ClassifiedImpure {
-
-    final def isRefinable = true
-
-    override def combine(other: Purity) : Purity = {
-        other match {
-            case Impure(otherReasons)   ⇒ Impure(this.reasons ++ otherReasons)
-            case LBImpure(otherReasons) ⇒ LBImpure(this.reasons ++ otherReasons)
-            case _                      ⇒ this
-        }
-    }
-
-    override def toString : String = reasons.mkString("LBImpure(", ", ", ")")
 }
 
 /**
- * Companion object defining common values for impurity.
- *
- * Analyses may use any of the values below or use their instance to give other reasons for
- * a method being impure. The reason given may be just the first of several reasons for impurity
- * and it is not required to be the same reason for different runs of the analysis.
+ * The method needs to be treated as impure for the time being. However, the current
+ * analysis is still waiting on the results of some dependencies.
  */
-object LBImpure {
+case object MaybePure extends ClassifiedImpure {
 
-    /**
-     * No analysis is started (but maybe started later on) or the analysis is
-     * still ongoing. (This models the default value.)
-     */
-    final val MaybePure = LBImpure(Set("initial analysis not started/not complete"))
+    final def isRefinable: Boolean = true
 
-    /**
-     * The method is impure because it uses synchronization.
-     */
-    final val Synchronization = LBImpure(Set("uses synchronization"))
+    final val flags = ImpureFlags | PerformsDomainSpecificOperations | IsConditional
 
-    /**
-     * The method is impure because it may modify heap objects.
-     */
-    final val HeapModification = LBImpure(Set("modifies heap objects"))
+    override def combine(other: Purity): Purity = {
+        other match {
+            case Impure   ⇒ Impure
+            case LBImpure ⇒ LBImpure
+            case _        ⇒ this
+        }
+    }
 
-    /**
-     * The method is impure because it calls a method or uses a type that may be
-     * overridden/extended.
-     */
-    final val Extensible = LBImpure(Set("uses method/type that may be overridden/extended"))
+    override def toString: String = "MaybePure"
 
-    /**
-     * The method is impure because it calls a method that may be impure.
-     */
-    final val ImpureCall = LBImpure(Set("calls impure method"))
+}
 
-    final val ImpureInstruction = LBImpure(Set("executes (potentially) impure instruction"))
+/**
+ * The method needs to be treated as impure for the time being. However, the current
+ * analysis is not able to derive a more precise result; no more dependency exist.
+ */
+case object LBImpure extends ClassifiedImpure {
 
-    /**
-     * The method is impure because it uses an entity not found in the current project's scope.
-     */
-    final val UnknownEntity = LBImpure(Set("depends on unknown entity"))
+    final def isRefinable: Boolean = true
 
-    final val AccessOfMutableState = LBImpure(Set("accesses mutable state"))
+    final val flags = ImpureFlags | PerformsDomainSpecificOperations
+
+    override def combine(other: Purity): Purity = if (other == Impure) Impure else this
+
+    override def toString: String = "LBImpure"
+
+}
+
+/** The method is (finally classified as) impure; this also models the fallback. */
+case object Impure extends ClassifiedImpure {
+
+    final def isRefinable: Boolean = false
+
+    final val flags = ImpureFlags | PerformsDomainSpecificOperations
+
+    override def combine(other: Purity): Purity = this
+
+    override def toString: String = "Impure"
 
 }
