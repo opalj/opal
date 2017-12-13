@@ -29,36 +29,44 @@
 package org.opalj
 package ba
 
-import org.opalj.br.instructions.InstructionLike
+import org.opalj.br.instructions.LabeledInstruction
 
 /**
  * @author Malte Limmeroth
  */
 sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
-    def instruction: InstructionLike
+
+    final override def isExceptionHandlerElement: Boolean = false
+
+    def instruction: LabeledInstruction
 }
 
 object InstructionLikeElement {
 
-    def unapply(ile: InstructionLikeElement[_]): Some[InstructionLike] = {
+    def unapply(ile: InstructionLikeElement[_]): Some[LabeledInstruction] = {
         Some(ile.instruction)
     }
 }
 
 /**
- * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
+ * Wrapper for [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
 case class InstructionElement(
-        instruction: InstructionLike
+        instruction: LabeledInstruction
 ) extends InstructionLikeElement[Nothing]
 
 /**
- * Wrapper for annotated [[org.opalj.br.instructions.InstructionLike]]s.
+ * Wrapper for annotated [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
 case class AnnotatedInstructionElement[T](
-        instruction: InstructionLike,
+        instruction: LabeledInstruction,
         annotation:  T
-) extends InstructionLikeElement[T] {
+) extends InstructionLikeElement[T]
 
-    def this(ai: (InstructionLike, T)) { this(ai._1, ai._2) }
+object AnnotatedInstructionElement {
+
+    def apply[T](ia: (LabeledInstruction, T)): AnnotatedInstructionElement[T] = {
+        val (i, a) = ia
+        new AnnotatedInstructionElement(i, a)
+    }
 }

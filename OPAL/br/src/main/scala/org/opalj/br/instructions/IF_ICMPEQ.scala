@@ -54,6 +54,10 @@ case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction[IF_ICMPEQ] wit
     def negate(newBranchoffset: Int = branchoffset): IF_ICMPNE = {
         IF_ICMPNE(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIF_ICMPEQ(Symbol((currentPC + branchoffset).toString))
+    }
 }
 
 /**

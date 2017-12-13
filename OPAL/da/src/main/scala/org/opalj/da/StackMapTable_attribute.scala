@@ -50,8 +50,7 @@ case class StackMapTable_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>
             <details>
-                <summary>StackMapTable</summary>
-                <span> number of frames:{ stack_map_frames.length }</span>
+                <summary>StackMapTable [size: { stack_map_frames.length }]</summary>
                 { stack_map_framestoXHTML(cp) }
             </details>
         </div>
@@ -59,12 +58,20 @@ case class StackMapTable_attribute(
 
     def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {
         var offset: Int = -1
-        val framesAsXHTML = for (stack_map_frame ← stack_map_frames) yield {
-            val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML(cp, offset)
-            offset = newOffset
-            frameAsXHTML
-        }
-        <div> { framesAsXHTML } </div>
+        val framesAsXHTML =
+            for (stack_map_frame ← stack_map_frames) yield {
+                val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML(cp, offset)
+                offset = newOffset
+                frameAsXHTML
+            }
+        <table class="stack_map_table">
+            <thead>
+                <tr><th>PC</th><th>Kind</th><th>Frame Type</th><th>Offset Delta</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+                { framesAsXHTML }
+            </tbody>
+        </table>
     }
 
 }

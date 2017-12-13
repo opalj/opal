@@ -53,6 +53,10 @@ case class IFNONNULL(branchoffset: Int) extends IFXNullInstruction[IFNONNULL] wi
     def negate(newBranchoffset: Int = branchoffset): IFNULL = {
         IFNULL(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIFNONNULL(Symbol((currentPC + branchoffset).toString))
+    }
 }
 
 /**

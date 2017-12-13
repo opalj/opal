@@ -30,6 +30,7 @@ package org.opalj
 package ba
 
 import org.opalj.bi.ACC_STATIC
+import org.opalj.br.JVMMethod
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -64,13 +65,18 @@ class CodeAttributeBuilder[T] private[ba] (
         this
     }
 
+    def apply(jvmMethod: JVMMethod): (br.Code, (Map[br.PC, T], List[String])) = {
+        this(jvmMethod.accessFlags, jvmMethod.name, jvmMethod.descriptor)
+    }
+
     /**
      * @param  accessFlags The declaring method's access flags, required during code validation or
      *         when MAXSTACK/MAXLOCALS should be computed.
      * @param  descriptor The declaring method's descriptor; required during code valiation or
      *         when MAXSTACK/MAXLOCALS should be computed.
      *
-     * @return (The code attribute, (the extracted meta information, and the list of warnings)).
+     * @return The tuple:
+     *         `(the code attribute, (the extracted meta information, the list of warnings))`.
      */
     def apply(
         accessFlags: Int,

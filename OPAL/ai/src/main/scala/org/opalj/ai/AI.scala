@@ -270,12 +270,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             if (!method.isStatic) {
                 val thisType = method.classFile.thisType
                 val thisValue =
-                    if (method.isConstructor &&
-                        (method.classFile.thisType ne ObjectType.Object))
+                    if (method.isConstructor && (method.classFile.thisType ne ObjectType.Object)) {
                         // ... we have an uninitialized this!
-                        domain.NewObject(origin(localVariableIndex), thisType)
-                    else
+                        domain.UninitializedThis(thisType)
+                    } else {
                         domain.NonNullObjectValue(origin(localVariableIndex), thisType)
+                    }
                 locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }

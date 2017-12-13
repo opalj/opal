@@ -40,7 +40,7 @@ import org.opalj.collection.immutable.IntTrieSet
  *
  * @author Michael Eichberg
  */
-abstract class ReturnInstruction extends Instruction with ConstantLengthInstruction {
+abstract class ReturnInstruction extends Instruction with ConstantLengthInstruction with NoLabels {
 
     final override def isReturnInstruction: Boolean = true
 

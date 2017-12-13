@@ -37,7 +37,10 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-abstract class CreateNewArrayInstruction extends Instruction with ConstantLengthInstruction {
+abstract class CreateNewArrayInstruction
+    extends Instruction
+    with ConstantLengthInstruction
+    with NoLabels {
 
     final override def asCreateNewArrayInstruction: this.type = this
 

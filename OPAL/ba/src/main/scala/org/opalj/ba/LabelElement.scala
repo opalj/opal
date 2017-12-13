@@ -34,4 +34,8 @@ package ba
  *
  * @author Malte Limmeroth
  */
-case class LabelElement(label: Symbol) extends PseudoInstruction
+case class LabelElement(label: Symbol) extends PseudoInstruction {
+
+    final override def isExceptionHandlerElement: Boolean = false
+
+}

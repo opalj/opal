@@ -40,11 +40,6 @@ import org.opalj.collection.immutable.Chain
 trait Instruction extends InstructionLike {
 
     /**
-     * @return  `this`.
-     */
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): this.type = this
-
-    /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it is handled locally and
@@ -72,6 +67,15 @@ trait Instruction extends InstructionLike {
      * @note   Implemted by using the underlying (compiler generated) equals methods.
      */
     def similar(other: Instruction): Boolean = this == other
+
+    /**
+     * Converts this instruction to a [[LabeledInstruction]], where relative jump targets are
+     * replaced by symbols using the program counters of the target instructions as
+     * Symbols (i.e., absolute targets).
+     *
+     * @param currentPC The pc of the current instruction.
+     */
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction
 
     // ---------------------------------------------------------------------------------------------
     //

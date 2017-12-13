@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 import scala.xml.Text
 import scala.xml.Unparsed
 
@@ -63,11 +64,7 @@ case class Code(instructions: Array[Byte]) {
             <tr>
                 <th class="pc">PC</th>
                 {
-                    lineNumberTable.map { _ ⇒
-                        <th class="line">Line</th>
-                    }.getOrElse {
-                        scala.xml.NodeSeq.Empty
-                    }
+                    lineNumberTable.map(_ ⇒ <th class="line">Line</th>).getOrElse(NodeSeq.Empty)
                 }
                 <th>Instruction</th>
                 {

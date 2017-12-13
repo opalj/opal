@@ -92,6 +92,10 @@ table.fields td {
 	padding-right: 0.5em
 }
 
+table.stack_map_table th,td {
+    padding-right: 8px;
+}
+
 div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
 }

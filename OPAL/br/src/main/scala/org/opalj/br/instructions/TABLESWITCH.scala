@@ -70,6 +70,15 @@ case class TABLESWITCH(
 
     final override def asTABLESWITCH: this.type = this
 
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledTABLESWITCH(
+            Symbol((currentPC + defaultOffset).toString),
+            low,
+            high,
+            jumpOffsets.map { branchoffset ⇒ Symbol((currentPC + branchoffset).toString) }
+        )
+    }
+
     def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpOffsets.length - 1

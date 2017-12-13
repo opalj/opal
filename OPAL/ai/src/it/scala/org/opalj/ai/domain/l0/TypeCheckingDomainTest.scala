@@ -27,16 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ba
+package ai
+package domain
+package l0
+
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import java.net.URL
+
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 
 /**
- * Pseudo instruction that generates an entry in the [[org.opalj.br.LineNumberTable]] with the
- * program counter of the following instruction.
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods using the l1.TypeCheckingDomain. It basically
+ * tests if we can load and process a large number of different classes without exceptions.
  *
- * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
-case class LINENUMBER(lineNumber: Int) extends PseudoInstruction {
+@RunWith(classOf[JUnitRunner])
+class TypeCheckingDomainTest extends DomainTestInfrastructure("l0.TypeCheckingDomain") {
 
-    final override def isExceptionHandlerElement: Boolean = false
+    type AnalyzedDomain = l0.TypeCheckingDomain
+
+    def Domain(project: Project[URL], method: Method): l0.TypeCheckingDomain = {
+        new l0.TypeCheckingDomain(project, method)
+    }
 
 }

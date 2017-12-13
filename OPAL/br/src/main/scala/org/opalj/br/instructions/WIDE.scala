@@ -37,7 +37,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case object WIDE extends Instruction with ConstantLengthInstruction {
+case object WIDE extends Instruction with ConstantLengthInstruction with NoLabels {
 
     final val opcode = 196
 

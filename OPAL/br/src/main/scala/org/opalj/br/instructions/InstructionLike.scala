@@ -54,18 +54,6 @@ trait InstructionLike {
     def mnemonic: String
 
     /**
-     * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced
-     * by the branchoffsets and an [[Instruction]] is returned. If this instruction already
-     * has concrete branchoffsets nothing special will happen.
-     *
-     * If this instruction already has concrete jump targets nothing special will happen.
-     *
-     * @param   pc The final pc of this instruction in the code array.
-     * @param   pcs The map which maps all symbols to their final pcs.
-     */
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction
-
-    /**
      * The exceptions that may be thrown by the JVM at runtime if the execution of
      * this instruction fails.
      * I.e., these are neither exceptions that are explicitly created and then thrown

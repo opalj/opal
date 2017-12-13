@@ -42,7 +42,9 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case class RET(lvIndex: Int) extends ControlTransferInstruction with ConstantLengthInstruction {
+case class RET(
+        lvIndex: Int
+) extends ControlTransferInstruction with ConstantLengthInstruction with NoLabels {
 
     final def opcode: Opcode = RET.opcode
 

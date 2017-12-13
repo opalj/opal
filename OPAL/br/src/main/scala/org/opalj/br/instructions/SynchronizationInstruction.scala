@@ -37,7 +37,8 @@ package instructions
  */
 abstract class SynchronizationInstruction
     extends Instruction
-    with ConstantLengthInstruction {
+    with ConstantLengthInstruction
+    with NoLabels {
 
     final def length: Int = 1
 

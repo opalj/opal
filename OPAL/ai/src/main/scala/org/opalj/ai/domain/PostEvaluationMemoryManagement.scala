@@ -36,6 +36,9 @@ import org.opalj.br.instructions.Instruction
  * Provides the possibility to further update the memory layout (registers and operands)
  * after the execution of an instruction, but before any potential join is performed.
  *
+ * Using this domain is only safe if the (partial-)domains that use this functionality
+ * never interfere with each other.
+ *
  * @note    If this domain is mixed in then the domain cannot be used to simultaneously analyze
  *          multiple different methods at the same time.
  *
@@ -56,8 +59,8 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
         assert(oldValue ne null)
         assert((newValueAfterEvaluation ne null) || (newValueAfterException ne null))
-        assert(oldValue ne newValueAfterEvaluation, "it doesn't make sense to update a value with itself")
-        assert(oldValue ne newValueAfterException, "it doesn't make sense to update a value with itself")
+        assert(oldValue ne newValueAfterEvaluation, "useless self update")
+        assert(oldValue ne newValueAfterException, "useless self update")
 
         this.oldValue = oldValue
         this.newValueAfterEvaluation = newValueAfterEvaluation
@@ -97,11 +100,12 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
                 pc, instruction, oldOperands, oldLocals,
                 targetPC, isExceptionalControlFlow, operands1, locals1
             )
-        } else
+        } else {
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
                 targetPC, isExceptionalControlFlow, newOperands, newLocals
             )
+        }
     }
 
 }

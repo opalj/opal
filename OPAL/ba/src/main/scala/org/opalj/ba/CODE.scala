@@ -29,8 +29,10 @@
 package org.opalj
 package ba
 
-import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.PC
+import org.opalj.br.Code
 import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.WIDE
 
@@ -78,39 +80,39 @@ object CODE {
             case _ ⇒ // we don't care
         }
 
-        val instructionsWithPlaceholders = mutable.ArrayBuffer.empty[CodeElement[T]]
+        val formattedInstructions = ArrayBuffer.empty[CodeElement[T]]
 
         //fill the array with `null`s for PCs representing instruction arguments
         var nextPC = 0
         var currentPC = 0
         var modifiedByWide = false
         codeElements foreach { e ⇒
-            instructionsWithPlaceholders.append(e)
+            formattedInstructions.append(e)
 
             e match {
                 case InstructionLikeElement(inst) ⇒
                     currentPC = nextPC
                     nextPC = inst.indexOfNextInstruction(currentPC, modifiedByWide)
-                    for (j ← 1 until nextPC - currentPC) { // IMPROVE use while loop
-                        instructionsWithPlaceholders.append(null)
+                    for (j ← 1 until nextPC - currentPC) { // IMPROVE use repeat
+                        formattedInstructions.append(null)
                     }
                     modifiedByWide = false
                     if (inst == WIDE) {
                         modifiedByWide = true
                     }
-                case _ ⇒
+
+                case _ ⇒ // we are not interested in EXCEPTION HANDLERS, LABLES...
             }
         }
-
-        //calculate the PCs of all PseudoInstructions
+        //calculate the PCs of all PseudoInstructions // IMPROVE merge with previous loop!
         var labels: Map[Symbol, br.PC] = Map.empty
         val exceptionHandlerBuilder = new ExceptionHandlerGenerator
         val lineNumberTableBuilder = new LineNumberTableBuilder()
         var count: Int = 0
-        for ((inst, index) ← instructionsWithPlaceholders.zipWithIndex) { // IMPROVE use while loop
+        for ((inst, index) ← formattedInstructions.zipWithIndex) {
             if (inst.isInstanceOf[PseudoInstruction]) {
                 val pc = index - count
-                instructionsWithPlaceholders.remove(pc)
+                formattedInstructions.remove(pc)
                 inst match {
                     case LabelElement(label)        ⇒ labels += (label → (pc))
                     case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, pc)
@@ -124,11 +126,11 @@ object CODE {
 
         val attributes: IndexedSeq[br.Attribute] = lineNumberTableBuilder.result()
 
-        val annotations = instructionsWithPlaceholders.zipWithIndex.collect { // IMPROVE use iterator?
+        val annotations = formattedInstructions.zipWithIndex.collect { // IMPROVE use iterator?
             case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
         }.toMap
 
-        val instructionLikesOnly = instructionsWithPlaceholders.collect {
+        val instructionLikesOnly = formattedInstructions.collect {
             case InstructionLikeElement(i) ⇒ i
             case null                      ⇒ null
             // ... filter pseudo instructions
@@ -151,5 +153,177 @@ object CODE {
             exceptionHandlers,
             attributes
         )
+    }
+
+    def toLabeledCode(code: Code): LabeledCode = {
+        val estimatedSize = code.codeSize
+        val labeledInstructions = new ArrayBuffer[CodeElement[AnyRef]](estimatedSize)
+
+        // Transform the current code to use labels; this approach handles cases such as
+        // switches which now require more/less bytes very elegantly.
+        code.iterate { (pc, i) ⇒
+            // IMPROVE use while loop
+            code.exceptionHandlers.iterator.zipWithIndex.foreach { (ehIndex) ⇒
+                val (eh, index) = ehIndex
+                // Recall that endPC is exclusive while TRYEND is inclusive... Hence,
+                // we have to add it before the next...
+                if (eh.endPC == pc) labeledInstructions += TRYEND(Symbol(s"eh$index"))
+
+                if (eh.startPC == pc)
+                    labeledInstructions += TRY(Symbol(s"eh$index"))
+                if (eh.handlerPC == pc)
+                    labeledInstructions += CATCH(Symbol(s"eh$index"), eh.catchType)
+
+            }
+            labeledInstructions += LabelElement(Symbol(pc.toString))
+            labeledInstructions += i.toLabeledInstruction(pc)
+        }
+
+        new LabeledCode(code, labeledInstructions)
+    }
+
+    /**
+     * Inserts the given sequence of instructions before, at or after the instruction with the
+     * given pc.
+     * Here, '''before''' means that those instruction which currently jump to the instruction with
+     * the given pc, will jump to the first instruction of the given sequence of instructions.
+     *
+     * @note   The instructions are only considered to be prototypes and are adapted (in case of
+     *         jump instructions) if necessary.
+     * @note   This method does not provide support for methods that will - if too many instructions
+     *         are added - exceed the maximum allowed length of methods.
+     *
+     * @param insertionPC The pc of an instruction.
+     * @param insertionPosition Given an instruction I which is a jump target and which has the pc
+     *         `insertionPC`. In this case, the effect of the (insertion) position is:
+     *
+     *         ''Before''
+     *                  `insertionPC:` // the jump target will be the newly inserted instructions
+     *                  `&lt;new instructions&gt;`
+     *                  `&lt;remaining original instructions&gt;`
+     *
+     *         ''After''
+     *                  `insertionPC:`
+     *                  `&lt;original instruction with program counter insertionPC&gt;`
+     *                  `newJumpTarget(insertionPC+1):`
+     *                      // i.e., an instruction which jumps to the original
+     *                      // instruction which follows the instruction with
+     *                      // insertionPC will still jump to that instruction
+     *                      // and not the new one.
+     *                      // Additionally, existing exception handlers which
+     *                      // included the specified instruction will also
+     *                      // include this instruction.
+     *                  `&lt;new instructions&gt;`
+     *                  `pcOfNextInstruction(insertionPC):`
+     *                  `&lt;remaining original instructions&gt;`
+     *
+     *         '''At'''
+     *                  `newJumpTarget(insertionPC):`
+     *                  `&lt;new instructions&gt;`
+     *                  `insertionPC:`
+     *                  `&lt;remaining original instructions&gt;`
+     *
+     *         (W.r.t. labeled code the effect can also be described as shown next:
+     *         Let's assume that:
+     *         EH ... code elements modelling exception handlers (TRY|TRYEND|CATCH)
+     *         I ... the (implicitly referenced) instruction
+     *         L ... the (implicit) label of the instruction
+     *         CE ... the new CodeElements
+     *
+     *         '''Given''':
+     *         EH | L | I // EH can be empty, L is (for original instructions) always existing!
+     *
+     *         '''Before''':
+     *         EH | L | CE | I
+     *
+     *         '''At''':
+     *         EH | CE | L | I // existing exception handlers w.r.t. L are effective
+     *
+     *         '''After''':
+     *         EH | L | I | CE | EH | L+1 // i.e., the insertion position depends on L+1(!)
+     *         )
+     *
+     *         Hence, `At` and `After` can be used interchangeably except when an
+     *         instruction should be added at the very beginning or after the end.
+     *
+     * @param newInstructions The sequence of instructions that will be added at the specified
+     *         position relative to the instruction with the given pc.
+     *         If this list of instructions contains instructions which have jump
+     *         targets then these jump targets have to use `Symbol`s which are not used
+     *         by the code (which are the program counters of the code's instructions).
+     *         E.g., by appending something like `new` to every Symbol we will get
+     *         unique jump targets for instructions.
+     */
+    def insert(
+        insertionPC: PC, insertionPosition: InsertionPosition.Value,
+        newInstructions: Seq[CodeElement[AnyRef]],
+        labeledCode:     LabeledCode
+    ): Unit = {
+        val instructions = labeledCode.instructions
+
+        // In the array we can have (after the label) all other code elements... (and if
+        // we already inserted other code, we could have multiple labels...)
+        insertionPosition match {
+
+            case InsertionPosition.Before ⇒
+                val insertionPCLabel = LabelElement(Symbol(insertionPC.toString))
+                val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
+                instructions.insert(insertionPCLabelIndex + 1, newInstructions: _*)
+
+            case InsertionPosition.At ⇒
+                val insertionPCLabel = LabelElement(Symbol(insertionPC.toString))
+                val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
+                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
+
+            case InsertionPosition.After ⇒
+                val originalCode = labeledCode.originalCode
+                val effectivePC = originalCode.pcOfNextInstruction(insertionPC)
+                var insertionPCLabelIndex =
+                    if (effectivePC >= originalCode.codeSize)
+                        instructions.size
+                    else {
+                        val insertionPCLabel = LabelElement(Symbol(effectivePC.toString))
+                        instructions.indexOf(insertionPCLabel)
+                    }
+                // Let's find the index where we want to actually insert the new instructions...
+                // which is before all exception related code elements!
+                while (instructions(insertionPCLabelIndex - 1).isExceptionHandlerElement) {
+                    insertionPCLabelIndex -= 1
+                }
+                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
+
+        }
+    }
+}
+
+object InsertionPosition extends Enumeration {
+    final val Before = Value("before")
+    final val At = Value("at")
+    final val After = Value("after")
+}
+
+/**
+ *
+ * @note Using LabeledCode is NOT thread safe.
+ *
+ * @param originalCode The original code.
+ */
+class LabeledCode(
+        val originalCode:             Code,
+        private[ba] val instructions: ArrayBuffer[CodeElement[AnyRef]]
+) {
+
+    def toCodeAttributeBuilder: CodeAttributeBuilder[AnyRef] = {
+        val initialCodeAttributeBuilder = CODE(instructions)
+        // TODO We have to adapt the exiting attributes and we have to merge the line number tables
+        // if necessary.
+        initialCodeAttributeBuilder
+    }
+
+    def insert(
+        insertionPC: PC, insertionPosition: InsertionPosition.Value,
+        newInstructions: Seq[CodeElement[AnyRef]]
+    ): Unit = {
+        CODE.insert(insertionPC, insertionPosition, newInstructions, this)
     }
 }

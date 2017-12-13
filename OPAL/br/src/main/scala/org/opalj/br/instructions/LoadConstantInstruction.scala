@@ -37,7 +37,10 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-abstract class LoadConstantInstruction[T] extends Instruction with ConstantLengthInstruction {
+abstract class LoadConstantInstruction[T]
+    extends Instruction
+    with ConstantLengthInstruction
+    with NoLabels {
 
     /**
      * The value that is put onto the stack.

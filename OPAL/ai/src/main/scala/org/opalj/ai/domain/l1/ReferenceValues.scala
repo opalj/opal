@@ -1923,6 +1923,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ObjectValue(pc, No, true, objectType, nextRefId())
     }
 
+    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
+        ObjectValue(-1, No, false, objectType, nextRefId())
+    }
+
     override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, No, true, objectType, nextRefId())
     }

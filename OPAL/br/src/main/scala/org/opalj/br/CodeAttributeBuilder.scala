@@ -38,9 +38,7 @@ package br
  * @author Michael Eichberg
  */
 trait CodeAttributeBuilder[T] {
-    def apply(
-        accessFlags: Int,
-        name:        String,
-        descriptor:  MethodDescriptor
-    ): (Attribute, T)
+
+    def apply(accessFlags: Int, name: String, descriptor: MethodDescriptor): (Attribute, T)
+
 }
