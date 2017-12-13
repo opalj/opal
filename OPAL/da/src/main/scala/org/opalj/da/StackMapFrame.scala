@@ -60,8 +60,14 @@ sealed abstract class StackMapFrame {
         implicit
         cp: Constant_Pool
     ): NodeSeq = {
-        val vtis = verification_type_infos.map(l ⇒ { l.toXHTML })
-        NodeSeq.fromSeq(vtis.tail.foldLeft(List(vtis.head)) { (r, n) ⇒ r ++ List(Text(", "), n) })
+        NodeSeq.fromSeq(
+            if (verification_type_infos.isEmpty) {
+                List(<i>&lt;Empty&gt;</i>)
+            } else {
+                val vtis = verification_type_infos.map(l ⇒ { l.toXHTML })
+                vtis.tail.foldLeft(List(vtis.head)) { (r, n) ⇒ r ++ List(Text(", "), n) }
+            }
+        )
     }
 
 }
