@@ -33,6 +33,9 @@ package analyses
 import org.opalj.br.analyses.Project
 import java.net.URL
 
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
@@ -75,6 +78,11 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
 
             PropertyStoreKey.makeAllocationSitesAvailable(project)
             PropertyStoreKey.makeFormalParametersAvailable(project)
+            PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
+
+            val domain = (m: Method) => new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
+            project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain)
+
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 
@@ -87,9 +95,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
 
         time {
             InterProceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion(
-                useFallbacksForIncomputableProperties = false
-            )
+            propertyStore.waitOnPropertyComputationCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         val allocationSites = propertyStore.context[AllocationSites]

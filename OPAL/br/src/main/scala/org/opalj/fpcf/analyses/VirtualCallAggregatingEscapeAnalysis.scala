@@ -56,7 +56,10 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
             propertyStore(formalParameters(method)(-1 - fp.origin), EscapeProperty.key) match {
                 case EP(_, p) if p.isFinal ⇒ escapeState = escapeState meet p
                 case EP(_, AtMost(p))      ⇒ escapeState = escapeState meet AtMost(p)
-                case epk                   ⇒ dependees += epk
+                case ep @ EP(_, Conditional(p)) ⇒
+                    escapeState = escapeState meet p
+                    dependees += ep
+                case epk ⇒ dependees += epk
             }
         }
 

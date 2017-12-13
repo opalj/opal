@@ -35,17 +35,24 @@ import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.AllocationSitesKey
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EP
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.AtMost
+import org.opalj.fpcf.properties.EscapeViaParameter
+import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
+/**
+ *
+ * @author Florian Kübler
+ */
 object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String = ""
@@ -70,6 +77,9 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
         var maybeNoEscapingArrays = 0
         var maybeInCalleeArrays = 0
         var maybeInCallerArrays = 0
+        var maybeViaParamArrays = 0
+        var maybeViaReturn = 0
+        var maybeViaAbnormal = 0
         var globalArrays = 0
         var allocations = 0
         var nonDeadAllocations = 0
@@ -115,7 +125,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                             case PutField(_, _, name, _, objRef, value) ⇒
                                 if (value.isVar && value.asVar.definedBy.contains(index)) {
                                     putFields += 1
-                                    if (objRef.isVar && objRef.asVar.definedBy != IntArraySet(-1)) {
+                                    if (objRef.isVar && objRef.asVar.definedBy != IntTrieSet(-1)) {
                                         val defSitesOfObjRef = objRef.asVar.definedBy
                                         if (defSitesOfObjRef.exists { defSite ⇒
                                             if (defSite > 0) {
@@ -169,6 +179,12 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                         maybeNoEscapingArrays += 1
                                                     case EP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
                                                         maybeInCalleeArrays += 1
+                                                    case EP(_, EscapeViaParameter | AtMost(EscapeViaParameter))=>
+                                                        maybeViaParamArrays += 1
+                                                    case EP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) =>
+                                                        maybeViaReturn += 1
+                                                    case EP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) =>
+                                                        maybeViaAbnormal +=1
                                                     case EP(_, p) if p.isBottom ⇒ globalArrays += 1
                                                     case _                      ⇒ maybeInCallerArrays += 1
                                                 }
@@ -211,6 +227,9 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                |# of arraystores on new array $arrayStoresOfAllocation
                |# of no escaping new arrays: $maybeNoEscapingArrays
                |# of escape in callee new arrays: $maybeInCalleeArrays
+               |# of escape via param new arrays: $maybeViaParamArrays
+               |# of escape via return new arrays: $maybeViaReturn
+               |# of escape via abnormal new arrays: $maybeViaAbnormal
                |# of escape in caller new arrays: $maybeInCallerArrays
                |# of global new arrays: $globalArrays
                |# of arrayloads after store: $arrayLoads"""

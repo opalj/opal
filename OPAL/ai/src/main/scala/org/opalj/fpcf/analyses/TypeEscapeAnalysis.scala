@@ -30,14 +30,16 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.analyses.AllocationSites
-import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -46,7 +48,6 @@ import org.opalj.fpcf.properties.GlobalType
 import org.opalj.fpcf.properties.PackageLocalType
 import org.opalj.fpcf.properties.MaybePackageLocalType
 import org.opalj.fpcf.properties.AtMost
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
@@ -110,13 +111,8 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
     }
 
     def main(args: Array[String]): Unit = {
-
-        val opaConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        val project = Project(
-            org.opalj.bytecode.JRELibraryFolder,
-            GlobalLogContext,
-            opaConfig.withFallback(org.opalj.ai.BaseConfig)
-        )
+        val project = Project(org.opalj.bytecode.JRELibraryFolder)
+        project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m))
 
         implicit val logContext = project.logContext
         time {
@@ -130,10 +126,11 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeFormalParametersAvailable(project)
+        PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
         val propertyStore = project.get(PropertyStoreKey)
         //propertyStore.debug = true
         time {
-            SimpleEscapeAnalysis.start(project)
+            InterProceduralEscapeAnalysis.start(project, propertyStore)
             propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
