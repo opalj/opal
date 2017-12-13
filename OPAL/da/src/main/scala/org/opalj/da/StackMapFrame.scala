@@ -30,6 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
+import scala.xml.NodeSeq
 
 /**
  * @author Michael Eichberg
@@ -49,8 +51,24 @@ sealed abstract class StackMapFrame {
     def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ )
+
+    protected def verification_type_infos_toXHTML(
+        verification_type_infos: Seq[VerificationTypeInfo]
+    )(
+        implicit
+        cp: Constant_Pool
+    ): NodeSeq = {
+        NodeSeq.fromSeq(
+            if (verification_type_infos.isEmpty) {
+                List(<i>&lt;Empty&gt;</i>)
+            } else {
+                val vtis = verification_type_infos.map(l ⇒ { l.toXHTML })
+                vtis.tail.foldLeft(List(vtis.head)) { (r, n) ⇒ r ++ List(Text(", "), n) }
+            }
+        )
+    }
 
 }
 
@@ -61,10 +79,19 @@ case class SameFrame(frame_type: Int) extends StackMapFrame {
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + frame_type + 1
-        (<div>[pc: { newOffset },frame_type:same]</div>, newOffset)
+        val newOffset = previous_frame_offset + frame_type + 1
+        (
+            <tr>
+                <td>{ newOffset }</td>
+                <td>SameFrame</td>
+                <td>{ frame_type }</td>
+                <td>{ frame_type }</td>
+                <td>Stack:&nbsp;Unchanged<br/>Locals:&nbsp;Unchanged</td>
+            </tr>,
+            newOffset
+        )
     }
 
 }
@@ -79,15 +106,28 @@ case class SameLocals1StackItemFrame(
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + frame_type - 64 + 1
-        (<div>[pc: { newOffset },frame_type:SameLocals1StackItem,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>, newOffset)
+        val newOffset = previous_frame_offset + frame_type - 64 + 1
+        (
+            <tr>
+                <td>{ newOffset }</td>
+                <td>SameLocals1StackItemFrame</td>
+                <td>{ frame_type }</td>
+                <td>{ frame_type - 64 }</td>
+                <td>
+                    Stack:&nbsp;<i>&lt;Empty&gt;</i>
+                    ,&nbsp;{ verification_type_info_stack.toXHTML(cp) }<br/>
+                    Locals:&nbsp;Unchanged
+                </td>
+            </tr>,
+            newOffset
+        )
     }
 }
 
 case class SameLocals1StackItemFrameExtended(
-        frame_type:                   Int,
+        frame_type:                   Int                  = 247,
         offset_delta:                 Int,
         verification_type_info_stack: VerificationTypeInfo
 ) extends StackMapFrame {
@@ -97,15 +137,21 @@ case class SameLocals1StackItemFrameExtended(
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + offset_delta + 1
+        val newOffset = previous_frame_offset + offset_delta + 1
         (
-            <div>
-                [pc:{ newOffset }
-                ,SameLocals1StackItemFrameExtended,stack:[{ verification_type_info_stack.toXHTML(cp) }
-                ]]
-            </div>,
+            <tr>
+                <td>{ newOffset }</td>
+                <td>SameLocals1StackItemFrameExtended</td>
+                <td>247</td>
+                <td>{ offset_delta }</td>
+                <td>
+                    Stack:&nbsp;<i>&lt;Empty&gt;</i>
+                    ,&nbsp;{ verification_type_info_stack.toXHTML(cp) }<br/>
+                    Locals:&nbsp;Unchanged
+                </td>
+            </tr>,
             newOffset
         )
     }
@@ -118,28 +164,47 @@ case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + offset_delta + 1
-        (<div>[pc: { newOffset },frame_type:Chop]</div>, newOffset)
+        val newOffset = previous_frame_offset + offset_delta + 1
+        (
+            <tr>
+                <td>{ newOffset }</td>
+                <td>ChopFrame</td>
+                <td>{ frame_type }</td>
+                <td>{ offset_delta }</td>
+                <td>
+                    Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
+                    Locals:&nbsp;The last{ 251 - frame_type }
+                    local(s) are absent
+                </td>
+            </tr>,
+            newOffset
+        )
     }
 }
 
-case class SameFrameExtended( final val frame_type: Int = 251, offset_delta: Int) extends StackMapFrame {
+case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends StackMapFrame {
 
     final override def attribute_length: Int = 1 + 2
 
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + offset_delta + 1
+        val newOffset = previous_frame_offset + offset_delta + 1
         (
-            <div>
-                [pc:{ newOffset }
-                ,frame_type:SameFrameExtended]
-            </div>,
+            <tr>
+                <td>{ newOffset }</td>
+                <td>SameFrameExtended</td>
+                <td>251</td>
+                <td>{ offset_delta }</td>
+                <td>
+                    Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
+                    Locals:&nbsp;Unchanged
+                </td>
+            </tr>,
             newOffset
         )
     }
@@ -156,22 +221,23 @@ case class AppendFrame(
         verification_type_info_locals.foldLeft(initial)((c, n) ⇒ c + n.attribute_length)
     }
 
-    private def localsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span> { verification_type_info_locals.map(_.toXHTML(cp)) }</span>
-    }
-
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + offset_delta + 1
+        val newOffset = previous_frame_offset + offset_delta + 1
         (
-            <div>
-                [pc:{ newOffset }
-                ,Append,locals:[{ localsToXHTML(cp) }
-                ]]
-            </div>,
+            <tr>
+                <td>{ newOffset }</td>
+                <td>AppendFrame</td>
+                <td>{ frame_type }</td>
+                <td>{ offset_delta }</td>
+                <td>
+                    Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
+                    Locals:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_locals) }
+                </td>
+            </tr>,
             newOffset
         )
     }
@@ -192,27 +258,23 @@ case class FullFrame(
         initial + locals + stack
     }
 
-    private def localsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span> { verification_type_info_locals.map(_.toXHTML(cp)) }</span>
-    }
-
-    private def stackToXHTML(implicit cp: Constant_Pool): Node = {
-        <span> { verification_type_info_stack.map(_.toXHTML(cp)) }</span>
-    }
-
     override def toXHTML(
         implicit
         cp:                    Constant_Pool,
-        previous_frame_Offset: Int
+        previous_frame_offset: Int
     ): (Node, Int /* new offset*/ ) = {
-        val newOffset = previous_frame_Offset + offset_delta + 1
+        val newOffset = previous_frame_offset + offset_delta + 1
         (
-            <div>
-                [pc:{ newOffset }
-                ,Full,locals:[{ localsToXHTML(cp) }
-                ],stack:[{ stackToXHTML(cp) }
-                ]]
-            </div>,
+            <tr>
+                <td>{ newOffset }</td>
+                <td>FullFrame</td>
+                <td>{ frame_type }</td>
+                <td>{ offset_delta }</td>
+                <td>
+                    Stack:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_stack) }<br/>
+                    Locals:&nbsp;{ verification_type_infos_toXHTML(verification_type_info_locals) }
+                </td>
+            </tr>,
             newOffset
         )
     }

@@ -97,7 +97,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      * created by the (`NEW`) instruction with the specified program counter.
      *
      * OPAL calls this method when it evaluates `newobject` instructions.
-     * If the bytecode is valid a call of one of the object's constructors will
+     * If the bytecode is valid a call of one of the (super) object's constructors will
      * subsequently initialize the object.
      *
      * ==Summary==
@@ -105,13 +105,29 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *  - Initialized: '''no''' (only the memory is allocated for the object)
      *  - Type: '''precise''' (i.e., this type is not an upper bound,
      *      the type correctly models the runtime type.)
-     *  - Null: '''No''' (This value is not `null`.)
+     *  - Null: '''no''' (This value is not `null`.)
      *
      * @note Instances of arrays are created by the `newarray` and
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
     def NewObject(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+
+    /**
+     * Creates a new `DomainValue` that represents ''the `this` value of a constructor before the
+     * super constructor is called. Hence, the value origin is necessarily always -1.
+     *
+     * OPAL calls this method when it creates the initial locals for constructors.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''no''' (only the memory is allocated for the object)
+     *  - Type: '''upper bound'''
+     *  - Null: '''no''' (This value is not `null`.)
+     *
+     * @note Instances of arrays are never uninitialized.
+     */
+    def UninitializedThis(objectType: ObjectType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents an '''initialized'''

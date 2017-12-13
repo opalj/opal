@@ -27,51 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package ai
+package domain
+package l0
 
-import scala.xml.Node
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import java.net.URL
+
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 
 /**
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods using the l1.TypeCheckingDomain. It basically
+ * tests if we can load and process a large number of different classes without exceptions.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
- * @author Andre Pacak
  */
-case class StackMapTable_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        stack_map_frames:     IndexedSeq[StackMapFrame]
-) extends Attribute {
+@RunWith(classOf[JUnitRunner])
+class TypeCheckingDomainTest extends DomainTestInfrastructure("l0.TypeCheckingDomain") {
 
-    final override def attribute_length: Int = {
-        stack_map_frames.foldLeft(2 /*count*/ )((c, n) ⇒ c + n.attribute_length)
-    }
+    type AnalyzedDomain = l0.TypeCheckingDomain
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <details>
-                <summary>StackMapTable [size: { stack_map_frames.length }]</summary>
-                { stack_map_framestoXHTML(cp) }
-            </details>
-        </div>
-    }
-
-    def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {
-        var offset: Int = -1
-        val framesAsXHTML =
-            for (stack_map_frame ← stack_map_frames) yield {
-                val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML(cp, offset)
-                offset = newOffset
-                frameAsXHTML
-            }
-        <table class="stack_map_table">
-            <thead>
-                <tr><th>PC</th><th>Kind</th><th>Frame Type</th><th>Offset Delta</th><th>Details</th></tr>
-            </thead>
-            <tbody>
-                { framesAsXHTML }
-            </tbody>
-        </table>
+    def Domain(project: Project[URL], method: Method): l0.TypeCheckingDomain = {
+        new l0.TypeCheckingDomain(project, method)
     }
 
 }

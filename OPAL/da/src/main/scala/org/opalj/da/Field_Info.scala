@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 
 import org.opalj.bi.AccessFlagsContexts.FIELD
 
@@ -63,26 +64,31 @@ case class Field_Info(
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val (accessFlags, explicitAccessFlags) = accessFlagsToXHTML(access_flags, FIELD)
+        val (constantValue, otherAttributes) =
+            attributes.partition(a ⇒ a.attribute_name == "ConstantValue")
         val fieldName = this.fieldName
         val fieldDeclaration =
             <span class="field_declaration">
                 { accessFlags }
                 { fieldType.asSpan("field_type") }
                 <span class="name">{ fieldName }</span>
+                { if (constantValue.nonEmpty) constantValue.head.toXHTML else NodeSeq.Empty }
             </span>
 
-        if (attributes.isEmpty) {
-            <div class="details field" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
+        if (otherAttributes.isEmpty) {
+            <div class="field details" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
                 { fieldDeclaration }
             </div>
         } else {
             <details class="field" data-name={ fieldName } data-access-flags={ explicitAccessFlags }>
                 <summary>{ fieldDeclaration }</summary>
-                { attributesToXHTML }
+                { otherAttributes.map(_.toXHTML) }
             </details>
         }
     }
 
-    def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = attributes.map(_.toXHTML)
+    // def attributesToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
+    //    attributes.map(_.toXHTML)
+    // }
 
 }

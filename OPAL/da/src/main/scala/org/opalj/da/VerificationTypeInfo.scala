@@ -70,7 +70,7 @@ case object TopVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Top
 
-    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">top |</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">top</span>
 
 }
 
@@ -80,7 +80,7 @@ case object IntegerVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Integer
 
-    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">int |</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">int</span>
 
 }
 
@@ -90,7 +90,7 @@ case object FloatVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Float
 
-    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">float |</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">float</span>
 
 }
 
@@ -100,7 +100,7 @@ case object LongVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Long
 
-    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">long |</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">long</span>
 
 }
 
@@ -110,7 +110,7 @@ case object DoubleVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Double
 
-    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">double |</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">double</span>
 
 }
 
@@ -120,7 +120,7 @@ case object NullVariableInfo extends VerificationTypeInfo {
 
     def tag: Int = VerificationTypeInfo.ITEM_Null
 
-    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification">null |</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = <span class="verification_type">null</span>
 
 }
 
@@ -131,7 +131,7 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo {
     def tag: Int = VerificationTypeInfo.ITEM_UninitializedThis
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification">uninitializedThis |</span>
+        <span class="verification_type">uninitializedThis</span>
     }
 }
 
@@ -143,7 +143,7 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         val referenceType = asJavaReferenceType(cpool_index)
-        referenceType.asSpan("")
+        referenceType.asSpan("verification_type")
     }
 }
 
@@ -154,7 +154,6 @@ case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeIn
     def tag: Int = VerificationTypeInfo.ITEM_Unitialized
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification">Uninitialized(pc: { offset }) |</span>
+        <span class="verification_type">Uninitialized({ offset }) |</span>
     }
 }
-
