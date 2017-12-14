@@ -241,7 +241,7 @@ object Purity extends PurityPropertyMetaInformation {
 
     /**
      * The key associated with every purity property. The name is "Purity"; the fallback is
-     * "Impure.Fallback".
+     * "Impure".
      */
     final val key = PropertyKey.create[Purity]("Purity", Impure, baseCycleResolutionStrategy _)
 
@@ -257,13 +257,15 @@ object Purity extends PurityPropertyMetaInformation {
     final val SideEffectFreeWithoutAllocationsFlags = IsNonDeterministic
     final val SideEffectFreeFlags = SideEffectFreeWithoutAllocationsFlags | PureFlags
     final val ExternallySideEffectFreeFlags = SideEffectFreeFlags | ModifiesReceiver
-    // TODO Shortly reason why Impure does not require/have additional flags!
-    final val ImpureFlags = ExternallySideEffectFreeFlags
+    // There is no flag for impurity as analyses have to treat [[ClassifiedImpure]] specially anyway
+    final val ImpureFlags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
 
-    // TODO Document who is excepted to call this method in which case and what the expected output is. (In particular w.r.t. (LB)Impure...)
-    def apply(flags: Int): Purity = {
-        // TODO Document why is it not necessary to take the IMPURE ones in consideration.
-        // i.e., document the underlying ideas/assumptions/....
+    /**
+     * Returns the purity level matching the given flags for internal use by the combine operation
+     * and unconditional/withoutExternal.
+     * This will not return Impure/LBImpure as they have to be handled seperately.
+     */
+    private def apply(flags: Int): Purity = {
         (flags: @switch) match {
             case PureWithoutAllocations.flags              ⇒ PureWithoutAllocations
             case LBSideEffectFreeWithoutAllocations.flags  ⇒ LBSideEffectFreeWithoutAllocations
@@ -273,27 +275,22 @@ object Purity extends PurityPropertyMetaInformation {
             case CLBSideEffectFreeWithoutAllocations.flags ⇒ CLBSideEffectFreeWithoutAllocations
             case CLBPure.flags                             ⇒ CLBPure
             case CLBSideEffectFree.flags                   ⇒ CLBSideEffectFree
-            case _ ⇒
-                // TODO explaing the conditions
-                if ((flags & PerformsDomainSpecificOperations) == 0) {
-                    ((flags | HasAllocations): @switch) match {
-                        case LBExternallyPure.flags            ⇒ LBExternallyPure
-                        case LBExternallySideEffectFree.flags  ⇒ LBExternallySideEffectFree
-                        case CLBExternallyPure.flags           ⇒ CLBExternallyPure
-                        case CLBExternallySideEffectFree.flags ⇒ CLBExternallySideEffectFree
-                    }
-                } else {
-                    ((flags & ~PerformsDomainSpecificOperations | HasAllocations): @switch) match {
-                        case LBPure.flags                      ⇒ LBDPure
-                        case LBSideEffectFree.flags            ⇒ LBDSideEffectFree
-                        case LBExternallyPure.flags            ⇒ LBDExternallyPure
-                        case LBExternallySideEffectFree.flags  ⇒ LBDExternallySideEffectFree
-                        case CLBPure.flags                     ⇒ CLBDPure
-                        case CLBSideEffectFree.flags           ⇒ CLBDSideEffectFree
-                        case CLBExternallyPure.flags           ⇒ CLBDExternallyPure
-                        case CLBExternallySideEffectFree.flags ⇒ CLBDExternallySideEffectFree
-                    }
-                }
+            // If `ModifiesReceiver` or `PerformsDomainSpecificOperations` is present,
+            // we don't distinguish between purity levels with/without allocations anymore
+            case _ ⇒ ((flags | HasAllocations): @switch) match {
+                case LBExternallyPure.flags             ⇒ LBExternallyPure
+                case LBExternallySideEffectFree.flags   ⇒ LBExternallySideEffectFree
+                case CLBExternallyPure.flags            ⇒ CLBExternallyPure
+                case CLBExternallySideEffectFree.flags  ⇒ CLBExternallySideEffectFree
+                case LBDPure.flags                      ⇒ LBDPure
+                case LBDSideEffectFree.flags            ⇒ LBDSideEffectFree
+                case LBDExternallyPure.flags            ⇒ LBDExternallyPure
+                case LBDExternallySideEffectFree.flags  ⇒ LBDExternallySideEffectFree
+                case CLBDPure.flags                     ⇒ CLBDPure
+                case CLBDSideEffectFree.flags           ⇒ CLBDSideEffectFree
+                case CLBDExternallyPure.flags           ⇒ CLBDExternallyPure
+                case CLBDExternallySideEffectFree.flags ⇒ CLBDExternallySideEffectFree
+            }
         }
     }
 }
@@ -415,7 +412,7 @@ case object LBDExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
 }
 
-trait ConditionalPurity extends Purity {
+sealed trait ConditionalPurity extends Purity {
     final def isRefinable = true // even in the context of a single phase
 }
 
@@ -551,9 +548,7 @@ case object CLBDExternallySideEffectFree extends ConditionalPurity {
  * Clients have to treat the method as impure. If the property is refinable clients can keep
  * the dependency.
  */
-abstract class ClassifiedImpure extends Purity {
-
-}
+sealed abstract class ClassifiedImpure extends Purity
 
 /**
  * The method needs to be treated as impure for the time being. However, the current
@@ -563,7 +558,7 @@ case object MaybePure extends ClassifiedImpure {
 
     final def isRefinable: Boolean = true
 
-    final val flags = ImpureFlags | PerformsDomainSpecificOperations | IsConditional
+    final val flags = ImpureFlags | IsConditional
 
     override def combine(other: Purity): Purity = {
         other match {
@@ -575,6 +570,7 @@ case object MaybePure extends ClassifiedImpure {
 
     override def toString: String = "MaybePure"
 
+    override def unconditional: Purity = LBImpure
 }
 
 /**
@@ -585,7 +581,7 @@ case object LBImpure extends ClassifiedImpure {
 
     final def isRefinable: Boolean = true
 
-    final val flags = ImpureFlags | PerformsDomainSpecificOperations
+    final val flags = ImpureFlags
 
     override def combine(other: Purity): Purity = if (other == Impure) Impure else this
 
@@ -598,7 +594,7 @@ case object Impure extends ClassifiedImpure {
 
     final def isRefinable: Boolean = false
 
-    final val flags = ImpureFlags | PerformsDomainSpecificOperations
+    final val flags = ImpureFlags
 
     override def combine(other: Purity): Purity = this
 
