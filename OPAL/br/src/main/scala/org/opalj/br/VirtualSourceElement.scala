@@ -245,12 +245,13 @@ sealed class VirtualMethod(
     override def equals(other: Any): Boolean = {
         other match {
             case that: VirtualMethod ⇒
-                (this.declaringClassType eq that.declaringClassType) &&
-                    this.descriptor == that.descriptor &&
-                    this.name == that.name
+                (that canEqual this) && (this.declaringClassType eq that.declaringClassType) &&
+                    this.descriptor == that.descriptor && this.name == that.name
             case _ ⇒ false
         }
     }
+
+    def canEqual(other: Any): Boolean = other.isInstanceOf[VirtualMethod]
 
     override def toString: String = {
         s"VirtualMethod($declaringClassType,$name,$descriptor)"
@@ -276,36 +277,26 @@ object VirtualMethod {
     }
 }
 
-final class VirtualForwardingMethod(
-        declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        val target:         Method
+final case class VirtualForwardingMethod(
+        override val declaringClassType: ReferenceType,
+        override val name:               String,
+        override val descriptor:         MethodDescriptor,
+        target:                          Method
 ) extends VirtualMethod(declaringClassType, name, descriptor) {
 
     override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
 
-}
+    override def hashCode: Int = (target.hashCode() * 41) + super.hashCode
 
-object VirtualForwardingMethod {
-
-    def apply(
-        declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        target:             Method
-    ): VirtualMethod = {
-        new VirtualForwardingMethod(declaringClassType, name, descriptor, target)
+    override def equals(other: Any): Boolean = other match {
+        case that: VirtualForwardingMethod ⇒
+            (that canEqual this) && (this.target eq that.target) && super.equals(other)
+        case _ ⇒ false
     }
 
-    def unapply(
-        virtualMethod: VirtualForwardingMethod
-    ): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
-        Some((
-            virtualMethod.declaringClassType,
-            virtualMethod.name,
-            virtualMethod.descriptor,
-            virtualMethod.target
-        ))
+    override def canEqual(other: Any): Boolean = other.isInstanceOf[VirtualForwardingMethod]
+
+    override def toString: String = {
+        s"VirtualForwardingMethod($declaringClassType,$name,$descriptor,$target)"
     }
 }
