@@ -26,32 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package instructions
+package org.opalj.br.instructions
 
-/**
- * An instruction where the jump targets are identified using `Symbols` associated with the
- * instructions which should be executed in case of a jump.
- * The labels are standard Scala `Symbol`.
- *
- * @author Malte Limmeroth
- * @author Michael Eichberg
- */
-trait LabeledInstruction extends InstructionLike {
+trait SimpleBranchInstructionLike
+    extends ControlTransferInstructionLike
+    with ConstantLengthInstruction
 
-    def branchTargets: Seq[Symbol]
+trait SimpleBranchInstruction extends ControlTransferInstruction with SimpleBranchInstructionLike {
 
-    /**
-     * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced
-     * by the branchoffsets and an [[Instruction]] is returned. If this instruction already
-     * has concrete branchoffsets nothing special will happen.
-     *
-     * If this instruction already has concrete jump targets nothing special will happen.
-     *
-     * @param   pc The final pc of this instruction in the code array.
-     * @param   pcs The map which maps all symbols to their final pcs.
-     */
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction
+    final override def asSimpleBranchInstruction: SimpleBranchInstruction = this
+
+    def branchoffset: Int
 
 }

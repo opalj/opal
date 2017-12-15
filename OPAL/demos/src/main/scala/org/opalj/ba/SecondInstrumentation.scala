@@ -30,36 +30,43 @@ package org.opalj
 package ba
 
 import java.io.ByteArrayInputStream
+import java.io.File
+import java.util.ArrayList
 
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
 import org.opalj.br.ObjectType
-import org.opalj.br.IntegerType
-import org.opalj.br.MethodDescriptor.JustReturnsString
-import org.opalj.br.MethodDescriptor.JustReturnsInteger
 import org.opalj.br.MethodDescriptor.JustTakes
+import org.opalj.br.MethodDescriptor.JustReturnsString
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
-import org.opalj.br.reader.Java8Framework
+import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
 
 /**
- * Demonstrates how to perform a simple instrumentation; here, we just search for toString calls
- * and print out the result to the console.
+ * Demonstrates how to perform an instrumentation where we need more information about the code
+ * (here, the (static) type of a value given to a method.
  *
  * @author Michael Eichberg
  */
-object SimpleInstrumentation extends App {
+object SecondInstrumentation extends App {
 
     val PrintStreamType = ObjectType("java/io/PrintStream")
     val SystemType = ObjectType("java/lang/System")
+    val CollectionType = ObjectType("java/util/Collection")
+    val PrintlnDescriptor = JustTakes(ObjectType.Object)
 
     val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
 
     // let's load the class
-    val in = () ⇒ this.getClass.getResourceAsStream("SimpleInstrumentationDemo.class")
-    val cf = Java8Framework.ClassFile(in).head // in this case we don't have invokedynamic resolution
+    val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
+    val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
+    val cf = p.classFile(TheType).get
+    // let's transform the methods
     val newMethods =
         for (m ← cf.methods) yield {
             m.body match {
@@ -67,36 +74,39 @@ object SimpleInstrumentation extends App {
                     m.copy() // these are native and abstract methods
 
                 case Some(code) ⇒
-                    // let's search all "toString" calls
+                    // let's search all "println" calls where the parameter has a specific
+                    // type (which is statically known)
+                    lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
+                    val operandsArray = aiResult.operandsArray
                     val lCode = CODE.toLabeledCode(code)
-                    for { (pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code } {
-                        // print out the result of toString
+                    var modified = false
+                    for {
+                        (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
+                        param = operandsArray(pc).head
+                        // if param.asDomainReferenceValue.valueType.get == CollectionType
+                        if param.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
+                    } {
+                        modified = true
                         lCode.insert(
-                            pc, InsertionPosition.After,
+                            pc, InsertionPosition.Before,
                             Seq(
                                 DUP,
+                                INVOKEVIRTUAL(ObjectType.Object, "toString", JustReturnsString),
                                 GETSTATIC(SystemType, "out", PrintStreamType),
                                 SWAP,
                                 INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
                             )
                         )
-                        // print out the receiver's hashCode (it has to be on the stack!)
-                        lCode.insert(
-                            pc, InsertionPosition.Before,
-                            Seq(
-                                DUP,
-                                INVOKEVIRTUAL(ObjectType.Object, "hashCode", JustReturnsInteger),
-                                GETSTATIC(SystemType, "out", PrintStreamType),
-                                SWAP,
-                                INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(IntegerType))
-                            )
-                        )
                     }
-                    val (newCode, _) = lCode.toCodeAttributeBuilder(m)
-                    m.copy(body = Some(newCode))
+                    if (modified) {
+                        val (newCode, _) = lCode.toCodeAttributeBuilder(m)
+                        m.copy(body = Some(newCode))
+                    } else {
+                        m.copy()
+                    }
             }
         }
-    val newRawCF = Assembler(toDA(cf.copy(methods = newMethods)))
+    val newRawCF = Assembler(toDA(cf.copy(methods = newMethods, version = UShortPair(0, 48))))
 
     //
     // THE FOLLOWING IS NOT RELATED TO BYTECODE MANIPULATION, BUT SHOWS ASPECTS OF OPAL WHICH ARE
@@ -104,9 +114,10 @@ object SimpleInstrumentation extends App {
     //
 
     // Let's see the old file...
+
     println("original: "+
         org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(in).head.toXHTML(None), "SimpleInstrumentationDemo", ".html"
+            da.ClassFileReader.ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None), "SimpleInstrumentationDemo", ".html"
         ))
 
     // Let's see the new file...
@@ -121,19 +132,11 @@ object SimpleInstrumentation extends App {
     val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)), this.getClass.getClassLoader)
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
-    newClass.getMethod("callsToString").invoke(instance)
+    println("1. Example")
+    newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, new ArrayList[AnyRef]())
+    println("2. Example")
+    newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, "data")
 
-}
-
-// the following is just a simple demo class which we are going to instrument
-class SimpleInstrumentationDemo {
-
-    def main(args: Array[String]): Unit = {
-        new SimpleInstrumentationDemo().callsToString()
-    }
-
-    def callsToString(): Unit = {
-        println("the length of the toString representation is: "+this.toString().length())
-    }
+    println("End")
 }
 
