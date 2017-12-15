@@ -583,7 +583,13 @@ case object LBImpure extends ClassifiedImpure {
 
     final val flags = ImpureFlags
 
-    override def combine(other: Purity): Purity = if (other == Impure) Impure else this
+    override def combine(other: Purity): Purity = {
+        other match {
+            case Impure    ⇒ Impure
+            case MaybePure ⇒ MaybePure
+            case _         ⇒ this
+        }
+    }
 
     override def toString: String = "LBImpure"
 
