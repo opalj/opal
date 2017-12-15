@@ -48,6 +48,7 @@ import org.opalj.fpcf.analyses.L0PurityAnalysis
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.properties.PureWithoutAllocations
 
 /**
  * Executes a purity analysis for a given code base.
@@ -103,8 +104,9 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val result = methodInfo +
             propertyStore.toString(false)+
-            "\nPure methods:             "+methodsWithPurityProperty.count(m ⇒ m._2 == LBPure)+
-            "\nSide-effect free methods: "+methodsWithPurityProperty.count(m ⇒ m._2 == LBSideEffectFree)
+            "\npure without allocations:  "+methodsWithPurityProperty.count(m ⇒ m._2 == PureWithoutAllocations)+
+            "\nAt least pure:             "+methodsWithPurityProperty.count(m ⇒ m._2 == LBPure)+
+            "\nAt least side-effect free: "+methodsWithPurityProperty.count(m ⇒ m._2 == LBSideEffectFree)
 
         BasicReport(result)
     }
