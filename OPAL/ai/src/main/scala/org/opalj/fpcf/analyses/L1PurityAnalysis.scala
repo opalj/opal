@@ -243,12 +243,15 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                 case PutField.ASTID     ⇒ isLocal(stmt.asPutField.objRef)
 
                 case PutStatic.ASTID    ⇒
-                    // Note that a putstatic is not pure/sideeffect free, even if it is executed
-                    // within a static initializer to initialize a field of `the` class; it is
-                    // possible that the initialization triggers the initialization of
-                    // another class which reads the value of this static field. See
+                    // Note that a putstatic is not necessarily pure/sideeffect free, even if it
+                    // is executed within a static initializer to initialize a field of
+                    // `the` class; it is possible that the initialization triggers the
+                    // initialization of another class which reads the value of this static field.
+                    // See
                     // https://stackoverflow.com/questions/6416408/static-circular-dependency-in-java
                     // for an in-depth discussion.
+                    // (Howevever, if we would check for cycles, we could determine that it is pure,
+                    // but this is not considered to be too useful...)
                     false
 
                 case CaughtException.ASTID ⇒
