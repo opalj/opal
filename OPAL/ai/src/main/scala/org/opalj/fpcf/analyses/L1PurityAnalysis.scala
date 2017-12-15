@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.ai.Domain
 import org.opalj.ai.isVMLevelValue
 import org.opalj.ai.pcOfVMLevelValue
@@ -45,7 +44,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
 import org.opalj.fpcf.properties.ClassImmutability
@@ -68,9 +67,11 @@ import org.opalj.tac._
  *
  * @note This analysis is sound only up to the usual standards, i.e. it does not cope with
  *       VirtualMachineErrors and may be unsound in the presence of native code, reflection or
- *       `sun.misc.Unsafe`.
- *       TODO Document how native methods (which do not use "Unsafe or reflection" could have
- *       a negative impact on the soundness).
+ *       `sun.misc.Unsafe`. Calls to native methods are generally
+ *       handled soundly as they are considered [[org.opalj.fpcf.properties.LBImpure]].
+ *       There are no soundness guarantees in the presence of load-time transformation.
+ *       Soundness in general depends on the soundness of the analyses that compute properties used
+ *       by this analysis, e.g. field mutability.
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
@@ -78,7 +79,7 @@ import org.opalj.tac._
  *
  * @note This analysis only derives the properties [[org.opalj.fpcf.properties.LBPure]],
  *       [[org.opalj.fpcf.properties.LBSideEffectFree]] and
- *       [[org.opalj.fpcf.properties.LBImpureBase]].
+ *       [[org.opalj.fpcf.properties.LBImpure]].
  *       Compared to the `L0PurityAnalysis`, it deals with all methods, even if their reference type
  *       parameters are mutable. It can handle accesses of (effectively) final instance fields,
  *       array loads, array length and virtual/interface calls. Array stores and field writes as
@@ -93,11 +94,9 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] =
-        project.get(DefaultTACAIKey)
+    val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
 
-    // TODO Use MethodExtensibility once the method extensibility key is available (again)
-    val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
+    val isOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     /**
      * Checks whether the statement, which is the origin of an exception, directly created the
@@ -243,8 +242,17 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                 case ArrayStore.ASTID   ⇒ isLocal(stmt.asArrayStore.arrayRef)
                 case PutField.ASTID     ⇒ isLocal(stmt.asPutField.objRef)
 
-                //TODO This is probably pure in a static initializer if the assigned field is a static field of this class. Is it?
-                case PutStatic.ASTID    ⇒ false
+                case PutStatic.ASTID ⇒
+                    // Note that a putstatic is not necessarily pure/sideeffect free, even if it
+                    // is executed within a static initializer to initialize a field of
+                    // `the` class; it is possible that the initialization triggers the
+                    // initialization of another class which reads the value of this static field.
+                    // See
+                    // https://stackoverflow.com/questions/6416408/static-circular-dependency-in-java
+                    // for an in-depth discussion.
+                    // (Howevever, if we would check for cycles, we could determine that it is pure,
+                    // but this is not considered to be too useful...)
+                    false
 
                 case CaughtException.ASTID ⇒
                     // Creating implicit exceptions is side-effect free because the Throwable
@@ -326,7 +334,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
          * early.
          */
         def checkPurityOfVirtualCall(
-            rcvrType:    ReferenceType,
+            rcvrType:    ReferenceType, // TODO Rename declaringClassType(?)
             isInterface: Boolean,
             name:        String,
             receiver:    Expr[V],
@@ -345,8 +353,12 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     val callee = project.instanceCall(declClass, rcvr.valueType.get, name, descr)
                     checkPurityOfCall(rcvrType, name, callee)
                 }
-            } else if (rcvrType.isObjectType && typeExtensibility(rcvrType.asObjectType).isNotNo) {
-                // IMPROVE Replace by MethodExtensibility based check once available
+            } else if (rcvrType.isObjectType && (
+                isInterface || {
+                    val mOpt = project.resolveMethodReference(rcvrType, name, descr, false)
+                    mOpt.isEmpty || isOverridable(mOpt.get).isYes
+                }
+            )) {
                 false // We don't know all overrides, so we are impure
             } else {
                 val callees =

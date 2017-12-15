@@ -64,7 +64,8 @@ class PurityPropertyTest extends FlatSpec with Matchers {
         CPureWithoutAllocations, CLBSideEffectFreeWithoutAllocations, CLBPure, CLBSideEffectFree,
         CLBExternallyPure, CLBExternallySideEffectFree, CLBDPure,
         CLBDSideEffectFree, CLBDExternallyPure,
-        CLBDExternallySideEffectFree
+        CLBDExternallySideEffectFree,
+        MaybePure
     )
 
     "purity levels" should "have the right properties" in {
@@ -1006,10 +1007,6 @@ class PurityPropertyTest extends FlatSpec with Matchers {
                 s" (was ${CLBDExternallySideEffectFree combine LBImpure})"
         )
 
-        assert(
-            (MaybePure combine LBImpure) == MaybePure,
-            "MaybePure combine LBImpure was not MaybePure"+
-                s" (was ${MaybePure combine LBImpure})"
-        )
+        assert((MaybePure combine LBImpure) == MaybePure)
     }
 }

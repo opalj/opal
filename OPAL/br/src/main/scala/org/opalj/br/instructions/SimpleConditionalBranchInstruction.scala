@@ -40,7 +40,7 @@ import org.opalj.collection.immutable.Naught
  */
 trait SimpleConditionalBranchInstructionLike
     extends ConditionalBranchInstructionLike
-    with ConstantLengthInstruction {
+    with SimpleBranchInstructionLike {
 
     /**
      * The comparison operator (incl. the constant) underlying the if instruction.
@@ -58,6 +58,7 @@ trait SimpleConditionalBranchInstructionLike
 
 trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction[T]]
     extends ConditionalBranchInstruction
+    with SimpleBranchInstruction
     with SimpleConditionalBranchInstructionLike {
 
     def branchoffset: Int
