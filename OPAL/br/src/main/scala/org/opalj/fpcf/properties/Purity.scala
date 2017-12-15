@@ -563,7 +563,7 @@ case object MaybePure extends ClassifiedImpure {
     override def combine(other: Purity): Purity = {
         other match {
             case Impure   ⇒ Impure
-            case LBImpure ⇒ LBImpure
+            case LBImpure ⇒ MaybePure
             case _        ⇒ this
         }
     }
