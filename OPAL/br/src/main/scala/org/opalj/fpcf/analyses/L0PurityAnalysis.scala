@@ -133,7 +133,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
 
                         nonVirtualCall(mii) match {
 
-                            case Success(callee) if declaredMethods.contains(callee) ⇒
+                            case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
                                 val purity = propertyStore(declaredMethods(callee), Purity.key)
 

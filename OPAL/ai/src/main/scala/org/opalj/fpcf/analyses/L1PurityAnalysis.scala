@@ -395,7 +395,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                 true // The java.lang.Object constructor is pure
             } else {
                 methodResult match {
-                    case Success(callee) if declaredMethods.contains(callee) ⇒
+                    case Success(callee) ⇒
                         if (callee == method) true // Self-recursive don't need to be checked
                         else {
                             val calleePurity = propertyStore(declaredMethods(callee), Purity.key)

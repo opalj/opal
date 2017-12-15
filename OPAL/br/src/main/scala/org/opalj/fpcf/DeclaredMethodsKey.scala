@@ -59,10 +59,6 @@ class DeclaredMethods(val data: Map[DeclaredMethod, DeclaredMethod]) {
         ).asInstanceOf[DefinedMethod]
     }
 
-    def contains(method: Method): Boolean = {
-        data.contains(DefinedMethod(method.classFile.thisType, method))
-    }
-
     def declaredMethods: Iterable[DeclaredMethod] = {
         data.keys
     }
