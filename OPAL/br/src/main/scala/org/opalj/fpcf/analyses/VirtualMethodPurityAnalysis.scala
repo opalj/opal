@@ -52,7 +52,7 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
         var dependees: Set[EOptionP[Method, Purity]] = Set.empty
 
         val methods = project.virtualCall(
-            m.classFile.thisType.packageName, vm.declaringClassType, m.name, m.descriptor //FIXME: Calling context is wrong
+            m.classFile.thisType.packageName, vm.declaringClassType, m.name, m.descriptor
         )
         for (method ← methods) {
             propertyStore(method, Purity.key) match {
