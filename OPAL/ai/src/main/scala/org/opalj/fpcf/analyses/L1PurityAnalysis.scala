@@ -67,9 +67,11 @@ import org.opalj.tac._
  *
  * @note This analysis is sound only up to the usual standards, i.e. it does not cope with
  *       VirtualMachineErrors and may be unsound in the presence of native code, reflection or
- *       `sun.misc.Unsafe`.
- *       TODO Document how native methods (which do not use "Unsafe or reflection" could have
- *       a negative impact on the soundness).
+ *       `sun.misc.Unsafe`. Calls to native methods are generally
+ *       handled soundly as they are considered [[org.opalj.fpcf.properties.LBImpure]].
+ *       There are no soundness guarantees in the presence of load-time transformation.
+ *       Soundness in general depends on the soundness of the analyses that compute properties used
+ *       by this analysis, e.g. field mutability.
  *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
@@ -95,7 +97,6 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
 
     val isOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
-    //val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
     /**
      * Checks whether the statement, which is the origin of an exception, directly created the

@@ -238,7 +238,6 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                         // => the best possible result is conditionally pure, but
                         // this method can still be impure if a field is not final or a
                         // type is not immutable or if method becomes impure!
-                        // => we have to clear all Purity related dependencies
                         bestPossiblePurity = CPureWithoutAllocations
                         dependees = dependees.filter(_.e ne e)
                         if (dependees.isEmpty)
