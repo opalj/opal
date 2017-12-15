@@ -51,6 +51,8 @@ class CodeAttributeBuilder[T] private[ba] (
 
     /**
      * Defines the max_stack value.
+     *
+     * (This overrides/disables the automatic computation of this value.)
      */
     def MAXSTACK(value: Int): this.type = {
         maxStack = Some(value)
@@ -59,12 +61,15 @@ class CodeAttributeBuilder[T] private[ba] (
 
     /**
      * Defines the max_locals value.
+     *
+     * (This overrides/disables the automatic computation of this value.)
      */
     def MAXLOCALS(value: Int): this.type = {
         maxLocals = Some(value)
         this
     }
 
+    /** Creates a `Code` attribute w.r.t. the given method. */
     def apply(jvmMethod: JVMMethod): (br.Code, (Map[br.PC, T], List[String])) = {
         this(jvmMethod.accessFlags, jvmMethod.name, jvmMethod.descriptor)
     }

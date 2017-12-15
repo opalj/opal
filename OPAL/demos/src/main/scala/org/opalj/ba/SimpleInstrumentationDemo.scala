@@ -27,31 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package ba
 
-/**
- * An instruction where the jump targets are identified using `Symbols` associated with the
- * instructions which should be executed in case of a jump.
- * The labels are standard Scala `Symbol`.
- *
- * @author Malte Limmeroth
- * @author Michael Eichberg
- */
-trait LabeledInstruction extends InstructionLike {
+// the following is just a simple demo class which we are going to instrument
+class SimpleInstrumentationDemo {
 
-    def branchTargets: Seq[Symbol]
+    def main(args: Array[String]): Unit = {
+        new SimpleInstrumentationDemo().callsToString()
+    }
 
-    /**
-     * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced
-     * by the branchoffsets and an [[Instruction]] is returned. If this instruction already
-     * has concrete branchoffsets nothing special will happen.
-     *
-     * If this instruction already has concrete jump targets nothing special will happen.
-     *
-     * @param   pc The final pc of this instruction in the code array.
-     * @param   pcs The map which maps all symbols to their final pcs.
-     */
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction
+    def callsToString(): Unit = {
+        println("the length of the toString representation is: "+this.toString().length())
+    }
 
+    def returnsValue(i: Int): Int = {
+        if (i % 2 == 0)
+            return -1;
+        else
+            return 2;
+    }
+
+    def playingWithTypes(a: AnyRef): Unit = {
+        a match {
+            case i: Integer ⇒
+                println("integer ")
+                println(i.intValue())
+            case c: java.util.Collection[_] ⇒
+                print("some collection ")
+                println(c) // let's assume that we want to know the type of c
+            case s: String ⇒
+                print("some string ")
+                println(s)
+        }
+    }
 }

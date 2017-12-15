@@ -41,12 +41,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
-/*
-import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.IFGT
-import org.opalj.br.instructions.GOTO
-import org.opalj.br.instructions.LoadString
-*/
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
 
@@ -56,7 +50,7 @@ import org.opalj.util.InMemoryClassLoader
  *
  * @author Michael Eichberg
  */
-object SimpleInstrumentation extends App {
+object FirstInstrumentation extends App {
 
     val PrintStreamType = ObjectType("java/io/PrintStream")
     val SystemType = ObjectType("java/lang/System")
@@ -79,7 +73,8 @@ object SimpleInstrumentation extends App {
                     var modified = false
                     for ((pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code) {
                         modified = true
-                        // print out the result of toString
+                        // print out the result of toString if and only if the type of o is
+                        // a collection...
                         lCode.insert(
                             pc, InsertionPosition.After,
                             Seq(
@@ -101,30 +96,6 @@ object SimpleInstrumentation extends App {
                             )
                         )
                     }
-                    // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
-                    // i.e., let's see how we add conditional logic.
-                    /* WE FIRST NEED TO FINISH THE GENERATION OF THE STACK_MAP TABLE ATTRIBUTE!
-                    for ((pc, IRETURN) ← code) {
-                        val gtTarget = Symbol(pc+":>")
-                        val printlnTarget = Symbol(pc+":println")
-                        lCode.insert(
-                            pc, InsertionPosition.Before,
-                            Seq(
-                                DUP, // duplicate the value
-                                GETSTATIC(SystemType, "out", PrintStreamType), // receiver
-                                SWAP, // the int value is on top now..
-                                IFGT(gtTarget),
-                                // value is less than 0
-                                LoadString("negative"), // top is the parameter, receiver is 2nd top most
-                                GOTO(printlnTarget),
-                                gtTarget, // this Symbol has to unique across all instrumentations of this method
-                                LoadString("positive"),
-                                printlnTarget,
-                                INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(IntegerType))
-                            )
-                        )
-                    }
-                    */
                     if (modified) {
                         val (newCode, _) = lCode.toCodeAttributeBuilder(m)
                         m.copy(body = Some(newCode))
@@ -162,24 +133,5 @@ object SimpleInstrumentation extends App {
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
 
-}
-
-// the following is just a simple demo class which we are going to instrument
-class SimpleInstrumentationDemo {
-
-    def main(args: Array[String]): Unit = {
-        new SimpleInstrumentationDemo().callsToString()
-    }
-
-    def callsToString(): Unit = {
-        println("the length of the toString representation is: "+this.toString().length())
-    }
-
-    def returnsValue(i: Int): Int = {
-        if (i % 2 == 0)
-            return -1;
-        else
-            return 2;
-    }
 }
 
