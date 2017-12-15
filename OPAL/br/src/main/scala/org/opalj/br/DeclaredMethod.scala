@@ -30,17 +30,33 @@ package org.opalj
 package br
 
 /**
- * Represents a method of a virtual class.
+ * Represents a declared method which is a method that is (not necessarily) defined by
+ * the class, but which belongs to the API of the class identified by `declaringClassType`.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 sealed abstract class DeclaredMethod {
 
-    val declaringClassType: ReferenceType
-    val name: String
-    val descriptor: MethodDescriptor
+    def declaringClassType: ReferenceType
 
-    def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+    def name: String
+
+    def descriptor: MethodDescriptor
+
+    def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
+
+    def hasDefinition: Boolean
+
+    def asDefinedMethod: DefinedMethod
+
+    /**
+     * Returns the defined method related to this declared method. The defined method
+     * is always either defined by the same class or a superclass thereof.
+     *
+     * The behavior of this method is undefined if [[hasDefinition]] return false.
+     */
+    def methodDefinition: Method
 
     override def hashCode: Int = {
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
@@ -53,12 +69,19 @@ final case class VirtualDeclaredMethod(
         descriptor:         MethodDescriptor
 ) extends DeclaredMethod {
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
+    def hasDefinition: Boolean = false
+    def methodDefinition: Method = {
+        throw new UnsupportedOperationException("no concrete method available")
+    }
+    def asDefinedMethod: DefinedMethod = throw new ClassCastException()
 
-    override def equals(other: Any): Boolean = other match {
-        case that: VirtualDeclaredMethod ⇒
-            (declaringClassType eq that.declaringClassType) && name == that.name && descriptor == that.descriptor
-        case _ ⇒ false
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: VirtualDeclaredMethod ⇒
+                (this.declaringClassType eq that.declaringClassType) &&
+                    this.name == that.name && this.descriptor == that.descriptor
+            case _ ⇒ false
+        }
     }
 
     override def toString: String = {
@@ -66,25 +89,37 @@ final case class VirtualDeclaredMethod(
     }
 }
 
+/**
+ * Represents a declared method; i.e., a method which belongs to the (public and privage) API of a
+ * class along with a reference to the declaration.
+ */
 final case class DefinedMethod(
         declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        target:             Method
+        definedMethod:      Method
 ) extends DeclaredMethod {
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
+    def hasDefinition: Boolean = true
+    def asDefinedMethod: DefinedMethod = this
 
-    override def hashCode: Int = (target.hashCode() * 41) + super.hashCode
+    def name: String = definedMethod.name
 
-    override def equals(other: Any): Boolean = other match {
-        case that: DefinedMethod ⇒
-            (this.target eq that.target) && (declaringClassType eq that.declaringClassType) && name == that.name && descriptor == that.descriptor
-        case _ ⇒ false
+    def descriptor: MethodDescriptor = definedMethod.descriptor
+
+    def methodDefinition: Method = definedMethod
+
+    override def hashCode: Int = (definedMethod.hashCode() * 41) + super.hashCode
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: DefinedMethod ⇒
+                (this.definedMethod eq that.definedMethod) &&
+                    (this.declaringClassType eq that.declaringClassType)
+            case _ ⇒
+                false
+        }
     }
 
     override def toString: String = {
-        s"DefinedMethod($declaringClassType,$name,$descriptor,$target)"
+        s"DefinedMethod($declaringClassType,$name,$descriptor,${definedMethod.toJava})"
     }
 }
-
