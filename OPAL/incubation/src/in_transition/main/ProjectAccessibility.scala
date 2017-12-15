@@ -43,7 +43,7 @@ sealed trait ProjectAccessibility extends Property {
 
     final type Self = ProjectAccessibility
 
-    final def isRefineable = false
+    final def isRefinable = false
 
     final def key = ProjectAccessibility.Key
 }

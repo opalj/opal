@@ -103,16 +103,16 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     }
     // Multiple properties can share the same property instance
     case object Palindrome extends PalindromeProperty {
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
     case object NoPalindrome extends PalindromeProperty {
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
     case object MaybePalindrome extends PalindromeProperty {
-        def isRefineable: Boolean = true
+        def isRefinable: Boolean = true
     }
     case object PalindromeIncomputable extends PalindromeProperty {
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
 
     /**
@@ -128,7 +128,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     case class BitsProperty(bits: Int) extends Property {
         type Self = BitsProperty
         def key = BitsKey
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
 
     // HERE: we consider a palindrome to be a super palindrome if the lead is itself a
@@ -143,7 +143,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     sealed trait SuperPalindromeProperty extends Property {
         type Self = SuperPalindromeProperty
         def key = SuperPalindromeKey
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
     // Multiple properties can share the same property instance
     case object SuperPalindrome extends SuperPalindromeProperty
@@ -162,13 +162,13 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     }
     // Multiple properties can share the same property instance
     case object Tainted extends TaintedProperty {
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
     case object NotTainted extends TaintedProperty {
-        def isRefineable: Boolean = false
+        def isRefinable: Boolean = false
     }
     case object MaybeTainted extends TaintedProperty {
-        def isRefineable: Boolean = true
+        def isRefinable: Boolean = true
     }
 
     final val StringLengthKey: PropertyKey[StringLength] = {
@@ -181,7 +181,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     case class StringLength(length: Int) extends Property {
         final type Self = StringLength
         final def key = StringLengthKey
-        final def isRefineable: Boolean = false
+        final def isRefinable: Boolean = false
     }
 
     final val CountKey: PropertyKey[Count] = {
@@ -194,7 +194,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     case class Count(count: Int) extends Property {
         final type Self = Count
         final def key = CountKey
-        final def isRefineable: Boolean = true
+        final def isRefinable: Boolean = true
     }
 
     final val PurityKey: PropertyKey[Purity] = {
@@ -210,9 +210,9 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         final type Self = Purity
         final def key = PurityKey
     }
-    case object Pure extends Purity { final override def isRefineable: Boolean = false }
-    case object Impure extends Purity { final override def isRefineable: Boolean = false }
-    case object ConditionallyPure extends Purity { final override def isRefineable: Boolean = true }
+    case object Pure extends Purity { final override def isRefinable: Boolean = false }
+    case object Impure extends Purity { final override def isRefinable: Boolean = false }
+    case object ConditionallyPure extends Purity { final override def isRefinable: Boolean = true }
 
     class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
         override def hashCode: Int = name.hashCode()
@@ -268,7 +268,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     case class ReachableNodes(nodes: scala.collection.Set[Node]) extends Property {
         type Self = ReachableNodes
         def key = ReachableNodesKey
-        def isRefineable = true
+        def isRefinable = true
     }
     object NoReachableNodes extends ReachableNodes(Set.empty) {
         override def toString: String = "NoReachableNodes"
@@ -305,7 +305,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     case class TreeLevel(length: Int) extends Property {
         final type Self = TreeLevel
         final def key = TreeLevelKey
-        final def isRefineable = false
+        final def isRefinable = false
     }
 
     override def afterEach(): Unit = {

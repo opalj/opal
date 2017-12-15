@@ -64,15 +64,15 @@ object Instantiability extends InstantiabilityPropertyMetaInformation {
  * Foo is not instantiable because it can not be instantiated except
  * by Foo itself which does never call the private constructor.
  */
-case object NotInstantiable extends Instantiability { final val isRefineable: Boolean = false }
+case object NotInstantiable extends Instantiability { final val isRefinable: Boolean = false }
 
 /**
  * Should be assigned to classes which can be instantiated or are instantiated.
  */
-case object Instantiable extends Instantiability { final val isRefineable: Boolean = false }
+case object Instantiable extends Instantiability { final val isRefinable: Boolean = false }
 
 /**
  * Classes that are MaybeInstantiable lack of information. E.g. we don't know whether it is
  * instantiable or not.
  */
-case object MaybeInstantiable extends Instantiability { final val isRefineable: Boolean = true }
+case object MaybeInstantiable extends Instantiability { final val isRefinable: Boolean = true }

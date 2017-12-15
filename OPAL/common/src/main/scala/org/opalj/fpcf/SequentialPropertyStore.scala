@@ -272,8 +272,8 @@ class SequentialPropertyStore(
                 val Result(e, p) = r
                 update(e, p, FinalUpdate)
 
-            case RefineableResult.id ⇒
-                val RefineableResult(e, p) = r
+            case RefinableResult.id ⇒
+                val RefinableResult(e, p) = r
                 update(e, p, IntermediateUpdate)
 
             case IntermediateResult.id ⇒

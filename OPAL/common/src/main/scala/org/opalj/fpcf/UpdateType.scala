@@ -43,7 +43,7 @@ sealed abstract class UpdateType(val name: String) {
 /**
  * The result is just an intermediate result that may be refined in the future.
  *
- * @note Refineable results are - downstream - only intermediate updates.
+ * @note Refinable results are - downstream - only intermediate updates.
  */
 case object IntermediateUpdate extends UpdateType("Intermediate Update") {
     final val id = 1

@@ -98,24 +98,24 @@ sealed abstract class ThrownExceptionsByOverridingMethods extends Property {
 }
 
 case class AllThrownExceptionsByOverridingMethods(
-        exceptions:   BRTypesSet = BRTypesSet.empty,
-        isRefineable: Boolean    = false
+        exceptions:  BRTypesSet = BRTypesSet.empty,
+        isRefinable: Boolean    = false
 ) extends ThrownExceptionsByOverridingMethods {
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: AllThrownExceptionsByOverridingMethods ⇒
-                this.isRefineable == that.isRefineable &&
+                this.isRefinable == that.isRefinable &&
                     this.exceptions == that.exceptions
             case _ ⇒ false
         }
     }
 
     override def hashCode: Int = 13 * exceptions.hashCode +
-        (if (isRefineable) 41 else 53)
+        (if (isRefinable) 41 else 53)
 }
 
 case object UnknownThrownExceptionsByOverridingMethods
     extends ThrownExceptionsByOverridingMethods {
-    final val isRefineable = false
+    final val isRefinable = false
 }

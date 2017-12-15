@@ -27,32 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package properties
+package ba
 
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
+// the following is just a simple demo class which we are going to instrument
+class SimpleInstrumentationDemo {
 
-/**
- * This property determines if an object leaks it's self reference (`this`) by passing
- * it to methods or assigning it to fields.
- */
-sealed trait SelfReferenceLeakage extends Property {
+    def main(args: Array[String]): Unit = {
+        new SimpleInstrumentationDemo().callsToString()
+    }
 
-    final type Self = SelfReferenceLeakage
+    def callsToString(): Unit = {
+        println("the length of the toString representation is: "+this.toString().length())
+    }
 
-    final def key = SelfReferenceLeakage.Key
+    def returnsValue(i: Int): Int = {
+        if (i % 2 == 0)
+            return -1;
+        else
+            return 2;
+    }
+
+    def playingWithTypes(a: AnyRef): Unit = {
+        a match {
+            case i: Integer ⇒
+                println("integer ")
+                println(i.intValue())
+            case c: java.util.Collection[_] ⇒
+                print("some collection ")
+                println(c) // let's assume that we want to know the type of c
+            case s: String ⇒
+                print("some string ")
+                println(s)
+        }
+    }
 }
-
-object SelfReferenceLeakage {
-    final val Key = PropertyKey.create[SelfReferenceLeakage](
-        "SelfReferenceLeakage",
-        LeaksSelfReference
-    )
-}
-
-case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object MayNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = true }

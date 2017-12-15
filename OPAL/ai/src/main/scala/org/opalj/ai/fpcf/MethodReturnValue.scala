@@ -58,7 +58,7 @@ case class MethodReturnValue private (
 
     final def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
 
-    final def isRefineable = true
+    final def isRefinable = true
 
 }
 

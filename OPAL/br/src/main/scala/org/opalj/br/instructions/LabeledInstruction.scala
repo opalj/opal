@@ -55,13 +55,3 @@ trait LabeledInstruction extends InstructionLike {
     def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction
 
 }
-
-private[instructions] trait NoLabels extends LabeledInstruction { this: Instruction ⇒
-
-    final override def branchTargets: Seq[Symbol] = Nil
-
-    final override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction = this
-
-    final def toLabeledInstruction(currentPC: PC): LabeledInstruction = this
-
-}

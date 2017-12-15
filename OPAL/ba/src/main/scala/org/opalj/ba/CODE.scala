@@ -33,7 +33,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.br.PC
 import org.opalj.br.Code
-import org.opalj.br.instructions.LabeledInstruction
+// import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.WIDE
 
 /**
@@ -57,32 +57,29 @@ object CODE {
 
     def apply[T](codeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
 
-        require(
-            codeElements.exists(_.isInstanceOf[InstructionElement]),
-            "a code attribute has to have at least one instruction"
-        )
-
         val labelSymbols = codeElements.collect { case LabelElement(r) ⇒ r }
+
+        require(codeElements.exists(_.isInstanceOf[InstructionElement]), "no code found")
+
         require(
             labelSymbols.distinct.length == labelSymbols.length,
-            "each label has to be unique: "+
-                labelSymbols.groupBy(identity).collect { case (x, ys) if ys.size > 1 ⇒ x }.mkString
+            labelSymbols.
+                groupBy(identity).
+                collect { case (x, ys) if ys.size > 1 ⇒ x }.
+                mkString("each label has to be unique:\n\t", "\n\t", "")
         )
 
-        codeElements.collect { case InstructionElement(i) ⇒ i }.foreach {
-            case bi: LabeledInstruction ⇒
-                bi.branchTargets foreach { target ⇒
-                    require(
-                        labelSymbols.contains(target),
-                        s"branch target label $target of $bi undefined"
-                    )
+        codeElements foreach {
+            case InstructionElement(i) ⇒
+                i.branchTargets.foreach { target ⇒
+                    require(labelSymbols.contains(target), s"$i: undefined branch target $target")
                 }
-            case _ ⇒ // we don't care
+            case _ ⇒ /*NOT RELEVANT*/
         }
 
         val formattedInstructions = ArrayBuffer.empty[CodeElement[T]]
 
-        //fill the array with `null`s for PCs representing instruction arguments
+        // fill the array with `null`s for PCs representing instruction arguments
         var nextPC = 0
         var currentPC = 0
         var modifiedByWide = false
@@ -101,10 +98,10 @@ object CODE {
                         modifiedByWide = true
                     }
 
-                case _ ⇒ // we are not interested in EXCEPTION HANDLERS, LABLES...
+                case _ ⇒ // we are not interested in EXCEPTION HANDLERS, LABELS...
             }
         }
-        //calculate the PCs of all PseudoInstructions // IMPROVE merge with previous loop!
+        // calculate the PCs of all PseudoInstructions // IMPROVE merge with previous loop!
         var labels: Map[Symbol, br.PC] = Map.empty
         val exceptionHandlerBuilder = new ExceptionHandlerGenerator
         val lineNumberTableBuilder = new LineNumberTableBuilder()
@@ -114,13 +111,18 @@ object CODE {
                 val pc = index - count
                 formattedInstructions.remove(pc)
                 inst match {
-                    case LabelElement(label)        ⇒ labels += (label → (pc))
+                    case LabelElement(label)        ⇒ labels += (label → pc)
                     case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, pc)
                     case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, pc)
                 }
                 count += 1
             }
         }
+
+        // We need to check if we have to adapt ifs and gotos if the branchtarget is not
+        // representable using a signed short; in case of gotos we simply use goto_w; in
+        // case of ifs, we "negate" the condition and add a goto_w w.r.t. the target and
+        // in the other cases jump to the original instruction which follows the if.
 
         val exceptionHandlers = exceptionHandlerBuilder.result()
 
@@ -255,9 +257,10 @@ object CODE {
      *         unique jump targets for instructions.
      */
     def insert(
-        insertionPC: PC, insertionPosition: InsertionPosition.Value,
-        newInstructions: Seq[CodeElement[AnyRef]],
-        labeledCode:     LabeledCode
+        insertionPC:       PC,
+        insertionPosition: InsertionPosition.Value,
+        newInstructions:   Seq[CodeElement[AnyRef]],
+        labeledCode:       LabeledCode
     ): Unit = {
         val instructions = labeledCode.instructions
 
@@ -303,6 +306,7 @@ object InsertionPosition extends Enumeration {
 }
 
 /**
+ * Container for some labeled code.
  *
  * @note Using LabeledCode is NOT thread safe.
  *
@@ -315,8 +319,13 @@ class LabeledCode(
 
     def toCodeAttributeBuilder: CodeAttributeBuilder[AnyRef] = {
         val initialCodeAttributeBuilder = CODE(instructions)
+        // let's check if we have to compute a new StackMapTable attribute
+        // originalCode.cfJoins
+        // initialCodeAttributeBuilder.instructions
+
         // TODO We have to adapt the exiting attributes and we have to merge the line number tables
         // if necessary.
+
         initialCodeAttributeBuilder
     }
 

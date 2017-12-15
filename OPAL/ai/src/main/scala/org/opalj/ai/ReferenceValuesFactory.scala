@@ -94,7 +94,9 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
     /**
      * Creates a new `DomainValue` that represents ''a new,
      * uninitialized instance of an object of the given type''. The object was
-     * created by the (`NEW`) instruction with the specified program counter.
+     * created by the (`NEW`) instruction with the specified program counter or - if value
+     * origin is -1 - represents this in a constructor call before the call of the super
+     * constructor.
      *
      * OPAL calls this method when it evaluates `newobject` instructions.
      * If the bytecode is valid a call of one of the (super) object's constructors will

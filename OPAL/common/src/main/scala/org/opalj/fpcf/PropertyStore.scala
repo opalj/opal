@@ -216,7 +216,7 @@ abstract class PropertyStore {
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
      *      `EP(e,Property)` otherwise; in the later case `EP` may encapsulate a property that
      *      is the final result of a computation `ep.isPropertyFinal === true` even though the
-     *      property as such is in general refineable. Hence, to determine if the property in
+     *      property as such is in general refinable. Hence, to determine if the property in
      *      the current analysis context is final it is necessary to call the `EP` object's
      *      `isPropertyFinal` method.
      */

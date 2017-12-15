@@ -26,33 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
-package properties
+package org.opalj.br.instructions
 
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
+trait SimpleBranchInstructionLike
+    extends ControlTransferInstructionLike
+    with ConstantLengthInstruction
 
-/**
- * This property determines if an object leaks it's self reference (`this`) by passing
- * it to methods or assigning it to fields.
- */
-sealed trait SelfReferenceLeakage extends Property {
+trait SimpleBranchInstruction extends ControlTransferInstruction with SimpleBranchInstructionLike {
 
-    final type Self = SelfReferenceLeakage
+    final override def asSimpleBranchInstruction: SimpleBranchInstruction = this
 
-    final def key = SelfReferenceLeakage.Key
+    def branchoffset: Int
+
 }
-
-object SelfReferenceLeakage {
-    final val Key = PropertyKey.create[SelfReferenceLeakage](
-        "SelfReferenceLeakage",
-        LeaksSelfReference
-    )
-}
-
-case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object MayNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = true }

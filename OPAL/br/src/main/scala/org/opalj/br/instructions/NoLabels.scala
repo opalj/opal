@@ -27,32 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package properties
+package br
+package instructions
 
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
+private[instructions] trait NoLabels extends LabeledInstruction { this: Instruction ⇒
 
-/**
- * This property determines if an object leaks it's self reference (`this`) by passing
- * it to methods or assigning it to fields.
- */
-sealed trait SelfReferenceLeakage extends Property {
+    final override def branchTargets: Seq[Symbol] = Nil
 
-    final type Self = SelfReferenceLeakage
+    final override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction = this
 
-    final def key = SelfReferenceLeakage.Key
+    final def toLabeledInstruction(currentPC: PC): LabeledInstruction = this
+
 }
-
-object SelfReferenceLeakage {
-    final val Key = PropertyKey.create[SelfReferenceLeakage](
-        "SelfReferenceLeakage",
-        LeaksSelfReference
-    )
-}
-
-case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object MayNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = true }

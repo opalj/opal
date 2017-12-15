@@ -71,7 +71,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
         val concreteMethod = ps(m, ThrownExceptions.Key)
         concreteMethod match {
             case EP(_, a: AllThrownExceptions) ⇒
-                methodIsRefinable = a.isRefineable
+                methodIsRefinable = a.isRefinable
                 exceptions ++= a.types.concreteTypes
             case EP(_, ThrownExceptionsAreUnknown(_)) ⇒
                 hasUnknownExceptions = true
@@ -104,7 +104,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
             .foreach {
                 case EP(_, c: AllThrownExceptionsByOverridingMethods) ⇒
                     exceptions ++= c.exceptions.concreteTypes
-                    methodIsRefinable |= c.isRefineable
+                    methodIsRefinable |= c.isRefinable
                 case EP(_, UnknownThrownExceptionsByOverridingMethods) ⇒
                     hasUnknownExceptions = true
                 case epk ⇒ dependees += epk
@@ -137,7 +137,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
             val r = if (hasUnknownExceptions)
                 UnknownThrownExceptionsByOverridingMethods
             else
-                AllThrownExceptionsByOverridingMethods(exceptions, isRefineable = dependees.nonEmpty)
+                AllThrownExceptionsByOverridingMethods(exceptions, isRefinable = dependees.nonEmpty)
             if (dependees.isEmpty) {
                 Result(m, r)
             } else {
@@ -148,7 +148,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
         val r = if (hasUnknownExceptions)
             UnknownThrownExceptionsByOverridingMethods
         else
-            AllThrownExceptionsByOverridingMethods(exceptions, isRefineable = dependees.nonEmpty)
+            AllThrownExceptionsByOverridingMethods(exceptions, isRefinable = dependees.nonEmpty)
 
         if (dependees.isEmpty) {
             Result(m, r)

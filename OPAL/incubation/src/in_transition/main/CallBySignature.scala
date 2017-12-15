@@ -92,7 +92,7 @@ sealed trait CallBySignature extends Property {
 
     final type Self = CallBySignature
 
-    final def isRefineable = false
+    final def isRefinable = false
 
     /**
      * Returns the key used by all `CallBySignature` properties.

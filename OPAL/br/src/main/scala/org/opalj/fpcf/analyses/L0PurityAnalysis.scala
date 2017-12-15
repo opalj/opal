@@ -32,58 +32,28 @@ package analyses
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.NonFinalField
-import org.opalj.fpcf.properties.Impure
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.MaybePure
-import org.opalj.fpcf.properties.ConditionallyPure
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.SourceElement
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.NEWARRAY
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.MULTIANEWARRAY
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.LALOAD
-import org.opalj.br.instructions.IALOAD
-import org.opalj.br.instructions.CALOAD
-import org.opalj.br.instructions.BALOAD
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.LASTORE
-import org.opalj.br.instructions.SASTORE
-import org.opalj.br.instructions.SALOAD
-import org.opalj.br.instructions.DALOAD
-import org.opalj.br.instructions.FALOAD
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions._
+
+import org.opalj.fpcf.properties.FinalField
+import org.opalj.fpcf.properties.NonFinalField
+import org.opalj.fpcf.properties.FieldMutability
+
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
+
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.MaybePure
+import org.opalj.fpcf.properties.LBImpure
+import org.opalj.fpcf.properties.CPureWithoutAllocations
+import org.opalj.fpcf.properties.PureWithoutAllocations
 
 /**
- * Very simple, fast, but also imprecise analysis of the purity of methods. See the
+ * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
  * [[org.opalj.fpcf.properties.Purity]] property for details regarding the precise
  * semantics of `(Im)Pure`.
  *
@@ -105,7 +75,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
      *
      * This function encapsulates the continuation.
      */
-    private[this] def doDeterminePurity(
+    def doDeterminePurityOfBody(
         method:           Method,
         initialDependees: Set[EOptionP[SourceElement, Property]]
     ): PropertyComputationResult = {
@@ -119,7 +89,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
 
         var dependees = initialDependees
         var lastResult: EP[Method, Purity] = EP(method, MaybePure)
-        var bestPossiblePurity: Purity = Pure
+        var bestPossiblePurity: Purity = PureWithoutAllocations
 
         var currentPC = 0
         while (currentPC < maxPC) {
@@ -140,7 +110,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                                 if (fieldClassType.isDefined)
                                     dependees += EPK(fieldClassType.get, TypeImmutability.key)
                                 else
-                                    return Result(method, Impure);
+                                    return Result(method, LBImpure);
                             }
                             if (field.isNotFinal) {
                                 dependees += EPK(field, FieldMutability.key)
@@ -149,7 +119,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                         case _ ⇒
                             // We know nothing about the target field (it is not
                             // found in the scope of the current project).
-                            return Result(method, Impure);
+                            return Result(method, LBImpure);
                     }
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
@@ -168,14 +138,14 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                                 val purity = propertyStore(callee, Purity.key)
 
                                 purity match {
-                                    case EP(_, Pure) ⇒ /* Nothing to do...*/
-
-                                    case EP(_, Impure | MaybePure) ⇒
-                                        return Result(method, Impure);
+                                    case EP(_, PureWithoutAllocations) ⇒ /* Nothing to do...*/
 
                                     // Handling cyclic computations
-                                    case ep @ EP(_, ConditionallyPure) ⇒
+                                    case ep @ EP(_, CPureWithoutAllocations | MaybePure) ⇒
                                         dependees += ep
+
+                                    case EP(_, _) ⇒
+                                        return Result(method, LBImpure);
 
                                     case epk ⇒
                                         dependees += epk
@@ -184,7 +154,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                             case _ /* Empty or Failure */ ⇒
                                 // We know nothing about the target method (it is not
                                 // found in the scope of the current project).
-                                return Result(method, Impure);
+                                return Result(method, LBImpure);
 
                         }
                 }
@@ -204,15 +174,21 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    return Result(method, Impure);
+                    return Result(method, LBImpure);
+
+                case ARETURN.opcode |
+                    IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
+                    RETURN.opcode ⇒
+                // if we have a monitor instruction the method is impure anyway..
+                // hence, we can ignore the monitor related implicit exception
 
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
                     // as long as no implicit exceptions are raised.
                     if (instruction.jvmExceptions.nonEmpty) {
-                        // JVM Excpections reify the stack and, hence, make the method impure as
+                        // JVM Exceptions reify the stack and, hence, make the method impure as
                         // the calling context is now an explicit part of the method's result.
-                        return Result(method, Impure);
+                        return Result(method, LBImpure);
                     }
                 // else ok..
 
@@ -223,7 +199,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
         // IN GENERAL
         // Every method that is not identified as being impure is (conditionally)pure.
         if (dependees.isEmpty)
-            return Result(method, Pure);
+            return Result(method, PureWithoutAllocations);
 
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
@@ -239,7 +215,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                         Result(method, bestPossiblePurity)
                     } else if (dependees.forall(d ⇒ d.pk == Purity.key)) {
                         // We can now report an intermediate result:
-                        lastResult = EP(method, ConditionallyPure)
+                        lastResult = EP(method, CPureWithoutAllocations)
                         IntermediateResult(lastResult, dependees, c)
                     } else {
                         // We still have dependencies regarding field mutability/type immutability;
@@ -250,57 +226,52 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                 case AtLeastConditionallyImmutableType ⇒
                     // The result remains as it is..., however, we have to update the dependee
                     // w.r.t. the last seen property.
-                    dependees = dependees.filter(eOptP ⇒ eOptP.e eq e) + EP(e.asInstanceOf[SourceElement], p)
+                    dependees = dependees.filter(eOptP ⇒ eOptP.e ne e) + EP(e.asInstanceOf[SourceElement], p)
                     IntermediateResult(lastResult, dependees, c)
 
-                case _: TypeImmutability ⇒ Result(method, Impure) // The type is at most conditionally immutable.
-                case _: NonFinalField    ⇒ Result(method, Impure)
+                // The type is at most conditionally immutable.
+                case _: TypeImmutability ⇒ Result(method, LBImpure)
+                case _: NonFinalField    ⇒ Result(method, LBImpure)
 
-                case Impure | MaybePure  ⇒ Result(method, Impure)
-
-                case ConditionallyPure ⇒
+                case CPureWithoutAllocations ⇒
                     if (ut.isFinalUpdate) {
                         // => the best possible result is conditionally pure, but
                         // this method can still be impure if a field is not final or a
-                        // type is not immutable!
-                        bestPossiblePurity = ConditionallyPure
-                        // we have to clear all Purity related dependencies
-                        dependees = dependees.filter(_.pk != Purity.key)
+                        // type is not immutable or if method becomes impure!
+                        bestPossiblePurity = CPureWithoutAllocations
+                        dependees = dependees.filter(_.e ne e)
                         if (dependees.isEmpty)
                             Result(method, bestPossiblePurity)
                         else {
-                            assert(lastResult.hasNoProperty /* is still an EPK */ )
                             IntermediateResult(lastResult, dependees, c)
                         }
                     } else {
                         val newEP = EP(e.asInstanceOf[Method], p)
                         dependees = dependees.filter(_.e ne e) + newEP
-
                         IntermediateResult(lastResult, dependees, c)
                     }
 
-                case Pure ⇒
-                    dependees = dependees.filter { _.e ne e }
+                case PureWithoutAllocations ⇒
+                    dependees = dependees.filter(_.e ne e)
                     if (dependees.isEmpty)
-                        Result(method, Pure)
+                        Result(method, PureWithoutAllocations)
                     else {
                         IntermediateResult(lastResult, dependees, c)
                     }
+
+                case _: Purity ⇒
+                    // a called method is impure...
+                    Result(method, LBImpure)
             }
         }
 
-        if (dependees.exists(eOptP ⇒ eOptP.pk != Purity.key)) {
-            // We have dependencies which we have to resolve before we will have a first
-            // result.
-            IntermediateResult(lastResult, dependees, c)
-        } else {
-            IntermediateResult(method, ConditionallyPure, dependees, c)
+        if (dependees.forall(eOptP ⇒ eOptP.pk == Purity.key)) {
+            lastResult = EP(method, CPureWithoutAllocations)
         }
+        IntermediateResult(lastResult, dependees, c)
     }
 
-    protected def doCheckDescriptorImmutability(
-        method: Method
-    ): PropertyComputationResult = {
+    def doDeterminePurity(method: Method): PropertyComputationResult = {
 
         // All parameters either have to be base types or have to be immutable.
         // IMPROVE Use plain object type once we use ObjectType in the store!
@@ -308,19 +279,19 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
             case t: ObjectType ⇒
                 project.classFile(t) match {
                     case Some(cf) ⇒ cf
-                    case None     ⇒ return Result(method, Impure);
+                    case None     ⇒ return Result(method, LBImpure);
                 }
         }
         val methodReturnType = method.descriptor.returnType
         if (methodReturnType.isArrayType) {
             // we currently have no logic to decide whether the array was created locally
-            // or was created elsewhere...
-            return Result(method, Impure);
+            // and did not escape or was created elsewhere...
+            return Result(method, LBImpure);
         }
         if (methodReturnType.isObjectType) {
             project.classFile(methodReturnType.asObjectType) match {
                 case Some(cf) ⇒ referenceTypes ++= Iterator(cf)
-                case None     ⇒ return Result(method, Impure);
+                case None     ⇒ return Result(method, LBImpure);
             }
         }
 
@@ -331,13 +302,14 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                 case epk: EPK[_, _]       ⇒ dependees += epk
 
                 case ep @ EP(_, immutability) ⇒
-                    if (immutability.isRefineable)
+                    if (immutability.isRefinable)
                         dependees += ep
                     else
-                        return Result(method, Impure);
+                        return Result(method, LBImpure);
             }
         }
-        doDeterminePurity(method, dependees)
+
+        doDeterminePurityOfBody(method, dependees)
     }
 
     /**
@@ -345,16 +317,16 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
      */
     def determinePurity(method: Method): PropertyComputationResult = {
         if (method.isSynchronized)
-            return Result(method, Impure);
+            return Result(method, LBImpure);
 
-        // 1. step ( will schedule 2. step if necessary):
-        doCheckDescriptorImmutability(method)
+        // 1. step (will schedule 2. step if necessary):
+        doDeterminePurity(method)
     }
 
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
-            case m: Method ⇒ doDeterminePurity(m)
+            case m: Method ⇒ determinePurity(m)
             case e         ⇒ throw new UnknownError("purity is only defined for methods")
         }
     }

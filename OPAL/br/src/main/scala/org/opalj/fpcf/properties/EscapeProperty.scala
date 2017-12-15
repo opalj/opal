@@ -191,7 +191,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
  */
 case object NoEscape extends EscapeProperty(3) {
 
-    final val isRefineable = false
+    final val isRefinable = false
 
     override def propertyName: String = "No"
 
@@ -227,7 +227,7 @@ case object NoEscape extends EscapeProperty(3) {
  * @author Florian Kuebler
  */
 case object ArgEscape extends EscapeProperty(2) {
-    final val isRefineable = false
+    final val isRefinable = false
 
     override def propertyName: String = "Arg"
 
@@ -254,7 +254,7 @@ case object ArgEscape extends EscapeProperty(2) {
  *       and Mössenböck
  */
 sealed abstract class MethodEscape extends EscapeProperty(1) {
-    final val isRefineable = false
+    final val isRefinable = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case NoEscape       ⇒ this
@@ -362,7 +362,7 @@ case object MethodEscapeViaReturnAssignment extends MethodEscape {
  * @author Florian Kuebler
  */
 case object MaybeNoEscape extends EscapeProperty(3) { // TODO shouldn't "level" be "0" ... a refinement to MaybeArgEscape should be possible... right?
-    final val isRefineable = true
+    final val isRefinable = true
 
     override def propertyName: String = "MaybeNo"
 
@@ -389,7 +389,7 @@ case object MaybeNoEscape extends EscapeProperty(3) { // TODO shouldn't "level" 
  */
 case object MaybeArgEscape extends EscapeProperty(2) {
 
-    final val isRefineable = true
+    final val isRefinable = true
 
     override def propertyName: String = "MaybeArg"
 
@@ -420,7 +420,7 @@ case object MaybeArgEscape extends EscapeProperty(2) {
  */
 case object MaybeMethodEscape extends EscapeProperty(1) {
 
-    final val isRefineable = true
+    final val isRefinable = true
 
     override def propertyName: String = "MaybeMethod"
 
@@ -442,7 +442,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  * This property should be used if and only if the analysis is conclusive and could determine
  * that the value definitively escapes globally.
  * If a more advanced analysis – potentially run later – could identify an object
- * as only [[MethodEscape]], [[ArgEscape]] or even [[NoEscape]] then the refineable property
+ * as only [[MethodEscape]], [[ArgEscape]] or even [[NoEscape]] then the refinable property
  * [[MaybeNoEscape]] should be used.
  *
  * @example
@@ -471,7 +471,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  * @author Florian Kuebler
  */
 sealed abstract class GlobalEscape extends EscapeProperty(0) {
-    final val isRefineable = false
+    final val isRefinable = false
     override def meet(that: EscapeProperty): EscapeProperty = this
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 }

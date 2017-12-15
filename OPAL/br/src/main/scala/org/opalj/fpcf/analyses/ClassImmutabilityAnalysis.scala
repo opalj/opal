@@ -140,7 +140,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // If the mutability of the super class is not yet finally determined, we have to
         // keep a dependency to it.
-        if (superClassMutability.isRefineable) {
+        if (superClassMutability.isRefinable) {
             dependees ::= EP(superClassFile, superClassMutability)
         }
 
@@ -365,7 +365,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             }
         }
 
-        //[DEBUG] assert(initialImmutability.isRefineable)
+        //[DEBUG] assert(initialImmutability.isRefinable)
         val result = IntermediateResult(cf, initialImmutability, dependees, c)
         createIncrementalResult(cf, initialImmutability, result)
     }
