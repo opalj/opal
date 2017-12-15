@@ -30,8 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.Method
-import org.opalj.br.VirtualForwardingMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.PureWithoutAllocations
 import org.opalj.fpcf.properties.Purity
@@ -46,16 +45,18 @@ import org.opalj.fpcf.properties.ClassifiedImpure
  */
 class VirtualMethodPurityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
-    def determinePurity(vm: VirtualForwardingMethod): PropertyComputationResult = {
-        val m = vm.target
+    val declaredMethods = project.get(DeclaredMethodsKey)
+
+    def determinePurity(dm: DefinedMethod): PropertyComputationResult = {
+        val m = dm.definedMethod
         var maxPurity: Purity = PureWithoutAllocations
-        var dependees: Set[EOptionP[Method, Purity]] = Set.empty
+        var dependees: Set[EOptionP[DefinedMethod, Purity]] = Set.empty
 
         val methods = project.virtualCall(
-            m.classFile.thisType.packageName, vm.declaringClassType, m.name, m.descriptor
+            m.classFile.thisType.packageName, dm.declaringClassType, m.name, m.descriptor
         )
         for (method ← methods) {
-            propertyStore(method, Purity.key) match {
+            propertyStore(declaredMethods(method), Purity.key) match {
                 case ep @ EP(_, p) ⇒
                     maxPurity = maxPurity combine p
                     if (p.isConditional) dependees += ep
@@ -68,32 +69,32 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
             maxPurity = maxPurity combine p.asInstanceOf[Purity]
             if (p.asInstanceOf[Purity].isConditional) {
                 assert(!ut.isFinalUpdate)
-                dependees += EP(e.asInstanceOf[Method], p.asInstanceOf[Purity])
+                dependees += EP(e.asInstanceOf[DefinedMethod], p.asInstanceOf[Purity])
             }
 
             if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
                 //println(s"Computing VMPurity for $vm : $maxPurity")
-                Result(vm, VirtualMethodPurity(maxPurity.unconditional))
+                Result(dm, VirtualMethodPurity(maxPurity.unconditional))
             } else {
-                IntermediateResult(vm, VirtualMethodPurity(maxPurity), dependees, c)
+                IntermediateResult(dm, VirtualMethodPurity(maxPurity), dependees, c)
             }
         }
 
         if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
             //println(s"Computing VMPurity for $vm : $maxPurity")
-            Result(vm, VirtualMethodPurity(maxPurity.unconditional))
+            Result(dm, VirtualMethodPurity(maxPurity.unconditional))
         } else {
             maxPurity = maxPurity combine CPureWithoutAllocations
-            IntermediateResult(vm, VirtualMethodPurity(maxPurity), dependees, c)
+            IntermediateResult(dm, VirtualMethodPurity(maxPurity), dependees, c)
         }
     }
 
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
-            case m: VirtualForwardingMethod ⇒ determinePurity(m)
+            case m: DefinedMethod ⇒ determinePurity(m)
             case e ⇒ throw new UnknownError(
-                "virtual method purity is only defined for virtual forwarding methods"
+                "virtual method purity is only defined for defined methods"
             )
         }
     }
@@ -108,8 +109,8 @@ object VirtualMethodPurityAnalysis extends FPCFAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(project)
-        val vms = project.get(VirtualForwardingMethodsKey)
-        propertyStore.scheduleForEntities(vms.virtualForwardingMethods)(analysis.determinePurity)
+        val vms = project.get(DeclaredMethodsKey)
+        propertyStore.scheduleForEntities(vms.declaredMethods)(analysis.doDeterminePurity)
         analysis
     }
 

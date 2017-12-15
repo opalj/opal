@@ -31,43 +31,54 @@ package org.opalj.fpcf
 import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import org.opalj.br.VirtualForwardingMethod
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.log.OPALLogger.error
 
 /**
- * The set of all VirtualForwardingMethods.
+ * The set of all DeclaredMethods.
  *
  * @author DominikHelm
  */
-class VirtualForwardingMethods(val data: Map[VirtualForwardingMethod, VirtualForwardingMethod]) {
+class DeclaredMethods(val data: Map[DeclaredMethod, DeclaredMethod]) {
 
     /**
      * Returns the unique identity of a VirtualForwardingMethod or None if that
      * VirtualForwardingMethod is unknown.
      */
-    def apply(vm: VirtualForwardingMethod): Option[VirtualForwardingMethod] = {
+    def apply(vm: DeclaredMethod): Option[DeclaredMethod] = {
         data.get(vm)
     }
 
-    def virtualForwardingMethods: Iterable[VirtualForwardingMethod] = {
+    def apply(method: Method): DefinedMethod = {
+        data(
+            DefinedMethod(method.classFile.thisType, method)
+        ).asInstanceOf[DefinedMethod]
+    }
+
+    def contains(method: Method): Boolean = {
+        data.contains(DefinedMethod(method.classFile.thisType, method))
+    }
+
+    def declaredMethods: Iterable[DeclaredMethod] = {
         data.keys
     }
 }
 
 /**
- * The ''key'' object to get information about all virtual forwarding methods.
+ * The ''key'' object to get information about all declared methods.
  *
- * @note See [[org.opalj.br.VirtualForwardingMethod]] for further details.
+ * @note See [[org.opalj.br.DeclaredMethod]] for further details.
  * @example To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and pass in
  *          `this` object.
  *
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-object VirtualForwardingMethodsKey
-    extends ProjectInformationKey[VirtualForwardingMethods, Nothing] {
+object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing] {
 
     /**
      * The analysis has no special prerequisites.
@@ -81,39 +92,37 @@ object VirtualForwardingMethodsKey
      *
      * @note This analysis is internally parallelized.
      */
-    override protected def compute(p: SomeProject): VirtualForwardingMethods = {
+    override protected def compute(p: SomeProject): DeclaredMethods = {
         implicit val logContext = p.logContext
 
-        val sites = new ConcurrentLinkedQueue[(VirtualForwardingMethod, VirtualForwardingMethod)]
+        val sites = new ConcurrentLinkedQueue[(DeclaredMethod, DeclaredMethod)]
 
         val errors = p.parForeachClassFile() { cf ⇒
             for {
                 // all instance methods present in the current class file, including methods derived
                 // from any supertype that are not overriden by this type.
-                mc ← p.instanceMethods(cf.thisType)
+                m ← cf.methods
             } {
-                val m = mc.method
-                val md = m.descriptor
-                val vm = VirtualForwardingMethod(cf.thisType, m.name, md, m)
+                val vm = DefinedMethod(cf.thisType, m)
                 sites.add(vm → vm)
             }
         }
         errors.foreach { e ⇒
-            error("virtual forwarding methods", "collecting virtual forwarding methods failed", e)
+            error("declared methods", "collecting declared methods failed", e)
         }
 
-        new VirtualForwardingMethods(sites.asScala.toMap)
+        new DeclaredMethods(sites.asScala.toMap)
     }
 
     //
     // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD VIRTUAL FORWARDING METHODS TO A
     // PROPERTYSTORE!
     //
-    final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], VirtualForwardingMethods) = {
+    final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], DeclaredMethods) = {
         (p: SomeProject) ⇒
             {
-                val virtualMethods = p.get(VirtualForwardingMethodsKey)
-                (virtualMethods.virtualForwardingMethods, virtualMethods)
+                val declaredMethods = p.get(DeclaredMethodsKey)
+                (declaredMethods.declaredMethods, declaredMethods)
             }
     }
 }

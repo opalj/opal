@@ -32,7 +32,7 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.Method
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
@@ -74,6 +74,8 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
+        PropertyStoreKey.makeDeclaredMethodsAvailable(project)
+
         val propertyStore = project.get(PropertyStoreKey)
 
         if (parameters.contains(L1PurityAnalysisParameter)) {
@@ -90,8 +92,8 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val entitiesWithPurityProperty: Traversable[EP[Entity, Purity]] =
             propertyStore.entities(Purity.key)
-        val methodsWithPurityProperty: Traversable[(Method, Property)] =
-            entitiesWithPurityProperty.collect { case EP(m: Method, p) ⇒ (m, p) }
+        val methodsWithPurityProperty: Traversable[(DefinedMethod, Property)] =
+            entitiesWithPurityProperty.collect { case EP(m: DefinedMethod, p) ⇒ (m, p) }
         val methodsWithPurityPropertyAsStrings =
             methodsWithPurityProperty.map(m ⇒ m._2+" >> "+m._1.toJava)
 

@@ -97,6 +97,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
     val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
 
     val isOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Checks whether the statement, which is the origin of an exception, directly created the
@@ -148,9 +149,11 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
      * @param method A method with a body.
      */
     def determinePurity(method: Method): PropertyComputationResult = {
+        val definedMethod = declaredMethods(method)
+
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return Result(method, LBImpure);
+            return Result(definedMethod, LBImpure);
 
         implicit val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
@@ -392,10 +395,10 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                 true // The java.lang.Object constructor is pure
             } else {
                 methodResult match {
-                    case Success(callee) ⇒
+                    case Success(callee) if declaredMethods.contains(callee) ⇒
                         if (callee == method) true // Self-recursive don't need to be checked
                         else {
-                            val calleePurity = propertyStore(callee, Purity.key)
+                            val calleePurity = propertyStore(declaredMethods(callee), Purity.key)
                             calleePurity match {
                                 case EP(_, LBPure) ⇒ true
                                 case EP(_, LBSideEffectFree) ⇒
@@ -554,15 +557,15 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
                 // Cases resulting in impurity LBImpure ...  call to impure method
                 case _ ⇒
-                    return Result(method, LBImpure)
+                    return Result(definedMethod, LBImpure)
             }
 
             if (dependees.isEmpty) {
-                Result(method, maxPurity)
+                Result(definedMethod, maxPurity)
             } else if (maxPurity == LBPure) {
-                IntermediateResult(method, CLBPure, dependees, c)
+                IntermediateResult(definedMethod, CLBPure, dependees, c)
             } else {
-                IntermediateResult(method, CLBSideEffectFree, dependees, c)
+                IntermediateResult(definedMethod, CLBSideEffectFree, dependees, c)
             }
         }
 
@@ -570,18 +573,18 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
         var s = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(method, LBImpure)
+                return Result(definedMethod, LBImpure)
             s += 1
         }
 
         // Every method that is not identified as being impure is (conditionally) pure or
         // (conditionally) side-effect free.
         if (dependees.isEmpty) {
-            Result(method, maxPurity)
+            Result(definedMethod, maxPurity)
         } else if (maxPurity == LBPure) {
-            IntermediateResult(method, CLBPure, dependees, c)
+            IntermediateResult(definedMethod, CLBPure, dependees, c)
         } else {
-            IntermediateResult(method, CLBSideEffectFree, dependees, c)
+            IntermediateResult(definedMethod, CLBSideEffectFree, dependees, c)
         }
     }
 }
