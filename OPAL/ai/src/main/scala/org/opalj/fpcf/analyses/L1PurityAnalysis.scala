@@ -44,7 +44,6 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableObject
 import org.opalj.fpcf.properties.AtLeastConditionallyImmutableType
@@ -93,9 +92,9 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    val tacai: Method ⇒ TACode[TACMethodParameter,V] =         project.get(DefaultTACAIKey)
+    val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
 
-        val isOverridable : Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    val isOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     //val typeExtensibility: ObjectType ⇒ Answer = project.get(TypeExtensibilityKey)
 
     /**
@@ -242,7 +241,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                 case ArrayStore.ASTID   ⇒ isLocal(stmt.asArrayStore.arrayRef)
                 case PutField.ASTID     ⇒ isLocal(stmt.asPutField.objRef)
 
-                case PutStatic.ASTID    ⇒
+                case PutStatic.ASTID ⇒
                     // Note that a putstatic is not necessarily pure/sideeffect free, even if it
                     // is executed within a static initializer to initialize a field of
                     // `the` class; it is possible that the initialization triggers the
@@ -334,7 +333,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
          * early.
          */
         def checkPurityOfVirtualCall(
-            rcvrType:    ReferenceType,
+            rcvrType:    ReferenceType, // TODO Rename declaringClassType(?)
             isInterface: Boolean,
             name:        String,
             receiver:    Expr[V],
@@ -353,8 +352,12 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
                     val callee = project.instanceCall(declClass, rcvr.valueType.get, name, descr)
                     checkPurityOfCall(rcvrType, name, callee)
                 }
-            } else if (rcvrType.isObjectType && typeExtensibility(rcvrType.asObjectType).isNotNo) {
-                // IMPROVE Replace by MethodExtensibility based check once available
+            } else if (rcvrType.isObjectType && (
+                isInterface || {
+                    val mOpt = project.resolveMethodReference(rcvrType, name, descr, false)
+                    mOpt.isEmpty || isOverridable(mOpt.get).isYes
+                }
+            )) {
                 false // We don't know all overrides, so we are impure
             } else {
                 val callees =
