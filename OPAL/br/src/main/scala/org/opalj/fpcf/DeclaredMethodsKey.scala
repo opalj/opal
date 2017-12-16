@@ -95,11 +95,19 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
 
         val errors = p.parForeachClassFile() { cf ⇒
             for {
-                // all instance methods present in the current class file, including methods derived
+                // all methods present in the current class file, not including methods derived
                 // from any supertype that are not overriden by this type.
                 m ← cf.methods
             } {
                 val vm = DefinedMethod(cf.thisType, m)
+                sites.add(vm → vm)
+            }
+            for {
+                // all instance methods present in the current class file, including methods derived
+                // from any supertype that are not overriden by this type.
+                mc ← p.instanceMethods(cf.thisType)
+            } {
+                val vm = DefinedMethod(cf.thisType, mc.method)
                 sites.add(vm → vm)
             }
         }
