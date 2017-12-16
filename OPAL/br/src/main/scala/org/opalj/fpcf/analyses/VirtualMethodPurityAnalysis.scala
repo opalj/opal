@@ -73,7 +73,6 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
             }
 
             if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
-                //println(s"Computing VMPurity for $vm : $maxPurity")
                 Result(dm, VirtualMethodPurity(maxPurity.unconditional))
             } else {
                 IntermediateResult(dm, VirtualMethodPurity(maxPurity), dependees, c)
@@ -81,7 +80,6 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
         }
 
         if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
-            //println(s"Computing VMPurity for $vm : $maxPurity")
             Result(dm, VirtualMethodPurity(maxPurity.unconditional))
         } else {
             maxPurity = maxPurity combine CPureWithoutAllocations
