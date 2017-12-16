@@ -246,7 +246,7 @@ class L0PurityAnalysis private ( final val project: SomeProject) extends FPCFAna
                             IntermediateResult(lastResult, dependees, c)
                         }
                     } else {
-                        val newEP = EP(e.asInstanceOf[Method], p)
+                        val newEP = EP(e.asInstanceOf[DefinedMethod], p)
                         dependees = dependees.filter(_.e ne e) + newEP
                         IntermediateResult(lastResult, dependees, c)
                     }
