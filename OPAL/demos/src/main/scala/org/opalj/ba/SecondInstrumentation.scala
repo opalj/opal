@@ -33,6 +33,10 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.io.writeAndOpen
+import org.opalj.util.InMemoryClassLoader
+import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
@@ -44,8 +48,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.util.InMemoryClassLoader
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -106,7 +108,8 @@ object SecondInstrumentation extends App {
                     }
             }
         }
-    val newRawCF = Assembler(toDA(cf.copy(methods = newMethods, version = UShortPair(0, 48))))
+    val newCF = cf.copy(methods = newMethods, version = UShortPair(0, 49))
+    val newRawCF = Assembler(toDA(newCF))
 
     //
     // THE FOLLOWING IS NOT RELATED TO BYTECODE MANIPULATION, BUT SHOWS ASPECTS OF OPAL WHICH ARE
@@ -114,18 +117,12 @@ object SecondInstrumentation extends App {
     //
 
     // Let's see the old file...
-
-    println("original: "+
-        org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None), "SimpleInstrumentationDemo", ".html"
-        ))
+    val oldDACF = ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head
+    println("original: "+writeAndOpen(oldDACF.toXHTML(None), "SimpleInstrumentationDemo", ".html"))
 
     // Let's see the new file...
-    println("instrumented: "+
-        org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None),
-            "NewSimpleInstrumentationDemo", ".html"
-        ))
+    val newDACF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head
+    println("instrumented: "+writeAndOpen(newDACF.toXHTML(None), "NewSimpleInstrumentationDemo", ".html"))
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
