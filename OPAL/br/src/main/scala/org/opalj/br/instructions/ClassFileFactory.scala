@@ -206,27 +206,26 @@ object ClassFileFactory {
      *          used to call call the method on the receiver.
      */
     def Proxy(
-        definingType:             TypeDeclaration,
-        methodName:               String,
-        methodDescriptor:         MethodDescriptor,
-        receiverType:             ObjectType,
-        receiverIsInterface:      Boolean,
-        receiverMethodName:       String,
-        receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction:    Opcode,
-        bridgeMethodDescriptor:   Option[MethodDescriptor] = None
+        definingType:           TypeDeclaration,
+        methodName:             String,
+        methodDescriptor:       MethodDescriptor,
+        receiverType:           ObjectType,
+        receiverIsInterface:    Boolean,
+        implMethod:             MethodCallMethodHandle,
+        invocationInstruction:  Opcode,
+        bridgeMethodDescriptor: Option[MethodDescriptor] = None
     ): ClassFile = {
 
         val interfaceMethodParametersCount = methodDescriptor.parametersCount
-        val receiverParameters = receiverMethodDescriptor.parameterTypes
+        val implMethodParameters = implMethod.methodDescriptor.parameterTypes
 
         val receiverField =
             if (invocationInstruction == INVOKESTATIC.opcode ||
-                isNewInvokeSpecial(invocationInstruction, receiverMethodName) ||
+                isNewInvokeSpecial(invocationInstruction, implMethod.name) ||
                 isVirtualMethodReference(
                     invocationInstruction,
                     receiverType,
-                    receiverMethodDescriptor,
+                    implMethod.methodDescriptor,
                     methodDescriptor
                 )) {
                 IndexedSeq.empty
@@ -234,7 +233,7 @@ object ClassFileFactory {
                 IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            receiverParameters.dropRight(interfaceMethodParametersCount).zipWithIndex map { p ⇒
+            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex map { p ⇒
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
@@ -258,8 +257,7 @@ object ClassFileFactory {
             additionalFieldsForStaticParameters,
             receiverType,
             receiverIsInterface,
-            receiverMethodName,
-            receiverMethodDescriptor,
+            implMethod,
             invocationInstruction
         )
         methods(1) = constructor
@@ -749,21 +747,20 @@ object ClassFileFactory {
      * If the `methodDescriptor`s have to be identical in terms of parameter types and return type.
      */
     def proxyMethod(
-        definingType:             ObjectType,
-        methodName:               String,
-        methodDescriptor:         MethodDescriptor,
-        staticParameters:         Seq[FieldTemplate],
-        receiverType:             ObjectType,
-        receiverIsInterface:      Boolean,
-        receiverMethodName:       String,
-        receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction:    Opcode
+        definingType:          ObjectType,
+        methodName:            String,
+        methodDescriptor:      MethodDescriptor,
+        staticParameters:      Seq[FieldTemplate],
+        receiverType:          ObjectType,
+        receiverIsInterface:   Boolean,
+        implMethod:            MethodCallMethodHandle,
+        invocationInstruction: Opcode
     ): MethodTemplate = {
 
         val code =
             createProxyMethodBytecode(
                 definingType, methodDescriptor, staticParameters,
-                receiverType, receiverIsInterface, receiverMethodName, receiverMethodDescriptor,
+                receiverType, receiverIsInterface, implMethod,
                 invocationInstruction
             )
 
@@ -780,22 +777,31 @@ object ClassFileFactory {
      * @see [[parameterForwardingInstructions]]
      */
     private def createProxyMethodBytecode(
-        definingType:             ObjectType, // type of "this"
-        methodDescriptor:         MethodDescriptor, // the parameters of the current method
-        staticParameters:         Seq[FieldTemplate],
-        receiverType:             ObjectType,
-        receiverIsInterface:      Boolean,
-        receiverMethodName:       String,
-        receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction:    Opcode
+        definingType:          ObjectType, // type of "this"
+        methodDescriptor:      MethodDescriptor, // the parameters of the current method
+        staticParameters:      Seq[FieldTemplate],
+        receiverType:          ObjectType,
+        receiverIsInterface:   Boolean,
+        implMethod:            MethodCallMethodHandle,
+        invocationInstruction: Opcode
     ): Code = {
 
         assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
 
+        // If we have a constructor, we have to fix the method descriptor. Usually, the instruction
+        // doesn't have a return type. For the proxy method, it is imporatant to return the instance
+        // so we have to patch the correct return type into the method descriptor
+        val fixedImplDescriptor: MethodDescriptor =
+            if (invocationInstruction == INVOKESPECIAL.opcode) {
+                MethodDescriptor(implMethod.methodDescriptor.parameterTypes, receiverType)
+            } else {
+                implMethod.methodDescriptor
+            }
+
         val isVirtualMethodReference = this.isVirtualMethodReference(
             invocationInstruction,
             receiverType,
-            receiverMethodDescriptor,
+            fixedImplDescriptor,
             methodDescriptor
         )
         // if the receiver method is not static, we need to push the receiver object
@@ -805,7 +811,7 @@ object ClassFileFactory {
         val loadReceiverObject: Array[Instruction] =
             if (invocationInstruction == INVOKESTATIC.opcode || isVirtualMethodReference) {
                 Array()
-            } else if (receiverMethodName == "<init>") {
+            } else if (implMethod.name == "<init>") {
                 Array(
                     NEW(receiverType), null, null,
                     DUP
@@ -822,7 +828,7 @@ object ClassFileFactory {
 
         val forwardParametersInstructions =
             parameterForwardingInstructions(
-                methodDescriptor, receiverMethodDescriptor, variableOffset,
+                methodDescriptor, fixedImplDescriptor, variableOffset,
                 staticParameters, definingType
             )
 
@@ -831,27 +837,27 @@ object ClassFileFactory {
                 case INVOKESTATIC.opcode ⇒
                     Array(
                         INVOKESTATIC(
-                            receiverType, receiverIsInterface,
-                            receiverMethodName, receiverMethodDescriptor
+                            implMethod.receiverType.asObjectType, receiverIsInterface,
+                            implMethod.name, fixedImplDescriptor
                         ), null, null
                     )
                 case INVOKESPECIAL.opcode ⇒
                     val methodDescriptor =
-                        if (receiverMethodName == "<init>") {
-                            MethodDescriptor(receiverMethodDescriptor.parameterTypes, VoidType)
+                        if (implMethod.name == "<init>") {
+                            MethodDescriptor(fixedImplDescriptor.parameterTypes, VoidType)
                         } else {
-                            receiverMethodDescriptor
+                            fixedImplDescriptor
                         }
                     val invoke = INVOKESPECIAL(
-                        receiverType, receiverIsInterface,
-                        receiverMethodName, methodDescriptor
+                        implMethod.receiverType.asObjectType, receiverIsInterface,
+                        implMethod.name, methodDescriptor
                     )
                     Array(invoke, null, null)
                 case INVOKEINTERFACE.opcode ⇒
-                    val invoke = INVOKEINTERFACE(receiverType, receiverMethodName, receiverMethodDescriptor)
+                    val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
                     Array(invoke, null, null, null, null)
                 case INVOKEVIRTUAL.opcode ⇒
-                    val invoke = INVOKEVIRTUAL(receiverType, receiverMethodName, receiverMethodDescriptor)
+                    val invoke = INVOKEVIRTUAL(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
                     Array(invoke, null, null)
             }
 
@@ -864,7 +870,7 @@ object ClassFileFactory {
             else
                 returnAndConvertInstructions(
                     methodDescriptor.returnType.asFieldType,
-                    receiverMethodDescriptor.returnType.asFieldType
+                    fixedImplDescriptor.returnType.asFieldType
                 )
 
         val bytecodeInstructions: Array[Instruction] =
@@ -873,7 +879,7 @@ object ClassFileFactory {
         val receiverObjectStackSize =
             if (invocationInstruction == INVOKESTATIC.opcode) 0 else 1
 
-        val parametersStackSize = receiverMethodDescriptor.requiredRegisters
+        val parametersStackSize = implMethod.methodDescriptor.requiredRegisters
 
         val returnValueStackSize = methodDescriptor.returnType.operandSize
 

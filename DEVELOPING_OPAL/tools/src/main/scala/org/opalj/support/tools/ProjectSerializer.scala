@@ -30,18 +30,20 @@ package org.opalj
 package support
 package tools
 
+import sys.process._
 import java.io.File
 import java.io.FileOutputStream
 import java.io.BufferedOutputStream
 
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.opalj.io.process
-
 import org.opalj.bytecode.RTJar
-import org.opalj.ba
 import org.opalj.bc.Assembler
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.reader.LambdaExpressionsRewriting
+import org.opalj.log.OPALLogger
 
 /**
  * Program to export a project loaded with OPAL with all code rewriting, for example INVOKEDYNAMIC
@@ -60,6 +62,7 @@ object ProjectSerializer {
         println("Parameters:")
         println("   -cp <Folder/jar-file> the classes to load into OPAL and export")
         println("   -o <FileName> the folder. Defaults to current folder.")
+        println("   -jar <FileName> Export the classfiles into a jar file as well.")
         println()
         println("java org.opalj.br.ProjectSerializer -cp <classpath or jar file> -o <output folder>")
     }
@@ -67,6 +70,7 @@ object ProjectSerializer {
     def main(args: Array[String]): Unit = {
         var classPath: String = null
         var outFolder: String = "."
+        var jarFileName: String = null
 
         var i = 0
         while (i < args.length) {
@@ -76,6 +80,9 @@ object ProjectSerializer {
 
                 case "-o" ⇒
                     i += 1; outFolder = args(i)
+
+                case "-jar" ⇒
+                    i += 1; jarFileName = args(i)
 
                 case "-h" | "--help" ⇒
                     showUsage()
@@ -109,15 +116,28 @@ object ProjectSerializer {
         val projectClassFiles = Project.JavaClassFileReader().ClassFiles(classPathFile)
         val libraryClassFiles = Project.JavaClassFileReader().ClassFiles(RTJar)
 
+        val baseConfig: Config = ConfigFactory.load()
+        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
+        implicit val config: Config = baseConfig.
+            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
+
         val p = Project(
             projectClassFiles,
             libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false
+            libraryClassFilesAreInterfacesOnly = false,
+            virtualClassFiles = Traversable.empty
+        )(
+            config,
+            OPALLogger.globalLogger()
         )
 
         serialize(p, outFile)
-
         Console.out.println(s"Wrote all classfiles to $outFolder")
+
+        if (jarFileName != null) {
+            val r = Process(s"jar cfv ../$jarFileName .", outFile).!
+            Console.out.println(s"Created jar file $jarFileName $r")
+        }
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {

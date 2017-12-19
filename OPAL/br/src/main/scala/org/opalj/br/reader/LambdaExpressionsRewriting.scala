@@ -69,7 +69,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val performLambdaExpressionsRewriting: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
-        val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
+        val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(true)
         if (rewrite) {
             info("class file reader", "Java 8 invokedynamics are rewritten")
         } else {
@@ -310,6 +310,18 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         storeProxy(classFile, proxy, reason)
     }
 
+    /**
+     * Resolution of the java 8 lambda and method reference expressions.
+     *
+     * @see More information about lambda deserialization and lambda meta factory:
+     *      - [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html]
+     *
+     * @param classFile The classfile to parse
+     * @param instructions The instructions of the method we are currently parsing
+     * @param pc The program counter of the current instruction
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     */
     private def java8LambdaResolution(
         classFile:     ClassFile,
         instructions:  Array[Instruction],
@@ -320,20 +332,18 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
             ) = invokedynamic
         val bootstrapArguments = bootstrapMethod.arguments
-        // apparently there are cases in the JRE where there are more than just those
-        // three parameters
-        // TODO: Why can they be ignored
+        // Extract the arguments of the lambda factory.
         val Seq(
-            functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
-            tempInvokeTargetMethodHandle: MethodCallMethodHandle,
-            functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*
-            ) =
-            bootstrapArguments
-        var invokeTargetMethodHandle = tempInvokeTargetMethodHandle
+            samMethodType: MethodDescriptor, // describing the implemented method type
+            tempImplMethod: MethodCallMethodHandle, // the MethodHandle providing the implementation
+            instantiatedMethodType: MethodDescriptor, // allowing restrictions on invocation
+            _* // possibly other metadata, we don't need them for our proxy class
+            ) = bootstrapArguments
+        var implMethod = tempImplMethod
 
         val MethodCallMethodHandle(
             targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
-            ) = invokeTargetMethodHandle
+            ) = implMethod
 
         // Check if the target method is accessible from the lambda. If not, make it package
         // private, so the lambda can access it.
@@ -361,11 +371,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
         // methods doesn't apply anymore.
-        if (invokeTargetMethodHandle.isInstanceOf[InvokeSpecialMethodHandle]) {
-            invokeTargetMethodHandle = InvokeVirtualMethodHandle(
-                invokeTargetMethodHandle.receiverType,
-                invokeTargetMethodHandle.name,
-                invokeTargetMethodHandle.methodDescriptor
+        if (implMethod.isInstanceOf[InvokeSpecialMethodHandle]) {
+            implMethod = InvokeVirtualMethodHandle(
+                implMethod.receiverType,
+                implMethod.name,
+                implMethod.methodDescriptor
             )
         }
 
@@ -377,21 +387,14 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             superInterfaceTypes
         )
 
-        val invocationInstruction = invokeTargetMethodHandle.opcodeOfUnderlyingInstruction
+        val invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
 
-        val receiverDescriptor: MethodDescriptor =
-            if (invokeTargetMethodHandle.isInstanceOf[NewInvokeSpecialMethodHandle]) {
-                MethodDescriptor(targetMethodDescriptor.parameterTypes, targetMethodOwner)
-            } else {
-                targetMethodDescriptor
-            }
-
-        val needsBridgeMethod = functionalInterfaceDescriptorAfterTypeErasure !=
-            functionalInterfaceDescriptorBeforeTypeErasure
+        val needsBridgeMethod = samMethodType !=
+            instantiatedMethodType
 
         val bridgeMethodDescriptor: Option[MethodDescriptor] =
             if (needsBridgeMethod) {
-                Some(functionalInterfaceDescriptorAfterTypeErasure)
+                Some(samMethodType)
             } else {
                 None
             }
@@ -469,12 +472,12 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 // It is the first parameter of the functional interface parameter
                 // list.
                 invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
-            } else if (functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.nonEmpty &&
-                functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.isObjectType) {
+            } else if (instantiatedMethodType.parameterTypes.nonEmpty &&
+                instantiatedMethodType.parameterTypes.head.isObjectType) {
                 // If we get a instance method reference like `LinkedHashSet::addAll`, get
                 // the receiver type from the functional interface. The first parameter is
                 // the instance where the method should be called.
-                functionalInterfaceDescriptorBeforeTypeErasure.parameterTypes.head.asObjectType
+                instantiatedMethodType.parameterTypes.head.asObjectType
             } else {
                 targetMethodOwner
             }
@@ -487,7 +490,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         INVOKESTATIC instruction.
          */
         val receiverIsInterface =
-            invokeTargetMethodHandle match {
+            implMethod match {
 
                 case _: InvokeInterfaceMethodHandle    ⇒ true
                 case _: InvokeVirtualMethodHandle      ⇒ false
@@ -500,7 +503,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                     // a MethodRef instead of an InterfaceMethodRef which led to the
                     // wrong kind of InvokeStaticMethodHandle).
                     // See https://github.com/scala/bug/issues/10429 for further details.
-                    if (invokeTargetMethodHandle.receiverType eq classFile.thisType) {
+                    if (implMethod.receiverType eq classFile.thisType) {
                         classFile.isInterfaceDeclaration
                     } else {
                         handle.isInterface
@@ -512,13 +515,10 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         val proxy: ClassFile = ClassFileFactory.Proxy(
             typeDeclaration,
             functionalInterfaceMethodName,
-            functionalInterfaceDescriptorBeforeTypeErasure,
+            instantiatedMethodType,
             receiverType,
-            // Note, a static lambda method in an interface needs
-            // to be called using the correct variant of an invokestatic.
             receiverIsInterface = receiverIsInterface,
-            targetMethodName,
-            receiverDescriptor,
+            implMethod,
             invocationInstruction,
             bridgeMethodDescriptor
         )
