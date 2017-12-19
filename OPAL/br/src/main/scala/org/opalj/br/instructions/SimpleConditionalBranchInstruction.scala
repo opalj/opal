@@ -61,8 +61,6 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
     with SimpleBranchInstruction
     with SimpleConditionalBranchInstructionLike {
 
-    def branchoffset: Int
-
     def copy(branchoffset: Int): SimpleConditionalBranchInstruction[T]
 
     /**
