@@ -108,7 +108,7 @@ trait BytecodeOptimizer extends MethodsBinding {
     }
 
     final val LogControlFlowSimplifications: Boolean = {
-        val key = BytecodeOptimizer.BytecodeOptimizerConfigKeyPrefix+"logControlFlowSimplification"
+        val key = BytecodeOptimizer.LogControlFlowSimplificationKey
         val logControlFlowSimplification: Boolean = config.as[Option[Boolean]](key).getOrElse(false)
         if (logControlFlowSimplification) {
             info("class file reader", "control flow simplifications are logged")
@@ -506,4 +506,7 @@ object BytecodeOptimizer {
 
     final val SimplifyControlFlowKey = BytecodeOptimizerConfigKeyPrefix+"simplifyControlFlow"
 
+    final val LogControlFlowSimplificationKey = {
+        BytecodeOptimizerConfigKeyPrefix+"logControlFlowSimplification"
+    }
 }
