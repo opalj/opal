@@ -39,7 +39,7 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * and only has escape state [[EscapeViaReturn]].
  */
 sealed abstract class ReturnValueFreshness extends Property
-        with ReturnValueFreshnessPropertyMetaInformation {
+    with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 }

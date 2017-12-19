@@ -75,12 +75,12 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * analysis must define its corresponding entity analysis.
      */
     protected def entityEscapeAnalysis(
-        e:        Entity,
-        defSite:  ValueOrigin,
-        uses:     IntTrieSet,
-        code:     Array[Stmt[V]],
-        cfg:      CFG,
-        m:        VirtualMethod
+        e:       Entity,
+        defSite: ValueOrigin,
+        uses:    IntTrieSet,
+        code:    Array[Stmt[V]],
+        cfg:     CFG,
+        m:       VirtualMethod
     ): AbstractEntityEscapeAnalysis
 
     /**
@@ -89,12 +89,12 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * compute the escape state.
      */
     protected final def doDetermineEscape(
-        e:        Entity,
-        defSite:  ValueOrigin,
-        uses:     IntTrieSet,
-        code:     Array[Stmt[V]],
-        cfg:      CFG,
-        m:        VirtualMethod
+        e:       Entity,
+        defSite: ValueOrigin,
+        uses:    IntTrieSet,
+        code:    Array[Stmt[V]],
+        cfg:     CFG,
+        m:       VirtualMethod
     ): PropertyComputationResult = {
         val analysis = entityEscapeAnalysis(
             e,
@@ -114,10 +114,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     def determineEscape(e: Entity): PropertyComputationResult
 
     protected[this] final def findUsesOfASAndAnalyze(
-        as:     AllocationSite,
-        index:  PC,
-        code:   Array[Stmt[V]],
-        cfg:    CFG
+        as:    AllocationSite,
+        index: PC,
+        code:  Array[Stmt[V]],
+        cfg:   CFG
     ): PropertyComputationResult = {
         val pc = as.pc
         val m = as.method

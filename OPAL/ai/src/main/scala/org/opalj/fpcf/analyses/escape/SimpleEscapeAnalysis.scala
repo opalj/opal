@@ -65,12 +65,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
      * Creates a [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] for the analysis.
      */
     override def entityEscapeAnalysis(
-        e:        Entity,
-        defSite:  ValueOrigin,
-        uses:     IntTrieSet,
-        code:     Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        cfg:      CFG,
-        m:        VirtualMethod
+        e:       Entity,
+        defSite: ValueOrigin,
+        uses:    IntTrieSet,
+        code:    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        cfg:     CFG,
+        m:       VirtualMethod
     ): AbstractEntityEscapeAnalysis =
         new SimpleEntityEscapeAnalysis(
             e,

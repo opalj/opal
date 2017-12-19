@@ -33,7 +33,9 @@ package analyses
 import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.br.AllocationSite
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.br.{AllocationSite, Method}
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
@@ -81,6 +83,13 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         implicit val logContext: LogContext = project.logContext
 
         val propertyStore = time {
+
+            project.getOrCreateProjectInformationKeyInitializationData(
+                SimpleAIKey,
+                (m: Method) ⇒ {
+                    new PrimitiveTACAIDomain(project, m)
+                }
+            )
 
             PropertyStoreKey.makeAllocationSitesAvailable(project)
             PropertyStoreKey.makeFormalParametersAvailable(project)

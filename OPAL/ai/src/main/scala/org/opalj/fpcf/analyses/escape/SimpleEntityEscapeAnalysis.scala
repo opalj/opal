@@ -75,19 +75,19 @@ import org.opalj.tac.Throw
  * @author Florian Kuebler
  */
 class SimpleEntityEscapeAnalysis(
-    val entity:                  Entity,
-    val defSite:                 ValueOrigin,
-    val uses:                    IntTrieSet,
-    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val cfg:                     CFG,
-    val formalParameters:        FormalParameters,
-    val propertyStore:           PropertyStore,
-    val project:                 SomeProject
+        val entity:           Entity,
+        val defSite:          ValueOrigin,
+        val uses:             IntTrieSet,
+        val code:             Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val cfg:              CFG,
+        val formalParameters: FormalParameters,
+        val propertyStore:    PropertyStore,
+        val project:          SomeProject
 ) extends DefaultEntityEscapeAnalysis
-        with ConstructorSensitiveEntityEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntityEscapeAnalysis
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntityEscapeAnalysis
 
 /**
  * Handling for exceptions, that are allocated within the current method.

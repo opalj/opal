@@ -67,7 +67,7 @@ import org.opalj.tac.Const
  *
  * @author Florian Kübler
  */
-class ReturnValueFreshnessAnalysis private(final val project: SomeProject) extends FPCFAnalysis {
+class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
     private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 

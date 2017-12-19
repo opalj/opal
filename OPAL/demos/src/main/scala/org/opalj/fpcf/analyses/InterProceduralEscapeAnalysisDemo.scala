@@ -86,7 +86,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             project.getOrCreateProjectInformationKeyInitializationData(
                 SimpleAIKey,
                 (m: Method) ⇒ {
-                    new PrimitiveTACAIDomain(project, m)//new DefaultDomainWithCFGAndDefUse(project, m) //new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding //primitivetacidomain
+                    new PrimitiveTACAIDomain(project, m)//new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // new DefaultDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding //primitivetacidomain
                 }
             )
             PropertyStoreKey.makeAllocationSitesAvailable(project)

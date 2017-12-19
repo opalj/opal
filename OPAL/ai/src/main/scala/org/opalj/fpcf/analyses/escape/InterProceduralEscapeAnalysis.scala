@@ -61,12 +61,12 @@ class InterProceduralEscapeAnalysis private (
 ) extends AbstractEscapeAnalysis {
 
     override def entityEscapeAnalysis(
-        e:        Entity,
-        defSite:  ValueOrigin,
-        uses:     IntTrieSet,
-        code:     Array[Stmt[V]],
-        cfg:      CFG,
-        m:        VirtualMethod
+        e:       Entity,
+        defSite: ValueOrigin,
+        uses:    IntTrieSet,
+        code:    Array[Stmt[V]],
+        cfg:     CFG,
+        m:       VirtualMethod
     ): AbstractEntityEscapeAnalysis =
         new InterProceduralEntityEscapeAnalysis(
             e,
