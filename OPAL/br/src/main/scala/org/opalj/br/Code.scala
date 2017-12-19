@@ -1053,8 +1053,9 @@ final class Code private (
      * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
-    def stackMapTable: Option[StackMapFrames] = {
-        attributes collectFirst { case StackMapTable(smf) ⇒ smf }
+    def stackMapTable: Option[StackMapTable] = {
+        attributes collectFirst { case smt: StackMapTable ⇒ smt }
+    }
     }
 
     /**
