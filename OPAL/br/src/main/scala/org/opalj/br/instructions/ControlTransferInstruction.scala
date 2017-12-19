@@ -43,4 +43,8 @@ trait ControlTransferInstructionLike extends InstructionLike {
 
 }
 
-trait ControlTransferInstruction extends Instruction with ControlTransferInstructionLike
+trait ControlTransferInstruction extends Instruction with ControlTransferInstructionLike {
+    final override def isControlTransferInstruction: Boolean = true
+    final override def asControlTransferInstruction: ControlTransferInstruction = this
+
+}
