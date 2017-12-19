@@ -64,7 +64,6 @@ import org.opalj.br.instructions.IFNULL
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.JSR
 import org.opalj.br.instructions.JSR_W
-import org.opalj.log.OPALLogger
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
