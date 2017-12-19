@@ -32,11 +32,8 @@ package reader
 
 import scala.annotation.switch
 import scala.annotation.tailrec
-
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.OPALLogger.info
-
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.GotoInstruction
@@ -67,10 +64,11 @@ import org.opalj.br.instructions.IFNULL
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.JSR
 import org.opalj.br.instructions.JSR_W
+import org.opalj.log.OPALLogger
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
- * In particular to make it more likely that an if which is actually a loop's if actually
+ * In particular to make it more likely that an if that is actually a loop's if actually
  * jumps back.
  *
  * The following transformations are performed:
@@ -90,6 +88,10 @@ import org.opalj.br.instructions.JSR_W
  * The target array has the same size as the source array to make sure that branch offsets/ line-
  * numbers etc. point to the correct instruction. Furthermore, we try to avoid the introduction
  * of dead code.
+ *
+ * @note All transformation always only reduce the number of basic blocks and never create new
+ *       basic blocks. There existing stack map table attributes are never effect and remain
+ *       valid!
  *
  * @author Michael Eichberg
  */
@@ -127,9 +129,11 @@ trait BytecodeOptimizer extends MethodsBinding {
     ): Method_Info = {
         attributes collectFirst { case c: Code ⇒ c } foreach { code ⇒
             val isSimplified = optimizeInstructions(code.exceptionHandlers, code.instructions)
-            if (isSimplified && LogControlFlowSimplifications) {
-                val methodSignature = cp(name_index).asString + cp(descriptor_index).asString
-                info("class file reader", s"simplified control flow of $methodSignature")
+            if (isSimplified) {
+                if (LogControlFlowSimplifications) {
+                    val methodSignature = cp(name_index).asString + cp(descriptor_index).asString
+                    info("class file reader", s"simplified control flow of $methodSignature")
+                }
             }
         }
         super.Method_Info(cp, accessFlags, name_index, descriptor_index, attributes)
@@ -335,7 +339,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                             // totally useless..
                             newNextPC = nextPC
                         } else {
-                            // This switch is bascially just a goto... we will add
+                            // This switch is basically just a goto... we will add
                             // the goto at the end of this section of the bytecode
                             // array; however, the original target remains valid...
                             jumpTargetInstructions += pc + defaultOffset
