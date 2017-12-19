@@ -134,6 +134,15 @@ object PropertyStoreKey
     }
 
     /**
+     * Makes the set of [[org.opalj.br.DeclaredMethod]]s available to the property store
+     * that is created for the respective project later on. I.e., this method must be called,
+     * before this key is used to get the project's property store.
+     */
+    def makeDeclaredMethodsAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p) { DeclaredMethodsKey.entityDerivationFunction(p) }
+    }
+
+    /**
      * The [[PropertyStoreKey]] has no special prerequisites.
      *
      * @return `Nil`.
