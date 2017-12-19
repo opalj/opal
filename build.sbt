@@ -234,18 +234,6 @@ lazy val bc = Project(
     .dependsOn(da % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
-lazy val ba = Project(
-    id = "BytecodeAssembler",
-    base = file("OPAL/ba"),
-    settings = buildSettings ++ Seq(
-        name := "Bytecode Assembler",
-        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Assembler")
-    ))
-    .dependsOn(
-        bc % "it->it;it->test;test->test;compile->compile",
-        br % "it->it;it->test;test->test;compile->compile")
-    .configs(IntegrationTest)
-
 lazy val ai = Project(
     id = "AbstractInterpretationFramework",
     base = file("OPAL/ai"),
@@ -255,6 +243,18 @@ lazy val ai = Project(
         fork in run := true
     ))
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
+
+lazy val ba = Project(
+    id = "BytecodeAssembler",
+    base = file("OPAL/ba"),
+    settings = buildSettings ++ Seq(
+        name := "Bytecode Assembler",
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Assembler")
+    ))
+    .dependsOn(
+        bc % "it->it;it->test;test->test;compile->compile",
+        ai % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
 // The project "DependenciesExtractionLibrary" depends on
