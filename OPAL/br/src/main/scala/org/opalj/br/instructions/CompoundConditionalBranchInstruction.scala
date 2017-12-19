@@ -61,6 +61,16 @@ trait CompoundConditionalBranchInstruction
 
     def jumpOffsets: Iterable[Int]
 
+    final override def jumpTargets(
+        currentPC: PC
+    )(
+        implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Iterator[PC] = {
+        jumpOffsets.iterator.map(_ + currentPC) ++ Iterator(defaultOffset + currentPC)
+    }
+
     /**
      * Returns the case value(s) that are associated with the given `jumpOffset`.
      * If the `jumpOffset` is also the `defaultOffset`, the return value's second

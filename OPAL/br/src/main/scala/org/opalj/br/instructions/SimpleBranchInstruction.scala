@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.instructions
+package org.opalj
+package br
+package instructions
 
 trait SimpleBranchInstructionLike
     extends ControlTransferInstructionLike
@@ -37,5 +39,15 @@ trait SimpleBranchInstruction extends ControlTransferInstruction with SimpleBran
     final override def asSimpleBranchInstruction: SimpleBranchInstruction = this
 
     def branchoffset: Int
+
+    final override def jumpTargets(
+        currentPC: PC
+    )(
+        implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Iterator[PC] = {
+        Iterator(branchoffset + currentPC)
+    }
 
 }
