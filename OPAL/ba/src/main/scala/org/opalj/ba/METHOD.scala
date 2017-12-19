@@ -44,7 +44,7 @@ class METHOD[T](
 ) {
 
     /**
-     * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations.
+     * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations (if any).
      */
     def result(): (br.MethodTemplate, Option[T]) = {
         val methodDescriptor = br.MethodDescriptor(descriptor)
