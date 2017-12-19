@@ -88,7 +88,7 @@ case class SameFrame(frame_type: Int) extends StackMapFrame {
                 <td>SameFrame</td>
                 <td>{ frame_type }</td>
                 <td>{ frame_type }</td>
-                <td>Stack:&nbsp;Unchanged<br/>Locals:&nbsp;Unchanged</td>
+                <td>Stack:&nbsp;&lt;Empty&gt;<br/>Locals:&nbsp;Unchanged</td>
             </tr>,
             newOffset
         )
