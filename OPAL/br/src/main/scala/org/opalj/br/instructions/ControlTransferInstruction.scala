@@ -41,6 +41,8 @@ trait ControlTransferInstructionLike extends InstructionLike {
 
     final def expressionResult: NoExpression.type = NoExpression
 
+    final override def isControlTransferInstruction: Boolean = true
+
 }
 
 trait ControlTransferInstruction extends Instruction with ControlTransferInstructionLike {
@@ -65,7 +67,6 @@ trait ControlTransferInstruction extends Instruction with ControlTransferInstruc
         classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
     ): Iterator[PC]
 
-    final override def isControlTransferInstruction: Boolean = true
     final override def asControlTransferInstruction: ControlTransferInstruction = this
 
 }

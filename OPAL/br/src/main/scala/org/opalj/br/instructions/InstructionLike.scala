@@ -53,6 +53,8 @@ trait InstructionLike {
      */
     def mnemonic: String
 
+    def isControlTransferInstruction: Boolean = false
+
     /**
      * The exceptions that may be thrown by the JVM at runtime if the execution of
      * this instruction fails.

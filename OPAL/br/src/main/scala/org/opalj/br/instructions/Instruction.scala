@@ -84,7 +84,6 @@ trait Instruction extends InstructionLike {
     // ---------------------------------------------------------------------------------------------
 
     def isReturnInstruction: Boolean = false
-    def isControlTransferInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
     def isStackManagementInstruction: Boolean = false
     def isLoadLocalVariableInstruction: Boolean = false
