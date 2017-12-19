@@ -79,6 +79,32 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
     def ReferenceValue(origin: ValueOrigin, referenceType: ReferenceType): DomainReferenceValue
 
     /**
+     * Factory method to create a `DomainValue` that represents an '''initialized'''
+     * reference value of the given type and that was created (explicitly or implicitly)
+     * by the instruction with the specified program counter.
+     *
+     * ==General Remarks==
+     * The given type usually identifies a class type (not an interface type) that is
+     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`)
+     * it may be useful/meaningful to relax this requirement and to state that the
+     * class precisely represents the runtime type – even
+     * so the class is abstract. However, such decisions need to be made by the domain.
+     *
+     * This method is used by the OPAL framework to create reference values that are normally
+     * internally created by the JVM (in particular exceptions such as
+     * `NullPointExeception` and `ClassCastException`). However, it can generally
+     * be used to create initialized objects/arrays.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes'''
+     *  - Type: '''precise''' (i.e., this type is not an upper bound, the type
+     *      correctly models the runtime type.)
+     *  - Null: '''No''' (This value is not `null`.)
+     */
+    def InitializedObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+
+    /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
      *
      * The domain may ignore the information about the value and the origin (`vo`).
@@ -94,9 +120,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
     /**
      * Creates a new `DomainValue` that represents ''a new,
      * uninitialized instance of an object of the given type''. The object was
-     * created by the (`NEW`) instruction with the specified program counter or - if value
-     * origin is -1 - represents this in a constructor call before the call of the super
-     * constructor.
+     * created by the (`NEW`) instruction with the specified program counter.
      *
      * OPAL calls this method when it evaluates `newobject` instructions.
      * If the bytecode is valid a call of one of the (super) object's constructors will
@@ -130,32 +154,6 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      * @note Instances of arrays are never uninitialized.
      */
     def UninitializedThis(objectType: ObjectType): DomainReferenceValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents an '''initialized'''
-     * reference value of the given type and that was created (explicitly or implicitly)
-     * by the instruction with the specified program counter.
-     *
-     * ==General Remarks==
-     * The given type usually identifies a class type (not an interface type) that is
-     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`)
-     * it may be useful/meaningful to relax this requirement and to state that the
-     * class precisely represents the runtime type – even
-     * so the class is abstract. However, such decisions need to be made by the domain.
-     *
-     * This method is used by the OPAL framework to create reference values that are normally
-     * internally created by the JVM (in particular exceptions such as
-     * `NullPointExeception` and `ClassCastException`). However, it can generally
-     * be used to create initialized objects/arrays.
-     *
-     * ==Summary==
-     * The properties of the domain value are:
-     *  - Initialized: '''Yes'''
-     *  - Type: '''precise''' (i.e., this type is not an upper bound, the type
-     *      correctly models the runtime type.)
-     *  - Null: '''No''' (This value is not `null`.)
-     */
-    def InitializedObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
