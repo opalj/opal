@@ -31,10 +31,13 @@ package ba
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.control.rerun
+import org.opalj.control.iterateUntil
 import org.opalj.br.PC
 import org.opalj.br.Code
-// import org.opalj.br.instructions.LabeledInstruction
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.WIDE
+import org.opalj.br.instructions.LabeledInstruction
 
 /**
  * Factory method for creating a [[CodeAttributeBuilder]].
@@ -57,7 +60,7 @@ object CODE {
 
     def apply[T](codeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
 
-        val labelSymbols = codeElements.collect { case LabelElement(r) ⇒ r }
+        /*  val labelSymbols = codeElements.collect { case LabelElement(r) ⇒ r }
 
         require(codeElements.exists(_.isInstanceOf[InstructionElement]), "no code found")
 
@@ -85,20 +88,19 @@ object CODE {
         var modifiedByWide = false
         codeElements foreach { e ⇒
             formattedInstructions.append(e)
-
             e match {
-                case InstructionLikeElement(inst) ⇒
+                case InstructionLikeElement(i) ⇒
                     currentPC = nextPC
-                    nextPC = inst.indexOfNextInstruction(currentPC, modifiedByWide)
-                    for (j ← 1 until nextPC - currentPC) { // IMPROVE use repeat
-                        formattedInstructions.append(null)
-                    }
+                    nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
+
+                    rerun((nextPC - currentPC)-1){                        formattedInstructions.append(null)                    }
+
                     modifiedByWide = false
-                    if (inst == WIDE) {
+                    if (i == WIDE) {
                         modifiedByWide = true
                     }
 
-                case _ ⇒ // we are not interested in EXCEPTION HANDLERS, LABELS...
+                case _ ⇒ // we are not further interested in EXCEPTION HANDLERS, LABELS...
             }
         }
         // calculate the PCs of all PseudoInstructions // IMPROVE merge with previous loop!
@@ -106,9 +108,11 @@ object CODE {
         val exceptionHandlerBuilder = new ExceptionHandlerGenerator
         val lineNumberTableBuilder = new LineNumberTableBuilder()
         var count: Int = 0
-        for ((inst, index) ← formattedInstructions.zipWithIndex) {
-            if (inst.isInstanceOf[PseudoInstruction]) {
-                val pc = index - count
+        for {
+            (inst, index) ← formattedInstructions.iterator.zipWithIndex
+            if inst != null && inst.isPseudoInstruction
+        }{
+                           val pc = index - count
                 formattedInstructions.remove(pc)
                 inst match {
                     case LabelElement(label)        ⇒ labels += (label → pc)
@@ -116,8 +120,7 @@ object CODE {
                     case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, pc)
                 }
                 count += 1
-            }
-        }
+                    }
 
         // We need to check if we have to adapt ifs and gotos if the branchtarget is not
         // representable using a signed short; in case of gotos we simply use goto_w; in
@@ -155,6 +158,67 @@ object CODE {
             exceptionHandlers,
             attributes
         )
+
+        */
+
+        val instructionLikes = new ArrayBuffer[LabeledInstruction](codeElements.size)
+
+        var labels = Map.empty[Symbol, br.PC]
+        var annotations = Map.empty[br.PC, T]
+        val exceptionHandlerBuilder = new ExceptionHandlerGenerator()
+        val lineNumberTableBuilder = new LineNumberTableBuilder()
+        var hasControlTransferInstructions = false
+
+        var currentPC = 0
+        var nextPC = 0
+        var modifiedByWide = false
+        // fill the instructionLikes array with `null`s for PCs representing instruction arguments
+        codeElements foreach {
+            case ile @ InstructionLikeElement(i) ⇒
+                if (ile.isAnnotated) {
+                    annotations += ((currentPC, ile.annotation))
+                }
+                currentPC = nextPC
+                nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
+                instructionLikes.append(i)
+                rerun((nextPC - currentPC) - 1) { instructionLikes.append(null) }
+
+                modifiedByWide = i == WIDE
+                hasControlTransferInstructions |= i.isControlTransferInstruction
+
+            case LabelElement(label)        ⇒ labels += (label → nextPC)
+
+            case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, nextPC)
+
+            case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
+        }
+
+        val exceptionHandlers = exceptionHandlerBuilder.result()
+        val attributes = lineNumberTableBuilder.result()
+
+        // TODO We need to check if we have to adapt ifs and gotos if the branchtarget is not
+        // representable using a signed short; in case of gotos we simply use goto_w; in
+        // case of ifs, we "negate" the condition and add a goto_w w.r.t. the target and
+        // in the other cases jump to the original instruction which follows the if.
+
+        val codeSize = instructionLikes.size
+        val instructions = new Array[Instruction](codeSize)
+        iterateUntil(0, codeSize) { pc ⇒
+            val labeledInstruction = instructionLikes(pc)
+            if (labeledInstruction != null) {
+                instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
+            }
+        }
+
+        new CodeAttributeBuilder(
+            instructions.toArray,
+            hasControlTransferInstructions,
+            annotations,
+            None,
+            None,
+            exceptionHandlers,
+            attributes
+        )
     }
 
     def toLabeledCode(code: Code): LabeledCode = {
@@ -168,7 +232,7 @@ object CODE {
             code.exceptionHandlers.iterator.zipWithIndex.foreach { (ehIndex) ⇒
                 val (eh, index) = ehIndex
                 // Recall that endPC is exclusive while TRYEND is inclusive... Hence,
-                // we have to add it before the next...
+                // we have to add it before the next instruction...
                 if (eh.endPC == pc) labeledInstructions += TRYEND(Symbol(s"eh$index"))
 
                 if (eh.startPC == pc)

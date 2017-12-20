@@ -31,7 +31,10 @@ package ba
 
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.JVMMethod
+import org.opalj.br.StackMapTable
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. Instantiation is only
@@ -41,12 +44,13 @@ import org.opalj.br.instructions.Instruction
  * @author Malte Limmeroth
  */
 class CodeAttributeBuilder[T] private[ba] (
-        private val instructions:      Array[Instruction],
-        private val annotations:       Map[br.PC, T],
-        private var maxStack:          Option[Int],
-        private var maxLocals:         Option[Int],
-        private var exceptionHandlers: br.ExceptionHandlers,
-        private var attributes:        br.Attributes
+        private val instructions:                   Array[Instruction],
+        private val hasControlTransferInstructions: Boolean,
+        private val annotations:                    Map[br.PC, T],
+        private var maxStack:                       Option[Int],
+        private var maxLocals:                      Option[Int],
+        private var exceptionHandlers:              br.ExceptionHandlers,
+        private var attributes:                     br.Attributes
 ) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
 
     /**
@@ -70,23 +74,33 @@ class CodeAttributeBuilder[T] private[ba] (
     }
 
     /** Creates a `Code` attribute w.r.t. the given method. */
-    def apply(jvmMethod: JVMMethod): (br.Code, (Map[br.PC, T], List[String])) = {
-        this(jvmMethod.accessFlags, jvmMethod.name, jvmMethod.descriptor)
+    def apply(
+        classFileVersion: UShortPair,
+        jvmMethod:        JVMMethod
+    )(
+        implicit
+        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+    ): (br.Code, (Map[br.PC, T], List[String])) = {
+        this(classFileVersion, jvmMethod.accessFlags, jvmMethod.name, jvmMethod.descriptor)
     }
 
     /**
      * @param  accessFlags The declaring method's access flags, required during code validation or
-     *         when MAXSTACK/MAXLOCALS should be computed.
-     * @param  descriptor The declaring method's descriptor; required during code valiation or
-     *         when MAXSTACK/MAXLOCALS should be computed.
+     *         when MAXSTACK/MAXLOCALS needs to be computed.
+     * @param  descriptor The declaring method's descriptor; required during code validation or
+     *         when MAXSTACK/MAXLOCALS needs to be computed.
      *
      * @return The tuple:
      *         `(the code attribute, (the extracted meta information, the list of warnings))`.
      */
     def apply(
-        accessFlags: Int,
-        name:        String,
-        descriptor:  br.MethodDescriptor
+        classFileVersion: UShortPair,
+        accessFlags:      Int,
+        name:             String,
+        descriptor:       br.MethodDescriptor
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
 
         import CodeAttributeBuilder.warnMessage
@@ -119,6 +133,14 @@ class CodeAttributeBuilder[T] private[ba] (
                 maxStack.get,
                 computedMaxStack
             )
+        }
+
+        // We need to compute the stack map table if we don't have one already!
+        if (classFileVersion.major >= bi.Java6MajorVersion &&
+            attributes.forall(a ⇒ a.kindId != StackMapTable.KindId) &&
+            (hasControlTransferInstructions || exceptionHandlers.nonEmpty)) {
+            // we need to build the stack map table
+            ??? // lazy val aiResult = BaseAI(m, new TypeCheckingDomain()(classHierarchy, m))
         }
 
         val code = br.Code(

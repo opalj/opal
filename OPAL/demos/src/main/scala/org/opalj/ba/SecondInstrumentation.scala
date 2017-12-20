@@ -41,6 +41,7 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
 import org.opalj.br.ObjectType
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.analyses.Project
@@ -67,6 +68,7 @@ object SecondInstrumentation extends App {
     // let's load the class
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
     val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
+    implicit val ch: ClassHierarchy = p.classHierarchy
     val cf = p.classFile(TheType).get
     // let's transform the methods
     val newMethods =
@@ -101,7 +103,7 @@ object SecondInstrumentation extends App {
                         )
                     }
                     if (modified) {
-                        val (newCode, _) = lCode.toCodeAttributeBuilder(m)
+                        val (newCode, _) = lCode.toCodeAttributeBuilder(cf.version, m)
                         m.copy(body = Some(newCode))
                     } else {
                         m.copy()
@@ -116,13 +118,14 @@ object SecondInstrumentation extends App {
     // HELPFUL WHEN DOING BYTECODE INSTRUMENTATION.
     //
 
-    // Let's see the old file...
+    // Let's see the old class file...
     val oldDACF = ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head
     println("original: "+writeAndOpen(oldDACF.toXHTML(None), "SimpleInstrumentationDemo", ".html"))
 
-    // Let's see the new file...
+    // Let's see the new class file...
     val newDACF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head
-    println("instrumented: "+writeAndOpen(newDACF.toXHTML(None), "NewSimpleInstrumentationDemo", ".html"))
+    val newCFHTML = writeAndOpen(newDACF.toXHTML(None), "NewSimpleInstrumentationDemo", ".html")
+    println("instrumented: "+newCFHTML)
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
