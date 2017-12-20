@@ -69,7 +69,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val performLambdaExpressionsRewriting: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
-        val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(true)
+        val rewrite: Boolean = config.as[Option[Boolean]](Key).get
         if (rewrite) {
             info("class file reader", "Java 8 invokedynamics are rewritten")
         } else {
@@ -80,7 +80,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val logLambdaExpressionsRewrites: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
-        val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
+        val logRewrites: Boolean = config.as[Option[Boolean]](Key).get
         if (logRewrites) {
             info("class file reader", "Java 8 invokedynamic rewrites are logged")
         } else {
@@ -91,7 +91,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val logUnknownInvokeDynamics: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
-        val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
+        val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).get
         if (logUnknownInvokeDynamics) {
             info("class file reader", "unknown invokedynamics are logged")
         } else {
@@ -337,7 +337,8 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             samMethodType: MethodDescriptor, // describing the implemented method type
             tempImplMethod: MethodCallMethodHandle, // the MethodHandle providing the implementation
             instantiatedMethodType: MethodDescriptor, // allowing restrictions on invocation
-            _* // possibly other metadata, we don't need them for our proxy class
+            _* // depending on the metafactory, we could have more information, e.g. about bridges or markers
+            // IMPROVE: Add support for altMetafactory
             ) = bootstrapArguments
         var implMethod = tempImplMethod
 
@@ -372,11 +373,18 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // invokespecial to invokevirtual, because the special handling used for private
         // methods doesn't apply anymore.
         if (implMethod.isInstanceOf[InvokeSpecialMethodHandle]) {
-            implMethod = InvokeVirtualMethodHandle(
-                implMethod.receiverType,
-                implMethod.name,
-                implMethod.methodDescriptor
-            )
+            implMethod = if (classFile.isInterfaceDeclaration)
+                InvokeInterfaceMethodHandle(
+                    implMethod.receiverType,
+                    implMethod.name,
+                    implMethod.methodDescriptor
+                )
+            else
+                InvokeVirtualMethodHandle(
+                    implMethod.receiverType,
+                    implMethod.name,
+                    implMethod.methodDescriptor
+                )
         }
 
         val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
@@ -399,69 +407,69 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 None
             }
 
+        /*
+        Check the type of the invoke instruction using the instruction's opcode.
+
+        targetMethodOwner identifies the class where the method is actually implemented.
+        This is wrong for INVOKEVIRTUAL and INVOKEINTERFACE. The call to the proxy class
+        is done with the actual class, not the class where the method is implemented.
+        Therefore, the receiverType must be the class from the caller, not where the to-
+        be-called method is implemented. E.g. LinkedHashSet.contains() is implemented in
+        HashSet, but the receiverType and constructor parameter must be LinkedHashSet
+        instead of HashSet.
+
+        *** INVOKEVIRTUAL ***
+        An INVOKEVIRTUAL is used when the method is defined by a class type
+        (not an interface type). (e.g. LinkedHashSet.addAll()).
+        This instruction requires a receiver object when the method reference uses a
+        non-null object as a receiver.
+        E.g.: LinkedHashSet<T> lhs = new LinkedHashSet<>();
+              lhs::container()
+
+        It does not have a receiver field in case of a class based method reference,
+        e.g. LinkedHashSet::container()
+
+        *** INVOKEINTERFACE ***
+        It is similar to INVOKEVIRTUAL, but the method definition is defined in an
+        interface. Therefore, the same rule like INVOKEVIRTUAL applies.
+
+        *** INVOKESTATIC ***
+        Because we call a static method, we don't have an instance. Therefore we don't
+        need a receiver field.
+
+        *** INVOKESPECIAL ***
+        INVOKESPECIAL is used for:
+        - instance initialization methods (i.e. constructors) -> Method is implemented
+          in called class -> no rewrite necessary
+        - private method invocation: The private method must be in the same class as
+          the callee -> no rewrite needed
+        - Invokation of methods using super keyword -> Not needed, because a synthetic
+          method in the callee class is created which handles the INVOKESPECIAL.
+          Therefore the receiverType is also the callee class.
+
+          E.g.
+              public static class Superclass {
+                  protected String someMethod() {
+                      return "someMethod";
+                  }
+              }
+
+              public static class Subclass extends Superclass {
+                  public String callSomeMethod() {
+                      Supplier<String> s = super::someMethod;
+                      return s.get();
+                  }
+              }
+
+          The class Subclass contains a synthetic method `access`, which has an
+          INVOKESPECIAL instruction calling Superclass.someMethod. The generated
+          Lambda Proxyclass calls Subclass.access, so the receiverType must be
+          Subclass insteaed of Superclass.
+
+          More information:
+            http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
+        */
         val receiverType =
-            /*
-            Check the type of the invoke instruction using the instruction's opcode.
-
-            targetMethodOwner identifies the class where the method is actually implemented.
-            This is wrong for INVOKEVIRTUAL and INVOKEINTERFACE. The call to the proxy class
-            is done with the actual class, not the class where the method is implemented.
-            Therefore, the receiverType must be the class from the caller, not where the to-
-            be-called method is implemented. E.g. LinkedHashSet.contains() is implemented in
-            HashSet, but the receiverType and constructor parameter must be LinkedHashSet
-            instead of HashSet.
-
-            *** INVOKEVIRTUAL ***
-            An INVOKEVIRTUAL is used when the method is defined by a class type
-            (not an interface type). (e.g. LinkedHashSet.addAll()).
-            This instruction requires a receiver object when the method reference uses a
-            non-null object as a receiver.
-            E.g.: LinkedHashSet<T> lhs = new LinkedHashSet<>();
-                  lhs::container()
-
-            It does not have a receiver field in case of a class based method reference,
-            e.g. LinkedHashSet::container()
-
-            *** INVOKEINTERFACE ***
-            It is similar to INVOKEVIRTUAL, but the method definition is defined in an
-            interface. Therefore, the same rule like INVOKEVIRTUAL applies.
-
-            *** INVOKESTATIC ***
-            Because we call a static method, we don't have an instance. Therefore we don't
-            need a receiver field.
-
-            *** INVOKESPECIAL ***
-            INVOKESPECIAL is used for:
-            - instance initialization methods (i.e. constructors) -> Method is implemented
-              in called class -> no rewrite necessary
-            - private method invocation: The private method must be in the same class as
-              the callee -> no rewrite needed
-            - Invokation of methods using super keyword -> Not needed, because a synthetic
-              method in the callee class is created which handles the INVOKESPECIAL.
-              Therefore the receiverType is also the callee class.
-
-              E.g.
-                  public static class Superclass {
-                      protected String someMethod() {
-                          return "someMethod";
-                      }
-                  }
-
-                  public static class Subclass extends Superclass {
-                      public String callSomeMethod() {
-                          Supplier<String> s = super::someMethod;
-                          return s.get();
-                      }
-                  }
-
-              The class Subclass contains a synthetic method `access`, which has an
-              INVOKESPECIAL instruction calling Superclass.someMethod. The generated
-              Lambda Proxyclass calls Subclass.access, so the receiverType must be
-              Subclass insteaed of Superclass.
-
-              More information:
-                http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
-            */
             if (invocationInstruction != INVOKEVIRTUAL.opcode &&
                 invocationInstruction != INVOKEINTERFACE.opcode) {
                 targetMethodOwner
@@ -533,9 +541,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             proxy.thisType,
             isInterface = false, // the created proxy class is always a concrete class
             factoryMethod.name,
-            // the invokedynamic's methodDescriptor (factoryDescriptor) determines
-            // the parameters that are actually pushed and popped from/to the stack
-            factoryDescriptor.copy(returnType = proxy.thisType)
+            factoryMethod.descriptor
         )
 
         if (logLambdaExpressionsRewrites) {

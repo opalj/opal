@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import scala.IndexedSeq
 import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -470,7 +469,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 for {
                     (theType, method) ← methods
                 } {
-                    val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
+                    val (invocationInstruction, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
                             (
                                 INVOKEINTERFACE.opcode,
@@ -480,7 +479,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         } else if (method.isStatic) {
@@ -493,7 +492,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         } else if (method.isPrivate) {
@@ -506,7 +505,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         } else {
@@ -518,7 +517,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         }
@@ -571,7 +570,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         } else if (method.isStatic) {
@@ -584,7 +583,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         } else if (method.isPrivate) {
@@ -597,7 +596,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         } else {
@@ -609,7 +608,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         IntegerType +: method.parameterTypes,
                                         method.returnType
-                                    ),
+                                    )
                                 )
                             )
                         }
@@ -690,7 +689,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         method.parameterTypes,
                                         ObjectType.Object
-                                    ),
+                                    )
                                 )
                             )
                         } else if (method.isStatic) {
@@ -703,7 +702,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         method.parameterTypes,
                                         ObjectType.Object
-                                    ),
+                                    )
                                 )
                             )
                         } else if (method.isPrivate) {
@@ -716,7 +715,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         method.parameterTypes,
                                         ObjectType.Object
-                                    ),
+                                    )
                                 )
                             )
                         } else {
@@ -728,7 +727,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                                     MethodDescriptor(
                                         method.parameterTypes,
                                         ObjectType.Object
-                                    ),
+                                    )
                                 )
                             )
                         }
@@ -852,7 +851,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         SomeType,
                         false,
                         "<init>",
-                        MethodDescriptor(ObjectType.String, SomeType),
+                        MethodDescriptor(ObjectType.String, SomeType)
                     ),
                     INVOKESPECIAL.opcode
                 )
@@ -940,7 +939,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             theType,
                             false,
                             "newInstance",
-                            new NoArgumentMethodDescriptor(theType),
+                            new NoArgumentMethodDescriptor(theType)
                         ),
                         INVOKESTATIC.opcode
                     )

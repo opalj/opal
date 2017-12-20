@@ -789,10 +789,10 @@ object ClassFileFactory {
         assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
 
         // If we have a constructor, we have to fix the method descriptor. Usually, the instruction
-        // doesn't have a return type. For the proxy method, it is imporatant to return the instance
-        // so we have to patch the correct return type into the method descriptor
+        // doesn't have a return type. For the proxy method, it is important to return the instance
+        // so we have to patch the correct return type into the method descriptor.
         val fixedImplDescriptor: MethodDescriptor =
-            if (invocationInstruction == INVOKESPECIAL.opcode) {
+            if (implMethod.name == "<init>" && invocationInstruction == INVOKESPECIAL.opcode) {
                 MethodDescriptor(implMethod.methodDescriptor.parameterTypes, receiverType)
             } else {
                 implMethod.methodDescriptor
@@ -857,7 +857,7 @@ object ClassFileFactory {
                     val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
                     Array(invoke, null, null, null, null)
                 case INVOKEVIRTUAL.opcode ⇒
-                    val invoke = INVOKEVIRTUAL(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
+                    val invoke = INVOKEVIRTUAL(implMethod.receiverType, implMethod.name, fixedImplDescriptor)
                     Array(invoke, null, null)
             }
 

@@ -35,15 +35,12 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.BufferedOutputStream
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.opalj.io.process
 import org.opalj.bytecode.RTJar
 import org.opalj.bc.Assembler
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.reader.LambdaExpressionsRewriting
-import org.opalj.log.OPALLogger
 
 /**
  * Program to export a project loaded with OPAL with all code rewriting, for example INVOKEDYNAMIC
@@ -109,34 +106,21 @@ object ProjectSerializer {
 
         val outFile = new File(s"$outFolder/OPAL-export")
         if (!outFile.exists() && !outFile.mkdir()) {
-            Console.out.println("Output folder could not be created!")
+            println("Output folder could not be created!")
             System.exit(1)
         }
 
-        val projectClassFiles = Project.JavaClassFileReader().ClassFiles(classPathFile)
-        val libraryClassFiles = Project.JavaClassFileReader().ClassFiles(RTJar)
-
-        val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
-        implicit val config: Config = baseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
-
         val p = Project(
-            projectClassFiles,
-            libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false,
-            virtualClassFiles = Traversable.empty
-        )(
-            config,
-            OPALLogger.globalLogger()
+            classPathFile,
+            RTJar
         )
 
         serialize(p, outFile)
-        Console.out.println(s"Wrote all classfiles to $outFolder")
+        println(s"Wrote all classfiles to $outFolder")
 
         if (jarFileName != null) {
             val r = Process(s"jar cfv ../$jarFileName .", outFile).!
-            Console.out.println(s"Created jar file $jarFileName $r")
+            println(s"Created jar file $jarFileName $r")
         }
     }
 

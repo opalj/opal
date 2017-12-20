@@ -233,6 +233,13 @@ public class MethodReferences {
         return f.apply(42);
     }
 
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/Object", name = "toString", parameterTypes = {  }, line = 239)
+    public String arrayInstanceMethod() {
+        Object[] someObjects = new Object[10];
+        Supplier<String> s = someObjects::toString;
+        return s.get();
+    }
+
 	public static class Outer {
         public static class Inner {
 
