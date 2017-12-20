@@ -28,26 +28,22 @@
  */
 package org.opalj.fpcf
 
-import scala.collection.JavaConverters._
-import java.util.concurrent.ConcurrentLinkedQueue
-
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.log.OPALLogger.error
 
 /**
- * The set of all DeclaredMethods.
+ * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
  *
  * @author DominikHelm
  */
 class DeclaredMethods(val data: Map[DeclaredMethod, DeclaredMethod]) {
 
     /**
-     * Returns the unique identity of a VirtualForwardingMethod or None if that
-     * VirtualForwardingMethod is unknown.
+     * Returns the canonical object representing a specific `Some([[org.opalj.br.DeclaredMethod]])` or
+     * `None` if the specified declared method is unknown.
      */
     def apply(vm: DeclaredMethod): Option[DeclaredMethod] = {
         data.get(vm)
@@ -84,42 +80,38 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
     override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Collects all virtual forwarding methods.
-     *
-     * @note This analysis is internally parallelized.
+     * Collects all declared methods.
      */
     override protected def compute(p: SomeProject): DeclaredMethods = {
-        implicit val logContext = p.logContext
-
-        val sites = new ConcurrentLinkedQueue[(DeclaredMethod, DeclaredMethod)]
-
-        val errors = p.parForeachClassFile() { cf ⇒
+        // Note that this analysis is not parallelized; the synchronization etc. overhead
+        // outweighs the benefits even on systems with 4 or so cores..
+        var declaredMethods = Map.empty[DeclaredMethod, DeclaredMethod]
+        p.allClassFiles.foreach { cf ⇒
+            val classType = cf.thisType
             for {
-                // all methods present in the current class file, not including methods derived
+                // all methods present in the current class file, excluding methods derived
                 // from any supertype that are not overriden by this type.
                 m ← cf.methods
+                if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
             } {
-                val vm = DefinedMethod(cf.thisType, m)
-                sites.add(vm → vm)
+                val vm = DefinedMethod(classType, m)
+                declaredMethods += (vm → vm)
             }
             for {
-                // all instance methods present in the current class file, including methods derived
-                // from any supertype that are not overriden by this type.
-                mc ← p.instanceMethods(cf.thisType)
+                // all non-private, non-abstract instance methods present in the current class file,
+                // including methods derived from any supertype that are not overriden by this type.
+                mc ← p.instanceMethods(classType)
             } {
-                val vm = DefinedMethod(cf.thisType, mc.method)
-                sites.add(vm → vm)
+                val vm = DefinedMethod(classType, mc.method)
+                declaredMethods += (vm → vm)
             }
         }
-        errors.foreach { e ⇒
-            error("declared methods", "collecting declared methods failed", e)
-        }
 
-        new DeclaredMethods(sites.asScala.toMap)
+        new DeclaredMethods(declaredMethods)
     }
 
     //
-    // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD VIRTUAL FORWARDING METHODS TO A
+    // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD DECLARED METHODS TO A
     // PROPERTYSTORE!
     //
     final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], DeclaredMethods) = {
