@@ -270,12 +270,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             "ensures that the test isScalaLambdaDeserialize was executed"
         )
 
-        val superInterfaceTypes = UIDSet(LambdaMetafactoryDescriptor.returnType.asObjectType)
         val typeDeclaration = TypeDeclaration(
             ObjectType(newLambdaTypeName(classFile.thisType)),
             isInterfaceType = false,
-            Some(ObjectType.Object), // we basically create a "CallSiteObject"
-            superInterfaceTypes
+            Some(LambdaMetafactoryDescriptor.returnType.asObjectType), // we basically create a "CallSiteObject"
+            UIDSet.empty
         )
 
         val proxy: ClassFile = ClassFileFactory.DeserializeLambdaProxy(
