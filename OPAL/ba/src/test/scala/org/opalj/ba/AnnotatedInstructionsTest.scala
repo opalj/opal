@@ -72,6 +72,8 @@ class AnnotatedInstructionsTest extends FlatSpec {
         val (pcAnnotations: List[Map[br.PC, String]], warnings) =
             methodAnnotations.values.unzip
 
+        println(pcAnnotations)
+
         "[String Annotated Instructions] the class generation" should "have no warnings" in {
             assert(warnings.flatten.isEmpty)
         }
@@ -123,8 +125,7 @@ class AnnotatedInstructionsTest extends FlatSpec {
             assert("Test" == loader.loadClass("Test").getSimpleName)
         }
 
-        "[Tuple Annotated Instructions] the method " should "have the correct annotations" in {
-
+        "[Tuple Annotated Instructions] the method" should "have the correct annotations" in {
             assert(pcAnnotations.head(0) == (('L1, "MarkerAnnotation1")))
             assert(pcAnnotations.head(4) == (('L2, "MarkerAnnotation2")))
         }

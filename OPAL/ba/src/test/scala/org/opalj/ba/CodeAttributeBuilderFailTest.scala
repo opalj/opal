@@ -52,10 +52,10 @@ class CodeAttributeBuilderFailTest extends FlatSpec {
     behavior of "CodeAttributeBuilder"
 
     "the CodeAttributeBuilder" should "warn about a too small defined max_locals/max_stack values" in {
-        val (_, (_, warnings)) =
-            (
-                CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0
-            )(ACC_PUBLIC.mask, "test", MethodDescriptor("(II)I"))
+        implicit val ch = br.Code.BasicClassHierarchy
+        val md = MethodDescriptor("(II)I")
+        val code = (CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0)
+        val (_, (_, warnings)) = code(bi.Java5Version, ACC_PUBLIC.mask, "test", md)
 
         assert(warnings.size == 2)
     }
@@ -70,11 +70,11 @@ class CodeAttributeBuilderFailTest extends FlatSpec {
     }
 
     it should "fail with unresolvable labels in branch instructions" in {
-        assertThrows[IllegalArgumentException](CODE(IFGE('label)))
-        assertThrows[IllegalArgumentException](
+        assertThrows[java.util.NoSuchElementException](CODE(IFGE('label)))
+        assertThrows[java.util.NoSuchElementException](
             CODE('default, LOOKUPSWITCH('default, IndexedSeq((0, 'label))))
         )
-        assertThrows[IllegalArgumentException](
+        assertThrows[java.util.NoSuchElementException](
             CODE('default, 'label1, LOOKUPSWITCH('default, IndexedSeq((0, 'label1), (0, 'label2))))
         )
     }

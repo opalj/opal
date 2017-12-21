@@ -153,7 +153,7 @@ class CLASS[T](
 
 object CLASS {
 
-    final val DefaultMajorVersion = 50
+    final val DefaultMajorVersion = bi.Java8MajorVersion
 
     final val DefaultMinorVersion = 0
 

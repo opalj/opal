@@ -29,8 +29,9 @@
 package org.opalj
 package ba
 
-import scala.collection.mutable.ArrayBuffer
+import java.util.NoSuchElementException
 
+import scala.collection.mutable.ArrayBuffer
 import org.opalj.control.rerun
 import org.opalj.control.iterateUntil
 import org.opalj.br.PC
@@ -175,18 +176,20 @@ object CODE {
         // fill the instructionLikes array with `null`s for PCs representing instruction arguments
         codeElements foreach {
             case ile @ InstructionLikeElement(i) ⇒
-                if (ile.isAnnotated) {
-                    annotations += ((currentPC, ile.annotation))
-                }
                 currentPC = nextPC
                 nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
+                if (ile.isAnnotated) annotations += ((currentPC, ile.annotation))
                 instructionLikes.append(i)
                 rerun((nextPC - currentPC) - 1) { instructionLikes.append(null) }
 
                 modifiedByWide = i == WIDE
                 hasControlTransferInstructions |= i.isControlTransferInstruction
 
-            case LabelElement(label)        ⇒ labels += (label → nextPC)
+            case LabelElement(label) ⇒
+                if (labels.contains(label)) {
+                    throw new IllegalArgumentException(s"the label $label is already used")
+                }
+                labels += (label → nextPC)
 
             case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, nextPC)
 
@@ -202,11 +205,18 @@ object CODE {
         // in the other cases jump to the original instruction which follows the if.
 
         val codeSize = instructionLikes.size
+        require(codeSize > 0, "no code found")
         val instructions = new Array[Instruction](codeSize)
         iterateUntil(0, codeSize) { pc ⇒
             val labeledInstruction = instructionLikes(pc)
             if (labeledInstruction != null) {
-                instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
+                try {
+                    instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
+                } catch {
+                    case _: NoSuchElementException ⇒
+                        val message = s"$labeledInstruction's label(s) could not be resolved"
+                        throw new NoSuchElementException(message)
+                }
             }
         }
 
