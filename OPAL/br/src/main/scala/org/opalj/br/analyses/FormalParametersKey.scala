@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
 
 import org.opalj.collection.immutable.ConstArray
-import org.opalj.log.OPALLogger.error
 
 /**
  * The set of all explicit and implicit formal method parameters in a project.
@@ -85,11 +84,10 @@ object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothi
      *       analysis in isolation.
      */
     override protected def compute(p: SomeProject): FormalParameters = {
-        implicit val logContext = p.logContext
 
         val sites = new ConcurrentLinkedQueue[(Method, ConstArray[FormalParameter])]
 
-        val errors = p.parForeachMethod() { m ⇒
+        p.parForeachMethod() { m ⇒
             val md = m.descriptor
             val parametersCount = md.parametersCount
             if (m.isStatic && parametersCount == 0) {
@@ -105,7 +103,6 @@ object FormalParametersKey extends ProjectInformationKey[FormalParameters, Nothi
                 sites.add(m → ConstArray(formalParameters))
             }
         }
-        errors.foreach { e ⇒ error("formal parameters", "collecting formal parameters failed", e) }
 
         new FormalParameters(sites.asScala.toMap)
     }

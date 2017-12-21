@@ -121,8 +121,7 @@ object MethodCallInformation extends DefaultOneStepAnalysis {
             }
         }
 
-        val ex = theProject.parForeachMethodWithBody(isInterrupted)(mi ⇒ analyzeMethod(mi.method))
-        ex.foreach { e ⇒ e.printStackTrace(Console.err) }
+        theProject.parForeachMethodWithBody(isInterrupted)(mi ⇒ analyzeMethod(mi.method))
 
         BasicReport(s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information.")
     }

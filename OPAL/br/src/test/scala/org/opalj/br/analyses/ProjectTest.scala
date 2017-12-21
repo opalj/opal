@@ -288,10 +288,7 @@ class ProjectTest extends FlatSpec with Matchers {
         it should s"return that same methods for $name as a manual search" in {
             val mutex = new Object
             var methods = List.empty[Method]
-            val exceptions = project.parForeachMethodWithBody() { mi ⇒
-                mutex.synchronized { methods ::= mi.method }
-            }
-            assert(exceptions.isEmpty)
+            project.parForeachMethodWithBody()(mi ⇒ mutex.synchronized { methods ::= mi.method })
             val missedMethods = for {
                 c ← project.allClassFiles
                 m ← c.methods

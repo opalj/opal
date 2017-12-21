@@ -75,7 +75,7 @@ object FieldAccessInformationAnalysis {
         // we don't want to report unresolvable field references multiple times
         val reportedFieldAccesses = ConcurrentHashMap.newKeySet[Instruction]()
 
-        val errors = project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
+        project.parForeachMethodWithBody(isInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
             val readAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
@@ -137,12 +137,6 @@ object FieldAccessInformationAnalysis {
             }
 
             if (unresolved.nonEmpty) allUnresolved.add((method, unresolved))
-        }
-
-        if (errors.nonEmpty) {
-            errors.foreach { e ⇒
-                OPALLogger.error("analysis", "failed while deriving field access information", e)
-            }
         }
 
         import scala.collection.JavaConverters._

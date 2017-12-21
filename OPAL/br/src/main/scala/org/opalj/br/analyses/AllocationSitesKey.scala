@@ -37,7 +37,6 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.concurrent.defaultIsInterrupted
-import org.opalj.log.OPALLogger.error
 
 /**
  * The ''key'' object to collect all allocation sites in a project. If the library methods
@@ -75,11 +74,10 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
      *        analysis in isolation.
      */
     override protected def compute(p: SomeProject): AllocationSites = {
-        implicit val logContext = p.logContext
         val sitesPerMethod = new ConcurrentLinkedQueue[(Method, Map[PC, AllocationSite])]
         val sitesByType = new ConcurrentLinkedQueue[(ReferenceType, AllocationSite)]
 
-        val errors = p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+        p.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val m = methodInfo.method
             val code = m.body.get
             val as = code.foldLeft(Map.empty[PC, AllocationSite]) { (as, pc, instruction) ⇒
@@ -105,8 +103,6 @@ object AllocationSitesKey extends ProjectInformationKey[AllocationSites, Nothing
             }
             if (as.nonEmpty) sitesPerMethod.add((m, as))
         }
-
-        errors foreach { e ⇒ error("identifying allocation sites", "unexpected error", e) }
 
         val initialMap: Map[ReferenceType, ArrayBuffer[AllocationSite]] =
             Map.empty.withDefault(rt ⇒ new ArrayBuffer(8))

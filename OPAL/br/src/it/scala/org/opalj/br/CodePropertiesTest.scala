@@ -65,7 +65,7 @@ class CodePropertiesTest extends FunSuite {
         val ch = project.classHierarchy
 
         val analyzedMethodsCount = new AtomicInteger(0)
-        val errors = project.parForeachMethodWithBody() { m ⇒
+        project.parForeachMethodWithBody() { m ⇒
 
             val MethodInfo(src, method) = m
             val code = method.body.get
@@ -107,9 +107,6 @@ class CodePropertiesTest extends FunSuite {
             }
             analyzedMethodsCount.incrementAndGet()
         }
-        if (errors.nonEmpty) {
-            fail(errors.mkString("computation of max stack/locals failed:\n", "\n", "\n"))
-        }
         analyzedMethodsCount.get()
     }
 
@@ -121,7 +118,7 @@ class CodePropertiesTest extends FunSuite {
     def doAnalyzeStackMapTablePCs(project: SomeProject): Int = {
         implicit val ch = project.classHierarchy
         val analyzedMethodsCount = new AtomicInteger(0)
-        val errors = project.parForeachMethodWithBody(() ⇒ false) { mi ⇒
+        project.parForeachMethodWithBody(() ⇒ false) { mi ⇒
             if (mi.classFile.version.major > 49) {
                 val code = mi.method.body.get
                 val computedPCs = code.stackMapTablePCs
@@ -142,9 +139,6 @@ class CodePropertiesTest extends FunSuite {
                     analyzedMethodsCount.incrementAndGet()
                 }
             }
-        }
-        if (errors.nonEmpty) {
-            fail(errors.mkString("computation of stack map table pcs failed:\n", "\n", "\n"))
         }
         analyzedMethodsCount.get
     }
