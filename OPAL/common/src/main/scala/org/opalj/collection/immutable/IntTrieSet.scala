@@ -45,6 +45,22 @@ sealed abstract class IntTrieSet
     with IntWorkSet[IntTrieSet] { intSet ⇒
 
     def foreachPair[U](f: (Int, Int) ⇒ U): Unit
+    def intersect(other: IntTrieSet): IntTrieSet = {
+        if (other.size <= 2)
+            // we have specialized handling for small sets
+            return other.intersect(this);
+
+        val (smallerSet, largerSet) = if (other.size > this.size) (this, other) else (other, this)
+        var r = smallerSet
+        val it = smallerSet.iterator
+        while (it.hasNext) {
+            val n = it.next
+            if (!largerSet.contains(n)) {
+                r -= n
+            }
+        }
+        r
+    }
 
     /** Returns some value and removes it from this set. */
     def getAndRemove: (Int, IntTrieSet)
@@ -88,6 +104,7 @@ class FilteredIntTrieSet(private val s: IntTrieSet, private val p: Int ⇒ Boole
 
     private[this] lazy val filtered: IntTrieSet = s.filter(p)
 
+    override def intersect(other: IntTrieSet): IntTrieSet = filtered.intersect(other)
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = filtered.foreachPair(f)
     override def filter(p: Int ⇒ Boolean): IntTrieSet = filtered.filter(p)
     override def isSingletonSet: Boolean = filtered.isSingletonSet
@@ -136,6 +153,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def map(f: Int ⇒ Int): IntTrieSet = this
     override def -(i: Int): this.type = this
     override def +(i: Int): IntTrieSet1 = new IntTrieSet1(i)
+    override def intersect(other: IntTrieSet): IntTrieSet = this
     override def subsetOf(other: IntTrieSet): Boolean = true
     override def iterator: Iterator[Int] = Iterator.empty
     override def intIterator: IntIterator = IntIterator.empty
@@ -181,6 +199,9 @@ final case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override def +(i: Int): IntTrieSet = if (this.i == i) this else IntTrieSet.from(this.i, i)
     override def iterator: Iterator[Int] = Iterator.single(i)
     override def intIterator: IntIterator = IntIterator(i)
+    override def intersect(other: IntTrieSet): IntTrieSet = {
+        if (other.contains(this.i)) this else EmptyIntTrieSet
+    }
     override def subsetOf(other: IntTrieSet): Boolean = other.contains(i)
     override def contains(value: Int): Boolean = value == i
     override def exists(p: Int ⇒ Boolean): Boolean = p(i)
@@ -255,6 +276,24 @@ private[immutable] final class IntTrieSet2 private[immutable] (
         else this
     }
     override def +(i: Int): IntTrieSet = if (i1 == i | i2 == i) this else IntTrieSet.from(i1, i2, i)
+    override def intersect(other: IntTrieSet): IntTrieSet = {
+        other.size match {
+            case 0 ⇒ other
+            case 1 ⇒ if (other.head == i1 || other.head == i2) other else EmptyIntTrieSet
+            case _ ⇒
+                if (other.contains(this.i1)) {
+                    if (other.contains(this.i2)) {
+                        this
+                    } else {
+                        new IntTrieSet1(this.i1)
+                    }
+                } else if (other.contains(this.i2)) {
+                    IntTrieSet1(this.i2)
+                } else {
+                    EmptyIntTrieSet
+                }
+        }
+    }
     override def contains(value: Int): Boolean = value == i1 || value == i2
     override def exists(p: Int ⇒ Boolean): Boolean = p(i1) || p(i2)
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(f(z, i1), i2)
