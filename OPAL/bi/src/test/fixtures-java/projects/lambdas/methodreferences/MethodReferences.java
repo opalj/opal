@@ -249,6 +249,15 @@ public class MethodReferences {
         default int getSomeInt() {
             return 2;
         }
+
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$SomeInterface", name = "lambda$1", parameterTypes = {  }, line = 255)
+        static Runnable StaticFoo() {
+            return () -> System.out.println("Hello world! " + SomeInterface.StaticGetSomeInt());
+        }
+
+        static int StaticGetSomeInt() {
+            return 2;
+        }
     }
 
     public static class Outer {
