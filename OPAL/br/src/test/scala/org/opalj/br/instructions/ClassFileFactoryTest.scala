@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import scala.IndexedSeq
 import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -432,8 +431,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         methodWithFiveDoubleParameters.name,
                         methodWithFiveDoubleParameters.descriptor,
                         StaticMethods, false,
-                        methodWithFiveDoubleParameters.name,
-                        methodWithFiveDoubleParameters.descriptor,
+                        InvokeStaticMethodHandle(
+                            StaticMethods,
+                            false,
+                            methodWithFiveDoubleParameters.name,
+                            methodWithFiveDoubleParameters.descriptor
+                        ),
                         INVOKESTATIC.opcode
                     )
 
@@ -466,15 +469,57 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 for {
                     (theType, method) ← methods
                 } {
-                    val invocationInstruction: Opcode =
+                    val (invocationInstruction, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
-                            INVOKEINTERFACE.opcode
+                            (
+                                INVOKEINTERFACE.opcode,
+                                InvokeInterfaceMethodHandle(
+                                    theType,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         } else if (method.isStatic) {
-                            INVOKESTATIC.opcode
+                            (
+                                INVOKESTATIC.opcode,
+                                InvokeStaticMethodHandle(
+                                    theType,
+                                    false,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         } else if (method.isPrivate) {
-                            INVOKESPECIAL.opcode
+                            (
+                                INVOKESPECIAL.opcode,
+                                InvokeSpecialMethodHandle(
+                                    theType,
+                                    false,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         } else {
-                            INVOKEVIRTUAL.opcode
+                            (
+                                INVOKEVIRTUAL.opcode,
+                                InvokeVirtualMethodHandle(
+                                    theType,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         }
                     val proxy =
                         ClassFileFactory.Proxy(
@@ -488,11 +533,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             method.descriptor,
                             theType,
                             false,
-                            method.name,
-                            MethodDescriptor(
-                                IntegerType +: method.parameterTypes,
-                                method.returnType
-                            ),
+                            methodHandle,
                             invocationInstruction
                         )
 
@@ -519,15 +560,57 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 for {
                     (theType, method) ← methods
                 } {
-                    val invocationInstruction: Opcode =
+                    val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
-                            INVOKEINTERFACE.opcode
+                            (
+                                INVOKEINTERFACE.opcode,
+                                InvokeInterfaceMethodHandle(
+                                    theType,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         } else if (method.isStatic) {
-                            INVOKESTATIC.opcode
+                            (
+                                INVOKESTATIC.opcode,
+                                InvokeStaticMethodHandle(
+                                    theType,
+                                    false,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         } else if (method.isPrivate) {
-                            INVOKESPECIAL.opcode
+                            (
+                                INVOKESPECIAL.opcode,
+                                InvokeSpecialMethodHandle(
+                                    theType,
+                                    false,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         } else {
-                            INVOKEVIRTUAL.opcode
+                            (
+                                INVOKEVIRTUAL.opcode,
+                                InvokeVirtualMethodHandle(
+                                    theType,
+                                    method.name,
+                                    MethodDescriptor(
+                                        IntegerType +: method.parameterTypes,
+                                        method.returnType
+                                    )
+                                )
+                            )
                         }
                     val proxy =
                         ClassFileFactory.Proxy(
@@ -541,11 +624,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             method.descriptor,
                             theType,
                             false,
-                            method.name,
-                            MethodDescriptor(
-                                IntegerType +: method.parameterTypes,
-                                method.returnType
-                            ),
+                            methodHandle,
                             invocationInstruction
                         )
                     val forwarderMethod = collectTheForwardingMethod(proxy)
@@ -600,15 +679,57 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 for {
                     (theType, method) ← methods if method.returnType != VoidType
                 } {
-                    val invocationInstruction: Opcode =
+                    val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                         if (testProject.classFile(theType).get.isInterfaceDeclaration) {
-                            INVOKEINTERFACE.opcode
+                            (
+                                INVOKEINTERFACE.opcode,
+                                InvokeInterfaceMethodHandle(
+                                    theType,
+                                    method.name,
+                                    MethodDescriptor(
+                                        method.parameterTypes,
+                                        ObjectType.Object
+                                    )
+                                )
+                            )
                         } else if (method.isStatic) {
-                            INVOKESTATIC.opcode
+                            (
+                                INVOKESTATIC.opcode,
+                                InvokeStaticMethodHandle(
+                                    theType,
+                                    false,
+                                    method.name,
+                                    MethodDescriptor(
+                                        method.parameterTypes,
+                                        ObjectType.Object
+                                    )
+                                )
+                            )
                         } else if (method.isPrivate) {
-                            INVOKESPECIAL.opcode
+                            (
+                                INVOKESPECIAL.opcode,
+                                InvokeSpecialMethodHandle(
+                                    theType,
+                                    false,
+                                    method.name,
+                                    MethodDescriptor(
+                                        method.parameterTypes,
+                                        ObjectType.Object
+                                    )
+                                )
+                            )
                         } else {
-                            INVOKEVIRTUAL.opcode
+                            (
+                                INVOKEVIRTUAL.opcode,
+                                InvokeVirtualMethodHandle(
+                                    theType,
+                                    method.name,
+                                    MethodDescriptor(
+                                        method.parameterTypes,
+                                        ObjectType.Object
+                                    )
+                                )
+                            )
                         }
                     val proxy =
                         ClassFileFactory.Proxy(
@@ -622,11 +743,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             method.descriptor,
                             theType,
                             false,
-                            method.name,
-                            MethodDescriptor(
-                                method.parameterTypes,
-                                ObjectType.Object
-                            ),
+                            methodHandle,
                             invocationInstruction
                         )
                     val forwarderMethod = collectTheForwardingMethod(proxy)
@@ -730,8 +847,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     "get",
                     MethodDescriptor(ObjectType.String, SomeType),
                     SomeType, false,
-                    "<init>",
-                    MethodDescriptor(ObjectType.String, SomeType),
+                    InvokeSpecialMethodHandle(
+                        SomeType,
+                        false,
+                        "<init>",
+                        MethodDescriptor(ObjectType.String, SomeType)
+                    ),
                     INVOKESPECIAL.opcode
                 )
 
@@ -779,8 +900,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     "isFull",
                     MethodDescriptor(SomeOtherType, BooleanType),
                     SomeOtherType, false,
-                    "isThisFull",
-                    MethodDescriptor.JustReturnsBoolean,
+                    InvokeVirtualMethodHandle(
+                        SomeOtherType,
+                        "isThisFull",
+                        MethodDescriptor.JustReturnsBoolean
+                    ),
                     INVOKEVIRTUAL.opcode
                 )
 
@@ -811,8 +935,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         "$newInstance",
                         new NoArgumentMethodDescriptor(theType),
                         theType, false,
-                        "newInstance",
-                        new NoArgumentMethodDescriptor(theType),
+                        InvokeStaticMethodHandle(
+                            theType,
+                            false,
+                            "newInstance",
+                            new NoArgumentMethodDescriptor(theType)
+                        ),
                         INVOKESTATIC.opcode
                     )
                 val factoryMethod = collectTheFactoryMethod(proxy)
@@ -832,8 +960,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         "method",
                         methodDescriptor,
                         receiverType, false,
-                        "method",
-                        methodDescriptor,
+                        InvokeVirtualMethodHandle(
+                            receiverType,
+                            "method",
+                            methodDescriptor
+                        ),
                         INVOKESTATIC.opcode,
                         Some(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
                     )
@@ -1347,22 +1478,52 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         val methodName = calleeMethodName+"$Forwarded"
         val methodDescriptor = calleeMethodDescriptor
         val calleeIsInterface = repository.classFile(calleeType).get.isInterfaceDeclaration
-        val invocationInstruction: Opcode =
+        val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
             if (calleeIsInterface) {
-                INVOKEINTERFACE.opcode
+                (
+                    INVOKEINTERFACE.opcode,
+                    InvokeInterfaceMethodHandle(
+                        calleeType,
+                        calleeMethodName,
+                        calleeMethodDescriptor
+                    )
+                )
             } else if (calleeMethod.isStatic) {
-                INVOKESTATIC.opcode
+                (
+                    INVOKESTATIC.opcode,
+                    InvokeStaticMethodHandle(
+                        calleeType,
+                        calleeIsInterface,
+                        calleeMethodName,
+                        calleeMethodDescriptor
+                    )
+                )
             } else if (calleeMethod.isPrivate) {
-                INVOKESPECIAL.opcode
+                (
+                    INVOKESPECIAL.opcode,
+                    InvokeSpecialMethodHandle(
+                        calleeType,
+                        calleeIsInterface,
+                        calleeMethodName,
+                        calleeMethodDescriptor
+                    )
+                )
             } else {
-                INVOKEVIRTUAL.opcode
+                (
+                    INVOKEVIRTUAL.opcode,
+                    InvokeVirtualMethodHandle(
+                        calleeType,
+                        calleeMethodName,
+                        calleeMethodDescriptor
+                    )
+                )
             }
         val classFile =
             ClassFileFactory.Proxy(
                 definingType,
                 methodName, methodDescriptor,
                 calleeType, calleeIsInterface,
-                calleeMethodName, calleeMethodDescriptor, invocationInstruction
+                methodHandle, invocationInstruction
             )
 
         test(classFile, (calleeType, calleeMethod))
