@@ -73,6 +73,15 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 
+/**
+ * Adds inter-procedural behavior to escape analyses.
+ * Uses the results of the [[org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis]]
+ * attached to the [[org.opalj.br.analyses.VirtualFormalParameter]] entities.
+ *
+ * Parameter of non-virtual methods are represented as [[org.opalj.br.analyses.FormalParameter]]
+ *
+ * @author Florian Kuebler
+ */
 trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     val project: SomeProject
     val formalParameters: FormalParameters
@@ -209,14 +218,15 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             if (target.isEmpty || isMethodOverridable(target.value).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
-                // TODO: to optimize performance, we do not let the analysis run against the existing methods
+                //
+                // to optimize performance, we do not let the analysis run against the existing methods
                 meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
                 val vm = VirtualForwardingMethod(dc, name, descr, target.value)
                 if (project.isSignaturePolymorphic(vm.target.classFile.thisType, vm.target)) {
                     //IMPROVE
+                    // check if this is to much (param contains def-site)
                     meetMostRestrictive(AtMost(EscapeInCallee))
-                    //TODO check if this is to much (param contains def-site)
                 } else {
                     if (usesDefSite(receiver)) {
                         val fp = virtualFormalParameters(vm)

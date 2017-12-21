@@ -40,6 +40,16 @@ import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
 
+/**
+ * Aggregates the escape information for virtual formal parameters.
+ * That are all possible call targets that override the method attached to the virtual method.
+ *
+ * @see
+ *      [[org.opalj.fpcf.properties.EscapeProperty]]
+ *      [[org.opalj.br.analyses.VirtualFormalParameter]]
+ *
+ * @author Florian Kübler
+ */
 class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val formalParameters = propertyStore.context[FormalParameters]
 
@@ -73,7 +83,9 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     IntermediateResult(fp, Conditional(escapeState), dependees, c)
                 case p: EscapeProperty ⇒
                     escapeState = escapeState meet p
-                    dependees = dependees.filter { _.e ne other }
+                    dependees = dependees.filter {
+                        _.e ne other
+                    }
                     if (dependees.isEmpty) {
                         if (escapeState.isRefineable)
                             RefineableResult(fp, escapeState)

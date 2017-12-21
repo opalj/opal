@@ -55,7 +55,7 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.MonitorEnter
 
 /**
- * TODO
+ * Finds object references in monitorenter instructions that do not escape their thread.
  *
  * @author Florian Kübler
  */

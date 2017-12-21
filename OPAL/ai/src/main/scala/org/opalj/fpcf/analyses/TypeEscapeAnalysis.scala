@@ -51,18 +51,24 @@ import org.opalj.fpcf.properties.AtMost
 import org.opalj.log.OPALLogger.error
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
-//TODO bedeutung..... wie oft aus anderem package überschriebene methode aufgerufen
+
+/**
+ * Computes whether all allocations of a type does not escape their method.
+ * Uses the [[org.opalj.fpcf.properties.TypeEscapeProperty]].
+ *
+ *
+ * @author Florian Kuebler
+ */
 class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
     /**
-     * Determines the purity of the given method. The given method must have a body!
+     * Determines whether the type escapes.
      */
     def determineTypeEscape(cf: ClassFile): PropertyComputationResult = {
         //var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
 
         if (cf.isAbstract || !cf.isPackageVisible) {
             ImmediateResult(cf, GlobalType)
-            // TODO abstract types are not interesting
         } else {
             val constructorsNotAccessible = cf.constructors.forall(cs ⇒ cs.isPackagePrivate || cs.isPrivate)
             if (constructorsNotAccessible) {
@@ -90,7 +96,6 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                 //check escape of allocation
             } else {
                 ImmediateResult(cf, GlobalType)
-                // TODO the type escapes
             }
         }
     }
@@ -98,7 +103,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
 
 object TypeEscapeAnalysis extends FPCFAnalysisRunner {
 
-    override def derivedProperties: Set[PropertyKind] = Set(TypeEscapeProperty) //TODO use own property
+    override def derivedProperties: Set[PropertyKind] = Set(TypeEscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
@@ -110,6 +115,9 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
         analysis
     }
 
+    /**
+     * Used for evaluation.
+     */
     def main(args: Array[String]): Unit = {
         val project = Project(org.opalj.bytecode.JRELibraryFolder)
         project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m))

@@ -218,7 +218,7 @@ trait AbstractEntityEscapeAnalysis {
             if (usesDefSite(call.receiver)) {
                 handleThisLocalOfConstructor(call)
             }
-            //TODO might be correct in an else branch
+            //TODO should be also correct in an else branch
             handleParameterOfConstructor(call)
 
         } else {

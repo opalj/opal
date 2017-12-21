@@ -37,6 +37,8 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
 /**
  * The property describes, whether a method returns a value, that is allocated in the same method
  * and only has escape state [[EscapeViaReturn]].
+ *
+ * @author Florian Kuebler
  */
 sealed abstract class ReturnValueFreshness extends Property
     with ReturnValueFreshnessPropertyMetaInformation {
