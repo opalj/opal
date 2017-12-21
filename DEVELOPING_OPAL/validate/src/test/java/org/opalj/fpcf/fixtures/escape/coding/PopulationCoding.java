@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.escape.coding;
 
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
-import org.opalj.fpcf.properties.escape.MaybeEscapeInCallee;
+import org.opalj.fpcf.properties.escape.AtMostEscapeInCallee;
 
 // todo taken from
 class PopulationCoding implements CodingMethod {
@@ -20,7 +20,7 @@ class PopulationCoding implements CodingMethod {
     static final int[] LValuesCoded
             = { -1, 4, 8, 16, 32, 64, 128, 192, 224, 240, 248, 252 };
 
-    public static int parseMetaCoding12345(byte[] bytes, int pos, @MaybeEscapeInCallee(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod res[]) {
+    public static int parseMetaCoding12345(byte[] bytes, int pos, @AtMostEscapeInCallee(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod res[]) {
         int op = bytes[pos++] & 0xFF;
         if (op < _meta_pop || op >= _meta_limit)  return pos-1; // backup
         op -= _meta_pop;

@@ -25,10 +25,10 @@ public class EscapesViaReturn {
                 @EscapeViaReturn(
                         value = "the object is passed to an identity function and then returned",
                         analyses = InterProceduralEscapeAnalysis.class)
-                @MaybeEscapeViaReturn(
+                @AtMostEscapeViaReturn(
                         value = "intra-procedural analyses don't track the call but the domain does",
                         analyses = SimpleEscapeAnalysis.class)
-                @MaybeEscapeInCallee(value = "the domain does not recognize the identity", performInvokationsDomain = false)
+                @AtMostEscapeInCallee(value = "the domain does not recognize the identity", performInvokationsDomain = false)
                         Object();
         Object x = identity(o);
         return x;
@@ -39,7 +39,7 @@ public class EscapesViaReturn {
                 @EscapeInCallee(
                         value = "the object is passed to an identity function and not returned",
                         analyses = InterProceduralEscapeAnalysis.class)
-                @MaybeEscapeInCallee(
+                @AtMostEscapeInCallee(
                         value = "intra-procedural analyses don't track the call",
                         analyses = SimpleEscapeAnalysis.class)
                         Object();
@@ -60,7 +60,7 @@ public class EscapesViaReturn {
 
     public Object escapeAfterCallToSometimesIdentity(boolean b) {
         Object o = new
-                @MaybeEscapeInCallee("the object is passed to an identity like function")
+                @AtMostEscapeInCallee("the object is passed to an identity like function")
                         Object();
         return sometimesIdentity(b, o);
     }

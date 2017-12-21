@@ -11,7 +11,7 @@ public abstract class AbstractClass implements Interface {
     public Circle copyCircle(
             @NoEscape(value = "a new circle is created",
                     analyses = InterProceduralEscapeAnalysis.class)
-            @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
+            @AtMostNoEscape(value = "Formal parameters are not going to be analyzed",
                     analyses = SimpleEscapeAnalysis.class)
                     Circle aCircle
     ) {
@@ -20,9 +20,9 @@ public abstract class AbstractClass implements Interface {
 
     @Override
     public Circle cyclicFunction(
-            @MaybeEscapeInCallee(value = "it is passed to an extensible function",
+            @AtMostEscapeInCallee(value = "it is passed to an extensible function",
                     analyses = InterProceduralEscapeAnalysis.class)
-            @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
+            @AtMostNoEscape(value = "Formal parameters are not going to be analyzed",
                     analyses = SimpleEscapeAnalysis.class) Circle aCircle,
             int count
     ) {
@@ -32,7 +32,7 @@ public abstract class AbstractClass implements Interface {
             return cyclicFunction(aCircle, -1);
         } else {
             return cyclicFunction(new
-                    @MaybeEscapeInCallee("the function is extensible")
+                    @AtMostEscapeInCallee("the function is extensible")
                             Circle(), 0);
         }
     }

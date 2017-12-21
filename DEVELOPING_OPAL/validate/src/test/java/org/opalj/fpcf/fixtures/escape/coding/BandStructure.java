@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.escape.coding;
 
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
-import org.opalj.fpcf.properties.escape.MaybeEscapeViaParameter;
+import org.opalj.fpcf.properties.escape.AtMostEscapeViaParameter;
 
 public abstract class BandStructure {
 
@@ -22,7 +22,7 @@ public abstract class BandStructure {
             Coding.of(4,256,1)
     };
 
-    public static int parseMetaCoding(byte[] bytes, int pos, @MaybeEscapeViaParameter(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod[] res) {
+    public static int parseMetaCoding(byte[] bytes, int pos, @AtMostEscapeViaParameter(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod[] res) {
         if ((bytes[pos] & 0xFF) == _meta_default) {
             res[0] = dflt;
             return pos+1;

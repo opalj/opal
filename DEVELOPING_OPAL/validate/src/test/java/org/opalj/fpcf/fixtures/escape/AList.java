@@ -3,8 +3,8 @@ package org.opalj.fpcf.fixtures.escape;
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.EscapeViaParameter;
-import org.opalj.fpcf.properties.escape.MaybeEscapeViaParameter;
-import org.opalj.fpcf.properties.escape.MaybeNoEscape;
+import org.opalj.fpcf.properties.escape.AtMostEscapeViaParameter;
+import org.opalj.fpcf.properties.escape.AtMostNoEscape;
 
 public class AList {
 
@@ -20,16 +20,16 @@ public class AList {
     }
 
     public void add(
-            @MaybeEscapeViaParameter(value = "the parameter escapes via the array",
+            @AtMostEscapeViaParameter(value = "the parameter escapes via the array",
                     analyses = InterProceduralEscapeAnalysis.class)
-            @MaybeNoEscape(value = "SimpleEscapeAnalyis does not track formal parameters",
+            @AtMostNoEscape(value = "SimpleEscapeAnalyis does not track formal parameters",
                     analyses = SimpleEscapeAnalysis.class)
                     Object o
     ) {
         if (numberOfElements >= elements.length) {
             Object[] tmp = elements;
             elements = new
-                    @MaybeEscapeViaParameter("the array escapes via the this local")
+                    @AtMostEscapeViaParameter("the array escapes via the this local")
                             Object[elements.length * 2];
             for (int i = 0; i < numberOfElements; i++) {
                 elements[i] = tmp[i];

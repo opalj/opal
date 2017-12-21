@@ -4,8 +4,8 @@ import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.fixtures.escape.Circle;
 import org.opalj.fpcf.properties.escape.EscapeInCallee;
-import org.opalj.fpcf.properties.escape.MaybeEscapeInCallee;
-import org.opalj.fpcf.properties.escape.MaybeNoEscape;
+import org.opalj.fpcf.properties.escape.AtMostEscapeInCallee;
+import org.opalj.fpcf.properties.escape.AtMostNoEscape;
 
 public class ClassA extends AbstractClass {
 
@@ -13,7 +13,7 @@ public class ClassA extends AbstractClass {
     public Circle copyCircle(
             @EscapeInCallee(value = "escapes in super call",
                     analyses = InterProceduralEscapeAnalysis.class)
-            @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
+            @AtMostNoEscape(value = "Formal parameters are not going to be analyzed",
                     analyses = SimpleEscapeAnalysis.class)
                     Circle aCircle
     ) {
@@ -23,9 +23,9 @@ public class ClassA extends AbstractClass {
 
     @Override
     public Circle cyclicFunction(
-            @MaybeEscapeInCallee(value = "the type is extensible",
+            @AtMostEscapeInCallee(value = "the type is extensible",
                     analyses = InterProceduralEscapeAnalysis.class)
-            @MaybeNoEscape(value = "Formal parameters are not going to be analyzed",
+            @AtMostNoEscape(value = "Formal parameters are not going to be analyzed",
                     analyses = SimpleEscapeAnalysis.class)
                     Circle aCircle,
             int count

@@ -17,7 +17,7 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 @Target({ TYPE_USE, PARAMETER })
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface MaybeEscapeViaReturn {
+public @interface AtMostEscapeViaReturn {
 
     /**
      * A short reasoning of this property.

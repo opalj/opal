@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.escape.coding;
 
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
-import org.opalj.fpcf.properties.escape.MaybeEscapeInCallee;
+import org.opalj.fpcf.properties.escape.AtMostEscapeInCallee;
 
 public class AdaptiveCoding implements CodingMethod {
 
@@ -42,7 +42,7 @@ public class AdaptiveCoding implements CodingMethod {
         return (KB+KB_OFFSET) << (KX * KX_LG2BASE);
     }
 
-    public static int parseMetaCoding(byte[] bytes, int pos, @MaybeEscapeInCallee(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod res[]) {
+    public static int parseMetaCoding(byte[] bytes, int pos, @AtMostEscapeInCallee(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod res[]) {
         int op = bytes[pos++] & 0xFF;
         if (op < _meta_run || op >= _meta_pop)  return pos-1; // backup
         AdaptiveCoding prevc = null;

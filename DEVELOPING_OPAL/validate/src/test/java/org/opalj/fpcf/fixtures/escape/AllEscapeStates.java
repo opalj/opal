@@ -34,6 +34,9 @@ import org.opalj.fpcf.properties.escape.*;
 
 public class AllEscapeStates {
 
+
+    public static Circle global;
+
     public static int noEscape() {
         Circle c = new @NoEscape("the object stays local") Circle();
         return c.area;
@@ -43,7 +46,7 @@ public class AllEscapeStates {
         Circle c = new
                 @EscapeInCallee(value = "the this local escapes in toString",
                         analyses = InterProceduralEscapeAnalysis.class)
-                @MaybeEscapeInCallee(value = "the simple analysis is intra-procedural",
+                @AtMostEscapeInCallee(value = "the simple analysis is intra-procedural",
                         analyses = SimpleEscapeAnalysis.class)
                         Circle();
         System.out.println(c.toString());
@@ -65,5 +68,12 @@ public class AllEscapeStates {
             throw e;
         }
     }
+
+
+    public static void escapeViaStaticField() {
+        Circle c = new @EscapeViaStaticField("assigned to global") Circle();
+        AllEscapeStates.global = c;
+    }
+
 
 }

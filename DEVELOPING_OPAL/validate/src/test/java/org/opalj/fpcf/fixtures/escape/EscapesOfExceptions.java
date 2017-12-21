@@ -99,7 +99,7 @@ public class EscapesOfExceptions {
 
     public static void isThrownInConstructor() throws AnException{
         new
-                @MaybeNoEscape(value = "analyses do not track the abnormal return any further")
+                @AtMostNoEscape(value = "analyses do not track the abnormal return any further")
                 @EscapeViaAbnormalReturn(value = "the exception is thrown in its constructor", analyses = {})
                         AnException(true);
     }

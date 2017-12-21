@@ -18,14 +18,14 @@ public class EscapesViaArrays {
         List<Object> attributesList = new
                 @EscapeViaHeapObject(value = "the list is put into the static map", analyses = {})
                         //TODO what about Interprocedurual
-                @MaybeEscapeInCallee(value = "is passed to map",
+                @AtMostEscapeInCallee(value = "is passed to map",
                         analyses = SimpleEscapeAnalysis.class)
                         LinkedList<>();
         attributes[0] = new
                 @EscapeViaHeapObject(
                         value = "the object is assigned to the list and therefore to the global map",
                         analyses = {})
-                @MaybeNoEscape("we do not track the array any further")
+                @AtMostNoEscape("we do not track the array any further")
                         Object();
         attributesList.add(attributes[0]);
         staticMap.put("Test", attributesList);
