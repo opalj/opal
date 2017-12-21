@@ -371,19 +371,21 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
         // methods doesn't apply anymore.
-        if (implMethod.isInstanceOf[InvokeSpecialMethodHandle]) {
-            implMethod = if (classFile.isInterfaceDeclaration)
-                InvokeInterfaceMethodHandle(
-                    implMethod.receiverType,
-                    implMethod.name,
-                    implMethod.methodDescriptor
-                )
-            else
-                InvokeVirtualMethodHandle(
-                    implMethod.receiverType,
-                    implMethod.name,
-                    implMethod.methodDescriptor
-                )
+        implMethod match {
+            case specialImplMethod: InvokeSpecialMethodHandle ⇒
+                implMethod = if (specialImplMethod.isInterface)
+                    InvokeInterfaceMethodHandle(
+                        implMethod.receiverType,
+                        implMethod.name,
+                        implMethod.methodDescriptor
+                    )
+                else
+                    InvokeVirtualMethodHandle(
+                        implMethod.receiverType,
+                        implMethod.name,
+                        implMethod.methodDescriptor
+                    )
+            case _ ⇒
         }
 
         val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
