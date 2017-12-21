@@ -179,12 +179,12 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                         maybeNoEscapingArrays += 1
                                                     case EP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
                                                         maybeInCalleeArrays += 1
-                                                    case EP(_, EscapeViaParameter | AtMost(EscapeViaParameter))=>
+                                                    case EP(_, EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
                                                         maybeViaParamArrays += 1
-                                                    case EP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) =>
+                                                    case EP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
                                                         maybeViaReturn += 1
-                                                    case EP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) =>
-                                                        maybeViaAbnormal +=1
+                                                    case EP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
+                                                        maybeViaAbnormal += 1
                                                     case EP(_, p) if p.isBottom ⇒ globalArrays += 1
                                                     case _                      ⇒ maybeInCallerArrays += 1
                                                 }

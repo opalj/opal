@@ -14,7 +14,7 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
 @PropertyValidator(key = "EscapeProperty",
-        validator = MaybeEscapeViaNormalAndAbnormalReturnMatcher.class)
+        validator = AtMostEscapeViaNormalAndAbnormalReturnMatcher.class)
 @Target({ TYPE_USE, PARAMETER })
 @Documented
 @Retention(RetentionPolicy.CLASS)

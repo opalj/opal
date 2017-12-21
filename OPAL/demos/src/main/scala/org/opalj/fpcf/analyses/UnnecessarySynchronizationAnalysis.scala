@@ -80,7 +80,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
             PropertyStoreKey.makeFormalParametersAvailable(project)
             PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
 
-            val domain = (m: Method) => new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
+            val domain = (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
             project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain)
 
             project.get(PropertyStoreKey)

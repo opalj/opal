@@ -78,7 +78,7 @@ object EscapeEvaluation {
             target = new File(projectDir, "project/bin.zip")
             analysis ← List(SimpleEscapeAnalysis, InterProceduralEscapeAnalysis)
             domainID ← 0 to 2
-            i ← 0 to 101 //todo 100
+            i ← 0 to 0 //todo 100
         } {
             try {
                 val projectEvaluationDir = new File(evaluationDir, projectDir.getName)

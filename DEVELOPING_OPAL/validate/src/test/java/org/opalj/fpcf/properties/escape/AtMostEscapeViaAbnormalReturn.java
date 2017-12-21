@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
-@PropertyValidator(key = "EscapeProperty", validator = MaybeEscapeViaAbnormalReturnMatcher.class)
+@PropertyValidator(key = "EscapeProperty", validator = AtMostEscapeViaAbnormalReturnMatcher.class)
 @Target({ TYPE_USE, PARAMETER })
 @Documented
 @Retention(RetentionPolicy.CLASS)
