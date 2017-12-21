@@ -79,4 +79,11 @@ public class ReceiverInheritance {
         Consumer<T> bc = lhm::contains;
         bc.accept(t);
     }
+
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 86)
+    public static <T> boolean instanceBiFunction(T t) {
+        LinkedHashSet<T> lhm = new LinkedHashSet<T>();
+        Function<T, Boolean> f = lhm::contains;
+        return f.apply(t);
+    }
 }
