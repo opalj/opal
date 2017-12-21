@@ -29,21 +29,21 @@
 package org.opalj
 package br
 
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+
 import java.net.URL
 import java.io.File
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-
-import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.RTJar
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.support.tools.ProjectBasedInMemoryClassLoader
+import org.opalj.ba.ProjectBasedInMemoryClassLoader
 
 /**
- * Test if OPAL is able to rewrite a simple lambda expression and check if the rewritten bytecode
+ * Tests if OPAL is able to rewrite a simple lambda expression and checks if the rewritten bytecode
  * is executable.
  *
  * @author Andreas Muttscheller
