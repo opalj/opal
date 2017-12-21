@@ -388,7 +388,7 @@ trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
         if (anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(NoEscape))
+            meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {

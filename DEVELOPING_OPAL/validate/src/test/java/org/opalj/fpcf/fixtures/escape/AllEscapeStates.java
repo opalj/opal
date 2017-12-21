@@ -34,8 +34,11 @@ import org.opalj.fpcf.properties.escape.*;
 
 public class AllEscapeStates {
 
+    public Object f;
 
     public static Circle global;
+
+    public static Object globalObject;
 
     public static int noEscape() {
         Circle c = new @NoEscape("the object stays local") Circle();
@@ -69,11 +72,58 @@ public class AllEscapeStates {
         }
     }
 
-
     public static void escapeViaStaticField() {
         Circle c = new @EscapeViaStaticField("assigned to global") Circle();
         AllEscapeStates.global = c;
     }
 
+    public static void escapeViaParameter(AllEscapeStates param) {
+        param.f =
+                new @EscapeViaParameter(value = "passed to parameter", analyses = {})
+                @AtMostEscapeViaParameter("passed to parameter, but analyses do not track further")
+                        Object();
+    }
+
+    public static void parameterFieldGlobalEscape(AllEscapeStates param) {
+        param.f = new
+                @EscapeViaStaticField(value = "passed to parameter", analyses = {})
+                @AtMostEscapeViaParameter(
+                        "passed to parameter, but analyses do not track further") Object();
+        globalObject = param;
+    }
+
+    public static Object multipleEscapes(AllEscapeStates param) {
+        global = new @EscapeViaStaticField("assigned to global") Circle();
+
+        if (param == null) {
+            throw new @EscapeViaAbnormalReturn("thrown exception")
+                    RuntimeException();
+        }
+        param.f =
+                new @EscapeViaParameter(value = "passed to parameter", analyses = {})
+                @AtMostEscapeViaParameter("passed to parameter, but analyses do not track further")
+                        Object();
+        Object local = new @NoEscape("local object") Object();
+        Circle noLocal =
+                new
+                        @EscapeViaStaticField(value = "parameter escapes",
+                                analyses = { InterProceduralEscapeAnalysis.class })
+                        @AtMostEscapeInCallee(value = "intra-procedural",
+                                analyses = SimpleEscapeAnalysis.class)
+                                Circle();
+        if (local != null) {
+            formalParamEscape(noLocal);
+        }
+        return new @EscapeViaReturn("returned") Object();
+    }
+
+    private static void formalParamEscape(
+            @EscapeViaStaticField(value = "assigned to static field",
+                    analyses = InterProceduralEscapeAnalysis.class)
+            @AtMostNoEscape(value = "intra-procedural",
+                    analyses = SimpleEscapeAnalysis.class) Circle o
+    ) {
+        global = o;
+    }
 
 }
