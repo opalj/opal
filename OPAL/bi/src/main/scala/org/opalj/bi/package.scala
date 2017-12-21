@@ -29,8 +29,10 @@
 package org.opalj
 
 import java.lang.Integer.parseInt
-import scala.io.Source
 
+import org.opalj.collection.immutable.UShortPair
+
+import scala.io.Source
 import org.opalj.io.process
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -94,10 +96,15 @@ package object bi {
     }
 
     final val Java9MajorVersion = 53
+    final val Java9Version = UShortPair(0, Java9MajorVersion)
     final val Java8MajorVersion = 52
+    final val Java8Version = UShortPair(0, Java8MajorVersion)
     final val Java7MajorVersion = 51
+    final val Java7Version = UShortPair(0, Java7MajorVersion)
     final val Java6MajorVersion = 50
+    final val Java6Version = UShortPair(0, Java6MajorVersion)
     final val Java5MajorVersion = 49
+    final val Java5Version = UShortPair(0, Java5MajorVersion)
     // all other versions are not really relevant in the context of Java bytecode
     final val Java1MajorVersion = 45
 
