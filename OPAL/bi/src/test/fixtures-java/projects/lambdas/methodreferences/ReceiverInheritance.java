@@ -80,7 +80,7 @@ public class ReceiverInheritance {
         bc.accept(t);
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 80)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/LinkedHashSet", name = "contains", line = 86)
     public static <T> boolean instanceBiFunction(T t) {
         LinkedHashSet<T> lhm = new LinkedHashSet<T>();
         Function<T, Boolean> f = lhm::contains;

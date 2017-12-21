@@ -29,8 +29,6 @@
 package lambdas.methodreferences;
 
 import java.io.Serializable;
-import annotations.target.InvokedMethod;
-import static annotations.target.TargetResolution.DYNAMIC;
 
 /**
  * This class contains an example of a method reference dealing with intersection types.

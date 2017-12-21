@@ -240,7 +240,18 @@ public class MethodReferences {
         return s.get();
     }
 
-	public static class Outer {
+    public interface SomeInterface {
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$SomeInterface", name = "lambda$0", parameterTypes = {  }, line = 246)
+        default Runnable foo() {
+            return () -> System.out.println("Hello world! " + getSomeInt());
+        }
+
+        default int getSomeInt() {
+            return 2;
+        }
+    }
+
+    public static class Outer {
         public static class Inner {
 
         }

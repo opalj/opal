@@ -295,6 +295,7 @@ class LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         it("should resolve all references in MethodReferences") {
             testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/MethodReferences")
             testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/MethodReferences$Child")
+            testAllMethodsWithInvokedMethodAnnotation("lambdas/methodreferences/MethodReferences$SomeInterface")
         }
 
         it("should resolve all references in ReceiverInheritance") {
