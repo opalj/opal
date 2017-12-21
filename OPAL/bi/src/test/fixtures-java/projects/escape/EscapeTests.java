@@ -84,8 +84,8 @@ public class EscapeTests {
         ClassWithFields.global = new @Escapes(ViaStaticField) Object();
         if (param == null) {
             throw new
-                    @Escapes(ViaReturn)
-                    @Escapes(value = MaybeViaAbnormalReturn,
+                    @Escapes(ViaAbnormalReturn)
+                    @Escapes(value = ViaAbnormalReturn,
                             algorithms = { "SimpleEscapeAnalysis",
                                     "InterproceduralEscapeAnalysis" })
                             RuntimeException();
@@ -214,8 +214,6 @@ public class EscapeTests {
     public static void exceptionEscape() {
         throw new
                 @Escapes(ViaAbnormalReturn)
-                @Escapes(value = MaybeViaAbnormalReturn, algorithms = { "SimpleEscapeAnalysis",
-                        "InterproceduralEscapeAnalysis" })
                         RuntimeException();
     }
 
@@ -223,8 +221,6 @@ public class EscapeTests {
         try {
             throw new
                     @Escapes(No)
-                    @Escapes(value = MaybeNo, algorithms = { "SimpleEscapeAnalysis",
-                            "InterproceduralEscapeAnalysis" })
                             RuntimeException();
         } catch (Exception e) {
             System.out.println("catched the error");
@@ -237,16 +233,10 @@ public class EscapeTests {
             if (b)
                 e = new
                         @Escapes(No)
-                        @Escapes(value = MaybeNo,
-                                algorithms = { "SimpleEscapeAnalysis",
-                                        "InterproceduralEscapeAnalysis" })
                                 ArrayIndexOutOfBoundsException("");
             else
                 e = new
                         @Escapes(No)
-                        @Escapes(value = MaybeNo,
-                                algorithms = { "SimpleEscapeAnalysis",
-                                        "InterproceduralEscapeAnalysis" })
                                 IllegalArgumentException("");
             throw e;
         } catch (ArrayIndexOutOfBoundsException ex) {
@@ -416,5 +406,28 @@ public class EscapeTests {
         Object o = new @Escapes(ViaStaticField) Object();
         formalParamNoEscape(o);
         ClassWithFields.global = o;
+    }
+
+    public static void simpleCycleNoEscape1(
+            @Escapes(value = InCallee, algorithms = "InterproceduralEscapeAnalysis")
+            @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
+                    Object param,
+            int i
+    ) {
+        if (i > 0) {
+            ClassWithFields x = new ClassWithFields();
+            x.f = param;
+            simpleCycleNoEscape2(param, i - 1);
+        }
+    }
+
+    public static void simpleCycleNoEscape2(
+            @Escapes(value = InCallee, algorithms = "InterproceduralEscapeAnalysis")
+            @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
+                    Object param, int i
+    ) {
+        if (i > 0) {
+            simpleCycleNoEscape1(param, i - 1);
+        }
     }
 }
