@@ -270,7 +270,7 @@ lazy val de = Project(
     .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
-/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG  ANALYSIS AGAIN!
+/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
 lazy val bp = Project(
     id = "BugPicker",
     base = file("OPAL/bp"),
@@ -300,6 +300,8 @@ lazy val DeveloperTools = Project(
         scalacOptions in(Compile, console) := Seq("-deprecation"),
         //library dependencies
         libraryDependencies ++= Dependencies.developertools,
+        assemblyJarName in assembly := "OPALLambdaRectifier.jar",
+        mainClass in assembly := Some("org.opalj.support.tools.ProjectSerializer"),
         // Required by Java/ScalaFX
         fork := true
     ))
@@ -368,13 +370,15 @@ lazy val incubation = Project(
 val generateSite = taskKey[File]("creates the OPAL website") in Compile
 generateSite := {
     lazy val disassemblerJar = (assembly in da).value
+    lazy val projectSerializerJar = (assembly in DeveloperTools).value
     val runUnidoc = (unidoc in Compile).value
 
     SiteGeneration.generateSite(
         sourceDirectory.value,
         resourceManaged.value,
         streams.value,
-        disassemblerJar
+        disassemblerJar,
+        projectSerializerJar
     )
 }
 

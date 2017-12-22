@@ -192,7 +192,7 @@ package object concurrent {
      *
      * @note   The OPALExecutionContext is used for getting the necessary threads.
      *
-     * @throws [[org.opalj.concurrent.ConcurrentExceptions]] if any exception occurs;
+     * @throws `ConcurrentExceptions` if any exception occurs;
      *         the thrown exception stores all other exceptions (`getSuppressed`)
      */
     @throws[ConcurrentExceptions]("all thrown exceptions are collected and added as suppressed exceptions to the thrown exception")

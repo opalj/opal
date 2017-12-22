@@ -30,116 +30,100 @@ package org.opalj
 package support
 package tools
 
-import sys.process._
 import java.io.File
 import java.io.FileOutputStream
 import java.io.BufferedOutputStream
 
 import org.opalj.io.process
-import org.opalj.bytecode.RTJar
-import org.opalj.bc.Assembler
-import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
+import org.opalj.bc.Assembler
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Program to export a project loaded with OPAL with all code rewriting, for example INVOKEDYNAMIC
- * resolution.
+ * Exports the class files belonging to the project part of a loaded
+ * [[org.opalj.br.analyses.Project]].
+ * I.e., all code rewritings (e.g., INVOKEDYNAMIC resolution) and
+ * bytecode optimizations become visible.
  *
  * Example execution:
- *     sbt "OPAL-Validate/runMain org.opalj.br.ProjectSerializer -cp DEVELOPING_OPAL/validate/target/scala-2.12/test-classes -o DEVELOPING_OPAL/validate/target"
- *     java -cp DEVELOPING_OPAL/validate/target/OPAL-export org.opalj.br.fixtures.InvokeDynamics
+ *    java org.opalj.br.ProjectSerializer -in <MyJar> -out <MyJarRewritten>
  *
  * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
 object ProjectSerializer {
 
-    private def showUsage(): Unit = {
+    private def showUsage(error: Option[String]): Unit = {
         println("OPAL - Project Serializer")
+        println("Writes out the project's rewritten and transformed class files.")
+        println("(No INVOKEDYNAMICS and optimized bytecode.)")
+        error.foreach { e ⇒ println(); Console.err.println(e); println() }
         println("Parameters:")
-        println("   -cp <Folder/jar-file> the classes to load into OPAL and export")
-        println("   -o <FileName> the folder. Defaults to current folder.")
-        println("   -jar <FileName> Export the classfiles into a jar file as well.")
+        println("   -in <JAR File or Folder> a jar or a folder containing a project's class files")
+        println("   -out <FileName> the folder where the class files are stored.")
         println()
-        println("java org.opalj.br.ProjectSerializer -cp <classpath or jar file> -o <output folder>")
+        println("Example:")
+        println("   java org.opalj.br.ProjectSerializer -jar <JAR File> -o <output folder>")
     }
 
     def main(args: Array[String]): Unit = {
-        var classPath: String = null
-        var outFolder: String = "."
-        var jarFileName: String = null
-
+        var in: String = null
+        var out: String = null
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-cp" ⇒
-                    i += 1; classPath = args(i)
-
-                case "-o" ⇒
-                    i += 1; outFolder = args(i)
-
-                case "-jar" ⇒
-                    i += 1; jarFileName = args(i)
-
-                case "-h" | "--help" ⇒
-                    showUsage()
-                    System.exit(0)
-
-                case arg ⇒
-                    Console.err.println(s"Unknown parameter $arg.")
-                    showUsage()
-                    System.exit(2)
+                case "-in"           ⇒ { i += 1; in = args(i) }
+                case "-out"          ⇒ { i += 1; out = args(i) }
+                case "-h" | "--help" ⇒ { showUsage(error = None); System.exit(0) }
+                case arg             ⇒ { showUsage(Some(s"Unsupported: $arg")); System.exit(2) }
             }
             i += 1
         }
-        if (classPath == null) {
-            Console.err.println("Missing classpath information.")
-            showUsage()
+        if (in == null || out == null) {
+            showUsage(Some("Parameters missing."))
+            System.exit(1)
+        }
+        val inFile = new File(in)
+        if (!inFile.exists()) {
+            Console.err.println(s"$in does not exist.")
             System.exit(1)
         }
 
-        val classPathFile = new File(classPath)
-        if (!classPathFile.exists()) {
-            Console.err.println("Classpath or jar file does not exists.")
-            System.exit(1)
+        def checkOrCreateOutputFolder(outFolder: File): Unit = {
+            if ((!outFolder.exists() && !outFolder.mkdirs()) ||
+                (outFolder.exists() && !outFolder.isDirectory)) {
+                Console.err.println(s"$out could not be created or is not a folder.")
+                System.exit(1)
+            }
         }
+        val outFolder = new File(out)
+        checkOrCreateOutputFolder(outFolder)
+        val classesFolder = new File(outFolder.getPath + File.separator+"classes")
+        checkOrCreateOutputFolder(classesFolder)
 
-        val outFile = new File(s"$outFolder/OPAL-export")
-        if (!outFile.exists() && !outFile.mkdir()) {
-            println("Output folder could not be created!")
-            System.exit(1)
-        }
+        val p = Project(inFile /* actually, we don't need the RTJar */ )
+        serialize(p, classesFolder)
+        println(s"Wrote all classfiles to $outFolder.")
 
-        val p = Project(
-            classPathFile,
-            RTJar
-        )
-
-        serialize(p, outFile)
-        println(s"Wrote all classfiles to $outFolder")
-
+        /*
         if (jarFileName != null) {
             val r = Process(s"jar cfv ../$jarFileName .", outFile).!
             println(s"Created jar file $jarFileName $r")
-        }
+        }*/
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {
-        p.allProjectClassFiles.par.foreach { c ⇒
-            val b = classToByte(c)
-            val targetPackageFolder = new File(s"${targetFolder.getAbsolutePath}/${c.thisType.packageName}")
-            targetPackageFolder.mkdirs()
-            val targetFile = new File(s"${targetFolder.getAbsolutePath}/${c.fqn}.class")
+        p.parForeachProjectClassFile() { cf ⇒
+            val b = Assembler(ba.toDA(cf))
+            val classFileFolderName = s"${targetFolder.getAbsolutePath}/${cf.thisType.packageName}"
+            val classFileFolder = new File(classFileFolderName)
+            classFileFolder.mkdirs()
+            val targetFile = new File(s"${classFileFolder.getAbsolutePath}/${cf.fqn}.class")
 
             process(new BufferedOutputStream(new FileOutputStream(targetFile))) {
                 bos ⇒ bos.write(b)
             }
         }
     }
-
-    def classToByte(c: ClassFile): Array[Byte] = {
-        Assembler(ba.toDA(c))
-    }
-}
 
 }
