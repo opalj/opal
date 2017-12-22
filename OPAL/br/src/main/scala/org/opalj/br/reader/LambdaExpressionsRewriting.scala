@@ -58,6 +58,9 @@ import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
  * attribute [[SynthesizedClassFiles]]. All such ClassFiles will
  * be picked up later for inclusion in the project.
  *
+ * @see [[https://mydailyjava.blogspot.de/2015/03/dismantling-invokedynamic.html DismantlingInvokeDynamic]]
+ *      for furhter information.
+ *
  * @author Arne Lottmann
  * @author Michael Eichberg
  * @author Andreas Muttscheller
@@ -71,9 +74,9 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import LambdaExpressionsRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (rewrite) {
-            info("class file reader", "Java 8 invokedynamics are rewritten")
+            info("class file reader", "invokedynamics using LambdaMetaFactory are rewritten")
         } else {
-            info("class file reader", "Java 8 invokedynamics are not rewritten")
+            info("class file reader", "invokedynamics using LambdaMetaFactory are not rewritten")
         }
         rewrite
     }
@@ -82,9 +85,15 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         import LambdaExpressionsRewriting.{LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean = config.as[Option[Boolean]](Key).getOrElse(false)
         if (logRewrites) {
-            info("class file reader", "Java 8 invokedynamic rewrites are logged")
+            info(
+                "class file reader",
+                "rewrites of LambdaMetaFactory based invokedynamics are logged"
+            )
         } else {
-            info("class file reader", "Java 8 invokedynamic rewrites are not logged")
+            info(
+                "class file reader",
+                "rewrites of LambdaMetaFactory based invokedynamics are not logged"
+            )
         }
         logRewrites
     }
