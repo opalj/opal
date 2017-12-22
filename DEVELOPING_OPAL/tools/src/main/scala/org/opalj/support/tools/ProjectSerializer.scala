@@ -33,6 +33,8 @@ package tools
 import java.io.File
 import java.io.FileOutputStream
 import java.io.BufferedOutputStream
+import java.util.zip.ZipOutputStream
+import java.util.zip.ZipEntry
 
 import org.opalj.io.process
 import org.opalj.br.analyses.Project
@@ -113,17 +115,27 @@ object ProjectSerializer {
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {
+        val zipFile = new File(targetFolder.getAbsolutePath + File.separator+"project.zip")
+        val zipOut = new ZipOutputStream(new FileOutputStream(zipFile))
         p.parForeachProjectClassFile() { cf ⇒
-            val b = Assembler(ba.toDA(cf))
             val classFileFolderName = s"${targetFolder.getAbsolutePath}/${cf.thisType.packageName}"
             val classFileFolder = new File(classFileFolderName)
             classFileFolder.mkdirs()
-            val targetFile = new File(s"${classFileFolder.getAbsolutePath}/${cf.fqn}.class")
+            val classFileName = s"${cf.fqn}.class"
+            val targetFile = new File(s"${targetFolder.getAbsolutePath}/$classFileName")
 
+            val b = Assembler(ba.toDA(cf))
             process(new BufferedOutputStream(new FileOutputStream(targetFile))) {
                 bos ⇒ bos.write(b)
             }
+            zipOut.synchronized {
+                val e = new ZipEntry(classFileName)
+                zipOut.putNextEntry(e)
+                zipOut.write(b, 0, b.length)
+                zipOut.closeEntry()
+            }
         }
+        zipOut.close()
     }
 
 }
