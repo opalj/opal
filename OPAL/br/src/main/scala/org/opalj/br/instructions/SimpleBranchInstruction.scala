@@ -36,6 +36,8 @@ trait SimpleBranchInstructionLike
 
 trait SimpleBranchInstruction extends ControlTransferInstruction with SimpleBranchInstructionLike {
 
+    final override def isSimpleBranchInstruction: Boolean = true
+
     final override def asSimpleBranchInstruction: SimpleBranchInstruction = this
 
     def branchoffset: Int

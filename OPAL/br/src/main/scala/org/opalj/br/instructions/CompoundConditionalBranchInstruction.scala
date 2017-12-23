@@ -55,6 +55,7 @@ trait CompoundConditionalBranchInstruction
     extends ConditionalBranchInstruction
     with CompoundConditionalBranchInstructionLike {
 
+    final override def isCompoundConditionalBranchInstruction: Boolean = true
     final override def asCompoundConditionalBranchInstruction: this.type = this
 
     def defaultOffset: Int
