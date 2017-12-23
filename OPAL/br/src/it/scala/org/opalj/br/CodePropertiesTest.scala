@@ -120,24 +120,27 @@ class CodePropertiesTest extends FunSuite {
         val analyzedMethodsCount = new AtomicInteger(0)
         project.parForeachMethodWithBody(() ⇒ false) { mi ⇒
             if (mi.classFile.version.major > 49) {
+                analyzedMethodsCount.incrementAndGet()
                 val code = mi.method.body.get
-                val computedPCs = code.stackMapTablePCs
                 val definedPCs = code.stackMapTable.map(_.pcs).getOrElse(IntArraySet.empty)
-                if (computedPCs != definedPCs) {
-                    if (computedPCs.size >= definedPCs.size) {
-                        fail(
-                            s"${mi.source}:${mi.method.toJava}: computed stack map table pcs differ:\n"+
-                                definedPCs.mkString("expected:  {", ",", "}\n") +
-                                computedPCs.mkString("computed:  {", ",", "}\n")
-                        )
-                    } else {
-                        // ... in this case, we have a strict subset; however, some compilers
-                        // seem to create stack map frames which are not strictly required;
-                        // we have to ignore those...
+                def validateComputedPCs (computedPCs : IntArraySet) : Unit = {
+                    if (computedPCs != definedPCs) {
+                        if (computedPCs.size >= definedPCs.size) {
+                            fail(
+                                s"${mi.source}:${mi.method.toJava}: "+
+                                    "computed stack map table pcs differ:\n" +
+                                    definedPCs.mkString("expected:  {", ",", "}\n") +
+                                    computedPCs.mkString("computed:  {", ",", "}\n")
+                            )
+                        } else {
+                            // ... in this case, we have a strict subset; however, some compilers
+                            // seem to create stack map frames which are not strictly required;
+                            // we have to ignore those...
+                        }
                     }
-                } else {
-                    analyzedMethodsCount.incrementAndGet()
                 }
+                validateComputedPCs(code.stackMapTablePCs)
+                validateComputedPCs(Code.stackMapTablePCs(code.instructions,code.exceptionHandlers))
             }
         }
         analyzedMethodsCount.get
@@ -157,10 +160,9 @@ class CodePropertiesTest extends FunSuite {
 
     test(s"computing maxStack, maxLocals and stackMapTablePCs for $JRELibraryFolder") {
 
-        // To make the comparison meaningful we have to turn off bytecode optimizations;
-        // this potentially violates existing stack map table attributes!
-        // (Due to the optimizations we get a new cfg and the stack map table attribute
-        // is now longer valid.)
+        // To make the comparison more meaningful we have to turn off bytecode optimizations;
+        // (Due to the optimizations we get a new smaller cfg; however the old stack map table
+        // remains valid; it just contains superfluous entries.)
         val baseConfig: Config = ConfigFactory.load()
         val optimizationConfigKey = BytecodeOptimizer.SimplifyControlFlowKey
         val logOptimizationsConfigKey = BytecodeOptimizer.LogControlFlowSimplificationKey
@@ -174,7 +176,8 @@ class CodePropertiesTest extends FunSuite {
         val cfs = org.opalj.br.reader.readJREClassFiles()(reader = reader)
         val jreProject = Project(cfs);
         analyzeMaxStackAndLocals(jreProject)
-        analyzeStackMapTablePCs(jreProject)
+        val count = analyzeStackMapTablePCs(jreProject)
+        info(s"computation of stack maps table pcs executed for $count methods")
     }
 
 }

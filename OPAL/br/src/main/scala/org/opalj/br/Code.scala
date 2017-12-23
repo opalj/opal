@@ -32,15 +32,16 @@ package br
 import scala.annotation.tailrec
 import scala.annotation.switch
 import scala.reflect.ClassTag
+
 import java.util.Arrays.fill
 
 import scala.collection.AbstractIterator
 import scala.collection.mutable
-
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
+import org.opalj.control.foreachNonNullValue
 import org.opalj.util.AnyToAnyThis
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
@@ -1060,9 +1061,10 @@ final class Code private (
     }
 
     /**
-     * Computes the set of PCs for which we need a stack map frame. Calling this method
+     * Computes the set of PCs for which a stack map frame is required. Calling this method
      * (i.e., the generation of stack map tables in general) is only defined for Java > 5 code;
-     * therefore the behavior for Java 5 or earlier code is deliberately undefined.
+     * i.e., cocde which does not use JSR/RET; therefore the behavior for Java 5 or earlier code
+     * is deliberately undefined.
      *
      * @param classHierarchy The computation of the stack map table generally requires the
      *                       presence of a complete type hierarchy.
@@ -1828,6 +1830,48 @@ object Code {
         }
 
         maxStackDepth
+    }
+
+    /**
+     * Computes the set of PCs for which we need a stack map frame. Calling this method
+     * (i.e., the generation of stack map tables in general) is only meaningful for Java > 5 code;
+     * i.e., code which does not use JSR/RET, therefore the behavior for Java 5 or earlier code
+     * is deliberately undefined and - if a JSR(_W)/RET instruction is found an exception is
+     * thrown.
+     *
+     * @return The sorted set of PCs for which a stack map frame is required.
+     */
+    def stackMapTablePCs(
+        instructions:      Array[Instruction],
+        exceptionHandlers: ExceptionHandlers
+    ): IntArraySet = {
+
+        var pcs: IntArraySet = IntArraySet.empty
+        foreachNonNullValue(instructions) { (pc, instruction) ⇒
+            if (instruction != null && instruction.isControlTransferInstruction) {
+                instruction.opcode match {
+                    case JSR.opcode | JSR_W.opcode | RET.opcode ⇒
+                        throw BytecodeProcessingFailedException(
+                            "computation of stack map tables containing JSR/RET is not supported; "+
+                                "the attribute is neither required nor helpful in this case"
+                        )
+                    case _ ⇒
+                        if (instruction.isSimpleBranchInstruction) {
+                            pcs += (pc + instruction.asSimpleBranchInstruction.branchoffset)
+                        } else {
+                            val ccbti = instruction.asCompoundConditionalBranchInstruction
+                            ccbti.jumpOffsets.foreach { branchoffset ⇒ pcs += pc + branchoffset
+                            }
+                            pcs += pc + ccbti.defaultOffset
+                        }
+
+                }
+            }
+        }
+
+        exceptionHandlers.foreach(ex ⇒ pcs += ex.handlerPC)
+
+        pcs
     }
 
 }
