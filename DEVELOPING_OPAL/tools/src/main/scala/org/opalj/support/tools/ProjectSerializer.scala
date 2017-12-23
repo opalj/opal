@@ -106,12 +106,6 @@ object ProjectSerializer {
         val p = Project(inFile /* actually, we don't need the RTJar */ )
         serialize(p, classesFolder)
         println(s"Wrote all classfiles to $outFolder.")
-
-        /*
-        if (jarFileName != null) {
-            val r = Process(s"jar cfv ../$jarFileName .", outFile).!
-            println(s"Created jar file $jarFileName $r")
-        }*/
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {
