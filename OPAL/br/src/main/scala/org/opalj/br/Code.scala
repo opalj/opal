@@ -86,6 +86,16 @@ final class Code private (
     with InstructionsContainer
     with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
 
+    def copy(
+        maxStack:          Int                = this.maxStack,
+        maxLocals:         Int                = this.maxLocals,
+        instructions:      Array[Instruction] = this.instructions,
+        exceptionHandlers: ExceptionHandlers  = this.exceptionHandlers,
+        attributes:        Attributes         = this.attributes
+    ): Code = {
+        new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
+    }
+
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
             case that: Code ⇒ this.similar(that, config)
