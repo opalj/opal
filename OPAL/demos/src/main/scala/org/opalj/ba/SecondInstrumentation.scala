@@ -71,6 +71,7 @@ object SecondInstrumentation extends App {
     implicit val ch: ClassHierarchy = p.classHierarchy
     val cf = p.classFile(TheType).get
     // let's transform the methods
+    val newVersion = UShortPair(0, 49)
     val newMethods =
         for (m ← cf.methods) yield {
             m.body match {
@@ -103,14 +104,14 @@ object SecondInstrumentation extends App {
                         )
                     }
                     if (modified) {
-                        val (newCode, _) = lCode.toCodeAttributeBuilder(cf.version, m)
+                        val (newCode, _) = lCode.toCodeAttributeBuilder(newVersion, m)
                         m.copy(body = Some(newCode))
                     } else {
                         m.copy()
                     }
             }
         }
-    val newCF = cf.copy(methods = newMethods, version = UShortPair(0, 49))
+    val newCF = cf.copy(methods = newMethods, version = newVersion)
     val newRawCF = Assembler(toDA(newCF))
 
     //
