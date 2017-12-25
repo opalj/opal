@@ -60,108 +60,6 @@ object CODE {
     }
 
     def apply[T](codeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
-
-        /*  val labelSymbols = codeElements.collect { case LabelElement(r) ⇒ r }
-
-        require(codeElements.exists(_.isInstanceOf[InstructionElement]), "no code found")
-
-        require(
-            labelSymbols.distinct.length == labelSymbols.length,
-            labelSymbols.
-                groupBy(identity).
-                collect { case (x, ys) if ys.size > 1 ⇒ x }.
-                mkString("each label has to be unique:\n\t", "\n\t", "")
-        )
-
-        codeElements foreach {
-            case InstructionElement(i) ⇒
-                i.branchTargets.foreach { target ⇒
-                    require(labelSymbols.contains(target), s"$i: undefined branch target $target")
-                }
-            case _ ⇒ /*NOT RELEVANT*/
-        }
-
-        val formattedInstructions = ArrayBuffer.empty[CodeElement[T]]
-
-        // fill the array with `null`s for PCs representing instruction arguments
-        var nextPC = 0
-        var currentPC = 0
-        var modifiedByWide = false
-        codeElements foreach { e ⇒
-            formattedInstructions.append(e)
-            e match {
-                case InstructionLikeElement(i) ⇒
-                    currentPC = nextPC
-                    nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
-
-                    rerun((nextPC - currentPC)-1){                        formattedInstructions.append(null)                    }
-
-                    modifiedByWide = false
-                    if (i == WIDE) {
-                        modifiedByWide = true
-                    }
-
-                case _ ⇒ // we are not further interested in EXCEPTION HANDLERS, LABELS...
-            }
-        }
-        // calculate the PCs of all PseudoInstructions // IMPROVE merge with previous loop!
-        var labels: Map[Symbol, br.PC] = Map.empty
-        val exceptionHandlerBuilder = new ExceptionHandlerGenerator
-        val lineNumberTableBuilder = new LineNumberTableBuilder()
-        var count: Int = 0
-        for {
-            (inst, index) ← formattedInstructions.iterator.zipWithIndex
-            if inst != null && inst.isPseudoInstruction
-        }{
-                           val pc = index - count
-                formattedInstructions.remove(pc)
-                inst match {
-                    case LabelElement(label)        ⇒ labels += (label → pc)
-                    case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, pc)
-                    case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, pc)
-                }
-                count += 1
-                    }
-
-        // We need to check if we have to adapt ifs and gotos if the branchtarget is not
-        // representable using a signed short; in case of gotos we simply use goto_w; in
-        // case of ifs, we "negate" the condition and add a goto_w w.r.t. the target and
-        // in the other cases jump to the original instruction which follows the if.
-
-        val exceptionHandlers = exceptionHandlerBuilder.result()
-
-        val attributes: IndexedSeq[br.Attribute] = lineNumberTableBuilder.result()
-
-        val annotations = formattedInstructions.zipWithIndex.collect { // IMPROVE use iterator?
-            case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
-        }.toMap
-
-        val instructionLikesOnly = formattedInstructions.collect {
-            case InstructionLikeElement(i) ⇒ i
-            case null                      ⇒ null
-            // ... filter pseudo instructions
-        }
-
-        val instructions = instructionLikesOnly.zipWithIndex.map { tuple ⇒
-            val (instruction, index) = tuple
-            if (instruction != null) {
-                instruction.resolveJumpTargets(index, labels)
-            } else {
-                null
-            }
-        }
-
-        new CodeAttributeBuilder(
-            instructions.toArray,
-            annotations,
-            None,
-            None,
-            exceptionHandlers,
-            attributes
-        )
-
-        */
-
         val instructionLikes = new ArrayBuffer[LabeledInstruction](codeElements.size)
 
         var labels = Map.empty[Symbol, br.PC]
@@ -187,7 +85,7 @@ object CODE {
 
             case LabelElement(label) ⇒
                 if (labels.contains(label)) {
-                    throw new IllegalArgumentException(s"the label $label is already used")
+                    throw new IllegalArgumentException(s"'$label is already used")
                 }
                 labels += (label → nextPC)
 
@@ -393,10 +291,6 @@ class LabeledCode(
 
     def toCodeAttributeBuilder: CodeAttributeBuilder[AnyRef] = {
         val initialCodeAttributeBuilder = CODE(instructions)
-        // let's check if we have to compute a new StackMapTable attribute
-        // originalCode.cfJoins
-        // initialCodeAttributeBuilder.instructions
-
         // TODO We have to adapt the exiting attributes and we have to merge the line number tables
         // if necessary.
 
