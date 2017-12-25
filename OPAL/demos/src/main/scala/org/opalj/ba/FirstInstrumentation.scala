@@ -67,7 +67,7 @@ object FirstInstrumentation extends App {
         for (m ← cf.methods) yield {
             m.body match {
                 case None ⇒
-                    m.copy() // these are native and abstract methods
+                    m.copy() // methods which are native and abstract ...
 
                 case Some(code) ⇒
                     // let's search all "toString" calls
@@ -75,8 +75,6 @@ object FirstInstrumentation extends App {
                     var modified = false
                     for ((pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code) {
                         modified = true
-                        // print out the result of toString if and only if the type of o is
-                        // a collection...
                         lCode.insert(
                             pc, InsertionPosition.After,
                             Seq(
@@ -120,8 +118,9 @@ object FirstInstrumentation extends App {
     //
 
     // Let's see the old class file...
-    val oldCFHTML = writeAndOpen(ClassFile(in).head.toXHTML(None), "SimpleInstrumentationDemo", ".html")
-    println("original: "+oldCFHTML)
+    val odlCFHTML = ClassFile(in).head.toXHTML(None)
+    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "SimpleInstrumentationDemo", ".html")
+    println("original: "+oldCFHTMLFile)
 
     // Let's see the new class file...
     val newCF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
