@@ -140,7 +140,6 @@ class CodePropertiesTest extends FunSuite {
                     }
                 }
                 validateComputedPCs(code.stackMapTablePCs)
-                validateComputedPCs(Code.stackMapTablePCs(code.instructions,code.exceptionHandlers))
             }
         }
         analyzedMethodsCount.get
