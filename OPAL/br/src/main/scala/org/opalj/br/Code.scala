@@ -1091,6 +1091,13 @@ final class Code private (
                             "computation of stack map tables containing JSR/RET is not supported; "+
                                 "the attribute is neither required nor helpful in this case"
                         )
+                    case GOTO.opcode | GOTO_W.opcode ⇒
+                        stackMapTablePCs += pc + instruction.asGotoInstruction.branchoffset
+                        val nextPC = code.pcOfNextInstruction(pc)
+                        if (nextPC < codeSize) {
+                            // test for a goto at the end...
+                            stackMapTablePCs += nextPC
+                        }
                     case _ ⇒
                         stackMapTablePCs ++=
                             instruction.asControlTransferInstruction.jumpTargets(pc)(
