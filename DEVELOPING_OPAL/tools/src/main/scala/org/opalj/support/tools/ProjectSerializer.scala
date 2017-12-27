@@ -30,14 +30,13 @@ package org.opalj
 package support
 package tools
 
+import sys.process._
 import java.io.File
 import java.io.FileOutputStream
 import java.io.BufferedOutputStream
 
 import org.opalj.io.process
-
 import org.opalj.bytecode.RTJar
-import org.opalj.ba
 import org.opalj.bc.Assembler
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
@@ -60,6 +59,7 @@ object ProjectSerializer {
         println("Parameters:")
         println("   -cp <Folder/jar-file> the classes to load into OPAL and export")
         println("   -o <FileName> the folder. Defaults to current folder.")
+        println("   -jar <FileName> Export the classfiles into a jar file as well.")
         println()
         println("java org.opalj.br.ProjectSerializer -cp <classpath or jar file> -o <output folder>")
     }
@@ -67,6 +67,7 @@ object ProjectSerializer {
     def main(args: Array[String]): Unit = {
         var classPath: String = null
         var outFolder: String = "."
+        var jarFileName: String = null
 
         var i = 0
         while (i < args.length) {
@@ -76,6 +77,9 @@ object ProjectSerializer {
 
                 case "-o" ⇒
                     i += 1; outFolder = args(i)
+
+                case "-jar" ⇒
+                    i += 1; jarFileName = args(i)
 
                 case "-h" | "--help" ⇒
                     showUsage()
@@ -102,22 +106,22 @@ object ProjectSerializer {
 
         val outFile = new File(s"$outFolder/OPAL-export")
         if (!outFile.exists() && !outFile.mkdir()) {
-            Console.out.println("Output folder could not be created!")
+            println("Output folder could not be created!")
             System.exit(1)
         }
 
-        val projectClassFiles = Project.JavaClassFileReader().ClassFiles(classPathFile)
-        val libraryClassFiles = Project.JavaClassFileReader().ClassFiles(RTJar)
-
         val p = Project(
-            projectClassFiles,
-            libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false
+            classPathFile,
+            RTJar
         )
 
         serialize(p, outFile)
+        println(s"Wrote all classfiles to $outFolder")
 
-        Console.out.println(s"Wrote all classfiles to $outFolder")
+        if (jarFileName != null) {
+            val r = Process(s"jar cfv ../$jarFileName .", outFile).!
+            println(s"Created jar file $jarFileName $r")
+        }
     }
 
     def serialize(p: SomeProject, targetFolder: File): Unit = {

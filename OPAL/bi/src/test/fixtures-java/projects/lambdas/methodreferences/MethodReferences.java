@@ -233,7 +233,34 @@ public class MethodReferences {
         return f.apply(42);
     }
 
-	public static class Outer {
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/Object", name = "toString", parameterTypes = {  }, line = 239)
+    public String arrayInstanceMethod() {
+        Object[] someObjects = new Object[10];
+        Supplier<String> s = someObjects::toString;
+        return s.get();
+    }
+
+    public interface SomeInterface {
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$SomeInterface", name = "lambda$0", parameterTypes = {  }, line = 246)
+        default Runnable foo() {
+            return () -> System.out.println("Hello world! " + getSomeInt());
+        }
+
+        default int getSomeInt() {
+            return 2;
+        }
+
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$SomeInterface", name = "lambda$1", parameterTypes = {  }, line = 255)
+        static Runnable StaticFoo() {
+            return () -> System.out.println("Hello world! " + SomeInterface.StaticGetSomeInt());
+        }
+
+        static int StaticGetSomeInt() {
+            return 2;
+        }
+    }
+
+    public static class Outer {
         public static class Inner {
 
         }
