@@ -638,23 +638,13 @@ class Project[Source] private (
     )(
         f: ClassFile ⇒ T
     ): Unit = {
-        var allConcurrentExceptions: ConcurrentExceptions = null
         try {
             parForeachProjectClassFile(isInterrupted)(f)
-        } catch {
-            case ce: ConcurrentExceptions ⇒ allConcurrentExceptions = ce
-        }
-        try {
             parForeachLibraryClassFile(isInterrupted)(f)
         } catch {
             case ce: ConcurrentExceptions ⇒
-                if (allConcurrentExceptions == null)
-                    allConcurrentExceptions = ce
-                else
-                    ce.getSuppressed.foreach { n ⇒ allConcurrentExceptions.addSuppressed(n) }
+                throw ce;
         }
-        if (allConcurrentExceptions.getSuppressed.length > 0)
-            throw allConcurrentExceptions;
     }
 
     /**
