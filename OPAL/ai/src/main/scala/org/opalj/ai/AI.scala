@@ -205,6 +205,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing.
+     *
+     * @note This method is (basically only) useful when interpreting code snippets!
      */
     def initialOperands(method: Method, domain: D): domain.Operands = Naught
 
