@@ -53,9 +53,6 @@ import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.FormalParametersKey
 
 /**
- * Tests the `ProjectIndex`.
- *
- * @author Arne Lottmann
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
@@ -157,6 +154,8 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
     describe("using makeFormalParametersAvailable") {
 
         val p: SomeProject = biProject("ai.jar")
+        assert(p != null)
+        assert(p.allClassFiles.nonEmpty)
 
         PropertyStoreKey.makeFormalParametersAvailable(p)
 
