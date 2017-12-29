@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable extends Attribute {
+trait LineNumberTable extends CodeAttribute {
 
     def lineNumbers: LineNumbers
 
@@ -57,6 +57,10 @@ trait LineNumberTable extends Attribute {
         // the order of two line number tables need to be identical
         thisLineNumbers.size == otherLineNumbers.size &&
             thisLineNumbers == otherLineNumbers
+    }
+
+    override def remapPCs(f: PC ⇒ PC): CodeAttribute = {
+        UnpackedLineNumberTable(lineNumbers.map(_.remapPCs(f)))
     }
 }
 

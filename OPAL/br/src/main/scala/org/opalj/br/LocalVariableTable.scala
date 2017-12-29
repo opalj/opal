@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTable(localVariables: LocalVariables) extends Attribute {
+case class LocalVariableTable(localVariables: LocalVariables) extends CodeAttribute {
 
     override def kindId: Int = LocalVariableTable.KindId
 
@@ -49,6 +49,10 @@ case class LocalVariableTable(localVariables: LocalVariables) extends Attribute 
         // the order of two local variable tables does not need to be identical
         this.localVariables.size == other.localVariables.size &&
             this.localVariables.forall(other.localVariables.contains)
+    }
+
+    override def remapPCs(f: Opcode ⇒ Opcode): CodeAttribute = {
+        LocalVariableTable(localVariables.map(_.remapPCs(f)))
     }
 }
 object LocalVariableTable {

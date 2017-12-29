@@ -83,6 +83,10 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
  * @author Michael Eichberg
  */
 case class LineNumber(
-        startPC:    Int,
+        startPC:    PC,
         lineNumber: Int
-)
+) {
+
+    def remapPCs(f: PC ⇒ PC): LineNumber = LineNumber(f(startPC), lineNumber)
+
+}

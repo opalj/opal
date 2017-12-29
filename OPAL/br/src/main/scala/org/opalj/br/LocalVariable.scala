@@ -40,4 +40,17 @@ case class LocalVariable(
         name:      String,
         fieldType: FieldType,
         index:     Int
-)
+) {
+
+    def remapPCs(f: PC ⇒ PC): LocalVariable = {
+        val newStartPC = f(startPC)
+        LocalVariable(
+            newStartPC,
+            f(startPC + length) - newStartPC,
+            name,
+            fieldType,
+            index
+        )
+    }
+
+}

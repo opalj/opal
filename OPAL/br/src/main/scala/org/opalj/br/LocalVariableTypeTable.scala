@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extends Attribute {
+case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extends CodeAttribute {
 
     override def kindId: Int = LocalVariableTypeTable.KindId
 
@@ -51,6 +51,9 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
             this.localVariableTypes.forall(other.localVariableTypes.contains)
     }
 
+    override def remapPCs(f: PC ⇒ PC): CodeAttribute = {
+        LocalVariableTypeTable(localVariableTypes.map(_.remapPCs(f)))
+    }
 }
 object LocalVariableTypeTable {
 
@@ -59,9 +62,20 @@ object LocalVariableTypeTable {
 }
 
 case class LocalVariableType(
-        startPC:   Int,
+        startPC:   PC,
         length:    Int,
         name:      String,
         signature: FieldTypeSignature,
         index:     Int
-)
+) {
+    def remapPCs(f: PC ⇒ PC): LocalVariableType = {
+        val newStartPC = f(startPC)
+        LocalVariableType(
+            newStartPC,
+            f(startPC + length) - newStartPC,
+            name,
+            signature,
+            index
+        )
+    }
+}
