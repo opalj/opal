@@ -80,7 +80,7 @@ object SecondInstrumentation extends App {
 
                 case Some(code) ⇒
                     // let's search all "println" calls where the parameter has a specific
-                    // type (which is statically known)
+                    // type (which is statically known, and which is NOT the parameter type)
                     lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
                     val operandsArray = aiResult.operandsArray
                     val lCode = CODE.toLabeledCode(code)
