@@ -31,6 +31,7 @@ package ba
 
 import org.opalj.br.MethodSignature
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UShortPair
 
 /**
@@ -73,13 +74,13 @@ class CLASS[T](
     ): (br.ClassFile, Map[br.Method, T]) = {
 
         val accessFlags = accessModifiers.accessFlags
-        val thisType = br.ObjectType(this.thisType)
-        val superclassType = this.superclassType.map(br.ObjectType.apply)
-        val interfaceTypes = this.interfaceTypes.map(br.ObjectType.apply)
+        val thisType: ObjectType = br.ObjectType(this.thisType)
+        val superclassType: Option[ObjectType] = this.superclassType.map(br.ObjectType.apply)
+        val interfaceTypes: Seq[ObjectType] = this.interfaceTypes.map(br.ObjectType.apply)
         val brFields = fields.result()
 
         val brAnnotatedMethods: IndexedSeq[(br.MethodTemplate, Option[T])] = {
-            methods.result(version)
+            methods.result(version, thisType)
         }
         val annotationsMap: Map[MethodSignature, Option[T]] =
             brAnnotatedMethods.map { mt ⇒ val (m, t) = mt; (m.signature, t) }.toMap

@@ -83,7 +83,7 @@ object SecondInstrumentation extends App {
                     // type (which is statically known, and which is NOT the parameter type)
                     lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
                     val operandsArray = aiResult.operandsArray
-                    val lCode = CODE.toLabeledCode(code)
+                    val lCode = LabeledCode(code)
                     var modified = false
                     for {
                         (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
@@ -104,7 +104,7 @@ object SecondInstrumentation extends App {
                         )
                     }
                     if (modified) {
-                        val (newCode, _) = lCode.toCodeAttributeBuilder(newVersion, m)
+                        val (newCode, _) = lCode.result(newVersion, m)
                         m.copy(body = Some(newCode))
                     } else {
                         m.copy()

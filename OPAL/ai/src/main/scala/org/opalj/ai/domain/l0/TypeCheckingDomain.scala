@@ -39,6 +39,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.UninitializedVariableInfo
+import org.opalj.br.UninitializedThisVariableInfo
+import org.opalj.br.ObjectVariableInfo
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -48,7 +52,7 @@ import org.opalj.br.analyses.SomeProject
  * because we make the correct bytecode assumption over there and, therefore, never see an
  * invalid usage of an uninitialized object reference.)
  */
-class TypeCheckingDomain(
+final class TypeCheckingDomain(
         val classHierarchy: ClassHierarchy,
         val method:         Method
 ) extends Domain
@@ -93,8 +97,12 @@ class TypeCheckingDomain(
 
     protected class InitializedObjectValue(
             theUpperTypeBound: ObjectType
-    ) extends SObjectValue(theUpperTypeBound) {
+    ) extends SObjectValue(theUpperTypeBound) with Value {
         this: DomainObjectValue ⇒
+
+        final override def verificationTypeInfo: VerificationTypeInfo = {
+            ObjectVariableInfo(theUpperTypeBound)
+        }
 
         // WIDENING OPERATION
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
@@ -118,6 +126,13 @@ class TypeCheckingDomain(
 
         // joins of an uninitialized value with null results in an illegal value
         override def isNull: Answer = No
+
+        final override def verificationTypeInfo: VerificationTypeInfo = {
+            if (vo == -1)
+                UninitializedThisVariableInfo
+            else
+                UninitializedVariableInfo(vo)
+        }
 
         // WIDENING OPERATION
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {

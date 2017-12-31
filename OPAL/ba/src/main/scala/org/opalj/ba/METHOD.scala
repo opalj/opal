@@ -30,6 +30,7 @@ package org.opalj
 package ba
 
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UShortPair
 
 /**
@@ -50,7 +51,8 @@ class METHOD[T](
      * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations (if any).
      */
     def result(
-        classFileVersion: UShortPair
+        classFileVersion:   UShortPair,
+        declaringClassType: ObjectType
     )(
         implicit
         classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
@@ -62,7 +64,8 @@ class METHOD[T](
             attributeBuilder(accessFlags, name, descriptor))
 
         if (code.isDefined) {
-            val (attribute, annotations) = code.get(classFileVersion, accessFlags, name, descriptor)
+            val (attribute, annotations) =
+                code.get(classFileVersion, declaringClassType, accessFlags, name, descriptor)
             val method = br.Method(accessFlags, name, descriptor, attributes :+ attribute)
             (method, Some(annotations))
         } else {

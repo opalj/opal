@@ -29,12 +29,14 @@
 package org.opalj
 package ba
 
+import org.opalj.br.instructions.InstructionLabel
+
 /**
  * Wrapper for `Symbols` (labels) representing branch targets.
  *
  * @author Malte Limmeroth
  */
-case class LabelElement(label: Symbol) extends PseudoInstruction {
+case class LabelElement(label: InstructionLabel) extends PseudoInstruction {
 
     final override def isExceptionHandlerElement: Boolean = false
 

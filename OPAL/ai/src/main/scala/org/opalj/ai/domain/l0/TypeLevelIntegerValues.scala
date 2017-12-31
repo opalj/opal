@@ -39,6 +39,8 @@ import org.opalj.br.ByteType
 import org.opalj.br.ShortType
 import org.opalj.br.IntegerType
 import org.opalj.br.CTIntType
+import org.opalj.br.IntegerVariableInfo
+import org.opalj.br.VerificationTypeInfo
 
 /**
  * Domain that performs computations related to integer values at the type level.
@@ -60,6 +62,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
         this: DomainTypedValue[T] ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeInt
+
+        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 
         override def summarize(pc: PC): DomainValue = this
 

@@ -41,9 +41,9 @@ import org.scalatest.{FlatSpec, Matchers}
 class LabeledInstructionsTest extends FlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
-    val label = 'TestLabel
-    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, Symbol ⇒ LabeledSimpleConditionalBranchInstruction)] = {
-        List /*[(LabeledSimpleConditionalBranchInstruction, { def apply(branchTarget: Symbol): AnyRef })]*/ (
+    val label = InstructionLabel('TestLabel)
+    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel ⇒ LabeledSimpleConditionalBranchInstruction)] = {
+        List(
             IFEQ(label) → LabeledIFEQ,
             IFNE(label) → LabeledIFNE,
             IFLT(label) → LabeledIFLT,
@@ -109,12 +109,12 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
         }
 
-    val table = IndexedSeq('two, 'three)
+    val table = IndexedSeq(InstructionLabel('two), InstructionLabel('three))
     val lookupTable = ((2 to 3) zip table)
-    val labelsMap = Map(
+    val labelsMap = Map[InstructionLabel, Int](
         label → 43,
-        'two → 44,
-        'three → 45
+        InstructionLabel('two) → 44,
+        InstructionLabel('three) → 45
     )
 
     "the convenience factories of CompoundConditionalBranchInstruction" should

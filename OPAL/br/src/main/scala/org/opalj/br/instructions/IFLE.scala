@@ -56,7 +56,7 @@ case class IFLE(branchoffset: Int) extends IF0Instruction[IFLE] with IFLELike {
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFLE(Symbol((currentPC + branchoffset).toString))
+        LabeledIFLE(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -72,15 +72,15 @@ object IFLE {
     /**
      * Creates [[LabeledIFLE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFLE = LabeledIFLE(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFLE = LabeledIFLE(branchTarget)
 
 }
 
 case class LabeledIFLE(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFLELike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFLE = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFLE = {
         IFLE(pcs(branchTarget) - pc)
     }
 }

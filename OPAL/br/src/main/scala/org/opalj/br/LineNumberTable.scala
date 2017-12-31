@@ -59,7 +59,7 @@ trait LineNumberTable extends CodeAttribute {
             thisLineNumbers == otherLineNumbers
     }
 
-    override def remapPCs(f: PC ⇒ PC): CodeAttribute = {
+    override def remapPCs(f: PC ⇒ PC): LineNumberTable = {
         UnpackedLineNumberTable(lineNumbers.map(_.remapPCs(f)))
     }
 }
@@ -67,5 +67,7 @@ trait LineNumberTable extends CodeAttribute {
 object LineNumberTable {
 
     final val KindId = 19
+
+    def unapply(lnt: LineNumberTable): Option[LineNumbers] = Some(lnt.lineNumbers)
 
 }

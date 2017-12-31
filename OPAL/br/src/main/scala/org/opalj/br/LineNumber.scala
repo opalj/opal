@@ -26,63 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package instructions
+package org.opalj.br
 
 /**
- * Jump subroutine.
+ * An entry in a line number table.
  *
  * @author Michael Eichberg
  */
-trait JSRLike extends JSRInstructionLike {
+case class LineNumber(
+        startPC:    PC,
+        lineNumber: Int
+) {
 
-    final def opcode: Opcode = JSR.opcode
+    def remapPCs(f: PC ⇒ PC): LineNumber = LineNumber(f(startPC), lineNumber)
 
-    final def mnemonic: String = "jsr"
-
-    final def length: Int = 3
-}
-
-case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike {
-
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledJSR(InstructionLabel(currentPC + branchoffset))
-    }
-}
-
-/**
- * Defines constants and factory methods.
- *
- * @author Malte Limmeroth
- */
-object JSR {
-
-    final val opcode = 168
-
-    /**
-     * Creates [[LabeledJSR]] instructions with a `Symbol` as the branch target.
-     */
-    def apply(branchTarget: InstructionLabel): LabeledJSR = LabeledJSR(branchTarget)
-}
-
-case class LabeledJSR(
-        branchTarget: InstructionLabel
-) extends LabeledUnconditionalBranchInstruction with JSRLike {
-
-    override def resolveJumpTargets(
-        currentPC: PC,
-        pcs:       Map[InstructionLabel, PC]
-    ): JSRInstruction = {
-        val branchoffset = pcs(branchTarget) - currentPC
-        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
-            JSR_W(branchoffset)
-        } else {
-            JSR(branchoffset)
-        }
-    }
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        this == code.instructions(otherPC)
-    }
 }

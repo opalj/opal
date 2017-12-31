@@ -71,7 +71,7 @@ object FirstInstrumentation extends App {
 
                 case Some(code) ⇒
                     // let's search all "toString" calls
-                    val lCode = CODE.toLabeledCode(code)
+                    val lCode = LabeledCode(code)
                     var modified = false
                     for ((pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code) {
                         modified = true
@@ -98,9 +98,7 @@ object FirstInstrumentation extends App {
                     }
                     if (modified) {
                         val (newCode, _) =
-                            lCode.toCodeAttributeBuilder(
-                                cf.version, m
-                            )( // We can use the default class hierarchy in this example
+                            lCode.result(cf.version, m)( // We can use the default class hierarchy in this example
                             // as we only instrument linear methods using linear code,
                             // hence, we don't need to compute a new stack map table attribute!
                             )

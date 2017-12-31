@@ -40,9 +40,15 @@ trait LabeledSimpleConditionalBranchInstruction
     extends LabeledSingleJumpTargetInstruction
     with SimpleConditionalBranchInstructionLike {
 
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): SimpleConditionalBranchInstruction[_]
-
-    def branchTarget: Symbol
+    /**
+     * @inheritdoc
+     *
+     * @return A `SimpleConditionalBranchInstruction`.
+     */
+    override def resolveJumpTargets(
+        pc:  PC,
+        pcs: Map[InstructionLabel, PC]
+    ): SimpleConditionalBranchInstruction[_]
 
     override def toString(currentPC: Int): String = {
         s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"

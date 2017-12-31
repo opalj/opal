@@ -40,7 +40,7 @@ package instructions
  */
 trait LabeledInstruction extends InstructionLike {
 
-    def branchTargets: Seq[Symbol]
+    def branchTargets: Seq[InstructionLabel]
 
     /**
      * If this instruction uses `Symbol`s to mark jump targets then the targets are replaced
@@ -52,6 +52,6 @@ trait LabeledInstruction extends InstructionLike {
      * @param   pc The final pc of this instruction in the code array.
      * @param   pcs The map which maps all symbols to their final pcs.
      */
-    def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): Instruction
+    def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): Instruction
 
 }

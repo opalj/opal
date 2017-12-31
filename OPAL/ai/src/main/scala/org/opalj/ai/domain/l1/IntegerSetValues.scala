@@ -82,7 +82,9 @@ trait IntegerSetValues
         with IsIntegerValue[IntegerLikeValue] {
         this: DomainTypedValue[CTIntType] ⇒
 
-        final def computationalType: ComputationalType = ComputationalTypeInt
+        final override def computationalType: ComputationalType = ComputationalTypeInt
+
+        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 
     }
 

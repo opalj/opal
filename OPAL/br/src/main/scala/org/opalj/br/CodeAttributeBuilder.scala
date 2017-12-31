@@ -53,10 +53,11 @@ trait CodeAttributeBuilder[T] {
      * @return The newly build code attribute.
      */
     def apply(
-        classFileVersion: UShortPair,
-        accessFlags:      Int,
-        name:             String,
-        descriptor:       MethodDescriptor
+        classFileVersion:   UShortPair,
+        declaringClassType: ObjectType,
+        accessFlags:        Int,
+        name:               String,
+        descriptor:         MethodDescriptor
     )(
         implicit
         classHierarchy: ClassHierarchy

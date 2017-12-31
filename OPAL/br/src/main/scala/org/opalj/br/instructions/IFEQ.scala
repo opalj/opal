@@ -56,7 +56,7 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction[IFEQ] with IFEQLike {
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFEQ(Symbol((currentPC + branchoffset).toString))
+        LabeledIFEQ(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -65,22 +65,22 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction[IFEQ] with IFEQLike {
  *
  * @author Malte Limmeroth
  */
-object IFEQ {
+object IFEQ extends InstructionLabelFactory {
 
     final val opcode = 153
 
     /**
      * Creates [[LabeledIFEQ]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFEQ = LabeledIFEQ(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFEQ = LabeledIFEQ(branchTarget)
 
 }
 
 case class LabeledIFEQ(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFEQLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFEQ = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFEQ = {
         IFEQ(pcs(branchTarget) - pc)
     }
 }

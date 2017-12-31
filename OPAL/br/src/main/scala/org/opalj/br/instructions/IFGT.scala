@@ -55,7 +55,7 @@ case class IFGT(branchoffset: Int) extends IF0Instruction[IFGT] with IFGTLike {
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFGT(Symbol((currentPC + branchoffset).toString))
+        LabeledIFGT(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -71,15 +71,15 @@ object IFGT {
     /**
      * Creates [[LabeledIFGT]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFGT = LabeledIFGT(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFGT = LabeledIFGT(branchTarget)
 
 }
 
 case class LabeledIFGT(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFGTLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFGT = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFGT = {
         IFGT(pcs(branchTarget) - pc)
     }
 }

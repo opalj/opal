@@ -56,7 +56,7 @@ case class IFGE(branchoffset: Int) extends IF0Instruction[IFGE] with IFGELike {
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFGE(Symbol((currentPC + branchoffset).toString))
+        LabeledIFGE(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -72,15 +72,15 @@ object IFGE {
     /**
      * Creates [[LabeledIFGE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFGE = LabeledIFGE(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFGE = LabeledIFGE(branchTarget)
 
 }
 
 case class LabeledIFGE(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFGELike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFGE = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFGE = {
         IFGE(pcs(branchTarget) - pc)
     }
 }

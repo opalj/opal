@@ -56,7 +56,7 @@ case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction[IF_ICMPNE] wit
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIF_ICMPNE(Symbol((currentPC + branchoffset).toString))
+        LabeledIF_ICMPNE(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -72,15 +72,15 @@ object IF_ICMPNE {
     /**
      * Creates [[LabeledIF_ICMPNE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIF_ICMPNE = LabeledIF_ICMPNE(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIF_ICMPNE = LabeledIF_ICMPNE(branchTarget)
 
 }
 
 case class LabeledIF_ICMPNE(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPNELike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ICMPNE = {
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ICMPNE = {
         IF_ICMPNE(pcs(branchTarget) - pc)
     }
 }
