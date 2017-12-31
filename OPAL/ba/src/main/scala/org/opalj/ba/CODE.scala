@@ -99,6 +99,8 @@ object CODE {
             case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
         }
 
+        // TODO Support filtering compile time dead code!
+
         // TODO Support if and goto rewriting if required
         // We need to check if we have to adapt ifs and gotos if the branchtarget is not
         // representable using a signed short; in case of gotos we simply use goto_w; in
