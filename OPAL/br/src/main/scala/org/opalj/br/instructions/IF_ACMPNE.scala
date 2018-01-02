@@ -80,7 +80,8 @@ case class LabeledIF_ACMPNE(
         branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPNELike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ACMPNE = {
-        IF_ACMPNE(pcs(branchTarget) - pc)
+        IF_ACMPNE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

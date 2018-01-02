@@ -80,7 +80,8 @@ case class LabeledIFNULL(
         branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFNULLLike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFNULL = {
-        IFNULL(pcs(branchTarget) - pc)
+        IFNULL(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

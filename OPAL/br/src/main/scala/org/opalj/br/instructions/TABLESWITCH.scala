@@ -197,12 +197,13 @@ case class LabeledTABLESWITCH(
         jumpTargets:         IndexedSeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): TABLESWITCH = {
         TABLESWITCH(
-            pcs(defaultBranchTarget) - currentPC,
+            asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
             low,
             high,
-            jumpTargets.map(pcs(_) - currentPC)
+            jumpTargets.map(target => asShortBranchoffset(pcs(target) - currentPC))
         )
     }
 

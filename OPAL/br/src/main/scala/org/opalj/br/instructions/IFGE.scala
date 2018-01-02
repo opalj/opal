@@ -80,7 +80,8 @@ case class LabeledIFGE(
         branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFGELike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFGE = {
-        IFGE(pcs(branchTarget) - pc)
+        IFGE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

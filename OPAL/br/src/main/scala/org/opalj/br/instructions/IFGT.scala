@@ -79,7 +79,8 @@ case class LabeledIFGT(
         branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFGTLike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFGT = {
-        IFGT(pcs(branchTarget) - pc)
+        IFGT(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

@@ -73,16 +73,12 @@ case class LabeledGOTO(
         branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with GOTOLike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(
         currentPC: PC,
         pcs:       Map[InstructionLabel, PC]
     ): GotoInstruction = {
-        val branchoffset = pcs(branchTarget) - currentPC
-        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
-            GOTO_W(branchoffset)
-        } else {
-            GOTO(branchoffset)
-        }
+            GOTO(asShortBranchoffset(pcs(branchTarget) - currentPC))
     }
 
 }

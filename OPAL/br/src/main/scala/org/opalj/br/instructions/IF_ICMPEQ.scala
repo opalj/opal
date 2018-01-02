@@ -80,7 +80,8 @@ case class LabeledIF_ICMPEQ(
         branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPEQLike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ICMPEQ = {
-        IF_ICMPEQ(pcs(branchTarget) - pc)
+        IF_ICMPEQ(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

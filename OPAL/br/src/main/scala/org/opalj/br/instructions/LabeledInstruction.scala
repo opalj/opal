@@ -33,7 +33,8 @@ package instructions
 /**
  * An instruction where the jump targets are identified using `Symbols` associated with the
  * instructions which should be executed in case of a jump.
- * The labels are standard Scala `Symbol`.
+ * The labels are `InstructionLabel`s; however, the eDSL provides implicits to faciliate the
+ * usage of standard scala Symbols as labels.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
@@ -52,6 +53,18 @@ trait LabeledInstruction extends InstructionLike {
      * @param   pc The final pc of this instruction in the code array.
      * @param   pcs The map which maps all symbols to their final pcs.
      */
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): Instruction
+
+    /**
+     * Validates the branchoffset and returns it or throws an exception!
+     */
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    protected def asShortBranchoffset(branchoffset : Int) : Int = {
+        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
+            throw BranchoffsetException(this);
+        }
+        branchoffset
+    }
 
 }

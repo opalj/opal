@@ -70,16 +70,12 @@ case class LabeledJSR(
         branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with JSRLike {
 
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
     override def resolveJumpTargets(
         currentPC: PC,
         pcs:       Map[InstructionLabel, PC]
     ): JSRInstruction = {
-        val branchoffset = pcs(branchTarget) - currentPC
-        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
-            JSR_W(branchoffset)
-        } else {
-            JSR(branchoffset)
-        }
+            JSR(asShortBranchoffset(pcs(branchTarget) - currentPC))
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
