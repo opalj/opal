@@ -29,6 +29,10 @@
 package org.opalj
 package ba
 
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UShortPair
+
 /**
  * Builder for a [[org.opalj.br.MethodTemplate]].
  *
@@ -44,21 +48,28 @@ class METHOD[T](
 ) {
 
     /**
-     * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations.
+     * Returns the build [[org.opalj.br.MethodTemplate]] and its annotations (if any).
      */
-    def result(): (br.MethodTemplate, Option[T]) = {
-        val methodDescriptor = br.MethodDescriptor(descriptor)
+    def result(
+        classFileVersion:   UShortPair,
+        declaringClassType: ObjectType
+    )(
+        implicit
+        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+    ): (br.MethodTemplate, Option[T]) = {
+        val descriptor = br.MethodDescriptor(this.descriptor)
         val accessFlags = accessModifiers.accessFlags
 
         val attributes = this.attributes.map(attributeBuilder ⇒
-            attributeBuilder(accessFlags, name, methodDescriptor))
+            attributeBuilder(accessFlags, name, descriptor))
 
         if (code.isDefined) {
-            val (codeAttribute, codeAnnotations) = code.get(accessFlags, name, methodDescriptor)
-            val method = br.Method(accessFlags, name, methodDescriptor, attributes :+ codeAttribute)
-            (method, Some(codeAnnotations))
+            val (attribute, annotations) =
+                code.get(classFileVersion, declaringClassType, accessFlags, name, descriptor)
+            val method = br.Method(accessFlags, name, descriptor, attributes :+ attribute)
+            (method, Some(annotations))
         } else {
-            val method = br.Method(accessFlags, name, methodDescriptor, attributes)
+            val method = br.Method(accessFlags, name, descriptor, attributes)
             (method, None)
         }
     }

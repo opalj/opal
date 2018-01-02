@@ -49,7 +49,7 @@ trait GOTOLike extends GotoInstructionLike {
 case class GOTO(branchoffset: Int) extends GotoInstruction with GOTOLike {
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledGOTO(Symbol((currentPC + branchoffset).toString))
+        LabeledGOTO(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -65,21 +65,20 @@ object GOTO {
     /**
      * Creates [[LabeledGOTO]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledGOTO = LabeledGOTO(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledGOTO = LabeledGOTO(branchTarget)
 
 }
 
 case class LabeledGOTO(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with GOTOLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): GotoInstruction = {
-        val branchoffset = pcs(branchTarget) - currentPC
-        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
-            GOTO_W(branchoffset)
-        } else {
-            GOTO(branchoffset)
-        }
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(
+        currentPC: PC,
+        pcs:       Map[InstructionLabel, PC]
+    ): GotoInstruction = {
+        GOTO(asShortBranchoffset(pcs(branchTarget) - currentPC))
     }
 
 }

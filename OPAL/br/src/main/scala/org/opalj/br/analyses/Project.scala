@@ -48,7 +48,6 @@ import scala.collection.mutable.Buffer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.SequentialTasks
@@ -72,6 +71,7 @@ import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -608,10 +608,10 @@ class Project[Source] private (
         classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean
     )(
         f: ClassFile ⇒ T
-    ): Iterable[Throwable] = {
+    ): Unit = {
         val classFilesCount = classFiles.length
         if (classFilesCount == 0)
-            return Nil;
+            return ;
 
         val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, classFilesCount)
         parForeachArrayElement(classFiles, parallelizationLevel, isInterrupted)(f)
@@ -621,7 +621,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
-    ): Iterable[Throwable] = {
+    ): Unit = {
         doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
     }
 
@@ -629,7 +629,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
-    ): Iterable[Throwable] = {
+    ): Unit = {
         doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
     }
 
@@ -637,8 +637,14 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: ClassFile ⇒ T
-    ): Iterable[Throwable] = {
-        parForeachProjectClassFile(isInterrupted)(f) ++ parForeachLibraryClassFile(isInterrupted)(f)
+    ): Unit = {
+        try {
+            parForeachProjectClassFile(isInterrupted)(f)
+            parForeachLibraryClassFile(isInterrupted)(f)
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                throw ce;
+        }
     }
 
     /**
@@ -698,10 +704,10 @@ class Project[Source] private (
         parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
     )(
         f: MethodInfo[Source] ⇒ T
-    ): Iterable[Throwable] = {
+    ): Unit = {
         val methods = this.methodsWithBodyAndContext
         if (methods.length == 0)
-            return Nil;
+            return ;
 
         parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
     }
@@ -714,7 +720,7 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean = defaultIsInterrupted
     )(
         f: Method ⇒ T
-    ): Iterable[Throwable] = {
+    ): Unit = {
         parForeachClassFile(isInterrupted) { cf ⇒ cf.methods.foreach(f) }
     }
 
@@ -1029,78 +1035,82 @@ object Project {
             exsMutex.synchronized { exs = ex :: exs }
         }
 
-        val exceptions = project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { mi ⇒
-            val m: Method = mi.method
-            val cf = m.classFile
+        try {
+            project.parForeachMethodWithBody(() ⇒ Thread.interrupted()) { mi ⇒
+                val m: Method = mi.method
+                val cf = m.classFile
 
-            def completeSupertypeInformation =
-                classHierarchy.isSupertypeInformationComplete(cf.thisType)
+                def completeSupertypeInformation =
+                    classHierarchy.isSupertypeInformationComplete(cf.thisType)
 
-            def missingSupertypeClassFile =
-                classHierarchy.allSupertypes(cf.thisType, false).find { t ⇒
-                    project.classFile(t).isEmpty
-                }.map { ot ⇒
-                    (classHierarchy.isInterface(ot) match {
-                        case Yes     ⇒ "interface "
-                        case No      ⇒ "class "
-                        case Unknown ⇒ "interface/class "
-                    }) + ot.toJava
-                }.getOrElse("<None>")
+                def missingSupertypeClassFile =
+                    classHierarchy.allSupertypes(cf.thisType, false).find { t ⇒
+                        project.classFile(t).isEmpty
+                    }.map { ot ⇒
+                        (classHierarchy.isInterface(ot) match {
+                            case Yes     ⇒ "interface "
+                            case No      ⇒ "class "
+                            case Unknown ⇒ "interface/class "
+                        }) + ot.toJava
+                    }.getOrElse("<None>")
 
-            m.body.get.iterate { (pc, instruction) ⇒
-                (instruction.opcode: @switch) match {
+                m.body.get.iterate { (pc, instruction) ⇒
+                    (instruction.opcode: @switch) match {
 
-                    case NEW.opcode ⇒
-                        val NEW(objectType) = instruction
-                        if (isInterface(objectType).isYes) {
-                            val ex = InconsistentProjectException(
-                                s"cannot create an instance of interface ${objectType.toJava} in "+
-                                    m.toJava(s"pc=$pc $disclaimer"),
-                                Error
-                            )
-                            addException(ex)
-                        }
-
-                    case INVOKESTATIC.opcode ⇒
-                        val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                        project.staticCall(invokestatic) match {
-                            case _: Success[_] ⇒ /*OK*/
-                            case Empty         ⇒ /*OK - partial project*/
-                            case Failure ⇒
+                        case NEW.opcode ⇒
+                            val NEW(objectType) = instruction
+                            if (isInterface(objectType).isYes) {
                                 val ex = InconsistentProjectException(
-                                    s"target method of invokestatic call in "+
-                                        m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                        "cannot be resolved; supertype information is complete="+
-                                        completeSupertypeInformation+
-                                        "; missing supertype class file: "+missingSupertypeClassFile,
+                                    s"cannot create an instance of interface ${objectType.toJava} in "+
+                                        m.toJava(s"pc=$pc $disclaimer"),
                                     Error
                                 )
                                 addException(ex)
-                        }
+                            }
 
-                    case INVOKESPECIAL.opcode ⇒
-                        val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                        project.specialCall(invokespecial) match {
-                            case _: Success[_] ⇒ /*OK*/
-                            case Empty         ⇒ /*OK - partial project*/
-                            case Failure ⇒
-                                val ex = InconsistentProjectException(
-                                    s"target method of invokespecial call in "+
-                                        m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                        "cannot be resolved; supertype information is complete="+
-                                        completeSupertypeInformation+
-                                        "; missing supertype class file: "+missingSupertypeClassFile,
-                                    Error
-                                )
-                                addException(ex)
-                        }
+                        case INVOKESTATIC.opcode ⇒
+                            val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
+                            project.staticCall(invokestatic) match {
+                                case _: Success[_] ⇒ /*OK*/
+                                case Empty         ⇒ /*OK - partial project*/
+                                case Failure ⇒
+                                    val ex = InconsistentProjectException(
+                                        s"target method of invokestatic call in "+
+                                            m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
+                                            "cannot be resolved; supertype information is complete="+
+                                            completeSupertypeInformation+
+                                            "; missing supertype class file: "+missingSupertypeClassFile,
+                                        Error
+                                    )
+                                    addException(ex)
+                            }
 
-                    case _ ⇒ // Nothing special is checked (so far)
+                        case INVOKESPECIAL.opcode ⇒
+                            val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
+                            project.specialCall(invokespecial) match {
+                                case _: Success[_] ⇒ /*OK*/
+                                case Empty         ⇒ /*OK - partial project*/
+                                case Failure ⇒
+                                    val ex = InconsistentProjectException(
+                                        s"target method of invokespecial call in "+
+                                            m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
+                                            "cannot be resolved; supertype information is complete="+
+                                            completeSupertypeInformation+
+                                            "; missing supertype class file: "+missingSupertypeClassFile,
+                                        Error
+                                    )
+                                    addException(ex)
+                            }
+
+                        case _ ⇒ // Nothing special is checked (so far)
+                    }
                 }
             }
-        }
-        if (exceptions.nonEmpty) {
-            exceptions.foreach(ex ⇒ error("internal - ignored", "project validation failed", ex))
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed.foreach { e ⇒
+                    error("internal - ignored", "project validation failed", e)
+                }
         }
 
         exs

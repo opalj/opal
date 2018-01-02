@@ -34,4 +34,9 @@ package ba
  *
  * @author Malte Limmeroth
  */
-abstract class PseudoInstruction extends CodeElement[Nothing]
+abstract class PseudoInstruction extends CodeElement[Nothing] {
+
+    final override def isPseudoInstruction: Boolean = true
+
+    final override def isControlTransferInstruction: Boolean = false
+}

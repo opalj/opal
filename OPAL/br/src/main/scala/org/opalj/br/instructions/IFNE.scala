@@ -55,7 +55,7 @@ case class IFNE(branchoffset: Int) extends IF0Instruction[IFNE] with IFNELike {
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFNE(Symbol((currentPC + branchoffset).toString))
+        LabeledIFNE(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -71,15 +71,16 @@ object IFNE {
     /**
      * Creates [[LabeledIFNE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFNE = LabeledIFNE(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFNE = LabeledIFNE(branchTarget)
 
 }
 
 case class LabeledIFNE(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFNELike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFNE = {
-        IFNE(pcs(branchTarget) - pc)
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFNE = {
+        IFNE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

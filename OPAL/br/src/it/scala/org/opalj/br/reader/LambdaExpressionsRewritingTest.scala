@@ -64,7 +64,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
-        val exceptions = project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi ⇒
             factoryCalls.addAll(
                 (mi.method.body.get.collectInstructions {
                     case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
@@ -79,7 +79,6 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             }
             */
         }
-        if (exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
         info(s"found ${factoryCalls.size} lambda proxy factory method calls")
         factoryCalls.asScala
 

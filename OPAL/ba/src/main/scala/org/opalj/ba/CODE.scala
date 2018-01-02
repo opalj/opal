@@ -29,19 +29,187 @@
 package org.opalj
 package ba
 
-import scala.collection.mutable.ArrayBuffer
+import java.util.NoSuchElementException
 
-import org.opalj.br.PC
-import org.opalj.br.Code
-// import org.opalj.br.instructions.LabeledInstruction
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
+
+import scala.collection.mutable.ArrayBuffer
+import org.opalj.control.rerun
+import org.opalj.control.iterateUntil
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.WIDE
+import org.opalj.br.instructions.LabeledInstruction
+import org.opalj.br.instructions.InstructionLabel
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.br.instructions.LabeledJSR
+import org.opalj.br.instructions.LabeledJSR_W
+import org.opalj.br.instructions.LabeledSimpleConditionalBranchInstruction
+import org.opalj.log.LogContext
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
 
 /**
- * Factory method for creating a [[CodeAttributeBuilder]].
+ * Factory method to create an initial [[CodeAttributeBuilder]].
  *
  * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
 object CODE {
+
+    implicit def logContext: LogContext = GlobalLogContext
+
+    final val CodeConfigKeyPrefix = "org.opalj.ba.CODE."
+    final val LogDeadCodeRemovalConfigKey = CodeConfigKeyPrefix+"logDeadCodeRemoval"
+    final val LogDeadCodeConfigKey = CodeConfigKeyPrefix+"logDeadCode"
+    final val LogCodeRewritingConfigKey = CodeConfigKeyPrefix+"logCodeRewriting"
+
+    @volatile private[this] var logDeadCodeRemoval: Boolean = true
+    @volatile private[this] var logDeadCode: Boolean = true
+    @volatile private[this] var logCodeRewriting: Boolean = true
+
+    def setBaseConfig(config: Config) = {
+        logDeadCodeRemoval = config.getBoolean(LogDeadCodeRemovalConfigKey)
+        info("code generation", s"compile-time dead code removal is logged: $logDeadCodeRemoval")
+        logDeadCode = config.getBoolean(LogDeadCodeConfigKey)
+        info("code generation", s"compile-time dead code is logged: $logDeadCode")
+        logCodeRewriting = config.getBoolean(LogCodeRewritingConfigKey)
+        info("code generation", s"code rewritings are logged: $logCodeRewriting")
+    }
+
+    setBaseConfig(ConfigFactory.load(this.getClass.getClassLoader()))
+
+    def filterDeadCode[T](codeElements: IndexedSeq[CodeElement[T]]): IndexedSeq[CodeElement[T]] = {
+
+        // Basic idea - mark all code elements as live:
+        // 1 - We first go linearly over all code elements to find all catch handlers and add them
+        //     to the set of all code elements that should be marked as live. (Actually, we add
+        //     to the set the pseudo instructions directly following the preceding
+        //     instruction.) Additionally, we compute the "label => index" relation.
+        // 2 - we follow the cfg to mark the live code elements
+        // 3 - we remove the dead code
+        //
+        // Note:
+        // We will later test if we have broken exception handlers; hence, we just assume they
+        // are valid for the time being! (E.g., if all instructions in the try block are dead,
+        // the try will also be dead, and creating the exception handler will fail..)
+        var markedAsLive: IntTrieSet = IntTrieSet1(0)
+        val isLive = new Array[Boolean](codeElements.size)
+        var isLiveCount = 0
+        val labelsToIndexes = new Object2IntOpenHashMap[InstructionLabel]()
+        labelsToIndexes.defaultReturnValue(Int.MinValue)
+
+        // Marks the code element with the given index or – if pseudo instructions are
+        // preceding it – the earliest directly preceding pseudo instruction as live.
+        def markAsLive(index: Int): Unit = {
+            var currentIndex = index
+            while (currentIndex > 0) {
+                if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
+                    return ; // nothing to do
+                }
+                currentIndex -= 1
+                if (!codeElements(currentIndex).isPseudoInstruction) {
+                    markedAsLive += (currentIndex + 1)
+                    return ;
+                }
+            }
+            // the code element "0" is already marked as live..
+        }
+
+        // Step 1
+        iterateUntil(0, codeElements.size) { index ⇒
+            codeElements(index) match {
+                case LabelElement(label) ⇒
+                    if (labelsToIndexes.containsKey(label)) {
+                        throw new IllegalArgumentException(s"'$label is already used")
+                    }
+                    labelsToIndexes.put(label, index)
+                case _: CATCH ⇒ markAsLive(index) // TODO only if we have a try block!
+                case _        ⇒ // nothing to do
+            }
+        }
+
+        // Step 2.1
+        def handleBranchTarget(branchTarget: InstructionLabel): Unit = {
+            val targetIndex = labelsToIndexes.getInt(branchTarget)
+            if (targetIndex == Int.MinValue) {
+                val message = s"the $branchTarget label could not be resolved"
+                throw new NoSuchElementException(message)
+            }
+            markAsLive(targetIndex)
+        }
+        while (markedAsLive.nonEmpty) {
+            // mark all code elements which can be executed subsequently as live
+            val (nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
+            var currentIndex = nextIndex
+            markedAsLive = newMarkedAsLive
+            if (!isLive(currentIndex)) {
+                do {
+                    isLive(currentIndex) = true
+                    isLiveCount += 1
+                    currentIndex += 1
+                } while (currentIndex < codeElements.size && !isLive(currentIndex) && {
+                    // Currently, we make the assumption that the instruction following the
+                    // JSR is live... i.e., a RET exists (which should always be the case for
+                    // proper code!)
+                    //
+                    codeElements(currentIndex - 1) match {
+                        case _: PseudoInstruction ⇒ true
+                        case InstructionLikeElement(li) ⇒
+                            !li.isControlTransferInstruction || {
+                                li.branchTargets.foreach(handleBranchTarget)
+                                // let's check if we have a "fall-through"
+                                li match {
+                                    case LabeledJSR(_) | LabeledJSR_W(_) |
+                                        _: LabeledSimpleConditionalBranchInstruction ⇒
+                                        // let's continue...
+                                        true
+                                    case _ ⇒
+                                        // the next code element is only live if we have
+                                        // an explicit jump to it, or if it is the start
+                                        // of an exception handler...
+                                        false
+                                }
+                            }
+                    }
+                })
+            }
+        }
+        // Step 2.2 We now have to test for still required TRY-Block and LINENUMBER markers..
+
+        // Step 3
+        if (isLiveCount < codeElements.size) {
+            val deadCodeElementsCount = codeElements.size - isLiveCount
+            if (logDeadCodeRemoval) {
+                info("code generation", s"found $deadCodeElementsCount dead code elements")
+            }
+            if (logDeadCode) {
+                val deadCode = new Array[String](deadCodeElementsCount)
+                var deadCodeIndex = 0
+                iterateUntil(0, codeElements.size) { index ⇒
+                    if (!isLive(index)) {
+                        deadCode(deadCodeIndex) = s"$index: ${codeElements(index)}"
+                        deadCodeIndex += 1
+                    }
+                }
+                info(
+                    "code generation",
+                    deadCode.mkString("compile-time dead code elements:\n\t", "\n\t", "\n")
+                )
+            }
+            val newCodeElements = new ArrayBuffer[CodeElement[T]](isLiveCount)
+            iterateUntil(0, codeElements.size) { index ⇒
+                if (isLive(index)) {
+                    newCodeElements += codeElements(index)
+                }
+            }
+            filterDeadCode(newCodeElements); // tail-recursive call...
+        } else {
+            codeElements
+        }
+    }
 
     /**
      * Creates a new [[CodeAttributeBuilder]] with the given [[CodeElement]]s converted to
@@ -55,100 +223,67 @@ object CODE {
         this(codeElements.toIndexedSeq)
     }
 
-    def apply[T](codeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
+    def apply[T](initialCodeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
+        val codeElements = filterDeadCode(initialCodeElements)
+        val instructionLikes = new ArrayBuffer[LabeledInstruction](codeElements.size)
 
-        val labelSymbols = codeElements.collect { case LabelElement(r) ⇒ r }
-
-        require(codeElements.exists(_.isInstanceOf[InstructionElement]), "no code found")
-
-        require(
-            labelSymbols.distinct.length == labelSymbols.length,
-            labelSymbols.
-                groupBy(identity).
-                collect { case (x, ys) if ys.size > 1 ⇒ x }.
-                mkString("each label has to be unique:\n\t", "\n\t", "")
-        )
-
-        codeElements foreach {
-            case InstructionElement(i) ⇒
-                i.branchTargets.foreach { target ⇒
-                    require(labelSymbols.contains(target), s"$i: undefined branch target $target")
-                }
-            case _ ⇒ /*NOT RELEVANT*/
-        }
-
-        val formattedInstructions = ArrayBuffer.empty[CodeElement[T]]
-
-        // fill the array with `null`s for PCs representing instruction arguments
-        var nextPC = 0
-        var currentPC = 0
-        var modifiedByWide = false
-        codeElements foreach { e ⇒
-            formattedInstructions.append(e)
-
-            e match {
-                case InstructionLikeElement(inst) ⇒
-                    currentPC = nextPC
-                    nextPC = inst.indexOfNextInstruction(currentPC, modifiedByWide)
-                    for (j ← 1 until nextPC - currentPC) { // IMPROVE use repeat
-                        formattedInstructions.append(null)
-                    }
-                    modifiedByWide = false
-                    if (inst == WIDE) {
-                        modifiedByWide = true
-                    }
-
-                case _ ⇒ // we are not interested in EXCEPTION HANDLERS, LABELS...
-            }
-        }
-        // calculate the PCs of all PseudoInstructions // IMPROVE merge with previous loop!
-        var labels: Map[Symbol, br.PC] = Map.empty
-        val exceptionHandlerBuilder = new ExceptionHandlerGenerator
+        var labels = Map.empty[InstructionLabel, br.PC]
+        var annotations = Map.empty[br.PC, T]
+        val exceptionHandlerBuilder = new ExceptionHandlerGenerator()
         val lineNumberTableBuilder = new LineNumberTableBuilder()
-        var count: Int = 0
-        for ((inst, index) ← formattedInstructions.zipWithIndex) {
-            if (inst.isInstanceOf[PseudoInstruction]) {
-                val pc = index - count
-                formattedInstructions.remove(pc)
-                inst match {
-                    case LabelElement(label)        ⇒ labels += (label → pc)
-                    case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, pc)
-                    case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, pc)
+        var hasControlTransferInstructions = false
+        val pcMapping = new PCMapping
+
+        var currentPC = 0
+        var nextPC = 0
+        var modifiedByWide = false
+        // fill the instructionLikes array with `null`s for PCs representing instruction arguments
+        codeElements foreach {
+            case ile @ InstructionLikeElement(i) ⇒
+                currentPC = nextPC
+                nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
+                if (ile.isAnnotated) annotations += ((currentPC, ile.annotation))
+                instructionLikes.append(i)
+                rerun((nextPC - currentPC) - 1) { instructionLikes.append(null) }
+
+                modifiedByWide = i == WIDE
+                hasControlTransferInstructions |= i.isControlTransferInstruction
+
+            case LabelElement(label) ⇒
+                if (label.isPCLabel) {
+                    // let's store the mapping to make it possible to remap the other attributes..
+                    pcMapping += (label.pc, nextPC)
                 }
-                count += 1
-            }
+                labels += (label → nextPC)
+
+            case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, nextPC)
+
+            case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
         }
 
+        // TODO Support if and goto rewriting if required
         // We need to check if we have to adapt ifs and gotos if the branchtarget is not
         // representable using a signed short; in case of gotos we simply use goto_w; in
         // case of ifs, we "negate" the condition and add a goto_w w.r.t. the target and
         // in the other cases jump to the original instruction which follows the if.
 
         val exceptionHandlers = exceptionHandlerBuilder.result()
+        val attributes = lineNumberTableBuilder.result()
 
-        val attributes: IndexedSeq[br.Attribute] = lineNumberTableBuilder.result()
-
-        val annotations = formattedInstructions.zipWithIndex.collect { // IMPROVE use iterator?
-            case (AnnotatedInstructionElement(_, annotation), pc) ⇒ (pc, annotation)
-        }.toMap
-
-        val instructionLikesOnly = formattedInstructions.collect {
-            case InstructionLikeElement(i) ⇒ i
-            case null                      ⇒ null
-            // ... filter pseudo instructions
-        }
-
-        val instructions = instructionLikesOnly.zipWithIndex.map { tuple ⇒
-            val (instruction, index) = tuple
-            if (instruction != null) {
-                instruction.resolveJumpTargets(index, labels)
-            } else {
-                null
+        val codeSize = instructionLikes.size
+        require(codeSize > 0, "no code found")
+        val instructions = new Array[Instruction](codeSize)
+        iterateUntil(0, codeSize) { pc ⇒
+            val labeledInstruction = instructionLikes(pc)
+            if (labeledInstruction != null) {
+                instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
             }
         }
 
         new CodeAttributeBuilder(
-            instructions.toArray,
+            instructions,
+            hasControlTransferInstructions,
+            pcMapping,
             annotations,
             None,
             None,
@@ -157,182 +292,4 @@ object CODE {
         )
     }
 
-    def toLabeledCode(code: Code): LabeledCode = {
-        val estimatedSize = code.codeSize
-        val labeledInstructions = new ArrayBuffer[CodeElement[AnyRef]](estimatedSize)
-
-        // Transform the current code to use labels; this approach handles cases such as
-        // switches which now require more/less bytes very elegantly.
-        code.iterate { (pc, i) ⇒
-            // IMPROVE use while loop
-            code.exceptionHandlers.iterator.zipWithIndex.foreach { (ehIndex) ⇒
-                val (eh, index) = ehIndex
-                // Recall that endPC is exclusive while TRYEND is inclusive... Hence,
-                // we have to add it before the next...
-                if (eh.endPC == pc) labeledInstructions += TRYEND(Symbol(s"eh$index"))
-
-                if (eh.startPC == pc)
-                    labeledInstructions += TRY(Symbol(s"eh$index"))
-                if (eh.handlerPC == pc)
-                    labeledInstructions += CATCH(Symbol(s"eh$index"), eh.catchType)
-
-            }
-            labeledInstructions += LabelElement(Symbol(pc.toString))
-            labeledInstructions += i.toLabeledInstruction(pc)
-        }
-
-        new LabeledCode(code, labeledInstructions)
-    }
-
-    /**
-     * Inserts the given sequence of instructions before, at or after the instruction with the
-     * given pc.
-     * Here, '''before''' means that those instruction which currently jump to the instruction with
-     * the given pc, will jump to the first instruction of the given sequence of instructions.
-     *
-     * @note   The instructions are only considered to be prototypes and are adapted (in case of
-     *         jump instructions) if necessary.
-     * @note   This method does not provide support for methods that will - if too many instructions
-     *         are added - exceed the maximum allowed length of methods.
-     *
-     * @param insertionPC The pc of an instruction.
-     * @param insertionPosition Given an instruction I which is a jump target and which has the pc
-     *         `insertionPC`. In this case, the effect of the (insertion) position is:
-     *
-     *         ''Before''
-     *                  `insertionPC:` // the jump target will be the newly inserted instructions
-     *                  `&lt;new instructions&gt;`
-     *                  `&lt;remaining original instructions&gt;`
-     *
-     *         ''After''
-     *                  `insertionPC:`
-     *                  `&lt;original instruction with program counter insertionPC&gt;`
-     *                  `newJumpTarget(insertionPC+1):`
-     *                      // i.e., an instruction which jumps to the original
-     *                      // instruction which follows the instruction with
-     *                      // insertionPC will still jump to that instruction
-     *                      // and not the new one.
-     *                      // Additionally, existing exception handlers which
-     *                      // included the specified instruction will also
-     *                      // include this instruction.
-     *                  `&lt;new instructions&gt;`
-     *                  `pcOfNextInstruction(insertionPC):`
-     *                  `&lt;remaining original instructions&gt;`
-     *
-     *         '''At'''
-     *                  `newJumpTarget(insertionPC):`
-     *                  `&lt;new instructions&gt;`
-     *                  `insertionPC:`
-     *                  `&lt;remaining original instructions&gt;`
-     *
-     *         (W.r.t. labeled code the effect can also be described as shown next:
-     *         Let's assume that:
-     *         EH ... code elements modelling exception handlers (TRY|TRYEND|CATCH)
-     *         I ... the (implicitly referenced) instruction
-     *         L ... the (implicit) label of the instruction
-     *         CE ... the new CodeElements
-     *
-     *         '''Given''':
-     *         EH | L | I // EH can be empty, L is (for original instructions) always existing!
-     *
-     *         '''Before''':
-     *         EH | L | CE | I
-     *
-     *         '''At''':
-     *         EH | CE | L | I // existing exception handlers w.r.t. L are effective
-     *
-     *         '''After''':
-     *         EH | L | I | CE | EH | L+1 // i.e., the insertion position depends on L+1(!)
-     *         )
-     *
-     *         Hence, `At` and `After` can be used interchangeably except when an
-     *         instruction should be added at the very beginning or after the end.
-     *
-     * @param newInstructions The sequence of instructions that will be added at the specified
-     *         position relative to the instruction with the given pc.
-     *         If this list of instructions contains instructions which have jump
-     *         targets then these jump targets have to use `Symbol`s which are not used
-     *         by the code (which are the program counters of the code's instructions).
-     *         E.g., by appending something like `new` to every Symbol we will get
-     *         unique jump targets for instructions.
-     */
-    def insert(
-        insertionPC:       PC,
-        insertionPosition: InsertionPosition.Value,
-        newInstructions:   Seq[CodeElement[AnyRef]],
-        labeledCode:       LabeledCode
-    ): Unit = {
-        val instructions = labeledCode.instructions
-
-        // In the array we can have (after the label) all other code elements... (and if
-        // we already inserted other code, we could have multiple labels...)
-        insertionPosition match {
-
-            case InsertionPosition.Before ⇒
-                val insertionPCLabel = LabelElement(Symbol(insertionPC.toString))
-                val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
-                instructions.insert(insertionPCLabelIndex + 1, newInstructions: _*)
-
-            case InsertionPosition.At ⇒
-                val insertionPCLabel = LabelElement(Symbol(insertionPC.toString))
-                val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
-                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
-
-            case InsertionPosition.After ⇒
-                val originalCode = labeledCode.originalCode
-                val effectivePC = originalCode.pcOfNextInstruction(insertionPC)
-                var insertionPCLabelIndex =
-                    if (effectivePC >= originalCode.codeSize)
-                        instructions.size
-                    else {
-                        val insertionPCLabel = LabelElement(Symbol(effectivePC.toString))
-                        instructions.indexOf(insertionPCLabel)
-                    }
-                // Let's find the index where we want to actually insert the new instructions...
-                // which is before all exception related code elements!
-                while (instructions(insertionPCLabelIndex - 1).isExceptionHandlerElement) {
-                    insertionPCLabelIndex -= 1
-                }
-                instructions.insert(insertionPCLabelIndex, newInstructions: _*)
-
-        }
-    }
-}
-
-object InsertionPosition extends Enumeration {
-    final val Before = Value("before")
-    final val At = Value("at")
-    final val After = Value("after")
-}
-
-/**
- * Container for some labeled code.
- *
- * @note Using LabeledCode is NOT thread safe.
- *
- * @param originalCode The original code.
- */
-class LabeledCode(
-        val originalCode:             Code,
-        private[ba] val instructions: ArrayBuffer[CodeElement[AnyRef]]
-) {
-
-    def toCodeAttributeBuilder: CodeAttributeBuilder[AnyRef] = {
-        val initialCodeAttributeBuilder = CODE(instructions)
-        // let's check if we have to compute a new StackMapTable attribute
-        // originalCode.cfJoins
-        // initialCodeAttributeBuilder.instructions
-
-        // TODO We have to adapt the exiting attributes and we have to merge the line number tables
-        // if necessary.
-
-        initialCodeAttributeBuilder
-    }
-
-    def insert(
-        insertionPC: PC, insertionPosition: InsertionPosition.Value,
-        newInstructions: Seq[CodeElement[AnyRef]]
-    ): Unit = {
-        CODE.insert(insertionPC, insertionPosition, newInstructions, this)
-    }
 }

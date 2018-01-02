@@ -31,6 +31,8 @@ package ba
 
 import java.io.ByteArrayInputStream
 
+import org.opalj.io.writeAndOpen
+import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.bc.Assembler
 import org.opalj.br.ObjectType
 import org.opalj.br.IntegerType
@@ -65,16 +67,14 @@ object FirstInstrumentation extends App {
         for (m ← cf.methods) yield {
             m.body match {
                 case None ⇒
-                    m.copy() // these are native and abstract methods
+                    m.copy() // methods which are native and abstract ...
 
                 case Some(code) ⇒
                     // let's search all "toString" calls
-                    val lCode = CODE.toLabeledCode(code)
+                    val lCode = LabeledCode(code)
                     var modified = false
                     for ((pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code) {
                         modified = true
-                        // print out the result of toString if and only if the type of o is
-                        // a collection...
                         lCode.insert(
                             pc, InsertionPosition.After,
                             Seq(
@@ -97,7 +97,11 @@ object FirstInstrumentation extends App {
                         )
                     }
                     if (modified) {
-                        val (newCode, _) = lCode.toCodeAttributeBuilder(m)
+                        val (newCode, _) =
+                            lCode.result(cf.version, m)( // We can use the default class hierarchy in this example
+                            // as we only instrument linear methods using linear code,
+                            // hence, we don't need to compute a new stack map table attribute!
+                            )
                         m.copy(body = Some(newCode))
                     } else {
                         m.copy()
@@ -111,18 +115,14 @@ object FirstInstrumentation extends App {
     // HELPFUL WHEN DOING BYTECODE INSTRUMENTATION.
     //
 
-    // Let's see the old file...
-    println("original: "+
-        org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(in).head.toXHTML(None), "SimpleInstrumentationDemo", ".html"
-        ))
+    // Let's see the old class file...
+    val odlCFHTML = ClassFile(in).head.toXHTML(None)
+    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "SimpleInstrumentationDemo", ".html")
+    println("original: "+oldCFHTMLFile)
 
-    // Let's see the new file...
-    println("instrumented: "+
-        org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None),
-            "NewSimpleInstrumentationDemo", ".html"
-        ))
+    // Let's see the new class file...
+    val newCF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
+    println("instrumented: "+writeAndOpen(newCF, "NewSimpleInstrumentationDemo", ".html"))
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)

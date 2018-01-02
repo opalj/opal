@@ -29,8 +29,21 @@
 package org.opalj
 package ba
 
+import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
-import org.opalj.br.JVMMethod
+import org.opalj.br.StackMapTable
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
+import org.opalj.br.ObjectType
+import org.opalj.br.StackMapFrame
+import org.opalj.br.FullFrame
+import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.TopVariableInfo
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -41,13 +54,28 @@ import org.opalj.br.instructions.Instruction
  * @author Malte Limmeroth
  */
 class CodeAttributeBuilder[T] private[ba] (
-        private val instructions:      Array[Instruction],
-        private val annotations:       Map[br.PC, T],
-        private var maxStack:          Option[Int],
-        private var maxLocals:         Option[Int],
-        private var exceptionHandlers: br.ExceptionHandlers,
-        private var attributes:        br.Attributes
+        private[ba] val instructions:                   Array[Instruction],
+        private[ba] val hasControlTransferInstructions: Boolean,
+        private[ba] val pcMapping:                      PCMapping,
+        private[ba] val annotations:                    Map[br.PC, T],
+        private[ba] var maxStack:                       Option[Int],
+        private[ba] var maxLocals:                      Option[Int],
+        private[ba] var exceptionHandlers:              br.ExceptionHandlers,
+        private[ba] var attributes:                     br.Attributes
 ) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
+
+    def copy(attributes: br.Attributes = this.attributes): CodeAttributeBuilder[T] = {
+        new CodeAttributeBuilder[T](
+            instructions,
+            hasControlTransferInstructions,
+            pcMapping,
+            annotations,
+            maxStack,
+            maxLocals,
+            exceptionHandlers,
+            attributes
+        )
+    }
 
     /**
      * Defines the max_stack value.
@@ -69,24 +97,49 @@ class CodeAttributeBuilder[T] private[ba] (
         this
     }
 
-    /** Creates a `Code` attribute w.r.t. the given method. */
-    def apply(jvmMethod: JVMMethod): (br.Code, (Map[br.PC, T], List[String])) = {
-        this(jvmMethod.accessFlags, jvmMethod.name, jvmMethod.descriptor)
+    /**
+     * Creates a `Code` attribute with respect to the given method; this is particularly useful
+     * when we do bytecode weaving.
+     *
+     * @see `apply(classFileVersion:UShortPair,accessFlags:Int,name:String,...)` for more details.
+     */
+    def apply(
+        classFileVersion: UShortPair,
+        method:           Method
+    )(
+        implicit
+        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+    ): (br.Code, (Map[br.PC, T], List[String])) = {
+        this(
+            classFileVersion, method.classFile.thisType,
+            method.accessFlags, method.name, method.descriptor
+        )
     }
 
     /**
+     * Creates a `Code` attribute.
+     *
+     * The `classHierarchy` is required iff a Java 6 or newer class file is created and
+     * the code requires the computation of a new stack map table. If this is not the
+     * case the class hierarchy can be `null`.
+     *
      * @param  accessFlags The declaring method's access flags, required during code validation or
-     *         when MAXSTACK/MAXLOCALS should be computed.
-     * @param  descriptor The declaring method's descriptor; required during code valiation or
-     *         when MAXSTACK/MAXLOCALS should be computed.
+     *         when MAXSTACK/MAXLOCALS needs to be computed.
+     * @param  descriptor The declaring method's descriptor; required during code validation or
+     *         when MAXSTACK/MAXLOCALS needs to be computed.
      *
      * @return The tuple:
      *         `(the code attribute, (the extracted meta information, the list of warnings))`.
      */
     def apply(
-        accessFlags: Int,
-        name:        String,
-        descriptor:  br.MethodDescriptor
+        classFileVersion:   UShortPair,
+        declaringClassType: ObjectType,
+        accessFlags:        Int,
+        name:               String,
+        descriptor:         br.MethodDescriptor
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
 
         import CodeAttributeBuilder.warnMessage
@@ -111,7 +164,6 @@ class CodeAttributeBuilder[T] private[ba] (
             instructions = instructions,
             exceptionHandlers = exceptionHandlers
         )
-
         if (maxStack.isDefined && maxStack.get < computedMaxStack) {
             warnings ::= warnMessage.format(
                 descriptor.toJVMDescriptor,
@@ -121,7 +173,7 @@ class CodeAttributeBuilder[T] private[ba] (
             )
         }
 
-        val code = br.Code(
+        var code = br.Code(
             maxStack = maxStack.getOrElse(computedMaxStack),
             maxLocals = maxLocals.getOrElse(computedMaxLocals),
             instructions = instructions,
@@ -129,11 +181,105 @@ class CodeAttributeBuilder[T] private[ba] (
             attributes = attributes
         )
 
+        // We need to compute the stack map table if we don't have one already!
+        if (classFileVersion.major >= bi.Java6MajorVersion &&
+            attributes.forall(a ⇒ a.kindId != StackMapTable.KindId) &&
+            (hasControlTransferInstructions || exceptionHandlers.nonEmpty)) {
+            // let's create fake code and method objects to make it possible
+            // to use the AI framework
+            val cf = ClassFile(
+                thisType = declaringClassType,
+                methods = IndexedSeq(Method(accessFlags, name, descriptor, IndexedSeq(code)))
+            )
+            val m = cf.methods.head
+            val as = IndexedSeq(computeStackMapTable(m))
+            code = code.copy(attributes = as)
+        }
+
         (code, (annotations, warnings))
+    }
+
+    def computeStackMapTable(
+        m: Method
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): StackMapTable = {
+        val c = m.body.get
+
+        // compute info
+        val theDomain = new TypeCheckingDomain(classHierarchy, m)
+        val ils = CodeAttributeBuilder.ai.initialLocals(m, theDomain)(None)
+        val ios = CodeAttributeBuilder.ai.initialOperands(m, theDomain)
+        val r = CodeAttributeBuilder.ai.performInterpretation(c, theDomain)(ios, ils)
+
+        // create table
+        val framePCs = c.stackMapTablePCs(classHierarchy)
+        var lastPC = -1 // -1 === initial stack map frame
+        val fs = new Array[StackMapFrame](framePCs.size)
+        var frameIndex = 0
+        framePCs.foreach { pc ⇒
+
+            val verificationTypeInfoLocals: IndexedSeq[VerificationTypeInfo] = {
+                val locals = r.localsArray(pc)
+                if (locals == null) {
+                    // We have found compile time dead code; we have to throw it away... we
+                    // simply can't compute a stack map table frame for such code!
+                }
+                val localsCount = locals.size
+                if (locals.size == 0) {
+                    IndexedSeq.empty
+                } else {
+                    var index = 0
+                    val ls = ArrayBuffer.empty[VerificationTypeInfo]
+                    do {
+                        ls += (
+                            locals(index) match {
+                                case null | r.domain.TheIllegalValue ⇒
+                                    index += 1
+                                    TopVariableInfo
+
+                                case dv ⇒
+                                    index += dv.computationalType.operandSize
+                                    dv.verificationTypeInfo
+                            }
+                        )
+                    } while (index < localsCount)
+                    ls
+                }
+            }
+            val verificationTypeInfoStack: IndexedSeq[VerificationTypeInfo] = {
+                var operands = r.operandsArray(pc)
+                var operandIndex = operands.size
+                if (operandIndex == 0) {
+                    IndexedSeq.empty // an empty stack is a VERY common case...
+                } else {
+                    val os = new Array[VerificationTypeInfo](operandIndex)
+                    operandIndex -= 1
+                    do {
+                        os(operandIndex) = operands.head.verificationTypeInfo
+                        operands = operands.tail
+                        operandIndex -= 1
+                    } while (operandIndex >= 0)
+                    os
+                }
+            }
+            fs(frameIndex) = new FullFrame(
+                offsetDelta = if (lastPC != -1) pc - lastPC - 1 else pc,
+                verificationTypeInfoLocals,
+                verificationTypeInfoStack
+            )
+            frameIndex += 1
+            lastPC = pc
+        }
+        StackMapTable(fs)
     }
 }
 
 object CodeAttributeBuilder {
 
-    val warnMessage = s"%s: %s is too small %d < %d"
+    final val warnMessage = s"%s: %s is too small %d < %d"
+
+    final val ai = new BaseAI(IdentifyDeadVariables = false)
+
 }

@@ -53,12 +53,12 @@ import org.opalj.io.OpeningFileFailedException
  * @author Christos Votskos
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultArraysTest extends FunSpec with Matchers {
+class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
     import DefaultArraysTest._
 
-    private def evaluateMethod(name: String)(f: DefaultArraysTestDomain ⇒ Unit): Unit = {
-        val domain = new DefaultArraysTestDomain()
+    private def evaluateMethod(name: String)(f: DefaultConcreteArraysTestDomain ⇒ Unit): Unit = {
+        val domain = new DefaultConcreteArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
         val code = method.body.get
@@ -604,7 +604,7 @@ class DefaultArraysTest extends FunSpec with Matchers {
 
 }
 
-class DefaultArraysTestDomain(
+class DefaultConcreteArraysTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
     with GlobalLogContextProvider

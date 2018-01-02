@@ -30,24 +30,33 @@ package org.opalj
 package br
 
 /**
- * Represents a declared method which is a method that is (not necessarily) defined by
- * the class, but which belongs to the API of the class identified by `declaringClassType`.
+ * Represents a declared method of a class identified by [[declaringClassType]];
+ * that is, a method which belongs to the API of the class itself or a super class thereof.
  *
  * @author Michael Eichberg
  * @author Dominik Helm
  */
 sealed abstract class DeclaredMethod {
 
+    /**
+     * The declaring type; the returned type may not define the method; it could be defined by
+     * a super class.
+     */
     def declaringClassType: ReferenceType
 
     def name: String
 
     def descriptor: MethodDescriptor
 
-    def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
+    def toJava: String = s"${declaringClassType.toJava}{ ${descriptor.toJava(name)} }"
 
+    /**
+     * If `true` the method which actually defines this method (which may still be abstract!),
+     * is known and is available using [[asDefinedMethod]].
+     */
     def hasDefinition: Boolean
 
+    /** The definition of this method; defined iff [[hasDefinition]] returns `true`. */
     def asDefinedMethod: DefinedMethod
 
     /**
@@ -63,24 +72,28 @@ sealed abstract class DeclaredMethod {
     }
 }
 
+/**
+ * Represents a method belonging to the API of the specified class type, where the original
+ * method definition is not available (in the context of the current analysis.)
+ */
 final case class VirtualDeclaredMethod(
         declaringClassType: ReferenceType,
         name:               String,
         descriptor:         MethodDescriptor
 ) extends DeclaredMethod {
 
-    def hasDefinition: Boolean = false
-    def methodDefinition: Method = {
-        throw new UnsupportedOperationException("no concrete method available")
-    }
-    def asDefinedMethod: DefinedMethod = throw new ClassCastException()
+    override def hasDefinition: Boolean = false
+    override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
+    override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: VirtualDeclaredMethod ⇒
                 (this.declaringClassType eq that.declaringClassType) &&
-                    this.name == that.name && this.descriptor == that.descriptor
-            case _ ⇒ false
+                    this.name == that.name &&
+                    this.descriptor == that.descriptor
+            case _ ⇒
+                false
         }
     }
 
@@ -91,21 +104,19 @@ final case class VirtualDeclaredMethod(
 
 /**
  * Represents a declared method; i.e., a method which belongs to the (public and privage) API of a
- * class along with a reference to the declaration.
+ * class along with a reference to the original declaration.
  */
 final case class DefinedMethod(
         declaringClassType: ReferenceType,
         definedMethod:      Method
 ) extends DeclaredMethod {
 
-    def hasDefinition: Boolean = true
-    def asDefinedMethod: DefinedMethod = this
+    override def name: String = definedMethod.name
+    override def descriptor: MethodDescriptor = definedMethod.descriptor
 
-    def name: String = definedMethod.name
-
-    def descriptor: MethodDescriptor = definedMethod.descriptor
-
-    def methodDefinition: Method = definedMethod
+    override def hasDefinition: Boolean = true
+    override def asDefinedMethod: DefinedMethod = this
+    override def methodDefinition: Method = definedMethod
 
     override def hashCode: Int = (definedMethod.hashCode() * 41) + super.hashCode
 

@@ -66,7 +66,10 @@ class ClassFileBuilderTest extends FlatSpec {
         CLASS[Nothing](accessModifiers = ABSTRACT INTERFACE, thisType = "MarkerInterface2").toDA()
 
     val (abstractClass, _) =
-        CLASS[Nothing](accessModifiers = ABSTRACT PUBLIC, thisType = "org/opalj/bc/AbstractClass").toDA()
+        CLASS[Nothing](
+            accessModifiers = ABSTRACT PUBLIC,
+            thisType = "org/opalj/bc/AbstractClass"
+        ).toDA()
 
     val (simpleConcreteClass, _) =
         CLASS[Nothing](

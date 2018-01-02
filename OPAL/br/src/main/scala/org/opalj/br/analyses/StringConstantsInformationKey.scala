@@ -39,7 +39,6 @@ import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
-import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get information about all string constants found in the project's code.
@@ -69,7 +68,7 @@ object StringConstantsInformationKey
         val estimatedSize = project.methodsCount
         val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](estimatedSize)
 
-        val errors = project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
             method.body.get.withFilter { i ⇒
@@ -86,11 +85,6 @@ object StringConstantsInformationKey
                     list.add((method, pc))
                 case _ ⇒ /*other type of constant*/
             }
-        }
-        errors foreach { e ⇒
-            OPALLogger.error(
-                "string constants information", "collecting string constants information failed", e
-            )(project.logContext)
         }
 
         var result: Map[String, ConstArray[(Method, PC)]] = Map.empty

@@ -71,7 +71,9 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     sealed trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
         this: DomainTypedValue[LongType] ⇒
 
-        final def computationalType: ComputationalType = ComputationalTypeLong
+        final override def computationalType: ComputationalType = ComputationalTypeLong
+
+        final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
 
     }
 

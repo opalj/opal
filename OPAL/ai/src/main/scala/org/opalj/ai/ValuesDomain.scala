@@ -30,13 +30,16 @@ package org.opalj
 package ai
 
 import scala.language.higherKinds
-
 import scala.reflect.ClassTag
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.br.TopVariableInfo
+import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.NullVariableInfo
+import org.opalj.br.ObjectVariableInfo
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -152,6 +155,11 @@ trait ValuesDomain {
          * @note The computational type has to be precise/correct.
          */
         def computationalType: ComputationalType
+
+        /**
+         * The type of this value as used by the [[org.opalj.br.StackMapTable]] attribute.
+         */
+        def verificationTypeInfo: VerificationTypeInfo
 
         /**
          * @return  The concrete return address stored by this value; this method
@@ -426,6 +434,21 @@ trait ValuesDomain {
          */
         final override def computationalType: ComputationalType = ComputationalTypeReference
 
+        /**
+         * Provides the correct verification type for non-locally initialized object values if
+         * null-ness is tracked.
+         *
+         * For the computation of uninitialized this/object value infos,
+         * this method needs to be refined/overridden.
+         */
+        override def verificationTypeInfo: VerificationTypeInfo = {
+            if (isNull.isYes) {
+                NullVariableInfo
+            } else {
+                ObjectVariableInfo(valueType.get.asReferenceType)
+            }
+        }
+
         final override def asDomainReferenceValue: DomainReferenceValue = this
     }
 
@@ -471,6 +494,8 @@ trait ValuesDomain {
         final override def computationalType: Nothing = {
             throw DomainException("an IllegalValue has no computational type")
         }
+
+        final override def verificationTypeInfo: VerificationTypeInfo = TopVariableInfo
 
         @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
@@ -532,6 +557,10 @@ trait ValuesDomain {
     trait RETValue extends Value { this: DomainValue ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+
+        final override def verificationTypeInfo: VerificationTypeInfo = {
+            throw new UnsupportedOperationException("see JVM Spec.: StackMapTableAttribute");
+        }
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: PC): DomainValue = {

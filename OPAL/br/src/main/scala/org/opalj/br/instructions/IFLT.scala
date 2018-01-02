@@ -55,7 +55,7 @@ case class IFLT(branchoffset: Int) extends IF0Instruction[IFLT] with IFLTLike {
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIFLT(Symbol((currentPC + branchoffset).toString))
+        LabeledIFLT(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -71,14 +71,15 @@ object IFLT {
     /**
      * Creates LabeledIFLT instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFLT = LabeledIFLT(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFLT = LabeledIFLT(branchTarget)
 }
 
 case class LabeledIFLT(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IFLTLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFLT = {
-        IFLT(pcs(branchTarget) - pc)
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFLT = {
+        IFLT(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

@@ -40,7 +40,7 @@ package instructions
  */
 trait LabeledSingleJumpTargetInstruction extends LabeledInstruction {
 
-    final def branchTargets: List[Symbol] = branchTarget :: Nil
+    final def branchTargets: List[InstructionLabel] = branchTarget :: Nil
 
-    def branchTarget: Symbol
+    def branchTarget: InstructionLabel
 }

@@ -46,15 +46,16 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
- * Tests the rewriting of Java 8 lambda expressions/method references based
- * [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction.
+ * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
+ * tests rewritinh of [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction using
+ * `LambdaMetafactory`s.
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
  * @author Andreas Muttscheller
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class LambdaExpressionsRewritingTest extends FunSpec with Matchers {
+class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 
@@ -313,7 +314,7 @@ class LambdaExpressionsRewritingTest extends FunSpec with Matchers {
         }
     }
 
-    describe("rewriting of Java 8 lambda expressions") {
+    describe("rewriting of lambda expressions") {
         val cache = new BytecodeInstructionsCache
         implicit val logContext: LogContext = GlobalLogContext
         val baseConfig: Config = ConfigFactory.load()

@@ -38,7 +38,15 @@ sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
 
     final override def isExceptionHandlerElement: Boolean = false
 
+    final override def isPseudoInstruction: Boolean = false
+
+    def isAnnotated: Boolean
+
+    def annotation: T
+
     def instruction: LabeledInstruction
+
+    def isControlTransferInstruction: Boolean = instruction.isControlTransferInstruction
 }
 
 object InstructionLikeElement {
@@ -53,7 +61,10 @@ object InstructionLikeElement {
  */
 case class InstructionElement(
         instruction: LabeledInstruction
-) extends InstructionLikeElement[Nothing]
+) extends InstructionLikeElement[Nothing] {
+    final override def isAnnotated: Boolean = false
+    final override def annotation: Nothing = throw new UnsupportedOperationException
+}
 
 /**
  * Wrapper for annotated [[org.opalj.br.instructions.LabeledInstruction]]s.
@@ -61,7 +72,9 @@ case class InstructionElement(
 case class AnnotatedInstructionElement[T](
         instruction: LabeledInstruction,
         annotation:  T
-) extends InstructionLikeElement[T]
+) extends InstructionLikeElement[T] {
+    final override def isAnnotated: Boolean = true
+}
 
 object AnnotatedInstructionElement {
 

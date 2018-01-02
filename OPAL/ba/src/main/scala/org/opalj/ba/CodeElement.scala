@@ -45,7 +45,12 @@ import org.opalj.br.instructions.LabeledInstruction
  */
 trait CodeElement[+T] {
 
+    def isPseudoInstruction: Boolean
+
     def isExceptionHandlerElement: Boolean
+
+    def isControlTransferInstruction: Boolean
+
 }
 
 /**

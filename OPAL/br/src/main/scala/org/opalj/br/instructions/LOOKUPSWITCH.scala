@@ -77,10 +77,10 @@ case class LOOKUPSWITCH(
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
         LabeledLOOKUPSWITCH(
-            Symbol((currentPC + defaultOffset).toString),
+            InstructionLabel(currentPC + defaultOffset),
             npairs.map { e ⇒
                 val (v, branchoffset) = e
-                (v, Symbol((currentPC + branchoffset).toString))
+                (v, InstructionLabel(currentPC + branchoffset))
             }
         )
     }
@@ -167,8 +167,8 @@ object LOOKUPSWITCH {
      *    the second value is the branch target.
      */
     def apply(
-        defaultBranchTarget: Symbol,
-        branchTargets:       IndexedSeq[(Int, Symbol)]
+        defaultBranchTarget: InstructionLabel,
+        branchTargets:       IndexedSeq[(Int, InstructionLabel)]
     ): LabeledLOOKUPSWITCH = LabeledLOOKUPSWITCH(defaultBranchTarget, branchTargets)
 
 }
@@ -181,29 +181,30 @@ object LOOKUPSWITCH {
  *
  */
 case class LabeledLOOKUPSWITCH(
-        defaultBranchTarget: Symbol,
-        npairs:              IndexedSeq[(Int, Symbol)]
+        defaultBranchTarget: InstructionLabel,
+        npairs:              IndexedSeq[(Int, InstructionLabel)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
 
     override def tableSize = npairs.size
 
     def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: Seq[Symbol] = npairs.map(_._2)
+    override def branchTargets: Seq[InstructionLabel] = npairs.map(_._2)
 
-    def caseValueOfJumpTarget(jumpTarget: Symbol): (Chain[Int], Boolean) = {
+    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
         (
             npairs.filter(_._2 == jumpTarget).map(_._1)(Chain.GenericSpecializedCBF),
             jumpTarget == defaultBranchTarget
         )
     }
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): LOOKUPSWITCH = {
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
-            pcs(defaultBranchTarget) - currentPC,
+            asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
             npairs.map { pair ⇒
                 val (value, target) = pair
-                (value, pcs(target) - currentPC)
+                (value, asShortBranchoffset(pcs(target) - currentPC))
             }.toIndexedSeq
         )
     }

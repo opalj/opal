@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable extends Attribute {
+trait LineNumberTable extends CodeAttribute {
 
     def lineNumbers: LineNumbers
 
@@ -58,10 +58,16 @@ trait LineNumberTable extends Attribute {
         thisLineNumbers.size == otherLineNumbers.size &&
             thisLineNumbers == otherLineNumbers
     }
+
+    override def remapPCs(f: PC ⇒ PC): LineNumberTable = {
+        UnpackedLineNumberTable(lineNumbers.map(_.remapPCs(f)))
+    }
 }
 
 object LineNumberTable {
 
     final val KindId = 19
+
+    def unapply(lnt: LineNumberTable): Option[LineNumbers] = Some(lnt.lineNumbers)
 
 }

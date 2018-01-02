@@ -42,14 +42,16 @@ import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.mutable.IntQueue
-import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.mutable.IntQueue
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 
@@ -82,6 +84,16 @@ final class Code private (
     with CommonAttributes
     with InstructionsContainer
     with FilterMonadic[(PC, Instruction), Nothing] { code ⇒
+
+    def copy(
+        maxStack:          Int                = this.maxStack,
+        maxLocals:         Int                = this.maxLocals,
+        instructions:      Array[Instruction] = this.instructions,
+        exceptionHandlers: ExceptionHandlers  = this.exceptionHandlers,
+        attributes:        Attributes         = this.attributes
+    ): Code = {
+        new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
+    }
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
@@ -517,8 +529,8 @@ final class Code private (
                         // this handles cases where we have totally broken code; e.g.,
                         // compile-time dead code at the end of the method where the
                         // very last instruction is not even a ret/jsr/goto/return/atrow
-                        // instruction (e.g., a NOP instruction as in case of the jPython
-                        // related classe.)
+                        // instruction (e.g., a NOP instruction as in case of jPython
+                        // related classes.)
                         exitPCs += pc
                     }
                 }
@@ -1053,8 +1065,52 @@ final class Code private (
      * @note   Depending on the configuration of the reader for `ClassFile`s this
      *         attribute may not be reified.
      */
-    def stackMapTable: Option[StackMapFrames] = {
-        attributes collectFirst { case StackMapTable(smf) ⇒ smf }
+    def stackMapTable: Option[StackMapTable] = {
+        attributes collectFirst { case smt: StackMapTable ⇒ smt }
+    }
+
+    /**
+     * Computes the set of PCs for which a stack map frame is required. Calling this method
+     * (i.e., the generation of stack map tables in general) is only defined for Java > 5 code;
+     * i.e., cocde which does not use JSR/RET; therefore the behavior for Java 5 or earlier code
+     * is deliberately undefined.
+     *
+     * @param classHierarchy The computation of the stack map table generally requires the
+     *                       presence of a complete type hierarchy.
+     *
+     * @return The sorted set of PCs for which a stack map frame is required.
+     */
+    def stackMapTablePCs(implicit classHierarchy: ClassHierarchy): IntArraySet = {
+
+        var stackMapTablePCs: IntArraySet = IntArraySet.empty
+        iterate { (pc, instruction) ⇒
+            if (instruction.isControlTransferInstruction) {
+                instruction.opcode match {
+                    case JSR.opcode | JSR_W.opcode | RET.opcode ⇒
+                        throw BytecodeProcessingFailedException(
+                            "computation of stack map tables containing JSR/RET is not supported; "+
+                                "the attribute is neither required nor helpful in this case"
+                        )
+                    case GOTO.opcode | GOTO_W.opcode ⇒
+                        stackMapTablePCs += pc + instruction.asGotoInstruction.branchoffset
+                        val nextPC = code.pcOfNextInstruction(pc)
+                        if (nextPC < codeSize) {
+                            // test for a goto at the end...
+                            stackMapTablePCs += nextPC
+                        }
+                    case _ ⇒
+                        stackMapTablePCs ++=
+                            instruction.asControlTransferInstruction.jumpTargets(pc)(
+                                code = this,
+                                classHierarchy = classHierarchy
+                            )
+                }
+            }
+        }
+
+        code.exceptionHandlers.foreach(ex ⇒ stackMapTablePCs += ex.handlerPC)
+
+        stackMapTablePCs
     }
 
     /**

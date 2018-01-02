@@ -30,7 +30,6 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.log.OPALLogger
 import org.opalj.da.ClassFile
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
@@ -67,7 +66,7 @@ object TrivialReflectionUsage extends FeatureQuery {
         val trivialLocations = new LocationsContainer[S]
         val nontrivialLocations = new LocationsContainer[S]
 
-        val errors = project.parForeachMethodWithBody(isInterrupted = this.isInterrupted _) { mi ⇒
+        project.parForeachMethodWithBody(isInterrupted = this.isInterrupted _) { mi ⇒
             val MethodInfo(source, m @ MethodWithBody(code)) = mi
             val classForNameCalls = code.collect {
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) ⇒ i
@@ -101,12 +100,6 @@ object TrivialReflectionUsage extends FeatureQuery {
                     }
                 }
             }
-        }
-
-        for (error ← errors) {
-            OPALLogger.error(
-                "analysis failed - ignored", "interpretation of a method failed", error
-            )(project.logContext)
         }
 
         List(

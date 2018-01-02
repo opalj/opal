@@ -56,7 +56,7 @@ case class IF_ACMPEQ(branchoffset: Int) extends IFACMPInstruction[IF_ACMPEQ] wit
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
-        LabeledIF_ACMPEQ(Symbol((currentPC + branchoffset).toString))
+        LabeledIF_ACMPEQ(InstructionLabel(currentPC + branchoffset))
     }
 }
 
@@ -72,15 +72,16 @@ object IF_ACMPEQ {
     /**
      * Creates[[LabeledIF_ACMPEQ]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIF_ACMPEQ = LabeledIF_ACMPEQ(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIF_ACMPEQ = LabeledIF_ACMPEQ(branchTarget)
 
 }
 
 case class LabeledIF_ACMPEQ(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPEQLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ACMPEQ = {
-        IF_ACMPEQ(pcs(branchTarget) - pc)
+    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ACMPEQ = {
+        IF_ACMPEQ(asShortBranchoffset(pcs(branchTarget) - pc))
     }
 }

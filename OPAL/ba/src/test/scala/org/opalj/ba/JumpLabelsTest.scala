@@ -40,8 +40,9 @@ import java.io.ByteArrayInputStream
 import scala.reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
+import org.opalj.br.Method
 import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework
+import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -52,63 +53,81 @@ import org.opalj.util.InMemoryClassLoader
 @RunWith(classOf[JUnitRunner])
 class JumpLabelsTest extends FlatSpec {
 
-    val (daClassFile, _) =
-        CLASS(
-            accessModifiers = PUBLIC SUPER,
-            thisType = "TestJump",
-            methods = METHODS(
-                METHOD(PUBLIC, "returnInt", "(I)I", CODE(
-                    GOTO('IsZero_?),
-                    'Else,
-                    ILOAD_1,
-                    IRETURN,
-                    'IsTwo_?,
-                    ILOAD_1,
-                    ICONST_2,
-                    IF_ICMPNE('Else),
-                    ICONST_2,
-                    IRETURN,
-                    'IsOne_?,
-                    ILOAD_1,
-                    ICONST_1,
-                    IF_ICMPNE('IsTwo_?),
-                    ICONST_1,
-                    IRETURN,
-                    'IsZero_?,
-                    ILOAD_1,
-                    IFNE('IsOne_?),
-                    ICONST_0,
-                    IRETURN
-                ))
-            )
-        ).toDA()
-    val rawClassFile = Assembler(daClassFile)
+    val methodTemplate =
+        METHOD(PUBLIC, "returnInt", "(I)I", CODE(
+            GOTO('IsZero_?),
+            'Else,
+            ILOAD_1,
+            IRETURN,
+            'IsTwo_?,
+            ILOAD_1,
+            ICONST_2,
+            IF_ICMPNE('Else),
+            ICONST_2,
+            IRETURN,
+            'IsOne_?,
+            ILOAD_1,
+            ICONST_1,
+            IF_ICMPNE('IsTwo_?),
+            ICONST_1,
+            IRETURN,
+            'IsZero_?,
+            ILOAD_1,
+            IFNE('IsOne_?),
+            ICONST_0,
+            IRETURN
+        ))
 
-    val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head
+    val (daJava5ClassFile, _) =
+        CLASS(
+            version = bi.Java5Version,
+            accessModifiers = PUBLIC SUPER,
+            thisType = "TestJumpJava5",
+            methods = METHODS(methodTemplate)
+        ).toDA()
+    val rawJava5ClassFile = Assembler(daJava5ClassFile)
+    val brJava5ClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(rawJava5ClassFile)).head
+
+    // We basically test that we compute the (correct) stack map table attribute
+    val (daJava8ClassFile, _) =
+        CLASS(
+            version = bi.Java8Version,
+            accessModifiers = PUBLIC SUPER,
+            thisType = "TestJumpJava8",
+            methods = METHODS(methodTemplate)
+        ).toDA()
+    val rawJava8ClassFile = Assembler(daJava8ClassFile)
+    val brJava8ClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(rawJava8ClassFile)).head
 
     "the method returnInt" should "execute as expected" in {
-        val loader = new InMemoryClassLoader(
-            Map("TestJump" → rawClassFile),
-            this.getClass.getClassLoader
-        )
+        val classes = Map("TestJumpJava5" → rawJava5ClassFile, "TestJumpJava8" → rawJava8ClassFile)
+        val loader = new InMemoryClassLoader(classes, this.getClass.getClassLoader)
+        def testClass(clazz: Class[_]): Unit = {
+            val testJumpInstance = clazz.newInstance()
 
-        val clazz = loader.loadClass("TestJump")
-        val testJumpInstance = clazz.newInstance()
+            val mirror = runtimeMirror(loader).reflect(testJumpInstance)
+            val method = mirror.symbol.typeSignature.member(TermName("returnInt")).asMethod
 
-        val mirror = runtimeMirror(loader).reflect(testJumpInstance)
-        val method = mirror.symbol.typeSignature.member(TermName("returnInt")).asMethod
+            assert(mirror.reflectMethod(method)(0) == 0)
+            assert(mirror.reflectMethod(method)(1) == 1)
+            assert(mirror.reflectMethod(method)(2) == 2)
+            assert(mirror.reflectMethod(method)(10) == 10)
+        }
 
-        assert(mirror.reflectMethod(method)(0) == 0)
-        assert(mirror.reflectMethod(method)(1) == 1)
-        assert(mirror.reflectMethod(method)(2) == 2)
-        assert(mirror.reflectMethod(method)(10) == 10)
+        testClass(loader.loadClass("TestJumpJava5"))
+        testClass(loader.loadClass("TestJumpJava8"))
     }
 
     "each BranchInstruction" should "have the correct branch offset" in {
-        val instructions = brClassFile.methods.find(_.name == "returnInt").get.body.get.instructions
-        assert(instructions(0).asInstanceOf[GOTO].branchoffset == 19)
-        assert(instructions(7).asInstanceOf[IF_ICMPNE].branchoffset == -4)
-        assert(instructions(14).asInstanceOf[IF_ICMPNE].branchoffset == -9)
-        assert(instructions(20).asInstanceOf[IFNE].branchoffset == -8)
+        def testMethods(methods: Seq[Method]): Unit = {
+            val instructions = methods.find(_.name == "returnInt").get.body.get.instructions
+            assert(instructions(0).asInstanceOf[GOTO].branchoffset == 19)
+            assert(instructions(7).asInstanceOf[IF_ICMPNE].branchoffset == -4)
+            assert(instructions(14).asInstanceOf[IF_ICMPNE].branchoffset == -9)
+            assert(instructions(20).asInstanceOf[IFNE].branchoffset == -8)
+        }
+
+        testMethods(brJava5ClassFile.methods)
+        testMethods(brJava8ClassFile.methods)
     }
 }

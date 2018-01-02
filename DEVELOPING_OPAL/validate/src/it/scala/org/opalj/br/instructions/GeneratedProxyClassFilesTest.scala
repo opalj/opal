@@ -77,7 +77,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                             InvokeInterfaceMethodHandle(
                                 t,
                                 m.name,
-                                m.descriptor,
+                                m.descriptor
                             )
                         )
                     } else if (m.isStatic) {
@@ -87,7 +87,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                                 t,
                                 tIsInterface,
                                 m.name,
-                                m.descriptor,
+                                m.descriptor
                             )
                         )
                     } else if (m.isPrivate) {
@@ -97,7 +97,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                                 t,
                                 tIsInterface,
                                 m.name,
-                                m.descriptor,
+                                m.descriptor
                             )
                         )
                     } else {
@@ -106,7 +106,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                             InvokeVirtualMethodHandle(
                                 t,
                                 m.name,
-                                m.descriptor,
+                                m.descriptor
                             )
                         )
                     }

@@ -95,3 +95,10 @@ trait Attribute {
      */
     def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean
 }
+
+/** Attributes which are referred to by the code attribute. */
+trait CodeAttribute extends Attribute {
+
+    def remapPCs(f: PC ⇒ PC): CodeAttribute
+
+}

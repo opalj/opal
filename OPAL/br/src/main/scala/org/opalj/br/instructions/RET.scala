@@ -63,6 +63,16 @@ case class RET(
         nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
     }
 
+    def jumpTargets(
+        currentPC: PC
+    )(
+        implicit
+        code:           Code,
+        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    ): Iterator[PC] = {
+        nextInstructions(currentPC, false /*irrelevant*/ ).toIterator
+    }
+
     final def nextInstructions(currentPC: PC, cfg: () ⇒ CFG)(implicit code: Code): Chain[PC] = {
 
         // If we have just one subroutine it is sufficient to collect the

@@ -71,7 +71,7 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
             val returnedParameters = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
-            val exceptions = theProject.parForeachMethodWithBody() { m ⇒
+            theProject.parForeachMethodWithBody() { m ⇒
                 val method = m.method
                 val psCount = method.actualArgumentsCount // includes "this" in case of instance methods
                 if (psCount > 0) {
@@ -106,12 +106,6 @@ object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
                         validateArgument(valueOrigin = -1)
                     }
                 }
-            }
-
-            exceptions.foreach { e ⇒
-                e.printStackTrace()
-                if (e.getCause() != null) e.getCause().printStackTrace()
-                println()
             }
 
             (returnedParameters.asScala.toList.sorted, unusedParameters.asScala.toList.sorted)

@@ -33,10 +33,15 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.io.writeAndOpen
+import org.opalj.util.InMemoryClassLoader
+import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
 import org.opalj.br.ObjectType
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.analyses.Project
@@ -44,8 +49,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
-import org.opalj.collection.immutable.UShortPair
-import org.opalj.util.InMemoryClassLoader
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -65,8 +68,10 @@ object SecondInstrumentation extends App {
     // let's load the class
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
     val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
+    implicit val ch: ClassHierarchy = p.classHierarchy
     val cf = p.classFile(TheType).get
     // let's transform the methods
+    val newVersion = UShortPair(0, 49)
     val newMethods =
         for (m ← cf.methods) yield {
             m.body match {
@@ -75,10 +80,10 @@ object SecondInstrumentation extends App {
 
                 case Some(code) ⇒
                     // let's search all "println" calls where the parameter has a specific
-                    // type (which is statically known)
+                    // type (which is statically known, and which is NOT the parameter type)
                     lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
                     val operandsArray = aiResult.operandsArray
-                    val lCode = CODE.toLabeledCode(code)
+                    val lCode = LabeledCode(code)
                     var modified = false
                     for {
                         (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
@@ -99,33 +104,29 @@ object SecondInstrumentation extends App {
                         )
                     }
                     if (modified) {
-                        val (newCode, _) = lCode.toCodeAttributeBuilder(m)
+                        val (newCode, _) = lCode.result(newVersion, m)
                         m.copy(body = Some(newCode))
                     } else {
                         m.copy()
                     }
             }
         }
-    val newRawCF = Assembler(toDA(cf.copy(methods = newMethods, version = UShortPair(0, 48))))
+    val newCF = cf.copy(methods = newMethods, version = newVersion)
+    val newRawCF = Assembler(toDA(newCF))
 
     //
     // THE FOLLOWING IS NOT RELATED TO BYTECODE MANIPULATION, BUT SHOWS ASPECTS OF OPAL WHICH ARE
     // HELPFUL WHEN DOING BYTECODE INSTRUMENTATION.
     //
 
-    // Let's see the old file...
+    // Let's see the old class file...
+    val oldDACF = ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head
+    println("original: "+writeAndOpen(oldDACF.toXHTML(None), "SimpleInstrumentationDemo", ".html"))
 
-    println("original: "+
-        org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None), "SimpleInstrumentationDemo", ".html"
-        ))
-
-    // Let's see the new file...
-    println("instrumented: "+
-        org.opalj.io.writeAndOpen(
-            da.ClassFileReader.ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None),
-            "NewSimpleInstrumentationDemo", ".html"
-        ))
+    // Let's see the new class file...
+    val newDACF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head
+    val newCFHTML = writeAndOpen(newDACF.toXHTML(None), "NewSimpleInstrumentationDemo", ".html")
+    println("instrumented: "+newCFHTML)
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
