@@ -30,6 +30,7 @@ package org.opalj
 package br
 package reader
 
+import java.lang.invoke.LambdaMetafactory
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.Config
@@ -148,7 +149,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // class, we have to make the synthetic method accessible from the proxy class.
         updatedClassFile = updatedClassFile.copy(
             methods = classFile.methods.map { m ⇒
-                if (m.name.startsWith("lambda$") &&
+                if ((m.name.startsWith("lambda$") || m.name.equals("$deserializeLambda$")) &&
                     m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
                     val syntheticLambdaMethodAccessFlags =
                         if (updatedClassFile.isInterfaceDeclaration) {
@@ -314,7 +315,6 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      *
      * @see More information about lambda deserialization and lambda meta factory:
      *      - [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html]
-     *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
      * @param pc The program counter of the current instruction
@@ -336,10 +336,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             samMethodType: MethodDescriptor, // describing the implemented method type
             tempImplMethod: MethodCallMethodHandle, // the MethodHandle providing the implementation
             instantiatedMethodType: MethodDescriptor, // allowing restrictions on invocation
-            _* // depending on the metafactory, we could have more information, e.g. about bridges or markers
-            // IMPROVE: Add support for altMetafactory
+            altMetafactoryArgs @ _* // depending on the metafactory, we could have more information, e.g. about bridges or markers
             ) = bootstrapArguments
         var implMethod = tempImplMethod
+
+        val (markerInterfaces, bridges, serializable) = extractAltMetafactoryArguments(altMetafactoryArgs)
 
         val MethodCallMethodHandle(
             targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
@@ -388,12 +389,20 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             case _ ⇒
         }
 
-        val superInterfaceTypes = UIDSet(factoryDescriptor.returnType.asObjectType)
+        val superInterfaceTypesBuilder = UIDSet.newBuilder[ObjectType]
+        superInterfaceTypesBuilder += factoryDescriptor.returnType.asObjectType
+        if (serializable) {
+            superInterfaceTypesBuilder += ObjectType.Serializable
+        }
+        markerInterfaces foreach { mi ⇒
+            superInterfaceTypesBuilder += mi.asObjectType
+        }
+
         val typeDeclaration = TypeDeclaration(
             ObjectType(newLambdaTypeName(classFile.thisType)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
-            superInterfaceTypes
+            superInterfaceTypesBuilder.result()
         )
 
         val invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
@@ -401,12 +410,12 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         val needsBridgeMethod = samMethodType !=
             instantiatedMethodType
 
-        val bridgeMethodDescriptor: Option[MethodDescriptor] =
-            if (needsBridgeMethod) {
-                Some(samMethodType)
-            } else {
-                None
-            }
+        val bridgeMethodDescriptorBuilder = IndexedSeq.newBuilder[MethodDescriptor]
+        if (needsBridgeMethod) {
+            bridgeMethodDescriptorBuilder += samMethodType
+        }
+        bridgeMethodDescriptorBuilder ++= bridges
+        val bridgeMethodDescriptors = bridgeMethodDescriptorBuilder.result()
 
         /*
         Check the type of the invoke instruction using the instruction's opcode.
@@ -522,6 +531,8 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             }
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
+            classFile.thisType,
+            classFile.isInterfaceDeclaration,
             typeDeclaration,
             functionalInterfaceMethodName,
             instantiatedMethodType,
@@ -529,7 +540,8 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             receiverIsInterface = receiverIsInterface,
             implMethod,
             invocationInstruction,
-            bridgeMethodDescriptor
+            bridgeMethodDescriptors,
+            samMethodType
         )
         val factoryMethod = {
             if (functionalInterfaceMethodName == DefaultFactoryMethodName)
@@ -557,6 +569,73 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val reason = Some((updatedClassFile, instructions, pc, invokedynamic, newInvokestatic))
         storeProxy(updatedClassFile, proxy, reason)
+    }
+
+    /**
+     * Extract the parameters of the altMetafactory.
+     *
+     * CallSite altMetafactory(MethodHandles.Lookup caller,
+     *                   String invokedName,
+     *                   MethodType invokedType,
+     *                   Object... args)
+     *
+     * Object... args evaluates to the following argument list:
+     *                   int flags,
+     *                   int markerInterfaceCount,  // IF flags has MARKERS set
+     *                   Class... markerInterfaces, // IF flags has MARKERS set
+     *                   int bridgeCount,           // IF flags has BRIDGES set
+     *                   MethodType... bridges      // IF flags has BRIDGES set
+     *
+     * flags is a bitwise OR of the desired flags FLAG_MARKERS, FLAG_BRIDGES and FLAG_SERIALIZABLE.
+     *
+     * @see https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html#altMetafactory-java.lang.invoke.MethodHandles.Lookup-java.lang.String-java.lang.invoke.MethodType-java.lang.Object...-
+     *
+     * @param altMetafactoryArgs `Object... args` of altMetafactory parameters
+     * @return A tuple containing an IndexSeq of markerInterfaces, bridges and a boolean indicating
+     *         if the class must be serializable.
+     */
+    def extractAltMetafactoryArguments(
+        altMetafactoryArgs: Seq[BootstrapArgument]
+    ): (IndexedSeq[ReferenceType], IndexedSeq[MethodDescriptor], Boolean) = {
+        var markerInterfaces = IndexedSeq.empty[ReferenceType]
+        var bridges = IndexedSeq.empty[MethodDescriptor]
+        var serializable = false
+
+        if (altMetafactoryArgs.isEmpty) {
+            return (markerInterfaces, bridges, serializable);
+        }
+
+        var argCount = 0
+        val flags = altMetafactoryArgs(argCount).asInstanceOf[ConstantInteger].value
+        argCount += 1
+
+        // Extract the marker interfaces. They are the first in the arguement list if the flag
+        // FLAG_MARKERS is present.
+        if ((flags & LambdaMetafactory.FLAG_MARKERS) > 0) {
+            val markerCount = altMetafactoryArgs(argCount).asInstanceOf[ConstantInteger].value
+            argCount += 1
+            markerInterfaces = altMetafactoryArgs
+                .slice(argCount, argCount + markerCount)
+                .map(_.asInstanceOf[ConstantClass].value)
+                .toIndexedSeq
+            argCount += markerCount
+        }
+
+        // bridge methods come afterwards if FLAG_BRIDGES is set.
+        if ((flags & LambdaMetafactory.FLAG_BRIDGES) > 0) {
+            val bridgesCount = altMetafactoryArgs(argCount).asInstanceOf[ConstantInteger].value
+            argCount += 1
+            bridges = altMetafactoryArgs
+                .slice(argCount, argCount + bridgesCount)
+                .map(_.asInstanceOf[MethodDescriptor])
+                .toIndexedSeq
+            argCount += bridgesCount
+        }
+
+        // Check if the FLAG_SERIALIZABLE is set.
+        serializable = (flags & LambdaMetafactory.FLAG_SERIALIZABLE) > 0
+
+        (markerInterfaces, bridges, serializable)
     }
 
     def storeProxy(

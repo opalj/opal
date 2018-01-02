@@ -121,7 +121,7 @@ class LambdaExpressionsRewritingTest extends FunSpec with Matchers {
     ): Option[Method] = {
         val proxy = project.classFile(factoryCall.declaringClass).get
         val forwardingMethod = proxy.methods.find { m ⇒
-            !m.isConstructor && m.name != factoryCall.name && !m.isBridge
+            !m.isConstructor && m.name != factoryCall.name && !m.isBridge && !m.isSynthetic
         }.get
         val invocationInstructions = forwardingMethod.body.get.instructions.collect {
             case i: MethodInvocationInstruction ⇒ i

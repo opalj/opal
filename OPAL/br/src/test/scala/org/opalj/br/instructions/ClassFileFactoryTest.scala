@@ -422,6 +422,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     ).head
                 val proxy =
                     ClassFileFactory.Proxy(
+                        testProject.classFile(StaticMethods).get.thisType,
+                        testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                         TypeDeclaration(
                             ObjectType("StaticMethods$ProxyWithFiveArguments"),
                             false,
@@ -523,6 +525,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         }
                     val proxy =
                         ClassFileFactory.Proxy(
+                            testProject.classFile(StaticMethods).get.thisType,
+                            testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                             TypeDeclaration(
                                 ObjectType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
@@ -614,6 +618,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         }
                     val proxy =
                         ClassFileFactory.Proxy(
+                            testProject.classFile(StaticMethods).get.thisType,
+                            testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                             TypeDeclaration(
                                 ObjectType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
@@ -733,6 +739,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         }
                     val proxy =
                         ClassFileFactory.Proxy(
+                            testProject.classFile(StaticMethods).get.thisType,
+                            testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                             TypeDeclaration(
                                 ObjectType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
@@ -838,6 +846,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
                 val SomeType = ObjectType("SomeType")
                 val proxy = ClassFileFactory.Proxy(
+                    MethodReferences.thisType,
+                    MethodReferences.isInterfaceDeclaration,
                     TypeDeclaration(
                         ObjectType("MethodRefConstructorProxy"),
                         false,
@@ -891,6 +901,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
                 val SomeOtherType = ObjectType("SomeOtherType")
                 val proxy = ClassFileFactory.Proxy(
+                    MethodReferences.thisType,
+                    MethodReferences.isInterfaceDeclaration,
                     TypeDeclaration(
                         ObjectType("InstanceMethodRefProxy"),
                         false,
@@ -923,9 +935,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
         describe("should be able to profixy $newInstance methods") {
             it("by picking an alternate name for the factory method") {
+                val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 val theType = ObjectType("ClassFileFactoryTest$newInstanceName")
                 val proxy =
                     ClassFileFactory.Proxy(
+                        lambdas.thisType,
+                        lambdas.isInterfaceDeclaration,
                         TypeDeclaration(
                             ObjectType(theType.toJava + '$'+"Proxy"),
                             false,
@@ -950,12 +965,15 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
         describe("should create a bridge method to the forwarding method if so desired") {
             it("the bridge method should stack & cast parameters and call the forwarding method") {
+                val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
                 val proxyType = ObjectType(receiverType.simpleName + '$'+"Proxy")
                 val methodDescriptor =
                     MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
                 val proxy =
                     ClassFileFactory.Proxy(
+                        lambdas.thisType,
+                        lambdas.isInterfaceDeclaration,
                         TypeDeclaration(proxyType, false, Some(ObjectType.Object), UIDSet.empty),
                         "method",
                         methodDescriptor,
@@ -966,7 +984,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             methodDescriptor
                         ),
                         INVOKESTATIC.opcode,
-                        Some(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
+                        IndexedSeq(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
                     )
                 val bridge = proxy.methods.find(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
                 bridge should be('defined)
@@ -1520,6 +1538,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             }
         val classFile =
             ClassFileFactory.Proxy(
+                repository.classFile(calleeType).get.thisType,
+                calleeIsInterface,
                 definingType,
                 methodName, methodDescriptor,
                 calleeType, calleeIsInterface,

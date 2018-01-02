@@ -29,6 +29,14 @@
 package lambdas.methodreferences;
 
 import java.io.Serializable;
+import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.Method;
+import java.util.function.Function;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * This class contains an example of a method reference dealing with intersection types.
@@ -49,8 +57,40 @@ public class IntersectionTypes {
     public interface MyMarkerInterface1 {}
     public interface MyMarkerInterface2 {}
 
-    public Runnable create() {
+    public Runnable createMarkerInterface() {
         return (Runnable & Serializable & MyMarkerInterface1 & MyMarkerInterface2)
                 () -> System.out.println("Hello World");
     }
+
+    public static void main(String[] args) {
+        System.out.println(serializedLambda());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String serializedLambda() {
+        Float y = 3.14f;
+        String s = "foo";
+        Function<Integer, String> lambda = (Function<Integer, String> & Serializable) (Integer x) -> "Hello World " + x + y + s;
+
+        try {
+            Method writeReplace = lambda.getClass().getDeclaredMethod("writeReplace");
+            writeReplace.setAccessible(true);
+            SerializedLambda sl = (SerializedLambda) writeReplace.invoke(lambda);
+
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            try(ObjectOutputStream oos = new ObjectOutputStream(os)) { oos.writeObject(sl);}
+            Function<Integer, String> dl;
+
+            try(ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+                ObjectInputStream ois = new ObjectInputStream(is)) {
+                dl=(Function<Integer, String>) ois.readObject();
+            }
+
+            return dl.apply(2);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "failure";
+        }
+    }
+
 }

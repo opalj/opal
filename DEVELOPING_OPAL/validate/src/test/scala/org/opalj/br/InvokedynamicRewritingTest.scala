@@ -64,7 +64,7 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
         )
     }
 
-    describe("a simple lambda add") {
+    describe("bi lambda fixtures") {
         it("should calculate 2+2 correctly") {
             val r = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
             val p = FixtureProject(r)
@@ -75,6 +75,17 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
             val res = m.invoke(instance, new Integer(2), new Integer(2))
 
             assert(res.asInstanceOf[Integer] == 4)
+        }
+
+        it("should serialize and deserialize lambdas properly") {
+            val r = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+            val p = FixtureProject(r)
+            val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
+            val c = inMemoryClassLoader.loadClass("lambdas.methodreferences.IntersectionTypes")
+            val m = c.getMethod("serializedLambda")
+            val res = m.invoke(null)
+
+            assert(res.asInstanceOf[String] == "Hello World 23.14foo")
         }
     }
 

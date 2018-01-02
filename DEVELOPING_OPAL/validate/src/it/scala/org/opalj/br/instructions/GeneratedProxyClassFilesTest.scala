@@ -112,6 +112,8 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     }
                 proxy =
                     ClassFileFactory.Proxy(
+                        classFile.thisType,
+                        classFile.isInterfaceDeclaration,
                         definingType,
                         proxyMethodName,
                         m.descriptor,

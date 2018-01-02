@@ -140,7 +140,6 @@ object ClassFileFactory {
      *
      * @note The used class file version is 49.0 (Java 5) (Using this version, we are not
      * required to create the stack map table attribute to create a valid class file.)
-     *
      * @note It is expected that `methodDescriptor` and `receiverMethodDescriptor` are
      * "compatible", i.e. it would be possible to have the method described by
      * `methodDescriptor` forward to `receiverMethodDescriptor`.
@@ -199,21 +198,23 @@ object ClassFileFactory {
      * receiverMethodDescriptor =
      *  MethodDescriptor(IndexedSeq(ByteType, ByteType, IntegerType), IntegerType)
      * }}}
-     *
      * @param invocationInstruction the opcode of the invocation instruction
      *          (`INVOKESPECIAL.opcode`,`INVOKEVIRTUAL.opcode`,
      *          `INVOKESTATIC.opcode`,`INVOKEINTERFACE.opcode`)
      *          used to call call the method on the receiver.
      */
     def Proxy(
-        definingType:           TypeDeclaration,
-        methodName:             String,
-        methodDescriptor:       MethodDescriptor,
-        receiverType:           ObjectType,
-        receiverIsInterface:    Boolean,
-        implMethod:             MethodCallMethodHandle,
-        invocationInstruction:  Opcode,
-        bridgeMethodDescriptor: Option[MethodDescriptor] = None
+        caller:                  ObjectType,
+        callerIsInterface:       Boolean,
+        definingType:            TypeDeclaration,
+        methodName:              String,
+        methodDescriptor:        MethodDescriptor,
+        receiverType:            ObjectType,
+        receiverIsInterface:     Boolean,
+        implMethod:              MethodCallMethodHandle,
+        invocationInstruction:   Opcode,
+        bridgeMethodDescriptors: IndexedSeq[MethodDescriptor] = IndexedSeq.empty[MethodDescriptor],
+        samMethodType:           MethodDescriptor             = MethodDescriptor.NoArgsAndReturnVoid
     ): ClassFile = {
 
         val interfaceMethodParametersCount = methodDescriptor.parametersCount
@@ -249,7 +250,13 @@ object ClassFileFactory {
                 DefaultFactoryMethodName
             }
 
-        val methods: Array[MethodTemplate] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
+        val isSerializable = definingType.theSuperinterfaceTypes.contains(ObjectType.Serializable)
+
+        val methods: Array[MethodTemplate] = new Array(
+            3 + // Proxymethod, constructor, factory
+                bridgeMethodDescriptors.length + // Bridge methods
+                (if (isSerializable) 2 else 0) // writeReplace and $deserializeLambda$ if Serializable
+        )
         methods(0) = proxyMethod(
             definingType.objectType,
             methodName,
@@ -266,12 +273,30 @@ object ClassFileFactory {
             fields.map(_.fieldType),
             factoryMethodName
         )
-        if (bridgeMethodDescriptor.isDefined) {
-            methods(3) = createBridgeMethod(
+
+        bridgeMethodDescriptors.zipWithIndex.foreach {
+            case (md, i) ⇒
+                methods(3 + i) = createBridgeMethod(
+                    methodName,
+                    md,
+                    methodDescriptor,
+                    definingType.objectType
+                )
+        }
+
+        // Add a writeReplace and $deserializeLambda$ method if the class isSerializable
+        if (isSerializable) {
+            methods(3 + bridgeMethodDescriptors.length) = createWriteReplaceMethod(
+                definingType,
                 methodName,
-                bridgeMethodDescriptor.get,
+                samMethodType,
+                implMethod,
                 methodDescriptor,
-                definingType.objectType
+                additionalFieldsForStaticParameters
+            )
+            methods(4 + bridgeMethodDescriptors.length) = createDeserializeLambdaProxy(
+                caller,
+                callerIsInterface
             )
         }
 
@@ -736,6 +761,140 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
             factoryMethodName,
             MethodDescriptor(fieldTypes, typeToCreate),
+            Seq(body)
+        )
+    }
+
+    /**
+     * Create a writeReplace method inside the proxy lambda class. It is used
+     * to create a SerializedLambda object which holds the serialized lambda.
+     *
+     * The parameters of the SerializedLambda class map as following:
+     *   capturingClass = definingType
+     *   functionalInterfaceClass = definingType.theSuperinterfaceTypes.head (This is the functional interface)
+     *   functionalInterfaceMethodName = functionalInterfaceMethodName
+     *   functionalInterfaceMethodSignature = samMethodType.parameterType
+     *   implMethodKind = implMethod match to REF_
+     *   implClass = implMethod.receiverType
+     *   implMethodName = implMethod.name
+     *   implMethodSignature = implMethod.methodDescriptor
+     *   instantiatedMethodType = instantiatedMethodType
+     *   capturedArgs = methodDescriptor.parameterTypes (factoryParameters, fields in Proxy)
+     *
+     * @see https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html
+     *      and
+     *      https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html#altMetafactory-java.lang.invoke.MethodHandles.Lookup-java.lang.String-java.lang.invoke.MethodType-java.lang.Object...-
+     *
+     * @param definingType The lambda proxyclass type
+     * @param methodName The name of the functional interface method
+     * @param samMethodType Includes the method signature for the functional interface method
+     * @param implMethod The lambda method inside the class defining the lambda
+     * @param additionalFieldsForStaticParameters The static fields that are put into the caputeredArgs
+     * @return A SerializedLambda object containing all information to be able to serialize this lambda
+     */
+    def createWriteReplaceMethod(
+        definingType:                        TypeDeclaration,
+        methodName:                          String,
+        samMethodType:                       MethodDescriptor,
+        implMethod:                          MethodCallMethodHandle,
+        instantiatedMethodType:              MethodDescriptor,
+        additionalFieldsForStaticParameters: IndexedSeq[FieldTemplate]
+    ): MethodTemplate = {
+        var instructions: Array[Instruction] = Array(
+            NEW(ObjectType.SerializedLambda), null, null,
+            DUP,
+            LoadClass(definingType.objectType), null,
+            LDC(ConstantString(definingType.theSuperinterfaceTypes.head.fqn)), null,
+            LDC(ConstantString(methodName)), null,
+            LDC(ConstantString(samMethodType.toJVMDescriptor)), null,
+            LDC(ConstantInteger(implMethod.referenceKind.referenceKind)), null,
+            LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)), null,
+            LDC(ConstantString(implMethod.name)), null,
+            LDC(ConstantString(implMethod.methodDescriptor.toJVMDescriptor)), null,
+            LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)), null,
+            // Add the caputeredArgs
+            BIPUSH(additionalFieldsForStaticParameters.length), null,
+            ANEWARRAY(ObjectType.Object), null, null,
+        )
+
+        additionalFieldsForStaticParameters.zipWithIndex.foreach {
+            case (x, i) => instructions ++= Array(
+                DUP,
+                BIPUSH(i), null,
+                ALOAD_0,
+                GETFIELD(definingType.objectType, x.name, x.fieldType), null, null,
+                AASTORE
+            )
+        }
+
+        instructions ++= Array(
+            INVOKESPECIAL(
+                ObjectType.SerializedLambda,
+                isInterface = false,
+                "<init>",
+                MethodDescriptor(
+                    IndexedSeq(
+                        ObjectType.Class,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ObjectType.String,
+                        IntegerType,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ArrayType(ObjectType.Object)
+                    ),
+                    VoidType
+                )
+            ), null, null,
+            ARETURN
+        )
+
+        val maxStack = Code.computeMaxStack(instructions)
+        val body = Code(maxStack, 1, instructions)
+        Method(
+            bi.ACC_PUBLIC.mask | bi.ACC_SYNTHETIC.mask,
+            "writeReplace",
+            MethodDescriptor.JustReturnsObject,
+            Seq(body)
+        )
+    }
+
+    /**
+      * Create a static proxy method for the $deserializeLambda$ method.
+      *
+      * @param caller The class where the lambda is implemented.
+      * @param callerIsInterface true if the class is an interface, false if not
+      * @return The static proxy method relaying the $deserializedLambda$ invokation to the actual
+      *         class that implemted the lambda.
+      */
+    def createDeserializeLambdaProxy(
+        caller:            ObjectType,
+        callerIsInterface: Boolean
+    ): MethodTemplate = {
+        val deserializedLambdaMethodDescriptor = MethodDescriptor(
+            IndexedSeq(
+                ObjectType.SerializedLambda
+            ),
+            ObjectType.Object
+        )
+        val instructions: Array[Instruction] = Array(
+            ALOAD_0,
+            INVOKESTATIC(
+                caller,
+                callerIsInterface,
+                "$deserializeLambda$",
+                deserializedLambdaMethodDescriptor
+            ), null, null,
+            ARETURN
+        )
+        val maxStack = Code.computeMaxStack(instructions)
+        val body = Code(maxStack, 1, instructions)
+        Method(
+            bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask | bi.ACC_SYNTHETIC.mask,
+            "$deserializeLambda$",
+            deserializedLambdaMethodDescriptor,
             Seq(body)
         )
     }
