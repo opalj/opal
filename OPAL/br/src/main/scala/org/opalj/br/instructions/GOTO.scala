@@ -78,7 +78,7 @@ case class LabeledGOTO(
         currentPC: PC,
         pcs:       Map[InstructionLabel, PC]
     ): GotoInstruction = {
-            GOTO(asShortBranchoffset(pcs(branchTarget) - currentPC))
+        GOTO(asShortBranchoffset(pcs(branchTarget) - currentPC))
     }
 
 }

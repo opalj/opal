@@ -56,7 +56,7 @@ class CFGFactoryTest extends CFGTests {
             try {
                 doAnalyzeProject(project)
             } catch {
-                case ce : ConcurrentExceptions => ce.printStackTrace(Console.err)
+                case ce: ConcurrentExceptions ⇒ ce.printStackTrace(Console.err)
             }
         } { t ⇒ info("the analysis took "+t.toSeconds) }
     }

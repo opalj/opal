@@ -30,6 +30,7 @@ package org.opalj.ba
 
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.util.ArrayList
 
 import org.opalj.io.writeAndOpen
 import org.opalj.ai.BaseAI
@@ -37,7 +38,6 @@ import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.bc.Assembler
 import org.opalj.br.ObjectType
-import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -45,9 +45,9 @@ import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
 import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.IFGT
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.LoadString
+import org.opalj.br.instructions.IFGT
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -83,6 +83,7 @@ object ThirdInstrumentation extends App {
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
                 val lCode = LabeledCode(code)
                 var modified = false
+
                 for {
                     (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
@@ -94,13 +95,15 @@ object ThirdInstrumentation extends App {
                             DUP,
                             GETSTATIC(SystemType, "out", PrintStreamType),
                             SWAP,
-                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
+                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.Object))
                         )
                     )
                 }
+
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
                 for ((pc, IRETURN) ← code) {
+                    modified = true
                     val gtTarget = Symbol(pc+":>")
                     val printlnTarget = Symbol(pc+":println")
                     lCode.insert(
@@ -113,10 +116,10 @@ object ThirdInstrumentation extends App {
                             // value is less than 0
                             LoadString("negative"), // top is the parameter, receiver is 2nd top most
                             GOTO(printlnTarget),
-                            gtTarget, // this Symbol has to unique across all instrumentations of this method
+                            gtTarget, // this Symbol has to be unique across all instrumentations of this method
                             LoadString("positive"),
                             printlnTarget,
-                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(IntegerType))
+                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
                         )
                     )
                 }
@@ -150,6 +153,7 @@ object ThirdInstrumentation extends App {
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
     newClass.getMethod("callsToString").invoke(instance)
+    newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, new ArrayList[AnyRef]())
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
 

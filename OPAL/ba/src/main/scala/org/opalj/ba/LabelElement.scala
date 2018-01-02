@@ -32,7 +32,7 @@ package ba
 import org.opalj.br.instructions.InstructionLabel
 
 /**
- * Wrapper for `Symbols` (labels) representing branch targets.
+ * Wrapper for `InstructionLabel`s representing branch targets.
  *
  * @author Malte Limmeroth
  */

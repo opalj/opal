@@ -60,7 +60,7 @@ trait LabeledInstruction extends InstructionLike {
      * Validates the branchoffset and returns it or throws an exception!
      */
     @throws[BranchoffsetException]("if the branchoffset is invalid")
-    protected def asShortBranchoffset(branchoffset : Int) : Int = {
+    protected def asShortBranchoffset(branchoffset: Int): Int = {
         if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
             throw BranchoffsetException(this);
         }

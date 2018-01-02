@@ -49,6 +49,8 @@ trait CodeElement[+T] {
 
     def isExceptionHandlerElement: Boolean
 
+    def isControlTransferInstruction: Boolean
+
 }
 
 /**

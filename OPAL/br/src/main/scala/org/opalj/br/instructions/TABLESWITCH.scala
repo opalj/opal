@@ -203,7 +203,7 @@ case class LabeledTABLESWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
             low,
             high,
-            jumpTargets.map(target => asShortBranchoffset(pcs(target) - currentPC))
+            jumpTargets.map(target ⇒ asShortBranchoffset(pcs(target) - currentPC))
         )
     }
 

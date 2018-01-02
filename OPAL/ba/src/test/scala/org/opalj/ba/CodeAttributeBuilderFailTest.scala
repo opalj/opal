@@ -32,9 +32,9 @@ package ba
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 import org.opalj.br.instructions.IFGE
 import org.opalj.br.instructions.ILOAD_2
 import org.opalj.br.instructions.IRETURN
@@ -49,13 +49,15 @@ import org.opalj.br.instructions.RETURN
 @RunWith(classOf[JUnitRunner])
 class CodeAttributeBuilderFailTest extends FlatSpec {
 
-    behavior of "CodeAttributeBuilder"
+    final val FakeObjectType = ObjectType("<FAKE_TYPE>") // this type name is NOT valid
+
+    behavior of "CodeAttributeBuilder when the code is invalid"
 
     "the CodeAttributeBuilder" should "warn about a too small defined max_locals/max_stack values" in {
         implicit val ch = br.Code.BasicClassHierarchy
         val md = MethodDescriptor("(II)I")
         val code = (CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0)
-        val (_, (_, warnings)) = code(bi.Java5Version, ACC_PUBLIC.mask, "test", md)
+        val (_, (_, warnings)) = code(bi.Java5Version, FakeObjectType, ACC_PUBLIC.mask, "test", md)
 
         assert(warnings.size == 2)
     }

@@ -75,7 +75,7 @@ case class LabeledJSR(
         currentPC: PC,
         pcs:       Map[InstructionLabel, PC]
     ): JSRInstruction = {
-            JSR(asShortBranchoffset(pcs(branchTarget) - currentPC))
+        JSR(asShortBranchoffset(pcs(branchTarget) - currentPC))
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

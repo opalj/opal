@@ -31,7 +31,7 @@ package br
 package instructions
 
 case class BranchoffsetException(
-                                    labeledInstruction: LabeledInstruction
-                                ) extends RuntimeException(
+        labeledInstruction: LabeledInstruction
+) extends RuntimeException(
     s"resolving the branchoffset of $labeledInstruction resulted in an invalid branchoffset"
 )

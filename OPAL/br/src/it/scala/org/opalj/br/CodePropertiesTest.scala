@@ -123,12 +123,12 @@ class CodePropertiesTest extends FunSuite {
                 analyzedMethodsCount.incrementAndGet()
                 val code = mi.method.body.get
                 val definedPCs = code.stackMapTable.map(_.pcs).getOrElse(IntArraySet.empty)
-                def validateComputedPCs (computedPCs : IntArraySet) : Unit = {
+                def validateComputedPCs(computedPCs: IntArraySet): Unit = {
                     if (computedPCs != definedPCs) {
                         if (computedPCs.size >= definedPCs.size) {
                             fail(
                                 s"${mi.source}:${mi.method.toJava}: "+
-                                    "computed stack map table pcs differ:\n" +
+                                    "computed stack map table pcs differ:\n"+
                                     definedPCs.mkString("expected:  {", ",", "}\n") +
                                     computedPCs.mkString("computed:  {", ",", "}\n")
                             )

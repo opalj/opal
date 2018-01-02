@@ -31,6 +31,10 @@ package ba
 
 import java.util.NoSuchElementException
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
+
 import scala.collection.mutable.ArrayBuffer
 import org.opalj.control.rerun
 import org.opalj.control.iterateUntil
@@ -38,13 +42,174 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.WIDE
 import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.InstructionLabel
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.br.instructions.LabeledJSR
+import org.opalj.br.instructions.LabeledJSR_W
+import org.opalj.br.instructions.LabeledSimpleConditionalBranchInstruction
+import org.opalj.log.LogContext
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * Factory method to create an initial [[CodeAttributeBuilder]].
  *
  * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
 object CODE {
+
+    implicit def logContext: LogContext = GlobalLogContext
+
+    final val CodeConfigKeyPrefix = "org.opalj.ba.CODE."
+    final val LogDeadCodeRemovalConfigKey = CodeConfigKeyPrefix+"logDeadCodeRemoval"
+    final val LogDeadCodeConfigKey = CodeConfigKeyPrefix+"logDeadCode"
+    final val LogCodeRewritingConfigKey = CodeConfigKeyPrefix+"logCodeRewriting"
+
+    @volatile private[this] var logDeadCodeRemoval: Boolean = true
+    @volatile private[this] var logDeadCode: Boolean = true
+    @volatile private[this] var logCodeRewriting: Boolean = true
+
+    def setBaseConfig(config: Config) = {
+        logDeadCodeRemoval = config.getBoolean(LogDeadCodeRemovalConfigKey)
+        info("code generation", s"compile-time dead code removal is logged: $logDeadCodeRemoval")
+        logDeadCode = config.getBoolean(LogDeadCodeConfigKey)
+        info("code generation", s"compile-time dead code is logged: $logDeadCode")
+        logCodeRewriting = config.getBoolean(LogCodeRewritingConfigKey)
+        info("code generation", s"code rewritings are logged: $logCodeRewriting")
+    }
+
+    setBaseConfig(ConfigFactory.load(this.getClass.getClassLoader()))
+
+    def filterDeadCode[T](codeElements: IndexedSeq[CodeElement[T]]): IndexedSeq[CodeElement[T]] = {
+
+        // Basic idea - mark all code elements as live:
+        // 1 - We first go linearly over all code elements to find all catch handlers and add them
+        //     to the set of all code elements that should be marked as live. (Actually, we add
+        //     to the set the pseudo instructions directly following the preceding
+        //     instruction.) Additionally, we compute the "label => index" relation.
+        // 2 - we follow the cfg to mark the live code elements
+        // 3 - we remove the dead code
+        //
+        // Note:
+        // We will later test if we have broken exception handlers; hence, we just assume they
+        // are valid for the time being! (E.g., if all instructions in the try block are dead,
+        // the try will also be dead, and creating the exception handler will fail..)
+        var markedAsLive: IntTrieSet = IntTrieSet1(0)
+        val isLive = new Array[Boolean](codeElements.size)
+        var isLiveCount = 0
+        val labelsToIndexes = new Object2IntOpenHashMap[InstructionLabel]()
+        labelsToIndexes.defaultReturnValue(Int.MinValue)
+
+        // Marks the code element with the given index or – if pseudo instructions are
+        // preceding it – the earliest directly preceding pseudo instruction as live.
+        def markAsLive(index: Int): Unit = {
+            var currentIndex = index
+            while (currentIndex > 0) {
+                if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
+                    return ; // nothing to do
+                }
+                currentIndex -= 1
+                if (!codeElements(currentIndex).isPseudoInstruction) {
+                    markedAsLive += (currentIndex + 1)
+                    return ;
+                }
+            }
+            // the code element "0" is already marked as live..
+        }
+
+        // Step 1
+        iterateUntil(0, codeElements.size) { index ⇒
+            codeElements(index) match {
+                case LabelElement(label) ⇒
+                    if (labelsToIndexes.containsKey(label)) {
+                        throw new IllegalArgumentException(s"'$label is already used")
+                    }
+                    labelsToIndexes.put(label, index)
+                case _: CATCH ⇒ markAsLive(index) // TODO only if we have a try block!
+                case _        ⇒ // nothing to do
+            }
+        }
+
+        // Step 2.1
+        def handleBranchTarget(branchTarget: InstructionLabel): Unit = {
+            val targetIndex = labelsToIndexes.getInt(branchTarget)
+            if (targetIndex == Int.MinValue) {
+                val message = s"the $branchTarget label could not be resolved"
+                throw new NoSuchElementException(message)
+            }
+            markAsLive(targetIndex)
+        }
+        while (markedAsLive.nonEmpty) {
+            // mark all code elements which can be executed subsequently as live
+            val (nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
+            var currentIndex = nextIndex
+            markedAsLive = newMarkedAsLive
+            if (!isLive(currentIndex)) {
+                do {
+                    isLive(currentIndex) = true
+                    isLiveCount += 1
+                    currentIndex += 1
+                } while (currentIndex < codeElements.size && !isLive(currentIndex) && {
+                    // Currently, we make the assumption that the instruction following the
+                    // JSR is live... i.e., a RET exists (which should always be the case for
+                    // proper code!)
+                    //
+                    codeElements(currentIndex - 1) match {
+                        case _: PseudoInstruction ⇒ true
+                        case InstructionLikeElement(li) ⇒
+                            !li.isControlTransferInstruction || {
+                                li.branchTargets.foreach(handleBranchTarget)
+                                // let's check if we have a "fall-through"
+                                li match {
+                                    case LabeledJSR(_) | LabeledJSR_W(_) |
+                                        _: LabeledSimpleConditionalBranchInstruction ⇒
+                                        // let's continue...
+                                        true
+                                    case _ ⇒
+                                        // the next code element is only live if we have
+                                        // an explicit jump to it, or if it is the start
+                                        // of an exception handler...
+                                        false
+                                }
+                            }
+                    }
+                })
+            }
+        }
+        // Step 2.2 We now have to test for still required TRY-Block and LINENUMBER markers..
+
+        // Step 3
+        if (isLiveCount < codeElements.size) {
+            val deadCodeElementsCount = codeElements.size - isLiveCount
+            if (logDeadCodeRemoval) {
+                info("code generation", s"found $deadCodeElementsCount dead code elements")
+            }
+            if (logDeadCode) {
+                val deadCode = new Array[String](deadCodeElementsCount)
+                var deadCodeIndex = 0
+                iterateUntil(0, codeElements.size) { index ⇒
+                    if (!isLive(index)) {
+                        deadCode(deadCodeIndex) = s"$index: ${codeElements(index)}"
+                        deadCodeIndex += 1
+                    }
+                }
+                info(
+                    "code generation",
+                    deadCode.mkString("compile-time dead code elements:\n\t", "\n\t", "\n")
+                )
+            }
+            val newCodeElements = new ArrayBuffer[CodeElement[T]](isLiveCount)
+            iterateUntil(0, codeElements.size) { index ⇒
+                if (isLive(index)) {
+                    newCodeElements += codeElements(index)
+                }
+            }
+            filterDeadCode(newCodeElements); // tail-recursive call...
+        } else {
+            codeElements
+        }
+    }
 
     /**
      * Creates a new [[CodeAttributeBuilder]] with the given [[CodeElement]]s converted to
@@ -58,7 +223,8 @@ object CODE {
         this(codeElements.toIndexedSeq)
     }
 
-    def apply[T](codeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
+    def apply[T](initialCodeElements: IndexedSeq[CodeElement[T]]): CodeAttributeBuilder[T] = {
+        val codeElements = filterDeadCode(initialCodeElements)
         val instructionLikes = new ArrayBuffer[LabeledInstruction](codeElements.size)
 
         var labels = Map.empty[InstructionLabel, br.PC]
@@ -84,22 +250,16 @@ object CODE {
                 hasControlTransferInstructions |= i.isControlTransferInstruction
 
             case LabelElement(label) ⇒
-                if (labels.contains(label)) {
-                    throw new IllegalArgumentException(s"'$label is already used")
-                }
                 if (label.isPCLabel) {
                     // let's store the mapping to make it possible to remap the other attributes..
                     pcMapping += (label.pc, nextPC)
                 }
-
                 labels += (label → nextPC)
 
             case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, nextPC)
 
             case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
         }
-
-        // TODO Support filtering compile time dead code!
 
         // TODO Support if and goto rewriting if required
         // We need to check if we have to adapt ifs and gotos if the branchtarget is not
@@ -116,13 +276,7 @@ object CODE {
         iterateUntil(0, codeSize) { pc ⇒
             val labeledInstruction = instructionLikes(pc)
             if (labeledInstruction != null) {
-                try {
-                    instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
-                } catch {
-                    case _: NoSuchElementException ⇒
-                        val message = s"$labeledInstruction's label(s) could not be resolved"
-                        throw new NoSuchElementException(message)
-                }
+                instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
             }
         }
 

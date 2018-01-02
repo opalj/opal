@@ -45,6 +45,8 @@ sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
     def annotation: T
 
     def instruction: LabeledInstruction
+
+    def isControlTransferInstruction: Boolean = instruction.isControlTransferInstruction
 }
 
 object InstructionLikeElement {
