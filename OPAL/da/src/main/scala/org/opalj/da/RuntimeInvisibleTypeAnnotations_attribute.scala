@@ -45,7 +45,7 @@ case class RuntimeInvisibleTypeAnnotations_attribute(
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute type_annotations runtime_invisible">
-            <summary>Runtime Invisible Type Annotations</summary>
+            <summary class="attribute_name">Runtime Invisible Type Annotations [size: { typeAnnotations.size } item(s)]</summary>
             { typeAnnotationsToXHTML(cp) }
         </details>
     }
