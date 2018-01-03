@@ -426,7 +426,12 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         if (needsBridgeMethod) {
             bridgeMethodDescriptorBuilder += samMethodType
         }
+        // If the bridge has the same method descriptor like the instantiatedMethodType or
+        // samMethodType, they are already present in the proxy class. Do not add them again.
+        // This happens in scala patternmatching for example.
         bridgeMethodDescriptorBuilder ++= bridges
+            .filterNot(_.equals(samMethodType))
+            .filterNot(_.equals(instantiatedMethodType))
         val bridgeMethodDescriptors = bridgeMethodDescriptorBuilder.result()
 
         /*

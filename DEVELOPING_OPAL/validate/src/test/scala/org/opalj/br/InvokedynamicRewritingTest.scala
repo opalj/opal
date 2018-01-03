@@ -31,17 +31,19 @@ package br
 
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import java.net.URL
+import java.net.URLClassLoader
 import java.io.File
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import java.nio.file.Files
+import java.security.Permission
 
 import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
-
+import org.opalj.io.JARsFileFilter
 /**
  * Tests if OPAL is able to rewrite a simple lambda expression and checks if the rewritten bytecode
  * is executable.
@@ -50,11 +52,10 @@ import org.opalj.ba.ProjectBasedInMemoryClassLoader
  */
 class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
-    def FixtureProject(fixtureFiles: File): Project[URL] = {
-        val classFileReader = Project.JavaClassFileReader()
-        import classFileReader.ClassFiles
-        val projectClassFiles = ClassFiles(fixtureFiles)
-        val libraryClassFiles = ClassFiles(RTJar)
+    def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
+
+        val projectClassFiles = Project.JavaClassFileReader().ClassFiles(fixtureFiles)
+        val libraryClassFiles = Project.JavaLibraryClassFileReader.ClassFiles(RTJar)
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -65,11 +66,11 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
     }
 
     describe("behavior of rewritten bi.lambdas fixtures") {
+        val r = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+        val p = JavaFixtureProject(r)
+        val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
 
         it("simpleLambdaAdd should calculate 2+2 correctly") {
-            val r = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
-            val p = FixtureProject(r)
-            val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
             val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
             val instance = c.newInstance()
             val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
@@ -78,22 +79,51 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
             assert(res.asInstanceOf[Integer] == 4)
         }
 
-        it("serializedLambda should serialize and deserialize lambdas properly") {
-            val r = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
-            val p = FixtureProject(r)
-            val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
+        it("serializedLambda should work with only objects properly") {
             val c = inMemoryClassLoader.loadClass("lambdas.methodreferences.IntersectionTypes")
-            val m = c.getMethod("serializedLambda")
+            val m = c.getMethod("lambdaWithObjectCaptures")
             val res = m.invoke(null)
 
             assert(res.asInstanceOf[String] == "Hello World 23.14foo")
+        }
+
+        it("serializedLambda should work with object and primitives properly") {
+            val c = inMemoryClassLoader.loadClass("lambdas.methodreferences.IntersectionTypes")
+            val m = c.getMethod("lambdaWithObjectAndPrimitiveCaptures")
+            val res = m.invoke(null)
+
+            assert(res.asInstanceOf[String] == "Hello World 23.14foo")
+        }
+
+        it("serializedLambda should work with object array properly") {
+            val c = inMemoryClassLoader.loadClass("lambdas.methodreferences.IntersectionTypes")
+            val m = c.getMethod("lambdaWithObjectArray")
+            val res = m.invoke(null)
+
+            assert(res.asInstanceOf[String] == "Hello World 3.1442.0")
+        }
+
+        it("serializedLambda should work with primitive array properly") {
+            val c = inMemoryClassLoader.loadClass("lambdas.methodreferences.IntersectionTypes")
+            val m = c.getMethod("lambdaWithPrimitiveArray")
+            val res = m.invoke(null)
+
+            assert(res.asInstanceOf[String] == "Hello World 3.1442.0")
+        }
+
+        it("serializedLambda should work with primitive array and object properly") {
+            val c = inMemoryClassLoader.loadClass("lambdas.methodreferences.IntersectionTypes")
+            val m = c.getMethod("lambdaWithPrimitiveArrayAndObject")
+            val res = m.invoke(null)
+
+            assert(res.asInstanceOf[String] == "Hello World 3.1442.0foo")
         }
     }
 
     describe("behavior of rewritten JCG lambda_expressions project") {
 
         it("should execute main successfully") {
-            val p = FixtureProject(locateTestResources("classfiles/lambda_expressions.jar", "bi"))
+            val p = JavaFixtureProject(locateTestResources("classfiles/lambda_expressions.jar", "bi"))
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
 
             val c = inMemoryClassLoader.loadClass("app.ExpressionPrinter")
@@ -111,4 +141,74 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
             System.setOut(defaultOut)
         }
     }
+
+    describe("behavior of rewritten OPAL") {
+        it("should execute hermes successfully") {
+            val p = JavaFixtureProject(locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar", "bi"))
+            val scalaLib = locateTestResources("classfiles/scala-2.12.2/", "bi")
+                .listFiles(JARsFileFilter)
+                .map(_.toURI.toURL)
+            val opalDependencies = locateTestResources("classfiles/OPAL-dependencies/", "bi")
+                .listFiles(JARsFileFilter)
+                .map(_.toURI.toURL)
+
+            // Otherwise, the hermes resources are not included and hermes won't find
+            // HermesCLI.txt for example
+            val resourceClassloader = new URLClassLoader(
+                Array(
+                    new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
+                    new File("OPAL/ai/src/main/resources/").toURI.toURL,
+                    new File("OPAL/ba/src/main/resources/").toURI.toURL,
+                    new File("OPAL/bi/src/main/resources/").toURI.toURL,
+                    new File("OPAL/bp/src/main/resources/").toURI.toURL,
+                    new File("OPAL/br/src/main/resources/").toURI.toURL,
+                    new File("OPAL/common/src/main/resources/").toURI.toURL
+                ) ++ scalaLib ++ opalDependencies, null
+            )
+            val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p, resourceClassloader)
+
+            val c = inMemoryClassLoader.loadClass("org.opalj.hermes.HermesCLI")
+            val m = c.getMethod("main", classOf[Array[String]])
+
+            // Intercept System.exit calls and throw an exception instead
+            // Hermes runs multi threaded, so we return from m immediately.
+            // We have to wait for the statistics file to appear before we can
+            // succeed the test. We also have to "kill" the thread which calls
+            // System.exit by throwing an exception. Then the whole program doesn't
+            // quit.
+            // IMPROVE: Improve HermesCLI to return from main when the process is
+            // actually finished.
+            val secManager = new ExitCodeSecurityManager
+            System.setSecurityManager(secManager)
+
+            val tempFile = Files.createTempFile("OPALValidate-Hermes-stats-", ".csv").toFile
+            tempFile.delete()
+
+            m.invoke(null, Array(
+                "-config", "DEVELOPING_OPAL/tools/src/main/resources/hermes-validate-fixtures.json",
+                "-statistics", tempFile.getAbsolutePath
+            ))
+
+            // Wait for the statistics file to appear
+            while (!tempFile.exists()) {
+                Thread.sleep(100)
+            }
+            assert(tempFile.exists())
+            assert(tempFile.length() > 0)
+
+            System.setSecurityManager(null)
+        }
+    }
+
+    private class ExitCodeSecurityManager extends SecurityManager {
+        override def checkPermission(perm: Permission): Unit = {}
+
+        override def checkPermission(perm: Permission, context: Object): Unit = {}
+
+        override def checkExit(status: Int): Unit = {
+            throw new ExitCodeException(status)
+        }
+    }
+
+    private class ExitCodeException(val exitCode: Int) extends SecurityException
 }
