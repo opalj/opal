@@ -91,7 +91,7 @@ object ClassFileFactory {
      *     return/*<= if the return type is not void*/ this.receiver.<receiverMethodName>(<parameters>)
      *  }
      *
-     *  // possibly a bridge method
+     *  // possibly multiple bridge methods (multiple only in case of altLambdaMetaFactory usages)
      * }
      * }}}
      *
@@ -138,11 +138,12 @@ object ClassFileFactory {
      * The created class will always have its synthetic access flag set, as well as the
      * [[VirtualTypeFlag]] attribute.
      *
-     * @note The used class file version is 49.0 (Java 5) (Using this version, we are not
-     * required to create the stack map table attribute to create a valid class file.)
+     * @note The used class file version is 52. (StackMapTables are, however, still not required
+     *       because the code contains no relevant control-flow.)
+     *
      * @note It is expected that `methodDescriptor` and `receiverMethodDescriptor` are
-     * "compatible", i.e. it would be possible to have the method described by
-     * `methodDescriptor` forward to `receiverMethodDescriptor`.
+     *       "compatible", i.e. it would be possible to have the method described by
+     *       `methodDescriptor` forward to `receiverMethodDescriptor`.
      *
      * This requires that for their return types, one of the following statements holds true:
      *
