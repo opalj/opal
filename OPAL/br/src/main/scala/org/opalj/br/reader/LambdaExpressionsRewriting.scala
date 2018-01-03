@@ -584,7 +584,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * Extract the parameters of the altMetafactory.
+     * Extract the parameters of `altMetafactory` calls.
      *
      * CallSite altMetafactory(MethodHandles.Lookup caller,
      *                   String invokedName,
@@ -611,43 +611,43 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     ): (IndexedSeq[ReferenceType], IndexedSeq[MethodDescriptor], Boolean) = {
         var markerInterfaces = IndexedSeq.empty[ReferenceType]
         var bridges = IndexedSeq.empty[MethodDescriptor]
-        var serializable = false
+        var isSerializable = false
 
         if (altMetafactoryArgs.isEmpty) {
-            return (markerInterfaces, bridges, serializable);
+            return (markerInterfaces, bridges, isSerializable);
         }
 
         var argCount = 0
-        val flags = altMetafactoryArgs(argCount).asInstanceOf[ConstantInteger].value
+        val ConstantInteger(flags) = altMetafactoryArgs(argCount)
         argCount += 1
 
-        // Extract the marker interfaces. They are the first in the arguement list if the flag
+        // Extract the marker interfaces. They are the first in the argument list if the flag
         // FLAG_MARKERS is present.
         if ((flags & LambdaMetafactory.FLAG_MARKERS) > 0) {
-            val markerCount = altMetafactoryArgs(argCount).asInstanceOf[ConstantInteger].value
+            val ConstantInteger(markerCount) = altMetafactoryArgs(argCount)
             argCount += 1
-            markerInterfaces = altMetafactoryArgs
+            markerInterfaces = altMetafactoryArgs.iterator
                 .slice(argCount, argCount + markerCount)
-                .map(_.asInstanceOf[ConstantClass].value)
+                .map { case ConstantClass(value) ⇒ value }
                 .toIndexedSeq
             argCount += markerCount
         }
 
         // bridge methods come afterwards if FLAG_BRIDGES is set.
         if ((flags & LambdaMetafactory.FLAG_BRIDGES) > 0) {
-            val bridgesCount = altMetafactoryArgs(argCount).asInstanceOf[ConstantInteger].value
+            val ConstantInteger(bridgesCount) = altMetafactoryArgs(argCount)
             argCount += 1
-            bridges = altMetafactoryArgs
+            bridges = altMetafactoryArgs.iterator
                 .slice(argCount, argCount + bridgesCount)
-                .map(_.asInstanceOf[MethodDescriptor])
+                .map { case md: MethodDescriptor ⇒ md }
                 .toIndexedSeq
             argCount += bridgesCount
         }
 
         // Check if the FLAG_SERIALIZABLE is set.
-        serializable = (flags & LambdaMetafactory.FLAG_SERIALIZABLE) > 0
+        isSerializable = (flags & LambdaMetafactory.FLAG_SERIALIZABLE) > 0
 
-        (markerInterfaces, bridges, serializable)
+        (markerInterfaces, bridges, isSerializable)
     }
 
     def storeProxy(
