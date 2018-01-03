@@ -878,8 +878,8 @@ object ClassFileFactory {
      * Creates a static proxy method used by the `$deserializeLambda$` method.
      *
      * @param caller The class where the lambda is implemented.
-     * @param callerIsInterface true if the class is an interface, false if not
-     * @return The static proxy method relaying the $deserializedLambda$ invocation to the actual
+     * @param callerIsInterface `true `if the class is an interface, false if not.
+     * @return The static proxy method relaying the `$deserializedLambda$` invocation to the actual
      *         class that implements the lambda.
      */
     def createDeserializeLambdaProxy(
