@@ -779,8 +779,8 @@ object ClassFileFactory {
     }
 
     /**
-     * Create a writeReplace method inside the proxy lambda class. It is used
-     * to create a SerializedLambda object which holds the serialized lambda.
+     * Creates the `writeReplace` method for a lambda proxy class. It is used
+     * to create a `SerializedLambda` object which holds the serialized lambda.
      *
      * The parameters of the SerializedLambda class map as following:
      *   capturingClass = definingType
@@ -798,12 +798,12 @@ object ClassFileFactory {
      *      and
      *      https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html#altMetafactory-java.lang.invoke.MethodHandles.Lookup-java.lang.String-java.lang.invoke.MethodType-java.lang.Object...-
      *
-     * @param definingType The lambda proxyclass type
-     * @param methodName The name of the functional interface method
-     * @param samMethodType Includes the method signature for the functional interface method
-     * @param implMethod The lambda method inside the class defining the lambda
-     * @param additionalFieldsForStaticParameters The static fields that are put into the caputeredArgs
-     * @return A SerializedLambda object containing all information to be able to serialize this lambda
+     * @param definingType The lambda proxyclass type.
+     * @param methodName The name of the functional interface method.
+     * @param samMethodType Includes the method signature for the functional interface method.
+     * @param implMethod The lambda method inside the class defining the lambda.
+     * @param additionalFieldsForStaticParameters The static fields that are put into the capturedArgs.
+     * @return A SerializedLambda object containing all information to be able to serialize this lambda.
      */
     def createWriteReplaceMethod(
         definingType:                        TypeDeclaration,
@@ -825,7 +825,7 @@ object ClassFileFactory {
             LDC(ConstantString(implMethod.name)), null,
             LDC(ConstantString(implMethod.methodDescriptor.toJVMDescriptor)), null,
             LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)), null,
-            // Add the caputeredArgs
+            // Add the capturedArgs
             BIPUSH(additionalFieldsForStaticParameters.length), null,
             ANEWARRAY(ObjectType.Object), null, null
         )
@@ -875,21 +875,19 @@ object ClassFileFactory {
     }
 
     /**
-     * Create a static proxy method for the $deserializeLambda$ method.
+     * Creates a static proxy method used by the `$deserializeLambda$` method.
      *
      * @param caller The class where the lambda is implemented.
      * @param callerIsInterface true if the class is an interface, false if not
-     * @return The static proxy method relaying the $deserializedLambda$ invokation to the actual
-     *         class that implemted the lambda.
+     * @return The static proxy method relaying the $deserializedLambda$ invocation to the actual
+     *         class that implements the lambda.
      */
     def createDeserializeLambdaProxy(
         caller:            ObjectType,
         callerIsInterface: Boolean
     ): MethodTemplate = {
         val deserializedLambdaMethodDescriptor = MethodDescriptor(
-            IndexedSeq(
-                ObjectType.SerializedLambda
-            ),
+            ObjectType.SerializedLambda,
             ObjectType.Object
         )
         val instructions: Array[Instruction] = Array(
