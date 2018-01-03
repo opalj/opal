@@ -70,7 +70,8 @@ public class IntersectionTypes {
     public static String serializedLambda() {
         Float y = 3.14f;
         String s = "foo";
-        Function<Integer, String> lambda = (Function<Integer, String> & Serializable) (Integer x) -> "Hello World " + x + y + s;
+        Function<Integer, String> lambda =
+                (Function<Integer, String> & Serializable) (Integer x) -> "Hello World " + x + y + s;
 
         try {
             Method writeReplace = lambda.getClass().getDeclaredMethod("writeReplace");
