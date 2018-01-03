@@ -198,6 +198,10 @@ object ClassFileFactory {
      * receiverMethodDescriptor =
      *  MethodDescriptor(IndexedSeq(ByteType, ByteType, IntegerType), IntegerType)
      * }}}
+     *
+     * @param definingType The defining type; if the type is `Serializable` the interface '''has
+     *                     to be a direct super interface'''.
+     *
      * @param invocationInstruction the opcode of the invocation instruction
      *          (`INVOKESPECIAL.opcode`,`INVOKEVIRTUAL.opcode`,
      *          `INVOKESTATIC.opcode`,`INVOKEINTERFACE.opcode`)
@@ -250,6 +254,14 @@ object ClassFileFactory {
                 DefaultFactoryMethodName
             }
 
+        /* We don't need to analyze the type hierarchy because the "Serializable" interface is
+         * directly implemented by the  defining type.
+         * From "java...LambdaMetaFactory":
+         *      When FLAG_SERIALIZABLE is set in flags, the function objects will implement
+         *      Serializable, and will have a writeReplace method that returns an appropriate
+         *      SerializedLambda. The caller class must have an appropriate $deserializeLambda$
+         *      method, as described in SerializedLambda.
+         */
         val isSerializable = definingType.theSuperinterfaceTypes.contains(ObjectType.Serializable)
 
         val methods: Array[MethodTemplate] = new Array(
