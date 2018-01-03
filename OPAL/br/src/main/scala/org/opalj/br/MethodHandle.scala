@@ -29,7 +29,16 @@
 package org.opalj
 package br
 
-import org.opalj.bi._
+import org.opalj.bi.ReferenceKind
+import org.opalj.bi.REF_getField
+import org.opalj.bi.REF_getStatic
+import org.opalj.bi.REF_putField
+import org.opalj.bi.REF_putStatic
+import org.opalj.bi.REF_invokeVirtual
+import org.opalj.bi.REF_invokeStatic
+import org.opalj.bi.REF_invokeSpecial
+import org.opalj.bi.REF_newInvokeSpecial
+import org.opalj.bi.REF_invokeInterface
 
 /**
  * A method handle.
@@ -172,7 +181,7 @@ case class NewInvokeSpecialMethodHandle(
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 
-    override def referenceKind: ReferenceKind = REF_invokeSpecial
+    override def referenceKind: ReferenceKind = REF_newInvokeSpecial
 }
 
 case class InvokeInterfaceMethodHandle(
