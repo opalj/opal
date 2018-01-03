@@ -120,7 +120,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         t, tIsInterface,
                         methodHandle,
                         invocationInstruction,
-                        MethodDescriptor.NoArgsAndReturnVoid,
+                        MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
                         IndexedSeq.empty
                     )
 
