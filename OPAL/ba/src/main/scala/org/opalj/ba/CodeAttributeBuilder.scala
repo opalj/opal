@@ -41,6 +41,12 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.StackMapFrame
 import org.opalj.br.FullFrame
+import org.opalj.br.ChopFrame
+import org.opalj.br.AppendFrame
+import org.opalj.br.SameLocals1StackItemFrameExtended
+import org.opalj.br.SameLocals1StackItemFrame
+import org.opalj.br.SameFrame
+import org.opalj.br.SameFrameExtended
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.TopVariableInfo
 import org.opalj.br.instructions.Instruction
@@ -248,10 +254,14 @@ class CodeAttributeBuilder[T] private[ba] (
             } while (index <= lastLocalsIndex)
             ls
         }
-        val framePCs = c.stackMapTablePCs(classHierarchy)
+
         var lastPC = -1 // -1 === initial stack map frame
-        var lastLocals: VerificationTypeInfos = computeLocalsVerificationTypeInfo(ils)
-        var lastOperands: VerificationTypeInfos = IndexedSeq.empty // has to be empty...
+        var lastVerificationTypeInfoLocals: VerificationTypeInfos =
+            computeLocalsVerificationTypeInfo(ils)
+        var lastverificationTypeInfoStack: VerificationTypeInfos =
+            IndexedSeq.empty // has to be empty...
+
+        val framePCs = c.stackMapTablePCs(classHierarchy)
         val fs = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc ⇒
@@ -283,15 +293,49 @@ class CodeAttributeBuilder[T] private[ba] (
             // TODO compute "optimal" stack map table
             // let's see how the last stack map frame looked like and if we can compute
             // an "optimal" stack map frame item
+            val sameLocals = lastVerificationTypeInfoLocals == verificationTypeInfoLocals
+            val emptyStack = verificationTypeInfoStack.isEmpty
+            val localsCount = verificationTypeInfoLocals.size
+            val localsDiffCount = localsCount - lastVerificationTypeInfoLocals.size
+            if (sameLocals && lastverificationTypeInfoStack == verificationTypeInfoStack) {
+                val offsetDelta = pc - lastPC - 1
+                if (offsetDelta <= 63)
+                    fs(frameIndex) = SameFrame(offsetDelta)
+                else
+                    fs(frameIndex) = SameFrameExtended(offsetDelta)
+            } else if (sameLocals && verificationTypeInfoStack.size == 1) {
+                val offsetDelta = pc - lastPC - 1
+                if (offsetDelta <= 63) {
+                    val frameType = 64 + offsetDelta
+                    fs(frameIndex) =
+                        SameLocals1StackItemFrame(frameType, verificationTypeInfoStack(0))
+                } else {
+                    fs(frameIndex) =
+                        SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
+                }
+            } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3) {
+                val offsetDelta = pc - lastPC - 1
+                fs(frameIndex) = ChopFrame(251 + localsDiffCount, offsetDelta)
+            } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3) {
+                val offsetDelta = pc - lastPC - 1
+                fs(frameIndex) = AppendFrame(
+                    251 + localsDiffCount,
+                    offsetDelta,
+                    verificationTypeInfoLocals.slice(
+                        from = localsCount - localsDiffCount,
+                        until = localsCount
+                    )
+                )
+            } else {
+                fs(frameIndex) = FullFrame(
+                    offsetDelta = if (lastPC != -1) pc - lastPC - 1 else pc,
+                    verificationTypeInfoLocals,
+                    verificationTypeInfoStack
+                )
+            }
 
-            fs(frameIndex) = new FullFrame(
-                offsetDelta = if (lastPC != -1) pc - lastPC - 1 else pc,
-                verificationTypeInfoLocals,
-                verificationTypeInfoStack
-            )
-
-            lastLocals = verificationTypeInfoLocals
-            lastOperands = verificationTypeInfoStack
+            lastVerificationTypeInfoLocals = verificationTypeInfoLocals
+            lastverificationTypeInfoStack = verificationTypeInfoStack
             frameIndex += 1
             lastPC = pc
         }
