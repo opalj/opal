@@ -197,7 +197,7 @@ case class LabeledTABLESWITCH(
         jumpTargets:         IndexedSeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): TABLESWITCH = {
         TABLESWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),

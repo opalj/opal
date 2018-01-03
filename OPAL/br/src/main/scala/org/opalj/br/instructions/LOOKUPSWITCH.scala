@@ -198,7 +198,7 @@ case class LabeledLOOKUPSWITCH(
         )
     }
 
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),

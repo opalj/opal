@@ -78,9 +78,10 @@ object IFLE {
 
 case class LabeledIFLE(
         branchTarget: InstructionLabel
-) extends LabeledSimpleConditionalBranchInstruction with IFLELike {
+) extends LabeledSimpleConditionalBranchInstruction
+    with IFLELike {
 
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFLE = {
         IFLE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
