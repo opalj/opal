@@ -54,4 +54,6 @@ trait LabeledSimpleConditionalBranchInstruction
         s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"
     }
 
+    def negate(newJumpTargetLabel: InstructionLabel): LabeledSimpleConditionalBranchInstruction
+
 }

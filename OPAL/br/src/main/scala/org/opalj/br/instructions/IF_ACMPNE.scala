@@ -85,4 +85,8 @@ case class LabeledIF_ACMPNE(
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ACMPNE = {
         IF_ACMPNE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIF_ACMPEQ = {
+        LabeledIF_ACMPEQ(newJumpTargetLabel)
+    }
 }

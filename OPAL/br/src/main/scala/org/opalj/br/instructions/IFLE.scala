@@ -85,4 +85,8 @@ case class LabeledIFLE(
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFLE = {
         IFLE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFGT = {
+        LabeledIFGT(newJumpTargetLabel)
+    }
 }

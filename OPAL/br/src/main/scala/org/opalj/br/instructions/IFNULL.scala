@@ -85,4 +85,8 @@ case class LabeledIFNULL(
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFNULL = {
         IFNULL(asShortBranchoffset(pcs(branchTarget) - pc))
     }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFNONNULL = {
+        LabeledIFNONNULL(newJumpTargetLabel)
+    }
 }

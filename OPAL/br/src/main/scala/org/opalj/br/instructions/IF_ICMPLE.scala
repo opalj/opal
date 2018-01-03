@@ -85,4 +85,8 @@ case class LabeledIF_ICMPLE(
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ICMPLE = {
         IF_ICMPLE(asShortBranchoffset(pcs(branchTarget) - pc))
     }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIF_ICMPGT = {
+        LabeledIF_ICMPGT(newJumpTargetLabel)
+    }
 }
