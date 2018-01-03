@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import java.util.concurrent.atomic.AtomicLong
+
 import scala.language.implicitConversions
 
 /**
@@ -44,9 +46,35 @@ sealed trait InstructionLabel {
     def pc: PC
 }
 
+/**
+ * A `Label` used to specify the "original" pc of an instruction. `PCLabel`s are assigned to
+ * all (labeled) instructions when we create the labeled code based on a method's bytecode.
+ * (I.e., when we instrument existing code.)
+ */
 case class PCLabel(pc: PC) extends InstructionLabel {
     def isPCLabel: Boolean = true
     override def toString: String = s"PC($pc)"
+}
+
+/**
+ *
+ * @param id A globally unique id.
+ */
+case class RewriteLabel private (id: Long) extends InstructionLabel {
+    def isPCLabel: Boolean = false
+    def pc: PC = throw new UnsupportedOperationException();
+    override def toString: String = s"Rewrite($id)"
+}
+
+object RewriteLabel {
+    private final val idGenerator = new AtomicLong(0L)
+    def apply(): RewriteLabel = {
+        val newID = idGenerator.getAndIncrement()
+        if (newID == -1) {
+            throw new IllegalStateException("out of labels; contact the OPAL developers");
+        }
+        new RewriteLabel(newID)
+    }
 }
 
 case class NamedLabel(name: String) extends InstructionLabel {
