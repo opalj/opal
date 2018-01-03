@@ -549,8 +549,8 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             receiverIsInterface = receiverIsInterface,
             implMethod,
             invocationInstruction,
-            bridgeMethodDescriptors,
-            samMethodType
+            samMethodType,
+            bridgeMethodDescriptors
         )
         val factoryMethod = {
             if (functionalInterfaceMethodName == DefaultFactoryMethodName)

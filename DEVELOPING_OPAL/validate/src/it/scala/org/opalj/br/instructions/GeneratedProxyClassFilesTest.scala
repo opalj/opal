@@ -119,7 +119,9 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         m.descriptor,
                         t, tIsInterface,
                         methodHandle,
-                        invocationInstruction
+                        invocationInstruction,
+                        MethodDescriptor.NoArgsAndReturnVoid,
+                        IndexedSeq.empty
                     )
 
                 def verifyMethod(method: Method): Unit = {

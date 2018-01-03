@@ -213,8 +213,8 @@ object ClassFileFactory {
         receiverIsInterface:     Boolean,
         implMethod:              MethodCallMethodHandle,
         invocationInstruction:   Opcode,
-        bridgeMethodDescriptors: IndexedSeq[MethodDescriptor] = IndexedSeq.empty[MethodDescriptor],
-        samMethodType:           MethodDescriptor             = MethodDescriptor.NoArgsAndReturnVoid
+        samMethodType:           MethodDescriptor,
+        bridgeMethodDescriptors: IndexedSeq[MethodDescriptor]
     ): ClassFile = {
 
         val interfaceMethodParametersCount = methodDescriptor.parametersCount
@@ -253,8 +253,8 @@ object ClassFileFactory {
         val isSerializable = definingType.theSuperinterfaceTypes.contains(ObjectType.Serializable)
 
         val methods: Array[MethodTemplate] = new Array(
-            3 + // Proxymethod, constructor, factory
-                bridgeMethodDescriptors.length + // Bridge methods
+            3 /* proxy method, constructor, factory */ +
+                bridgeMethodDescriptors.length + // bridge methods
                 (if (isSerializable) 2 else 0) // writeReplace and $deserializeLambda$ if Serializable
         )
         methods(0) = proxyMethod(
@@ -274,11 +274,11 @@ object ClassFileFactory {
             factoryMethodName
         )
 
-        bridgeMethodDescriptors.zipWithIndex.foreach {
-            case (md, i) ⇒
+        bridgeMethodDescriptors.iterator.zipWithIndex.foreach {
+            case (bridgeMethodDescriptor, i) ⇒
                 methods(3 + i) = createBridgeMethod(
                     methodName,
-                    md,
+                    bridgeMethodDescriptor,
                     methodDescriptor,
                     definingType.objectType
                 )

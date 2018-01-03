@@ -439,7 +439,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             methodWithFiveDoubleParameters.name,
                             methodWithFiveDoubleParameters.descriptor
                         ),
-                        INVOKESTATIC.opcode
+                        INVOKESTATIC.opcode,
+                        MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                        IndexedSeq.empty // <= not tested...
                     )
 
                 val method = collectTheForwardingMethod(proxy)
@@ -538,7 +540,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             theType,
                             false,
                             methodHandle,
-                            invocationInstruction
+                            invocationInstruction,
+                            MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                            IndexedSeq.empty // <= not tested...
                         )
 
                     val constructor = collectTheConstructor(proxy)
@@ -631,7 +635,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             theType,
                             false,
                             methodHandle,
-                            invocationInstruction
+                            invocationInstruction,
+                            MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                            IndexedSeq.empty // <= not tested...
                         )
                     val forwarderMethod = collectTheForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
@@ -752,7 +758,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             theType,
                             false,
                             methodHandle,
-                            invocationInstruction
+                            invocationInstruction,
+                            MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                            IndexedSeq.empty // <= not tested...
                         )
                     val forwarderMethod = collectTheForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
@@ -863,7 +871,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         "<init>",
                         MethodDescriptor(ObjectType.String, SomeType)
                     ),
-                    INVOKESPECIAL.opcode
+                    INVOKESPECIAL.opcode,
+                    MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                    IndexedSeq.empty // <= not tested...
                 )
 
                 val proxyMethod = proxy.findMethod("get").head
@@ -917,7 +927,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         "isThisFull",
                         MethodDescriptor.JustReturnsBoolean
                     ),
-                    INVOKEVIRTUAL.opcode
+                    INVOKEVIRTUAL.opcode,
+                    MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                    IndexedSeq.empty // <= not tested...
                 )
 
                 it("and result in a proxy method that passes in the explicit this") {
@@ -956,7 +968,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             "newInstance",
                             new NoArgumentMethodDescriptor(theType)
                         ),
-                        INVOKESTATIC.opcode
+                        INVOKESTATIC.opcode,
+                        MethodDescriptor.NoArgsAndReturnVoid, // not tested...
+                        IndexedSeq.empty // <= not tested...
                     )
                 val factoryMethod = collectTheFactoryMethod(proxy)
                 factoryMethod.name should be(ClassFileFactory.AlternativeFactoryMethodName)
@@ -964,6 +978,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
 
         describe("should create a bridge method to the forwarding method if so desired") {
+
             it("the bridge method should stack & cast parameters and call the forwarding method") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
@@ -984,6 +999,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             methodDescriptor
                         ),
                         INVOKESTATIC.opcode,
+                        MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
                         IndexedSeq(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
                     )
                 val bridge = proxy.methods.find(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
@@ -1028,6 +1044,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             methodDescriptor
                         ),
                         INVOKESTATIC.opcode,
+                        MethodDescriptor.NoArgsAndReturnVoid, // <= Not relevant...
                         IndexedSeq(
                             MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType),
                             MethodDescriptor(IndexedSeq(ObjectType.Serializable, DoubleType), IntegerType)
@@ -1421,7 +1438,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
 
         describe("should handle serializable lambdas correctly") {
-            val IntersectionTypes = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/methodreferences/IntersectionTypes").get
+            val IntersectionTypes = lambdasProject.allProjectClassFiles.find(
+                _.fqn == "lambdas/methodreferences/IntersectionTypes"
+            ).get
             val deserializedLambdaMethodDescriptor = MethodDescriptor(
                 IndexedSeq(
                     ObjectType.SerializedLambda
@@ -1454,8 +1473,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 IntersectionTypes.thisType, false,
                 implMethod,
                 INVOKESPECIAL.opcode,
-                IndexedSeq.empty[MethodDescriptor],
-                samMethodType
+                samMethodType,
+                IndexedSeq.empty[MethodDescriptor]
             )
 
             it("should add writeReplace and $deserializeLambda$ methods") {
@@ -1705,7 +1724,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 definingType,
                 methodName, methodDescriptor,
                 calleeType, calleeIsInterface,
-                methodHandle, invocationInstruction
+                methodHandle, invocationInstruction,
+                MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
+                IndexedSeq.empty[MethodDescriptor] // <= not tested...
             )
 
         test(classFile, (calleeType, calleeMethod))
