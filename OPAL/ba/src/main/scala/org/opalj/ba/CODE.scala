@@ -96,6 +96,8 @@ object CODE {
      */
     def removeDeadCode[T](codeElements: IndexedSeq[CodeElement[T]]): IndexedSeq[CodeElement[T]] = {
         val codeElementsSize = codeElements.size
+        if (codeElementsSize == 0)
+            return codeElements;
 
         // Basic idea - mark all code elements as live that are potentially executed and throw away
         // the rest!
