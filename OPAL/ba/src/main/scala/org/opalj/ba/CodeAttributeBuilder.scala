@@ -30,7 +30,6 @@ package org.opalj
 package ba
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
@@ -45,6 +44,8 @@ import org.opalj.br.FullFrame
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.TopVariableInfo
 import org.opalj.br.instructions.Instruction
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.mutable.Locals
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. Instantiation is only
@@ -56,7 +57,7 @@ import org.opalj.br.instructions.Instruction
 class CodeAttributeBuilder[T] private[ba] (
         private[ba] val instructions:                   Array[Instruction],
         private[ba] val hasControlTransferInstructions: Boolean,
-        private[ba] val pcMapping:                      PCMapping,
+        private[ba] val pcMapping:                      PCMapping, // the PCMapping must not be complete w.r.t. the set of original PCs
         private[ba] val annotations:                    Map[br.PC, T],
         private[ba] var maxStack:                       Option[Int],
         private[ba] var maxLocals:                      Option[Int],
@@ -199,12 +200,24 @@ class CodeAttributeBuilder[T] private[ba] (
         (code, (annotations, warnings))
     }
 
+    /**
+     * Computes the [[org.opalj.br.StackMapTable]] for the given method. (Requires that
+     * the method does NOT use JSR/RET instructions!)
+     *
+     * @param m A method (which satisfies the constraints of Java 6> methods) with a body.
+     * @param classHierarchy The project's class hierarchy; i.e., computing the table generally
+     *                       requires the complete class hierarchy w.r.t. to the types referred to
+     *                       by the method.
+     * @return The computed [[org.opalj.br.StackMapTable]].
+     */
     def computeStackMapTable(
         m: Method
     )(
         implicit
         classHierarchy: ClassHierarchy
     ): StackMapTable = {
+        type VerificationTypeInfos = IndexedSeq[VerificationTypeInfo]
+
         val c = m.body.get
 
         // compute info
@@ -213,48 +226,50 @@ class CodeAttributeBuilder[T] private[ba] (
         val ios = CodeAttributeBuilder.ai.initialOperands(m, theDomain)
         val r = CodeAttributeBuilder.ai.performInterpretation(c, theDomain)(ios, ils)
 
-        // create table
+        // compute table
+        def computeLocalsVerificationTypeInfo(
+            locals: Locals[theDomain.DomainValue]
+        ): VerificationTypeInfos = {
+            val lastLocalsIndex = locals.indexOfLastNonNullValue
+            var index = 0
+            val ls = new ArrayBuffer[VerificationTypeInfo](lastLocalsIndex + 1)
+            do {
+                ls += (
+                    locals(index) match {
+                        case null | r.domain.TheIllegalValue ⇒
+                            index += 1
+                            TopVariableInfo
+
+                        case dv ⇒
+                            index += dv.computationalType.operandSize
+                            dv.verificationTypeInfo
+                    }
+                )
+            } while (index <= lastLocalsIndex)
+            ls
+        }
         val framePCs = c.stackMapTablePCs(classHierarchy)
         var lastPC = -1 // -1 === initial stack map frame
+        var lastLocals: VerificationTypeInfos = computeLocalsVerificationTypeInfo(ils)
+        var lastOperands: VerificationTypeInfos = IndexedSeq.empty // has to be empty...
         val fs = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc ⇒
-
-            val verificationTypeInfoLocals: IndexedSeq[VerificationTypeInfo] = {
+            val verificationTypeInfoLocals: VerificationTypeInfos = {
                 val locals = r.localsArray(pc)
                 if (locals == null) {
-                    // We have found compile time dead code; we have to throw it away... we
-                    // simply can't compute a stack map table frame for such code!
+                    val message = m.toJava(s"pc=$pc is dead; unable to compute stack map table")
+                    throw new BytecodeProcessingFailedException(message);
                 }
-                val localsCount = locals.size
-                if (locals.size == 0) {
-                    IndexedSeq.empty
-                } else {
-                    var index = 0
-                    val ls = ArrayBuffer.empty[VerificationTypeInfo]
-                    do {
-                        ls += (
-                            locals(index) match {
-                                case null | r.domain.TheIllegalValue ⇒
-                                    index += 1
-                                    TopVariableInfo
-
-                                case dv ⇒
-                                    index += dv.computationalType.operandSize
-                                    dv.verificationTypeInfo
-                            }
-                        )
-                    } while (index < localsCount)
-                    ls
-                }
+                computeLocalsVerificationTypeInfo(locals)
             }
-            val verificationTypeInfoStack: IndexedSeq[VerificationTypeInfo] = {
+            val verificationTypeInfoStack: VerificationTypeInfos = {
                 var operands = r.operandsArray(pc)
                 var operandIndex = operands.size
                 if (operandIndex == 0) {
                     IndexedSeq.empty // an empty stack is a VERY common case...
                 } else {
-                    val os = new Array[VerificationTypeInfo](operandIndex)
+                    val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
                     do {
                         os(operandIndex) = operands.head.verificationTypeInfo
@@ -264,11 +279,19 @@ class CodeAttributeBuilder[T] private[ba] (
                     os
                 }
             }
+
+            // TODO compute "optimal" stack map table
+            // let's see how the last stack map frame looked like and if we can compute
+            // an "optimal" stack map frame item
+
             fs(frameIndex) = new FullFrame(
                 offsetDelta = if (lastPC != -1) pc - lastPC - 1 else pc,
                 verificationTypeInfoLocals,
                 verificationTypeInfoStack
             )
+
+            lastLocals = verificationTypeInfoLocals
+            lastOperands = verificationTypeInfoStack
             frameIndex += 1
             lastPC = pc
         }
@@ -280,6 +303,7 @@ object CodeAttributeBuilder {
 
     final val warnMessage = s"%s: %s is too small %d < %d"
 
+    // the identifiocation of dead variable potentially leads to "bigger stack map tables"...
     final val ai = new BaseAI(IdentifyDeadVariables = false)
 
 }
