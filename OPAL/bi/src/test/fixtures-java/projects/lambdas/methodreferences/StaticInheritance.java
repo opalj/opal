@@ -49,6 +49,7 @@ import static annotations.target.TargetResolution.DYNAMIC;
  * @author Andreas Muttscheller
  */
 public class StaticInheritance {
+
     public static class A {
         public static String foo() {
             return "bar";
