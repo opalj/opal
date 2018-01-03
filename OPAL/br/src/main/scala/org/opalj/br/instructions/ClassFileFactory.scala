@@ -814,11 +814,11 @@ object ClassFileFactory {
             LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)), null,
             // Add the caputeredArgs
             BIPUSH(additionalFieldsForStaticParameters.length), null,
-            ANEWARRAY(ObjectType.Object), null, null,
+            ANEWARRAY(ObjectType.Object), null, null
         )
 
         additionalFieldsForStaticParameters.zipWithIndex.foreach {
-            case (x, i) => instructions ++= Array(
+            case (x, i) ⇒ instructions ++= Array(
                 DUP,
                 BIPUSH(i), null,
                 ALOAD_0,
@@ -862,13 +862,13 @@ object ClassFileFactory {
     }
 
     /**
-      * Create a static proxy method for the $deserializeLambda$ method.
-      *
-      * @param caller The class where the lambda is implemented.
-      * @param callerIsInterface true if the class is an interface, false if not
-      * @return The static proxy method relaying the $deserializedLambda$ invokation to the actual
-      *         class that implemted the lambda.
-      */
+     * Create a static proxy method for the $deserializeLambda$ method.
+     *
+     * @param caller The class where the lambda is implemented.
+     * @param callerIsInterface true if the class is an interface, false if not
+     * @return The static proxy method relaying the $deserializedLambda$ invokation to the actual
+     *         class that implemted the lambda.
+     */
     def createDeserializeLambdaProxy(
         caller:            ObjectType,
         callerIsInterface: Boolean

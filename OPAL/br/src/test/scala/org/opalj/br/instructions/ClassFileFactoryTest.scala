@@ -1007,6 +1007,55 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     )
                 )
             }
+
+            it("should be able to add multiple bridge methods") {
+                val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
+                val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
+                val proxyType = ObjectType(receiverType.simpleName + '$'+"Proxy")
+                val methodDescriptor =
+                    MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
+                val proxy =
+                    ClassFileFactory.Proxy(
+                        lambdas.thisType,
+                        lambdas.isInterfaceDeclaration,
+                        TypeDeclaration(proxyType, false, Some(ObjectType.Object), UIDSet.empty),
+                        "method",
+                        methodDescriptor,
+                        receiverType, false,
+                        InvokeVirtualMethodHandle(
+                            receiverType,
+                            "method",
+                            methodDescriptor
+                        ),
+                        INVOKESTATIC.opcode,
+                        IndexedSeq(
+                            MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType),
+                            MethodDescriptor(IndexedSeq(ObjectType.Serializable, DoubleType), IntegerType)
+                        )
+                    )
+                val bridges = proxy.methods.filter(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
+                bridges.length should be(2)
+                bridges.foreach { bridge ⇒
+                    bridge.body should be('defined)
+                    val body = bridge.body.get
+                    body.maxStack should be(4)
+                    body.maxLocals should be(5)
+                    body.instructions should be(
+                        Array(
+                            ALOAD_0,
+                            ALOAD_1,
+                            CHECKCAST(ObjectType.String),
+                            null,
+                            null,
+                            DLOAD_2,
+                            INVOKEVIRTUAL(proxyType, "method", methodDescriptor),
+                            null,
+                            null,
+                            IRETURN
+                        )
+                    )
+                }
+            }
         }
 
         describe("should compute correct constructor stack and local values") {
@@ -1368,6 +1417,119 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ClassFileFactory.returnAndConvertInstructions(FloatType, LongType) should be(
                     Array(L2F, FRETURN)
                 )
+            }
+        }
+
+        describe("should handle serializable lambdas correctly") {
+            val IntersectionTypes = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/methodreferences/IntersectionTypes").get
+            val deserializedLambdaMethodDescriptor = MethodDescriptor(
+                IndexedSeq(
+                    ObjectType.SerializedLambda
+                ),
+                ObjectType.Object
+            )
+            val implMethod = InvokeSpecialMethodHandle(
+                IntersectionTypes.thisType,
+                false,
+                "lambda$1",
+                MethodDescriptor(IndexedSeq(
+                    ObjectType.Float,
+                    ObjectType.String,
+                    ObjectType.Integer
+                ), ObjectType.String)
+            )
+            val samMethodType = MethodDescriptor(ObjectType.Object, ObjectType.Object)
+            val instantiatedMethodType = MethodDescriptor(ObjectType.String, ObjectType.Object)
+            val proxy = ClassFileFactory.Proxy(
+                IntersectionTypes.thisType,
+                IntersectionTypes.isInterfaceDeclaration,
+                TypeDeclaration(
+                    ObjectType("SerializableProxy"),
+                    false,
+                    Some(ObjectType.Object),
+                    UIDSet(ObjectType("java/util/Function"), ObjectType.Serializable)
+                ),
+                "apply",
+                instantiatedMethodType,
+                IntersectionTypes.thisType, false,
+                implMethod,
+                INVOKESPECIAL.opcode,
+                IndexedSeq.empty[MethodDescriptor],
+                samMethodType
+            )
+
+            it("should add writeReplace and $deserializeLambda$ methods") {
+                proxy.findMethod("writeReplace", MethodDescriptor.JustReturnsObject) should be('defined)
+                proxy.findMethod("$deserializeLambda$", deserializedLambdaMethodDescriptor) should be('defined)
+            }
+
+            it("should forward $deserializeLambda$ to the caller") {
+                val dl = proxy.findMethod("$deserializeLambda$", deserializedLambdaMethodDescriptor).get
+
+                dl.body should be('defined)
+                dl.body.get.instructions should be(Array(
+                    ALOAD_0,
+                    INVOKESTATIC(
+                        IntersectionTypes.thisType,
+                        IntersectionTypes.isInterfaceDeclaration,
+                        "$deserializeLambda$",
+                        deserializedLambdaMethodDescriptor
+                    ), null, null,
+                    ARETURN
+                ))
+            }
+
+            it("should create a SerializedLambda object inside writeReplace") {
+                val wr = proxy.findMethod("writeReplace", MethodDescriptor.JustReturnsObject).get
+
+                wr.body should be('defined)
+                wr.body.get.instructions should be(Array(
+                    NEW(ObjectType.SerializedLambda), null, null,
+                    DUP,
+                    LoadClass(ObjectType("SerializableProxy")), null,
+                    LDC(ConstantString(ObjectType("java/util/Function").fqn)), null,
+                    LDC(ConstantString("apply")), null,
+                    LDC(ConstantString(samMethodType.toJVMDescriptor)), null,
+                    LDC(ConstantInteger(implMethod.referenceKind.referenceKind)), null,
+                    LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)), null,
+                    LDC(ConstantString(implMethod.name)), null,
+                    LDC(ConstantString(implMethod.methodDescriptor.toJVMDescriptor)), null,
+                    LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)), null,
+                    // Add the caputeredArgs
+                    BIPUSH(2), null,
+                    ANEWARRAY(ObjectType.Object), null, null,
+                    DUP,
+                    BIPUSH(0), null,
+                    ALOAD_0,
+                    GETFIELD(ObjectType("SerializableProxy"), "staticParameter0", ObjectType.Float), null, null,
+                    AASTORE,
+                    DUP,
+                    BIPUSH(1), null,
+                    ALOAD_0,
+                    GETFIELD(ObjectType("SerializableProxy"), "staticParameter1", ObjectType.String), null, null,
+                    AASTORE,
+                    INVOKESPECIAL(
+                        ObjectType.SerializedLambda,
+                        isInterface = false,
+                        "<init>",
+                        MethodDescriptor(
+                            IndexedSeq(
+                                ObjectType.Class,
+                                ObjectType.String,
+                                ObjectType.String,
+                                ObjectType.String,
+                                IntegerType,
+                                ObjectType.String,
+                                ObjectType.String,
+                                ObjectType.String,
+                                ObjectType.String,
+                                ArrayType(ObjectType.Object)
+                            ),
+                            VoidType
+                        )
+                    ), null, null,
+                    ARETURN
+                ))
             }
         }
     }
