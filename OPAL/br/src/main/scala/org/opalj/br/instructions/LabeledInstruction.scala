@@ -53,16 +53,16 @@ trait LabeledInstruction extends InstructionLike {
      * @param   pc The final pc of this instruction in the code array.
      * @param   pcs The map which maps all symbols to their final pcs.
      */
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): Instruction
 
     /**
      * Validates the branchoffset and returns it or throws an exception!
      */
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     protected def asShortBranchoffset(branchoffset: Int): Int = {
         if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
-            throw BranchoffsetException(this);
+            throw BranchoffsetOutOfBoundsException(this);
         }
         branchoffset
     }

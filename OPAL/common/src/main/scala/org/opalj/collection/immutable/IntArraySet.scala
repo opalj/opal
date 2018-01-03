@@ -49,6 +49,8 @@ sealed abstract class IntArraySet
 
     def foreachPair[U](f: (Int, Int) ⇒ U): Unit
 
+    def reverseIntIterator: IntIterator
+
     def min: Int
     def max: Int
     final def last: Int = max
@@ -77,6 +79,7 @@ case object EmptyIntArraySet extends IntArraySet {
     override def +(i: Int): IntArraySet1 = new IntArraySet1(i)
     override def iterator: Iterator[Int] = Iterator.empty
     override def intIterator: IntIterator = IntIterator.empty
+    override def reverseIntIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
     override def exists(p: Int ⇒ Boolean): Boolean = false
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = z
@@ -128,6 +131,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     }
     override def iterator: Iterator[Int] = Iterator.single(i)
     override def intIterator: IntIterator = IntIterator(i)
+    override def reverseIntIterator: IntIterator = IntIterator(i)
     override def size: Int = 1
 
     override def contains(value: Int): Boolean = value == i
@@ -193,6 +197,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
             }
         }
     }
+    override def reverseIntIterator: IntIterator = IntIterator(i2, i1)
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = f(i1, i2)
 
@@ -274,33 +279,30 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def max: Int = this.i3
     override def getAndRemove: (Int, IntArraySet) = (i3, new IntArraySet2(i1, i2)) // TODO Remove
 
-    override def iterator: Iterator[Int] = {
-        new AbstractIterator[Int] {
-            var i = 0
-            def hasNext: Boolean = i < 3
-            def next: Int = {
-                val v = i
-                i += 1
-                v match {
-                    case 0 ⇒ i1
-                    case 1 ⇒ i2
-                    case 2 ⇒ i3
-                    case _ ⇒ throw new IllegalStateException()
-                }
+    override def iterator: Iterator[Int] = new AbstractIterator[Int] {
+        var i = 0
+        def hasNext: Boolean = i < 3
+        def next: Int = {
+            val v = i
+            i += 1
+            v match {
+                case 0 ⇒ i1
+                case 1 ⇒ i2
+                case 2 ⇒ i3
+                case _ ⇒ throw new IllegalStateException()
             }
         }
     }
-    override def intIterator: IntIterator = {
-        new IntIterator {
-            private[this] var i = 0
-            def hasNext: Boolean = i < 3
-            def next: Int = {
-                val v = if (i == 0) i1 else if (i == 1) i2 else i3
-                i += 1
-                v
-            }
+    override def intIterator: IntIterator = new IntIterator {
+        private[this] var i = 0
+        def hasNext: Boolean = i < 3
+        def next: Int = {
+            val v = if (i == 0) i1 else if (i == 1) i2 else i3
+            i += 1
+            v
         }
     }
+    override def reverseIntIterator: IntIterator = IntIterator(i3, i2, i1)
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
 
@@ -522,12 +524,15 @@ case class IntArraySetN private[immutable] (
     }
 
     override def iterator: Iterator[Int] = is.iterator
-    override def intIterator: IntIterator = {
-        new IntIterator {
-            private[this] var i = 0
-            def hasNext: Boolean = i < is.length
-            def next(): Int = { val i = this.i; this.i = i + 1; is(i) }
-        }
+    override def intIterator: IntIterator = new IntIterator {
+        private[this] var i = 0
+        def hasNext: Boolean = i < is.length
+        def next(): Int = { val i = this.i; this.i = i + 1; is(i) }
+    }
+    override def reverseIntIterator: IntIterator = new IntIterator {
+        private[this] var i = is.length - 1
+        def hasNext: Boolean = i >= 0
+        def next(): Int = { val i = this.i; this.i = i - 1; is(i) }
     }
 
     override def toChain: Chain[Int] = {
@@ -604,6 +609,14 @@ private[immutable] class FilteredIntArraySet(
             filteredS.intIterator
         } else {
             origS.intIterator.filter(p)
+        }
+    }
+
+    override def reverseIntIterator: IntIterator = {
+        if (filteredS ne null) {
+            filteredS.reverseIntIterator
+        } else {
+            origS.reverseIntIterator.filter(p)
         }
     }
 

@@ -34,7 +34,7 @@ import org.opalj.br.instructions.LabeledInstruction
 /**
  * @author Malte Limmeroth
  */
-sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
+sealed abstract class InstructionLikeElement[+T] extends CodeElement[T] {
 
     final override def isExceptionHandlerElement: Boolean = false
 
@@ -69,7 +69,7 @@ case class InstructionElement(
 /**
  * Wrapper for annotated [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
-case class AnnotatedInstructionElement[T](
+case class AnnotatedInstructionElement[+T](
         instruction: LabeledInstruction,
         annotation:  T
 ) extends InstructionLikeElement[T] {

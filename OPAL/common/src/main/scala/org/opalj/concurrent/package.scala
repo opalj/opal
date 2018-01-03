@@ -192,10 +192,10 @@ package object concurrent {
      *
      * @note   The OPALExecutionContext is used for getting the necessary threads.
      *
-     * @throws `ConcurrentExceptions` if any exception occurs;
+     * @throws ConcurrentExceptions if any exception occurs;
      *         the thrown exception stores all other exceptions (`getSuppressed`)
      */
-    @throws[ConcurrentExceptions]("all thrown exceptions are collected and added as suppressed exceptions to the thrown exception")
+    @throws[ConcurrentExceptions]("concurrently thrown exceptions are added as suppressed exceptions")
     def parForeachArrayElement[T, U](
         data:                 Array[T],
         parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,

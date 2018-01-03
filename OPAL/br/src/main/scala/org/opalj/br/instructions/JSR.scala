@@ -70,7 +70,7 @@ case class LabeledJSR(
         branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with JSRLike {
 
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(
         currentPC: PC,
         pcs:       Map[InstructionLabel, PC]

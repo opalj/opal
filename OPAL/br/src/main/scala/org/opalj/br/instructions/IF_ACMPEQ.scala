@@ -78,10 +78,15 @@ object IF_ACMPEQ {
 
 case class LabeledIF_ACMPEQ(
         branchTarget: InstructionLabel
-) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPEQLike {
+) extends LabeledSimpleConditionalBranchInstruction
+    with IF_ACMPEQLike {
 
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ACMPEQ = {
         IF_ACMPEQ(asShortBranchoffset(pcs(branchTarget) - pc))
+    }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIF_ACMPNE = {
+        LabeledIF_ACMPNE(newJumpTargetLabel)
     }
 }

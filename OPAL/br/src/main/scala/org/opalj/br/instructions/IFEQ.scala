@@ -78,10 +78,15 @@ object IFEQ extends InstructionLabelFactory {
 
 case class LabeledIFEQ(
         branchTarget: InstructionLabel
-) extends LabeledSimpleConditionalBranchInstruction with IFEQLike {
+) extends LabeledSimpleConditionalBranchInstruction
+    with IFEQLike {
 
-    @throws[BranchoffsetException]("if the branchoffset is invalid")
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFEQ = {
         IFEQ(asShortBranchoffset(pcs(branchTarget) - pc))
+    }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFNE = {
+        LabeledIFNE(newJumpTargetLabel)
     }
 }
