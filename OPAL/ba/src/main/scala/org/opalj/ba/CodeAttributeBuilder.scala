@@ -192,15 +192,14 @@ class CodeAttributeBuilder[T] private[ba] (
         if (classFileVersion.major >= bi.Java6MajorVersion &&
             attributes.forall(a ⇒ a.kindId != StackMapTable.KindId) &&
             (hasControlTransferInstructions || exceptionHandlers.nonEmpty)) {
-            // let's create fake code and method objects to make it possible
-            // to use the AI framework
+            // Let's create fake code and method objects to make it possible
+            // to use the AI framework for computing the stack map table...
             val cf = ClassFile(
                 thisType = declaringClassType,
                 methods = IndexedSeq(Method(accessFlags, name, descriptor, IndexedSeq(code)))
             )
             val m = cf.methods.head
-            val as = IndexedSeq(computeStackMapTable(m))
-            code = code.copy(attributes = as)
+            code = code.copy(attributes = this.attributes :+ computeStackMapTable(m))
         }
 
         (code, (annotations, warnings))
