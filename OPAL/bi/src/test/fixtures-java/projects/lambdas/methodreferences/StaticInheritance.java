@@ -59,22 +59,22 @@ public class StaticInheritance {
     }
 
     public static class B extends A {
-
+        /* Empty */
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/StaticInheritance$B", name = "foo", line = 66)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/StaticInheritance$B", name = "foo", line = 67)
     public static String staticInheritanceTest() {
         Supplier<String> s = B::foo;
         return s.get();
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/StaticInheritance$B", name = "bar", line = 72)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/StaticInheritance$B", name = "bar", line = 73)
     public static void staticInheritanceWithParameter() {
         Consumer<String> c = B::bar;
         c.accept("foo");
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/Integer", name = "compareUnsigned", line = 79)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/lang/Integer", name = "compareUnsigned", line = 80)
     public Comparator<Integer> makeComparator() {
         // Return a comparator method reference that is also serializable
         return (Comparator<Integer> & Serializable) Integer::compareUnsigned;
