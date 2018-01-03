@@ -38,6 +38,8 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import net.ceedubs.ficus.Ficus._
 import org.opalj.bi.AccessFlags
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
@@ -158,7 +160,8 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         // class, we have to make the synthetic method accessible from the proxy class.
         updatedClassFile = updatedClassFile.copy(
             methods = classFile.methods.map { m ⇒
-                if ((m.name.startsWith("lambda$") || m.name.equals("$deserializeLambda$")) &&
+                val name = m.name
+                if ((name.startsWith("lambda$") || name.equals("$deserializeLambda$")) &&
                     m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
                     val syntheticLambdaMethodAccessFlags =
                         if (updatedClassFile.isInterfaceDeclaration) {
@@ -320,10 +323,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * Resolution of the java 8 lambda and method reference expressions.
+     * Resolution of java 8 lambda and method reference expressions.
      *
      * @see More information about lambda deserialization and lambda meta factory:
-     *      - [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html]
+     *      [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html]
+     *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
      * @param pc The program counter of the current instruction
@@ -345,11 +349,14 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             samMethodType: MethodDescriptor, // describing the implemented method type
             tempImplMethod: MethodCallMethodHandle, // the MethodHandle providing the implementation
             instantiatedMethodType: MethodDescriptor, // allowing restrictions on invocation
-            altMetafactoryArgs @ _* // depending on the metafactory, we could have more information, e.g. about bridges or markers
+            // The available information depends on the metafactory:
+            // (e.g. about bridges or markers)
+            altMetafactoryArgs @ _*
             ) = bootstrapArguments
         var implMethod = tempImplMethod
 
-        val (markerInterfaces, bridges, serializable) = extractAltMetafactoryArguments(altMetafactoryArgs)
+        val (markerInterfaces, bridges, serializable) =
+            extractAltMetafactoryArguments(altMetafactoryArgs)
 
         val MethodCallMethodHandle(
             targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
@@ -364,13 +371,9 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                     // Interface methods must be either public or private, see
                     //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
                     if (classFile.isInterfaceDeclaration) {
-                        m.copy(
-                            accessFlags = (m.accessFlags & ~bi.ACC_PRIVATE.mask) | bi.ACC_PUBLIC.mask
-                        )
+                        m.copy(accessFlags = (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask)
                     } else {
-                        m.copy(
-                            accessFlags = m.accessFlags & ~bi.ACC_PRIVATE.mask
-                        )
+                        m.copy(accessFlags = m.accessFlags & ~ACC_PRIVATE.mask)
                     }
                 } else {
                     m.copy()
