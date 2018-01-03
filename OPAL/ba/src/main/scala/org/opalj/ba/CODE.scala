@@ -379,6 +379,7 @@ object CODE {
                 case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
             }
         }
+        // TODO add artifical pc of first instruction aftet the code array to the mapping to facilitate analysis which go beyond  pcMapping += ()
 
         val exceptionHandlers = exceptionHandlerBuilder.result()
         val attributes = lineNumberTableBuilder.result()
