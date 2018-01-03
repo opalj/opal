@@ -37,6 +37,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.control.rerun
 import org.opalj.control.iterateUntil
 import org.opalj.br.instructions.Instruction
