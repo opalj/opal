@@ -50,7 +50,7 @@ class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest
                     LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
                     LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
                     LambdaExpressionsRewriting.isScalaSymbolExpression(i)
-                    )⇒ i
+                ) ⇒ i
             }
         }
 
