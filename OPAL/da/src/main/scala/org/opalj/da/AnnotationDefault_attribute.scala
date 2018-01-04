@@ -46,7 +46,7 @@ case class AnnotationDefault_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
-            <summary>AnnotationDefault</summary>
+            <summary class="attribute_name">AnnotationDefault</summary>
             { element_value.toXHTML }
         </details>
     }

@@ -48,7 +48,7 @@ case class MethodParameters_attribute(
     // Primarily implemented to handle the case if the attribute is not found where expected.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute method_paramaters">
-            <summary>Method Parameters</summary>
+            <summary class="attribute_name">Method Parameters</summary>
             <ol>{ parameters.map[Node, Seq[Node]] { p ⇒ <li>{ p.toXHTML(cp) }</li> } }</ol>
         </details>
     }

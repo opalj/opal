@@ -46,7 +46,7 @@ case class LineNumberTable_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
-            <summary>LineNumberTable</summary>
+            <summary class="attribute_name">LineNumberTable [size: { line_number_table.size } item(s)]</summary>
             { line_number_tableToXHTML() }
         </details>
     }

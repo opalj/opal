@@ -27,27 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
-
-import scala.xml.Node
+package br
+package reader
 
 /**
+ * This configuration can be used to read in Java 9 (version 53) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented. Instructions will be cached.
+ *
  * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
- * @author Andre Pacak
  */
-case class RuntimeVisibleParameterAnnotations_attribute(
-        attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: IndexedSeq[IndexedSeq[Annotation]]
-) extends ParametersAnnotations_attribute {
-
-    final override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details class="attribute parameter_annotations runtime_visible">
-            <summary class="attribute">Runtime Visible Parameter Annotations [size: { parameters_annotations.size } item(s)]</summary>
-            { parametersAnnotationstoXHTML(cp) }
-        </details>
-    }
-
-}
+class Java9FrameworkWithCaching(
+        cache: BytecodeInstructionsCache
+) extends Java8FrameworkWithCaching(cache)
+    with Java9LibraryFramework
