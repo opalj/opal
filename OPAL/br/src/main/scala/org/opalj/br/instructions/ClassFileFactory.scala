@@ -841,7 +841,7 @@ object ClassFileFactory {
                 if (x.fieldType.isBaseType) {
                     instructions ++= x.fieldType.asBaseType.boxValue
                 }
-                instructions ++= Array(AASTORE)
+                instructions :+= AASTORE
         }
 
         instructions ++= Array(
