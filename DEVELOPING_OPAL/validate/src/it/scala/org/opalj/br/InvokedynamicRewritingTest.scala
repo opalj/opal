@@ -37,13 +37,13 @@ import java.io.File
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
-import java.security.Permission
 
 import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.io.JARsFileFilter
+
 /**
  * Tests if OPAL is able to rewrite a simple lambda expression and checks if the rewritten bytecode
  * is executable.
@@ -123,7 +123,9 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
     describe("behavior of rewritten JCG lambda_expressions project") {
 
         it("should execute main successfully") {
-            val p = JavaFixtureProject(locateTestResources("classfiles/lambda_expressions.jar", "bi"))
+            val p = JavaFixtureProject(
+                locateTestResources("classfiles/jcg_lambda_expressions.jar", "bi")
+            )
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
 
             val c = inMemoryClassLoader.loadClass("app.ExpressionPrinter")
@@ -143,14 +145,21 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
     }
 
     describe("behavior of rewritten OPAL") {
-        it("should execute hermes successfully") {
-            val p = JavaFixtureProject(locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar", "bi"))
-            val scalaLib = locateTestResources("classfiles/scala-2.12.2/", "bi")
-                .listFiles(JARsFileFilter)
-                .map(_.toURI.toURL)
-            val opalDependencies = locateTestResources("classfiles/OPAL-dependencies/", "bi")
-                .listFiles(JARsFileFilter)
-                .map(_.toURI.toURL)
+
+        it("should execute Hermes successfully") {
+            val p = JavaFixtureProject(
+                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar", "bi")
+            )
+            val scalaLib =
+                locateTestResources("classfiles/scala-2.12.2/", "bi").
+                    listFiles(JARsFileFilter).
+                    map(_.toURI.toURL)
+            val opalDependencies =
+                locateTestResources(
+                    "classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017-dependencies/", "bi"
+                ).
+                    listFiles(JARsFileFilter).
+                    map(_.toURI.toURL)
 
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
@@ -163,52 +172,24 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
                     new File("OPAL/bp/src/main/resources/").toURI.toURL,
                     new File("OPAL/br/src/main/resources/").toURI.toURL,
                     new File("OPAL/common/src/main/resources/").toURI.toURL
-                ) ++ scalaLib ++ opalDependencies, null
+                ) ++ scalaLib ++ opalDependencies,
+                null
             )
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p, resourceClassloader)
 
             val c = inMemoryClassLoader.loadClass("org.opalj.hermes.HermesCLI")
             val m = c.getMethod("main", classOf[Array[String]])
 
-            // Intercept System.exit calls and throw an exception instead
-            // Hermes runs multi threaded, so we return from m immediately.
-            // We have to wait for the statistics file to appear before we can
-            // succeed the test. We also have to "kill" the thread which calls
-            // System.exit by throwing an exception. Then the whole program doesn't
-            // quit.
-            // IMPROVE: Improve HermesCLI to return from main when the process is
-            // actually finished.
-            val secManager = new ExitCodeSecurityManager
-            System.setSecurityManager(secManager)
-
             val tempFile = Files.createTempFile("OPALValidate-Hermes-stats-", ".csv").toFile
             tempFile.delete()
 
             m.invoke(null, Array(
-                "-config", "DEVELOPING_OPAL/tools/src/main/resources/hermes-validate-fixtures.json",
+                "-config", "DEVELOPING_OPAL/tools/src/main/resources/hermes-test-fixtures.json",
                 "-statistics", tempFile.getAbsolutePath
             ))
 
-            // Wait for the statistics file to appear
-            while (!tempFile.exists()) {
-                Thread.sleep(100)
-            }
             assert(tempFile.exists())
             assert(tempFile.length() > 0)
-
-            System.setSecurityManager(null)
         }
     }
-
-    private class ExitCodeSecurityManager extends SecurityManager {
-        override def checkPermission(perm: Permission): Unit = {}
-
-        override def checkPermission(perm: Permission, context: Object): Unit = {}
-
-        override def checkExit(status: Int): Unit = {
-            throw new ExitCodeException(status)
-        }
-    }
-
-    private class ExitCodeException(val exitCode: Int) extends SecurityException
 }
