@@ -48,11 +48,13 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.Locals
 
 /**
- * Builder for the [[org.opalj.br.Code]] attribute with all its properties. Instantiation is only
- * possible with the [[CODE]] factory. The `max_stack` and
- * `max_locals` values will be calculated if not explicitly defined.
+ * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
+ * created using the [[CODE]] factory.
+ *
+ * The `max_stack` and `max_locals` values will be calculated if not explicitly defined.
  *
  * @author Malte Limmeroth
+ * @author Michael Eichberg
  */
 class CodeAttributeBuilder[T] private[ba] (
         private[ba] val instructions:                   Array[Instruction],

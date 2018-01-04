@@ -33,12 +33,10 @@ import java.util.Arrays.copyOf
 /**
  * Mapping of some pc to some new pc.
  *
- * @note The knowledge about the "legal" keys/pcs has to be kept elsewhere!
+ * @note The knowledge about the "legal" pcs has to be kept elsewhere!
  *
  */
-class PCMapping(
-        private[ba] var data: Array[Int] = new Array[Int](16)
-) extends (Int ⇒ Int) {
+class PCMapping(private[ba] var data: Array[Int] = new Array[Int](16)) extends (Int ⇒ Int) {
 
     def apply(key: Int): Int = data(key)
 

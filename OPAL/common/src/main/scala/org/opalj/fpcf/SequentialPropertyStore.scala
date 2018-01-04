@@ -41,7 +41,7 @@ import org.opalj.collection.immutable.Chain
  * required. I.e.,
  *  - they have a property OR
  *  - a computation is already scheduled that will compute the property OR
- *  - we have a depender
+ *  - we have a `depender``
  */
 class SequentialPropertyStore(
         val ctx: Map[Type, AnyRef]
@@ -66,9 +66,10 @@ class SequentialPropertyStore(
     private class PropertyState(
             // Only null as long as the initial - already scheduled computation – has
             // not returned. Never null afterwards - we require that we always have
-            // an explicit representation for "bottom" w.r.t. the underlying lattice
+            // an explicit representation for "bottom" w.r.t. the underlying lattice; i.e.,
+            // using null as the bottom value is NOT supported.
             var p: Property,
-            // Both lists will be cleared when we schedule a related computation
+            // Both lists will be cleared when we schedule a related computation.
             // (we will get the new list of dependees by the computation anyway)
             var dependers: Chain[ScheduledOnUpdateContinutation], // those who are interested in this property
             var dependees: Option[(ScheduledOnUpdateContinutation, Traversable[SomeEPK])] // the other properties on which this property depends
@@ -78,6 +79,10 @@ class SequentialPropertyStore(
         def this(p: Property) { this(p, Chain.empty, None) }
         def this() { this(null, Chain.empty, None) }
 
+        /**
+         * @return `true` if the computation of the value of this property has finished and
+         *        we have result – at least w.r.t. the current phase.
+         */
         def isResult: Boolean = dependees.isEmpty
 
         override def toString: String = {
@@ -88,7 +93,7 @@ class SequentialPropertyStore(
         }
     }
 
-    def properties(e: Entity): Traversable[Property] = {
+    def properties(e: Entity): Traversable[Property] = { // IMPROVE use traversable once?
         assert(e ne null)
         for {
             epkpss ← ps.get(e).toSeq // the entities are lazily initialized!
@@ -100,7 +105,7 @@ class SequentialPropertyStore(
         }
     }
 
-    def entities(propertyFilter: Property ⇒ Boolean): Traversable[Entity] = {
+    def entities(propertyFilter: Property ⇒ Boolean): Traversable[Entity] = { // IMPROVE use traversable once?
         for {
             pkIdPState ← ps.values
             pState ← pkIdPState.values
@@ -111,12 +116,16 @@ class SequentialPropertyStore(
         }
     }
 
-    def entities[P <: Property](p: P): Traversable[Entity] = {
+    /**
+     * Returns all entities which have the given property based on an "==" (equals) comparison
+     * with the given property.
+     */
+    def entities[P <: Property](p: P): Traversable[Entity] = { // IMPROVE use traversable once?
         assert(p ne null)
         entities((otherP: Property) ⇒ p == otherP)
     }
 
-    def entities[P <: Property](pk: PropertyKey[P]): Traversable[EP[Entity, P]] = {
+    def entities[P <: Property](pk: PropertyKey[P]): Traversable[EP[Entity, P]] = { // IMPROVE use traversable once?
         for {
             (e, pkIdPState) ← ps
             pState ← pkIdPState.values
@@ -132,8 +141,8 @@ class SequentialPropertyStore(
             val properties = for {
                 (e, pkIdPStates) ← ps
                 (pkId, pState) ← pkIdPStates
-                propertyKindName = PropertyKey.name(pkId.toInt)
             } yield {
+                val propertyKindName = PropertyKey.name(pkId.toInt)
                 s"$e -> $propertyKindName[$pkId] = $pState"
             }
             properties.mkString("PropertyStore(\n\t", "\n\t", "\n")
