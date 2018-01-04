@@ -77,7 +77,7 @@ class BRtoBATest extends FlatSpec with Matchers {
         val Lock = new Object
         var exceptions: List[Throwable] = Nil
 
-        for {(brClassFile1,url) <- ClassFileReader.ClassFiles(file).par} {
+        for { (brClassFile1, url) ← ClassFileReader.ClassFiles(file).par } {
 
             try {
                 // PART 1... just serialize the file...
