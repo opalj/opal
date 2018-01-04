@@ -1077,7 +1077,7 @@ object Project {
                                     val ex = InconsistentProjectException(
                                         s"target method of invokestatic call in "+
                                             m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                            "cannot be resolved; supertype information is complete="+
+                                            " cannot be resolved; supertype information is complete="+
                                             completeSupertypeInformation+
                                             "; missing supertype class file: "+missingSupertypeClassFile,
                                         Error
@@ -1094,7 +1094,7 @@ object Project {
                                     val ex = InconsistentProjectException(
                                         s"target method of invokespecial call in "+
                                             m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                            "cannot be resolved; supertype information is complete="+
+                                            " cannot be resolved; supertype information is complete="+
                                             completeSupertypeInformation+
                                             "; missing supertype class file: "+missingSupertypeClassFile,
                                         Error
