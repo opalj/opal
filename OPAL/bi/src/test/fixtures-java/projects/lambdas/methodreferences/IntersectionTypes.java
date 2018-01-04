@@ -82,9 +82,12 @@ public class IntersectionTypes {
         }
     }
 
+    private static void processIt(Object o) { /*empty*/}
+
     public static void t() {
         float f = 3.14f;
         Object[] o = {f};
+        processIt(o);
     }
 
     public static String lambdaWithObjectCaptures() {

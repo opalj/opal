@@ -45,8 +45,8 @@ import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.io.JARsFileFilter
 
 /**
- * Tests if OPAL is able to rewrite a simple lambda expression and checks if the rewritten bytecode
- * is executable.
+ * Tests if OPAL is able to rewrite invokedynamics using LambdaMetaFactory and checks if the
+ * rewritten bytecode is executable.
  *
  * @author Andreas Muttscheller
  */
@@ -148,15 +148,15 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
         it("should execute Hermes successfully") {
             val p = JavaFixtureProject(
-                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar", "bi")
+                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
             )
             val scalaLib =
-                locateTestResources("classfiles/scala-2.12.2/", "bi").
+                locateTestResources("classfiles/scala-2.12.4/", "bi").
                     listFiles(JARsFileFilter).
                     map(_.toURI.toURL)
             val opalDependencies =
                 locateTestResources(
-                    "classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017-dependencies/", "bi"
+                    "classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi"
                 ).
                     listFiles(JARsFileFilter).
                     map(_.toURI.toURL)
@@ -184,7 +184,7 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
             tempFile.delete()
 
             m.invoke(null, Array(
-                "-config", "DEVELOPING_OPAL/tools/src/main/resources/hermes-test-fixtures.json",
+                "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
                 "-statistics", tempFile.getAbsolutePath
             ))
 
