@@ -31,19 +31,13 @@ package br
 package reader
 
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
+ * This configuration can be used to read in Java 9 (version 53) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
+ * is represented. Instructions will be cached.
  *
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-// IMPROVE [JDK9] Add support for the other meta information attributes (e.g. Version Attribute)
-
-object Java9LibraryFramework extends Java9LibraryFramework {
-
-    final override def loadsInterfacesOnly: Boolean = true
-
-}
+class Java9FrameworkWithCaching(
+        cache: BytecodeInstructionsCache
+) extends Java8FrameworkWithCaching(cache)
+    with Java9LibraryFramework
