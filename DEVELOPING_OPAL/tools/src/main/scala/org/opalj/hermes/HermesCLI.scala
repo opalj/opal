@@ -30,9 +30,9 @@ package org.opalj
 package hermes
 
 import java.io.File
+import java.util.concurrent.CountDownLatch
 
 import scala.io.Source
-
 import org.opalj.io.processSource
 
 /**
@@ -95,6 +95,7 @@ object HermesCLI {
             System.exit(1)
         }
 
+        val waitOnFinished = new CountDownLatch(1)
         Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
                 val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
@@ -107,11 +108,12 @@ object HermesCLI {
                     println("Wrote mapping: "+theMappingFile)
                 }
 
-                System.exit(0)
+                waitOnFinished.countDown()
             }
         }
         Hermes.initialize(new File(configFile))
-        Hermes.analyzeCorpus(runAsDaemons = false)
+        Hermes.analyzeCorpus(runAsDaemons = true)
+        waitOnFinished.await() // we will not return until we have finished the analysis
     }
 
 }
