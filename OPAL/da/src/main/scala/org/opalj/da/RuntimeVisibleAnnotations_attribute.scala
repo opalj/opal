@@ -46,7 +46,7 @@ case class RuntimeVisibleAnnotations_attribute(
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute annotations runtime_visible">
-            <summary>Runtime Visible Annotations</summary>
+            <summary class="attribute_name">Runtime Visible Annotations [size: { annotations.size } item(s)]</summary>
             { annotationsToXHTML(cp) }
         </details>
     }

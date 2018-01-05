@@ -39,4 +39,4 @@ package reader
  */
 class Java9FrameworkWithLambdaExpressionsSupportAndCaching(
         cache: BytecodeInstructionsCache
-) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache) with Java9LibraryFramework

@@ -39,21 +39,15 @@ import java.lang.{Boolean ⇒ JBoolean}
 import java.io.File
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
-import java.io.BufferedInputStream
-import java.util.zip.ZipFile
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.JavaConverters._
-
-//import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-//import org.opalj.log.GlobalLogContext
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java8FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9FrameworkWithCaching
 import org.opalj.br.reader.BytecodeOptimizer.SimplifyControlFlowKey
 
 /**
@@ -68,40 +62,28 @@ class BRtoBATest extends FlatSpec with Matchers {
     behavior of "toDA(...br.ClassFile)"
 
     val ClassFileReader = {
-        //implicit val logContext: LogContext = GlobalLogContext
         val testConfig = ConfigFactory.load().
             withValue(SimplifyControlFlowKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
 
         object Framework extends {
             override val config = testConfig
-        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(new BytecodeInstructionsCache)
+        } with Java9FrameworkWithCaching(new BytecodeInstructionsCache)
         Framework
     }
 
     def process(file: File): Unit = {
-        val zipFile = new ZipFile(file)
         val entriesCount = new AtomicInteger(0)
 
         val Lock = new Object
         var exceptions: List[Throwable] = Nil
 
-        zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
-
-            val brClassFile1 = {
-                val file = zipFile.getInputStream(ze)
-                val classFileSize = ze.getSize.toInt
-                val raw = new Array[Byte](classFileSize)
-                val bin = new BufferedInputStream(file, classFileSize)
-                val bytesRead = bin.read(raw, 0, classFileSize)
-                assert(bytesRead == classFileSize, "reading the zip file failed")
-                ClassFileReader.ClassFile(new DataInputStream(new ByteArrayInputStream(raw))).head
-            }
+        for { (brClassFile1, url) ← ClassFileReader.ClassFiles(file).par } {
 
             try {
                 // PART 1... just serialize the file...
                 // this may have - in comparison with the original class file:
                 //  - a new (optimal) constant pool,
-                //  - reordered fiels,
+                //  - reordered fields,
                 //  - reordered methods
                 val daClassFile1 = toDA(brClassFile1)
                 val rawClassFile1 = org.opalj.bc.Assembler(daClassFile1)
@@ -116,10 +98,10 @@ class BRtoBATest extends FlatSpec with Matchers {
                 entriesCount.incrementAndGet()
             } catch {
                 case e: Exception ⇒
-                    println(" -> failed: "+e.getMessage)
+                    println(s"reading/writing of $url -> failed: ${e.getMessage}")
                     Lock.synchronized {
                         val details = e.getMessage + e.getClass.getSimpleName
-                        val message = s"failed: $ze(${brClassFile1.thisType}); message:"+details
+                        val message = s"failed: $url(${brClassFile1.thisType}); message:"+details
                         val newException = new RuntimeException(message, e)
                         exceptions = newException :: exceptions
                     }

@@ -45,11 +45,10 @@ case class BootstrapMethods_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
-            <summary>BootstrapMethods</summary>
+            <summary class="attribute_name">BootstrapMethods</summary>
             { methodsToXHTML(cp) }
         </details>
     }
 
     def methodsToXHTML(implicit cp: Constant_Pool): Seq[Node] = bootstrap_methods.map(_.toXHTML(cp))
 }
-

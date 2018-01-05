@@ -32,6 +32,8 @@ package ba
 import org.opalj.br.instructions.LabeledInstruction
 
 /**
+ * Represents an (annotated) labeled instruction.
+ *
  * @author Malte Limmeroth
  */
 sealed abstract class InstructionLikeElement[+T] extends CodeElement[T] {

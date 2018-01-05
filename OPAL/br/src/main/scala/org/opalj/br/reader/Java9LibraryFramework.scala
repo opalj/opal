@@ -40,7 +40,7 @@ package reader
 trait Java9LibraryFramework
     extends Java8LibraryFramework
     with Module_attributeBinding
-// IMPROVE [JDK8] Add support for the other meta information attributes (e.g. Version Attribute)
+// IMPROVE [JDK9] Add support for the other meta information attributes (e.g. Version Attribute)
 
 object Java9LibraryFramework extends Java9LibraryFramework {
 

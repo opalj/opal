@@ -56,7 +56,7 @@ case class Module_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details>
-            <summary>Module</summary>
+            <summary class="attribute">Module</summary>
             <div>{ requires.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
             <div>{ exports.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
             <div>{ uses.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
