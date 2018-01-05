@@ -831,13 +831,17 @@ object ClassFileFactory {
         )
 
         additionalFieldsForStaticParameters.zipWithIndex.foreach {
-            case (x, i) ⇒ instructions ++= Array(
-                DUP,
-                BIPUSH(i), null,
-                ALOAD_0,
-                GETFIELD(definingType.objectType, x.name, x.fieldType), null, null,
-                AASTORE
-            )
+            case (x, i) ⇒
+                instructions ++= Array(
+                    DUP,
+                    BIPUSH(i), null,
+                    ALOAD_0,
+                    GETFIELD(definingType.objectType, x.name, x.fieldType), null, null
+                )
+                if (x.fieldType.isBaseType) {
+                    instructions ++= x.fieldType.asBaseType.boxValue
+                }
+                instructions :+= AASTORE
         }
 
         instructions ++= Array(
