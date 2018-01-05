@@ -265,11 +265,10 @@ abstract class PropertyStore {
 
     /**
      * Directly associates the given property `p` with property kind `pk` with the given entity
-     * `e` if `e` has no property of the respective kind. The property is always treated as being
-     * final.
+     * `e` if `e` has no property of the respective kind. The set property is always final.
      *
      * @note    This method must not be used '''if there might be another computation that
-     *          computes the property kind `pk` for `e` and whichs return the respective property
+     *          computes the property kind `pk` for `e` and which returns the respective property
      *          as a result'''.
      *
      * A use case is an analysis that does not interact with the property store while
@@ -280,6 +279,8 @@ abstract class PropertyStore {
      * IllegalArgumentException is thrown.
      */
     def set(e: Entity, p: Property): Unit
+
+    // TODO add: def update[E <: Entity, P <: Property](e :E, pk : PropertyKey[P])(f : EPK[E,P] => EP[E,P])
 
     /**
      * Registers a function that lazily computes a property for an element

@@ -29,11 +29,12 @@
 package org.opalj.fpcf
 
 /**
- * Ordered properties makes the order between all properties regarding of a respective kind explicit;
+ * Ordered properties makes the order between all properties regarding a respective kind explicit;
  * all properties that are of the same kind have to inherit from ordered property or none.
  *
  * This information is used by the property store when debugging is turned on to test if an
- * analysis which derives a new property always derives a more precise property.
+ * analysis which derives a new property always derives a more precise property. These tests
+ * are only executed in-phase!
  *
  * @author Michael Eichberg
  */

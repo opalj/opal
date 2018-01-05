@@ -28,14 +28,14 @@
  */
 package org.opalj.fpcf
 
-import java.util.concurrent.CountDownLatch
-
 /**
  * An information associated with an entity. Each property belongs to exactly one
- * property kind identified by a [[PropertyKey]]. Furthermore, each property
+ * property kind specified by the [[PropertyKey]]. Furthermore, each property
  * is associated with at most one property per property kind.
  *
  * ==Implementation Requirements==
+ *
+ * ===Structural Equality===
  * Each implementation of the property trait has to implement an `equals` method that
  * determines if two properties are equal.
  *
@@ -51,11 +51,13 @@ trait Property extends PropertyMetaInformation {
      *        The property store relies on the type of the result to determine if a property
      *        is final or not.
      */
+    // TOOD Remove - we now have three types of results to signify the results and the continuation function gets the update type anyway!
     def isRefinable: Boolean
 
     /**
      *  Returns `true` if this property is always final and no refinement is possible.
      */
+    // TOOD Remove - we now have three types of results to signify the results and the continuation function gets the update type anyway!
     final def isFinal: Boolean = !isRefinable
 
     /**
@@ -67,7 +69,6 @@ trait Property extends PropertyMetaInformation {
      * Returns true if this property is currently computed or if its computation is already
      * scheduled.
      */
-    // only used in combination with direct property computations
     private[fpcf] def isBeingComputed: Boolean = false
 
     /**
@@ -92,7 +93,9 @@ trait Property extends PropertyMetaInformation {
 //
 //
 
-private[fpcf] trait PropertyIsBeingComputed extends Property {
+private[fpcf] case object PropertyIsLazilyComputed extends Property {
+
+    type Self = PropertyIsLazilyComputed.type
 
     final override def key: Nothing = throw new UnsupportedOperationException
     final override def isRefinable: Nothing = throw new UnsupportedOperationException
@@ -103,33 +106,5 @@ private[fpcf] trait PropertyIsBeingComputed extends Property {
 private[fpcf] object PropertyIsBeingComputed {
 
     def unapply(p: Property): Boolean = (p ne null) && p.isBeingComputed
-
-}
-
-/**
- * A property that is used to state that the property is currently computed as part of a
- * direct property computation.
- *
- * This property is used to synchronize access to the property if the property
- * is computed using a direct property computation; in this case the first process - which also
- * performs the computation - decrements the CountDownLatch once the computation has succeeded.
- * All other processes just wait until the CountDownLatch is decremented.
- *
- * Recall that a direct property computation is executed by the thread that queries the property and
- * that a direct property computation is always only allowed to depend on either previously
- * computed properties or properties whose computation must not have a dependency on the currently
- * computed property.
- */
-private[fpcf] final class PropertyIsDirectlyComputed
-    extends CountDownLatch(1)
-    with PropertyIsBeingComputed {
-
-    type Self = PropertyIsDirectlyComputed
-
-}
-
-private[fpcf] case object PropertyIsLazilyComputed extends PropertyIsBeingComputed {
-
-    type Self = PropertyIsLazilyComputed.type
 
 }

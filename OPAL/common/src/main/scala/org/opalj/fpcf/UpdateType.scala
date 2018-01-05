@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf
 
+// TODO REname to PropertyState
 /**
  * The different types of updates distinguished by the fixed-point computations framework.
  *
@@ -37,6 +38,7 @@ sealed abstract class UpdateType(val name: String) {
     val id: Int
 
     def isIntermediateUpdate: Boolean
+    def isPhaseFinalUpdate: Boolean
     def isFinalUpdate: Boolean
 }
 
@@ -45,18 +47,30 @@ sealed abstract class UpdateType(val name: String) {
  *
  * @note Refinable results are - downstream - only intermediate updates.
  */
+// TODO Rename to IntermediateProperty
 case object IntermediateUpdate extends UpdateType("Intermediate Update") {
     final val id = 1
     final override def isIntermediateUpdate: Boolean = true
+    final override def isPhaseFinalUpdate: Boolean = false
+    final override def isFinalUpdate: Boolean = false
+}
+
+// TODO Rename to PhaseFinalProperty
+case object PhaseFinalUpdate extends UpdateType("Phase Final Update") {
+    final val id = 3
+    final override def isIntermediateUpdate: Boolean = false
+    final override def isPhaseFinalUpdate: Boolean = true
     final override def isFinalUpdate: Boolean = false
 }
 
 /**
  * The result is the final result and was computed using other information.
  */
+// TODO Rename to FinalProperty
 case object FinalUpdate extends UpdateType("Final Update") {
-    final val id = 2
+    final val id = 3
     final override def isIntermediateUpdate: Boolean = false
+    final override def isPhaseFinalUpdate: Boolean = false
     final override def isFinalUpdate: Boolean = true
 }
 

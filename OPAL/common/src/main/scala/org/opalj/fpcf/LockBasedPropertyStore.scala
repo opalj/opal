@@ -123,7 +123,6 @@ class LockBasedPropertyStore private (
     // pk =        Property Key
     // pc =        Property Computation
     // lpc =       Lazy Property Computation
-    // dpc =       Direct Property Computation
     // c =         Continuation (The rest of a computation if a specific, dependent property was computed.)
     // (p)o =      PropertyObserver
     // os =        PropertyObservers
@@ -223,7 +222,6 @@ class LockBasedPropertyStore private (
             effectiveDefaultPropertiesCount.set(0L)
 
             // reset entity related information
-            theDirectPropertyComputations.clear()
             theLazyPropertyComputations.clear()
             theOnPropertyComputations.clear()
             observers.clear()
@@ -415,10 +413,6 @@ class LockBasedPropertyStore private (
 
     // Access to this field is synchronized using the store's lock;
     // the map's keys are the ids of the PropertyKeys.
-    private[this] final val theDirectPropertyComputations = ArrayMap[(Entity) ⇒ Property](5)
-
-    // Access to this field is synchronized using the store's lock;
-    // the map's keys are the ids of the PropertyKeys.
     private[this] final val theLazyPropertyComputations = ArrayMap[SomePropertyComputation](5)
 
     // Access to this field is synchronized using the store's lock;
@@ -435,6 +429,11 @@ class LockBasedPropertyStore private (
     private type DependeeEPK = SomeEPK
     private type ObserversMap = JCHMap[DependerEPK, Buffer[(DependeeEPK, PropertyObserver)]]
     private[this] final val observers: ObserversMap = new JCHMap()
+
+    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[epk.e.type, P] = {
+        val EPK(e, pk) = epk
+        apply(e, pk).asInstanceOf[EOptionP[epk.e.type, P]]
+    }
 
     /**
      * Returns the property of the respective property kind `pk` currently associated
@@ -464,35 +463,11 @@ class LockBasedPropertyStore private (
      */
     // Locks: accessEntity, Entity (read)
     //                      Entity (write)
-    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[epk.e.type, P] = {
-        val EPK(e, pk) = epk
-        apply(e, pk).asInstanceOf[EOptionP[epk.e.type, P]]
-    }
-
     def apply[P <: Property](e: Entity, pk: PropertyKey[P]): EOptionP[e.type, P] = {
         val pkId = pk.id
         val eps = data.get(e)
         val ps = eps.ps
         val lock = eps.l
-
-        @inline def awaitComputationResult(p: PropertyIsDirectlyComputed): FinalEP[e.type, P] = {
-            // This also establishes the happens before relation!
-            p.await()
-            FinalEP(e, ps(pkId).p.asInstanceOf[P])
-        }
-
-        // quick path without locks... this path is only guaranteed to work if the property
-        // is final(!)
-        {
-            val pos = ps.apply(pkId)
-            if (pos ne null) {
-                val p = pos.p
-                if ((p ne null) && !p.isBeingComputed && p.isFinal) {
-                    // println("quick check succeeded")
-                    return EP(e, p.asInstanceOf[P]);
-                }
-            }
-        }
 
         accessEntity {
             // Thread safety: We use double checked locking w.r.t. the entity to ensure that
@@ -501,10 +476,23 @@ class LockBasedPropertyStore private (
             var pos = withReadLock(lock) { ps(pkId) }
             if (pos eq null) {
                 // => the property is not (yet) computed;
-                // let's check if we have a registered lazy or direct property computation function
+                // let's check if we have a registered lazy property computation function
                 val lpc = theLazyPropertyComputations(pkId)
                 if (lpc ne null) withWriteLock(lock) {
                     // pos is not null if we have a property or if the property is currently computed
+                    // quick path without locks... this path is only guaranteed to work if the property
+                    // is final(!)
+                    {
+                        val pos = ps.apply(pkId)
+                        if (pos ne null) {
+                            val p = pos.p
+                            if ((p ne null) && !p.isBeingComputed && p.isFinal) {
+                                // println("quick check succeeded")
+                                return EP(e, p.asInstanceOf[P]);
+                            }
+                        }
+                    }
+
                     pos = ps(pkId)
                     if (pos eq null) {
                         val pos = new PropertyAndObservers(PropertyIsLazilyComputed, new Buffer)
@@ -522,38 +510,12 @@ class LockBasedPropertyStore private (
                     }
                 }
                 else {
-                    val dpc = theDirectPropertyComputations(pkId)
-                    if (dpc ne null) {
-                        withWriteLock(lock) {
-                            pos = ps(pkId)
-                            if (pos eq null) {
-                                // => no other thread is currently computing this property
-                                val computationLatch = new PropertyIsDirectlyComputed
-                                ps(pkId) = new PropertyAndObservers(computationLatch, null)
-                                Left(computationLatch)
-                            } else {
-                                // => either the property is now available or some other thread
-                                // is still computing it
-                                Right(pos.p)
-                            }
-                        } match {
-                            case Left(computationLatch) ⇒
-                                val p = dpc(e).asInstanceOf[P]
-                                handleResult(Result(e, p))
-                                computationLatch.countDown()
-                                FinalEP(e, p)
-                            case Right(p: PropertyIsDirectlyComputed) ⇒ awaitComputationResult(p)
-                            case Right(p)                             ⇒ FinalEP(e, p.asInstanceOf[P])
-                        }
-                    } else {
-                        // So far no one want to compute a result, but this may still change.
-                        EPK(e, pk)
-                    }
+                    // So far no one wanted to compute a result, but this may still change.
+                    EPK(e, pk)
                 }
             } else {
                 pos.p match {
                     case null | PropertyIsLazilyComputed ⇒ EPK(e, pk)
-                    case p: PropertyIsDirectlyComputed   ⇒ awaitComputationResult(p)
                     case p ⇒
                         val theP = p.asInstanceOf[P]
                         if (pos.os eq null)
@@ -832,53 +794,6 @@ class LockBasedPropertyStore private (
                 }
             }
         }
-    }
-
-    /**
-     * Registers a direct property computation (DPC) function that is executed in the caller's
-     * thread when the property is requested for the first time. After that the computed value
-     * is cached and returned the next time the property is requested.
-     *
-     * A DPC has to satisfy the following constraints:
-     *  - a DPC may depend on other properties that are computed
-     *    using DPCs if and only if the other properties are guaranteed to never have a direct or
-     *    indirect dependency on the computed property. (This in particular excludes cyclic
-     *    property dependencies. However, hierarchical property dependencies are supported. For
-     *    example, if the computation of property for a specific class is done using a DPC that
-     *    requires only information about the subclasses (or the superclasses, but not both at the
-     *    same time) then it is possible to use a DPC.
-     *    (A DPC may use all properties that are fully computed before the computation is registered.)
-     *  - the computation must not create dependencies
-     *
-     * @note In general, using DPCs is most useful for analyses that have no notion of more/less
-     *      precise/sound. In this case client's of properties computed using DPCs can query the
-     *      store and will get the answer; i.e., a client that wants to know the property `P`
-     *      of an entity `e` with property key `pk` computed using a dpc can write:
-     *      {{{
-     *      val ps : PropertyStore = ...
-     *      ps(e,pk).get
-     *      }}}
-     */
-    def scheduleOnDemandComputation[P <: Property](
-        pk:  PropertyKey[P],
-        dpc: (Entity) ⇒ Property
-    ): Unit = accessStore {
-        /* The framework has to handle the situation that the same dpc is potentially triggered
-         * by multiple other analyses concurrently!
-         *
-         * The framework does not have to handle the following two situations because direct
-         * property computations may not depend on properties of the same kind.
-         *  1. a dpc may require the calculation of a dpc that leads to a cycle
-         *  2. two or more dpcs may depend on each other:
-         *      t1: o → o1 → o2
-         *                 ↙︎ ↑
-         *      t2: o → o3 → o4
-         *      t1 and t2 are two threads that run concurrently.
-         *      Now: if o2 depends on o3 to finish, but o4 is currently running then o2 will block
-         *           but if now o4 requires the property computed by o2 it also needs to wait.
-         *           Hence, we have a deadlock.
-         */
-        theDirectPropertyComputations(pk.id) = dpc
     }
 
     /**

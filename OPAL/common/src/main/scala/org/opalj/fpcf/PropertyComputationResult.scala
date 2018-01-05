@@ -169,12 +169,12 @@ private[fpcf] object IntermediateResult {
  * were stored. I.e., in this case the property store guarantees that all values stored previously
  * can be queried by `nextComputations` if necessary.
  *
- * To ensure correctness it is absolutel< essential that all entities - for which some result
+ * To ensure correctness it is absolutely essential that all entities - for which some result
  * could eventually be computed - are actually associated with some result before the
  * property store reaches quiescence. Hence, it is generally not possible that a lazy
  * computation returns `IncrementalResult` objects.
  *
- * Incremental results are particularly usefull to process tree structures such as the class
+ * Incremental results are particularly useful to process tree structures such as the class
  * hierarchy.
  */
 case class IncrementalResult[E <: Entity](
@@ -187,6 +187,28 @@ case class IncrementalResult[E <: Entity](
 }
 
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 7 }
+
+/**
+ * If an analysis is finished and will not return more precise results, but a subsequent
+ * analysis (scheduled in a subsequent phase) may refine the results, a ```PhaseResult```
+ * has to be used.
+ *
+ * @note If the given property is not refinable a (Immediate)Result has to be used.
+ * @note `PhaseResults` will never lead to cycles as we have no more outgoing dependencies.
+ *      TODO The property store can be configured to know which properties are collaboratively
+ *      computed in multiple phases; if no subsequent analysis is scheduled the `PropertyStore`
+ *      will commit a `PhaseResult` directly as a final result.
+ *
+ */
+// TODO Rename "PhaseResult"
+case class RefinableResult(e: Entity, p: Property) extends PropertyComputationResult {
+
+    assert(p.isRefinable)
+
+    private[fpcf] final def id = RefinableResult.id
+
+}
+private[fpcf] object RefinableResult { private[fpcf] final val id = 10 }
 
 /**
  * Just a collection of multiple results.
@@ -209,18 +231,3 @@ private[fpcf] object Results {
 
 }
 
-/**
- * If an analysis is finished and will not return more precise results, but a subsequent
- * analysis may refine the results, a ```RefinableResult``` has to be used.
- *
- * @note If the given property is not refinable a (Immediate)Result has to be used.
- *
- */
-case class RefinableResult(e: Entity, p: Property) extends PropertyComputationResult {
-
-    assert(p.isRefinable)
-
-    private[fpcf] final def id = RefinableResult.id
-
-}
-private[fpcf] object RefinableResult { private[fpcf] final val id = 10 }
