@@ -197,6 +197,7 @@ class CodeAttributeBuilder[T] private[ba] (
             // Let's create fake code and method objects to make it possible
             // to use the AI framework for computing the stack map table...
             val cf = ClassFile(
+                majorVersion = classFileVersion.major,
                 thisType = declaringClassType,
                 methods = IndexedSeq(Method(accessFlags, name, descriptor, IndexedSeq(code)))
             )
@@ -291,7 +292,6 @@ class CodeAttributeBuilder[T] private[ba] (
                 }
             }
 
-            // TODO compute "optimal" stack map table
             // let's see how the last stack map frame looked like and if we can compute
             // an "optimal" stack map frame item
             val sameLocals = lastVerificationTypeInfoLocals == verificationTypeInfoLocals
@@ -299,12 +299,17 @@ class CodeAttributeBuilder[T] private[ba] (
             val localsCount = verificationTypeInfoLocals.size
             val localsDiffCount = localsCount - lastVerificationTypeInfoLocals.size
             if (sameLocals && lastverificationTypeInfoStack == verificationTypeInfoStack) {
+                // ---- SameFrame(Extended) ...
+                //
                 val offsetDelta = pc - lastPC - 1
-                if (offsetDelta <= 63)
-                    fs(frameIndex) = SameFrame(offsetDelta)
-                else
-                    fs(frameIndex) = SameFrameExtended(offsetDelta)
+                fs(frameIndex) =
+                    if (offsetDelta <= 63)
+                        SameFrame(offsetDelta)
+                    else
+                        SameFrameExtended(offsetDelta)
             } else if (sameLocals && verificationTypeInfoStack.size == 1) {
+                // ---- SameLocals1StackItemFrame(Extended) ...
+                //
                 val offsetDelta = pc - lastPC - 1
                 if (offsetDelta <= 63) {
                     val frameType = 64 + offsetDelta
@@ -315,19 +320,31 @@ class CodeAttributeBuilder[T] private[ba] (
                         SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
                 }
             } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3) {
+                // ---- CHOP FRAME ...
+                //
                 val offsetDelta = pc - lastPC - 1
                 fs(frameIndex) = ChopFrame(251 + localsDiffCount, offsetDelta)
             } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3) {
+                // ---- APPEND FRAME ...
+                //
                 val offsetDelta = pc - lastPC - 1
-                fs(frameIndex) = AppendFrame(
-                    251 + localsDiffCount,
-                    offsetDelta,
-                    verificationTypeInfoLocals.slice(
-                        from = localsCount - localsDiffCount,
-                        until = localsCount
-                    )
+                val newLocals = verificationTypeInfoLocals.slice(
+                    from = localsCount - localsDiffCount,
+                    until = localsCount
                 )
+                if (newLocals.forall(_ == TopVariableInfo)) {
+                    // just "appending" top is not necessary - this is implicitly the case!
+                    fs(frameIndex) =
+                        if (offsetDelta <= 63)
+                            SameFrame(offsetDelta)
+                        else
+                            SameFrameExtended(offsetDelta)
+                } else {
+                    fs(frameIndex) = AppendFrame(251 + localsDiffCount, offsetDelta, newLocals)
+                }
             } else {
+                // ---- FULL FRAME ...
+                //
                 fs(frameIndex) = FullFrame(
                     offsetDelta = if (lastPC != -1) pc - lastPC - 1 else pc,
                     verificationTypeInfoLocals,
