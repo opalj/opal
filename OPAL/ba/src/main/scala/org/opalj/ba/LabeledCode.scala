@@ -148,7 +148,7 @@ class LabeledCode(
                 instructions.insert(insertionPCLabelIndex + 1, newInstructions: _*)
 
             case InsertionPosition.At ⇒
-                val insertionPCLabel = LabelElement(Symbol(insertionPC.toString))
+                val insertionPCLabel = LabelElement(InstructionLabel(insertionPC))
                 val insertionPCLabelIndex = instructions.indexOf(insertionPCLabel)
                 instructions.insert(insertionPCLabelIndex, newInstructions: _*)
 
