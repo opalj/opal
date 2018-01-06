@@ -78,10 +78,20 @@ object ThirdInstrumentation extends App {
                 m.copy() // these are native and abstract methods
 
             case Some(code) ⇒
+                val lCode = LabeledCode(code)
+                // let's weave a simple debug method
+                lCode.insert(
+                    0, InsertionPosition.Before,
+                    Seq(
+                        GETSTATIC(SystemType, "out", PrintStreamType),
+                        LoadString(m.toJava),
+                        INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
+                    )
+                )
+
                 // let's search all "println" calls where the parameter has a specific
                 // type (which is statically known)
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
-                val lCode = LabeledCode(code)
                 var modified = false
 
                 for {
