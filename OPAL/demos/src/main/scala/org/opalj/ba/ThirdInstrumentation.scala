@@ -79,9 +79,15 @@ object ThirdInstrumentation extends App {
 
             case Some(code) ⇒
                 val lCode = LabeledCode(code)
-                // let's weave a simple debug method
+                // whenever a method is called, we output its signature
                 lCode.insert(
-                    0, InsertionPosition.Before,
+                    // Note, we generally don't want to use Before, here!
+                    // If we would use "Before" and would have a method like:
+                    // do {
+                    // } while(...)
+                    // It could happen that the output would be printed each time the loop
+                    // is evaluated.
+                    0, InsertionPosition.At,
                     Seq(
                         GETSTATIC(SystemType, "out", PrintStreamType),
                         LoadString(m.toJava),
