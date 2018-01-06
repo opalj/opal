@@ -172,6 +172,6 @@ object ThirdInstrumentation extends App {
     newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, new ArrayList[AnyRef]())
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
+    newClass.getMethod("endlessLoop").invoke(instance)
 
 }
-

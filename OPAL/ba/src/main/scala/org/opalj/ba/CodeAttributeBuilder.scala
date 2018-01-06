@@ -111,6 +111,9 @@ class CodeAttributeBuilder[T] private[ba] (
      * when we do bytecode weaving.
      *
      * @see `apply(classFileVersion:UShortPair,accessFlags:Int,name:String,...)` for more details.
+     * @param classFileVersion The version of the class file to which the returned will be added
+     *                         eventually.
+     *
      */
     def apply(
         classFileVersion: UShortPair,
@@ -297,7 +300,8 @@ class CodeAttributeBuilder[T] private[ba] (
             val sameLocals = lastVerificationTypeInfoLocals == verificationTypeInfoLocals
             val emptyStack = verificationTypeInfoStack.isEmpty
             val localsCount = verificationTypeInfoLocals.size
-            val localsDiffCount = localsCount - lastVerificationTypeInfoLocals.size
+            val lastLocalsCount = lastVerificationTypeInfoLocals.size
+            val localsDiffCount = localsCount - lastLocalsCount
             if (sameLocals && lastverificationTypeInfoStack == verificationTypeInfoStack) {
                 // ---- SameFrame(Extended) ...
                 //
@@ -319,12 +323,24 @@ class CodeAttributeBuilder[T] private[ba] (
                     fs(frameIndex) =
                         SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
                 }
-            } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3) {
+            } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3 && (
+                // all still existing locals are equal...
+                verificationTypeInfoLocals.iterator.
+                take(localsCount + localsDiffCount).
+                zipWithIndex.
+                forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
+            )) {
                 // ---- CHOP FRAME ...
                 //
                 val offsetDelta = pc - lastPC - 1
                 fs(frameIndex) = ChopFrame(251 + localsDiffCount, offsetDelta)
-            } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3) {
+            } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3 && (
+                // all previously existing locals are equal...
+                verificationTypeInfoLocals.iterator
+                .take(lastLocalsCount)
+                .zipWithIndex
+                .forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
+            )) {
                 // ---- APPEND FRAME ...
                 //
                 val offsetDelta = pc - lastPC - 1
