@@ -463,6 +463,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         innerJarEntries.iterator().forEachRemaining { jarEntry ⇒
             // TODO make this commons.vfs compatible...
+            // jar:jar/...!/...!...
             val nextJarFileURL = s"${jarFileURL}jar:${jarEntry.getName}!/"
             try {
                 val jarData = new Array[Byte](jarEntry.getSize.toInt)
