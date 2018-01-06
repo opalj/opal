@@ -256,8 +256,12 @@ object LabeledCode {
                 labeledInstructions += i.toLabeledInstruction(pc)
         }
 
-        new LabeledCode(code, labeledInstructions)
+        // We have to add the pc that would be used by the instruction which would follow the last
+        // instruction in the code array. This is required when we remap, e.g.,  LocalVariableTables
+        // where the range extends across ALL instructions.
+        labeledInstructions += LabelElement(PCLabel(code.instructions.length))
 
+        new LabeledCode(code, labeledInstructions)
     }
 
 }
