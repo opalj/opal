@@ -175,8 +175,8 @@ case class ChopFrame(frame_type: Int, offset_delta: Int) extends StackMapFrame {
                 <td>{ offset_delta }</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i><br/>
-                    Locals:&nbsp;The last{ 251 - frame_type }
-                    local(s) are absent
+                    Locals:&nbsp;The last&nbsp;{ 251 - frame_type }
+                    locals(s) are absent
                 </td>
             </tr>,
             newOffset
