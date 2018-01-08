@@ -178,6 +178,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         attributes:    Attributes
     ): ClassFile
 
+    // TODO Add class file like structure as a supertype.
+    //protected def Module(
+    //                    cp : Constant_Pool,
+    //                       ...
+    //                  )
+
     //
     // IMPLEMENTATION
     //

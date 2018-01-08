@@ -30,52 +30,31 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
-
 /**
- * Generic parser for the ''ConcealedPackages'' attribute (Java 9).
+ * Generic parser for the ''ModuleMainClass'' attribute (Java 9).
  */
-trait ConcealedPackages_attributeReader extends AttributeReader {
+trait ModuleMainClass_attributeReader extends AttributeReader {
 
-    type ConcealedPackages_attribute >: Null <: Attribute
-
-    type ConcealedPackagesEntry
-    implicit val ConcealedPackagesEntryManifest: ClassTag[ConcealedPackagesEntry]
-
-    def ConcealedPackages_attribute(
-        constant_pool:        Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        packages:             ConcealedPackages // basically a list of strings
-    ): ConcealedPackages_attribute
+    type ModuleMainClass_attribute <: Attribute
 
     /**
-     * @param packageIndex Points to the name in internal form of a package in
-     *      the current module that is ''not to be exported''.
+     * @param main_class_index Reference to a CONSTANT_Class_info.
      */
-    def ConcealedPackagesEntry(
-        constant_pool: Constant_Pool,
-        packageIndex:  Constant_Pool_Index // CONSTANT_UTF8
-    ): ConcealedPackagesEntry
-
-    //
-    // IMPLEMENTATION
-    //
-
-    type ConcealedPackages = IndexedSeq[ConcealedPackagesEntry]
+    def ModuleMainClass_attribute(
+        constant_pool:        Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        main_class_index:     Constant_Pool_Index
+    ): ModuleMainClass_attribute
 
     /**
      * <pre>
-     * ConcealedPackages_attribute {
+     * MainClass_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
      *
-     *     u2 packages_count;
-     *     {   u2 package_index;
-     *     } packages[package_count];
+     *     u2 main_class_index;
      * }
      * </pre>
      */
@@ -85,25 +64,9 @@ trait ConcealedPackages_attributeReader extends AttributeReader {
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
-        /*val attribute_length = */ in.readInt()
-        val packagesCount = in.readUnsignedShort()
-        if (packagesCount > 0 || reifyEmptyAttributes) {
-            ConcealedPackages_attribute(
-                cp,
-                attribute_name_index,
-                repeat(packagesCount) {
-                    ConcealedPackagesEntry(cp, in.readUnsignedShort)
-                }
-            )
-        } else
-            null
+        /*val attribute_length =*/ in.readInt
+        ModuleMainClass_attribute(cp, attribute_name_index, in.readUnsignedShort())
     }
 
-    registerAttributeReader(ConcealedPackagesAttribute.Name → parserFactory())
-}
-
-object ConcealedPackagesAttribute {
-
-    final val Name = "ConcealedPackages"
-
+    registerAttributeReader(ModuleMainClassAttribute.Name → parserFactory())
 }

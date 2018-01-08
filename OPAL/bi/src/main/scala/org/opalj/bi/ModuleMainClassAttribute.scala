@@ -27,35 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package bi
 
-import scala.xml.Node
+object ModuleMainClassAttribute {
 
-/**
- * The TargetPlatform attribute is an attribute in the attributes table
- * of a module definition (Java 9).
- *
- * @author Michael Eichberg
- */
-case class TargetPlatform_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        os_name_index:        Constant_Pool_Index, // CONSTANT_UTF8
-        os_arch_index:        Constant_Pool_Index, // CONSTANT_UTF8
-        os_version_index:     Constant_Pool_Index // CONSTANT_UTF8
-) extends Attribute {
-    def attribute_length = 6
-
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="simple_attribute">
-            <span class="attribute_name">TargetPlatform</span>
-            -
-            {
-                cp(os_name_index).asString+" "+
-                    cp(os_arch_index).asString+" "+
-                    cp(os_version_index).asString+" "
-            }
-        </div>
-    }
+    final val Name = "ModuleMainClass"
 
 }
-

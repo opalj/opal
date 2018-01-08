@@ -2703,11 +2703,6 @@ object ClassHierarchy {
                         UIDSet.empty ++ classFile.interfaceTypes
                     )
                 }
-            } else {
-                OPALLogger.info(
-                    "project configuration - class hierarchy",
-                    s"ignored module defining class file ${classFile.thisType.toJava}"
-                )
             }
         }
 

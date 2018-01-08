@@ -54,9 +54,14 @@ object ConstantPoolTags extends Enumeration {
 
     final val CONSTANT_Utf8_ID = 1
 
+    // Java 7 onwards...
     final val CONSTANT_MethodHandle_ID = 15
     final val CONSTANT_MethodType_ID = 16
     final val CONSTANT_InvokeDynamic_ID = 18
+
+    // Java 9 onwards...
+    final val CONSTANT_Module_ID = 19
+    final val CONSTANT_Package_ID = 20
 
     // THE ENUM VALUES
 
@@ -82,4 +87,6 @@ object ConstantPoolTags extends Enumeration {
     val CONSTANT_MethodType = Value(CONSTANT_MethodType_ID, "CONSTANT_MethodType")
     val CONSTANT_InvokeDynamic = Value(CONSTANT_InvokeDynamic_ID, "CONSTANT_InvokeDynamic")
 
+    val CONSTANT_Module = Value(CONSTANT_Module_ID, "CONSTANT_Module")
+    val CONSTANT_Package = Value(CONSTANT_Package_ID, "CONSTANT_Package")
 }

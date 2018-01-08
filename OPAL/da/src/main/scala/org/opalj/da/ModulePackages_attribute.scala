@@ -27,63 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bi
-package reader
+package da
 
-import java.io.DataInputStream
+import scala.xml.Node
 
 /**
- * The TargetPlatform attribute is an attribute in the attributes table
- * of a module definition (Java 9).
+ * Represents the ''ModulePackages'' attribute (Java 9).
+ *
+ * @author Michael Eichberg
  */
-trait TargetPlatform_attributeReader extends AttributeReader {
-
-    type TargetPlatform_attribute <: Attribute
-
-    /**
-     * @note if the indexes are zero then the field is empty!
-     */
-    def TargetPlatform_attribute(
-        cp:                   Constant_Pool,
+case class ModulePackages_attribute(
         attribute_name_index: Constant_Pool_Index,
-        os_name_index:        Constant_Pool_Index, // CONSTANT_UTF8
-        os_arch_index:        Constant_Pool_Index, // CONSTANT_UTF8
-        os_version_index:     Constant_Pool_Index // CONSTANT_UTF8
-    ): TargetPlatform_attribute
+        package_index_table:  IndexedSeq[Constant_Pool_Index]
+) extends Attribute {
 
-    /**
-     * <pre>
-     * TargetPlatform_attribute {
-     *     u2 attribute_name_index;
-     *     u4 attribute_length;
-     *
-     *     u2 os_name_index;
-     *     u2 os_arch_index;
-     *     u2 os_version_index;
-     * }
-     * </pre>
-     */
-    private[this] def parserFactory() = (
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) ⇒ {
-        /*val attribute_length =*/ in.readInt
-        TargetPlatform_attribute(
-            cp, attribute_name_index,
-            in.readUnsignedShort(),
-            in.readUnsignedShort(),
-            in.readUnsignedShort()
-        )
+    override def attribute_length: Int = 2 + package_index_table.size * 2
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <details class="attribute">
+            <summary>ModulePackages</summary>
+            { package_index_table.map(p ⇒ cp(p).asString).sorted.map { p ⇒ <span>{ p }</span><br/> } }
+        </details>
     }
 
-    registerAttributeReader(TargetPlatformAttribute.Name → parserFactory())
-
 }
 
-object TargetPlatformAttribute {
-
-    final val Name = "TargetPlatform"
-
-}

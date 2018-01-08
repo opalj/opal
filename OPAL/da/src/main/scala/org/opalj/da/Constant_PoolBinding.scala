@@ -146,4 +146,9 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
         new CONSTANT_MethodType_info(descriptor_index)
     }
 
+    type CONSTANT_Module_info = org.opalj.da.CONSTANT_Module_info
+    def CONSTANT_Module_info(i: Int): CONSTANT_Module_info = da.CONSTANT_Module_info(i)
+
+    type CONSTANT_Package_info = org.opalj.da.CONSTANT_Package_info
+    def CONSTANT_Package_info(i: Int): CONSTANT_Package_info = da.CONSTANT_Package_info(i)
 }

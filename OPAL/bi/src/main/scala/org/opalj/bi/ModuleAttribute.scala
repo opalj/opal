@@ -28,53 +28,9 @@
  */
 package org.opalj
 package bi
-package reader
 
-import java.io.DataInputStream
+object ModuleAttribute {
 
-/**
- * The Version attribute is an attribute in the attributes table
- * of a module definition (Java 9).
- */
-trait Version_attributeReader extends AttributeReader {
-
-    type Version_attribute <: Attribute
-
-    def Version_attribute(
-        cp:                   Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        version_index:        Constant_Pool_Index // CONSTANT_UTF8 (!); eg. "9-ea"
-    ): Version_attribute
-
-    /**
-     * Parser for the Java 9 Version attribute.
-     *
-     * <pre>
-     * Version_attribute {
-     *     u2 attribute_name_index;
-     *     u4 attribute_length;
-     *
-     *     u2 version_index;
-     * }
-     * </pre>
-     */
-    private[this] def parserFactory() = (
-        _: AttributeParent,
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) ⇒ {
-        /*val attribute_length =*/ in.readInt
-        Version_attribute(cp, attribute_name_index, in.readUnsignedShort())
-    }
-
-    registerAttributeReader(
-        VersionAttribute.Name → parserFactory()
-    )
-}
-
-object VersionAttribute {
-
-    final val Name = "Version"
+    final val Name = "Module"
 
 }

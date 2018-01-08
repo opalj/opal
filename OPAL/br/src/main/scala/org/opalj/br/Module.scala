@@ -44,7 +44,9 @@ case class Module(
     final override def kindId: Int = Module.KindId
 
     // TODO Determine if the order is relevant or not and if not correct similar
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
 }
 
 object Module {

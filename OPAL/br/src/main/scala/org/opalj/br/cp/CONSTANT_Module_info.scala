@@ -26,51 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bi
-package reader
+package org.opalj.br.cp
 
-import java.io.DataInputStream
+import org.opalj.bi.ConstantPoolTags
 
 /**
- * The MainClass attribute is an attribute in the attributes table
- * of a module definition (Java 9).
- */
-trait MainClass_attributeReader extends AttributeReader {
+ * Represents a class or an interface.
+ *
+ * @author Michael Eichberg
+  */
+case class CONSTANT_Module_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    type MainClass_attribute <: Attribute
+    override def tag: Int = ConstantPoolTags.CONSTANT_Class_ID
 
-    def MainClass_attribute(
-        cp:                   Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
-    ): MainClass_attribute
+    override def asObjectType(cp: Constant_Pool): ObjectType = ObjectType(cp(name_index).asString)
 
-    /**
-     * <pre>
-     * MainClass_attribute {
-     *     u2 attribute_name_index;
-     *     u4 attribute_length;
-     *
-     *     u2 main_class_index;
-     * }
-     * </pre>
-     */
-    private[this] def parserFactory() = (
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        in: DataInputStream
-    ) ⇒ {
-        /*val attribute_length =*/ in.readInt
-        MainClass_attribute(cp, attribute_name_index, in.readUnsignedShort())
+    override def asReferenceType(cp: Constant_Pool): ReferenceType = {
+        ReferenceType(cp(name_index).asString)
     }
 
-    registerAttributeReader(MainClassAttribute.Name → parserFactory())
-}
+    override def asConstantValue(cp: Constant_Pool): ConstantClass = {
+        ConstantClass(asReferenceType(cp))
+    }
 
-object MainClassAttribute {
-
-    final val Name = "MainClass"
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
 
 }

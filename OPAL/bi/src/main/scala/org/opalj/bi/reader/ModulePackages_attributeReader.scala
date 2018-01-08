@@ -30,57 +30,57 @@ package org.opalj
 package bi
 package reader
 
-import java.io.DataInputStream
-
 import scala.reflect.ClassTag
+
+import java.io.DataInputStream
 
 import org.opalj.control.repeat
 
 /**
- * Generic parser for a code block's ''exceptions'' attribute.
+ * Generic parser for the ''ModulePackages'' attribute (Java 9).
  */
-trait Exceptions_attributeReader extends AttributeReader {
+trait ModulePackages_attributeReader extends AttributeReader {
 
-    type Exceptions_attribute >: Null <: Attribute
-    implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
+    type ModulePackages_attribute >: Null <: Attribute
 
-    type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
+    type PackageIndexTableEntry
+    implicit val PackageIndexTableEntryManifest: ClassTag[PackageIndexTableEntry]
 
-    def Exceptions_attribute(
-        constant_pool:         Constant_Pool,
-        attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable
-    ): Exceptions_attribute
+    type PackageIndexTable = IndexedSeq[PackageIndexTableEntry]
+
+    def PackageIndexTableEntry(
+        constant_pool: Constant_Pool,
+        package_index: Constant_Pool_Index
+    ): PackageIndexTableEntry
+
+    def ModulePackages_attribute(
+        constant_pool:        Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        package_index_table:  PackageIndexTable
+    ): ModulePackages_attribute
 
     //
     // IMPLEMENTATION
     //
 
-    /* From The Specification
-     *
-     * <pre>
-     * Exceptions_attribute {
-     *  u2 attribute_name_index;
-     *  u4 attribute_length;
-     *  u2 number_of_exceptions;
-     *  u2 exception_index_table[number_of_exceptions];
-     * }
-     * </pre>
-     */
     private[this] def parserFactory() = (
         ap: AttributeParent,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
-        /*val attribute_length =*/ in.readInt()
-        val number_of_exceptions = in.readUnsignedShort
-        if (number_of_exceptions > 0 || reifyEmptyAttributes) {
-            val exceptions = repeat(number_of_exceptions) { in.readUnsignedShort }
-            Exceptions_attribute(cp, attribute_name_index, exceptions)
-        } else
+        /*val attribute_length =*/ in.readInt
+        val packageCount = in.readUnsignedShort()
+        if (packageCount > 0 || reifyEmptyAttributes) {
+            val packageIndexTable = repeat(packageCount) {
+                PackageIndexTableEntry(cp, in.readUnsignedShort())
+            }
+            ModulePackages_attribute(cp, attribute_name_index, packageIndexTable)
+        } else {
             null
-    }
+        }
+    }: ModulePackages_attribute
 
-    registerAttributeReader(ExceptionsAttribute.Name → parserFactory())
+    registerAttributeReader(ModulePackagesAttribute.Name → parserFactory())
+
 }

@@ -27,25 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package reader
+package da
+
+import scala.xml.Node
 
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
+ * Java 9's `ModuleMainClass` attribute.
  *
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-with ModuleMainClass_attributeBinding
-with ModulePackages_attributeBinding
+case class ModuleMainClass_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
+) extends Attribute {
 
+    def attribute_length: Int = 2
 
-object Java9LibraryFramework extends Java9LibraryFramework {
-
-    final override def loadsInterfacesOnly: Boolean = true
-
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div class="simple_attribute">
+            <span class="attribute_name">MainClass</span>
+            :&nbsp;{ cp(main_class_index).toString(cp) }
+        </div>
+    }
 }

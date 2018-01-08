@@ -67,16 +67,6 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
         </span>
     }
 
-    // OLD CONVERSION METHODS
-
-    def asJavaType(implicit cp: Constant_Pool): String = {
-        val classInfo = cp(name_index).toString
-        if (classInfo.charAt(0) == '[')
-            parseFieldType(classInfo).asJava
-        else
-            classInfo
-    }
-
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         asJavaReferenceType(name_index).asSpan("")
     }

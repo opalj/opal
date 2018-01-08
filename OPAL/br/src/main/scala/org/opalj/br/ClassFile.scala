@@ -83,11 +83,9 @@ import org.opalj.bi.VisibilityModifier
  *           - ''RuntimeInvisibleAnnotations''
  *          In case of Java 9 ([[org.opalj.br.reader.Java9Framework]]) the following
  *          attributes are added:
- *           - ''Module_attribute''
- *           - TODO ''ConcealedPackages_attribute''
- *           - TODO ''Version_attribute''
- *           - TODO ''MainClass_attribute''
- *           - TODO ''TargetPlatform_attribute''
+ *           - ''Module''
+ *           - ''ModuleMainClass''
+ *           - ''ModulePackages''
  *
  *          The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
  *          may, however, be resolved and is then no longer part of the attributes table of

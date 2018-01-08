@@ -26,26 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package reader
+package org.opalj.da
+
+import scala.xml.Node
+import scala.xml.NodeSeq
+
+import org.opalj.bi.ConstantPoolTag
+import org.opalj.bi.ConstantPoolTags
 
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
- *
+ * @param name_index Reference to a CONSTANT_Utf8_info structure encoding a package name in
+ *                   internal form.
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-with ModuleMainClass_attributeBinding
-with ModulePackages_attributeBinding
+case class CONSTANT_Package_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
+    override def size: Int = 1 + 2
 
-object Java9LibraryFramework extends Java9LibraryFramework {
+    override def Constant_Type_Value: ConstantPoolTag = ConstantPoolTags.CONSTANT_Package
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override def asCPNode(implicit cp: Constant_Pool): Node = {
+        <span class="cp_entry">
+            CONSTANT_Package_info(name_index=
+            { name_index }
+            &laquo;
+            <span class="cp_ref">
+                { cp(name_index).asCPNode }
+            </span>
+            &raquo;
+            )
+        </span>
+    }
+
+    override def toString(implicit cp: Constant_Pool): String = cp(name_index).toString(cp)
+
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        throw new UnsupportedOperationException("unexpected usage in combination with instructions")
+    }
 
 }

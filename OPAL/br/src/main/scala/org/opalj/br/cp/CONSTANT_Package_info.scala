@@ -26,28 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package da
+package org.opalj.br.cp
 
-import scala.xml.Node
+import org.opalj.bi.ConstantPoolTags
+import org.opalj.br.ReferenceType
+import org.opalj.br.ObjectType
 
 /**
- * Java 9's `MainClass` attribute.
+ * Represents a class or an interface.
  *
  * @author Michael Eichberg
- */
-case class MainClass_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        main_class_index:     Constant_Pool_Index // CONSTANT_CLASS
-) extends Attribute {
+  */
+case class CONSTANT_Package_info(name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    def attribute_length: Int = 2
+    override def tag: Int = ConstantPoolTags.CONSTANT_Class_ID
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="simple_attribute">
-            <span class="attribute_name">MainClass</span>
-            -
-            { cp(main_class_index).toString(cp) }
-        </div>
+    override def asObjectType(cp: Constant_Pool): ObjectType = ObjectType(cp(name_index).asString)
+
+    override def asReferenceType(cp: Constant_Pool): ReferenceType = {
+        ReferenceType(cp(name_index).asString)
     }
+
+    override def asConstantValue(cp: Constant_Pool): ConstantClass = {
+        ConstantClass(asReferenceType(cp))
+    }
+
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument = asConstantValue(cp)
+
 }
