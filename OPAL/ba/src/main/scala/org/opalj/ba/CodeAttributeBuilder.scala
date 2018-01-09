@@ -324,9 +324,8 @@ class CodeAttributeBuilder[T] private[ba] (
                         SameLocals1StackItemFrameExtended(offsetDelta, verificationTypeInfoStack(0))
                 }
             } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3 && (
-                // all still existing locals are equal...
+                // all "still" existing locals are equal...
                 verificationTypeInfoLocals.iterator.
-                take(localsCount + localsDiffCount).
                 zipWithIndex.
                 forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
             )) {
