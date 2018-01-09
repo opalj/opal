@@ -325,9 +325,9 @@ class CodeAttributeBuilder[T] private[ba] (
                 }
             } else if (emptyStack && localsDiffCount < 0 && localsDiffCount >= -3 && (
                 // all "still" existing locals are equal...
-                verificationTypeInfoLocals.iterator.
-                zipWithIndex.
-                forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
+                verificationTypeInfoLocals.iterator
+                .zipWithIndex
+                .forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
             )) {
                 // ---- CHOP FRAME ...
                 //
@@ -335,10 +335,9 @@ class CodeAttributeBuilder[T] private[ba] (
                 fs(frameIndex) = ChopFrame(251 + localsDiffCount, offsetDelta)
             } else if (emptyStack && localsDiffCount > 0 && localsDiffCount <= 3 && (
                 // all previously existing locals are equal...
-                verificationTypeInfoLocals.iterator
-                .take(lastLocalsCount)
+                lastVerificationTypeInfoLocals.iterator
                 .zipWithIndex
-                .forall { case (vtil, index) ⇒ vtil == lastVerificationTypeInfoLocals(index) }
+                .forall { case (vtil, index) ⇒ vtil == verificationTypeInfoLocals(index) }
             )) {
                 // ---- APPEND FRAME ...
                 //
