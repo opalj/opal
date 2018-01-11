@@ -46,9 +46,8 @@ case class ModulePackages_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary>ModulePackages</summary>
-            { package_index_table.map(p ⇒ cp(p).asString).sorted.map { p ⇒ <span>{ p }</span><br/> } }
+            { package_index_table.map(p ⇒ cp(p).toString).sorted.map { p ⇒ <span>{ p }</span><br/> } }
         </details>
     }
 
 }
-
