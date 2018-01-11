@@ -32,8 +32,6 @@ package org.opalj
  * The project type specifies the type of the project/the kind of sources which will be
  * analyzed.
  *
- * Basically an enumeration of the modes that can be used by the subsequent analyses.
- *
  * @author Michael Eichberg
  */
 object ProjectTypes extends Enumeration {
