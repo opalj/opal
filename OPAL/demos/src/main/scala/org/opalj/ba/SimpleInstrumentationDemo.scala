@@ -60,4 +60,14 @@ class SimpleInstrumentationDemo {
                 println(s)
         }
     }
+
+    def endlessLoop(): Unit = {
+        do {
+            val t = System.currentTimeMillis
+            val s = s"Juhu: $t"
+            System.out.println(s)
+        } while (System.currentTimeMillis % 200 < 10)
+        System.out.println("Did it!")
+    }
+
 }

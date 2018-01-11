@@ -38,6 +38,8 @@ import org.opalj.br.instructions.LabeledInstruction
  */
 sealed abstract class InstructionLikeElement[+T] extends CodeElement[T] {
 
+    final override def isInstructionLikeElement: Boolean = true
+
     final override def isExceptionHandlerElement: Boolean = false
 
     final override def isPseudoInstruction: Boolean = false

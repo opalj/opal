@@ -62,9 +62,11 @@ import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePo
  */
 abstract class ProjectLike extends ClassFileRepository { project ⇒
 
+    private[this] final implicit val thisProjectLike: this.type = this
+
     implicit def classHierarchy: ClassHierarchy
 
-    private[this] final implicit val thisProjectLike: this.type = this
+    def projectType: ProjectType
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //

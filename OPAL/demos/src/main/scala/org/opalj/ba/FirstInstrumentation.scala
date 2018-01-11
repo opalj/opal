@@ -126,7 +126,7 @@ object FirstInstrumentation extends App {
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
-    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)), this.getClass.getClassLoader)
+    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
     newClass.getMethod("callsToString").invoke(instance)
@@ -134,4 +134,3 @@ object FirstInstrumentation extends App {
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
 
 }
-

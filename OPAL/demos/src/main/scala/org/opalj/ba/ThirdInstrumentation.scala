@@ -26,12 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ba
+package org.opalj
+package ba
 
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 
+import org.opalj.log.LogContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.io.writeAndOpen
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
@@ -40,6 +43,7 @@ import org.opalj.bc.Assembler
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.analyses.Project
+import org.opalj.br.ClassFileRepository
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
@@ -48,7 +52,6 @@ import org.opalj.br.instructions.IRETURN
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.IFGT
-import org.opalj.util.InMemoryClassLoader
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -69,7 +72,7 @@ object ThirdInstrumentation extends App {
     // local variables and stack values during instrumentation.
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
     val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
-    implicit val classHierarchy = p.classHierarchy
+    implicit val classHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
     val cf = p.classFile(TheType).get
     // let's transform the methods
     val newMethods = for (m ← cf.methods) yield {
@@ -99,6 +102,13 @@ object ThirdInstrumentation extends App {
                 // type (which is statically known)
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
                 var modified = false
+
+                for {
+                    (pc, GETSTATIC(SystemType, "out", _)) ← code
+                } {
+                    modified = true
+                    lCode.replace(pc, Seq(GETSTATIC(SystemType, "err", PrintStreamType)))
+                }
 
                 for {
                     (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
@@ -147,7 +157,8 @@ object ThirdInstrumentation extends App {
                 }
         }
     }
-    val newRawCF = Assembler(toDA(cf.copy(methods = newMethods)))
+    val newCF = cf.copy(methods = newMethods)
+    val newRawCF = Assembler(toDA(newCF))
 
     //
     // THE FOLLOWING IS NOT RELATED TO BYTECODE MANIPULATION, BUT SHOWS ASPECTS OF OPAL WHICH ARE
@@ -165,13 +176,22 @@ object ThirdInstrumentation extends App {
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
-    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)), this.getClass.getClassLoader)
+    val cfr = new ClassFileRepository {
+        implicit def logContext: LogContext = GlobalLogContext
+        def classFile(objectType: ObjectType): Option[br.ClassFile] = {
+            if (TheType == objectType)
+                Some(newCF)
+            else
+                p.classFile(objectType)
+        }
+    }
+    val cl = new ProjectBasedInMemoryClassLoader(cfr)
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
     newClass.getMethod("callsToString").invoke(instance)
     newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, new ArrayList[AnyRef]())
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
+    newClass.getMethod("endlessLoop").invoke(instance)
 
 }
-

@@ -33,7 +33,6 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 
-import org.opalj.collection.immutable.UShortPair
 import org.opalj.io.writeAndOpen
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.da.ClassFileReader.ClassFile
@@ -67,11 +66,11 @@ object SecondInstrumentation extends App {
 
     // let's load the class
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
-    val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
+    val p = Project(f.getParentFile, org.opalj.bytecode.RTJar) // TODO: turn off LambdaExpressionsRewriting
     implicit val ch: ClassHierarchy = p.classHierarchy
     val cf = p.classFile(TheType).get
     // let's transform the methods
-    val newVersion = UShortPair(0, 49)
+    val newVersion = bi.Java8Version
     val newMethods =
         for (m ← cf.methods) yield {
             m.body match {
@@ -111,7 +110,7 @@ object SecondInstrumentation extends App {
                     }
             }
         }
-    val newCF = cf.copy(methods = newMethods, version = newVersion)
+    val newCF = cf.copy(methods = newMethods)
     val newRawCF = Assembler(toDA(newCF))
 
     //
@@ -130,7 +129,7 @@ object SecondInstrumentation extends App {
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
-    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)), this.getClass.getClassLoader)
+    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
     println("1. Example")
@@ -140,4 +139,3 @@ object SecondInstrumentation extends App {
 
     println("End")
 }
-
