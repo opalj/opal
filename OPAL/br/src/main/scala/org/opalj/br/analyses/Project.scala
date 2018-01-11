@@ -1286,7 +1286,6 @@ object Project {
 
         implicit val classFileRepository = new ClassFileRepository {
             override implicit def logContext: LogContext = theLogContext
-            override def projectType: ProjectType = ???
             override def classFile(objectType: ObjectType): Option[ClassFile] = {
                 objectTypeToClassFile.get(objectType)
             }

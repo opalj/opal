@@ -42,6 +42,4 @@ trait ClassFileRepository {
 
     def classFile(objectType: ObjectType): Option[ClassFile]
 
-    def projectType: ProjectType
-
 }

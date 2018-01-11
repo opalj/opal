@@ -29,7 +29,7 @@
 package org.opalj
 package ba
 
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassFileRepository
 import org.opalj.br.ObjectType
 import org.opalj.bc.Assembler
 
@@ -40,8 +40,8 @@ import org.opalj.bc.Assembler
  * @author Andreas Muttscheller
  */
 class ProjectBasedInMemoryClassLoader(
-        val project: SomeProject,
-        parent:      ClassLoader = getClass.getClassLoader
+        val project: ClassFileRepository,
+        parent:      ClassLoader         = getClass.getClassLoader
 ) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]
