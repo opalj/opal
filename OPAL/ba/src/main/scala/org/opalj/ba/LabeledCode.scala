@@ -173,6 +173,28 @@ class LabeledCode(
     }
 
     /**
+     * Replaces the [[InstructionLikeElement]] associate with the given pc by the given
+     * instruction sequence. I.e., only the [[InstructionLikeElement]] is replaced; all
+     * other information associated with the respective program counter (e.g., line number
+     * or exception handling related markers) is kept.
+     *
+     * The instruction sequence has to process the values on the stack that would have been
+     * processed. Overall the sequence has to be stack-neutral.
+     */
+    def replace(
+        pc:              PC,
+        newInstructions: Seq[CodeElement[AnyRef]]
+    ): Unit = {
+        val pcLabel = LabelElement(InstructionLabel(pc))
+        var pcInstructionLikeIndex = instructions.indexOf(pcLabel) + 1
+        while (!instructions(pcInstructionLikeIndex).isInstructionLikeElement) {
+            pcInstructionLikeIndex += 1
+        }
+        instructions.remove(pcInstructionLikeIndex)
+        instructions.insert(pcInstructionLikeIndex, newInstructions: _*)
+    }
+
+    /**
      * Creates a new [[CodeAttributeBuilder]] based on this `LabeledCode`; that builder can then
      * be used to construct a valid [[org.opalj.br.Code]] attribute.
      */
