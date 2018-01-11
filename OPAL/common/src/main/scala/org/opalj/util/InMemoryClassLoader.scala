@@ -39,15 +39,19 @@ package util
  * @author  Michael Eichberg
  */
 class InMemoryClassLoader(
-        val classes: Map[String, Array[Byte]],
-        parent:      ClassLoader
+        private[this] var rawClasses: Map[String, Array[Byte]],
+        parent:                       ClassLoader              = ClassLoader.getSystemClassLoader
 ) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]
     override def findClass(name: String): Class[_] = {
-        classes.get(name) match {
-            case Some(data) ⇒ defineClass(name, data, 0, data.length)
-            case None       ⇒ throw new ClassNotFoundException(name)
+        rawClasses.get(name) match {
+            case Some(data) ⇒
+                val clazz = defineClass(name, data, 0, data.length)
+                rawClasses -= name
+                clazz
+            case None ⇒
+                throw new ClassNotFoundException(name)
         }
     }
 }
