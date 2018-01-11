@@ -92,8 +92,14 @@ case class RequiresEntry(
     def toString(implicit cp: Constant_Pool): String = {
 
         val flags = AccessFlags.toString(requires_flags, MODULE)
-        s"requires $flags ${cp(requires_index).toString(cp)};"
-        ???
+        val requiredPackage = cp(requires_index).toString(cp)
+        val versionInfo =
+            if (requires_version_index == 0)
+                ""
+            else
+                "// "+cp(requires_version_index).toString(cp)
+
+        s"requires $flags $requiredPackage;$versionInfo"
     }
 }
 
