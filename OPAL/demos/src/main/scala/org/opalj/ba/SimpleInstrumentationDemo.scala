@@ -65,9 +65,9 @@ class SimpleInstrumentationDemo {
         do {
             val t = System.currentTimeMillis
             val s = s"Juhu: $t"
-            println(s)
+            System.out.println(s)
         } while (System.currentTimeMillis % 200 < 10)
-        println("Did it!")
+        System.out.println("Did it!")
     }
 
 }

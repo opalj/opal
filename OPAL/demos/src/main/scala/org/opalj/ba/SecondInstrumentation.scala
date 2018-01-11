@@ -129,7 +129,7 @@ object SecondInstrumentation extends App {
 
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
-    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)), this.getClass.getClassLoader)
+    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
     val newClass = cl.findClass(TheType.toJava)
     val instance = newClass.newInstance()
     println("1. Example")
