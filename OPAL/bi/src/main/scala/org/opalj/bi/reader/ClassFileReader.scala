@@ -401,7 +401,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * Reads '''in parallel''' all class files stored in the given jar file. For each
      * successfully read class file the function `classFileHandler` is called.
      *
-     * @param jarFile A valid jar file that contains `.class` files and other
+     * @param zipFile A valid zip file that contains `.class` files and other
      *     `.jar` files; other files are ignored. Inner jar files are also unzipped.
      * @param classFileHandler A function that is called for each class file in
      *      the given jar file.
@@ -411,13 +411,13 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *      of a class file fails. '''This function has to be thread safe'''.
      */
     def ClassFiles(
-        jarFile:          ZipFile,
-        classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: ExceptionHandler
+                      zipFile:          ZipFile,
+                      classFileHandler: (ClassFile, URL) ⇒ Unit,
+                      exceptionHandler: ExceptionHandler
     ): Unit = {
-        val jarFileURL = new File(jarFile.getName).toURI.toURL.toExternalForm
-        val jarFileName = s"jar:$jarFileURL!/"
-        ClassFiles(jarFileName, jarFile, classFileHandler, exceptionHandler)
+        val zipFileURL = new File(zipFile.getName).toURI.toURL.toExternalForm
+        val jarFileName = s"jar:$zipFileURL!/"
+        ClassFiles(jarFileName, zipFile, classFileHandler, exceptionHandler)
     }
 
     private def ClassFiles(

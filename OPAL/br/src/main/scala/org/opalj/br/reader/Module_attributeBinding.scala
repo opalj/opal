@@ -64,12 +64,19 @@ trait Module_attributeBinding
     def Module_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
+        module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
+        module_flags:         Int,
+        module_version_index: Constant_Pool_Index, // CONSTANT_UTF8
         requires:             Requires,
         exports:              Exports,
+        opens:                Opens,
         uses:                 Uses,
         provides:             Provides
     ): Module_attribute = {
-        Module(requires, exports, uses, provides)
+        Module(
+            cp(module_name_index).asString
+            requires, exports, opens, uses, provides
+        )
     }
 
     def RequiresEntry(
