@@ -43,15 +43,41 @@ case class SpecificationViolation(message: String) extends Exception(message)
  * Specification of the properties of a fix-point computation (FPC) that are relevant
  * when computing the correct scheduling order.
  */
-abstract class ComputationSpecification(
-        val name:    String,
-        val uses:    Set[PropertyKeyID],
-        val derives: Set[PropertyKeyID]
-) {
+trait ComputationSpecification {
 
-    if (derives.isEmpty) {
-        throw new IllegalArgumentException("the computation does not derive any information")
+    /**
+     * Returns a short descriptive name of the analysis which is described by this specification.
+     *
+     * The default name is the name of `this` class.
+     *
+     * '''This method should be overridden.'''
+     */
+    def name: String = {
+        val nameCandidate = this.getClass.getSimpleName
+        if (nameCandidate.endsWith("$"))
+            nameCandidate.substring(0, nameCandidate.length() - 1)
+        else
+            nameCandidate
     }
+
+    /**
+     * Returns the kinds of properties which are queried by this analysis.
+     *
+     * @note   This set consists only of property kinds which are directly used by the analysis.
+     *
+     * @note   Self usages don't have to be documented since the analysis will derive this
+     *         property during the computation.
+     */
+    def uses: Set[PropertyKind]
+
+    /**
+     * Returns the set of property kinds derived by the underlying analysis.
+     */
+    def derives: Set[PropertyKind]
+
+    // TODO derivesLazily : Set[PropertyKind]
+
+    require(derives.nonEmpty, "the computation does not derive any information")
 
     /**
      * Called by the scheduler to start execution of this analysis.
@@ -59,13 +85,16 @@ abstract class ComputationSpecification(
     def schedule(ps: PropertyStore): Unit
 
     override def toString: String = {
-        val uses = this.uses.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
-        val derives = this.derives.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
+        val uses =
+            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
+        val derives =
+            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
         s"FPC(name=$name,$uses,$derives)"
     }
 
 }
 
+// TODO Add support for computing schedules where properties are computed by chained analyses
 class AnalysisScenario(
         private[this] var ccs: Set[ComputationSpecification] = Set.empty
 ) {
@@ -79,8 +108,8 @@ class AnalysisScenario(
      * the selected computations. I.e., a property `d` depends on another property `p` if the
      * algorithm wich computes `d` uses the property `p`.
      */
-    def propertyComputationsDependencies: Graph[PropertyKeyID] = {
-        val psDeps = Graph.empty[PropertyKeyID]
+    def propertyComputationsDependencies: Graph[PropertyKind] = {
+        val psDeps = Graph.empty[PropertyKind]
         ccs foreach { cs ⇒
             // all derived properties depend on all used properties
             cs.derives foreach { derived ⇒
@@ -98,8 +127,8 @@ class AnalysisScenario(
      */
     def computationDependencies: Graph[ComputationSpecification] = {
         val compDeps = Graph.empty[ComputationSpecification]
-        val derivedBy: Map[PropertyKeyID, ComputationSpecification] = {
-            ccs.flatMap(cs ⇒ cs.derives map { derives ⇒ (derives, cs) }).toMap
+        val derivedBy: Map[PropertyKind, ComputationSpecification] = {
+            ccs.flatMap(cs ⇒ cs.derives.map(derives ⇒ (derives, cs))).toMap
         }
         ccs foreach { cs ⇒
             compDeps += cs
@@ -130,8 +159,8 @@ class AnalysisScenario(
         logContext: LogContext
     ): Schedule = this.synchronized {
         // 1. check that each property is derived by only one analysis
-        var derived: Set[PropertyKeyID] = Set.empty
-        var uses: Set[PropertyKeyID] = Set.empty
+        var derived: Set[PropertyKind] = Set.empty
+        var uses: Set[PropertyKind] = Set.empty
         ccs.foreach { cs ⇒
             cs.derives.foreach { pk ⇒
                 if (derived.contains(pk)) {
@@ -147,7 +176,7 @@ class AnalysisScenario(
         // 2. check for properties that are not derived
         val underived = uses -- derived
         if (underived.nonEmpty) {
-            val underivedInfo = underived.map(up ⇒ PropertyKey.name(up)).mkString(", ")
+            val underivedInfo = underived.iterator.map(up ⇒ PropertyKey.name(up)).mkString(", ")
             val message = s"no analyses are scheduled for the properties: $underivedInfo"
             OPALLogger.warn("analysis configuration", message)
         }
@@ -190,8 +219,16 @@ case class Schedule(
 
     def apply(ps: PropertyStore): Unit = {
         batches.foreach { batch ⇒
+            val computedProperties =
+                batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
+            val openProperties =
+                batches.dropWhile(_ ne batch).tail. // collect properties derived by remaining batches
+                    map(batch ⇒ batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)).
+                    reduceOption((l, r) ⇒ l ++ r).
+                    getOrElse(Set.empty)
+            ps.setupPhase(computedProperties, openProperties)
             batch.foreach { fpc ⇒ fpc.schedule(ps) }
-            ps.waitOnPropertyComputationCompletion(true)
+            ps.waitOnPhaseCompletion()
         }
     }
 

@@ -41,22 +41,10 @@ package org.opalj.fpcf
 trait OrderedProperty extends Property {
 
     /**
-     * Returns `true`.
-     */
-    final override private[fpcf] def isOrdered: Boolean = true
-
-    /**
-     * Returns `this`.
-     */
-    final override private[fpcf] def asOrderedProperty: this.type = this
-
-    /**
      * Tests if this property is a valid successor property of the other property; this
-     * relation is typically reflexive, that is, a property is a valid success of itself.
-     *
-     * @return None if this property is a valid successor of the other property else
-     *         `Some(description:String)` which describes the problem is returned.
+     * relation is reflexive, that is, a property is a valid success of itself.
      */
-    def isValidSuccessorOf(other: OrderedProperty): Option[String]
+    @throws[IllegalArgumentException]("if this property is not a valid successor of other")
+    def checkIsValidSuccessorOf(other: Property): Unit
 
 }

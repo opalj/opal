@@ -529,7 +529,7 @@ class L1PurityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
          *     - fields read (for their mutability)
          *     - classes files for class types returned (for their mutability)
          */
-        def c(e: Entity, p: Property, u: UpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, u: PropertyState): PropertyComputationResult = {
             dependees = dependees.filter(_.e ne e)
             p match {
                 // Cases resulting in conditional purity

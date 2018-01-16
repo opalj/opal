@@ -56,30 +56,14 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
 object PropertyKey {
 
     type SomeEPKs = Iterable[SomeEPK]
-    type CycleResolutionStrategy = (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult]
+    type CycleResolutionStrategy = (PropertyStore, SomeEPS) ⇒ PropertyComputationResult
 
     private[this] val keysLock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
     private[this] val fallbackProperties = ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
-
-    // Entries in the array can be updated by an analysis!
     private[this] val cycleResolutionStrategies = ArrayBuffer.empty[CycleResolutionStrategy]
-
     private[this] var lastKeyId: Int = -1
-
-    /**
-     * Updates the (default) cycle resolution strategy associated with a specific kind of
-     * properties.
-     */
-    def updateCycleResolutionStrategy[P <: Property](
-        key:                     PropertyKey[P],
-        cycleResolutionStrategy: CycleResolutionStrategy
-    ): Unit = {
-        withWriteLock(keysLock) {
-            cycleResolutionStrategies(key.id) = cycleResolutionStrategy
-        }
-    }
 
     /**
      * Creates a new [[PropertyKey]] object that is to be shared by all properties that belong to
@@ -93,10 +77,13 @@ object PropertyKey {
      *              with those entities for which the property is not explicitly computed.
      *
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
-     *              computations. The strategy can be adapted by an analysis to its own needs.
-     *              In general, the cycle resolution strategy can query the (potential) properties
-     *              of the cycle's entities, but not the properties of other entities as this
-     *              could trigger direct/lazy computations which is not supported.
+     *              computations. The elements of a cycle are either ex- or implicitly
+     *              '''conditional properties'''. If for a specific property kind conditional
+     *              properties are explicitly modeled, then the respective non-conditional
+     *              property should be returned. If conditional properties are implicit (e.g.,
+     *              if we are referring to a set of values), then the current property can be
+     *              committed. In general, the result is expected to be a PhaseFinalResult,
+     *              but this is not a strict requirement.
      */
     def create[P <: Property](
         name:                    String,
@@ -124,7 +111,7 @@ object PropertyKey {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
     }
 
-    def create[P <: Property](
+    private[fpcf] def create[P <: Property](
         name:                    String,
         fallback:                (PropertyStore, Entity) ⇒ P,
         cycleResolutionProperty: P
@@ -132,11 +119,13 @@ object PropertyKey {
         create(
             name,
             fallback,
-            (ps: PropertyStore, epks: SomeEPKs) ⇒ Seq(Result(epks.head.e, cycleResolutionProperty))
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ {
+                PhaseResult(eOptionP.e, cycleResolutionProperty)
+            }
         )
     }
 
-    def create[P <: Property](
+    private[fpcf] def create[P <: Property](
         name:                    String,
         fallback:                P,
         cycleResolutionProperty: P
@@ -144,7 +133,7 @@ object PropertyKey {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionProperty)
     }
 
-    def create[P <: Property](name: String, fallback: P): PropertyKey[P] = {
+    private[fpcf] def create[P <: Property](name: String, fallback: P): PropertyKey[P] = {
         create(name, fallback, fallback)
     }
 
@@ -158,6 +147,8 @@ object PropertyKey {
      */
     def name(id: Int): String = withReadLock(keysLock) { propertyKeyNames(id) }
 
+    final def name(pKind: PropertyKind): String = name(pKind.id)
+
     /**
      * @note This method is intended to be called by the framework.
      */
@@ -166,22 +157,14 @@ object PropertyKey {
         e:  Entity,
         pk: PropertyKey[P]
     ): P = {
-        withReadLock(keysLock) {
-            fallbackProperties(pk.id)(ps, e).asInstanceOf[P]
-        }
+        withReadLock(keysLock) { fallbackProperties(pk.id)(ps, e).asInstanceOf[P] }
     }
 
     /**
      * @note This method is intended to be called by the framework.
      */
-    def resolveCycle(
-        ps:   PropertyStore,
-        epks: Iterable[SomeEPK]
-    ): Iterable[PropertyComputationResult] = {
-        withReadLock(keysLock) {
-            val epk = epks.head
-            cycleResolutionStrategies(epk.pk.id)(ps, epks)
-        }
+    def resolveCycle(ps: PropertyStore, eps: SomeEPS): PropertyComputationResult = {
+        withReadLock(keysLock) { cycleResolutionStrategies(eps.pk.id)(ps, eps) }
     }
 
     /**

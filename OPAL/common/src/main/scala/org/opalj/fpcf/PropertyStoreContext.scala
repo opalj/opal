@@ -26,28 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
-/**
- * A `PropertyObserver` is a function that is called if the property associated
- * with the respective entity is computed or refined.
- *
- * The parameters of the function are the observed element (dependee) and its
- * (then available/refined) property.
- *
- * ==Core Properties==
- * All implementations of a `PropertyObserver` never directly execute/continue
- * the analysis but schedules it if necessary.
- *
- * @author Michael Eichberg
- */
-private[fpcf] trait PropertyObserver extends ((Entity, Property, UpdateType) ⇒ Unit) {
+import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.runtime.universe.Type
+import scala.reflect.runtime.universe.typeOf
 
-    /**
-     * The entity and property key for which the property of the observed element
-     * is necessary.
-     */
-    def dependerEPK: SomeEPK
+class PropertyStoreContext[+T <: AnyRef] private (val t: Type, val data: T) {
 
+    def asTuple: (Type, T) = (t, data)
 }
 
+object PropertyStoreContext {
+
+    def apply[T <: AnyRef](t: Type, data: T): PropertyStoreContext[T] = {
+        new PropertyStoreContext(t, data)
+    }
+
+    def apply[T <: AnyRef: TypeTag](data: T): PropertyStoreContext[T] = {
+        new PropertyStoreContext[T](typeOf[T], data)
+    }
+
+}

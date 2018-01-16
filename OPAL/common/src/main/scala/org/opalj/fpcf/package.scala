@@ -28,9 +28,6 @@
  */
 package org.opalj
 
-import scala.collection.mutable
-import org.opalj.collection.mutable.{ArrayMap ⇒ OArrayMap}
-
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
  * computations on a fixed set of entities. The framework in particular
@@ -77,7 +74,7 @@ package object fpcf {
 
     type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    type OnUpdateContinuation = (Entity, Property, UpdateType) ⇒ PropertyComputationResult
+    type OnUpdateContinuation = (Entity, Property, Boolean) ⇒ PropertyComputationResult
 
     /**
      * A function that continues the computation of a property. It takes
@@ -93,38 +90,14 @@ package object fpcf {
 
     type SomeEPK = EPK[_ <: Entity, _ <: Property]
 
-    type SomeEP = EP[_ <: Entity, _ <: Property]
+    type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
     /**
      * The result of a computation if the computation derives multiple properties
      * at the same time.
      */
-    type ComputationResults = Traversable[SomeEP]
+    type ComputationResults = Traversable[EP]
 
     type PropertyKeyID = Int
-
-    //
-    //
-    // IMPLEMENTATION SPECIFIC TYPES
-    //
-    //
-
-    /**
-     * The type of the observers that can be associated with a specific property
-     * and element.
-     */
-    private[fpcf] type Observers = mutable.ListBuffer[PropertyObserver]
-
-    /**
-     * The type of the properties data structure that is associated with each
-     * property.
-     *
-     * The property can be `null` if we have multiple analyses that are waiting for
-     * the respective property.
-     *
-     * The underlying assumption is that not every property key is actually associated
-     * with a property value for each element.
-     */
-    private[fpcf] type Properties = OArrayMap[PropertyAndObservers]
 
 }

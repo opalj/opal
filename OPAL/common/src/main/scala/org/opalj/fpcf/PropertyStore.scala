@@ -122,32 +122,27 @@ abstract class PropertyStore {
     //
     //
 
-    @volatile private[this] var isInterrupted: () ⇒ Boolean = {
-        () ⇒ Thread.currentThread.isInterrupted()
-    }
-
     /**
-     * Sets the callback function that is regularly called by the property store to test if
+     * The callback function that is regularly called by the property store to test if
      * the property store should stop executing new tasks. Given that the given method is
-     * called frequently, it should be reasonbily efficient. The method has to be thread-safe.
+     * called frequently, it should be reasonably efficient. The method has to be thread-safe.
      *
      * The default method test if the current thread is interrupted.
+     *
+     * Interruption of the property store will leave the property store in a consistent state
+     * and the computation can be continued later on by updating this function (if necessary)
+     * and calling `waitOnPhaseCompletion` again. I.e., interruption can be used for debugging
+     * purposes!
      */
-    final def setIsInterrupted(isInterrupted: () ⇒ Boolean): Unit = {
-        this.isInterrupted = isInterrupted
-    }
-
-    /**
-     * Generally called by the property store to test if it should stop the execution of (new)
-     * tasks. This function can be called by 3rd party code.
-     */
-    final def checkIsInterrupted: Boolean = isInterrupted()
+    @volatile var isInterrupted: () ⇒ Boolean = concurrent.defaultIsInterrupted
 
     //
     //
     // DEBUGGING AND COMPREHENSION RELATED FUNCTIONALITY
     //
     //
+
+    @volatile var debug: Boolean = false
 
     /**
      * Returns a consistent snapshot of the stored properties.
@@ -167,11 +162,12 @@ abstract class PropertyStore {
     //
     //
 
+    def isKnown(e: Entity): Boolean
+
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
-     * @note   Querying the properties of the given entities will trigger lazy and direct property
-     *         computations.
+     * @note   Querying the properties of the given entities will trigger lazy computations.
      * @note   The returned collection can be used to create an [[IntermediateResult]].
      */
     final def apply[E <: Entity, P <: Property](
@@ -184,8 +180,7 @@ abstract class PropertyStore {
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
-     * @note  Querying the properties of the given entities will trigger lazy and direct property
-     *        computations.
+     * @note  Querying the properties of the given entities will trigger lazy computations.
      * @note  The returned collection can be used to create an [[IntermediateResult]].
      */
     final def apply[E <: Entity, P <: Property](
@@ -236,7 +231,7 @@ abstract class PropertyStore {
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]`
      */
-    def properties(e: Entity): Traversable[Property]
+    def properties(e: Entity): Iterator[Property]
 
     /**
      * Returns all entities which have a property of the respective kind. This method
@@ -245,14 +240,14 @@ abstract class PropertyStore {
      *
      * @note Lazy property computations are not triggered.
      */
-    def entities[P <: Property](pk: PropertyKey[P]): Traversable[EP[Entity, P]]
+    def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]]
 
     /**
      * Returns all entities that currently have a specific property.
      *
      * @note Does not trigger lazy property computations.
      */
-    def entities[P <: Property](p: P): Traversable[Entity]
+    def entities[P <: Property](p: P): Iterator[Entity]
 
     /**
      * The set of all entities which already have a property that pass the given filter.
@@ -261,7 +256,7 @@ abstract class PropertyStore {
      *
      * @note This method will not trigger lazy property computations.
      */
-    def entities(propertyFilter: Property ⇒ Boolean): Traversable[Entity]
+    def entities(propertyFilter: Property ⇒ Boolean): Iterator[Entity]
 
     /**
      * Directly associates the given property `p` with property kind `pk` with the given entity
@@ -276,16 +271,14 @@ abstract class PropertyStore {
      * be executed before any other analysis is scheduled'''.
      *
      * If a different property is already associated with the given entity, an
-     * IllegalArgumentException is thrown.
+     * IllegalStateException is thrown.
      */
     def set(e: Entity, p: Property): Unit
-
-    // TODO add: def update[E <: Entity, P <: Property](e :E, pk : PropertyKey[P])(f : EPK[E,P] => EP[E,P])
 
     /**
      * Registers a function that lazily computes a property for an element
      * of the store if the property of the respective kind is requested.
-     * Hence, a first request of such a property will always first return the result "None".
+     * Hence, a first request of such a property will always first return no result.
      *
      * The computation is triggered by a(n in)direct call of this store's `apply` method.
      *
@@ -293,7 +286,14 @@ abstract class PropertyStore {
      * than once for the same element at the same time. If `pc` is invoked again for a specific
      * element then only because a dependee has changed!
      *
-     * In general, the result can't be an `IncrementalResult`.
+     * In general, the result can't be an `IncrementalResult` and `scheduleLazyPropertyComputation`
+     * cannot be used for properties which should be computed by staged analyses.
+     *
+     * '''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
+     * exception has to be thrown or the bottom value has to be returned.'''
+     *
+     * Setting `scheduleLazyPropertyComputation` is only supported as long as
+     * the store is not queried.
      */
     def scheduleLazyPropertyComputation[P <: Property](
         pk: PropertyKey[P],
@@ -301,8 +301,30 @@ abstract class PropertyStore {
     ): Unit
 
     /**
+     * Needs to be called before an analysis is scheduled to inform the property store which
+     * properties will be computed now and which are computed in a later phase. The later
+     * information is used to decide which cycles are resolved and in which case we will use
+     * fallbacks.
+     *
+     * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
+     *
+     * @param openPropertyKinds The set of property kinds which will be computed or refined
+     *        in a later phase; no fallback will be used for dependencies to properties of the
+     *        respective kind and `PhaseFinalResult`s will not be finalized. I.e., if a cycle
+     *        contains at least on entity/property pair where the property kind will be refined
+     *        in the future, the cycle will not be resolved! However, `PhaseFinalResult`s will be
+     *        lifted to `FinalResult`s if the respective property will not be updated later on.
+     */
+    def setupPhase(
+        computedPropertyKinds: Set[PropertyKind],
+        openPropertyKinds:     Set[PropertyKind] = Set.empty
+    ): Unit
+
+    /**
      * Will call the given function `c` for all elements of `es` in parallel; all elements of `es`
      * have to be entities known to the property store.
+     *
+     * @see [[scheduleForEntity]] for details.
      */
     def scheduleForEntities[E <: Entity](
         es: TraversableOnce[E]
@@ -333,31 +355,7 @@ abstract class PropertyStore {
      * @note   If a second thread is used to register [[PropertyComputation]] functions
      *         no guarantees are given; it is recommended to schedule all property computation
      *         functions using one thread and using that thread to call this method.
-     *
-     * @param  resolveCycles If `true`, closed strongly connected components will be resolved.
-     * @param  useFallbacksForIncomputableProperties If `true`, fallbacks are used for
-     *         incomputable properties.
      */
-    def waitOnPropertyComputationCompletion(
-        resolveCycles:                         Boolean = true,
-        useFallbacksForIncomputableProperties: Boolean = true
-    ): Unit
-
-}
-
-class PropertyStoreContext[+T <: AnyRef] private (val t: Type, val data: T) {
-
-    def asTuple: (Type, T) = (t, data)
-}
-
-object PropertyStoreContext {
-
-    def apply[T <: AnyRef](t: Type, data: T): PropertyStoreContext[T] = {
-        new PropertyStoreContext(t, data)
-    }
-
-    def apply[T <: AnyRef: TypeTag](data: T): PropertyStoreContext[T] = {
-        new PropertyStoreContext[T](typeOf[T], data)
-    }
+    def waitOnPhaseCompletion(): Unit
 
 }

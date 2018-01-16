@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -38,77 +39,87 @@ import org.scalatest.BeforeAndAfterEach
 import org.opalj.log.GlobalLogContext
 
 /**
- * Tests the propety computations scheduler
+ * Tests the property computations scheduler.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class PropertyComputationsSchedulerTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
+    case class BasicComputationSpecification(
+            override val name: String,
+            uses:              Set[PropertyKind],
+            derives:           Set[PropertyKind]
+    ) extends ComputationSpecification {
+
+        def schedule(ps: PropertyStore): Unit = ???
+
+    }
+
     implicit val logContext = GlobalLogContext
 
-    val pks: Array[PropertyKeyID] = new Array[PropertyKeyID](11)
+    val pks: Array[PropertyKind] = new Array[PropertyKind](11)
     (0 to 10).foreach { i ⇒
         pks(i) = PropertyKey.create[Null](
             "p"+(i),
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
-        ).id
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
+        )
     }
 
-    val c1 = new ComputationSpecification(
+    val c1 = BasicComputationSpecification(
         "c1",
         Set.empty,
         Set(pks(1), pks(2))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c2 = new ComputationSpecification(
+    val c2 = BasicComputationSpecification(
         "c2",
         Set(pks(2), pks(3)),
         Set(pks(4))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c3 = new ComputationSpecification(
+    val c3 = BasicComputationSpecification(
         "c3",
         Set.empty,
         Set(pks(3))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c4 = new ComputationSpecification(
+    val c4 = BasicComputationSpecification(
         "c4",
         Set(pks(1)),
         Set(pks(5))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c5 = new ComputationSpecification(
+    val c5 = BasicComputationSpecification(
         "c5",
         Set(pks(3), pks(4)),
         Set(pks(0))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c6 = new ComputationSpecification(
+    val c6 = BasicComputationSpecification(
         "c6",
         Set(pks(6), pks(8)),
         Set(pks(7))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c7 = new ComputationSpecification(
+    val c7 = BasicComputationSpecification(
         "c7",
         Set(pks(5), pks(7), pks(8), pks(0)),
         Set(pks(6))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c8 = new ComputationSpecification(
+    val c8 = BasicComputationSpecification(
         "c8",
         Set(pks(6)),
         Set(pks(8), pks(9))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
-    val c9 = new ComputationSpecification(
+    val c9 = BasicComputationSpecification(
         "c9",
         Set(pks(9)),
         Set(pks(10))
-    ) { def schedule(ps: PropertyStore): Unit = ??? }
+    )
 
     //**********************************************************************************************
     //

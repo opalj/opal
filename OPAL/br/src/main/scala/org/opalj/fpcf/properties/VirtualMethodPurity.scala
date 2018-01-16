@@ -30,8 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyKey.SomeEPKs
-
 sealed trait VirtualMethodPurityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = VirtualMethodPurity
@@ -52,8 +50,6 @@ sealed case class VirtualMethodPurity(
      */
     final def key: PropertyKey[VirtualMethodPurity] = VirtualMethodPurity.key
 
-    final val isRefinable = purity.isRefinable
-
     def meet(other: VirtualMethodPurity): VirtualMethodPurity =
         VirtualMethodPurity(purity combine other.purity)
 
@@ -62,21 +58,10 @@ sealed case class VirtualMethodPurity(
 
 object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
 
-    def baseCycleResolutionStrategy(
-        propertyStore: PropertyStore,
-        epks:          SomeEPKs
-    ): Iterable[Result] = {
-        // When we have a cycle we can leverage the "purity" - conceptually (unless we
-        // we have a programming bug) all properties (also those belonging to other
-        // lattice) model conditional properties under the assumption that we have
-        // at least the current properties.
-        val e = epks.head.e
-        val p = propertyStore(e, key).p
-        assert(p.purity.isConditional) // a cycle must not contain a non-conditional property
-        // NOTE
-        // We DO NOT increase the purity of all methods as this will happen automatically as a
-        // sideeffect of setting the purity of one method!
-        Iterable(Result(e, VirtualMethodPurity(propertyStore(e, key).p.purity.unconditional)))
+    def baseCycleResolutionStrategy(propertyStore: PropertyStore, eps: SomeEPS): Result = {
+        val EPS(e, p: Purity, _) = eps
+        assert(p.isConditional) // a cycle must not contain a non-conditional property
+        Result(e, VirtualMethodPurity(p.unconditional))
     }
 
     def apply(purity: Purity): VirtualMethodPurity = purity match {

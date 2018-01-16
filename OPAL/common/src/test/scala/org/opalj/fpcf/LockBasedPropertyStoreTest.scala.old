@@ -94,7 +94,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create[PalindromeProperty](
             "Palindrome",
             (ps: PropertyStore, e: Entity) ⇒ PalindromeIncomputable,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     sealed trait PalindromeProperty extends Property {
@@ -122,7 +122,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create[BitsProperty](
             "Bits",
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     case class BitsProperty(bits: Int) extends Property {
@@ -137,7 +137,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create[SuperPalindromeProperty](
             "SuperPalindrome",
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     sealed trait SuperPalindromeProperty extends Property {
@@ -153,7 +153,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create[TaintedProperty](
             "Tainted",
             (ps: PropertyStore, e: Entity) ⇒ Tainted,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     sealed trait TaintedProperty extends Property {
@@ -175,7 +175,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create(
             "StringLength",
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     case class StringLength(length: Int) extends Property {
@@ -188,7 +188,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create(
             "Count",
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     case class Count(count: Int) extends Property {
@@ -200,10 +200,8 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     final val PurityKey: PropertyKey[Purity] = {
         PropertyKey.create(
             "Purity",
-            (ps: PropertyStore, e: Entity) ⇒
-                throw new UnknownError(s"no fallback available for $e"),
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒
-                Iterable(Result(epks.head.e, Pure))
+            (ps: PropertyStore, e: Entity) ⇒ throw new UnknownError(s"there is no fallback for $e"),
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ Result(eOptionP.e, Pure)
         )
     }
     sealed trait Purity extends Property {
@@ -253,15 +251,11 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/
                 throw new UnknownError(s"no fallback for ReachableNodes property for $e available")
             },
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ {
-                //                val allReachableNodes = epks.foldLeft(Set.empty[Node]) { (c, epk) ⇒
-                //                    c ++ ps(epk.e, ReachableNodesKey /* <=> epk.pk */ ).get.nodes
-                //                }
-                //                val epk = epks.head
-                //                Iterable(Result(epk.e, ReachableNodes(allReachableNodes)))
-                // Cycles are completely handled by the analysis;
-                // i.e., we do not need to lift the results!
-                Iterable.empty
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ {
+                // Cycles are inherently handled by the analysis; we just need to comit it as
+                // a result!
+                val EP(e, p) = eOptionP
+                Result(e, p)
             }
         )
     }
@@ -299,7 +293,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         PropertyKey.create(
             "TreeLevel",
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, epks: Iterable[SomeEPK]) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
     case class TreeLevel(length: Int) extends Property {
@@ -346,45 +340,6 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     //
     // TESTS
 
-    describe("the property store") {
-
-        it("should be in the initial state after calling reset") {
-            val ps = psStrings
-
-            // let's fill the property store with:
-            //  - an entity based property and
-            //  - an on property derivation function
-            ps schedule { e: Entity ⇒
-                val property = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
-                Result(e, property)
-            }
-            ps.waitOnPropertyComputationCompletion(true)
-
-            // let's test the reset method
-            ps.entities { x ⇒ true } should not be ('isEmpty)
-            ps.reset()
-            ps.entities { x ⇒ true } should be('isEmpty)
-
-        }
-    }
-
-    it("should be possible to interrupt the computations") {
-        val EntitiesCount = 100000
-        val entities: List[java.lang.Integer] = (1 to EntitiesCount).map(Integer.valueOf).toList
-
-        val triggeredComputations = new java.util.concurrent.atomic.AtomicInteger(0)
-        @volatile var doInterrupt = false
-        val ps = LockBasedPropertyStore(entities, () ⇒ doInterrupt)(GlobalLogContext)
-        ps schedule { e: Entity ⇒
-            triggeredComputations.incrementAndGet()
-            Thread.sleep(50)
-            Result(e, BitsProperty(Integer.bitCount(e.asInstanceOf[Integer])))
-        }
-        doInterrupt = true
-        ps.waitOnPropertyComputationCompletion(false)
-
-        if (triggeredComputations.get == EntitiesCount) fail("interrupting the computations failed")
-    }
 
     describe("per entity properties") {
 
@@ -563,7 +518,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
                 // Here, only if data is tainted we check if it is a palindrome...
                 ps schedule { e: Entity ⇒
-                    def c: OnUpdateContinuation = (e: Entity, p: Property, ut: UpdateType) ⇒ {
+                    def c: OnUpdateContinuation = (e: Entity, p: Property, ut: PropertyState) ⇒ {
                         if (p == Tainted) {
                             if (e.toString.reverse == e.toString())
                                 Result(e, Palindrome)
@@ -629,7 +584,6 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
                     }
 
-                    // the dot in ".<||<" is necessary to shut-up scalariform...
                     ps.scheduleForCollected[Node] { case n @ `nodeRoot` ⇒ n.asInstanceOf[Node] }(
                         analysis(0)
                     )
@@ -682,7 +636,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     def c(node: Node) =
                         new OnUpdateContinuation { c ⇒
                             def apply(
-                                e: Entity, p: Property, ut: UpdateType
+                                e: Entity, p: Property, ut: PropertyState
                             ): PropertyComputationResult = {
                                 purityAnalysis(node)
                             }
@@ -737,7 +691,7 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         def c(
                             dependeeE:  Entity,
                             dependeeP:  Property,
-                            updateType: UpdateType
+                            updateType: PropertyState
                         ): PropertyComputationResult = {
                             // Get the set of currently reachable nodes:
                             val alreadyReachableNodes: SomeSet[Node] =
@@ -831,11 +785,11 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                             return Result(n, NoReachableNodes);
 
                         val remainingDependees: mutable.Set[Node] = nTargets.clone - n
-                        val c = new Function3[Entity, Property, UpdateType, PropertyComputationResult] {
+                        val c = new Function3[Entity, Property, PropertyState, PropertyComputationResult] {
                             def apply(
                                 dependeeE:  Entity,
                                 dependeeP:  Property,
-                                updateType: UpdateType
+                                updateType: PropertyState
                             ): PropertyComputationResult = {
                                 // Get the set of currently reachable nodes.
                                 val alreadyReachableNodes: SomeSet[Node] =
@@ -977,3 +931,4 @@ class LockBasedPropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
     }
 }
+

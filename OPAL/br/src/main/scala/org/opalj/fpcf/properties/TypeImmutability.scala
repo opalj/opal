@@ -56,11 +56,12 @@ sealed trait TypeImmutability extends OrderedProperty with TypeImmutabilityPrope
      */
     final def key = TypeImmutability.key
 
+    def isImmutable: Boolean
+    def isConditionallyImmutable: Boolean
+    /** `true` if the mutability is unknown or if the type is mutable.*/
     def isMutable: Boolean
 
-    def isConditionallyImmutable: Boolean
-
-    def join(other: TypeImmutability): TypeImmutability
+    def meet(other: TypeImmutability): TypeImmutability
 }
 /**
  * Common constants use by all [[TypeImmutability]] properties associated with methods.
@@ -72,7 +73,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
      */
     final val key: PropertyKey[TypeImmutability] = PropertyKey.create(
         "TypeImmutability",
-        // The default property that will be used if no analysis is able
+        // The  property that will be used if no analysis is able
         // to (directly) compute the respective property.
         MutableType,
         // When we have a cycle all properties are necessarily at least conditionally
@@ -88,97 +89,47 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  */
 case object ImmutableType extends TypeImmutability {
 
-    final val isRefinable = false
-    final val isMutable = false
-    final val isConditionallyImmutable = false
+    override def isImmutable: Boolean = true
+    override def isConditionallyImmutable: Boolean = false
+    override def isMutable: Boolean = false
 
-    def join(that: TypeImmutability): TypeImmutability = {
-        if (this == that) this else that
+    override def checkIsValidSuccessorOf(other: Property): Unit = {
+        if (other != ImmutableType) {
+            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
+        }
     }
 
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
-    }
-}
+    def meet(that: TypeImmutability): TypeImmutability = if (this == that) this else that
 
-case object UnknownTypeImmutability extends TypeImmutability {
-
-    final val isRefinable = true
-    final val isMutable = false
-    final val isConditionallyImmutable = false
-
-    def join(that: TypeImmutability): TypeImmutability = {
-        if (that == MutableType) MutableType else this
-    }
-
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other == UnknownTypeImmutability)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
-    }
 }
 
 case object ConditionallyImmutableType extends TypeImmutability {
 
-    final val isRefinable = false
-    final val isMutable = false
-    final val isConditionallyImmutable = true
+    override def isImmutable: Boolean = false
+    override def isConditionallyImmutable: Boolean = true
+    override def isMutable: Boolean = false
 
-    def join(that: TypeImmutability): TypeImmutability = {
-        that match {
-            case MutableType | UnknownTypeImmutability ⇒ that
-            case _                                     ⇒ this
+    def meet(that: TypeImmutability): TypeImmutability = if (that == MutableType) that else this
+
+    override def checkIsValidSuccessorOf(other: Property): Unit = {
+        if (other == ImmutableType) {
+            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
         }
     }
-
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
-    }
-
-}
-
-case object AtLeastConditionallyImmutableType extends TypeImmutability {
-
-    final val isRefinable = true
-    final val isMutable = false
-    final val isConditionallyImmutable = false
-
-    def join(other: TypeImmutability): TypeImmutability = {
-        other match {
-            case MutableType | UnknownTypeImmutability | ConditionallyImmutableType ⇒ other
-            case _ ⇒ this
-        }
-    }
-
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
-    }
-
 }
 
 case object MutableType extends TypeImmutability {
 
-    final val isRefinable = false
-    final val isMutable = true
-    final val isConditionallyImmutable = false
+    override def isImmutable: Boolean = false
+    override def isConditionallyImmutable: Boolean = false
+    override def isMutable: Boolean = true
 
-    def join(other: TypeImmutability): this.type = this
+    def meet(other: TypeImmutability): this.type = this
 
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
+    override def checkIsValidSuccessorOf(other: Property): Unit = {
+        if (other != MutableType) {
+            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
+        }
     }
-
 }
+

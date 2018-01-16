@@ -57,19 +57,19 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
         )
         for (method ← methods) {
             propertyStore(declaredMethods(method), Purity.key) match {
-                case ep @ EP(_, p) ⇒
+                case eps @ EPS(_, p, _) ⇒
                     maxPurity = maxPurity combine p
-                    if (p.isConditional) dependees += ep
+                    if (p.isConditional) dependees += eps
                 case epk ⇒ dependees += epk
             }
         }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, isFinal: Boolean): PropertyComputationResult = {
             dependees = dependees.filter { _.e ne e }
             maxPurity = maxPurity combine p.asInstanceOf[Purity]
             if (p.asInstanceOf[Purity].isConditional) {
-                assert(!ut.isFinalUpdate)
-                dependees += EP(e.asInstanceOf[DefinedMethod], p.asInstanceOf[Purity])
+                assert(!isFinal)
+                dependees += EPS(e.asInstanceOf[DefinedMethod], p.asInstanceOf[Purity], isFinal)
             }
 
             if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {

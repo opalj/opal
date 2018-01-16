@@ -28,18 +28,21 @@
  */
 package org.opalj.fpcf
 
-// TODO REname to PropertyState
 /**
- * The different types of updates distinguished by the fixed-point computations framework.
+ * Specifies the state of the property value. An intermediate property is a property
+ * which may be updated in-phase or across-phases. A phase-final property is - if at all –
+ * updated across phases (by a subsequent more capable analysis). The computation
+ * underlying the phase final has no more outgoing dependencies. A final property is
+ * final and will never change.
  *
  * @author Michael Eichberg
  */
-sealed abstract class UpdateType(val name: String) {
-    val id: Int
+sealed abstract class PropertyState(val name: String) {
+    val id: Int // a unique int id
 
-    def isIntermediateUpdate: Boolean
-    def isPhaseFinalUpdate: Boolean
-    def isFinalUpdate: Boolean
+    def isIntermediate: Boolean
+    def isPhaseFinal: Boolean
+    def isFinal: Boolean
 }
 
 /**
@@ -48,29 +51,29 @@ sealed abstract class UpdateType(val name: String) {
  * @note Refinable results are - downstream - only intermediate updates.
  */
 // TODO Rename to IntermediateProperty
-case object IntermediateUpdate extends UpdateType("Intermediate Update") {
+case object IntermediateUpdate extends PropertyState("Intermediate Update") {
     final val id = 1
-    final override def isIntermediateUpdate: Boolean = true
-    final override def isPhaseFinalUpdate: Boolean = false
-    final override def isFinalUpdate: Boolean = false
+    final override def isIntermediate: Boolean = true
+    final override def isPhaseFinal: Boolean = false
+    final override def isFinal: Boolean = false
 }
 
 // TODO Rename to PhaseFinalProperty
-case object PhaseFinalUpdate extends UpdateType("Phase Final Update") {
-    final val id = 3
-    final override def isIntermediateUpdate: Boolean = false
-    final override def isPhaseFinalUpdate: Boolean = true
-    final override def isFinalUpdate: Boolean = false
+case object PhaseFinalUpdate extends PropertyState("Phase Final Update") {
+    final val id = 2
+    final override def isIntermediate: Boolean = false
+    final override def isPhaseFinal: Boolean = true
+    final override def isFinal: Boolean = false
 }
 
 /**
  * The result is the final result and was computed using other information.
  */
 // TODO Rename to FinalProperty
-case object FinalUpdate extends UpdateType("Final Update") {
+case object FinalUpdate extends PropertyState("Final Update") {
     final val id = 3
-    final override def isIntermediateUpdate: Boolean = false
-    final override def isPhaseFinalUpdate: Boolean = false
-    final override def isFinalUpdate: Boolean = true
+    final override def isIntermediate: Boolean = false
+    final override def isPhaseFinal: Boolean = false
+    final override def isFinal: Boolean = true
 }
 

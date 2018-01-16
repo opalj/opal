@@ -32,7 +32,6 @@ package properties
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.PropertyKey.SomeEPKs
 import org.opalj.fpcf.properties.Purity.HasAllocations
 import org.opalj.fpcf.properties.Purity.IsNonDeterministic
 import org.opalj.fpcf.properties.Purity.ModifiesReceiver
@@ -224,19 +223,15 @@ object Purity extends PurityPropertyMetaInformation {
 
     def baseCycleResolutionStrategy(
         propertyStore: PropertyStore,
-        epks:          SomeEPKs
-    ): Iterable[Result] = {
+        eps:           SomeEPS
+    ): Result = {
         // When we have a cycle we can leverage the "purity" - conceptually (unless we
         // we have a programming bug) all properties (also those belonging to other
         // lattice) model conditional properties under the assumption that we have
         // at least the current properties.
-        val e = epks.head.e
-        val p = propertyStore(e, key).p
+        val EPS(e, p: Purity, _) = eps
         assert(p.isConditional) // a cycle must not contain a non-conditional property
-        // NOTE
-        // We DO NOT increase the purity of all methods as this will happen automatically as a
-        // sideeffect of setting the purity of one method!
-        Iterable(Result(e, propertyStore(e, key).p.unconditional))
+        Result(e, p.unconditional)
     }
 
     /**
@@ -301,7 +296,6 @@ object Purity extends PurityPropertyMetaInformation {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object PureWithoutAllocations extends Purity {
-    final def isRefinable = false
     final val flags = 0 // <=> no flag is set
 
     override def combine(other: Purity): Purity = other
@@ -313,7 +307,6 @@ case object PureWithoutAllocations extends Purity {
  *  @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBPure extends Purity {
-    final def isRefinable = true
     final val flags = PureFlags
 }
 
@@ -325,7 +318,6 @@ case object LBPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBSideEffectFreeWithoutAllocations extends Purity {
-    final def isRefinable = true
     final val flags = SideEffectFreeWithoutAllocationsFlags
 }
 
@@ -336,7 +328,6 @@ case object LBSideEffectFreeWithoutAllocations extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBSideEffectFree extends Purity {
-    final def isRefinable = true
     final val flags = SideEffectFreeFlags
 }
 
@@ -349,7 +340,6 @@ case object LBSideEffectFree extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBExternallyPure extends Purity {
-    final def isRefinable = true
     final val flags = HasAllocations | ModifiesReceiver
 }
 
@@ -363,7 +353,6 @@ case object LBExternallyPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBExternallySideEffectFree extends Purity {
-    final def isRefinable = true
     final val flags = ExternallySideEffectFreeFlags
 }
 
@@ -374,7 +363,6 @@ case object LBExternallySideEffectFree extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDPure extends Purity {
-    final def isRefinable = true
     final val flags = HasAllocations | PerformsDomainSpecificOperations
 }
 
@@ -385,7 +373,6 @@ case object LBDPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDSideEffectFree extends Purity {
-    final def isRefinable = true
     final val flags = SideEffectFreeFlags | PerformsDomainSpecificOperations
 }
 
@@ -397,7 +384,6 @@ case object LBDSideEffectFree extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDExternallyPure extends Purity {
-    final def isRefinable = true
     final val flags = HasAllocations | ModifiesReceiver | PerformsDomainSpecificOperations
 }
 
@@ -408,13 +394,10 @@ case object LBDExternallyPure extends Purity {
  * @see [[Purity]] for further details regarding the purity levels.
  */
 case object LBDExternallySideEffectFree extends Purity {
-    final def isRefinable = true
     final val flags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
 }
 
-sealed trait ConditionalPurity extends Purity {
-    final def isRefinable = true // even in the context of a single phase
-}
+sealed trait ConditionalPurity extends Purity
 
 /**
  * Used, if the pureness of a method is dependent on other analysis results not yet available, but
@@ -556,8 +539,6 @@ sealed abstract class ClassifiedImpure extends Purity
  */
 case object MaybePure extends ClassifiedImpure {
 
-    final def isRefinable: Boolean = true
-
     final val flags = ImpureFlags | IsConditional
 
     override def combine(other: Purity): Purity = {
@@ -577,9 +558,8 @@ case object MaybePure extends ClassifiedImpure {
  * The method needs to be treated as impure for the time being. However, the current
  * analysis is not able to derive a more precise result; no more dependency exist.
  */
+// TODO REmove!!!
 case object LBImpure extends ClassifiedImpure {
-
-    final def isRefinable: Boolean = true
 
     final val flags = ImpureFlags
 
@@ -595,10 +575,8 @@ case object LBImpure extends ClassifiedImpure {
 
 }
 
-/** The method is (finally classified as) impure; this also models the fallback. */
+/** The method is impure. */
 case object Impure extends ClassifiedImpure {
-
-    final def isRefinable: Boolean = false
 
     final val flags = ImpureFlags
 

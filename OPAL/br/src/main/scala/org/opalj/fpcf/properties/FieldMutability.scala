@@ -89,8 +89,6 @@ sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaIn
 
     final def key = FieldMutability.key // All instances have to share the SAME key!
 
-    final def isRefinable: Boolean = false
-
     def isEffectivelyFinal: Boolean
 }
 
@@ -115,6 +113,9 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
     }
 
 }
+
+// TODO Support ConditionallyFinalField... which is final, if, e.g., an initialization
+// is guaranteed to always result in the same value independent of the calling scenario
 
 /**
  * The field is only set once to a non-default value and only the updated value is used.
