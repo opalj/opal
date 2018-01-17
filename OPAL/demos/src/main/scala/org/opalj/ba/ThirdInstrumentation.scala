@@ -44,14 +44,18 @@ import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFileRepository
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
 import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.IFGT
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.INVOKESPECIAL
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -64,6 +68,7 @@ object ThirdInstrumentation extends App {
     val PrintStreamType = ObjectType("java/io/PrintStream")
     val SystemType = ObjectType("java/lang/System")
     val CollectionType = ObjectType("java/util/Collection")
+    val RuntimeExceptionType = ObjectType("java/lang/RuntimeException")
     val PrintlnDescriptor = JustTakes(ObjectType.Object)
 
     val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
@@ -82,6 +87,25 @@ object ThirdInstrumentation extends App {
 
             case Some(code) ⇒
                 val lCode = LabeledCode(code)
+
+                var deadCodeRemovalRequired = false
+                for {
+                    (pc, LoadString("kill me")) ← code
+                } {
+                    deadCodeRemovalRequired = true
+                    // NOTE: when we throw an exception, we don't have to take of the
+                    //       size of the stack!
+                    lCode.insert(pc, InsertionPosition.After, Seq(
+                        NEW(RuntimeExceptionType),
+                        DUP,
+                        INVOKESPECIAL(RuntimeExceptionType, false, "<init>", MethodDescriptor.NoArgsAndReturnVoid),
+                        ATHROW
+                    ))
+                }
+                if (deadCodeRemovalRequired) {
+                    lCode.removedDeadCode()
+                }
+
                 // whenever a method is called, we output its signature
                 lCode.insert(
                     // Note, we generally don't want to use Before, here!
@@ -101,12 +125,10 @@ object ThirdInstrumentation extends App {
                 // let's search all "println" calls where the parameter has a specific
                 // type (which is statically known)
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
-                var modified = false
 
                 for {
                     (pc, GETSTATIC(SystemType, "out", _)) ← code
                 } {
-                    modified = true
                     lCode.replace(pc, Seq(GETSTATIC(SystemType, "err", PrintStreamType)))
                 }
 
@@ -114,7 +136,6 @@ object ThirdInstrumentation extends App {
                     (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
                 } {
-                    modified = true
                     lCode.insert(
                         pc, InsertionPosition.Before,
                         Seq(
@@ -129,7 +150,6 @@ object ThirdInstrumentation extends App {
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
                 for ((pc, IRETURN) ← code) {
-                    modified = true
                     val gtTarget = Symbol(pc+":>")
                     val printlnTarget = Symbol(pc+":println")
                     lCode.insert(
@@ -149,12 +169,9 @@ object ThirdInstrumentation extends App {
                         )
                     )
                 }
-                if (modified) {
-                    val (newCode, _) = lCode.result(cf.version, m)
-                    m.copy(body = Some(newCode))
-                } else {
-                    m.copy()
-                }
+                val (newCode, _) = lCode.result(cf.version, m)
+                m.copy(body = Some(newCode))
+
         }
     }
     val newCF = cf.copy(methods = newMethods)
@@ -193,5 +210,15 @@ object ThirdInstrumentation extends App {
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
     newClass.getMethod("endlessLoop").invoke(instance)
-
+    newClass.getMethod("killBase", classOf[Boolean]).invoke(instance, java.lang.Boolean.FALSE)
+    try {
+        newClass.getMethod("killBase", classOf[Boolean]).invoke(instance, java.lang.Boolean.TRUE)
+    } catch {
+        case ite: java.lang.reflect.InvocationTargetException ⇒
+            if (!ite.getCause.isInstanceOf[RuntimeException]) {
+                Console.err.println("Big Bug!")
+            } else {
+                Console.out.println("Dead code successfully removedt!")
+            }
+    }
 }

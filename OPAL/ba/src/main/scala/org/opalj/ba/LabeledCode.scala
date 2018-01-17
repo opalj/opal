@@ -29,9 +29,7 @@
 package org.opalj.ba
 
 import scala.collection.mutable.ArrayBuffer
-
 import it.unimi.dsi.fastutil.ints.Int2IntAVLTreeMap
-
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.StackMapTable
@@ -41,6 +39,8 @@ import org.opalj.br.CodeAttribute
 import org.opalj.br.UnpackedLineNumberTable
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.br.instructions.PCLabel
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Mutable container for some labeled code.
@@ -54,8 +54,19 @@ import org.opalj.br.instructions.PCLabel
  */
 class LabeledCode(
         val originalCode:         Code,
-        private val instructions: ArrayBuffer[CodeElement[AnyRef]]
+        private var instructions: ArrayBuffer[CodeElement[AnyRef]]
 ) {
+
+    def removedDeadCode(): Unit = {
+        CODE.removeDeadCode(instructions) match {
+            case newInstructions: ArrayBuffer[CodeElement[AnyRef]] ⇒
+                instructions = newInstructions
+            case newInstructions: IndexedSeq[CodeElement[AnyRef]] ⇒
+                instructions =
+                    new ArrayBuffer[CodeElement[AnyRef]](newInstructions.size) ++
+                        newInstructions
+        }
+    }
 
     /**
      * Inserts the given sequence of instructions before, at or after the instruction - identified

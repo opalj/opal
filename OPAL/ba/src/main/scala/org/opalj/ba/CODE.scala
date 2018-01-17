@@ -194,7 +194,7 @@ object CODE {
                     codeElements(currentIndex - 1) match {
                         case _: PseudoInstruction ⇒ true
                         case InstructionLikeElement(li) ⇒
-                            !li.isControlTransferInstruction || {
+                            if (li.isControlTransferInstruction) {
                                 li.branchTargets.foreach(handleBranchTarget)
                                 // let's check if we have a "fall-through"
                                 li match {
@@ -203,11 +203,16 @@ object CODE {
                                         // let's continue...
                                         true
                                     case _ ⇒
-                                        // the next code element is only live if we have
+                                        // ... we have a goto(_w) instruction, hence
+                                        // the next instruction like element is only live if we have
                                         // an explicit jump to it, or if it is the start
                                         // of an exception handler...
                                         false
                                 }
+                            } else if (li.isReturnInstruction || li.isAthrow) {
+                                false
+                            } else {
+                                true
                             }
                     }
                 })
