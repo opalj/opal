@@ -142,11 +142,13 @@ object CODE {
         // Step 1
         iterateUntil(0, codeElementsSize) { index ⇒
             codeElements(index) match {
+
                 case LabelElement(label) ⇒
                     if (labelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"jump '$label is already used")
                     }
                     labelsToIndexes.put(label, index)
+
                 case TRY(label) ⇒
                     if (tryLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"try '${label.name} is already used")
@@ -157,6 +159,7 @@ object CODE {
                         throw new IllegalArgumentException(s"catch '${label.name} is already used")
                     }
                     catchLabelsToIndexes.put(label, index)
+
                 case _ ⇒ // nothing to do
             }
         }
@@ -322,6 +325,8 @@ object CODE {
                 if (isLive(index)) newCodeElements += codeElements(index)
             }
             // if we have removed a try block we now have to remove the handler's code...
+            println(codeElements.mkString("old\n\t", "\n\t", "\n"))
+            println(newCodeElements.mkString("new:\n\t", "\n\t", "\n\n"))
             removeDeadCode(newCodeElements) // tail-recursive call...
         } else {
             codeElements
@@ -351,7 +356,7 @@ object CODE {
         val exceptionHandlerBuilder = new ExceptionHandlerGenerator()
         val lineNumberTableBuilder = new LineNumberTableBuilder()
         var hasControlTransferInstructions = false
-        val pcMapping = new PCMapping // created based on `PCLabel`s
+        val pcMapping = new PCMapping(initialSize = codeElements.length) // created based on `PCLabel`s
 
         var currentPC = 0
         var nextPC = 0
@@ -385,11 +390,11 @@ object CODE {
             }
         }
 
+        val codeSize = instructionLikes.size
+        require(codeSize > 0, "no code found")
         val exceptionHandlers = exceptionHandlerBuilder.result()
         val attributes = lineNumberTableBuilder.result()
 
-        val codeSize = instructionLikes.size
-        require(codeSize > 0, "no code found")
         val instructions = new Array[Instruction](codeSize)
         var codeElementsToRewrite = IntArraySet.empty
         iterateUntil(0, codeSize) { pc ⇒

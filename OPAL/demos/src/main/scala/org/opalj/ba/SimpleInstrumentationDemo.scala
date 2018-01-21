@@ -70,7 +70,12 @@ class SimpleInstrumentationDemo {
         System.out.println("Did it!")
     }
 
-    def killBase(b: Boolean): Unit = {
+    def killMe1(): Unit = {
+        System.out.println("kill me")
+        System.out.println("at the end")
+    }
+
+    def killMe2(b: Boolean): Unit = {
         if (b) {
             System.out.println("kill me")
         }

@@ -32,7 +32,6 @@ package br
 import scala.annotation.tailrec
 import scala.annotation.switch
 import scala.reflect.ClassTag
-
 import java.util.Arrays.fill
 
 import scala.collection.AbstractIterator
@@ -40,7 +39,6 @@ import scala.collection.mutable
 import scala.collection.immutable.IntMap
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
-
 import org.opalj.util.AnyToAnyThis
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
@@ -54,6 +52,7 @@ import org.opalj.collection.mutable.IntQueue
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.cfg.CFG
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -1657,6 +1656,57 @@ final class Code private (
         false
     }
 
+    @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
+    def stackDepthAt(
+        atPC:           PC,
+        classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+    ): Int = {
+        stackDepthAt(atPC, CFGFactory(this, classHierarchy))
+    }
+
+    /**
+     * Computes the stack depth for the instruction with the given pc (`atPC`).
+     * I.e, computes the stack depth before executing the instruction! This function is intended
+     * to be used iff and only if the stack depth is only required for a single instruction; it
+     * recomputes the stack depth for all instructions whenever the function is called.
+     *
+     * @note If the CFG is already available, it should be passed as the computation is
+     *       potentially the most expensive part.
+     *
+     * @return the stack depth or -1 if the instruction is invalid/dead.
+     */
+    @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
+    def stackDepthAt(atPC: PC, cfg: CFG): Int = {
+        var paths: Chain[(PC, Int /*stackdepth before executing the instruction*/ )] = Naught
+        val visitedPCs = new mutable.BitSet(instructions.length)
+
+        // We start with the first instruction and an empty stack.
+        paths :&:= ((0, 0))
+        visitedPCs += 0
+
+        // We have to make sure, that all exception handlers are evaluated for
+        // max_stack, if an exception is caught, the stack size is always 1 -
+        // containing the exception itself.
+        for (exceptionHandler ← exceptionHandlers) {
+            val handlerPC = exceptionHandler.handlerPC
+            if (visitedPCs.add(handlerPC)) paths :&:= ((handlerPC, 1))
+        }
+
+        while (paths.nonEmpty) {
+            val (pc, initialStackDepth) = paths.head
+            if (pc == atPC) {
+                return initialStackDepth;
+            }
+            paths = paths.tail
+            val newStackDepth = initialStackDepth + instructions(pc).stackSlotsChange
+            cfg.foreachSuccessor(pc) { succPC ⇒
+                if (visitedPCs.add(succPC)) { paths :&:= ((succPC, newStackDepth)) }
+            }
+        }
+
+        -1
+    }
+
     /**
      * This attribute's kind id.
      */
@@ -1803,8 +1853,21 @@ object Code {
         )
     }
 
+    def computeCFG(
+        instructions:      Array[Instruction],
+        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
+        classHierarchy:    ClassHierarchy     = ClassHierarchy.preInitializedClassHierarchy
+    ): CFG = {
+        CFGFactory(
+            Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
+            classHierarchy
+        )
+    }
+
     /**
-     * Computes the maximum stack size required during execution of this code block.
+     * Computes the maximum stack size required when executing this code block.
+     *
+     * @note If the cfg is available, call the respective `computeMaxStack` method.
      *
      * @throws java.lang.ClassFormatError If the stack size differs between execution paths.
      */
@@ -1814,9 +1877,24 @@ object Code {
         classHierarchy:    ClassHierarchy     = ClassHierarchy.preInitializedClassHierarchy,
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty
     ): Int = {
-        val tempCode = Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers)
-        val cfg = CFGFactory(tempCode, classHierarchy)
+        computeMaxStack(
+            instructions,
+            exceptionHandlers,
+            computeCFG(instructions, exceptionHandlers, classHierarchy)
+        )
+    }
 
+    /**
+     * Computes the maximum stack size required when executing this code block.
+     *
+     * @throws java.lang.ClassFormatError If the stack size differs between execution paths.
+     */
+    @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
+    def computeMaxStack(
+        instructions:      Array[Instruction],
+        exceptionHandlers: ExceptionHandlers,
+        cfg:               CFG
+    ): Int = {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0
 

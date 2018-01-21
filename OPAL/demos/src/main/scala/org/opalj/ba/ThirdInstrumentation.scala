@@ -32,6 +32,7 @@ package ba
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
+import java.util.Arrays
 
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
@@ -45,10 +46,13 @@ import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFileRepository
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
+import org.opalj.br.instructions.POP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
+import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.IRETURN
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.GOTO
@@ -86,24 +90,38 @@ object ThirdInstrumentation extends App {
                 m.copy() // these are native and abstract methods
 
             case Some(code) ⇒
+                val cfg = CFGFactory(code, classHierarchy)
                 val lCode = LabeledCode(code)
-
-                var deadCodeRemovalRequired = false
-                for {
-                    (pc, LoadString("kill me")) ← code
-                } {
-                    deadCodeRemovalRequired = true
-                    // NOTE: when we throw an exception, we don't have to take of the
-                    //       size of the stack!
-                    lCode.insert(pc, InsertionPosition.After, Seq(
-                        NEW(RuntimeExceptionType),
-                        DUP,
-                        INVOKESPECIAL(RuntimeExceptionType, false, "<init>", MethodDescriptor.NoArgsAndReturnVoid),
-                        ATHROW
-                    ))
-                }
-                if (deadCodeRemovalRequired) {
-                    lCode.removedDeadCode()
+                var removeDeadCode = false
+                if (m.name == "killMe1") {
+                    for {
+                        (pc, LoadString("kill me")) ← code // the search can be done either based on the original code or the lcode
+                    } {
+                        val stackDepth = code.stackDepthAt(pc, cfg)
+                        val cleanStackAndReturn = new Array[CodeElement[AnyRef]](stackDepth + 1)
+                        Arrays.fill(
+                            cleanStackAndReturn.asInstanceOf[Array[Object]],
+                            0, stackDepth,
+                            InstructionElement(POP)
+                        )
+                        cleanStackAndReturn(stackDepth) = RETURN
+                        lCode.insert(pc, InsertionPosition.After, cleanStackAndReturn)
+                    }
+                    removeDeadCode = true
+                } else if (m.name == "killMe2") {
+                    for {
+                        (pc, LoadString("kill me")) ← code
+                    } {
+                        // NOTE: when we throw an exception, we don't have to take of the
+                        //       size of the stack!
+                        lCode.insert(pc, InsertionPosition.After, Seq(
+                            NEW(RuntimeExceptionType),
+                            DUP,
+                            INVOKESPECIAL(RuntimeExceptionType, false, "<init>", MethodDescriptor.NoArgsAndReturnVoid),
+                            ATHROW
+                        ))
+                    }
+                    removeDeadCode = true
                 }
 
                 // whenever a method is called, we output its signature
@@ -169,6 +187,7 @@ object ThirdInstrumentation extends App {
                         )
                     )
                 }
+                if (removeDeadCode) lCode.removedDeadCode()
                 val (newCode, _) = lCode.result(cf.version, m)
                 m.copy(body = Some(newCode))
 
@@ -210,9 +229,13 @@ object ThirdInstrumentation extends App {
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
     newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
     newClass.getMethod("endlessLoop").invoke(instance)
-    newClass.getMethod("killBase", classOf[Boolean]).invoke(instance, java.lang.Boolean.FALSE)
+
+    println("expected: org.opalj.ba.SimpleInstrumentationDemo{ public void killMe1() }")
+    print("actual:   "); newClass.getMethod("killMe1").invoke(instance)
+
+    newClass.getMethod("killMe2", classOf[Boolean]).invoke(instance, java.lang.Boolean.FALSE)
     try {
-        newClass.getMethod("killBase", classOf[Boolean]).invoke(instance, java.lang.Boolean.TRUE)
+        newClass.getMethod("killMe2", classOf[Boolean]).invoke(instance, java.lang.Boolean.TRUE)
     } catch {
         case ite: java.lang.reflect.InvocationTargetException ⇒
             if (!ite.getCause.isInstanceOf[RuntimeException]) {

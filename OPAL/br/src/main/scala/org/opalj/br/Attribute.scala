@@ -99,6 +99,10 @@ trait Attribute {
 /** Attributes which are referred to by the code attribute. */
 trait CodeAttribute extends Attribute {
 
-    def remapPCs(f: PC ⇒ PC): CodeAttribute
+    /**
+     * A function that provides the new PC for every "old" PC. If an instruction I with the pc X
+     * does not exist (anymore), the pc of I is equal or larger than `codeSize`.
+     */
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): CodeAttribute
 
 }

@@ -49,8 +49,8 @@ trait TypeAnnotationTable extends CodeAttribute {
      */
     def typeAnnotations: TypeAnnotations
 
-    override def remapPCs(f: PC ⇒ PC): TypeAnnotationTable = {
-        copy(typeAnnotations.map(_.remapPCs(f)))
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): TypeAnnotationTable = {
+        copy(typeAnnotations.flatMap(_.remapPCs(codeSize, f)))
     }
 
     def copy(typeAnnotations: TypeAnnotations): TypeAnnotationTable

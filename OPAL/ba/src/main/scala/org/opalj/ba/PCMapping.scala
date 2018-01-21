@@ -29,22 +29,41 @@
 package org.opalj.ba
 
 import java.util.Arrays.copyOf
+import java.util.Arrays.fill
 
 /**
- * Mapping of some pc to some new pc.
- *
- * @note The knowledge about the "legal" pcs has to be kept elsewhere!
- *
+ * Mapping of some pc to some new pc. If no mapping exists, Int.MaxValue == PCMapping.Invalid
+ * is returned.
  */
-class PCMapping(private[ba] var data: Array[Int] = new Array[Int](16)) extends (Int ⇒ Int) {
+class PCMapping(private[ba] var data: Array[Int]) extends (Int ⇒ Int) {
 
-    def apply(key: Int): Int = data(key)
+    def this(initialSize: Int) {
+        this({
+            val a = new Array[Int](Math.max(initialSize, 0))
+            fill(a, Int.MaxValue)
+            a
+        })
+    }
+
+    def apply(key: Int): Int = {
+        if (key >= data.length)
+            PCMapping.Invalid
+        else
+            data(key)
+    }
 
     def +=(key: Int, value: Int): Unit = {
-        if (key >= data.length) {
-            data = copyOf(data, key + 32)
+        val oldLength = data.length
+        if (key >= oldLength) {
+            val newLength = key + 32
+            data = copyOf(data, newLength)
+            fill(data, oldLength, newLength, Int.MaxValue)
         }
         data(key) = value
     }
 
+}
+
+object PCMapping {
+    final def Invalid = Int.MaxValue
 }
