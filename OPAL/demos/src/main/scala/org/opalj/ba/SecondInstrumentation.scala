@@ -71,45 +71,44 @@ object SecondInstrumentation extends App {
     val cf = p.classFile(TheType).get
     // let's transform the methods
     val newVersion = bi.Java8Version
-    val newMethods =
-        for (m ← cf.methods) yield {
-            m.body match {
-                case None ⇒
-                    m.copy() // these are native and abstract methods
+    val newMethods = for (m ← cf.methods) yield {
+        m.body match {
+            case None ⇒
+                m.copy() // these are native and abstract methods
 
-                case Some(code) ⇒
-                    // let's search all "println" calls where the parameter has a specific
-                    // type (which is statically known, and which is NOT the parameter type)
-                    lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
-                    val operandsArray = aiResult.operandsArray
-                    val lCode = LabeledCode(code)
-                    var modified = false
-                    for {
-                        (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
-                        param = operandsArray(pc).head
-                        // if param.asDomainReferenceValue.valueType.get == CollectionType
-                        if param.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
-                    } {
-                        modified = true
-                        lCode.insert(
-                            pc, InsertionPosition.Before,
-                            Seq(
-                                DUP,
-                                INVOKEVIRTUAL(ObjectType.Object, "toString", JustReturnsString),
-                                GETSTATIC(SystemType, "out", PrintStreamType),
-                                SWAP,
-                                INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
-                            )
+            case Some(code) ⇒
+                // let's search all "println" calls where the parameter has a specific
+                // type (which is statically known, and which is NOT the parameter type)
+                lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
+                val operandsArray = aiResult.operandsArray
+                val lCode = LabeledCode(code)
+                var modified = false
+                for {
+                    (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
+                    param = operandsArray(pc).head
+                    // if param.asDomainReferenceValue.valueType.get == CollectionType
+                    if param.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
+                } {
+                    modified = true
+                    lCode.insert(
+                        pc, InsertionPosition.Before,
+                        Seq(
+                            DUP,
+                            INVOKEVIRTUAL(ObjectType.Object, "toString", JustReturnsString),
+                            GETSTATIC(SystemType, "out", PrintStreamType),
+                            SWAP,
+                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
                         )
-                    }
-                    if (modified) {
-                        val (newCode, _) = lCode.result(newVersion, m)
-                        m.copy(body = Some(newCode))
-                    } else {
-                        m.copy()
-                    }
-            }
+                    )
+                }
+                if (modified) {
+                    val (newCode, _) = lCode.result(newVersion, m)
+                    m.copy(body = Some(newCode))
+                } else {
+                    m.copy()
+                }
         }
+    }
     val newCF = cf.copy(methods = newMethods)
     val newRawCF = Assembler(toDA(newCF))
 

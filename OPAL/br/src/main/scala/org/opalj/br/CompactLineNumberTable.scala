@@ -32,7 +32,7 @@ package br
 /**
  * A method's line number table.
  *
- * @param   lineNumbers
+ * @param   rawLineNumbers
  *          <pre>
  *          LineNumberTable_attribute {
  *              DATA:

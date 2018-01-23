@@ -59,8 +59,13 @@ trait LineNumberTable extends CodeAttribute {
             thisLineNumbers == otherLineNumbers
     }
 
-    override def remapPCs(f: PC ⇒ PC): LineNumberTable = {
-        UnpackedLineNumberTable(lineNumbers.map(_.remapPCs(f)))
+    override def remapPCs(codeSize: PC, f: PC ⇒ PC): LineNumberTable = {
+        val newLineNumbers = List.newBuilder[LineNumber]
+        lineNumbers.foreach { ln ⇒
+            val newLNOption = ln.remapPCs(codeSize, f)
+            if (newLNOption.isDefined) newLineNumbers += newLNOption.get
+        }
+        UnpackedLineNumberTable(newLineNumbers.result())
     }
 }
 

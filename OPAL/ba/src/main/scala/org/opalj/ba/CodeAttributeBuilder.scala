@@ -244,7 +244,7 @@ class CodeAttributeBuilder[T] private[ba] (
             val lastLocalsIndex = locals.indexOfLastNonNullValue
             var index = 0
             val ls = new ArrayBuffer[VerificationTypeInfo](lastLocalsIndex + 1)
-            do {
+            while (index <= lastLocalsIndex) {
                 ls += (
                     locals(index) match {
                         case null | r.domain.TheIllegalValue ⇒
@@ -256,7 +256,7 @@ class CodeAttributeBuilder[T] private[ba] (
                             dv.verificationTypeInfo
                     }
                 )
-            } while (index <= lastLocalsIndex)
+            }
             ls
         }
 

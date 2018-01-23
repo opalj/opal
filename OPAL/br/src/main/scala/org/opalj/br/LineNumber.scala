@@ -33,11 +33,14 @@ package org.opalj.br
  *
  * @author Michael Eichberg
  */
-case class LineNumber(
-        startPC:    PC,
-        lineNumber: Int
-) {
+case class LineNumber(startPC: PC, lineNumber: Int) {
 
-    def remapPCs(f: PC ⇒ PC): LineNumber = LineNumber(f(startPC), lineNumber)
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LineNumber] = {
+        val newStartPC = f(startPC)
+        if (newStartPC < codeSize)
+            Some(LineNumber(newStartPC, lineNumber))
+        else
+            None
+    }
 
 }

@@ -29,23 +29,24 @@
 package org.opalj.br
 
 import org.scalatest.FunSuite
-
 import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Boolean ⇒ JBoolean}
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
+import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.instructions.LocalVariableAccess
 import org.opalj.br.reader.Java9Framework
 import org.opalj.br.reader.BytecodeOptimizer
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Just tests if we can compute various information for a wide range of methods; e.g.,
@@ -56,8 +57,14 @@ import org.opalj.collection.immutable.IntArraySet
 class CodePropertiesTest extends FunSuite {
 
     def analyzeMaxStackAndLocals(project: SomeProject): String = {
-        val (t, analyzedMethodsCount) = timed { doAnalyzeMaxStackAndLocals(project) }
-        s"computing max stack/locals for all $analyzedMethodsCount methods took ${t.toSeconds}"
+        try {
+            val (t, analyzedMethodsCount) = timed { doAnalyzeMaxStackAndLocals(project) }
+            s"computing max stack/locals for all $analyzedMethodsCount methods took ${t.toSeconds}"
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed.foreach(_.printStackTrace(Console.err))
+                throw ce
+        }
     }
 
     def doAnalyzeMaxStackAndLocals(project: SomeProject): Int = {
@@ -73,12 +80,31 @@ class CodePropertiesTest extends FunSuite {
             val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
             val specifiedMaxLocals = code.maxLocals
+            val cfg = CFGFactory(code, ch)
 
             val liveVariables = code.liveVariables(ch)
             assert(
                 code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
-                s"computation of liveVariables fail for ${method.toJava}"
+                s"computation of liveVariables fails for ${method.toJava}"
             )
+
+            for {
+                (pc, instruction) ← code
+                if instruction.isReturnInstruction
+            } {
+                val stackDepthAt = code.stackDepthAt(pc, cfg)
+                val stackSlotChange = instruction.stackSlotsChange
+                if (stackDepthAt + stackSlotChange != 0) {
+                    val message =
+                        code.instructions.zipWithIndex.map(_.swap).mkString(
+                            s"stack depth at pc:$pc[$instruction]($stackDepthAt) + stack slot change($stackSlotChange) is not 0:\n\t",
+                            "\n\t",
+                            "\n"
+                        )
+
+                    fail(method.toJava(message))
+                }
+            }
 
             for { (pc, LocalVariableAccess(i, isRead)) ← code } {
                 val isLive = liveVariables(pc).contains(i)
@@ -97,7 +123,7 @@ class CodePropertiesTest extends FunSuite {
                 )
             }
 
-            val computedMaxStack = Code.computeMaxStack(instructions, ch, eh)
+            val computedMaxStack = Code.computeMaxStack(instructions, eh, cfg)
             if (specifiedMaxStack < computedMaxStack) {
                 fail(
                     s"$src: computed max stack is too large - ${method.toJava}}: "+
@@ -173,7 +199,7 @@ class CodePropertiesTest extends FunSuite {
         }
         val reader = new Reader()
         val cfs = org.opalj.br.reader.readJREClassFiles()(reader = reader)
-        val jreProject = Project(cfs);
+        val jreProject = Project(cfs)
         analyzeMaxStackAndLocals(jreProject)
         val count = analyzeStackMapTablePCs(jreProject)
         info(s"computation of stack maps table pcs executed for $count methods")

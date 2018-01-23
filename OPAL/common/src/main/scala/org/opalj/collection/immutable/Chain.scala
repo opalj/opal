@@ -517,7 +517,7 @@ sealed trait Chain[@specialized(Int) +T]
         val result = new StringBuilder(pre)
         var rest = this
         if (rest.nonEmpty) {
-            result.append(head.toString)
+            result.append(head)
             rest = rest.tail
             while (rest.nonEmpty) {
                 result.append(sep)

@@ -54,6 +54,8 @@ trait InstructionLike {
     def mnemonic: String
 
     def isControlTransferInstruction: Boolean = false
+    def isReturnInstruction: Boolean = false
+    def isAthrow: Boolean = false
 
     /**
      * The exceptions that may be thrown by the JVM at runtime if the execution of

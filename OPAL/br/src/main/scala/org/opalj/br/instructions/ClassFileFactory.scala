@@ -918,7 +918,8 @@ object ClassFileFactory {
      * Creates a proxy method with name `methodName` and descriptor `methodDescriptor` and
      * the bytecode instructions to execute the method `receiverMethod` in `receiverType`.
      *
-     * If the `methodDescriptor`s have to be identical in terms of parameter types and return type.
+     * The `methodDescriptor`s have to be identical in terms of parameter types and have to
+     * be compatible w.r.t. the return type.
      */
     def proxyMethod(
         definingType:          ObjectType,
@@ -1006,46 +1007,55 @@ object ClassFileFactory {
                 staticParameters, definingType
             )
 
-        val forwardingCallInstruction: Array[Instruction] =
-            (invocationInstruction: @switch) match {
-                case INVOKESTATIC.opcode ⇒
-                    Array(
-                        INVOKESTATIC(
-                            implMethod.receiverType.asObjectType, receiverIsInterface,
-                            implMethod.name, fixedImplDescriptor
-                        ), null, null
-                    )
-                case INVOKESPECIAL.opcode ⇒
-                    val methodDescriptor =
-                        if (implMethod.name == "<init>") {
-                            MethodDescriptor(fixedImplDescriptor.parameterTypes, VoidType)
-                        } else {
-                            fixedImplDescriptor
-                        }
-                    val invoke = INVOKESPECIAL(
+        val forwardingCallInstruction: Array[Instruction] = (invocationInstruction: @switch) match {
+            case INVOKESTATIC.opcode ⇒
+                Array(
+                    INVOKESTATIC(
                         implMethod.receiverType.asObjectType, receiverIsInterface,
-                        implMethod.name, methodDescriptor
-                    )
-                    Array(invoke, null, null)
-                case INVOKEINTERFACE.opcode ⇒
-                    val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
-                    Array(invoke, null, null, null, null)
-                case INVOKEVIRTUAL.opcode ⇒
-                    val invoke = INVOKEVIRTUAL(implMethod.receiverType, implMethod.name, fixedImplDescriptor)
-                    Array(invoke, null, null)
-            }
+                        implMethod.name, fixedImplDescriptor
+                    ), null, null
+                )
+
+            case INVOKESPECIAL.opcode ⇒
+                val methodDescriptor =
+                    if (implMethod.name == "<init>") {
+                        MethodDescriptor(fixedImplDescriptor.parameterTypes, VoidType)
+                    } else {
+                        fixedImplDescriptor
+                    }
+                val invoke = INVOKESPECIAL(
+                    implMethod.receiverType.asObjectType, receiverIsInterface,
+                    implMethod.name, methodDescriptor
+                )
+                Array(invoke, null, null)
+
+            case INVOKEINTERFACE.opcode ⇒
+                val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
+                Array(invoke, null, null, null, null)
+
+            case INVOKEVIRTUAL.opcode ⇒
+                val invoke = INVOKEVIRTUAL(implMethod.receiverType, implMethod.name, fixedImplDescriptor)
+                Array(invoke, null, null)
+        }
 
         val forwardingInstructions: Array[Instruction] =
             forwardParametersInstructions ++ forwardingCallInstruction
 
         val returnAndConvertInstructionsArray: Array[Instruction] =
-            if (methodDescriptor.returnType.isVoidType)
-                Array(RETURN)
-            else
+            if (methodDescriptor.returnType.isVoidType) {
+                if (fixedImplDescriptor.returnType.isVoidType)
+                    Array(RETURN)
+                else
+                    Array(
+                        if (fixedImplDescriptor.returnType.operandSize == 1) POP else POP2,
+                        RETURN
+                    )
+            } else {
                 returnAndConvertInstructions(
                     methodDescriptor.returnType.asFieldType,
                     fixedImplDescriptor.returnType.asFieldType
                 )
+            }
 
         val bytecodeInstructions: Array[Instruction] =
             loadReceiverObject ++ forwardingInstructions ++ returnAndConvertInstructionsArray
@@ -1271,7 +1281,7 @@ object ClassFileFactory {
                 "internal error",
                 s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
                     s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
-                    s"receiver descriptor  = ${receiverMethodDescriptor} +\n\t "+
+                    s"receiver descriptor  = $receiverMethodDescriptor +\n\t "+
                     s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
                 t
             )(GlobalLogContext)

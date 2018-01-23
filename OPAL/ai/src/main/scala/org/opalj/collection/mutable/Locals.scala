@@ -365,7 +365,7 @@ private[mutable] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Loca
     override def indexOfLastNonNullValue: Int = {
         var maxIndex = size - 1
         while (maxIndex >= 0) {
-            if (apply(maxIndex) != null)
+            if (apply(maxIndex) ne null)
                 return maxIndex;
             maxIndex -= 1
         }
@@ -397,7 +397,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
 
     final override def size: Int = 1
 
-    final override def indexOfLastNonNullValue: Int = if (v == null) 0 else -1
+    final override def indexOfLastNonNullValue: Int = if (v != null) 0 else -1
 
     override def apply(index: Int): T = {
         // if (index != 0) throw new IndexOutOfBoundsException("invalid index("+index+")")
@@ -721,7 +721,11 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
     final override def size: Int = 4
 
     final override def indexOfLastNonNullValue: Int = {
-        if (v3 != null) 3 else if (v2 != null) 2 else if (v1 != null) 1 else if (v0 != null) 0 else -1
+        if (v3 != null) 3
+        else if (v2 != null) 2
+        else if (v1 != null) 1
+        else if (v0 != null) 0
+        else -1
     }
 
     override def apply(index: Int): T = {
