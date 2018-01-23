@@ -57,14 +57,14 @@ import org.opalj.concurrent.ConcurrentExceptions
 class CodePropertiesTest extends FunSuite {
 
     def analyzeMaxStackAndLocals(project: SomeProject): String = {
-     try {
-        val (t, analyzedMethodsCount) = timed { doAnalyzeMaxStackAndLocals(project) }
-        s"computing max stack/locals for all $analyzedMethodsCount methods took ${t.toSeconds}"
-     } catch {
-         case ce : ConcurrentExceptions ⇒
-            ce.getSuppressed.foreach(_.printStackTrace(Console.err))
-            throw ce
-     }
+        try {
+            val (t, analyzedMethodsCount) = timed { doAnalyzeMaxStackAndLocals(project) }
+            s"computing max stack/locals for all $analyzedMethodsCount methods took ${t.toSeconds}"
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed.foreach(_.printStackTrace(Console.err))
+                throw ce
+        }
     }
 
     def doAnalyzeMaxStackAndLocals(project: SomeProject): Int = {
@@ -80,7 +80,7 @@ class CodePropertiesTest extends FunSuite {
             val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
             val specifiedMaxLocals = code.maxLocals
-            val cfg = CFGFactory(code,ch)
+            val cfg = CFGFactory(code, ch)
 
             val liveVariables = code.liveVariables(ch)
             assert(
@@ -92,11 +92,16 @@ class CodePropertiesTest extends FunSuite {
                 (pc, instruction) ← code
                 if instruction.isReturnInstruction
             } {
-                val stackDepthAt = code.stackDepthAt(pc,cfg)
+                val stackDepthAt = code.stackDepthAt(pc, cfg)
                 val stackSlotChange = instruction.stackSlotsChange
                 if (stackDepthAt + stackSlotChange != 0) {
                     val message =
-                        s"stack depth at pc:$pc[$instruction]($stackDepthAt) + stack slot change($stackSlotChange) is not 0"
+                        code.instructions.zipWithIndex.map(_.swap).mkString(
+                            s"stack depth at pc:$pc[$instruction]($stackDepthAt) + stack slot change($stackSlotChange) is not 0:\n\t",
+                            "\n\t",
+                            "\n"
+                        )
+
                     fail(method.toJava(message))
                 }
             }
@@ -118,7 +123,7 @@ class CodePropertiesTest extends FunSuite {
                 )
             }
 
-            val computedMaxStack = Code.computeMaxStack(instructions, eh,cfg)
+            val computedMaxStack = Code.computeMaxStack(instructions, eh, cfg)
             if (specifiedMaxStack < computedMaxStack) {
                 fail(
                     s"$src: computed max stack is too large - ${method.toJava}}: "+
@@ -195,8 +200,8 @@ class CodePropertiesTest extends FunSuite {
         val reader = new Reader()
         val cfs = org.opalj.br.reader.readJREClassFiles()(reader = reader)
         val jreProject = Project(cfs)
-                    analyzeMaxStackAndLocals(jreProject)
-                val count = analyzeStackMapTablePCs(jreProject)
+        analyzeMaxStackAndLocals(jreProject)
+        val count = analyzeStackMapTablePCs(jreProject)
         info(s"computation of stack maps table pcs executed for $count methods")
     }
 
