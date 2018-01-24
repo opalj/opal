@@ -40,9 +40,8 @@ package reader
 trait Java9LibraryFramework
     extends Java8LibraryFramework
     with Module_attributeBinding
-with ModuleMainClass_attributeBinding
-with ModulePackages_attributeBinding
-
+// TODO XXXX FIXME with ModuleMainClass_attributeBinding
+// TODO XXXX FIXME with ModulePackages_attributeBinding
 
 object Java9LibraryFramework extends Java9LibraryFramework {
 

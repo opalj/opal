@@ -181,7 +181,8 @@ case class ProvidesEntry(
     def attribute_length: Int = 4 + provides_with_index_table.length * 2
 
     def toString(implicit cp: Constant_Pool): String = {
-        val provides_with = provides_with_index_table.map(_.toString).sorted.mkString(" with ", ", ", ";")
+        val provides_with =
+            provides_with_index_table.map(_.toString).sorted.mkString(" with ", ", ", ";")
 
         s"provides ${cp(provides_index).toString(cp)}$provides_with"
     }

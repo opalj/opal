@@ -45,7 +45,7 @@ trait ModuleMainClass_attributeReader extends AttributeReader {
     def ModuleMainClass_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        main_class_index:     Constant_Pool_Index
+        main_class_index:     Constant_Pool_Index // CONSTANT_Class_info
     ): ModuleMainClass_attribute
 
     /**

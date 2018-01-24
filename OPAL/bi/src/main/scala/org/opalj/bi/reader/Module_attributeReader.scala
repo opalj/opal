@@ -83,7 +83,7 @@ trait Module_attributeReader extends AttributeReader {
         attribute_name_index: Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
-        module_version_index: Constant_Pool_Index, // CONSTANT_UTF8
+        module_version_index: Constant_Pool_Index, // Optional: CONSTANT_UTF8
         requires:             Requires,
         exports:              Exports,
         opens:                Opens,
@@ -95,7 +95,7 @@ trait Module_attributeReader extends AttributeReader {
         constant_pool:         Constant_Pool,
         module_index:          Constant_Pool_Index, // CONSTANT_Module_info
         requires_flags:        Int,
-        require_version_index: Constant_Pool_Index // CONSTANT_UTF8
+        require_version_index: Constant_Pool_Index // Optional: CONSTANT_UTF8
     ): RequiresEntry
 
     def ExportsToIndexEntry(
@@ -156,32 +156,32 @@ trait Module_attributeReader extends AttributeReader {
      *     u2 module_version_index;
      *
      *     u2 requires_count;
-     *     {   u2 requires_index; // CONSTANT_Utf8
+     *     {   u2 requires_index; // CONSTANT_Module_info
      *         u2 requires_flags;
-     *         u2 requires_version_index;
+     *         u2 requires_version_index; // Optional: CONSTANT_Utf8_info
      *     } requires[requires_count];
      *
      *     u2 exports_count;
-     *     {   u2 exports_index; // CONSTANT_Utf8
+     *     {   u2 exports_index; // CONSTANT_Package_info
      *         u2 exports_flags;
      *         u2 exports_to_count;
-     *         u2 exports_to_index/*CONSTANT_UTF8*/[exports_to_count];
+     *         u2 exports_to_index[exports_to_count]; // CONSTANT_Module_info[]
      *     } exports[exports_count];
      *
      *      u2 opens_count;
-     *      {   u2 opens_index;
+     *      {   u2 opens_index; // CONSTANT_Package_info
      *          u2 opens_flags;
      *          u2 opens_to_count;
-     *          u2 opens_to_index[opens_to_count];
+     *          u2 opens_to_index[opens_to_count]; // CONSTANT_Module_info[]
      *      } opens[opens_count];
      *
      *     u2 uses_count;
-     *     u2 uses_index/*CONSTANT_Class*/[uses_count];
+     *     u2 uses_index[uses_count]; // CONSTANT_Class[]
      *
      *     u2 provides_count;
-     *     {   u2 provides_index /*CONSTANT_Class*/;
+     *     {   u2 provides_index; // CONSTANT_Class
      *         u2 provides_with_count;
-     *         u2 provides_with_index[provides_with_count];
+     *         u2 provides_with_index[provides_with_count]; // CONSTANT_Class_info[]
      *     } provides[provides_count];
      * }
      * </pre>
@@ -239,9 +239,7 @@ trait Module_attributeReader extends AttributeReader {
         }
 
         val usesCount = in.readUnsignedShort()
-        val uses = repeat(usesCount) {
-            UsesEntry(cp, in.readUnsignedShort())
-        }
+        val uses = repeat(usesCount) { UsesEntry(cp, in.readUnsignedShort()) }
 
         val providesCount = in.readUnsignedShort()
         val provides = repeat(providesCount) {

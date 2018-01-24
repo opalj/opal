@@ -411,9 +411,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *      of a class file fails. '''This function has to be thread safe'''.
      */
     def ClassFiles(
-                      zipFile:          ZipFile,
-                      classFileHandler: (ClassFile, URL) ⇒ Unit,
-                      exceptionHandler: ExceptionHandler
+        zipFile:          ZipFile,
+        classFileHandler: (ClassFile, URL) ⇒ Unit,
+        exceptionHandler: ExceptionHandler
     ): Unit = {
         val zipFileURL = new File(zipFile.getName).toURI.toURL.toExternalForm
         val jarFileName = s"jar:$zipFileURL!/"

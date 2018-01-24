@@ -50,7 +50,7 @@ trait ModulePackages_attributeReader extends AttributeReader {
 
     def PackageIndexTableEntry(
         constant_pool: Constant_Pool,
-        package_index: Constant_Pool_Index
+        package_index: Constant_Pool_Index // CONSTANT_Package_info
     ): PackageIndexTableEntry
 
     def ModulePackages_attribute(
