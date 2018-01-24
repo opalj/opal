@@ -51,8 +51,8 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
             this.localVariableTypes.forall(other.localVariableTypes.contains)
     }
 
-    override def remapPCs(f: PC ⇒ PC): CodeAttribute = {
-        LocalVariableTypeTable(localVariableTypes.map(_.remapPCs(f)))
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): CodeAttribute = {
+        LocalVariableTypeTable(localVariableTypes.flatMap(_.remapPCs(codeSize, f)))
     }
 }
 object LocalVariableTypeTable {
@@ -68,14 +68,19 @@ case class LocalVariableType(
         signature: FieldTypeSignature,
         index:     Int
 ) {
-    def remapPCs(f: PC ⇒ PC): LocalVariableType = {
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LocalVariableType] = {
         val newStartPC = f(startPC)
-        LocalVariableType(
-            newStartPC,
-            f(startPC + length) - newStartPC,
-            name,
-            signature,
-            index
-        )
+        if (newStartPC < codeSize)
+            Some(
+                LocalVariableType(
+                    newStartPC,
+                    f(startPC + length) - newStartPC,
+                    name,
+                    signature,
+                    index
+                )
+            )
+        else
+            None
     }
 }

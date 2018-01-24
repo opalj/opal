@@ -51,8 +51,9 @@ case class LocalVariableTable(localVariables: LocalVariables) extends CodeAttrib
             this.localVariables.forall(other.localVariables.contains)
     }
 
-    override def remapPCs(f: Opcode ⇒ Opcode): CodeAttribute = {
-        LocalVariableTable(localVariables.map(_.remapPCs(f)))
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): CodeAttribute = {
+        val newLocalVariables = localVariables.flatMap(_.remapPCs(codeSize, f))
+        LocalVariableTable(newLocalVariables)
     }
 }
 object LocalVariableTable {

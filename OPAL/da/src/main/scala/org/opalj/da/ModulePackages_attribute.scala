@@ -26,44 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ba
+package org.opalj
+package da
 
-import java.util.Arrays.copyOf
-import java.util.Arrays.fill
+import scala.xml.Node
 
 /**
- * Mapping of some pc to some new pc. If no mapping exists, Int.MaxValue == PCMapping.Invalid
- * is returned.
+ * Represents the ''ModulePackages'' attribute (Java 9).
+ *
+ * @author Michael Eichberg
  */
-class PCMapping(private[ba] var data: Array[Int]) extends (Int ⇒ Int) {
+case class ModulePackages_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        package_index_table:  IndexedSeq[Constant_Pool_Index]
+) extends Attribute {
 
-    def this(initialSize: Int) {
-        this({
-            val a = new Array[Int](Math.max(initialSize, 0))
-            fill(a, Int.MaxValue)
-            a
-        })
+    override def attribute_length: Int = 2 + package_index_table.size * 2
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <details class="attribute">
+            <summary>ModulePackages</summary>
+            { package_index_table.map(p ⇒ cp(p).toString).sorted.map { p ⇒ <span>{ p }</span><br/> } }
+        </details>
     }
 
-    def apply(key: Int): Int = {
-        if (key >= data.length)
-            PCMapping.Invalid
-        else
-            data(key)
-    }
-
-    def +=(key: Int, value: Int): Unit = {
-        val oldLength = data.length
-        if (key >= oldLength) {
-            val newLength = key + 32
-            data = copyOf(data, newLength)
-            fill(data, oldLength, newLength, Int.MaxValue)
-        }
-        data(key) = value
-    }
-
-}
-
-object PCMapping {
-    final def Invalid = Int.MaxValue
 }

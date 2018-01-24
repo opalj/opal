@@ -43,22 +43,22 @@ sealed abstract class TypeAnnotationTarget {
      * when the bytecode is optimized/transformed/instrumented to ensure the annotations are
      * still valid.
      */
-    def remapPCs(f: PC ⇒ PC): TypeAnnotationTarget
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TypeAnnotationTarget]
 
 }
 
 sealed abstract class TypeAnnotationTargetInCode extends TypeAnnotationTarget
 
 sealed abstract class TypeAnnotationTargetInClassDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(f: PC ⇒ PC): TypeAnnotationTarget = this
+    final override def remapPCs(codeSize: Int, f: PC ⇒ PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 sealed abstract class TypeAnnotationTargetInFieldDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(f: PC ⇒ PC): TypeAnnotationTarget = this
+    final override def remapPCs(codeSize: Int, f: PC ⇒ PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 sealed abstract class TypeAnnotationTargetInMetodDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(f: PC ⇒ PC): TypeAnnotationTarget = this
+    final override def remapPCs(codeSize: Int, f: PC ⇒ PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 /**
@@ -101,7 +101,13 @@ case class TypeAnnotation(
         annotationType:    FieldType,
         elementValuePairs: ElementValuePairs
 ) extends AnnotationLike {
-    def remapPCs(f: PC ⇒ PC): TypeAnnotation = copy(target = target.remapPCs(f))
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TypeAnnotation] = {
+        val newTargetOption = target.remapPCs(codeSize, f)
+        if (newTargetOption.isDefined)
+            Some(copy(target = newTargetOption.get))
+        else
+            None
+    }
 }
 
 //
@@ -170,8 +176,12 @@ case class TAOfLocalvarDecl(
         localVarTable: IndexedSeq[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
     override def typeId: Int = 0x40
-    override def remapPCs(f: PC ⇒ PC): TAOfLocalvarDecl = {
-        copy(localVarTable.map(_.remapPCs(f)))
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfLocalvarDecl] = {
+        val newLocalVarTable = localVarTable.flatMap(_.remapPCs(codeSize, f))
+        if (newLocalVarTable.nonEmpty)
+            Some(copy(newLocalVarTable))
+        else
+            None
     }
 }
 
@@ -179,53 +189,88 @@ case class TAOfResourcevarDecl(
         localVarTable: IndexedSeq[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
     override def typeId: Int = 0x41
-    override def remapPCs(f: PC ⇒ PC): TAOfResourcevarDecl = {
-        copy(localVarTable.map(_.remapPCs(f)))
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfResourcevarDecl] = {
+        val newLocalVarTable = localVarTable.flatMap(_.remapPCs(codeSize, f))
+        if (newLocalVarTable.nonEmpty)
+            Some(copy(newLocalVarTable))
+        else
+            None
     }
 }
 
 /** The local variable is valid in the range `[start_pc, start_pc + length)`. */
-case class LocalvarTableEntry(
-        startPC: Int,
-        length:  Int,
-        index:   Int
-) {
-    def remapPCs(f: PC ⇒ PC): LocalvarTableEntry = {
+case class LocalvarTableEntry(startPC: Int, length: Int, index: Int) {
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LocalvarTableEntry] = {
         val newStartPC = f(startPC)
-        LocalvarTableEntry(
-            newStartPC,
-            f(startPC + length) - newStartPC,
-            index
-        )
+        if (newStartPC < codeSize) {
+            val newLength = Math.min(f(startPC + length) - newStartPC, codeSize - newStartPC)
+            if (newLength > 0)
+                return Some(LocalvarTableEntry(newStartPC, newLength, index));
+        }
+        // ... else
+        None
     }
 }
 
 case class TAOfCatch(exception_table_index: Int) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x42
-    override def remapPCs(f: PC ⇒ PC): this.type = this
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Some[this.type] = Some(this)
 }
 
 case class TAOfInstanceOf(offset: Int) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x43
-    override def remapPCs(f: PC ⇒ PC): TAOfInstanceOf = new TAOfInstanceOf(f(offset))
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfInstanceOf] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(new TAOfInstanceOf(newOffset))
+        else
+            None
+    }
 }
 
 case class TAOfNew(offset: Int) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x44
-    override def remapPCs(f: PC ⇒ PC): TAOfNew = new TAOfNew(f(offset))
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfNew] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(new TAOfNew(newOffset))
+        else
+            None
+    }
 }
 
 case class TAOfMethodReferenceExpressionNew(offset: Int) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x45
-    override def remapPCs(f: PC ⇒ PC): TAOfMethodReferenceExpressionNew = {
-        new TAOfMethodReferenceExpressionNew(f(offset))
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfMethodReferenceExpressionNew] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(new TAOfMethodReferenceExpressionNew(newOffset))
+        else
+            None
     }
 }
 
 case class TAOfMethodReferenceExpressionIdentifier(offset: Int) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x46
-    override def remapPCs(f: PC ⇒ PC): TAOfMethodReferenceExpressionIdentifier = {
-        new TAOfMethodReferenceExpressionIdentifier(f(offset))
+
+    override def remapPCs(
+        codeSize: Int,
+        f:        PC ⇒ PC
+    ): Option[TAOfMethodReferenceExpressionIdentifier] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(new TAOfMethodReferenceExpressionIdentifier(newOffset))
+        else
+            None
     }
 }
 
@@ -233,33 +278,66 @@ case class TAOfCastExpression(
         offset:              Int,
         type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x47
-    override def remapPCs(f: PC ⇒ PC): TAOfCastExpression = copy(offset = f(offset))
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfCastExpression] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(copy(offset = f(offset)))
+        else
+            None
+    }
 }
 
 case class TAOfConstructorInvocation(
         offset:              Int,
         type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x48
-    override def remapPCs(f: PC ⇒ PC): TAOfConstructorInvocation = copy(offset = f(offset))
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfConstructorInvocation] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(copy(offset = f(offset)))
+        else
+            None
+    }
 }
 
 case class TAOfMethodInvocation(
         offset:              Int,
         type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x49
-    override def remapPCs(f: PC ⇒ PC): TAOfMethodInvocation = copy(offset = f(offset))
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfMethodInvocation] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(copy(offset = f(offset)))
+        else
+            None
+    }
 }
 
 case class TAOfConstructorInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x4A
-    override def remapPCs(f: PC ⇒ PC): TAOfConstructorInMethodReferenceExpression = {
-        copy(offset = f(offset))
+
+    override def remapPCs(
+        codeSize: Int,
+        f:        PC ⇒ PC
+    ): Option[TAOfConstructorInMethodReferenceExpression] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(copy(offset = f(offset)))
+        else
+            None
     }
 }
 
@@ -267,9 +345,18 @@ case class TAOfMethodInMethodReferenceExpression(
         offset:              Int,
         type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
+
     def typeId: Int = 0x4B
-    override def remapPCs(f: PC ⇒ PC): TAOfMethodInMethodReferenceExpression = {
-        copy(offset = f(offset))
+
+    override def remapPCs(
+        codeSize: Int,
+        f:        PC ⇒ PC
+    ): Option[TAOfMethodInMethodReferenceExpression] = {
+        val newOffset = f(offset)
+        if (newOffset < codeSize)
+            Some(copy(offset = f(offset)))
+        else
+            None
     }
 }
 

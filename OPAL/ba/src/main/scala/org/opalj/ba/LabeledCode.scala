@@ -29,9 +29,7 @@
 package org.opalj.ba
 
 import scala.collection.mutable.ArrayBuffer
-
 import it.unimi.dsi.fastutil.ints.Int2IntAVLTreeMap
-
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.StackMapTable
@@ -41,6 +39,8 @@ import org.opalj.br.CodeAttribute
 import org.opalj.br.UnpackedLineNumberTable
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.br.instructions.PCLabel
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Mutable container for some labeled code.
@@ -54,8 +54,19 @@ import org.opalj.br.instructions.PCLabel
  */
 class LabeledCode(
         val originalCode:         Code,
-        private val instructions: ArrayBuffer[CodeElement[AnyRef]]
+        private var instructions: ArrayBuffer[CodeElement[AnyRef]]
 ) {
+
+    def removedDeadCode(): Unit = {
+        CODE.removeDeadCode(instructions) match {
+            case newInstructions: ArrayBuffer[CodeElement[AnyRef]] ⇒
+                instructions = newInstructions
+            case newInstructions: IndexedSeq[CodeElement[AnyRef]] ⇒
+                instructions =
+                    new ArrayBuffer[CodeElement[AnyRef]](newInstructions.size) ++
+                        newInstructions
+        }
+    }
 
     /**
      * Inserts the given sequence of instructions before, at or after the instruction - identified
@@ -200,16 +211,17 @@ class LabeledCode(
      */
     def result: CodeAttributeBuilder[AnyRef] = {
         val initialCodeAttributeBuilder = CODE(instructions)
-
+        val codeSize = initialCodeAttributeBuilder.instructions.length
+        var explicitAttributes = initialCodeAttributeBuilder.attributes
         // We filter the (old) stack map table - it is most likely no longer valid!
         val oldAttributes = originalCode.attributes.filter { a ⇒ a.kindId != StackMapTable.KindId }
-        var explicitAttributes = initialCodeAttributeBuilder.attributes
 
         initialCodeAttributeBuilder.copy(
             oldAttributes.map {
 
                 case lnt: LineNumberTable ⇒
-                    val oldRemappedLNT = lnt.remapPCs(initialCodeAttributeBuilder.pcMapping)
+                    val oldRemappedLNT =
+                        lnt.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)
                     val explicitLNT =
                         initialCodeAttributeBuilder.attributes.collectFirst {
                             case lnt: LineNumberTable ⇒ lnt
@@ -233,7 +245,7 @@ class LabeledCode(
                             UnpackedLineNumberTable(finalLNs)
                     }
 
-                case ca: CodeAttribute ⇒ ca.remapPCs(initialCodeAttributeBuilder.pcMapping)
+                case ca: CodeAttribute ⇒ ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)
 
                 case a                 ⇒ a
             } ++ explicitAttributes
@@ -274,8 +286,9 @@ object LabeledCode {
 
             }
             labeledInstructions += LabelElement(PCLabel(pc))
-            if (filterInstruction(pc))
+            if (filterInstruction(pc)) {
                 labeledInstructions += i.toLabeledInstruction(pc)
+            }
         }
 
         // We have to add the pc that would be used by the instruction which would follow the last

@@ -142,11 +142,13 @@ object CODE {
         // Step 1
         iterateUntil(0, codeElementsSize) { index ⇒
             codeElements(index) match {
+
                 case LabelElement(label) ⇒
                     if (labelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"jump '$label is already used")
                     }
                     labelsToIndexes.put(label, index)
+
                 case TRY(label) ⇒
                     if (tryLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"try '${label.name} is already used")
@@ -157,6 +159,7 @@ object CODE {
                         throw new IllegalArgumentException(s"catch '${label.name} is already used")
                     }
                     catchLabelsToIndexes.put(label, index)
+
                 case _ ⇒ // nothing to do
             }
         }
@@ -194,7 +197,7 @@ object CODE {
                     codeElements(currentIndex - 1) match {
                         case _: PseudoInstruction ⇒ true
                         case InstructionLikeElement(li) ⇒
-                            !li.isControlTransferInstruction || {
+                            if (li.isControlTransferInstruction) {
                                 li.branchTargets.foreach(handleBranchTarget)
                                 // let's check if we have a "fall-through"
                                 li match {
@@ -203,11 +206,16 @@ object CODE {
                                         // let's continue...
                                         true
                                     case _ ⇒
-                                        // the next code element is only live if we have
+                                        // ... we have a goto(_w) instruction, hence
+                                        // the next instruction like element is only live if we have
                                         // an explicit jump to it, or if it is the start
                                         // of an exception handler...
                                         false
                                 }
+                            } else if (li.isReturnInstruction || li.isAthrow) {
+                                false
+                            } else {
+                                true
                             }
                     }
                 })
@@ -317,6 +325,8 @@ object CODE {
                 if (isLive(index)) newCodeElements += codeElements(index)
             }
             // if we have removed a try block we now have to remove the handler's code...
+            println(codeElements.mkString("old\n\t", "\n\t", "\n"))
+            println(newCodeElements.mkString("new:\n\t", "\n\t", "\n\n"))
             removeDeadCode(newCodeElements) // tail-recursive call...
         } else {
             codeElements
@@ -346,7 +356,7 @@ object CODE {
         val exceptionHandlerBuilder = new ExceptionHandlerGenerator()
         val lineNumberTableBuilder = new LineNumberTableBuilder()
         var hasControlTransferInstructions = false
-        val pcMapping = new PCMapping // created based on `PCLabel`s
+        val pcMapping = new PCMapping(initialSize = codeElements.length) // created based on `PCLabel`s
 
         var currentPC = 0
         var nextPC = 0
@@ -380,11 +390,11 @@ object CODE {
             }
         }
 
+        val codeSize = instructionLikes.size
+        require(codeSize > 0, "no code found")
         val exceptionHandlers = exceptionHandlerBuilder.result()
         val attributes = lineNumberTableBuilder.result()
 
-        val codeSize = instructionLikes.size
-        require(codeSize > 0, "no code found")
         val instructions = new Array[Instruction](codeSize)
         var codeElementsToRewrite = IntArraySet.empty
         iterateUntil(0, codeSize) { pc ⇒

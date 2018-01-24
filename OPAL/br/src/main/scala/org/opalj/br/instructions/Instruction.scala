@@ -83,7 +83,6 @@ trait Instruction extends InstructionLike {
     //
     // ---------------------------------------------------------------------------------------------
 
-    def isReturnInstruction: Boolean = false
     def isSimpleBranchInstruction: Boolean = false
     def isCompoundConditionalBranchInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
@@ -93,7 +92,6 @@ trait Instruction extends InstructionLike {
     def isCheckcast: Boolean = false
     def isInvocationInstruction: Boolean = false
     def isMethodInvocationInstruction: Boolean = false
-    def isAthrow: Boolean = false
     def isIINC: Boolean = false
 
     def asReturnInstruction: ReturnInstruction = throw new ClassCastException();
