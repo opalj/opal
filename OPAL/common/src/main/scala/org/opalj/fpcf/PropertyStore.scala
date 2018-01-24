@@ -292,8 +292,9 @@ abstract class PropertyStore {
      * '''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
      * exception has to be thrown or the bottom value has to be returned.'''
      *
-     * Setting `scheduleLazyPropertyComputation` is only supported as long as
-     * the store is not queried.
+     * Setting `scheduleLazyPropertyComputation` is only supported as long as the store is not
+     * queried. In general, this requires that lazy property computations are scheduled before
+     * any eager analysis that potentially reads the value.
      */
     def scheduleLazyPropertyComputation[P <: Property](
         pk: PropertyKey[P],
