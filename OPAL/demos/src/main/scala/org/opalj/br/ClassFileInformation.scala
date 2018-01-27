@@ -29,9 +29,9 @@
 package org.opalj
 package br
 
-import org.opalj.br.reader.Java9Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
+import org.opalj.br.reader.Java9Framework.{ClassFile ⇒ ClassFileReader}
 
 /**
  * Loads class files form a JAR archive and prints the signature and module related
@@ -55,7 +55,7 @@ object ClassFileInformation {
 
             // Load class file (the class file name has to correspond to the name of
             // the file inside the archive.)
-            // The JavaXFramework defines multiple other methods that make it convenient
+            // The `Java(8|9)Framework`s define multiple other methods that make it convenient
             // to load class files stored in folders or in jars within jars.
             val classFile = ClassFileReader(args(0), classFileName).head
             import classFile._
@@ -64,22 +64,22 @@ object ClassFileInformation {
             println(thisType.toJava)
 
             // superclassType returns an Option, because java.lang.Object does not have a super class
-            superclassType map { s ⇒ println("  extends "+s.toJava) }
-            if (interfaceTypes.length > 0) {
+            superclassType foreach { s ⇒ println("  extends "+s.toJava) }
+            if (interfaceTypes.nonEmpty) {
                 println(interfaceTypes.map(_.toJava).mkString("  implement ", ", ", ""))
             }
 
             // the source file attribute is an optional attribute and is only specified
             // if the compiler settings are such that debug information is added to the
             // compile class file.
-            sourceFile map { s ⇒ println("\tSOURCEFILE: "+s) }
+            sourceFile foreach { s ⇒ println("\tSOURCEFILE: "+s) }
 
             module foreach { m ⇒
                 println("\tMODULE: ")
                 if (m.requires.nonEmpty) {
                     println(
                         m.requires.map { r ⇒
-                            val flags = AccessFlags.toString(r.requiresFlags, AccessFlagsContexts.MODULE)
+                            val flags = AccessFlags.toString(r.flags, AccessFlagsContexts.MODULE)
                             s"\t\trequires $flags${r.requires};"
                         }.sorted.mkString("\n")
                     )
@@ -87,37 +87,22 @@ object ClassFileInformation {
                 }
 
                 if (m.exports.nonEmpty) {
-                    println(
-                        m.exports.map { e ⇒
-                            if (e.exportsTo.nonEmpty)
-                                e.exportsTo.mkString(s"\t\texports ${e.exports} to ", ", ", ";")
-                            else
-                                s"\t\texports ${e.exports};"
-                        }.sorted.mkString("\n")
-                    )
-                    println()
+                    println(m.exports.map(_.toJava).sorted.mkString("", "\n", "\n"))
                 }
-
+                if (m.opens.nonEmpty) {
+                    println(m.opens.map(_.toJava).sorted.mkString("", "\n", "\n"))
+                }
                 if (m.uses.nonEmpty) {
-                    println(
-                        m.uses.sortWith((l, r) ⇒ l.toJava < r.toJava).map(u ⇒ s"\t\tuses ${u.toJava};").mkString("\n")
-                    )
-                    println()
+                    println(m.uses.map(use ⇒ s"uses ${use.toJava};").sorted.mkString("", "\n", "\n"))
                 }
-
                 if (m.provides.nonEmpty) {
-                    println(
-                        m.provides.map { p ⇒
-                            s"\t\tprovides ${p.provides.toJava} with ${p.withInterface.toJava};"
-                        }.sorted.mkString("\n")
-                    )
-                    println()
+                    println(m.provides.map(_.toJava).sorted.mkString("", "\n", "\n"))
                 }
             }
 
             // The version of the class file. Basically, every major version of the
             // JDK defines additional (new) features.
-            println(s"\tVERSION: $majorVersion.$minorVersion (${org.opalj.bi.jdkVersion(majorVersion)})")
+            println(s"\tVERSION: $majorVersion.$minorVersion (${bi.jdkVersion(majorVersion)})")
 
             println(fields.map(_.signatureToJava(false)).mkString("\tFIELDS:\n\t", "\n\t", ""))
 

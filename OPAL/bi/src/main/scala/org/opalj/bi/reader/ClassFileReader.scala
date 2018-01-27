@@ -321,7 +321,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
     def isClassFileRepository(filename: String): Boolean = {
         filename.endsWith(".jar") || filename.endsWith(".zip") ||
-            filename.endsWith(".war") || filename.endsWith(".ear")
+            filename.endsWith(".war") || filename.endsWith(".ear") || filename.endsWith(".jmod")
     }
 
     protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {

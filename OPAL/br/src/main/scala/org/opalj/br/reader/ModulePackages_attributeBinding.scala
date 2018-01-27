@@ -30,21 +30,41 @@ package org.opalj
 package br
 package reader
 
+import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.ModuleMainClass_attributeReader
+
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
+ * The factory method to create the `ModulePackages` attribute (Java 9).
  *
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-    with ModuleMainClass_attributeBinding
-    with ModulePackages_attributeBinding
+trait ModulePackages_attributeBinding
+    extends ModuleMainClass_attributeReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
-object Java9LibraryFramework extends Java9LibraryFramework {
+    type ModulePackages_attribute = ModulePackages
 
-    final override def loadsInterfacesOnly: Boolean = true
+    type PackageIndexTableEntry = String
+    implicit val PackageIndexTableEntryManifest: ClassTag[PackageIndexTableEntry] = implicitly
+
+    type PackageIndexTable = IndexedSeq[PackageIndexTableEntry]
+
+    def PackageIndexTableEntry(
+        cp:            Constant_Pool,
+        package_index: Constant_Pool_Index // CONSTANT_Package_info
+    ): PackageIndexTableEntry = {
+        cp(package_index).asPackageIdentifier(cp)
+    }
+
+    def ModulePackages_attribute(
+        constant_pool:        Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        package_index_table:  PackageIndexTable
+    ): ModulePackages_attribute = {
+        new ModulePackages(package_index_table)
+    }
 
 }
+

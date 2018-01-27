@@ -28,23 +28,23 @@
  */
 package org.opalj
 package br
-package reader
 
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
+ * Definition of a Java 9 module main class.
  *
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-    with ModuleMainClass_attributeBinding
-    with ModulePackages_attributeBinding
+case class ModuleMainClass(mainClass: ObjectType) extends Attribute {
 
-object Java9LibraryFramework extends Java9LibraryFramework {
+    final override def kindId: Int = ModuleMainClass.KindId
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        this == other
+    }
+}
+
+object ModuleMainClass {
+
+    final val KindId = 45
 
 }

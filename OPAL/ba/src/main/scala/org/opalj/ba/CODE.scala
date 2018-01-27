@@ -325,8 +325,8 @@ object CODE {
                 if (isLive(index)) newCodeElements += codeElements(index)
             }
             // if we have removed a try block we now have to remove the handler's code...
-            println(codeElements.mkString("old\n\t", "\n\t", "\n"))
-            println(newCodeElements.mkString("new:\n\t", "\n\t", "\n\n"))
+            // [debug] println(codeElements.mkString("old\n\t", "\n\t", "\n"))
+            // [debug] println(newCodeElements.mkString("new:\n\t", "\n\t", "\n\n"))
             removeDeadCode(newCodeElements) // tail-recursive call...
         } else {
             codeElements

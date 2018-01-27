@@ -49,7 +49,7 @@ object AccessFlags {
      */
     def toStrings(accessFlags: Int, ctx: AccessFlagsContext): Iterator[String] = {
         AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
-            accessFlag.javaName.getOrElse("["+accessFlag.toString+"]")
+            accessFlag.javaName.getOrElse("/*"+accessFlag.toString+"*/")
         }
     }
 

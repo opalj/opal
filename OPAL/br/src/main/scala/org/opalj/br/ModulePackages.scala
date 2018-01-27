@@ -26,25 +26,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package reader
+package org.opalj.br
 
 /**
- * This "framework" can be used to read in Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented except of method implementations.
+ * Definition of a Java 9 module's packages.
  *
  * @author Michael Eichberg
  */
-trait Java9LibraryFramework
-    extends Java8LibraryFramework
-    with Module_attributeBinding
-    with ModuleMainClass_attributeBinding
-    with ModulePackages_attributeBinding
+case class ModulePackages(packages: IndexedSeq[String]) extends Attribute {
 
-object Java9LibraryFramework extends Java9LibraryFramework {
+    final override def kindId: Int = ModulePackages.KindId
 
-    final override def loadsInterfacesOnly: Boolean = true
+    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
+        // TODO make the comparisons order independent...
+        this == other
+    }
+}
+
+object ModulePackages {
+
+    final val KindId = 46
 
 }
