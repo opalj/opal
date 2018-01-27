@@ -91,6 +91,12 @@ class CodePropertiesTest extends FunSuite {
             for {
                 (pc, instruction) ← code
                 if instruction.isReturnInstruction
+                // The $deserializeLambda$ method contains invalid bytecode in typechecker.Typers$Typer,
+                // the code is duplicated and because of the exception handler, the stack at the
+                // 2nd ARETURN is not 0.
+                // This causes this test to fail, ignore this method therefore.
+                if !(method.name == "$deserializeLambda$" &&
+                    method.declaringClassFile.thisType.toJava.equals("scala.tools.nsc.typechecker.Typers$Typer"))
             } {
                 val stackDepthAt = code.stackDepthAt(pc, cfg)
                 val stackSlotChange = instruction.stackSlotsChange
