@@ -334,7 +334,6 @@ object ClassFileFactory {
         bootstrapArguments: BootstrapArguments,
         staticMethodName:   String
     ): ClassFile = {
-
         /*
             Instructions of LambdaDeserialize::bootstrap. This method will be reimplemented in the
             constructor of the new LambdaDeserializeProxy class.
@@ -367,7 +366,7 @@ object ClassFileFactory {
         // val a = new ArrayBuffer[Object](100)
         var buildMethodType: Array[Instruction] = Array() // IMPROVE: Use ArrayBuffer
 
-        bootstrapArguments.zipWithIndex.foreach { ia ⇒
+        bootstrapArguments.iterator.zipWithIndex.foreach { ia ⇒
             val (arg, idx) = ia
             val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
 
@@ -480,7 +479,7 @@ object ClassFileFactory {
                         ObjectType.MethodHandle
                     )
                 ), null, null,
-                LDC(ConstantInteger(idx)), null,
+                LoadInt(idx), null,
                 AASTORE
             )
         }
@@ -494,15 +493,14 @@ object ClassFileFactory {
                     MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
                 ), null, null,
                 ASTORE_2,
-                LDC(ConstantClass(ObjectType.Object)), null,
-                LDC(ConstantClass(ObjectType.SerializedLambda)), null,
+                LoadClass(ObjectType.Object), null,
+                LoadClass(ObjectType.SerializedLambda), null,
                 INVOKESTATIC(
                     ObjectType.MethodType,
                     false,
                     "methodType",
                     MethodDescriptor(
-                        IndexedSeq(ObjectType.Class, ObjectType.Class),
-                        ObjectType.MethodType
+                        IndexedSeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
                     )
                 ), null, null,
                 ASTORE_3,
@@ -514,10 +512,8 @@ object ClassFileFactory {
                     MethodDescriptor.JustReturnsString
                 ), null, null,
                 ALOAD_3,
-                LDC(ConstantInteger(bootstrapArguments.length)), null,
-                ANEWARRAY(
-                    ObjectType.MethodHandle
-                ), null, null
+                LoadInt(bootstrapArguments.length), null,
+                ANEWARRAY(ObjectType.MethodHandle), null, null
             ) ++
                 // *** START Add lookup for each argument ***
                 buildMethodType ++

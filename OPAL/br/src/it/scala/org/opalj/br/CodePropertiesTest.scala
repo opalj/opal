@@ -70,11 +70,13 @@ class CodePropertiesTest extends FunSuite {
     def doAnalyzeMaxStackAndLocals(project: SomeProject): Int = {
 
         val ch = project.classHierarchy
+        val TyperTyperType = ObjectType("scala/tools/nsc/typechecker/Typers$Typer")
 
         val analyzedMethodsCount = new AtomicInteger(0)
         project.parForeachMethodWithBody() { m ⇒
 
             val MethodInfo(src, method) = m
+            val declaringClassType = method.declaringClassFile.thisType
             val code = method.body.get
             val instructions = code.instructions
             val eh = code.exceptionHandlers
@@ -91,12 +93,11 @@ class CodePropertiesTest extends FunSuite {
             for {
                 (pc, instruction) ← code
                 if instruction.isReturnInstruction
-                // The $deserializeLambda$ method contains invalid bytecode in typechecker.Typers$Typer,
-                // the code is duplicated and because of the exception handler, the stack at the
-                // 2nd ARETURN is not 0.
+                // The bytecode of the scala...typechecker.Typers$Typer.$deserializeLambda$ method
+                // is invalid. The "primary" code is duplicated in an exception handler and the
+                // stack at the ARETURN in case of the exception is therefore not 0.
                 // This causes this test to fail, ignore this method therefore.
-                if !(method.name == "$deserializeLambda$" &&
-                    method.declaringClassFile.thisType.toJava.equals("scala.tools.nsc.typechecker.Typers$Typer"))
+                if method.name != "$deserializeLambda$" || declaringClassType != TyperTyperType
             } {
                 val stackDepthAt = code.stackDepthAt(pc, cfg)
                 val stackSlotChange = instruction.stackSlotsChange
