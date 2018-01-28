@@ -32,10 +32,12 @@ package domain
 
 import scala.annotation.tailrec
 import scala.annotation.switch
+
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
+//import scala.collection.JavaConverters._
 
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
 
@@ -331,6 +333,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
                     // )
                     forceScheduling = true
+                    joinedDefOps.foreach(vo ⇒ require(vo != null, s"$newDefOps join $oldDefOps == null"))
                     defOps(successorPC) = joinedDefOps
                 }
             }
@@ -409,6 +412,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             forceScheduling
         } else {
+            newDefOps.foreach(vo ⇒ require(vo != null, s"$newDefOps contains null"))
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
@@ -419,7 +423,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * Returns the origins of a domain value. This method is intended to be overridden by
      * domains that provide more precise def/use information than the default def/use analysis.
      *
-     * E.g., the l1.ReferenceValues domain tracks alias relations can (when we inline calls)
+     * E.g., the l1.ReferenceValues domain tracks alias relations and can (when we inline calls)
      * correctly identify those returned values that were passed to it.
      *
      * @param domainValue The domain value for which the origin information is required.
@@ -888,9 +892,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val subroutineInstructions = aiResult.subroutineInstructions
         val cfJoins = aiResult.cfJoins
 
-        var subroutinePCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
-        var retPCs: Set[PC] = Set.empty // IMPROVE Use IntTrieSet
-        // Performs poorly: val nextPCs: mutable.LinkedHashSet[PC] =mutable.LinkedHashSet(0)
+        //val subroutinePCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
+        //val retPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
+        var retPCs: Chain[Int] = Naught
         val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
         nextPCs.add(0)
 
@@ -903,7 +907,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
              * actually evaluated before we return.
              *
              * However, in case of deeply nested jsr-rets, we have to make sure that
-             * we "ret" as soon as all jumps to the subrouting have been evaluated, otherwise, we
+             * we "ret" as soon as all jumps to the subroutine have been evaluated, otherwise, we
              * may circumvent a relevant control-flow.
              *
              * A concrete example (belonging to the qualitas corpus) is:
@@ -913,25 +917,23 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
              *      )
              *  }
              */
-
-            if (retPCs.nonEmpty) {
-                nextPCs.add(retPCs.head)
-                retPCs = retPCs.tail
+            /*
+            if (!retPCs.isEmpty) {
+                nextPCs.add(retPCs.removeLastInt())
                 true
-            } else if (subroutinePCs.nonEmpty) {
+            } else if (!subroutinePCs.isEmpty) {
                 if (subroutinePCs.size == 1) {
-                    nextPCs.add(subroutinePCs.head)
-                    subroutinePCs = Set.empty
+                    nextPCs.add(subroutinePCs.removeFirstInt())
                 } else {
                     // We have to make sure that – before we schedule the evaluation of an
                     // instruction that is the return target of a subroutine - the
-                    // subroutine was completely analyzed. Otherwise, the context information
+                    // subroutine was completely analyzed. Otherwise, context information
                     // may be missing.
                     // Additionally, we have to ensure that a subroutine that is called
                     // directly by the main code, but which may also be called after
                     // some other subroutines were evaluated, is only evaluated after the
                     // other subroutines have been completely evaluated.
-                    // We check the latter condition using dominace information.
+                    // We check the latter condition using dominance information.
                     val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
                         // We originally fixed the above issue using a post-dominance related test
                         // however, due to the complexity related to post-dominator trees for
@@ -942,8 +944,26 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         if (aiResult.domain.dominatorTree.strictlyDominates(c, n)) c else n
                     }
                     nextPCs.add(nextSubroutinePC)
-                    subroutinePCs -= nextSubroutinePC
+                    subroutinePCs.remove(nextSubroutinePC)
                 }
+                true
+            } else {
+                false
+            }*/
+            /*
+            if (!subroutinePCs.isEmpty) {
+                nextPCs.add(subroutinePCs.removeLastInt())
+                true
+            } else if (!retPCs.isEmpty) {
+                nextPCs.add(retPCs.removeLastInt())
+                true
+            } else {
+                false
+            }
+            */
+            if (retPCs.nonEmpty) {
+                nextPCs.add(retPCs.head)
+                retPCs = retPCs.tail
                 true
             } else {
                 false
@@ -976,7 +996,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         val method = analyzedEntity(aiResult.domain)
                         var message = s"def-use computation failed for: $method\n"
                         try {
-                            message += s"\tCurrent PC: $currPC; SuccessorPC: $succPC\n"
+                            message += s"\tCurrent PC: $currPC; Successor PC: $succPC\n"
+                            //message += s"\tSubroutine start PCs: $subroutinePCs; Ret to PCs=$retPCs\n"
+                            message += retPCs.mkString("\tJSR/RET PCs: ", ",", "\n")
                             message += s"\tStack: ${defOps(currPC)}\n"
                             val localsDump =
                                 defLocals(currPC).zipWithIndex.map { e ⇒
@@ -1007,18 +1029,28 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 if (scheduleNextPC) {
                     instructions(currPC).opcode match {
-                        case JSR.opcode | JSR_W.opcode ⇒
-                            // first let's collect all subroutinePCs to make sure that we evaluate
-                            // the subroutines only once
-                            subroutinePCs += succPC
-                        case RET.opcode ⇒ retPCs += succPC
+                        case RET.opcode ⇒ retPCs :&:= succPC
                         case _          ⇒ nextPCs.add(succPC)
                     }
                 }
             }
 
             val currentSuccessors = regularSuccessorsOf(currPC)
-            currentSuccessors foreach { handleSuccessor(false) }
+            if (instructions(currPC).opcode == RET.opcode) {
+                // we can't schedule the RET target instruction related to a not-yet executed
+                // JSR(!)
+                var atLeastOneRETTargetActive = false
+                currentSuccessors.foreach { retPC ⇒
+                    val jsrPC = code.pcOfPreviousInstruction(retPC)
+                    if (defOps(jsrPC) ne null) {
+                        atLeastOneRETTargetActive = true
+                        handleSuccessor(false)(jsrPC)
+                    }
+                }
+                assert(atLeastOneRETTargetActive)
+            } else {
+                currentSuccessors foreach { handleSuccessor(false) }
+            }
             val currentExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(currPC)
             currentExceptionHandlerSuccessors foreach { handleSuccessor(true) }
             if (currentSuccessors.isEmpty && currentExceptionHandlerSuccessors.isEmpty) {
@@ -1027,7 +1059,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // just operates on the stack and which is not a stack management instruction (dup,
                 // ...))
                 val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
-                defOps(currPC).forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currPC) }
+                defOps(currPC).forFirstN(usedValues) { op ⇒
+                    if (op == null) {
+                        Console.err.println(s"ERRROROROROROROR => $currPC: $op")
+                        Console.err.println(s"ERRROROROROROROR => $currPC: used = $usedValues")
+                        Console.err.println(s"ERRROROROROROROR => $currPC: defOps = ${defOps(currPC)})")
+                    }
+                    updateUsageInformation(op, currPC)
+                }
             }
         }
     }
