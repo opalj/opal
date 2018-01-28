@@ -892,8 +892,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val subroutineInstructions = aiResult.subroutineInstructions
         val cfJoins = aiResult.cfJoins
 
-        //val subroutinePCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
-        //val retPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
+        // General idea related to JSR/RET:
+        // Follow JSRs eagerly; ret to ACTIVE callers (recall the underlying CFG already knows
+        // all ret targets, but if we have a JSR that was not yet executed, it may be the
+        // case that some instructions (on the way to the respective JSR) are relevant for the
+        // state afterwards!)
         var retPCs: Chain[Int] = Naught
         val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
         nextPCs.add(0)
@@ -901,9 +904,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         def checkAndScheduleNextSubroutine(): Boolean = {
             // When we reach this point "nextPCs" is already empty!
 
-            /* We want to evaluate the subroutines only after evaluating all other regular
-             * paths to ensure the def-use information is "complete".
-             * Additionally, we have to ensure that all paths of a specific subroutine are
+            /* We have to ensure that all paths of a specific subroutine are
              * actually evaluated before we return.
              *
              * However, in case of deeply nested jsr-rets, we have to make sure that
@@ -917,50 +918,19 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
              *      )
              *  }
              */
-            /*
-            if (!retPCs.isEmpty) {
-                nextPCs.add(retPCs.removeLastInt())
-                true
-            } else if (!subroutinePCs.isEmpty) {
-                if (subroutinePCs.size == 1) {
-                    nextPCs.add(subroutinePCs.removeFirstInt())
-                } else {
-                    // We have to make sure that – before we schedule the evaluation of an
-                    // instruction that is the return target of a subroutine - the
-                    // subroutine was completely analyzed. Otherwise, context information
-                    // may be missing.
-                    // Additionally, we have to ensure that a subroutine that is called
-                    // directly by the main code, but which may also be called after
-                    // some other subroutines were evaluated, is only evaluated after the
-                    // other subroutines have been completely evaluated.
-                    // We check the latter condition using dominance information.
-                    val nextSubroutinePC = subroutinePCs.tail.foldLeft(subroutinePCs.head) { (c, n) ⇒
-                        // We originally fixed the above issue using a post-dominance related test
-                        // however, due to the complexity related to post-dominator trees for
-                        // methods with infinite loops, we are now using the (forwards) dominator
-                        // tree. I.e., we (hopefully) changed the implementation to avoid having to
-                        // deal with some very weird corner cases.
-                        //if (aiResult.domain.postDominatorTree.strictlyDominates(c, n)) n else c
-                        if (aiResult.domain.dominatorTree.strictlyDominates(c, n)) c else n
-                    }
-                    nextPCs.add(nextSubroutinePC)
-                    subroutinePCs.remove(nextSubroutinePC)
-                }
-                true
-            } else {
-                false
-            }*/
-            /*
-            if (!subroutinePCs.isEmpty) {
-                nextPCs.add(subroutinePCs.removeLastInt())
-                true
-            } else if (!retPCs.isEmpty) {
-                nextPCs.add(retPCs.removeLastInt())
-                true
-            } else {
-                false
-            }
-            */
+
+            // We have to make sure that – before we schedule the evaluation of an
+            // instruction that is the return target of a subroutine - the
+            // subroutine was completely analyzed. Otherwise, context information
+            // may be missing.
+            // Additionally, we have to ensure that a subroutine that is called
+            // directly by the main code, but which may also be called after
+            // some other subroutines were evaluated, is only evaluated after the
+            // other subroutines have been completely evaluated.
+            //
+            // In other words: we generally only want to ret from the inner-most subroutine ...
+            // (We ensure (the caller of checkAndScheduleNextSubroutine) that only
+            // ret targets are scheduled for subroutines which are executed!)
             if (retPCs.nonEmpty) {
                 nextPCs.add(retPCs.head)
                 retPCs = retPCs.tail
@@ -972,16 +942,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
         while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
             val currPC = nextPCs.removeFirstInt()
-            /*
-            println(
-                s"ANALYZING: $currPC; remaining: ${nextPCs.mkString(",")}; "+
-                    s"subroutines: ${subroutinePCs.mkString(",")}; "+
-                    s"ret pcs: ${retPCs.mkString(",")}"
-            )
-            */
-            // println(
-            //      defLocals(currPC).zipWithIndex.map(_.swap).mkString("LOCALS:\n\t", "\n\t", "\n")
-            // )
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -998,7 +958,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         try {
                             message += s"\tCurrent PC: $currPC; Successor PC: $succPC\n"
                             //message += s"\tSubroutine start PCs: $subroutinePCs; Ret to PCs=$retPCs\n"
-                            message += retPCs.mkString("\tJSR/RET PCs: ", ",", "\n")
+                            message += retPCs.mkString("\tRET PCs: ", ",", "\n")
                             message += s"\tStack: ${defOps(currPC)}\n"
                             val localsDump =
                                 defLocals(currPC).zipWithIndex.map { e ⇒
@@ -1037,10 +997,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             val currentSuccessors = regularSuccessorsOf(currPC)
             if (instructions(currPC).opcode == RET.opcode) {
-                // we can't schedule the RET target instruction related to a not-yet executed
+                // we can't schedule the target of a RET instruction related to a not-yet executed
                 // JSR(!)
                 var atLeastOneRETTargetActive = false
-                currentSuccessors.foreach { retPC ⇒
+                currentSuccessors foreach { retPC ⇒
                     val jsrPC = code.pcOfPreviousInstruction(retPC)
                     if (defOps(jsrPC) ne null) {
                         atLeastOneRETTargetActive = true
@@ -1060,11 +1020,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // ...))
                 val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
                 defOps(currPC).forFirstN(usedValues) { op ⇒
-                    if (op == null) {
-                        Console.err.println(s"ERRROROROROROROR => $currPC: $op")
-                        Console.err.println(s"ERRROROROROROROR => $currPC: used = $usedValues")
-                        Console.err.println(s"ERRROROROROROROR => $currPC: defOps = ${defOps(currPC)})")
-                    }
                     updateUsageInformation(op, currPC)
                 }
             }
