@@ -334,7 +334,6 @@ object ClassFileFactory {
         bootstrapArguments: BootstrapArguments,
         staticMethodName:   String
     ): ClassFile = {
-
         /*
             Instructions of LambdaDeserialize::bootstrap. This method will be reimplemented in the
             constructor of the new LambdaDeserializeProxy class.
@@ -367,7 +366,8 @@ object ClassFileFactory {
         // val a = new ArrayBuffer[Object](100)
         var buildMethodType: Array[Instruction] = Array() // IMPROVE: Use ArrayBuffer
 
-        bootstrapArguments.foreach { arg ⇒
+        bootstrapArguments.iterator.zipWithIndex.foreach { ia ⇒
+            val (arg, idx) = ia
             val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
 
             // lookup.findStatic parameters
@@ -390,11 +390,8 @@ object ClassFileFactory {
                         ), null, null
                     )
                 }
-            buildMethodType ++= Array(
-                LDC(ConstantClass(staticHandle.receiverType)), null, // reference class
-                LDC(ConstantString(staticHandle.name)), null // method name
-            // next parameter is the method type, put parameters on stack
-            )
+
+            buildMethodType ++= Array(DUP)
             buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.returnType) // rtype
 
             if (staticHandle.methodDescriptor.parametersCount == 0) {
@@ -461,6 +458,30 @@ object ClassFileFactory {
                     ), null, null
                 )
             }
+
+            buildMethodType ++= Array(
+                LDC(ConstantString(staticHandle.name)), null, // method name
+                LDC(ConstantClass(staticHandle.receiverType)), null // reference class
+            )
+
+            // Now we have to call lookup.getStatic
+            buildMethodType ++= Array(
+                ALOAD_2, // Load the lookup
+                INVOKEVIRTUAL(
+                    ObjectType.MethodHandles$Lookup,
+                    "getStatic",
+                    MethodDescriptor(
+                        IndexedSeq(
+                            ObjectType.Class,
+                            ObjectType.String,
+                            ObjectType.MethodType
+                        ),
+                        ObjectType.MethodHandle
+                    )
+                ), null, null,
+                LoadInt(idx), null,
+                AASTORE
+            )
         }
 
         val instructions: Array[Instruction] =
@@ -472,15 +493,14 @@ object ClassFileFactory {
                     MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
                 ), null, null,
                 ASTORE_2,
-                LDC(ConstantClass(ObjectType.Object)), null,
-                LDC(ConstantClass(ObjectType.SerializedLambda)), null,
+                LoadClass(ObjectType.Object), null,
+                LoadClass(ObjectType.SerializedLambda), null,
                 INVOKESTATIC(
                     ObjectType.MethodType,
                     false,
                     "methodType",
                     MethodDescriptor(
-                        IndexedSeq(ObjectType.Class, ObjectType.Class),
-                        ObjectType.MethodType
+                        IndexedSeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
                     )
                 ), null, null,
                 ASTORE_3,
@@ -492,16 +512,11 @@ object ClassFileFactory {
                     MethodDescriptor.JustReturnsString
                 ), null, null,
                 ALOAD_3,
-                ICONST_1,
-                ANEWARRAY(
-                    ObjectType.MethodHandle
-                ), null, null,
-                DUP,
-                ICONST_0,
-                ALOAD_2
+                LoadInt(bootstrapArguments.length), null,
+                ANEWARRAY(ObjectType.MethodHandle), null, null
             ) ++
                 // *** START Add lookup for each argument ***
-                //  buildMethodType ++
+                buildMethodType ++
                 // *** END Add lookup for each argument ***
                 Array(
                     INVOKESTATIC(
