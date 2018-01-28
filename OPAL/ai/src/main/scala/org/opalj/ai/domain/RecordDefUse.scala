@@ -888,7 +888,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val operandsArray = aiResult.operandsArray
         val localsArray = aiResult.localsArray
         val subroutineInstructions = aiResult.subroutineInstructions
-        val cfJoins = aiResult.cfJoins
+        implicit val isSubroutineInstruction: PC ⇒ Boolean = subroutineInstructions.contains
+        implicit val cfJoins = aiResult.cfJoins
 
         // General idea related to JSR/RET:
         // Follow JSRs eagerly; ret to ACTIVE callers. (Recall the underlying CFG already knows
@@ -936,13 +937,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 if (isValidRETTarget) {
                     nextPCs.add(retTargetPC)
                     return true;
-                }
+                } /*
+                the subroutine never returns via RET or the def-use information is already complete.
+                */
             }
             false
         }
 
         while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
-            val currPC = nextPCs.removeFirstInt()
+            val currPC = nextPCs.removeLastInt() // in case of JSRs we need to decent eagerly...
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
                 val scheduleNextPC = try {
@@ -987,18 +990,57 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 assert(defLocals(succPC) ne null)
                 assert(defOps(succPC) ne null)
 
-                if (scheduleNextPC) {
-                    instructions(currPC).opcode match {
-                        case JSR.opcode | JSR_W.opcode ⇒
-                            retTargetPCs.put(code.pcOfNextInstruction(currPC), false)
-                            nextPCs.add(succPC)
-                        case RET.opcode ⇒
-                        /* nothing to do... */ //retTargetPCs :&:= succPC
+                val currentInstruction = instructions(currPC)
+                currentInstruction.opcode match {
+                    case JSR.opcode | JSR_W.opcode ⇒
+                        val retTargetPC = code.pcOfNextInstruction(currPC)
+                        if (scheduleNextPC) {
+                            retTargetPCs.put(retTargetPC, false)
+                            nextPCs.add(succPC) // will be executed next(!)
+                        } else {
+                            val oldDefLocals = defLocals(retTargetPC)
+                            val oldDefOps = defOps(retTargetPC)
+                            // Let's search for "a" potential last evaluation of the subroutine ...
+                            // it must contain at least the current def-use information.
+                            // (Every instruction is returned to by at most one RET.)
+                            val retCandidatePC =
+                                predecessorsOf(retTargetPC).filter { predPC ⇒
+                                    instructions(predPC).opcode == RET.opcode
+                                }
+                            if (retCandidatePC.isSingletonSet) {
+                                val retPC = retCandidatePC.head
+                                val retInstruction = instructions(retPC)
+                                //val RET(lvIndex) = retInstruction
+                                val retDefLocals = defLocals(retPC)
+                                val retDefOps = defOps(retPC)
+                                //val returnAddressValue = retDefLocals(lvIndex)
+                                updateUsageInformation(IntTrieSet1(currPC), retPC)
+                                propagate(retPC, retTargetPC, retDefOps, retDefLocals)
+                                // Recall that the first instruction of a subroutine
+                                // is not always a join instruction!
+                                nextPCs.add(retTargetPC)
+                                /*
+                                println(s"JSR: $currPC ($currentInstruction) (ret target: $retTargetPC) -> RET: $retPC ($retInstruction)")
+                                println(s"old subr. locals: ${defLocals(succPC)}}")
+                                println(s"old subr. ops: ${defOps(succPC)}}")
 
-                        case _ ⇒
-                            nextPCs.add(succPC)
-                    }
+                                println(s"old ret target locals: $oldDefLocals")
+                                println(s"new ret target locals: $retDefLocals")
+                                println(s"old ret target ops: $oldDefOps")
+                                println(s"new ret target ops: $retDefOps")
+                                println("....")
+                                println("....")
+                                println("....")
+                                */
+                                //    }
+                            } /* else { the subroutine never "ret"s } */
+                        }
+
+                    case RET.opcode ⇒ /* nothing to do... */
+
+                    case _          ⇒ if (scheduleNextPC) nextPCs.add(succPC)
                 }
+
             }
 
             val currentSuccessors = regularSuccessorsOf(currPC)
@@ -1007,7 +1049,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // JSR(!)
                 currentSuccessors foreach { retTargetPC ⇒
                     if (retTargetPCs.containsKey(retTargetPC)) {
-                        retTargetPCs.put(retTargetPC, true)
+                        retTargetPCs.replace(retTargetPC, true)
                         handleSuccessor(false)(retTargetPC)
                     }
                 }
