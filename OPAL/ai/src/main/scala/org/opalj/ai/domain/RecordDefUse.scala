@@ -998,8 +998,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             retTargetPCs.put(retTargetPC, false)
                             nextPCs.add(succPC) // will be executed next(!)
                         } else {
-                            val oldDefLocals = defLocals(retTargetPC)
-                            val oldDefOps = defOps(retTargetPC)
+                            //val oldDefLocals = defLocals(retTargetPC)
+                            //val oldDefOps = defOps(retTargetPC)
                             // Let's search for "a" potential last evaluation of the subroutine ...
                             // it must contain at least the current def-use information.
                             // (Every instruction is returned to by at most one RET.)
@@ -1009,7 +1009,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 }
                             if (retCandidatePC.isSingletonSet) {
                                 val retPC = retCandidatePC.head
-                                val retInstruction = instructions(retPC)
+                                // val retInstruction = instructions(retPC)
                                 //val RET(lvIndex) = retInstruction
                                 val retDefLocals = defLocals(retPC)
                                 val retDefOps = defOps(retPC)
