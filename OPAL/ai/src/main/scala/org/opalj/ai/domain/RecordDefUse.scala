@@ -32,15 +32,13 @@ package domain
 
 import scala.annotation.tailrec
 import scala.annotation.switch
-
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
-//import scala.collection.JavaConverters._
-
+import scala.collection.JavaConverters._
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
-
+import it.unimi.dsi.fastutil.ints.Int2BooleanLinkedOpenHashMap
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.immutable.:&:
@@ -893,11 +891,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val cfJoins = aiResult.cfJoins
 
         // General idea related to JSR/RET:
-        // Follow JSRs eagerly; ret to ACTIVE callers (recall the underlying CFG already knows
-        // all ret targets, but if we have a JSR that was not yet executed, it may be the
+        // Follow JSRs eagerly; ret to ACTIVE callers. (Recall the underlying CFG already knows
+        // ALL ret targets, but if we have a JSR that was not yet executed, it may be the
         // case that some instructions (on the way to the respective JSR) are relevant for the
         // state afterwards!)
-        var retPCs: Chain[Int] = Naught
+        // Note: Some JSRs have no RET (only athrow/returns instead!)
+        val retTargetPCs = new Int2BooleanLinkedOpenHashMap()
         val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
         nextPCs.add(0)
 
@@ -928,16 +927,18 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             // some other subroutines were evaluated, is only evaluated after the
             // other subroutines have been completely evaluated.
             //
-            // In other words: we generally only want to ret from the inner-most subroutine ...
+            // In other words: we generally only want to ret from the executed subroutine  ...
             // (We ensure (the caller of checkAndScheduleNextSubroutine) that only
             // ret targets are scheduled for subroutines which are executed!)
-            if (retPCs.nonEmpty) {
-                nextPCs.add(retPCs.head)
-                retPCs = retPCs.tail
-                true
-            } else {
-                false
+            while (!retTargetPCs.isEmpty) {
+                val retTargetPC = retTargetPCs.lastIntKey()
+                val isValidRETTarget = retTargetPCs.removeLastBoolean()
+                if (isValidRETTarget) {
+                    nextPCs.add(retTargetPC)
+                    return true;
+                }
             }
+            false
         }
 
         while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
@@ -957,8 +958,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         var message = s"def-use computation failed for: $method\n"
                         try {
                             message += s"\tCurrent PC: $currPC; Successor PC: $succPC\n"
-                            //message += s"\tSubroutine start PCs: $subroutinePCs; Ret to PCs=$retPCs\n"
-                            message += retPCs.mkString("\tRET PCs: ", ",", "\n")
+                            message += retTargetPCs.int2BooleanEntrySet().iterator.asScala.mkString("\tRET Target PCs: ", ",", "\n")
                             message += s"\tStack: ${defOps(currPC)}\n"
                             val localsDump =
                                 defLocals(currPC).zipWithIndex.map { e ⇒
@@ -989,8 +989,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                 if (scheduleNextPC) {
                     instructions(currPC).opcode match {
-                        case RET.opcode ⇒ retPCs :&:= succPC
-                        case _          ⇒ nextPCs.add(succPC)
+                        case JSR.opcode | JSR_W.opcode ⇒
+                            retTargetPCs.put(code.pcOfNextInstruction(currPC), false)
+                            nextPCs.add(succPC)
+                        case RET.opcode ⇒
+                        /* nothing to do... */ //retTargetPCs :&:= succPC
+
+                        case _ ⇒
+                            nextPCs.add(succPC)
                     }
                 }
             }
@@ -999,17 +1005,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             if (instructions(currPC).opcode == RET.opcode) {
                 // we can't schedule the target of a RET instruction related to a not-yet executed
                 // JSR(!)
-                var atLeastOneRETTargetActive = false
-                currentSuccessors foreach { retPC ⇒
-                    val JSRPC = code.pcOfPreviousInstruction(retPC)
-                    val JSRInstruction(subroutineOffset) = instructions(JSRPC)
-                    val firstSubroutinePC = JSRPC + subroutineOffset
-                    if (defOps(firstSubroutinePC) ne null) {
-                        atLeastOneRETTargetActive = true
-                        handleSuccessor(false)(retPC)
+                currentSuccessors foreach { retTargetPC ⇒
+                    if (retTargetPCs.containsKey(retTargetPC)) {
+                        retTargetPCs.put(retTargetPC, true)
+                        handleSuccessor(false)(retTargetPC)
                     }
                 }
-                assert(atLeastOneRETTargetActive)
             } else {
                 currentSuccessors foreach { handleSuccessor(false) }
             }
