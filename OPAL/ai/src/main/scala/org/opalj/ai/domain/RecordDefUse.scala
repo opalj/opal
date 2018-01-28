@@ -998,8 +998,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             retTargetPCs.put(retTargetPC, false)
                             nextPCs.add(succPC) // will be executed next(!)
                         } else {
-                            //val oldDefLocals = defLocals(retTargetPC)
-                            //val oldDefOps = defOps(retTargetPC)
                             // Let's search for "a" potential last evaluation of the subroutine ...
                             // it must contain at least the current def-use information.
                             // (Every instruction is returned to by at most one RET.)
@@ -1009,30 +1007,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 }
                             if (retCandidatePC.isSingletonSet) {
                                 val retPC = retCandidatePC.head
-                                // val retInstruction = instructions(retPC)
-                                //val RET(lvIndex) = retInstruction
                                 val retDefLocals = defLocals(retPC)
                                 val retDefOps = defOps(retPC)
-                                //val returnAddressValue = retDefLocals(lvIndex)
                                 updateUsageInformation(IntTrieSet1(currPC), retPC)
                                 propagate(retPC, retTargetPC, retDefOps, retDefLocals)
                                 // Recall that the first instruction of a subroutine
                                 // is not always a join instruction!
                                 nextPCs.add(retTargetPC)
-                                /*
-                                println(s"JSR: $currPC ($currentInstruction) (ret target: $retTargetPC) -> RET: $retPC ($retInstruction)")
-                                println(s"old subr. locals: ${defLocals(succPC)}}")
-                                println(s"old subr. ops: ${defOps(succPC)}}")
-
-                                println(s"old ret target locals: $oldDefLocals")
-                                println(s"new ret target locals: $retDefLocals")
-                                println(s"old ret target ops: $oldDefOps")
-                                println(s"new ret target ops: $retDefOps")
-                                println("....")
-                                println("....")
-                                println("....")
-                                */
-                                //    }
                             } /* else { the subroutine never "ret"s } */
                         }
 
