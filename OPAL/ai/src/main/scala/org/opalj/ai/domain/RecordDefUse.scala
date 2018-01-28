@@ -1001,11 +1001,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 // JSR(!)
                 var atLeastOneRETTargetActive = false
                 currentSuccessors foreach { retPC ⇒
-                    val JSRInstruction(subroutineOffset) = instructions(code.pcOfPreviousInstruction(retPC))
-                    val firstSubroutinePC = retPC + subroutineOffset
+                    val JSRPC = code.pcOfPreviousInstruction(retPC)
+                    val JSRInstruction(subroutineOffset) = instructions(JSRPC)
+                    val firstSubroutinePC = JSRPC + subroutineOffset
                     if (defOps(firstSubroutinePC) ne null) {
                         atLeastOneRETTargetActive = true
-                        handleSuccessor(false)(firstSubroutinePC)
+                        handleSuccessor(false)(retPC)
                     }
                 }
                 assert(atLeastOneRETTargetActive)
