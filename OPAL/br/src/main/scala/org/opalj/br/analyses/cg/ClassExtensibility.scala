@@ -197,7 +197,7 @@ class ConfiguredFinalClasses(val project: SomeProject) extends AbstractClassExte
     }
 }
 
-class ClassAreNotExtensible(val project : SomeProject) extends ClassExtensibility {
+class ClassHierarchyIsNotExtensible(val project : SomeProject) extends ClassExtensibility {
 
     def isClassExtensible(t: ObjectType): Answer = No
 }
