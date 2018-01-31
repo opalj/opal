@@ -32,7 +32,6 @@ import sbt._
 import sbt.Keys._
 
 import java.io.File
-import java.io.Writer
 import java.io.PrintWriter
 
 import org.opalj.javacompilation.FixtureDiscovery._

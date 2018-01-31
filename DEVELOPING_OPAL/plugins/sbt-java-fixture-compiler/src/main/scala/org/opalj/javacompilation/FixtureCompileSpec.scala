@@ -29,17 +29,8 @@
 package org.opalj.javacompilation
 
 import sbt._
-import sbt.Keys.TaskStreams
 import java.io.File
-import java.io.Writer
 import java.io.PrintWriter
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.Path
-import java.nio.file.Files
-import java.nio.file.FileVisitResult
-import java.nio.file.attribute.FileTime
-import java.nio.file.attribute.BasicFileAttributes
-import scala.io.Source.fromFile
 
 import org.eclipse.jdt.core.compiler.batch.BatchCompiler
 
