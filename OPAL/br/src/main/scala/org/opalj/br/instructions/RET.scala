@@ -50,7 +50,7 @@ case class RET(
 
     final override def mnemonic: String = "ret"
 
-    final override def isRET: Boolean = false
+    final override def isRET: Boolean = true
 
     final override def length: Int = 2
 

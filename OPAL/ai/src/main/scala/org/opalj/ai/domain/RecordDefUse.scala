@@ -288,7 +288,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             ): Chain[ValueOrigins] = {
                 if (lDefOps.isEmpty) {
                     // assert(rDefOps.isEmpty)
-                    return joinedDefOps.result();
+                    return if (oldIsSuperset) oldDefOps else joinedDefOps.result();
                 }
                 // assert(
                 //     rDefOps.nonEmpty,
@@ -938,11 +938,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     if (retCandidatePC.isSingletonSet) {
                         val retPC = retCandidatePC.head
                         updateUsageInformation(IntTrieSet1(jsrPC), retPC)
+                        val oldRetTargetPCDefLocals = defLocals(retTargetPC)
+                        val oldRetTargetPCDefOps = defOps(retTargetPC)
                         val retDefLocals = defLocals(retPC)
                         val retDefOps = defOps(retPC)
-                        propagate(retPC, retTargetPC, retDefOps, retDefLocals)
-                        nextPCs.add(retTargetPC)
-                        return true;
+                        if (propagate(retPC, retTargetPC, retDefOps, retDefLocals) && (
+                            oldRetTargetPCDefLocals != defLocals(retTargetPC) ||
+                            oldRetTargetPCDefOps != defOps(retTargetPC)
+                        )) {
+                            nextPCs.add(retTargetPC)
+                            return true;
+                        }
                     }
                     /*
                     else the subroutine never returns via RET and therefore retTargetPC is
@@ -1021,8 +1027,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 val retDefLocals = defLocals(retPC)
                                 val retDefOps = defOps(retPC)
                                 updateUsageInformation(IntTrieSet1(currPC), retPC)
-                                propagate(retPC, retTargetPC, retDefOps, retDefLocals)
-                                nextPCs.add(retTargetPC)
+                                if (propagate(retPC, retTargetPC, retDefOps, retDefLocals))
+                                    nextPCs.add(retTargetPC)
                             }
                             /*
                             else the subroutine never returns via RET and therefore retTargetPC is
@@ -1032,13 +1038,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
                     case RET.opcode ⇒ /* nothing to do... */
 
-                    case _          ⇒ if (scheduleNextPC) nextPCs.add(succPC)
+                    case _ ⇒
+                        if (scheduleNextPC) {
+                            nextPCs.add(succPC)
+                        }
                 }
 
             }
 
             val currentSuccessors = regularSuccessorsOf(currPC)
-            if (instructions(currPC).opcode == RET.opcode) {
+            if (instructions(currPC).isRET) {
                 // we can't schedule the target of a RET instruction related to a not-yet executed
                 // JSR(!)
                 currentSuccessors foreach { retTargetPC ⇒
