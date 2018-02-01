@@ -22,8 +22,6 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-// [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
-
 scalaVersion  in ThisBuild := "2.12.4"
 
 scalacOptions in ThisBuild ++= Seq(
@@ -43,7 +41,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 resolvers in ThisBuild += Resolver.jcenterRepo
 resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
-// the tests/analysis are already parallelized
+// in OPAL most tests/analyses are already parallelized internally
 parallelExecution in ThisBuild := false
 parallelExecution in Global := false
 
@@ -113,9 +111,7 @@ def getScalariformPreferences(dir: File) = {
 lazy val opal = `OPAL`
 lazy val `OPAL` = (project in file("."))
   //  .configure(_.copy(id = "OPAL"))
-  .settings(
-  (Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*,
-)
+  .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .aggregate(
     common,
@@ -150,25 +146,22 @@ lazy val `Common` = (project in file("OPAL/common"))
   )
   .configs(IntegrationTest)
 
-// For the bytecode infrastructure project, the OPAL/bi/build.sbt file
-// contains the task and settings that are responsible for java test fixture compilation
 lazy val bi = `BytecodeInfrastructure`
 lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
-  //  .configure(_.copy(id = "BytecodeInfrastructure"))
   .settings(buildSettings: _*)
   .settings(
     name := "Bytecode Infrastructure",
     libraryDependencies ++= Dependencies.bi,
     scalacOptions in(Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-    // libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.5"
-
-    /* The following settings relate to the java-fixture-compiler plugin, which
+    /*
+      The following settings relate to the java-fixture-compiler plugin, which
       compiles the java fixture projects in the BytecodeInfrastructure project for testing.
       For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
 
       The default settings for the fixture compilations are used.
       For details on the plugin and how to change its settings, see:
-      DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler/Readme.md */
+      DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler/Readme.md
+    */
     inConfig(Test)(
       JavaFixtureCompiler.baseJavaFixtureSettings ++
         Seq(
@@ -223,7 +216,6 @@ lazy val `BytecodeCreator` = (project in file("OPAL/bc"))
 
 lazy val ai = `AbstractInterpretationFramework`
 lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
-  //  .configure(_.copy(id = "AbstractInterpretationFramework"))
   .settings(buildSettings: _*)
   .settings(
     name := "Abstract Interpretation Framework",
