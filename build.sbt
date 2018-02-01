@@ -80,7 +80,7 @@ addCommandAlias("compileAll", "; copyResources ; scalastyle ; test:compile ; tes
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
 
-addCommandAlias("cleanAll", "; clean ; test:clean ; it:clean ; cleanFiles ; cleanCache ; cleanLocal ")
+addCommandAlias("cleanAll", "; clean ; test:clean ; it:clean ; cleanFiles")
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
@@ -89,6 +89,7 @@ lazy val IntegrationTest = config("it") extend Test
 // Default settings without scoverage
 lazy val buildSettings =
     Defaults.coreDefaultSettings ++ scalariformSettings ++
+        PublishingOverwrite.onSnapshotOverwriteSettings ++
         Seq(libraryDependencies ++= Dependencies.testlibs) ++
         Seq(Defaults.itSettings: _*) ++
         Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
