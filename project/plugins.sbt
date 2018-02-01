@@ -2,7 +2,7 @@
 // useable by the dockerfile to configure the docker image used for building OPAL.
 
 // to clear the ivy folders
-// not yet available for sbt 1.0.X: addSbtPlugin("com.eed3si9n" % "sbt-dirty-money" % "0.1.0")
+// not yet available for sbt 1.0.X: addSbtPlugin("com.eed3si9n" % "sbt-`dirty-money" % "0.1.0")
 
 // to build fat-jars
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.5")
@@ -10,6 +10,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.5")
 resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
 addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "1.5.1")
 
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.0")
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.1")
 
 // to make it possible to check for outdated dependencies
