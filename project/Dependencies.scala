@@ -89,7 +89,7 @@ object Dependencies {
 
     def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus)
     val bi = Seq(commonstext)
-    val br = Seq(scalaparsercombinators, fastutil)
+    val br = Seq(scalaparsercombinators, fastutil, scalaxml)
     val developertools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
 
 }
