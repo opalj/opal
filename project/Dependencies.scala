@@ -38,21 +38,21 @@ object Dependencies {
 
     object version {
         val junit = "4.12"
-        val scalatest = "3.0.4"
+        val scalatest = "3.0.5"
         val scalacheck = "1.13.5"
 
         val scalaxml = "1.0.6"
-        val playjson = "2.6.7"
+        val playjson = "2.6.8"
         val ficus = "1.4.3"
-        val commonstext = "1.1"
-        val scalaparsercombinators = "1.0.6"
+        val commonstext = "1.2"
+        val scalaparsercombinators = "1.0.7"
 
         val scalafx = "8.0.144-R12"
         val controlsfx = "8.40.14"
         val txtmark = "0.16"
-        val jacksonDF = "2.9.2"
-        val chocosolver = "4.0.5"
-        val fastutil = "8.1.0"
+        val jacksonDF = "2.9.4"
+        val chocosolver = "4.0.6"
+        val fastutil = "8.1.1"
     }
 
     object library {
