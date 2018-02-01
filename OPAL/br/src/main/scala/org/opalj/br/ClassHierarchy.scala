@@ -44,6 +44,7 @@ import scala.concurrent.duration.Duration
 
 import org.opalj.control.foreachNonNullValue
 import org.opalj.io.process
+import org.opalj.io.processSource
 import org.opalj.graphs.Node
 import org.opalj.log.Warn
 import org.opalj.log.GlobalLogContext
@@ -2512,9 +2513,7 @@ object ClassHierarchy {
         implicit
         logContext: LogContext
     ): Seq[TypeDeclaration] = {
-        val typeRegExp =
-            """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
-        val typeDefs: Seq[String] = process(createInputStream()) { in ⇒
+        process(createInputStream()) { in ⇒
             if (in eq null) {
                 OPALLogger.error(
                     "internal - class hierarchy",
@@ -2522,26 +2521,31 @@ object ClassHierarchy {
                         "make sure that all resources are found in the correct folders and "+
                         "try to rebuild the project using \"sbt copyResources\""
                 )
-                return Seq.empty;
+                Seq.empty;
+            } else {
+                val typeRegExp =
+                    """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
+                processSource(new BufferedSource(in)) { source ⇒
+                    source.getLines.
+                        map(_.trim).
+                        filterNot { l ⇒ l.startsWith("#") || l.length == 0 }.
+                        map { l ⇒
+                            val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l
+                            TypeDeclaration(
+                                ObjectType(theType),
+                                typeKind == "interface",
+                                Option(superclassType).map(ObjectType(_)),
+                                Option(superinterfaceTypes).map { superinterfaceTypes ⇒
+                                    superinterfaceTypes.
+                                        split(',').
+                                        map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
+                                }.getOrElse(UIDSet.empty)
+                            )
+                        }.
+                        toList
+                }
             }
-            val source = new BufferedSource(in)
-            source.getLines.map(_.trim).filterNot { l ⇒ l.startsWith("#") || l.length == 0 }.toSeq
         }
-        for {
-            typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) ← typeDefs
-        } yield {
-            TypeDeclaration(
-                ObjectType(theType),
-                typeKind == "interface",
-                Option(superclassType).map(ObjectType(_)),
-                Option(superinterfaceTypes).map { superinterfaceTypes ⇒
-                    superinterfaceTypes.
-                        split(',').
-                        map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
-                }.getOrElse(UIDSet.empty)
-            )
-        }
-
     }
 
     def apply(
