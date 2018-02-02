@@ -1,9 +1,6 @@
 // We have centralized the configuration of all plug-ins here, to make this file easily
 // useable by the dockerfile to configure the docker image used for building OPAL.
 
-// to clear the ivy folders
-// not yet available for sbt 1.0.X: addSbtPlugin("com.eed3si9n" % "sbt-`dirty-money" % "0.1.0")
-
 // to build fat-jars
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.5")
 
