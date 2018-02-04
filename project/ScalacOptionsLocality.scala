@@ -51,8 +51,8 @@ object ScalacOptionsLocality {
    logger: ManagedLogger): Seq[ScalacOptionEntry] = {
 
     val whitelist = Set("-Xdisable-assertions") // changing these options locally does not even issue a warning
+    val issueWarningOnNonWhitelistedDifference = true
 
-    println("HANDLING" + localOptions)
     if(localOptions.isDefined) {
       // returns the symmetric difference of scalac option names in local and git-managed sets
       // (option name: before any ":" as specified in ScalacOptionEntry)
@@ -67,10 +67,13 @@ object ScalacOptionsLocality {
       val symmetricDifference: Set[ScalacOptionEntry] = symDifference(managedOptions, localOptions.get)
       val significantDifference = symmetricDifference.filterNot(diffEntry => whitelist.contains(diffEntry.optionName))
       if(! significantDifference.isEmpty) {
-        logger.log(Level.Warn,
-          s"""Your local and global scalac options in this build differ in the significant options ${significantDifference.map(_.optionName)}.
-             |Consider merging the managed scalac options file: $managedOptFile
-             |into the local scalac options file (not tracked by git): $localOptFile""".stripMargin)
+
+        if(issueWarningOnNonWhitelistedDifference) {
+          logger.log(Level.Warn,
+            s"""Your local and global scalac options in this build differ in the significant options ${significantDifference.map(_.optionName)}.
+               |Consider merging the managed scalac options file: $managedOptFile
+               |into the local scalac options file (not tracked by git): $localOptFile""".stripMargin)
+        }
       }
 
       localOptions.get
