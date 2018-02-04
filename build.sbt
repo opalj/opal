@@ -22,18 +22,9 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion  in ThisBuild := "2.12.4"
+ScalacOptionsLocality.scalacOptionsSetting
 
-scalacOptions in ThisBuild ++= Seq(
-    "-target:jvm-1.8",
-    "-deprecation", "-feature", "-unchecked",
-    "-Xlint", "-Xfuture", "-Xfatal-warnings",
-    "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-    "-Ywarn-unused:imports,privates,locals,implicits",
-    // Buggy (Scala 2.12.4) "-Ywarn-unused:params,patvars"
-    "-Ywarn-infer-any", "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
-)
-scalacOptions in ThisBuild += "-Xdisable-assertions"
+scalaVersion  in ThisBuild := "2.12.4"
 
 scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
