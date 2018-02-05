@@ -1,0 +1,25 @@
+# Rename this file by removing the ".template" suffix of it to make
+# 1) git ignore the file from then on, and
+# 2) let the scalac options in this file take precedence over the ones defined in the file "scalac.options"
+# You would e.g. want to remove the flag "-Xdisable-assertions" to re-enable assertions in your build.
+#
+# This file takes exactly one scalac flag per line; empty lines and whitespace at the beginnig and end is trimmed
+# and "#" and "//" mark comment lines.
+
+-target:jvm-1.8
+-deprecation
+-feature
+-unchecked
+-Xlint
+-Xfuture
+-Xfatal-warnings
+-Ywarn-numeric-widen
+-Ywarn-nullary-unit
+-Ywarn-nullary-override
+-Ywarn-unused:imports,privates,locals,implicits
+// Buggy (Scala 2.12.4) "-Ywarn-unused:params,patvars"
+-Ywarn-infer-any
+-Ywarn-dead-code
+-Ywarn-inaccessible
+-Ywarn-adapted-args
+-Xdisable-assertions
