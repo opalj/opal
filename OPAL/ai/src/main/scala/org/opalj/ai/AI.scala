@@ -205,6 +205,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing.
+     *
+     * @note This method is (basically only) useful when interpreting code snippets!
      */
     def initialOperands(method: Method, domain: D): domain.Operands = Naught
 
@@ -269,7 +271,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
             if (!method.isStatic) {
                 val thisType = method.classFile.thisType
-                val thisValue = domain.NonNullObjectValue(origin(localVariableIndex), thisType)
+                val thisValue =
+                    if (method.isConstructor && (method.classFile.thisType ne ObjectType.Object)) {
+                        // ... we have an uninitialized this!
+                        domain.UninitializedThis(thisType)
+                    } else {
+                        domain.NonNullObjectValue(origin(localVariableIndex), thisType)
+                    }
                 locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
@@ -1889,10 +1897,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val remainingOperands = operands.tail
                         val low = tableswitch.low
                         val high = tableswitch.high
-                        var v = low
-                        while (v <= high) {
+                        var i = low.toLong // if low == high == Int.MaxValue...
+                        while (i <= high) {
+                            val v = i.toInt
                             if (intIsSomeValueInRange(pc, index, v, v).isYesOrUnknown) {
-                                val branchTargetPC = pc + tableswitch.jumpOffsets(v - low)
+                                val jumpOffsetIndex = v - low
+                                val branchTargetPC = pc + tableswitch.jumpOffsets(jumpOffsetIndex)
                                 val (updatedOperands, updatedLocals) =
                                     theDomain.intEstablishValue(
                                         branchTargetPC, v, index, remainingOperands, locals
@@ -1913,7 +1923,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     updatedOperands, updatedLocals
                                 )
                             }
-                            v = v + 1
+                            i = i + 1
                         }
                         if (intIsSomeValueNotInRange(pc, index, low, high).isYesOrUnknown) {
 
@@ -2602,7 +2612,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         else {
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is a subtype or if null is Unknown => UNCHANGED
+                                    // if objectref is a subtype => UNCHANGED
                                     fallThrough()
 
                                 case No ⇒

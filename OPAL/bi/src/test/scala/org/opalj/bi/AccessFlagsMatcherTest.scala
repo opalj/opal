@@ -115,16 +115,20 @@ class AccessFlagsMatcherTest extends FlatSpec with Matchers {
         afPublicAbstract match {
             case NOT_PRIVATE___NOT_FINAL() ⇒ /*success*/
             case _ ⇒
-                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                    " did not match "+NOT_PRIVATE___NOT_FINAL)
+                fail(
+                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
+                        " did not match "+NOT_PRIVATE___NOT_FINAL
+                )
         }
 
         val NOT_NOT_PUBLIC = !(!ACC_PUBLIC)
         afPublicAbstract match {
             case NOT_NOT_PUBLIC() ⇒ /*success*/
             case _ ⇒
-                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
-                    " did not match "+NOT_NOT_PUBLIC)
+                fail(
+                    AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
+                        " did not match "+NOT_NOT_PUBLIC
+                )
         }
     }
 
@@ -144,18 +148,26 @@ class AccessFlagsMatcherTest extends FlatSpec with Matchers {
         afProtectedAbstract match {
             case OrMatcher() ⇒ /*success*/
             case _ ⇒
-                fail(AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD)+
-                    " did not match "+OrMatcher)
+                fail(
+                    AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD)+
+                        " did not match "+OrMatcher
+                )
         }
 
         afProtectedFinal match {
-            case OrMatcher() ⇒ fail(AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD)+
-                " did match "+OrMatcher)
+            case OrMatcher() ⇒
+                fail(
+                    AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD)+
+                        " did match "+OrMatcher
+                )
             case _ ⇒ /*success*/
         }
         afDefaultAbstract match {
-            case OrMatcher() ⇒ fail(AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD)+
-                " did match "+OrMatcher)
+            case OrMatcher() ⇒
+                fail(
+                    AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD)+
+                        " did match "+OrMatcher
+                )
             case _ ⇒ /*success*/
         }
     }

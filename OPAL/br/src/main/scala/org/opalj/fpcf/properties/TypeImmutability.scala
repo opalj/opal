@@ -30,10 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
-
 sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeImmutability
@@ -92,7 +88,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  */
 case object ImmutableType extends TypeImmutability {
 
-    final val isRefineable = false
+    final val isRefinable = false
     final val isMutable = false
     final val isConditionallyImmutable = false
 
@@ -101,7 +97,7 @@ case object ImmutableType extends TypeImmutability {
     }
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -110,7 +106,7 @@ case object ImmutableType extends TypeImmutability {
 
 case object UnknownTypeImmutability extends TypeImmutability {
 
-    final val isRefineable = true
+    final val isRefinable = true
     final val isMutable = false
     final val isConditionallyImmutable = false
 
@@ -128,7 +124,7 @@ case object UnknownTypeImmutability extends TypeImmutability {
 
 case object ConditionallyImmutableType extends TypeImmutability {
 
-    final val isRefineable = false
+    final val isRefinable = false
     final val isMutable = false
     final val isConditionallyImmutable = true
 
@@ -140,7 +136,7 @@ case object ConditionallyImmutableType extends TypeImmutability {
     }
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -150,7 +146,7 @@ case object ConditionallyImmutableType extends TypeImmutability {
 
 case object AtLeastConditionallyImmutableType extends TypeImmutability {
 
-    final val isRefineable = true
+    final val isRefinable = true
     final val isMutable = false
     final val isConditionallyImmutable = false
 
@@ -162,7 +158,7 @@ case object AtLeastConditionallyImmutableType extends TypeImmutability {
     }
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")
@@ -172,14 +168,14 @@ case object AtLeastConditionallyImmutableType extends TypeImmutability {
 
 case object MutableType extends TypeImmutability {
 
-    final val isRefineable = false
+    final val isRefinable = false
     final val isMutable = true
     final val isConditionallyImmutable = false
 
     def join(other: TypeImmutability): this.type = this
 
     def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefineable)
+        if (other.isRefinable)
             None
         else
             Some(s"impossible refinement of $other to $this")

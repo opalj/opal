@@ -37,7 +37,7 @@ package br
  *
  * @author Michael Eichberg
  */
-trait TypeAnnotationTable extends Attribute {
+trait TypeAnnotationTable extends CodeAttribute {
 
     /**
      * Returns true if these annotations are visible at runtime.
@@ -48,6 +48,12 @@ trait TypeAnnotationTable extends Attribute {
      * The set of declared annotations; it may be empty.
      */
     def typeAnnotations: TypeAnnotations
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): TypeAnnotationTable = {
+        copy(typeAnnotations.flatMap(_.remapPCs(codeSize, f)))
+    }
+
+    def copy(typeAnnotations: TypeAnnotations): TypeAnnotationTable
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {

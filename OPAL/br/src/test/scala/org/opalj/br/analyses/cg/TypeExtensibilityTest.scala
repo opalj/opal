@@ -39,7 +39,7 @@ import org.scalatest.Matchers
 /**
  * This tests the basic functionality of the [[TypeExtensibilityKey]] and determines whether the
  * computed information is correct. Beneath the basics, the test also contains an integration test
- * that ensures that all directly extensible types (see [[DirectTypeExtensibilityTest]]) are also
+ * that ensures that all directly extensible types (see [[ClassExtensibilityTest]]) are also
  * transitively extensible.
  *
  * @author Michael Reif
@@ -60,14 +60,14 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
         val openConf = ConfigFactory.parseString(
             mergeConfigString(
-                DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+                ClassExtensibilityConfig.classExtensibilityAnalysis,
                 ClosedPackagesConfig.openCodeBase
             )
         )
 
         val closedConf = ConfigFactory.parseString(
             mergeConfigString(
-                DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+                ClassExtensibilityConfig.classExtensibilityAnalysis,
                 ClosedPackagesConfig.closedCodeBase
             )
         )
@@ -76,7 +76,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
             // open package
             var project = Project.recreate(testProject, openConf, true)
-            var isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
+            var isDirectlyExtensible = project.get(ClassExtensibilityKey)
             var isExtensible = project.get(TypeExtensibilityKey)
 
             var relevantTypes = for {
@@ -92,7 +92,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
             // closed package
             project = Project.recreate(project, closedConf, true)
-            isDirectlyExtensible = project.get(DirectTypeExtensibilityKey)
+            isDirectlyExtensible = project.get(ClassExtensibilityKey)
             isExtensible = project.get(TypeExtensibilityKey)
 
             relevantTypes = for {
@@ -109,7 +109,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
     describe("when a type is located in a closed package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.closedCodeBase
         )
 
@@ -117,7 +117,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
         val project = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
 
-        it("a package visible class should be transitively extensible when it has a public subclass") {
+        it("a package visible class is transitively extensible when it has a public subclass") {
             val objectType = ObjectType(s"${testPackage}case1/Class")
             isExtensible(objectType) should be(Yes)
         }
@@ -131,8 +131,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(interfaceOt) should be(No)
         }
 
-        it("a public class should be transitively extensible when all subclasses"+
-            " are NOT extensible") {
+        it("a non-final public class is transitively extensible even when all subclasses are NOT") {
             val pClassOt = ObjectType(s"${testPackage}case3/PublicClass")
 
             val pfClassOt = ObjectType(s"${testPackage}case3/PublicFinalClass")
@@ -148,16 +147,17 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
     }
 
-    describe("when a type is located an open package") {
+    describe("when a type belongs to an open package") {
 
         val configString = mergeConfigString(
-            DirectTypeExtensibilityConfig.directTypeExtensibilityAnalysis,
+            ClassExtensibilityConfig.classExtensibilityAnalysis,
             ClosedPackagesConfig.openCodeBase
         )
 
         val config = ConfigFactory.parseString(configString)
         val project = Project.recreate(testProject, config, true)
         val isExtensible = project.get(TypeExtensibilityKey)
+        val isClassExtensible = project.get(ClassExtensibilityKey)
 
         it("a package visible class should be transitively extensible") {
             val case1_classOt = ObjectType(s"${testPackage}case1/Class")
@@ -169,9 +169,20 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(case2_interfaceOt) should be(Yes)
         }
 
-        it("the extensibility of an unknown type should unknown") {
-            val case4_classOt = ObjectType("java/util/HashSet")
-            isExtensible(case4_classOt) should be(Unknown)
+        it("a type from which an application type inherits from is (obviously) extensible") {
+            val hashSetObjectType = ObjectType("java/util/HashSet")
+            assert(project.classFile(hashSetObjectType).isEmpty)
+            assert(isClassExtensible(hashSetObjectType) == Unknown)
+
+            isExtensible(hashSetObjectType) should be(Yes)
+        }
+
+        it("the extensibility of an unknown type should be unknown") {
+            val unknownType = ObjectType("unknown/Unknown")
+            assert(project.classFile(unknownType).isEmpty)
+            assert(isClassExtensible(unknownType) == Unknown)
+
+            isExtensible(unknownType) should be(Unknown)
         }
     }
 }

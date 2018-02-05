@@ -79,7 +79,7 @@ case class MethodComplexity(
 
     final def key = MethodComplexity.key // All instances have to share the SAME key!
 
-    final val isRefineable = false
+    final val isRefinable = false
 
 }
 

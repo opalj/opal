@@ -35,8 +35,6 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * Enables iterating over a class( file member)'s access flags. I.e., given
  * the access flags of a class file, a field or a method, it is then possible
  * to iterate over the flags (synthetic, public, deprecated, etc.) that are set.
- *
- * @author Michael Eichberg
  */
 class AccessFlagsIterator private (
         private[this] var flags:  Int,
@@ -76,4 +74,3 @@ object AccessFlagsIterator {
         new AccessFlagsIterator(accessFlags, AccessFlagsContexts.potentialAccessFlags(ctx))
     }
 }
-

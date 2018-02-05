@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class FieldAccess extends Instruction with ConstantLengthInstruction {
+abstract class FieldAccess extends Instruction with ConstantLengthInstruction with NoLabels {
 
     def declaringClass: ObjectType
 

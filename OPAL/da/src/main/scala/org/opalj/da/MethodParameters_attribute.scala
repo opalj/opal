@@ -47,8 +47,8 @@ case class MethodParameters_attribute(
 
     // Primarily implemented to handle the case if the attribute is not found where expected.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details>
-            <summary>Method Parameters</summary>
+        <details class="attribute method_paramaters">
+            <summary class="attribute_name">Method Parameters</summary>
             <ol>{ parameters.map[Node, Seq[Node]] { p ⇒ <li>{ p.toXHTML(cp) }</li> } }</ol>
         </details>
     }
@@ -68,7 +68,7 @@ case class MethodParameter(
 
     def toXHTML(parameterTypeInfo: FieldTypeInfo)(implicit cp: Constant_Pool): Node = {
         val (accessFlags, _) = accessFlagsToXHTML(access_flags, METHOD_PARAMETERS)
-        val parameterName = if (name_index == 0) "<_>" else cp(name_index).toString(cp)
-        <span>{ List(accessFlags, parameterTypeInfo.asSpan(""), <span> { parameterName }</span>) }</span>
+        val name = if (name_index == 0) "<Formal Parameter>" else cp(name_index).toString(cp)
+        <span>{ List(accessFlags, parameterTypeInfo.asSpan(""), <span> { name }</span>) }</span>
     }
 }

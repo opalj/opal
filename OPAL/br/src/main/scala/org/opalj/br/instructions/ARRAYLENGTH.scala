@@ -37,7 +37,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
+case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with NoLabels {
 
     final val opcode = 190
 

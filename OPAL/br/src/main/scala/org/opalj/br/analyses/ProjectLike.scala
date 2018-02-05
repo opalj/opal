@@ -62,9 +62,11 @@ import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePo
  */
 abstract class ProjectLike extends ClassFileRepository { project ⇒
 
+    private[this] final implicit val thisProjectLike: this.type = this
+
     implicit def classHierarchy: ClassHierarchy
 
-    private[this] final implicit val thisProjectLike: this.type = this
+    def projectType: ProjectType
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
@@ -693,7 +695,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *
      * @note    Virtual method call resolution is not necessary; the call target is
      *          either a constructor, a private method or a super method/constructor. However, in
-     *          the first and in the last case it may be possible that we can't find the method
+     *          the first and last case it may be possible that we can't find the method
      *          because of an inconsistent or incomplete project.
      *
      * @return  One of the following three values:

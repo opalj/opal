@@ -719,6 +719,18 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
     override def NullValue(pc: PC): DomainNullValue
 
+    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
+        ObjectValue(pc, objectType)
+    }
+
+    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
+        ObjectValue(-1, objectType)
+    }
+
+    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+        ObjectValue(pc, objectType)
+    }
+
     final override def ReferenceValue(
         pc:             PC,
         upperTypeBound: ReferenceType
@@ -730,23 +742,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, objectType)
-    }
-
-    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, objectType)
-    }
-
-    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, objectType)
+        InitializedObjectValue(pc, objectType)
     }
 
     override def StringValue(pc: PC, value: String): DomainObjectValue = {
-        ObjectValue(pc, ObjectType.String)
+        InitializedObjectValue(pc, ObjectType.String)
     }
 
     override def ClassValue(pc: PC, t: Type): DomainObjectValue = {
-        ObjectValue(pc, ObjectType.Class)
+        InitializedObjectValue(pc, ObjectType.Class)
     }
 
     //
@@ -785,6 +789,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * The properties of the domain value are:
      *
      *  - Initialized: '''Unknown'''
+     *    (I.e., it is not guaranteed that the constructor was called; unless `NewObject` was
+     *    overridden and returns DomainValues that are distinguishable!)
      *  - Type: '''Upper Bound'''
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
@@ -801,7 +807,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * ==Summary==
      * The properties of the domain value are:
      *
-     *  - Initialized: '''Unknown''' (i.e., it is not guaranteed that the constructor was called.)
+     *  - Initialized: '''Yes'''
+     *    (An Object with multiple bounds can only exist due to a merge, in this case, the objects
+     *    must have been initialized beforehand or the value is not used at all and actually
+     *    represents a dead variable.)
      *  - Type: '''Upper Bound'''
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''

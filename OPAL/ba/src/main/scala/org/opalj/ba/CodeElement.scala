@@ -30,8 +30,7 @@ package org.opalj
 package ba
 
 import scala.language.implicitConversions
-
-import org.opalj.br.instructions.InstructionLike
+import org.opalj.br.instructions.LabeledInstruction
 
 /**
  * Wrapper for elements that will generate the instructions and attributes of a
@@ -44,7 +43,17 @@ import org.opalj.br.instructions.InstructionLike
  *
  * @author Malte Limmeroth
  */
-trait CodeElement[+T]
+trait CodeElement[+T] {
+
+    def isInstructionLikeElement: Boolean
+
+    def isPseudoInstruction: Boolean
+
+    def isExceptionHandlerElement: Boolean
+
+    def isControlTransferInstruction: Boolean
+
+}
 
 /**
  * Implicit conversions to [[CodeElement]].
@@ -52,23 +61,23 @@ trait CodeElement[+T]
 object CodeElement {
 
     /**
-     * Converts [[org.opalj.br.instructions.InstructionLike]]s to
-     * [org.opalj.ba.[InstructionElement]].
+     * Converts [[org.opalj.br.instructions.LabeledInstruction]]s to
+     * [[org.opalj.ba.InstructionElement]]s.
      */
     implicit def instructionToInstructionElement(
-        instruction: InstructionLike
+        instruction: LabeledInstruction
     ): InstructionElement = {
         new InstructionElement(instruction)
     }
 
     /**
-     * Converts a tuple of [[org.opalj.br.instructions.InstructionLike]] and `scala.AnyRef`
+     * Converts a tuple of [[org.opalj.br.instructions.LabeledInstruction]] and `scala.AnyRef`
      * (an annotated instruction) to [[org.opalj.ba.AnnotatedInstructionElement]].
      */
     implicit def annotatedInstructionToAnnotatedInstructionElement[T](
-        ai: (InstructionLike, T)
+        ia: (LabeledInstruction, T)
     ): AnnotatedInstructionElement[T] = {
-        new AnnotatedInstructionElement(ai)
+        AnnotatedInstructionElement(ia)
     }
 
     /**

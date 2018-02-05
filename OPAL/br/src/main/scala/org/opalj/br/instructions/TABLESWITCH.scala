@@ -70,6 +70,15 @@ case class TABLESWITCH(
 
     final override def asTABLESWITCH: this.type = this
 
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledTABLESWITCH(
+            InstructionLabel(currentPC + defaultOffset),
+            low,
+            high,
+            jumpOffsets.map { branchoffset ⇒ InstructionLabel(currentPC + branchoffset) }
+        )
+    }
+
     def caseValueOfJumpOffset(jumpOffset: Int): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpOffsets.length - 1
@@ -129,14 +138,14 @@ case class TABLESWITCH(
     }
 
     override def toString: String = {
-        "TABLESWITCH("+
+        s"TABLESWITCH($low -> $high; "+
             (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
     }
 
     override def toString(pc: PC): String = {
-        "TABLESWITCH("+
+        s"TABLESWITCH($low -> $high; "+
             (low to high).zip(jumpOffsets).map { keyOffset ⇒
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
@@ -163,10 +172,10 @@ object TABLESWITCH {
      *
      */
     def apply(
-        defaultBranchTarget: Symbol,
+        defaultBranchTarget: InstructionLabel,
         low:                 Int,
         high:                Int,
-        branchTargets:       IndexedSeq[Symbol]
+        branchTargets:       IndexedSeq[InstructionLabel]
     ): LabeledTABLESWITCH = {
         require(
             branchTargets.size == high - low + 1,
@@ -182,24 +191,25 @@ object TABLESWITCH {
  * @author Malte Limmeroth
  */
 case class LabeledTABLESWITCH(
-        defaultBranchTarget: Symbol,
+        defaultBranchTarget: InstructionLabel,
         low:                 Int,
         high:                Int,
-        jumpTargets:         IndexedSeq[Symbol]
+        jumpTargets:         IndexedSeq[InstructionLabel]
 ) extends LabeledInstruction with TABLESWITCHLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): TABLESWITCH = {
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): TABLESWITCH = {
         TABLESWITCH(
-            pcs(defaultBranchTarget) - currentPC,
+            asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
             low,
             high,
-            jumpTargets.map(pcs(_) - currentPC)
+            jumpTargets.map(target ⇒ asShortBranchoffset(pcs(target) - currentPC))
         )
     }
 
-    override def branchTargets: Seq[Symbol] = defaultBranchTarget +: jumpTargets
+    override def branchTargets: Seq[InstructionLabel] = defaultBranchTarget +: jumpTargets
 
-    def caseValueOfJumpTarget(jumpTarget: Symbol): (Chain[Int], Boolean) = {
+    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
         var i = jumpTargets.length - 1
         while (i >= 0) {

@@ -29,15 +29,24 @@
 package org.opalj.br
 
 import org.scalatest.FunSuite
-
 import java.util.concurrent.atomic.AtomicInteger
+import java.lang.{Boolean ⇒ JBoolean}
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.MethodInfo
+import org.opalj.br.analyses.Project
+import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.instructions.LocalVariableAccess
+import org.opalj.br.reader.Java9Framework
+import org.opalj.br.reader.BytecodeOptimizer
+import org.opalj.collection.immutable.IntArraySet
+import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Just tests if we can compute various information for a wide range of methods; e.g.,
@@ -47,30 +56,62 @@ import org.opalj.br.instructions.LocalVariableAccess
  */
 class CodePropertiesTest extends FunSuite {
 
-    def analyzeProject(project: SomeProject): String = {
-        val (t, analyzedMethodsCount) = timed { doAnalyzeProject(project) }
-        s"the analysis of $analyzedMethodsCount methods took ${t.toSeconds}"
+    def analyzeMaxStackAndLocals(project: SomeProject): String = {
+        try {
+            val (t, analyzedMethodsCount) = timed { doAnalyzeMaxStackAndLocals(project) }
+            s"computing max stack/locals for all $analyzedMethodsCount methods took ${t.toSeconds}"
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed.foreach(_.printStackTrace(Console.err))
+                throw ce
+        }
     }
 
-    def doAnalyzeProject(project: SomeProject): Int = {
+    def doAnalyzeMaxStackAndLocals(project: SomeProject): Int = {
 
         val ch = project.classHierarchy
+        val TyperTyperType = ObjectType("scala/tools/nsc/typechecker/Typers$Typer")
 
         val analyzedMethodsCount = new AtomicInteger(0)
-        val errors = project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+        project.parForeachMethodWithBody() { m ⇒
 
             val MethodInfo(src, method) = m
+            val declaringClassType = method.declaringClassFile.thisType
             val code = method.body.get
             val instructions = code.instructions
             val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
             val specifiedMaxLocals = code.maxLocals
+            val cfg = CFGFactory(code, ch)
 
             val liveVariables = code.liveVariables(ch)
             assert(
                 code.programCounters.forall(pc ⇒ liveVariables(pc) ne null),
-                s"computation of liveVariables fail for ${method.toJava}"
+                s"computation of liveVariables fails for ${method.toJava}"
             )
+
+            for {
+                (pc, instruction) ← code
+                if instruction.isReturnInstruction
+                // The bytecode of the scala...typechecker.Typers$Typer.$deserializeLambda$ method
+                // is invalid. The "primary" code is duplicated in an exception handler and the
+                // stack at the ARETURN in case of the exception is therefore not 0.
+                // This causes this test to fail, ignore this method therefore.
+                if method.name != "$deserializeLambda$" || declaringClassType != TyperTyperType
+            } {
+                val stackDepthAt = code.stackDepthAt(pc, cfg)
+                val stackSlotChange = instruction.stackSlotsChange
+                if (stackDepthAt + stackSlotChange != 0) {
+                    val message =
+                        code.instructions.zipWithIndex.map(_.swap).mkString(
+                            s"stack depth at pc:$pc[$instruction]($stackDepthAt) + stack slot change($stackSlotChange) is not 0:\n\t",
+                            "\n\t",
+                            "\n"
+                        )
+
+                    fail(method.toJava(message))
+                }
+            }
 
             for { (pc, LocalVariableAccess(i, isRead)) ← code } {
                 val isLive = liveVariables(pc).contains(i)
@@ -89,8 +130,7 @@ class CodePropertiesTest extends FunSuite {
                 )
             }
 
-            val computedMaxStack = Code.computeMaxStack(instructions, ch, eh)
-            analyzedMethodsCount.incrementAndGet()
+            val computedMaxStack = Code.computeMaxStack(instructions, eh, cfg)
             if (specifiedMaxStack < computedMaxStack) {
                 fail(
                     s"$src: computed max stack is too large - ${method.toJava}}: "+
@@ -98,11 +138,44 @@ class CodePropertiesTest extends FunSuite {
                         code.toString
                 )
             }
-        }
-        if (errors.nonEmpty) {
-            fail(errors.mkString("computation of max stack/locals failed:\n", "\n", "\n"))
+            analyzedMethodsCount.incrementAndGet()
         }
         analyzedMethodsCount.get()
+    }
+
+    def analyzeStackMapTablePCs(project: SomeProject): String = {
+        val (t, analyzedMethodsCount) = timed { doAnalyzeStackMapTablePCs(project) }
+        s"successfully computing stack map table pcs for $analyzedMethodsCount methods took ${t.toSeconds}"
+    }
+
+    def doAnalyzeStackMapTablePCs(project: SomeProject): Int = {
+        implicit val ch = project.classHierarchy
+        val analyzedMethodsCount = new AtomicInteger(0)
+        project.parForeachMethodWithBody(() ⇒ false) { mi ⇒
+            if (mi.classFile.version.major > 49) {
+                analyzedMethodsCount.incrementAndGet()
+                val code = mi.method.body.get
+                val definedPCs = code.stackMapTable.map(_.pcs).getOrElse(IntArraySet.empty)
+                def validateComputedPCs(computedPCs: IntArraySet): Unit = {
+                    if (computedPCs != definedPCs) {
+                        if (computedPCs.size >= definedPCs.size) {
+                            fail(
+                                s"${mi.source}:${mi.method.toJava}: "+
+                                    "computed stack map table pcs differ:\n"+
+                                    definedPCs.mkString("expected:  {", ",", "}\n") +
+                                    computedPCs.mkString("computed:  {", ",", "}\n")
+                            )
+                        } else {
+                            // ... in this case, we have a strict subset; however, some compilers
+                            // seem to create stack map frames which are not strictly required;
+                            // we have to ignore those...
+                        }
+                    }
+                }
+                validateComputedPCs(code.stackMapTablePCs)
+            }
+        }
+        analyzedMethodsCount.get
     }
 
     //
@@ -112,13 +185,31 @@ class CodePropertiesTest extends FunSuite {
     allBIProjects() foreach { biProject ⇒
         val (name, createProject) = biProject
         test(s"computation of maxStack/maxLocals for all methods of $name") {
-            val count = analyzeProject(createProject())
+            val count = analyzeMaxStackAndLocals(createProject())
             info(s"computation of maxStack/maxLocals succeeded for $count methods")
         }
     }
 
-    test(s"computation of maxStack/maxLocals for all methods of the JDK ($JRELibraryFolder)") {
-        analyzeProject(TestSupport.createJREProject)
+    test(s"computing maxStack, maxLocals and stackMapTablePCs for $JRELibraryFolder") {
+
+        // To make the comparison more meaningful we have to turn off bytecode optimizations;
+        // (Due to the optimizations we get a new smaller cfg; however the old stack map table
+        // remains valid; it just contains superfluous entries.)
+        val baseConfig: Config = ConfigFactory.load()
+        val optimizationConfigKey = BytecodeOptimizer.SimplifyControlFlowKey
+        val logOptimizationsConfigKey = BytecodeOptimizer.LogControlFlowSimplificationKey
+        val theConfig = baseConfig.
+            withValue(logOptimizationsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
+            withValue(optimizationConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
+        class Reader extends { override val config = theConfig } with Java9Framework {
+            override def loadsInterfacesOnly: Boolean = false
+        }
+        val reader = new Reader()
+        val cfs = org.opalj.br.reader.readJREClassFiles()(reader = reader)
+        val jreProject = Project(cfs)
+        analyzeMaxStackAndLocals(jreProject)
+        val count = analyzeStackMapTablePCs(jreProject)
+        info(s"computation of stack maps table pcs executed for $count methods")
     }
 
 }

@@ -41,7 +41,8 @@ object SiteGeneration {
         sourceDirectory: File,
         resourceManaged: File,
         streams:         TaskStreams,
-        disassemblerJAR: File
+        disassemblerJAR: File,
+        projectSerializerJAR: File
     ): File = {
 
         // NOTE: Currently we keep all pages in memory during the transformation process... but, this
@@ -71,6 +72,10 @@ object SiteGeneration {
         val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName
         IO.copyFile(disassemblerJAR, disassemblerJARTarget)
         log.info("Copied bytecode disassembler to: "+disassemblerJARTarget)
+        // 0.2. generate ProjectSerializer
+        val projectSerializerJARTarget = targetFolder / "artifacts" / projectSerializerJAR.getName
+        IO.copyFile(projectSerializerJAR, projectSerializerJARTarget)
+        log.info("Copied project serializer to: "+projectSerializerJARTarget)
 
         if (siteGenerationNecessary) {
             log.info("Generating site using: "+sourceFolder / "site.conf")

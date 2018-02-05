@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Naive Code reader that just reads in the code array as is - without parsing it.
- *
- * @author Michael Eichberg
  */
 trait CodeReader extends Constant_PoolAbstractions {
 

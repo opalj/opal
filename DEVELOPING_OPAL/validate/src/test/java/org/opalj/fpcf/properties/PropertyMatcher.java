@@ -29,7 +29,7 @@
 package org.opalj.fpcf.properties;
 
 import scala.Option;
-import scala.collection.immutable.List;
+import scala.collection.Traversable;
 import scala.collection.immutable.Set;
 
 import org.opalj.fpcf.Property;
@@ -51,6 +51,8 @@ public interface PropertyMatcher {
     /**
      * Called by the framework to test if executing the matcher - given the set of
      * actual analyses that are executed - is meaningful.
+     *
+     * This test is used to filter the creation of useless test cases.
      *
      * @param p The project.
      * @param as The OPAL `ObjectType`'s of the executed analyses.
@@ -76,6 +78,6 @@ public interface PropertyMatcher {
      */
     Option<String> validateProperty(
             Project<?> p, Set<ObjectType> as,
-            Object entity, AnnotationLike a, List<Property> properties);
+            Object entity, AnnotationLike a, Traversable<Property> properties);
 
 }

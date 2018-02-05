@@ -31,10 +31,12 @@ package br
 package analyses
 package cg
 
+//import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.mutable
 
 /**
- * This analysis provides information about whether a method can be overridden by a yet unknown
+ * This analysis determines whether a method can be (transitively) overridden by a yet unknown
  * type. I.e., it determines whether the set of methods which potentially overrides a given method
  * is downwards (w.r.t. the class hierarchy) closed or not. For those methods, where the set is
  * downwards closed, it is always possible and meaningful to compute abstractions that abstract
@@ -49,13 +51,15 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 private[analyses] class IsOverridableMethodAnalysis(
-        project:              SomeProject,
-        isDirectlyExtensible: ObjectType ⇒ Answer,
-        isTypeExtensible:     ObjectType ⇒ Answer
+        project:           SomeProject,
+        isClassExtensible: ObjectType ⇒ Answer,
+        isTypeExtensible:  ObjectType ⇒ Answer
 ) extends (Method ⇒ Answer) {
 
+    //private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
+
     private[this] def isAlwaysFinallyOverridden(objectType: ObjectType, method: Method): Answer = {
-        if (isDirectlyExtensible(objectType).isYes && !method.isFinal)
+        if (isClassExtensible(objectType).isYes && !method.isFinal)
             return No;
 
         import project.classHierarchy
@@ -75,8 +79,7 @@ private[analyses] class IsOverridableMethodAnalysis(
             if (isTypeExtensible(ot).isYesOrUnknown) {
                 val cf = project.classFile(ot)
                 val subtypeMethod = cf.flatMap(_.findMethod(methodName, methodDescriptor))
-                if (subtypeMethod.isEmpty ||
-                    !subtypeMethod.get.isFinal ||
+                if (subtypeMethod.isEmpty || !subtypeMethod.get.isFinal ||
                     (
                         // let's test if this "final override", is for a different method...
                         method.isPackagePrivate &&
@@ -94,9 +97,9 @@ private[analyses] class IsOverridableMethodAnalysis(
                             candidateMethods.exists(mdc ⇒ mdc.packageName == methodPackageName)
                         }
                     )) {
-                    // the type as a whole is extensible...
+                    // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...
-                    isDirectlyExtensible(ot) match {
+                    isClassExtensible(ot) match {
                         case Yes     ⇒ return No;
                         case Unknown ⇒ return Unknown;
                         case No      ⇒ addDirectSubclasses(ot)
@@ -111,7 +114,7 @@ private[analyses] class IsOverridableMethodAnalysis(
     }
 
     def apply(method: Method): Answer = {
-        if (method.isPrivate || method.isStatic || method.isInitializer)
+        if (method.isPrivate || method.isStatic || method.isInitializer || method.isFinal)
             return No;
 
         val ot = method.declaringClassFile.thisType

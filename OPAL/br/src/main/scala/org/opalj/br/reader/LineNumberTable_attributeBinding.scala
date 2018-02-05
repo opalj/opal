@@ -32,7 +32,7 @@ package reader
 
 import reflect.ClassTag
 
-import bi.reader.LineNumberTable_attributeReader
+import org.opalj.bi.reader.LineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables and their entries.
@@ -63,7 +63,7 @@ trait UnpackedLineNumberTable_attributeBinding
 
 }
 
-import bi.reader.CompactLineNumberTable_attributeReader
+import org.opalj.bi.reader.CompactLineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables.

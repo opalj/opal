@@ -31,8 +31,6 @@ package bi
 
 /**
  * Common properties of `RuntimeInvisibleAnnotations`.
- *
- * @author Michael Eichberg
  */
 object RuntimeInvisibleAnnotationsAttribute {
 

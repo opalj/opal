@@ -258,16 +258,22 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
 
+        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+            throw DomainException("arraylength not possible; this is not an array value: "+this)
+        }
+
         final override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             throw DomainException("arrayload not possible; this is not an array value: "+this)
         }
 
-        final override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
+        final override def store(
+            pc:    PC,
+            value: DomainValue,
+            index: DomainValue
+        ): ArrayStoreResult = {
             throw DomainException("arraystore not possible; this is not an array value: "+this)
-
-        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
-            throw DomainException("arraylength not possible; this is not an array value: "+this)
         }
+
     }
 
     protected class SObjectValue(
@@ -431,8 +437,7 @@ trait DefaultTypeLevelReferenceValues
                 // Yes is not possible here!
 
                 case No if (
-                    supertype.isArrayType &&
-                    upperTypeBound != ObjectType.SerializableAndCloneable
+                    supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable
                 ) ⇒
                     // even if the upper bound is not precise we are now 100% sure
                     // that this value is not a subtype of the given supertype

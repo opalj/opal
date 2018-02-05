@@ -36,7 +36,7 @@ import scala.collection.AbstractIterable
 import org.opalj.collection.immutable.ConstArray
 
 /**
- * A set of all allocation sites.
+ * A set of allocation sites. (Typically, a [[Project]]'s set of allocation sites.)
  *
  * To initialize the set of allocation sites for an entire project use the respective
  * project information key: [[AllocationSitesKey]]. The key also provides further

@@ -87,11 +87,22 @@ trait Attribute {
     def kindId: Int
 
     /**
-     * Returns true if this attribute and the given one will is guaranteed to be indistinguishable
+     * Returns true if this attribute and the given one are guaranteed to be indistinguishable
      * at runtime.
      *
      * @note   If this class is implemented as a proper `case class`, this method can often be
      *         implemented by forwarding to the default `equals` method.
      */
     def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean
+}
+
+/** Attributes which are referred to by the code attribute. */
+trait CodeAttribute extends Attribute {
+
+    /**
+     * A function that provides the new PC for every "old" PC. If an instruction I with the pc X
+     * does not exist (anymore), the pc of I is equal or larger than `codeSize`.
+     */
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): CodeAttribute
+
 }

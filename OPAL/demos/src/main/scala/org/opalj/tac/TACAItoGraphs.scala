@@ -79,7 +79,7 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
         val aiResults = theProject.get(SimpleAIKey)
         val tacs = theProject.get(DefaultTACAIKey)
 
-        val errors = theProject.parForeachMethodWithBody() { mi ⇒
+        theProject.parForeachMethodWithBody() { mi ⇒
             val m = mi.method
             val methodName = m.toJava
             val outputFileName = pathName + org.opalj.io.sanitizeFileName(methodName)
@@ -113,7 +113,6 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
 
             methodCount.incrementAndGet()
         }
-        errors.foreach(e ⇒ e.printStackTrace)
 
         BasicReport(s"Created ${methodCount.get} def/use and control-flow graphs in: $folder.")
     }

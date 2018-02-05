@@ -88,7 +88,7 @@ package object control {
     def repeat[T](
         times: Int
     )(
-        f: T
+        f: ⇒ T
     ): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
@@ -130,6 +130,11 @@ package object control {
     )(
         f: Int ⇒ Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateUntil
+
+    /**
+     * Runs the given function f the given number of times.
+     */
+    def rerun(times: Int)(f: Unit): Unit = macro ControlAbstractionsImplementation.rerun
 
     /**
      * Finds the value identified by the given comparator, if any.
@@ -284,6 +289,24 @@ package control {
                 while (i < max) {
                     f.splice(i) // => we evaluate f the given number of times
                     i += 1
+                }
+            }
+        }
+
+        def rerun(
+            c: Context
+        )(
+            times: c.Expr[Int]
+        )(
+            f: c.Expr[Unit]
+        ): c.Expr[Unit] = {
+            import c.universe._
+
+            reify {
+                var i = times.splice
+                while (i > 0) {
+                    f.splice // => we evaluate f the given number of times
+                    i -= 1
                 }
             }
         }

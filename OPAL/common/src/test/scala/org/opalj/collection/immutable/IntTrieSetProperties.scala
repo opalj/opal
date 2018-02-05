@@ -257,6 +257,13 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
+    property("intersect") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
+        val (ias1, ias2) = ps
+        val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
+        val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
+        (s1 intersect s2) == s1.foldLeft(IntTrieSet.empty)((c, n) ⇒ if (s2.contains(n)) c + n else c)
+    }
+
     property("- (all elements)") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = s.foldLeft(its)(_ - _)

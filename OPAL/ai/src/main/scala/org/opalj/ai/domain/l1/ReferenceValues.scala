@@ -159,6 +159,24 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     /**
+     * Computes the efective upper-type bound which is the (single) final type in the utb
+     * if it contains one. In this case the other types have to be in a super-/subtype
+     * relation and were added "just" as a result of explicit CHECKCAST instructions.
+     */
+    protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
+        val it = utb.iterator
+        while (it.hasNext) {
+            val t: ReferenceType = it.next
+            if (t.isArrayType)
+                return utb;
+
+            if (classHierarchy.isKnownToBeFinal(t.asObjectType))
+                return UIDSet1(t);
+        }
+        utb
+    }
+
+    /**
      * Determines if the runtime object type referred to by the given `values` is always
      * the same. I.e., it determines if all values are precise and have the same `upperTypeBound`.
      * `Null` values are ignored when determining the precision.
@@ -169,10 +187,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         while (vIt.hasNext) {
             val v = vIt.next()
             if (v.isNull.isNoOrUnknown) {
-                val vUTB = v.upperTypeBound.toUIDSet[ReferenceType]
+                val vUTB = effectiveUTB(v.upperTypeBound.toUIDSet[ReferenceType])
                 if (!v.isPrecise || ((theUTB ne null) && theUTB != vUTB))
                     return false; // <===== early return from method
-                else
+                else if (theUTB == null)
                     theUTB = vUTB
             }
         }
@@ -928,6 +946,17 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             override val refId:  RefId
     ) extends super.MObjectValue(upperTypeBound) with ObjectValue { this: DomainObjectValue ⇒
 
+        /**
+         * If we have an incomplete type hierarchy it may happen that we ceate an
+         * MObjectValue where the types of the bound are in a sub-/supertype relation to ensure
+         * that after a checkcast a corresponding test will return Yes and not Unknown.
+         * In that case – and if one of the types is final – we can nevertheless determine that we
+         * know the precise type of the value.
+         */
+        override def isPrecise: Boolean = {
+            upperTypeBound.exists(classHierarchy.isKnownToBeFinal)
+        }
+
         override def updateRefId(
             refId:  RefId,
             origin: ValueOrigin,
@@ -1044,6 +1073,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *          captures the runtime type of the value.
      *          This basically requires that all '''non-null''' values
      *          are precise and have the same upper type bound. Null values are ignored.
+     *          Please note, that the type bound can still have multiple types as long
+     *          as one type is final and can be assumed to be the subtype of all other
+     *          types!
      */
     protected class MultipleReferenceValues(
             val values:             UIDSet[DomainSingleOriginReferenceValue],
@@ -1069,18 +1101,16 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"inconsistent null property(isNull == $isNull): ${values.mkString(",")}"
         )
         assert(
-            {
+            (isNull.isYes && isPrecise) || {
                 val nonNullValues = values.filter(_.isNull.isNoOrUnknown)
-                if (nonNullValues.nonEmpty && nonNullValues.forall(_.isPrecise)) {
-                    val theUTB = nonNullValues.head.upperTypeBound
-                    if (nonNullValues.tail.forall(_.upperTypeBound == theUTB))
-                        isPrecise
-                    else
-                        true
-                } else
-                    true
+                (nonNullValues.isEmpty && isPrecise) ||
+                    (
+                        nonNullValues.nonEmpty && (
+                            nonNullValues.exists(!_.isPrecise) || domain.isPrecise(values) == isPrecise
+                        )
+                    )
             },
-            s"should be precise "+values
+            s"unexpected precision (precise == $isPrecise): $this"
         )
         assert(
             (isNull.isYes && upperTypeBound.isEmpty) || (
@@ -1115,7 +1145,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 newIsNull,
                 this.isPrecise && newValue.isPrecise &&
                     (
-                        this.upperTypeBound == newValue.upperTypeBound ||
+                        effectiveUTB(this.upperTypeBound) == effectiveUTB(newValue.upperTypeBound) ||
                         this.upperTypeBound.isEmpty ||
                         newValue.upperTypeBound.isEmpty
                     ),
@@ -1664,12 +1694,21 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         }
                     if (newIsNull != this.isNull || newUTB != thisUTB)
                         updateType = StructuralUpdateType
-                    val newIsPrecise = this.isPrecise && that.isPrecise && (
-                        thisUTB.isEmpty || thatUTB.isEmpty || thisUTB == thatUTB
-                    )
+                    val newIsPrecise =
+                        (
+                            // The following is necessary if we have an incomplete type hierarchy
+                            // where we join an MObjectType -- which represents a final type, but
+                            // which also explicitly lists a super type to satisfy the CHECKCAST
+                            // contract (the super type is not part of the code base!) -- with
+                            // an SObjectType representing the final type...).
+                            newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head)
+                        ) || {
+                                this.isPrecise && that.isPrecise && (
+                                    thisUTB.isEmpty || thatUTB.isEmpty || thisUTB == thatUTB
+                                )
+                            }
 
                     val newRefId = if (this.refId == that.refId) this.refId else nextRefId()
-
                     updateType(
                         MultipleReferenceValues(
                             newValues,
@@ -1882,6 +1921,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, No, true, objectType, nextRefId())
+    }
+
+    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
+        ObjectValue(-1, No, false, objectType, nextRefId())
     }
 
     override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {

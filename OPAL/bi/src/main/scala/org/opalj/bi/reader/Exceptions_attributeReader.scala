@@ -30,15 +30,14 @@ package org.opalj
 package bi
 package reader
 
+import java.io.DataInputStream
+
 import scala.reflect.ClassTag
 
-import java.io.DataInputStream
 import org.opalj.control.repeat
 
 /**
  * Generic parser for a code block's ''exceptions'' attribute.
- *
- * @author Michael Eichberg
  */
 trait Exceptions_attributeReader extends AttributeReader {
 
@@ -77,11 +76,8 @@ trait Exceptions_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val number_of_exceptions = in.readUnsignedShort
         if (number_of_exceptions > 0 || reifyEmptyAttributes) {
-            Exceptions_attribute(
-                cp,
-                attribute_name_index,
-                repeat(number_of_exceptions) { in.readUnsignedShort }
-            )
+            val exceptions = repeat(number_of_exceptions) { in.readUnsignedShort }
+            Exceptions_attribute(cp, attribute_name_index, exceptions)
         } else
             null
     }

@@ -33,12 +33,11 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
- *
- * @author Michael Eichberg
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
 

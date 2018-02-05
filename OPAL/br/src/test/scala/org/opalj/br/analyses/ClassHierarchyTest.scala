@@ -138,10 +138,10 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     /** BaseWithConcreteInterface // BaseWithConcreteInterface implements Interface<Base> */
     val concreteInterfaceWithBase = CTS("BaseWithConcreteInterface", Nil)
 
-    /** AltBaseWithConcreteInterface // AltBaseWithConcreteInterface implements Interface<AlternativeBase> */
+    /** AltBaseWithConcreteInterface implements Interface<AlternativeBase> */
     val concreteInterfaceWithAltBase = CTS("AltBaseWithConcreteInterface", Nil)
 
-    /** SubclassWithInterface // SubclassWithInterface extends SubGeneric implements Interface<AlternativeBase> */
+    /** SubclassWithInterface extends SubGeneric implements Interface<AlternativeBase> */
     val subClassWithInterface = CTS("SubclassWithInterface", Nil)
 
     /** SubGeneric // SubGeneric extends SimpleGeneric<Base> */
@@ -222,11 +222,11 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
     /**
      * GenericWithSuffix<Base>.Suffix1_1<Base>
-     *
-     *  public class GenericWithSuffix<E> {
-     *      public class Suffix1_1<E>{}
-     *  }
-     *
+     * {{{
+     * public class GenericWithSuffix<E> {
+     *    public class Suffix1_1<E>{}
+     * }
+     * }}}
      */
     val genericWithSuffix_publicSuffix1_1 = CTS("GenericWithSuffix", List(elementType(baseCTS)), List(SimpleCTS("Suffix1_1", List(elementType(baseCTS)))))
 
@@ -738,6 +738,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
         apacheANTCH.allSupertypes(mi) should be(UIDSet(
             ObjectType("org/apache/tools/ant/Task"),
+            ObjectType("org/apache/tools/ant/ProjectComponent"),
             ObjectType("org/apache/tools/ant/TaskContainer"),
             ObjectType("org/apache/tools/ant/DynamicAttribute"),
             ObjectType.Object

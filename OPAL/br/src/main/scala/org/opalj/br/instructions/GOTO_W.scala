@@ -46,7 +46,12 @@ trait GOTO_WLike extends GotoInstructionLike {
     final def stackSlotsChange: Int = 0
 }
 
-case class GOTO_W(branchoffset: Int) extends GotoInstruction with GOTO_WLike
+case class GOTO_W(branchoffset: Int) extends GotoInstruction with GOTO_WLike {
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledGOTO_W(InstructionLabel(currentPC + branchoffset))
+    }
+}
 
 /**
  * Defines constants and factory methods.
@@ -60,15 +65,15 @@ object GOTO_W {
     /**
      * Creates [[LabeledGOTO_W]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledGOTO_W = LabeledGOTO_W(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledGOTO_W = LabeledGOTO_W(branchTarget)
 
 }
 
 case class LabeledGOTO_W(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with GOTO_WLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): GOTO_W = {
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): GOTO_W = {
         GOTO_W(pcs(branchTarget) - currentPC)
     }
 

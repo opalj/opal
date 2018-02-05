@@ -38,8 +38,6 @@ import scala.annotation.switch
  * flags defined for a class, method or field declaration. Access flags are
  * generally context dependent and the same value means different things
  * depending on the context.
- *
- * @author Michael Eichberg
  */
 sealed trait AccessFlag extends PrimitiveAccessFlagsMatcher {
 
@@ -88,8 +86,6 @@ sealed trait VisibilityModifier extends AccessFlag {
 
 /**
  * Defines extractor methods related to visibility modifiers.
- *
- * @author Michael Eichberg
  */
 object VisibilityModifier {
 

@@ -32,7 +32,7 @@ package da
 import java.io.File
 import java.nio.file.Files
 
-import org.apache.commons.lang3.StringUtils.getLevenshteinDistance
+import org.apache.commons.text.similarity.LevenshteinDistance.{getDefaultInstance ⇒ getLevenshteinDistance}
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -158,7 +158,7 @@ object Disassembler {
                     } else {
                         val allClassNames: List[(Int, String)] =
                             altClassNames.map { cf ⇒
-                                (getLevenshteinDistance(className, cf), cf)
+                                (getLevenshteinDistance()(className, cf).intValue, cf)
                             }.toList
                         val mostRelated = allClassNames.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
                         val ending = if (mostRelated.length > 15) ", ...)" else ")"

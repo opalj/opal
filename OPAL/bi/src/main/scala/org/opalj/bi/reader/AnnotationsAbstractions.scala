@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Annotation related definitions.
- *
- * @author Michael Eichberg
  */
 trait AnnotationAbstractions extends Constant_PoolAbstractions {
 

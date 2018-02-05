@@ -44,7 +44,13 @@ trait JSR_WLike extends JSRInstructionLike {
     final def length: Int = 5
 }
 
-case class JSR_W(branchoffset: Int) extends JSRInstruction with JSR_WLike
+case class JSR_W(branchoffset: Int) extends JSRInstruction with JSR_WLike {
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledJSR_W(InstructionLabel(currentPC + branchoffset))
+    }
+
+}
 
 /**
  * Defines constants and factory methods.
@@ -58,14 +64,14 @@ object JSR_W {
     /**
      * Creates [[LabeledJSR_W]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledJSR_W = LabeledJSR_W(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledJSR_W = LabeledJSR_W(branchTarget)
 }
 
 case class LabeledJSR_W(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with JSRLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): JSR_W = {
+    override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): JSR_W = {
         JSR_W(pcs(branchTarget) - currentPC)
     }
 

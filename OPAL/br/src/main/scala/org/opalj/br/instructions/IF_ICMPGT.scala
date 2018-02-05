@@ -54,6 +54,10 @@ case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction[IF_ICMPGT] wit
     def negate(newBranchoffset: Int = branchoffset): IF_ICMPLE = {
         IF_ICMPLE(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIF_ICMPGT(InstructionLabel(currentPC + branchoffset))
+    }
 }
 
 /**
@@ -68,15 +72,21 @@ object IF_ICMPGT {
     /**
      * Creates [[LabeledIF_ICMPGT]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIF_ICMPGT = LabeledIF_ICMPGT(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIF_ICMPGT = LabeledIF_ICMPGT(branchTarget)
 
 }
 
 case class LabeledIF_ICMPGT(
-        branchTarget: Symbol
-) extends LabeledSimpleConditionalBranchInstruction with IF_ICMPGTLike {
+        branchTarget: InstructionLabel
+) extends LabeledSimpleConditionalBranchInstruction
+    with IF_ICMPGTLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ICMPGT = {
-        IF_ICMPGT(pcs(branchTarget) - pc)
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ICMPGT = {
+        IF_ICMPGT(asShortBranchoffset(pcs(branchTarget) - pc))
+    }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIF_ICMPLE = {
+        LabeledIF_ICMPLE(newJumpTargetLabel)
     }
 }

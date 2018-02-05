@@ -40,11 +40,6 @@ import org.opalj.collection.immutable.Chain
 trait Instruction extends InstructionLike {
 
     /**
-     * @return  `this`.
-     */
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): this.type = this
-
-    /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it is handled locally and
@@ -73,13 +68,23 @@ trait Instruction extends InstructionLike {
      */
     def similar(other: Instruction): Boolean = this == other
 
+    /**
+     * Converts this instruction to a [[LabeledInstruction]], where relative jump targets are
+     * replaced by symbols using the program counters of the target instructions as
+     * Symbols (i.e., absolute targets).
+     *
+     * @param currentPC The pc of the current instruction.
+     */
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction
+
     // ---------------------------------------------------------------------------------------------
     //
     // TYPE TEST AND TYPE CAST RELATED INSTRUCTIONS
     //
     // ---------------------------------------------------------------------------------------------
 
-    def isReturnInstruction: Boolean = false
+    def isSimpleBranchInstruction: Boolean = false
+    def isCompoundConditionalBranchInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
     def isStackManagementInstruction: Boolean = false
     def isLoadLocalVariableInstruction: Boolean = false
@@ -87,7 +92,6 @@ trait Instruction extends InstructionLike {
     def isCheckcast: Boolean = false
     def isInvocationInstruction: Boolean = false
     def isMethodInvocationInstruction: Boolean = false
-    def isAthrow: Boolean = false
     def isIINC: Boolean = false
 
     def asReturnInstruction: ReturnInstruction = throw new ClassCastException();
@@ -104,9 +108,15 @@ trait Instruction extends InstructionLike {
     def asStoreLocalVariableInstruction: StoreLocalVariableInstruction = {
         throw new ClassCastException();
     }
+
+    def asControlTransferInstruction: ControlTransferInstruction = throw new ClassCastException();
     def asGotoInstruction: GotoInstruction = throw new ClassCastException();
 
+    def asSimpleBranchInstruction: SimpleBranchInstruction = throw new ClassCastException();
     def asSimpleConditionalBranchInstruction: SimpleConditionalBranchInstruction[_] = {
+        throw new ClassCastException();
+    }
+    def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = {
         throw new ClassCastException();
     }
     def asIFICMPInstruction: IFICMPInstruction[_] = throw new ClassCastException();
@@ -114,11 +124,10 @@ trait Instruction extends InstructionLike {
     def asIFACMPInstruction: IFACMPInstruction[_] = throw new ClassCastException();
     def asIFXNullInstruction: IFXNullInstruction[_] = throw new ClassCastException();
 
-    def asCompoundConditionalBranchInstruction: CompoundConditionalBranchInstruction = {
-        throw new ClassCastException();
-    }
-
     def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
+    def asMethodInvocationInstruction: MethodInvocationInstruction = {
+        throw new ClassCastException()
+    };
 
     def asArithmeticInstruction: ArithmeticInstruction = throw new ClassCastException();
 

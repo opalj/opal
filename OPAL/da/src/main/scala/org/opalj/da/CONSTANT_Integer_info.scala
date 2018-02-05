@@ -54,21 +54,33 @@ case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         val repr =
-            if (value < 0 || value >= 10)
+            if (value < 0 || value >= 10) {
+                var additionalInfo = " = 0x"+value.toHexString
+                if (value == Int.MinValue)
+                    additionalInfo += " = Int.Min"
+                else if (value == Int.MaxValue)
+                    additionalInfo += " = Int.Max"
                 Seq(
                     Text(value.toString),
-                    <span class="comment">{ "==0x"+value.toHexString }</span>
+                    <span class="comment">{ additionalInfo }</span>
                 )
-            else
+            } else {
                 Seq(Text(value.toString))
+            }
 
         <span class="constant_value">{ repr }</span>
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        if (value < 0 || value >= 10)
-            value+" (== 0x"+value.toHexString+")"
-        else
+        if (value < 0 || value >= 10) {
+            var r = value+" (= 0x"+value.toHexString
+            if (value == Int.MinValue)
+                r += " = Int.Min"
+            else if (value == Int.MaxValue)
+                r += " = Int.Max"
+            r+")"
+        } else {
             value.toString
+        }
     }
 }

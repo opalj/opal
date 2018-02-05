@@ -37,7 +37,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-abstract class StoreLocalVariableInstruction extends Instruction {
+abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
 
     final override def isStoreLocalVariableInstruction: Boolean = true
 

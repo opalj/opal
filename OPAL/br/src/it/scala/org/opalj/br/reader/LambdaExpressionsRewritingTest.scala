@@ -59,13 +59,12 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
     }
 
     protected def isProxyFactoryCall(declaringClassFQN: String): Boolean = {
-        declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaNameRegEx) ||
-            declaringClassFQN.matches(Java8LambdaExpressionsRewriting.LambdaDeserializeNameRegEx)
+        declaringClassFQN.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
     }
 
     protected def proxyFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
-        val exceptions = project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi ⇒
             factoryCalls.addAll(
                 (mi.method.body.get.collectInstructions {
                     case i: INVOKESTATIC if isProxyFactoryCall(i) ⇒ i
@@ -80,7 +79,6 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
             }
             */
         }
-        if (exceptions.nonEmpty) throw new UnknownError(exceptions.mkString("\n"))
         info(s"found ${factoryCalls.size} lambda proxy factory method calls")
         factoryCalls.asScala
 
@@ -91,8 +89,8 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
      */
     protected def project(libraryPath: java.io.File): (SomeProject, Iterable[INVOKESTATIC]) = {
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = Java8LambdaExpressionsRewriting.Java8LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
         val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.

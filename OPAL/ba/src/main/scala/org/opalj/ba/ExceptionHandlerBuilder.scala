@@ -82,7 +82,6 @@ class ExceptionHandlerGenerator {
      * Generates the final [[org.opalj.br.ExceptionHandlers]] from the added pseudo instructions.
      * Fails if any handler is incomplete. That is, only one or two of the three pseudo instructions
      * for a single id was added.
-     * @return
      */
     def result(): br.ExceptionHandlers = {
         map.toIndexedSeq.sortWith((left, right) ⇒ sortByLastNumber(left._1, right._1)).map { e ⇒
@@ -91,6 +90,7 @@ class ExceptionHandlerGenerator {
             require(ehBuilder.startPC >= 0, errorMsg.format("starting point"))
             require(ehBuilder.endPC >= 0, errorMsg.format("end point"))
             require(ehBuilder.handlerPC >= 0, errorMsg.format("handler point"))
+            require(ehBuilder.startPC < ehBuilder.endPC, errorMsg.format("empty sequence"))
             br.ExceptionHandler(
                 ehBuilder.startPC, ehBuilder.endPC, ehBuilder.handlerPC,
                 ehBuilder.catchType

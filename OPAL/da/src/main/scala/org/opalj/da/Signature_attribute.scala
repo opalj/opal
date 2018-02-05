@@ -57,7 +57,7 @@ case class Signature_attribute(
     // Primarily implemented to handle the case if the signature attribute is not
     // found in an expected case.
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details><summary>Signature</summary>{ signature }</details>
+        <details><summary class="attribute_name">Signature</summary>{ signature }</details>
     }
 
 }

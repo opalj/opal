@@ -31,8 +31,6 @@ package bi
 
 /**
  * Enumeration of all class file structures that can have attributes.
- *
- * @author Michael Eichberg
  */
 object AttributesParent extends Enumeration {
 

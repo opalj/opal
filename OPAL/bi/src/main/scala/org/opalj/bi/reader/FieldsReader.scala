@@ -33,12 +33,9 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
-/**
- *
- * @author Michael Eichberg
- */
 trait FieldsReader extends Constant_PoolAbstractions {
 
     //

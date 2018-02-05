@@ -36,6 +36,8 @@ import scala.Int.{MaxValue ⇒ MaxInt}
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
+import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.IntegerVariableInfo
 
 /**
  * This domain represents integer values using ranges.
@@ -147,7 +149,9 @@ trait IntegerRangeValues
         with IsIntegerValue[IntegerLikeValue] {
         this: DomainTypedValue[CTIntType] ⇒
 
-        final def computationalType: ComputationalType = ComputationalTypeInt
+        final override def computationalType: ComputationalType = ComputationalTypeInt
+
+        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 
         def newInstance: DomainValue
     }

@@ -54,6 +54,10 @@ case class IFNULL(branchoffset: Int) extends IFXNullInstruction[IFNULL] with IFN
     def negate(newBranchoffset: Int = branchoffset): IFNONNULL = {
         IFNONNULL(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIFNULL(InstructionLabel(currentPC + branchoffset))
+    }
 }
 
 /**
@@ -68,15 +72,21 @@ object IFNULL {
     /**
      * Creates LabeledIFNULL instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFNULL = LabeledIFNULL(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFNULL = LabeledIFNULL(branchTarget)
 
 }
 
 case class LabeledIFNULL(
-        branchTarget: Symbol
-) extends LabeledSimpleConditionalBranchInstruction with IFNULLLike {
+        branchTarget: InstructionLabel
+) extends LabeledSimpleConditionalBranchInstruction
+    with IFNULLLike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFNULL = {
-        IFNULL(pcs(branchTarget) - pc)
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFNULL = {
+        IFNULL(asShortBranchoffset(pcs(branchTarget) - pc))
+    }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFNONNULL = {
+        LabeledIFNONNULL(newJumpTargetLabel)
     }
 }

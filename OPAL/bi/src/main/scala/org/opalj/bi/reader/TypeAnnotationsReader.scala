@@ -30,7 +30,7 @@ package org.opalj
 package bi
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 import java.io.DataInputStream
 import org.opalj.control.repeat

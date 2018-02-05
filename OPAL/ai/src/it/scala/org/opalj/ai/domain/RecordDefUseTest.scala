@@ -209,7 +209,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         val identicalOrigins = new AtomicLong(0)
         val failures = new ConcurrentLinkedQueue[(String, Throwable)]
 
-        val exceptions = project.parForeachMethodWithBody() { methodInfo ⇒
+        project.parForeachMethodWithBody() { methodInfo ⇒
             val m = methodInfo.method
             try {
                 time {
@@ -230,7 +230,6 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
             }
         }
-        failures.addAll(exceptions.map(ex ⇒ ("additional exception", ex)).asJavaCollection)
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
         if (failures.size > 0) {

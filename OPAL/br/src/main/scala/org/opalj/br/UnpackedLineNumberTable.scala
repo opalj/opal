@@ -77,12 +77,3 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
 
 }
 
-/**
- * An entry in a line number table.
- *
- * @author Michael Eichberg
- */
-case class LineNumber(
-        startPC:    Int,
-        lineNumber: Int
-)

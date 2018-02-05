@@ -38,7 +38,9 @@ import org.opalj.br.ObjectType.OutOfMemoryError
  *
  * @author Michael Eichberg
  */
-case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthInstruction {
+case class NEW(
+        objectType: ObjectType
+) extends Instruction with ConstantLengthInstruction with NoLabels {
 
     final override def opcode: Opcode = NEW.opcode
 

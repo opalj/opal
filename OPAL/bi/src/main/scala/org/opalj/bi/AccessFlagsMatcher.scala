@@ -30,8 +30,7 @@ package org.opalj
 package bi
 
 /**
- * Matches a given access flags bit array and enables the construction of
- * complex matchers.
+ * Matches a given access flags bit array and enables the construction of complex matchers.
  *
  * @author Michael Eichberg
  */

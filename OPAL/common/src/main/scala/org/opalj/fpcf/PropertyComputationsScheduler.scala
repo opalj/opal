@@ -76,7 +76,7 @@ class AnalysisScenario(
 
     /**
      * Returns the graph which depicts the dependencies between the properties based on
-     * the selected computations. I.e., a property `d` depends on another property `p if the
+     * the selected computations. I.e., a property `d` depends on another property `p` if the
      * algorithm wich computes `d` uses the property `p`.
      */
     def propertyComputationsDependencies: Graph[PropertyKeyID] = {
@@ -115,7 +115,7 @@ class AnalysisScenario(
     }
 
     /**
-     * Computes a schedule which is a function that, given a property store, executes
+     * Computes a schedule. A schedule is a function that, given a property store, executes
      * the specified analyses.
      *
      * The goal is to find a schedule that:

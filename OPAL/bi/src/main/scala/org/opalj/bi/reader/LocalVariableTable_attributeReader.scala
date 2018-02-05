@@ -37,8 +37,6 @@ import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''local variable table'' attribute.
- *
- * @author Michael Eichberg
  */
 trait LocalVariableTable_attributeReader extends AttributeReader {
 

@@ -29,11 +29,12 @@
 package org.opalj.fpcf
 
 /**
- * Ordered properties define a definitive order between all properties of a respective kind;
+ * Ordered properties makes the order between all properties regarding a respective kind explicit;
  * all properties that are of the same kind have to inherit from ordered property or none.
  *
  * This information is used by the property store when debugging is turned on to test if an
- * analysis which derives a new property always derives a more precise property.
+ * analysis which derives a new property always derives a more precise property. These tests
+ * are only executed in-phase!
  *
  * @author Michael Eichberg
  */
@@ -42,15 +43,16 @@ trait OrderedProperty extends Property {
     /**
      * Returns `true`.
      */
-    final override def isOrdered: Boolean = true
+    final override private[fpcf] def isOrdered: Boolean = true
 
     /**
      * Returns `this`.
      */
-    final override def asOrderedProperty: this.type = this
+    final override private[fpcf] def asOrderedProperty: this.type = this
 
     /**
-     * Tests if this property is a valid successor property of the other property.
+     * Tests if this property is a valid successor property of the other property; this
+     * relation is typically reflexive, that is, a property is a valid success of itself.
      *
      * @return None if this property is a valid successor of the other property else
      *         `Some(description:String)` which describes the problem is returned.

@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf
 
+// TODO REname to PropertyState
 /**
  * The different types of updates distinguished by the fixed-point computations framework.
  *
@@ -36,31 +37,40 @@ package org.opalj.fpcf
 sealed abstract class UpdateType(val name: String) {
     val id: Int
 
-    def asUserUpdateType: UserUpdateType
-}
-
-sealed abstract class UserUpdateType(name: String) extends UpdateType(name) {
-    final override def asUserUpdateType: this.type = this
+    def isIntermediateUpdate: Boolean
+    def isPhaseFinalUpdate: Boolean
+    def isFinalUpdate: Boolean
 }
 
 /**
  * The result is just an intermediate result that may be refined in the future.
+ *
+ * @note Refinable results are - downstream - only intermediate updates.
  */
-case object IntermediateUpdate extends UserUpdateType("Intermediate Update") {
+// TODO Rename to IntermediateProperty
+case object IntermediateUpdate extends UpdateType("Intermediate Update") {
     final val id = 1
+    final override def isIntermediateUpdate: Boolean = true
+    final override def isPhaseFinalUpdate: Boolean = false
+    final override def isFinalUpdate: Boolean = false
+}
+
+// TODO Rename to PhaseFinalProperty
+case object PhaseFinalUpdate extends UpdateType("Phase Final Update") {
+    final val id = 3
+    final override def isIntermediateUpdate: Boolean = false
+    final override def isPhaseFinalUpdate: Boolean = true
+    final override def isFinalUpdate: Boolean = false
 }
 
 /**
  * The result is the final result and was computed using other information.
  */
-case object FinalUpdate extends UserUpdateType("Final Update") {
-    final val id = 2
+// TODO Rename to FinalProperty
+case object FinalUpdate extends UpdateType("Final Update") {
+    final val id = 3
+    final override def isIntermediateUpdate: Boolean = false
+    final override def isPhaseFinalUpdate: Boolean = false
+    final override def isFinalUpdate: Boolean = true
 }
 
-/**
- * The result is the final result and was computed without requiring any other information.
- */
-private[fpcf] case object OneStepFinalUpdate extends UpdateType("Final Update Without Dependencies") {
-    final val id = 3
-    final override def asUserUpdateType: FinalUpdate.type = FinalUpdate
-}

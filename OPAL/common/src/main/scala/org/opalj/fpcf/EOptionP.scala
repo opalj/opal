@@ -45,6 +45,7 @@ abstract class EOptionP[+E <: Entity, +P <: Property] private[fpcf] () {
      */
     def pk: PropertyKey[P]
 
+    /** This EOptionP as a pair of an entity and a property key. */
     def toEPK: EPK[E, P]
 
     /**
@@ -95,11 +96,11 @@ object EOptionP {
 /**
  * A pairing of an [[Entity]] and an associated [[Property]].
  *
- * Compared to a standard `Tuple2` the equality of two `EP` objects is based on
- * comparing the entities using reference equality.
+ * @note entities are compared using reference equality and properties are compared using `equals`.
  *
  * @author Michael Eichberg
  */
+// TODO Add property state information
 sealed class EP[+E <: Entity, +P <: Property](
         val e: E,
         val p: P

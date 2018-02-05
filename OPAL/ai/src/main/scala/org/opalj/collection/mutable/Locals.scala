@@ -34,7 +34,7 @@ import scala.reflect.ClassTag
 import scala.collection.immutable.Vector
 
 /**
- * '''THIS DATASTRUCTURE WILL BE REPLACED IN THE FUTURE, DON'T USE IT.'''
+ * '''THIS DATASTRUCTURE IS ONLY INTENDED TO BE USED BY THE AI FRAMEWORK, DON'T USE IT OTHERWISE.'''
  *
  * Conceptually, an array that enables random access and which is heavily optimized for
  * small(er) collections (up to 12 elements) that are frequently compared and updated
@@ -55,6 +55,12 @@ import scala.collection.immutable.Vector
 sealed trait Locals[T >: Null <: AnyRef] {
 
     /* ABSTRACT */ def size: Int
+
+    /**
+     * The index of the last value that is not `null`; if all values are `null` or if
+     * we have no locals, -1 is returned.
+     */
+    /* ABSTRACT */ def indexOfLastNonNullValue: Int
 
     /* ABSTRACT */ def isEmpty: Boolean
 
@@ -302,6 +308,8 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
     final override val size = 0
 
+    final override def indexOfLastNonNullValue: Int = -1
+
     final override val isEmpty = true
 
     final override val nonEmpty = false
@@ -354,6 +362,16 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
 private[mutable] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Locals[T] {
 
+    override def indexOfLastNonNullValue: Int = {
+        var maxIndex = size - 1
+        while (maxIndex >= 0) {
+            if (apply(maxIndex) ne null)
+                return maxIndex;
+            maxIndex -= 1
+        }
+        maxIndex
+    }
+
     final override def isEmpty: Boolean = false
 
     final override def nonEmpty: Boolean = true
@@ -378,6 +396,8 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
 ) extends LocalsX[T] {
 
     final override def size: Int = 1
+
+    final override def indexOfLastNonNullValue: Int = if (v != null) 0 else -1
 
     override def apply(index: Int): T = {
         // if (index != 0) throw new IndexOutOfBoundsException("invalid index("+index+")")
@@ -453,6 +473,10 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
 ) extends LocalsX[T] {
 
     final override def size: Int = 2
+
+    final override def indexOfLastNonNullValue: Int = {
+        if (v1 != null) 1 else if (v0 != null) 0 else -1
+    }
 
     override def apply(index: Int): T = {
         if (index == 0) v0 else v1
@@ -558,6 +582,10 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
 ) extends LocalsX[T] {
 
     final override def size: Int = 3
+
+    final override def indexOfLastNonNullValue: Int = {
+        if (v2 != null) 2 else if (v1 != null) 1 else if (v0 != null) 0 else -1
+    }
 
     override def apply(index: Int): T = {
         index match {
@@ -691,6 +719,14 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
 ) extends LocalsX[T] {
 
     final override def size: Int = 4
+
+    final override def indexOfLastNonNullValue: Int = {
+        if (v3 != null) 3
+        else if (v2 != null) 2
+        else if (v1 != null) 1
+        else if (v0 != null) 0
+        else -1
+    }
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {

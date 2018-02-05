@@ -54,6 +54,10 @@ case class IFGE(branchoffset: Int) extends IF0Instruction[IFGE] with IFGELike {
     def negate(newBranchoffset: Int = branchoffset): IFLT = {
         IFLT(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIFGE(InstructionLabel(currentPC + branchoffset))
+    }
 }
 
 /**
@@ -68,15 +72,21 @@ object IFGE {
     /**
      * Creates [[LabeledIFGE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIFGE = LabeledIFGE(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIFGE = LabeledIFGE(branchTarget)
 
 }
 
 case class LabeledIFGE(
-        branchTarget: Symbol
-) extends LabeledSimpleConditionalBranchInstruction with IFGELike {
+        branchTarget: InstructionLabel
+) extends LabeledSimpleConditionalBranchInstruction
+    with IFGELike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IFGE = {
-        IFGE(pcs(branchTarget) - pc)
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IFGE = {
+        IFGE(asShortBranchoffset(pcs(branchTarget) - pc))
+    }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIFLT = {
+        LabeledIFLT(newJumpTargetLabel)
     }
 }

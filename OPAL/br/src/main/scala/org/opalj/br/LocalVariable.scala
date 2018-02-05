@@ -40,4 +40,22 @@ case class LocalVariable(
         name:      String,
         fieldType: FieldType,
         index:     Int
-)
+) {
+
+    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LocalVariable] = {
+        val newStartPC = f(startPC)
+        if (newStartPC < codeSize)
+            Some(
+                LocalVariable(
+                    newStartPC,
+                    f(startPC + length) - newStartPC,
+                    name,
+                    fieldType,
+                    index
+                )
+            )
+        else
+            None
+    }
+
+}

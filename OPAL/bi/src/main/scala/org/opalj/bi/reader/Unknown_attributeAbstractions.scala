@@ -32,10 +32,6 @@ package reader
 
 import java.io.DataInputStream
 
-/**
- *
- * @author Michael Eichberg
- */
 trait Unknown_attributeAbstractions extends Constant_PoolAbstractions with AttributesAbstractions {
 
     type Unknown_attribute <: Attribute

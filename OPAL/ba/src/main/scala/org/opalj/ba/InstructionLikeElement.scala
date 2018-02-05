@@ -29,36 +29,61 @@
 package org.opalj
 package ba
 
-import org.opalj.br.instructions.InstructionLike
+import org.opalj.br.instructions.LabeledInstruction
 
 /**
+ * Represents an (annotated) labeled instruction.
+ *
  * @author Malte Limmeroth
  */
-sealed abstract class InstructionLikeElement[T] extends CodeElement[T] {
-    def instruction: InstructionLike
+sealed abstract class InstructionLikeElement[+T] extends CodeElement[T] {
+
+    final override def isInstructionLikeElement: Boolean = true
+
+    final override def isExceptionHandlerElement: Boolean = false
+
+    final override def isPseudoInstruction: Boolean = false
+
+    def isAnnotated: Boolean
+
+    def annotation: T
+
+    def instruction: LabeledInstruction
+
+    def isControlTransferInstruction: Boolean = instruction.isControlTransferInstruction
 }
 
 object InstructionLikeElement {
 
-    def unapply(ile: InstructionLikeElement[_]): Some[InstructionLike] = {
+    def unapply(ile: InstructionLikeElement[_]): Some[LabeledInstruction] = {
         Some(ile.instruction)
     }
 }
 
 /**
- * Wrapper for [[org.opalj.br.instructions.InstructionLike]]s.
+ * Wrapper for [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
 case class InstructionElement(
-        instruction: InstructionLike
-) extends InstructionLikeElement[Nothing]
+        instruction: LabeledInstruction
+) extends InstructionLikeElement[Nothing] {
+    final override def isAnnotated: Boolean = false
+    final override def annotation: Nothing = throw new UnsupportedOperationException
+}
 
 /**
- * Wrapper for annotated [[org.opalj.br.instructions.InstructionLike]]s.
+ * Wrapper for annotated [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
-case class AnnotatedInstructionElement[T](
-        instruction: InstructionLike,
+case class AnnotatedInstructionElement[+T](
+        instruction: LabeledInstruction,
         annotation:  T
 ) extends InstructionLikeElement[T] {
+    final override def isAnnotated: Boolean = true
+}
 
-    def this(ai: (InstructionLike, T)) { this(ai._1, ai._2) }
+object AnnotatedInstructionElement {
+
+    def apply[T](ia: (LabeledInstruction, T)): AnnotatedInstructionElement[T] = {
+        val (i, a) = ia
+        new AnnotatedInstructionElement(i, a)
+    }
 }

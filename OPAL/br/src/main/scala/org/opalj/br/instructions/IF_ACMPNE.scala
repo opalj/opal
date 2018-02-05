@@ -54,6 +54,10 @@ case class IF_ACMPNE(branchoffset: Int) extends IFACMPInstruction[IF_ACMPNE] wit
     def negate(newBranchoffset: Int = branchoffset): IF_ACMPEQ = {
         IF_ACMPEQ(newBranchoffset)
     }
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledIF_ACMPNE(InstructionLabel(currentPC + branchoffset))
+    }
 }
 
 /**
@@ -68,15 +72,21 @@ object IF_ACMPNE {
     /**
      * Creates [[LabeledIF_ACMPNE]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledIF_ACMPNE = LabeledIF_ACMPNE(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledIF_ACMPNE = LabeledIF_ACMPNE(branchTarget)
 
 }
 
 case class LabeledIF_ACMPNE(
-        branchTarget: Symbol
-) extends LabeledSimpleConditionalBranchInstruction with IF_ACMPNELike {
+        branchTarget: InstructionLabel
+) extends LabeledSimpleConditionalBranchInstruction
+    with IF_ACMPNELike {
 
-    override def resolveJumpTargets(pc: PC, pcs: Map[Symbol, PC]): IF_ACMPNE = {
-        IF_ACMPNE(pcs(branchTarget) - pc)
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(pc: PC, pcs: Map[InstructionLabel, PC]): IF_ACMPNE = {
+        IF_ACMPNE(asShortBranchoffset(pcs(branchTarget) - pc))
+    }
+
+    override def negate(newJumpTargetLabel: InstructionLabel): LabeledIF_ACMPEQ = {
+        LabeledIF_ACMPEQ(newJumpTargetLabel)
     }
 }

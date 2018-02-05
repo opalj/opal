@@ -30,9 +30,7 @@ package org
 package opalj
 
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.util.control.ControlThrowable
 import scala.concurrent.ExecutionContext
@@ -132,7 +130,15 @@ package object concurrent {
     //
     private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
         def uncaughtException(t: Thread, e: Throwable): Unit = {
-            handleUncaughtException(e)
+            try {
+                handleUncaughtException(e)
+            } catch {
+                case t: Throwable ⇒
+                    // we shouldn't use the OPALLogger here to ensure that we can report
+                    // Problems related to the logger
+                    Console.err.println("Fatal internal error when reporting errors:")
+                    t.printStackTrace(Console.err)
+            }
         }
     }
 
@@ -193,35 +199,38 @@ package object concurrent {
      *         will be caught and reported later.
      *
      * @note   The OPALExecutionContext is used for getting the necessary threads.
+     *
+     * @throws ConcurrentExceptions if any exception occurs;
+     *         the thrown exception stores all other exceptions (`getSuppressed`)
      */
+    @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
     def parForeachArrayElement[T, U](
         data:                 Array[T],
         parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
         isInterrupted:        () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
     )(
         f: Function[T, U]
-    ): Iterable[Throwable] = {
-
-        val exceptions = new ConcurrentLinkedQueue[Throwable]()
+    ): Unit = {
+        val exceptions = new ConcurrentExceptions
 
         if (parallelizationLevel == 1) {
             data.forall { e ⇒
                 try {
-                    if (!isInterrupted()) {
-                        f(e)
-                        true
-                    } else {
-                        false
-                    }
+                    f(e)
                 } catch {
                     case ct: ControlThrowable ⇒
-                        error("internal - fatal", "unsupported non-local return is used")
-                        exceptions.add(ct)
+                        val t = new Throwable("unsupported non-local return", ct)
+                        exceptions.addSuppressed(t)
 
-                    case t: Throwable ⇒ exceptions.add(t)
+                    case t: Throwable ⇒
+                        exceptions.addSuppressed(t)
                 }
+                !isInterrupted()
             }
-            return exceptions.asScala
+            if (exceptions.getSuppressed.length > 0)
+                throw exceptions;
+            else
+                return ;
         }
 
         val max = data.length
@@ -229,40 +238,52 @@ package object concurrent {
         val futures = new Array[Future[Unit]](parallelizationLevel)
 
         // Start parallel execution
-        {
-            var t = 0
-            while (t < parallelizationLevel) {
-                futures(t) = Future[Unit] {
-                    var i: Int = -1
-                    while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
-                        val e = data(i)
-                        try {
-                            f(e)
-                        } catch {
-                            case ct: ControlThrowable ⇒
-                                error("internal - fatal", "unsupported non-local return is used")
-                                exceptions.add(ct)
+        try {
+            {
+                var t = 0
+                while (t < parallelizationLevel) {
+                    futures(t) = Future[Unit] {
+                        var i: Int = -1
+                        while ({
+                            i = index.getAndIncrement; i
+                        } < max && !isInterrupted()) {
+                            val e = data(i)
+                            try {
+                                f(e)
+                            } catch {
+                                case ct: ControlThrowable ⇒
+                                    val t = new Throwable("unsupported non-local return", ct)
+                                    exceptions.addSuppressed(t)
 
-                            case t: Throwable ⇒ exceptions.add(t)
+                                case t: Throwable ⇒
+                                    exceptions.addSuppressed(t)
+                            }
                         }
                     }
+                    t += 1
                 }
-                t += 1
             }
-        }
-        // Await completion
-        {
-            var t = 0
-            while (t < parallelizationLevel) {
-                val future = futures(t)
-                if (Await.ready(future, Duration.Inf).value.get.isFailure) {
-                    // this should not happen!
-                    error("internal - fatal", "concurrent execution failed: "+future.value.get)
+            // Await completion
+            {
+                var t = 0
+                while (t < parallelizationLevel) {
+                    val future = futures(t)
+                    Await.ready(future, Duration.Inf).value.get match {
+                        case scala.util.Failure(exception) ⇒ exceptions.addSuppressed(exception)
+                        case _                             ⇒ // OK
+                    }
+                    t += 1
                 }
-                t += 1
             }
+        } catch {
+            case t: Throwable ⇒
+                // actually, we should never get here...
+                t.printStackTrace(Console.err)
+                exceptions.addSuppressed(t)
         }
-        exceptions.asScala
+        if (exceptions.getSuppressed.length > 0) {
+            throw exceptions;
+        }
     }
 
 }

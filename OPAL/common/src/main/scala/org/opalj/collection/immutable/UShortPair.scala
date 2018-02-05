@@ -31,8 +31,7 @@ package collection
 package immutable
 
 /**
- * A memory-efficient representation of a pair of UShortValues which
- * uses one Integer value.
+ * A memory-efficient representation of a pair of UShortValues which uses one Integer value.
  *
  * @example
  * {{{
@@ -52,7 +51,7 @@ final class UShortPair private (val pair: Int) extends AnyVal {
     def value: UShort = _2
     def major: UShort = _2
 
-    override def toString: String = s"UShortPair($key,$value)"
+    override def toString: String = s"UShortPair($minor,$major)"
 }
 /**
  * Factory to create `UShortPair` objects.

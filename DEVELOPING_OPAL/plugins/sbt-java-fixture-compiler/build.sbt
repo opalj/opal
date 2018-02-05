@@ -1,11 +1,11 @@
 // For information on how to use this plugin, see the accompanying Readme.md document.
 name := "sbt-java-fixture-compiler"
 version := "1.0"
-description := "compiles Java projects using the Eclipse compiler version 4.6.1"
+description := "compiles Java projects using a fixed version of the Eclipse compiler"
 organization := "de.opal-project"
 licenses += ("BSC 2-clause", url("https://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion := "2.10.6"
+scalaVersion := "2.12.4"
 
 sbtPlugin := true
 
@@ -20,5 +20,9 @@ scalacOptions in ThisBuild ++= Seq(
     "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
 )
 
-// Version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
+// The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
+// The version 4.6.1 which we use contains a bug when compiling
+// certain method references that return a value; however, even new(er) versions
+// still contain the bug (the stack is not empty, when the method returns.)
+// [still buggy] libraryDependencies ++= Seq("com.reubenpeeris" % "org.eclipse.jdt.core.compiler.ecj" % "4.7-201706120950")
 libraryDependencies ++= Seq("org.eclipse.jdt.core.compiler" % "ecj" % "4.6.1")

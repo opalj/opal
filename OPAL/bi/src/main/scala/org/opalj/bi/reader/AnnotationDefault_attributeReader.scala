@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Generic parser for ''annotation default'' attributes.
- *
- * @author Michael Eichberg
  */
 trait AnnotationDefault_attributeReader extends AttributeReader {
 

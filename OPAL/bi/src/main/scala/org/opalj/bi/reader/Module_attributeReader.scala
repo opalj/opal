@@ -33,16 +33,11 @@ package reader
 import scala.reflect.ClassTag
 
 import java.io.DataInputStream
+
 import org.opalj.control.repeat
 
 /**
  * Generic parser for the ''Module'' attribute (Java 9).
- *
- * @note This implementation is based on:
- *      http://cr.openjdk.java.net/~mr/jigsaw/spec/lang-vm.html
- *      August 2016
- *
- * @author Michael Eichberg
  */
 trait Module_attributeReader extends AttributeReader {
 

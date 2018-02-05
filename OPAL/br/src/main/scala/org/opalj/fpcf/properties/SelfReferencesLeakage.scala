@@ -45,10 +45,14 @@ sealed trait SelfReferenceLeakage extends Property {
 }
 
 object SelfReferenceLeakage {
-    final val Key = PropertyKey.create[SelfReferenceLeakage]("SelfReferenceLeakage", LeaksSelfReference)
+    final val Key = PropertyKey.create[SelfReferenceLeakage](
+        "SelfReferenceLeakage",
+        LeaksSelfReference
+    )
 }
 
-case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
+case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
 
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefineable = false }
+case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
 
+case object MayNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = true }

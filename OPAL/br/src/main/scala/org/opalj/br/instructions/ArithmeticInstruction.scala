@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait ArithmeticInstruction extends Instruction {
+trait ArithmeticInstruction extends Instruction with NoLabels {
 
     final override def asArithmeticInstruction: this.type = this
 

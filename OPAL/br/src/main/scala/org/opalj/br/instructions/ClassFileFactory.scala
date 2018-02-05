@@ -91,7 +91,7 @@ object ClassFileFactory {
      *     return/*<= if the return type is not void*/ this.receiver.<receiverMethodName>(<parameters>)
      *  }
      *
-     *  // possibly a bridge method
+     *  // possibly multiple bridge methods (multiple only in case of altLambdaMetaFactory usages)
      * }
      * }}}
      *
@@ -138,12 +138,12 @@ object ClassFileFactory {
      * The created class will always have its synthetic access flag set, as well as the
      * [[VirtualTypeFlag]] attribute.
      *
-     * @note The used class file version is 49.0 (Java 5) (Using this version, we are not
-     * required to create the stack map table attribute to create a valid class file.)
+     * @note The used class file version is 52. (StackMapTables are, however, still not required
+     *       because the code contains no relevant control-flow.)
      *
      * @note It is expected that `methodDescriptor` and `receiverMethodDescriptor` are
-     * "compatible", i.e. it would be possible to have the method described by
-     * `methodDescriptor` forward to `receiverMethodDescriptor`.
+     *       "compatible", i.e. it would be possible to have the method described by
+     *       `methodDescriptor` forward to `receiverMethodDescriptor`.
      *
      * This requires that for their return types, one of the following statements holds true:
      *
@@ -200,33 +200,38 @@ object ClassFileFactory {
      *  MethodDescriptor(IndexedSeq(ByteType, ByteType, IntegerType), IntegerType)
      * }}}
      *
+     * @param definingType The defining type; if the type is `Serializable` the interface '''has
+     *                     to be a direct super interface'''.
+     *
      * @param invocationInstruction the opcode of the invocation instruction
      *          (`INVOKESPECIAL.opcode`,`INVOKEVIRTUAL.opcode`,
      *          `INVOKESTATIC.opcode`,`INVOKEINTERFACE.opcode`)
      *          used to call call the method on the receiver.
      */
     def Proxy(
-        definingType:             TypeDeclaration,
-        methodName:               String,
-        methodDescriptor:         MethodDescriptor,
-        receiverType:             ObjectType,
-        receiverIsInterface:      Boolean,
-        receiverMethodName:       String,
-        receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction:    Opcode,
-        bridgeMethodDescriptor:   Option[MethodDescriptor] = None
+        caller:                  ObjectType,
+        callerIsInterface:       Boolean,
+        definingType:            TypeDeclaration,
+        methodName:              String,
+        methodDescriptor:        MethodDescriptor,
+        receiverType:            ObjectType,
+        receiverIsInterface:     Boolean,
+        implMethod:              MethodCallMethodHandle,
+        invocationInstruction:   Opcode,
+        samMethodType:           MethodDescriptor,
+        bridgeMethodDescriptors: IndexedSeq[MethodDescriptor]
     ): ClassFile = {
 
         val interfaceMethodParametersCount = methodDescriptor.parametersCount
-        val receiverParameters = receiverMethodDescriptor.parameterTypes
+        val implMethodParameters = implMethod.methodDescriptor.parameterTypes
 
         val receiverField =
             if (invocationInstruction == INVOKESTATIC.opcode ||
-                isNewInvokeSpecial(invocationInstruction, receiverMethodName) ||
+                isNewInvokeSpecial(invocationInstruction, implMethod.name) ||
                 isVirtualMethodReference(
                     invocationInstruction,
                     receiverType,
-                    receiverMethodDescriptor,
+                    implMethod.methodDescriptor,
                     methodDescriptor
                 )) {
                 IndexedSeq.empty
@@ -234,7 +239,7 @@ object ClassFileFactory {
                 IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            receiverParameters.dropRight(interfaceMethodParametersCount).zipWithIndex map { p ⇒
+            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex map { p ⇒
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
@@ -250,7 +255,21 @@ object ClassFileFactory {
                 DefaultFactoryMethodName
             }
 
-        val methods: Array[MethodTemplate] = new Array(if (bridgeMethodDescriptor.isDefined) 4 else 3)
+        /* We don't need to analyze the type hierarchy because the "Serializable" interface is
+         * directly implemented by the  defining type.
+         * From "java...LambdaMetaFactory":
+         *      When FLAG_SERIALIZABLE is set in flags, the function objects will implement
+         *      Serializable, and will have a writeReplace method that returns an appropriate
+         *      SerializedLambda. The caller class must have an appropriate $deserializeLambda$
+         *      method, as described in SerializedLambda.
+         */
+        val isSerializable = definingType.theSuperinterfaceTypes.contains(ObjectType.Serializable)
+
+        val methods: Array[MethodTemplate] = new Array(
+            3 /* proxy method, constructor, factory */ +
+                bridgeMethodDescriptors.length + // bridge methods
+                (if (isSerializable) 2 else 0) // writeReplace and $deserializeLambda$ if Serializable
+        )
         methods(0) = proxyMethod(
             definingType.objectType,
             methodName,
@@ -258,8 +277,7 @@ object ClassFileFactory {
             additionalFieldsForStaticParameters,
             receiverType,
             receiverIsInterface,
-            receiverMethodName,
-            receiverMethodDescriptor,
+            implMethod,
             invocationInstruction
         )
         methods(1) = constructor
@@ -268,22 +286,299 @@ object ClassFileFactory {
             fields.map(_.fieldType),
             factoryMethodName
         )
-        if (bridgeMethodDescriptor.isDefined) {
-            methods(3) = createBridgeMethod(
+
+        bridgeMethodDescriptors.iterator.zipWithIndex.foreach {
+            case (bridgeMethodDescriptor, i) ⇒
+                methods(3 + i) = createBridgeMethod(
+                    methodName,
+                    bridgeMethodDescriptor,
+                    methodDescriptor,
+                    definingType.objectType
+                )
+        }
+
+        // Add a writeReplace and $deserializeLambda$ method if the class isSerializable
+        if (isSerializable) {
+            methods(3 + bridgeMethodDescriptors.length) = createWriteReplaceMethod(
+                definingType,
                 methodName,
-                bridgeMethodDescriptor.get,
+                samMethodType,
+                implMethod,
                 methodDescriptor,
-                definingType.objectType
+                additionalFieldsForStaticParameters
+            )
+            methods(4 + bridgeMethodDescriptors.length) = createDeserializeLambdaProxy(
+                caller,
+                callerIsInterface
             )
         }
 
+        // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
+        // instruction on a static interface method.
+        // Given that none of the generated methods contains any control-flow instructions
+        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
         ClassFile(
-            0, 49,
+            0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toSeq,
             fields,
+            methods,
+            IndexedSeq(VirtualTypeFlag)
+        )
+    }
+
+    def DeserializeLambdaProxy(
+        definingType:       TypeDeclaration,
+        bootstrapArguments: BootstrapArguments,
+        staticMethodName:   String
+    ): ClassFile = {
+        /*
+            Instructions of LambdaDeserialize::bootstrap. This method will be reimplemented in the
+            constructor of the new LambdaDeserializeProxy class.
+
+            PC  Line  Instruction
+            0   36    invokestatic java.lang.invoke.MethodHandles { java.lang.invoke.MethodHandles$Lookup lookup () }
+            3   |     astore_2
+            4   38    ldc java.lang.Object.class
+            6   39    ldc java.lang.invoke.SerializedLambda.class
+            8   |     invokestatic java.lang.invoke.MethodType { java.lang.invoke.MethodType methodType (java.lang.Class, java.lang.Class) }
+            11  |     astore_3
+            12  42    aload_2
+            13  43    aload_0
+            14  |     invokevirtual java.lang.invoke.SerializedLambda { java.lang.String getImplMethodName () }
+            17  44    aload_3
+            18  |     iconst_1
+            19  |     anewarray java.lang.invoke.MethodHandle
+            22  |     dup
+            23  |     iconst_0
+            24  45    aconst_null
+            25  |     aastore
+            26  |     invokestatic scala.runtime.LambdaDeserialize { java.lang.invoke.CallSite bootstrap (java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle[]) }
+            29  |     astore 4
+            31  59    aload 4
+            33  |     invokevirtual java.lang.invoke.CallSite { java.lang.invoke.MethodHandle getTarget () }
+            36  |     aload_0
+            37  |     invokevirtual java.lang.invoke.MethodHandle { java.lang.Object invoke (java.lang.invoke.SerializedLambda) }
+            40  |     areturn
+            */
+        // val a = new ArrayBuffer[Object](100)
+        var buildMethodType: Array[Instruction] = Array() // IMPROVE: Use ArrayBuffer
+
+        bootstrapArguments.iterator.zipWithIndex.foreach { ia ⇒
+            val (arg, idx) = ia
+            val staticHandle = arg.asInstanceOf[InvokeStaticMethodHandle]
+
+            // lookup.findStatic parameters
+            def getParameterTypeInstruction(t: Type): Array[Instruction] =
+                if (t.isReferenceType) {
+                    Array(LDC(ConstantClass(t.asReferenceType)), null)
+                } else if (t.isBaseType) {
+                    // Primitive type handling
+                    Array(
+                        GETSTATIC(t.asBaseType.WrapperType, "TYPE", ObjectType.Class),
+                        null, null
+                    )
+                } else {
+                    // Handling for void type
+                    Array(
+                        GETSTATIC(
+                            VoidType.WrapperType,
+                            "TYPE",
+                            ObjectType.Class
+                        ), null, null
+                    )
+                }
+
+            buildMethodType ++= Array(DUP)
+            buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.returnType) // rtype
+
+            if (staticHandle.methodDescriptor.parametersCount == 0) {
+                // We have ZERO parameters, call MethodType.methodType with return parameter only
+                // IMPROVE: check if LDC method type can be used
+                buildMethodType ++= Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodType,
+                        false,
+                        "methodType",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.Class),
+                            ObjectType.MethodType
+                        )
+                    ), null, null
+                )
+            } else if (staticHandle.methodDescriptor.parametersCount == 1) {
+                // We have ONE parameters, call MethodType.methodType with return and one parameter only
+                buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.parameterType(0))
+                buildMethodType ++= Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodType,
+                        false,
+                        "methodType",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.Class, ObjectType.Class),
+                            ObjectType.MethodType
+                        )
+                    ), null, null
+                )
+            } else {
+                // We have MULTIPLE parameters
+                buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.parameterType(0))
+                buildMethodType ++= Array(
+                    // The first parameter has its own parameter field
+                    ICONST_4,
+                    ANEWARRAY(ObjectType.Class), null, null
+                )
+
+                // The following parameters are put into an array of Class
+                staticHandle.methodDescriptor.parameterTypes.tail.zipWithIndex.foreach { pt ⇒
+                    val (param, i) = pt
+                    buildMethodType ++= Array(
+                        DUP,
+                        BIPUSH(i), null // Use BIPUSH instead of ICONST_<i>, it is equivalent, see https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.iconst_i
+                    ) ++ getParameterTypeInstruction(param) ++ Array(
+                            AASTORE
+                        )
+                }
+
+                buildMethodType ++= Array(
+                    INVOKESTATIC(
+                        ObjectType.MethodType,
+                        false,
+                        "methodType",
+                        MethodDescriptor(
+                            IndexedSeq(
+                                ObjectType.Class,
+                                ObjectType.Class,
+                                ArrayType(ObjectType.Class)
+                            ),
+                            ObjectType.MethodType
+                        )
+                    ), null, null
+                )
+            }
+
+            buildMethodType ++= Array(
+                LDC(ConstantString(staticHandle.name)), null, // method name
+                LDC(ConstantClass(staticHandle.receiverType)), null // reference class
+            )
+
+            // Now we have to call lookup.getStatic
+            buildMethodType ++= Array(
+                ALOAD_2, // Load the lookup
+                INVOKEVIRTUAL(
+                    ObjectType.MethodHandles$Lookup,
+                    "getStatic",
+                    MethodDescriptor(
+                        IndexedSeq(
+                            ObjectType.Class,
+                            ObjectType.String,
+                            ObjectType.MethodType
+                        ),
+                        ObjectType.MethodHandle
+                    )
+                ), null, null,
+                LoadInt(idx), null,
+                AASTORE
+            )
+        }
+
+        val instructions: Array[Instruction] =
+            Array(
+                INVOKESTATIC(
+                    ObjectType.MethodHandles,
+                    false,
+                    "lookup",
+                    MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
+                ), null, null,
+                ASTORE_2,
+                LoadClass(ObjectType.Object), null,
+                LoadClass(ObjectType.SerializedLambda), null,
+                INVOKESTATIC(
+                    ObjectType.MethodType,
+                    false,
+                    "methodType",
+                    MethodDescriptor(
+                        IndexedSeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
+                    )
+                ), null, null,
+                ASTORE_3,
+                ALOAD_2,
+                ALOAD_0,
+                INVOKEVIRTUAL(
+                    ObjectType.SerializedLambda,
+                    "getImplMethodName",
+                    MethodDescriptor.JustReturnsString
+                ), null, null,
+                ALOAD_3,
+                LoadInt(bootstrapArguments.length), null,
+                ANEWARRAY(ObjectType.MethodHandle), null, null
+            ) ++
+                // *** START Add lookup for each argument ***
+                buildMethodType ++
+                // *** END Add lookup for each argument ***
+                Array(
+                    INVOKESTATIC(
+                        ObjectType.ScalaLambdaDeserialize,
+                        false,
+                        "bootstrap",
+                        MethodDescriptor(
+                            IndexedSeq(
+                                ObjectType.MethodHandles$Lookup,
+                                ObjectType.String,
+                                ObjectType.MethodType,
+                                ArrayType(ObjectType.MethodHandle)
+                            ),
+                            ObjectType.CallSite
+                        )
+                    ), null, null,
+                    ASTORE(4), null,
+                    ALOAD(4), null,
+                    INVOKEVIRTUAL(
+                        ObjectType.CallSite,
+                        "getTarget",
+                        MethodDescriptor.withNoArgs(ObjectType.MethodHandle)
+                    ), null, null,
+                    ALOAD_0,
+                    INVOKEVIRTUAL(
+                        ObjectType.MethodHandle,
+                        "invoke",
+                        MethodDescriptor(
+                            ObjectType.SerializedLambda, // Parameter
+                            ObjectType.Object // Return
+                        )
+                    ), null, null,
+                    ARETURN
+                )
+
+        val maxStack = Code.computeMaxStack(instructions)
+
+        val methods: Array[MethodTemplate] = Array(
+            Method(
+                bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
+                staticMethodName,
+                MethodDescriptor(
+                    IndexedSeq(ObjectType.SerializedLambda),
+                    ObjectType.Object
+                ),
+                Seq(
+                    Code(maxStack, maxLocals = 5, instructions, IndexedSeq.empty, Seq.empty)
+                )
+            )
+        )
+
+        // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
+        // instruction on a static interface method.
+        // Given that none of the generated methods contains any control-flow instructions
+        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
+        ClassFile(
+            0, 52,
+            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
+            definingType.objectType,
+            definingType.theSuperclassType,
+            definingType.theSuperinterfaceTypes.toSeq,
+            IndexedSeq.empty[FieldTemplate], // Class fields
             methods,
             IndexedSeq(VirtualTypeFlag)
         )
@@ -499,27 +794,163 @@ object ClassFileFactory {
     }
 
     /**
+     * Creates the `writeReplace` method for a lambda proxy class. It is used
+     * to create a `SerializedLambda` object which holds the serialized lambda.
+     *
+     * The parameters of the SerializedLambda class map as following:
+     *   capturingClass = definingType
+     *   functionalInterfaceClass = definingType.theSuperinterfaceTypes.head (This is the functional interface)
+     *   functionalInterfaceMethodName = functionalInterfaceMethodName
+     *   functionalInterfaceMethodSignature = samMethodType.parameterType
+     *   implMethodKind = implMethod match to REF_
+     *   implClass = implMethod.receiverType
+     *   implMethodName = implMethod.name
+     *   implMethodSignature = implMethod.methodDescriptor
+     *   instantiatedMethodType = instantiatedMethodType
+     *   capturedArgs = methodDescriptor.parameterTypes (factoryParameters, fields in Proxy)
+     *
+     * @see https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html
+     *      and
+     *      https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html#altMetafactory-java.lang.invoke.MethodHandles.Lookup-java.lang.String-java.lang.invoke.MethodType-java.lang.Object...-
+     *
+     * @param definingType The lambda proxyclass type.
+     * @param methodName The name of the functional interface method.
+     * @param samMethodType Includes the method signature for the functional interface method.
+     * @param implMethod The lambda method inside the class defining the lambda.
+     * @param additionalFieldsForStaticParameters The static fields that are put into the capturedArgs.
+     * @return A SerializedLambda object containing all information to be able to serialize this lambda.
+     */
+    def createWriteReplaceMethod(
+        definingType:                        TypeDeclaration,
+        methodName:                          String,
+        samMethodType:                       MethodDescriptor,
+        implMethod:                          MethodCallMethodHandle,
+        instantiatedMethodType:              MethodDescriptor,
+        additionalFieldsForStaticParameters: IndexedSeq[FieldTemplate]
+    ): MethodTemplate = {
+        var instructions: Array[Instruction] = Array(
+            NEW(ObjectType.SerializedLambda), null, null,
+            DUP,
+            LoadClass(definingType.objectType), null,
+            LDC(ConstantString(definingType.theSuperinterfaceTypes.head.fqn)), null,
+            LDC(ConstantString(methodName)), null,
+            LDC(ConstantString(samMethodType.toJVMDescriptor)), null,
+            LDC(ConstantInteger(implMethod.referenceKind.referenceKind)), null,
+            LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)), null,
+            LDC(ConstantString(implMethod.name)), null,
+            LDC(ConstantString(implMethod.methodDescriptor.toJVMDescriptor)), null,
+            LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)), null,
+            // Add the capturedArgs
+            BIPUSH(additionalFieldsForStaticParameters.length), null,
+            ANEWARRAY(ObjectType.Object), null, null
+        )
+
+        additionalFieldsForStaticParameters.zipWithIndex.foreach {
+            case (x, i) ⇒
+                instructions ++= Array(
+                    DUP,
+                    BIPUSH(i), null,
+                    ALOAD_0,
+                    GETFIELD(definingType.objectType, x.name, x.fieldType), null, null
+                )
+                if (x.fieldType.isBaseType) {
+                    instructions ++= x.fieldType.asBaseType.boxValue
+                }
+                instructions :+= AASTORE
+        }
+
+        instructions ++= Array(
+            INVOKESPECIAL(
+                ObjectType.SerializedLambda,
+                isInterface = false,
+                "<init>",
+                MethodDescriptor(
+                    IndexedSeq(
+                        ObjectType.Class,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ObjectType.String,
+                        IntegerType,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ObjectType.String,
+                        ArrayType(ObjectType.Object)
+                    ),
+                    VoidType
+                )
+            ), null, null,
+            ARETURN
+        )
+
+        val maxStack = Code.computeMaxStack(instructions)
+        val body = Code(maxStack, 1, instructions)
+        Method(
+            bi.ACC_PUBLIC.mask | bi.ACC_SYNTHETIC.mask,
+            "writeReplace",
+            MethodDescriptor.JustReturnsObject,
+            Seq(body)
+        )
+    }
+
+    /**
+     * Creates a static proxy method used by the `$deserializeLambda$` method.
+     *
+     * @param caller The class where the lambda is implemented.
+     * @param callerIsInterface `true `if the class is an interface, false if not.
+     * @return The static proxy method relaying the `$deserializedLambda$` invocation to the actual
+     *         class that implements the lambda.
+     */
+    def createDeserializeLambdaProxy(
+        caller:            ObjectType,
+        callerIsInterface: Boolean
+    ): MethodTemplate = {
+        val deserializedLambdaMethodDescriptor = MethodDescriptor(
+            ObjectType.SerializedLambda,
+            ObjectType.Object
+        )
+        val instructions: Array[Instruction] = Array(
+            ALOAD_0,
+            INVOKESTATIC(
+                caller,
+                callerIsInterface,
+                "$deserializeLambda$",
+                deserializedLambdaMethodDescriptor
+            ), null, null,
+            ARETURN
+        )
+        val maxStack = Code.computeMaxStack(instructions)
+        val body = Code(maxStack, 1, instructions)
+        Method(
+            bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask | bi.ACC_SYNTHETIC.mask,
+            "$deserializeLambda$",
+            deserializedLambdaMethodDescriptor,
+            Seq(body)
+        )
+    }
+
+    /**
      * Creates a proxy method with name `methodName` and descriptor `methodDescriptor` and
      * the bytecode instructions to execute the method `receiverMethod` in `receiverType`.
      *
-     * If the `methodDescriptor`s have to be identical in terms of parameter types and return type.
+     * The `methodDescriptor`s have to be identical in terms of parameter types and have to
+     * be compatible w.r.t. the return type.
      */
     def proxyMethod(
-        definingType:             ObjectType,
-        methodName:               String,
-        methodDescriptor:         MethodDescriptor,
-        staticParameters:         Seq[FieldTemplate],
-        receiverType:             ObjectType,
-        receiverIsInterface:      Boolean,
-        receiverMethodName:       String,
-        receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction:    Opcode
+        definingType:          ObjectType,
+        methodName:            String,
+        methodDescriptor:      MethodDescriptor,
+        staticParameters:      Seq[FieldTemplate],
+        receiverType:          ObjectType,
+        receiverIsInterface:   Boolean,
+        implMethod:            MethodCallMethodHandle,
+        invocationInstruction: Opcode
     ): MethodTemplate = {
 
         val code =
             createProxyMethodBytecode(
                 definingType, methodDescriptor, staticParameters,
-                receiverType, receiverIsInterface, receiverMethodName, receiverMethodDescriptor,
+                receiverType, receiverIsInterface, implMethod,
                 invocationInstruction
             )
 
@@ -536,22 +967,31 @@ object ClassFileFactory {
      * @see [[parameterForwardingInstructions]]
      */
     private def createProxyMethodBytecode(
-        definingType:             ObjectType, // type of "this"
-        methodDescriptor:         MethodDescriptor, // the parameters of the current method
-        staticParameters:         Seq[FieldTemplate],
-        receiverType:             ObjectType,
-        receiverIsInterface:      Boolean,
-        receiverMethodName:       String,
-        receiverMethodDescriptor: MethodDescriptor,
-        invocationInstruction:    Opcode
+        definingType:          ObjectType, // type of "this"
+        methodDescriptor:      MethodDescriptor, // the parameters of the current method
+        staticParameters:      Seq[FieldTemplate],
+        receiverType:          ObjectType,
+        receiverIsInterface:   Boolean,
+        implMethod:            MethodCallMethodHandle,
+        invocationInstruction: Opcode
     ): Code = {
 
         assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
 
+        // If we have a constructor, we have to fix the method descriptor. Usually, the instruction
+        // doesn't have a return type. For the proxy method, it is important to return the instance
+        // so we have to patch the correct return type into the method descriptor.
+        val fixedImplDescriptor: MethodDescriptor =
+            if (implMethod.name == "<init>" && invocationInstruction == INVOKESPECIAL.opcode) {
+                MethodDescriptor(implMethod.methodDescriptor.parameterTypes, receiverType)
+            } else {
+                implMethod.methodDescriptor
+            }
+
         val isVirtualMethodReference = this.isVirtualMethodReference(
             invocationInstruction,
             receiverType,
-            receiverMethodDescriptor,
+            fixedImplDescriptor,
             methodDescriptor
         )
         // if the receiver method is not static, we need to push the receiver object
@@ -561,7 +1001,7 @@ object ClassFileFactory {
         val loadReceiverObject: Array[Instruction] =
             if (invocationInstruction == INVOKESTATIC.opcode || isVirtualMethodReference) {
                 Array()
-            } else if (receiverMethodName == "<init>") {
+            } else if (implMethod.name == "<init>") {
                 Array(
                     NEW(receiverType), null, null,
                     DUP
@@ -578,50 +1018,59 @@ object ClassFileFactory {
 
         val forwardParametersInstructions =
             parameterForwardingInstructions(
-                methodDescriptor, receiverMethodDescriptor, variableOffset,
+                methodDescriptor, fixedImplDescriptor, variableOffset,
                 staticParameters, definingType
             )
 
-        val forwardingCallInstruction: Array[Instruction] =
-            (invocationInstruction: @switch) match {
-                case INVOKESTATIC.opcode ⇒
-                    Array(
-                        INVOKESTATIC(
-                            receiverType, receiverIsInterface,
-                            receiverMethodName, receiverMethodDescriptor
-                        ), null, null
-                    )
-                case INVOKESPECIAL.opcode ⇒
-                    val methodDescriptor =
-                        if (receiverMethodName == "<init>") {
-                            MethodDescriptor(receiverMethodDescriptor.parameterTypes, VoidType)
-                        } else {
-                            receiverMethodDescriptor
-                        }
-                    val invoke = INVOKESPECIAL(
-                        receiverType, receiverIsInterface,
-                        receiverMethodName, methodDescriptor
-                    )
-                    Array(invoke, null, null)
-                case INVOKEINTERFACE.opcode ⇒
-                    val invoke = INVOKEINTERFACE(receiverType, receiverMethodName, receiverMethodDescriptor)
-                    Array(invoke, null, null, null, null)
-                case INVOKEVIRTUAL.opcode ⇒
-                    val invoke = INVOKEVIRTUAL(receiverType, receiverMethodName, receiverMethodDescriptor)
-                    Array(invoke, null, null)
-            }
+        val forwardingCallInstruction: Array[Instruction] = (invocationInstruction: @switch) match {
+            case INVOKESTATIC.opcode ⇒
+                Array(
+                    INVOKESTATIC(
+                        implMethod.receiverType.asObjectType, receiverIsInterface,
+                        implMethod.name, fixedImplDescriptor
+                    ), null, null
+                )
+
+            case INVOKESPECIAL.opcode ⇒
+                val methodDescriptor =
+                    if (implMethod.name == "<init>") {
+                        MethodDescriptor(fixedImplDescriptor.parameterTypes, VoidType)
+                    } else {
+                        fixedImplDescriptor
+                    }
+                val invoke = INVOKESPECIAL(
+                    implMethod.receiverType.asObjectType, receiverIsInterface,
+                    implMethod.name, methodDescriptor
+                )
+                Array(invoke, null, null)
+
+            case INVOKEINTERFACE.opcode ⇒
+                val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
+                Array(invoke, null, null, null, null)
+
+            case INVOKEVIRTUAL.opcode ⇒
+                val invoke = INVOKEVIRTUAL(implMethod.receiverType, implMethod.name, fixedImplDescriptor)
+                Array(invoke, null, null)
+        }
 
         val forwardingInstructions: Array[Instruction] =
             forwardParametersInstructions ++ forwardingCallInstruction
 
         val returnAndConvertInstructionsArray: Array[Instruction] =
-            if (methodDescriptor.returnType.isVoidType)
-                Array(RETURN)
-            else
+            if (methodDescriptor.returnType.isVoidType) {
+                if (fixedImplDescriptor.returnType.isVoidType)
+                    Array(RETURN)
+                else
+                    Array(
+                        if (fixedImplDescriptor.returnType.operandSize == 1) POP else POP2,
+                        RETURN
+                    )
+            } else {
                 returnAndConvertInstructions(
                     methodDescriptor.returnType.asFieldType,
-                    receiverMethodDescriptor.returnType.asFieldType
+                    fixedImplDescriptor.returnType.asFieldType
                 )
+            }
 
         val bytecodeInstructions: Array[Instruction] =
             loadReceiverObject ++ forwardingInstructions ++ returnAndConvertInstructionsArray
@@ -629,7 +1078,7 @@ object ClassFileFactory {
         val receiverObjectStackSize =
             if (invocationInstruction == INVOKESTATIC.opcode) 0 else 1
 
-        val parametersStackSize = receiverMethodDescriptor.requiredRegisters
+        val parametersStackSize = implMethod.methodDescriptor.requiredRegisters
 
         val returnValueStackSize = methodDescriptor.returnType.operandSize
 
@@ -847,7 +1296,7 @@ object ClassFileFactory {
                 "internal error",
                 s"${definingType.toJava}: failed to create parameter forwarding instructions for:\n\t"+
                     s"forwarder descriptor = ${forwarderMethodDescriptor.toJava} =>\n\t"+
-                    s"receiver descriptor  = ${receiverMethodDescriptor} +\n\t "+
+                    s"receiver descriptor  = $receiverMethodDescriptor +\n\t "+
                     s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
                 t
             )(GlobalLogContext)

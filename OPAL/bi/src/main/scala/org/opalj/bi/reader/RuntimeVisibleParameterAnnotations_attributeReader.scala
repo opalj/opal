@@ -34,8 +34,6 @@ import java.io.DataInputStream
 
 /**
  * Generic parser for `RuntimeVisibleParameterAnnotations` attributes.
- *
- * @author Michael Eichberg
  */
 trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader {
 

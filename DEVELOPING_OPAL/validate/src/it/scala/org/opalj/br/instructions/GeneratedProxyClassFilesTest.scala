@@ -70,25 +70,58 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     )
                 val proxyMethodName = m.name + '$'+"proxy"
                 val tIsInterface = testProject.classFile(t).get.isInterfaceDeclaration
-                val invocationInstruction =
+                val (invocationInstruction: Opcode, methodHandle: MethodCallMethodHandle) =
                     if (tIsInterface) {
-                        INVOKEINTERFACE.opcode
+                        (
+                            INVOKEINTERFACE.opcode,
+                            InvokeInterfaceMethodHandle(
+                                t,
+                                m.name,
+                                m.descriptor
+                            )
+                        )
                     } else if (m.isStatic) {
-                        INVOKESTATIC.opcode
+                        (
+                            INVOKESTATIC.opcode,
+                            InvokeStaticMethodHandle(
+                                t,
+                                tIsInterface,
+                                m.name,
+                                m.descriptor
+                            )
+                        )
                     } else if (m.isPrivate) {
-                        INVOKESPECIAL.opcode
+                        (
+                            INVOKESPECIAL.opcode,
+                            InvokeSpecialMethodHandle(
+                                t,
+                                tIsInterface,
+                                m.name,
+                                m.descriptor
+                            )
+                        )
                     } else {
-                        INVOKEVIRTUAL.opcode
+                        (
+                            INVOKEVIRTUAL.opcode,
+                            InvokeVirtualMethodHandle(
+                                t,
+                                m.name,
+                                m.descriptor
+                            )
+                        )
                     }
                 proxy =
                     ClassFileFactory.Proxy(
+                        classFile.thisType,
+                        classFile.isInterfaceDeclaration,
                         definingType,
                         proxyMethodName,
                         m.descriptor,
                         t, tIsInterface,
-                        m.name,
-                        m.descriptor,
-                        invocationInstruction
+                        methodHandle,
+                        invocationInstruction,
+                        MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
+                        IndexedSeq.empty
                     )
 
                 def verifyMethod(method: Method): Unit = {

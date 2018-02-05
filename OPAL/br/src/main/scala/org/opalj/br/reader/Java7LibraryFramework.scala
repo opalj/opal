@@ -57,6 +57,7 @@ trait Java7LibraryFramework
     with Signature_attributeBinding
     with Synthetic_attributeBinding
     with ConstantValue_attributeBinding
+    with Exceptions_attributeBinding
 
 object Java7LibraryFramework extends Java7LibraryFramework {
 

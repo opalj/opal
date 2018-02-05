@@ -29,6 +29,17 @@
 package org.opalj
 package br
 
+import org.opalj.bi.ReferenceKind
+import org.opalj.bi.REF_getField
+import org.opalj.bi.REF_getStatic
+import org.opalj.bi.REF_putField
+import org.opalj.bi.REF_putStatic
+import org.opalj.bi.REF_invokeVirtual
+import org.opalj.bi.REF_invokeStatic
+import org.opalj.bi.REF_invokeSpecial
+import org.opalj.bi.REF_newInvokeSpecial
+import org.opalj.bi.REF_invokeInterface
+
 /**
  * A method handle.
  *
@@ -49,6 +60,8 @@ sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
     override def valueToString: String = this.toString
 
     def toJava: String
+
+    def referenceKind: ReferenceKind
 }
 
 sealed abstract class FieldAccessMethodHandle extends MethodHandle {
@@ -72,25 +85,33 @@ case class GetFieldMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldReadAccessMethodHandle
+) extends FieldReadAccessMethodHandle {
+    override def referenceKind: ReferenceKind = REF_getField
+}
 
 case class GetStaticMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldReadAccessMethodHandle
+) extends FieldReadAccessMethodHandle {
+    override def referenceKind: ReferenceKind = REF_getStatic
+}
 
 case class PutFieldMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldWriteAccessMethodHandle
+) extends FieldWriteAccessMethodHandle {
+    override def referenceKind: ReferenceKind = REF_putField
+}
 
 case class PutStaticMethodHandle(
         declaringClassType: ObjectType,
         name:               String,
         fieldType:          FieldType
-) extends FieldWriteAccessMethodHandle
+) extends FieldWriteAccessMethodHandle {
+    override def referenceKind: ReferenceKind = REF_putStatic
+}
 
 sealed abstract class MethodCallMethodHandle extends MethodHandle {
 
@@ -122,6 +143,8 @@ case class InvokeVirtualMethodHandle(
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEVIRTUAL.opcode
+
+    override def referenceKind: ReferenceKind = REF_invokeVirtual
 }
 
 case class InvokeStaticMethodHandle(
@@ -134,6 +157,8 @@ case class InvokeStaticMethodHandle(
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESTATIC.opcode
 
     final override def isInvokeStaticMethodHandle: Boolean = true
+
+    override def referenceKind: ReferenceKind = REF_invokeStatic
 }
 
 case class InvokeSpecialMethodHandle(
@@ -144,6 +169,8 @@ case class InvokeSpecialMethodHandle(
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
+
+    override def referenceKind: ReferenceKind = REF_invokeSpecial
 }
 
 case class NewInvokeSpecialMethodHandle(
@@ -153,6 +180,8 @@ case class NewInvokeSpecialMethodHandle(
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
+
+    override def referenceKind: ReferenceKind = REF_newInvokeSpecial
 }
 
 case class InvokeInterfaceMethodHandle(
@@ -162,4 +191,6 @@ case class InvokeInterfaceMethodHandle(
 ) extends MethodCallMethodHandle {
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKEINTERFACE.opcode
+
+    override def referenceKind: ReferenceKind = REF_invokeInterface
 }

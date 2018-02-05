@@ -42,6 +42,10 @@ case class RuntimeInvisibleTypeAnnotationTable(
 
     override def kindId: Int = RuntimeInvisibleTypeAnnotationTable.KindId
 
+    override def copy(typeAnnotations: TypeAnnotations): RuntimeInvisibleTypeAnnotationTable = {
+        new RuntimeInvisibleTypeAnnotationTable(typeAnnotations)
+    }
+
 }
 object RuntimeInvisibleTypeAnnotationTable {
 

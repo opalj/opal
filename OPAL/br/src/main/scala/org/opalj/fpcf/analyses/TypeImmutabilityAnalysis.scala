@@ -65,7 +65,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
         cf: ClassFile
     ): PropertyComputationResult = {
         typeExtensibility(cf.thisType) match {
-            case Yes | Unknown ⇒ ImmediateResult(cf, MutableType)
+            case Yes | Unknown ⇒ Result(cf, MutableType)
             case No            ⇒ step2(cf)
         }
     }
@@ -77,7 +77,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
         if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
             val c = new OnUpdateContinuation { c ⇒
-                def apply(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                def apply(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
                     p match {
                         case UnknownClassImmutability ⇒
                             val dependees = Traversable(EP(e, p))
@@ -95,9 +95,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             ps(cf, ClassImmutability.key) match {
                 case ep @ EP(_, p) ⇒
                     p match {
-                        case _: MutableObject             ⇒ ImmediateResult(cf, MutableType)
-                        case ImmutableObject              ⇒ ImmediateResult(cf, ImmutableType)
-                        case ConditionallyImmutableObject ⇒ ImmediateResult(cf, ConditionallyImmutableType)
+                        case _: MutableObject             ⇒ Result(cf, MutableType)
+                        case ImmutableObject              ⇒ Result(cf, ImmutableType)
+                        case ConditionallyImmutableObject ⇒ Result(cf, ConditionallyImmutableType)
                         case AtLeastConditionallyImmutableObject | UnknownClassImmutability ⇒
                             // In this case we have a class who's immutability (type) depends
                             // on the immutability of its object OR where the immutability is
@@ -168,7 +168,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 // when we reach this point, we have dependencies to types for which
                 // we have no further information (so far) or which are
                 // AtLeastConditionallyImmutableType
-                def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+                def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
 
                     ///*debug*/ val previousDependencies = dependencies
                     ///*debug*/ val previousJoinedImmutability = joinedImmutability
@@ -188,7 +188,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 Result(cf, ConditionallyImmutableType)
                             } else {
                                 /* DEBUGGING
-                                assert(joinedImmutability.isRefineable)
+                                assert(joinedImmutability.isRefinable)
                                 assert(
                                     previousDependencies != dependencies ||
                                         previousJoinedImmutability != joinedImmutability,
@@ -255,7 +255,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
                 }
 
-                //[DEBUG] assert(joinedImmutability.isRefineable)
+                //[DEBUG] assert(joinedImmutability.isRefinable)
                 IntermediateResult(cf, joinedImmutability, dependencies, c)
             }
         }
@@ -267,7 +267,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
  *
  * @author Michael Eichberg
  */
-object TypeImmutabilityAnalysis extends FPCFAnalysisRunner {
+object TypeImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(TypeImmutability)
 

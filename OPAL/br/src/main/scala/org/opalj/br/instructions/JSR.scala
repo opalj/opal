@@ -44,7 +44,12 @@ trait JSRLike extends JSRInstructionLike {
     final def length: Int = 3
 }
 
-case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike
+case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike {
+
+    def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
+        LabeledJSR(InstructionLabel(currentPC + branchoffset))
+    }
+}
 
 /**
  * Defines constants and factory methods.
@@ -58,20 +63,19 @@ object JSR {
     /**
      * Creates [[LabeledJSR]] instructions with a `Symbol` as the branch target.
      */
-    def apply(branchTarget: Symbol): LabeledJSR = LabeledJSR(branchTarget)
+    def apply(branchTarget: InstructionLabel): LabeledJSR = LabeledJSR(branchTarget)
 }
 
 case class LabeledJSR(
-        branchTarget: Symbol
+        branchTarget: InstructionLabel
 ) extends LabeledUnconditionalBranchInstruction with JSRLike {
 
-    override def resolveJumpTargets(currentPC: PC, pcs: Map[Symbol, PC]): JSRInstruction = {
-        val branchoffset = pcs(branchTarget) - currentPC
-        if (branchoffset < Short.MinValue || branchoffset > Short.MaxValue) {
-            JSR_W(branchoffset)
-        } else {
-            JSR(branchoffset)
-        }
+    @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
+    override def resolveJumpTargets(
+        currentPC: PC,
+        pcs:       Map[InstructionLabel, PC]
+    ): JSRInstruction = {
+        JSR(asShortBranchoffset(pcs(branchTarget) - currentPC))
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

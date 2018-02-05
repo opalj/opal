@@ -38,7 +38,10 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-abstract class StackManagementInstruction extends Instruction with ConstantLengthInstruction {
+abstract class StackManagementInstruction
+    extends Instruction
+    with ConstantLengthInstruction
+    with NoLabels {
 
     final override def isStackManagementInstruction: Boolean = true
 

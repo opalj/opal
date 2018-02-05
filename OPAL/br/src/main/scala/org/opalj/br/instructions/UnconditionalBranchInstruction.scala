@@ -38,9 +38,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-trait UnconditionalBranchInstructionLike
-    extends ControlTransferInstructionLike
-    with ConstantLengthInstruction {
+trait UnconditionalBranchInstructionLike extends SimpleBranchInstructionLike {
 
     override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
@@ -54,9 +52,9 @@ trait UnconditionalBranchInstructionLike
 
 }
 
-trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranchInstructionLike {
-
-    def branchoffset: Int
+trait UnconditionalBranchInstruction
+    extends SimpleBranchInstruction
+    with UnconditionalBranchInstructionLike {
 
     override final def nextInstructions(
         currentPC:             PC,
@@ -69,8 +67,8 @@ trait UnconditionalBranchInstruction extends Instruction with UnconditionalBranc
         Chain.singleton(currentPC + branchoffset)
     }
 
-    override def toString(currentPC: Int) = {
-        val direction = (if (branchoffset >= 0) "↓" else "↑")
+    override def toString(currentPC: Int): String = {
+        val direction = if (branchoffset >= 0) "↓" else "↑"
         getClass.getSimpleName+" "+(currentPC + branchoffset) + direction
     }
 
