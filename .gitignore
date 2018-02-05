@@ -25,7 +25,6 @@ bin
 Icon?
 /shippable/
 .history
-local.sbt
 .tmpBin
 .cache-*
 Test.class
@@ -41,3 +40,9 @@ temp
 /ensime.sbt
 .vscode/settings.json
 /project/eclipse.sbt
+
+# Exclude .jvmopts as this specifies custom sbt launching options
+.jvmopts
+
+local.scalac.options
+local.sbt
