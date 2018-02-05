@@ -22,10 +22,9 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-ScalacOptionsLocality.scalacOptionsSetting
-
 scalaVersion  in ThisBuild := "2.12.4"
 
+ScalacConfiguration.globalScalacOptions
 scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
