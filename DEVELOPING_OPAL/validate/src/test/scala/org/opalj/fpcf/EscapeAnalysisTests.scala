@@ -42,7 +42,7 @@ import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
  * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
  * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 class EscapeAnalysisTests extends PropertiesTest {
 

@@ -39,6 +39,7 @@ import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
 
 /**
  * Aggregates the escape information for virtual formal parameters.
@@ -54,14 +55,17 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
     private[this] val formalParameters = propertyStore.context[FormalParameters]
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
-        val vm = fp.method.asDefinedMethod //TODO think about this
-        val m = vm.definedMethod
+        val dm = fp.method
+        if (dm.declaringClassType.isArrayType) {
+            throw new NotImplementedError()
+            //TODO handle case
+        }
         var escapeState: EscapeProperty = NoEscape
         var dependees: Set[EOptionP[FormalParameter, EscapeProperty]] = Set.empty
         val methods = project.virtualCall(
             /* use the package in which the concrete method context is defined */
-            m.classFile.thisType.packageName,
-            vm.declaringClassType, vm.name, vm.descriptor
+            dm.declaringClassType.asObjectType.packageName,
+            dm.declaringClassType, dm.name, dm.descriptor
         )
         for (method ← methods) {
             propertyStore(formalParameters(method)(-1 - fp.origin), EscapeProperty.key) match {
@@ -89,23 +93,23 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     }
                     if (dependees.isEmpty) {
                         if (escapeState.isRefinable)
-                            RefinableResult(fp, escapeState)
+                            RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))
                         else
-                            Result(fp, escapeState)
+                            Result(fp, VirtualMethodEscapeProperty(escapeState))
                     } else {
-                        IntermediateResult(fp, Conditional(escapeState), dependees, c)
+                        IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
                     }
             }
         }
 
         if (escapeState.isBottom || dependees.isEmpty) {
             if (escapeState.isRefinable) {
-                RefinableResult(fp, escapeState)
+                RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))
             } else {
-                Result(fp, escapeState)
+                Result(fp, VirtualMethodEscapeProperty(escapeState))
             }
         } else {
-            IntermediateResult(fp, Conditional(escapeState), dependees, c)
+            IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
         }
     }
 
@@ -113,7 +117,7 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
 
 object VirtualCallAggregatingEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
-    override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
+    override def derivedProperties: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set(EscapeProperty)
 

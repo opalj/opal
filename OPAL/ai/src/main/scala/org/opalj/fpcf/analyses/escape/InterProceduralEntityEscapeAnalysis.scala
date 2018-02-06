@@ -222,11 +222,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // to optimize performance, we do not let the analysis run against the existing methods
                 meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val dm = DefinedMethod(dc, target.value) //TODO is this correct?
-                //val vm = VirtualForwardingMethod(dc, name, descr, target.value)
+                val dm = DefinedMethod(dc, target.value)
                 if (project.isSignaturePolymorphic(dm.definedMethod.classFile.thisType, dm.definedMethod)) {
                     //IMPROVE
-                    // check if this is to much (param c        ontains def-site)
+                    // check if this is to much (param contains def-site)
                     meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     if (usesDefSite(receiver)) {

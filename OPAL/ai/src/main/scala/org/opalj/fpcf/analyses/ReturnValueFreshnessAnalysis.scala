@@ -65,7 +65,7 @@ import org.opalj.tac.Const
  * In other words, it aggregates the escape information for all allocation-sites, that might be used
  * as return value.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
@@ -75,6 +75,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
      * Determines the freshness of the return value.
      */
     def determineFreshness(m: Method): PropertyComputationResult = {
+        // todo hardcode clone on array type
         // base types are always fresh
         if (m.returnType.isInstanceOf[BaseType]) {
             Result(m, PrimitiveReturnValue)
@@ -111,6 +112,8 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                         case Assignment(_, _, _)        ⇒ return Result(m, NoFreshReturnValue)
                         case _                          ⇒ throw new RuntimeException("not yet implemented")
                     }
+                } else {
+                    return Result(m, NoFreshReturnValue)
                 }
 
             }
