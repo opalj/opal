@@ -45,6 +45,6 @@ object TypeEscapeProperty extends TypeEscapePropertyMetaInformation {
     final val key = PropertyKey.create[TypeEscapeProperty]("TypeEscapeProperty", MaybePackageLocalType, MaybePackageLocalType)
 }
 
-case object GlobalType extends TypeEscapeProperty { final val isRefineable = false }
-case object PackageLocalType extends TypeEscapeProperty { final val isRefineable = false }
-case object MaybePackageLocalType extends TypeEscapeProperty { final val isRefineable = true }
+case object GlobalType extends TypeEscapeProperty { final val isRefinable = false }
+case object PackageLocalType extends TypeEscapeProperty { final val isRefinable = false }
+case object MaybePackageLocalType extends TypeEscapeProperty { final val isRefinable = true }

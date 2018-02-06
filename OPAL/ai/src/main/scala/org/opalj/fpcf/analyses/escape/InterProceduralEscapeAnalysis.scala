@@ -35,7 +35,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
 import org.opalj.br.VirtualMethod
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
@@ -94,15 +94,15 @@ class InterProceduralEscapeAnalysis private (
 
                 if (index != -1)
                     findUsesOfASAndAnalyze(as, index, code, cfg)
-                else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
+                else /* the allocation site is part of dead code */ Result(e, NoEscape)
 
-            case FormalParameter(m, _) if m.body.isEmpty ⇒ RefineableResult(e, AtMost(NoEscape))
+            case FormalParameter(m, _) if m.body.isEmpty ⇒ RefinableResult(e, AtMost(NoEscape))
             case FormalParameter(m, -1) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
                 doDetermineEscape(e, param.origin, param.useSites, code, cfg, m.asVirtualMethod)
             case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                RefineableResult(e, AtMost(NoEscape))
+                RefinableResult(e, AtMost(NoEscape))
             case FormalParameter(m, i) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
@@ -111,7 +111,7 @@ class InterProceduralEscapeAnalysis private (
     }
 }
 
-object InterProceduralEscapeAnalysis extends FPCFAnalysisRunner {
+object InterProceduralEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
     type V = DUVar[Domain#DomainValue]
 

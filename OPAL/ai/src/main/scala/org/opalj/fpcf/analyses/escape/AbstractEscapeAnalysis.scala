@@ -125,7 +125,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
                 doDetermineEscape(as, index, uses, code, cfg, m.asVirtualMethod)
             case ExprStmt(`pc`, New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                ImmediateResult(as, NoEscape)
+                Result(as, NoEscape)
             case CaughtException(`pc`, _, _) ⇒ findUsesOfASAndAnalyze(as, index + 1, code, cfg)
             case stmt ⇒
                 throw new RuntimeException(s"This analysis can't handle entity: $as for $stmt")

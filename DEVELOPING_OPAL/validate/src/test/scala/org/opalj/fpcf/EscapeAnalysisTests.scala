@@ -30,12 +30,10 @@ package org.opalj.fpcf
 
 import java.net.URL
 
-import org.opalj.AnalysisModes
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 
@@ -49,11 +47,12 @@ import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 class EscapeAnalysisTests extends PropertiesTest {
 
     override def executeAnalyses(
-        analysisRunners: Set[FPCFAnalysisRunner]
+        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
+        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        val p = Project.recreate(FixtureProject, testConfig)
-        //val p = FixtureProject.recreate()
+        //val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
+        // val p = Project.recreate(FixtureProject, testConfig)
+        val p = FixtureProject.recreate()
 
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
@@ -61,11 +60,11 @@ class EscapeAnalysisTests extends PropertiesTest {
                 new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m) // with DefaultArrayValuesBinding
             }
         )
-        org.opalj.br.analyses.PropertyStoreKey.makeAllocationSitesAvailable(p)
-        org.opalj.br.analyses.PropertyStoreKey.makeFormalParametersAvailable(p)
-        org.opalj.br.analyses.PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
-        val ps = p.get(org.opalj.br.analyses.PropertyStoreKey)
-        val as = analysisRunners.map(ar ⇒ ar.start(p, ps))
+        PropertyStoreKey.makeAllocationSitesAvailable(p)
+        PropertyStoreKey.makeFormalParametersAvailable(p)
+        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
+        val ps = p.get(PropertyStoreKey)
+        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion()
         (p, ps, as)
     }

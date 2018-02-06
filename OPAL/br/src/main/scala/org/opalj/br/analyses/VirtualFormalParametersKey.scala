@@ -31,8 +31,8 @@ package br
 package analyses
 
 import scala.collection.mutable.OpenHashMap
-
 import org.opalj.collection.immutable.ConstArray
+import org.opalj.fpcf.DeclaredMethodsKey
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -45,7 +45,7 @@ import org.opalj.collection.immutable.ConstArray
  * @author Florian Kuebler
  */
 class VirtualFormalParameters private[analyses] (
-        val data: scala.collection.Map[VirtualMethod, ConstArray[VirtualFormalParameter]]
+        val data: scala.collection.Map[DeclaredMethod, ConstArray[VirtualFormalParameter]]
 ) {
 
     /**
@@ -53,7 +53,7 @@ class VirtualFormalParameters private[analyses] (
      * `null` is returned. If the method is known a non-null (but potentially empty)
      * [[org.opalj.collection.immutable.ConstArray]] is returned.
      */
-    def apply(m: VirtualMethod): ConstArray[VirtualFormalParameter] = data.getOrElse(m, null)
+    def apply(m: DeclaredMethod): ConstArray[VirtualFormalParameter] = data.getOrElse(m, null)
 
     def virtualFormalParameters: Iterable[VirtualFormalParameter] = {
         // TOOD Why should it ever be null?
@@ -76,7 +76,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      * The key uses the `VirtualForwardingMethodsKey`.
      */
     override protected def requirements: ProjectInformationKeys = {
-        List(VirtualForwardingMethodsKey)
+        List(DeclaredMethodsKey)
     }
 
     /**
@@ -87,23 +87,23 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      */
     override protected def compute(p: SomeProject): VirtualFormalParameters = {
 
-        val sites = new OpenHashMap[VirtualMethod, ConstArray[VirtualFormalParameter]]
+        val sites = new OpenHashMap[DeclaredMethod, ConstArray[VirtualFormalParameter]]
 
         for {
-            vm ← p.get(VirtualForwardingMethodsKey)
+            dm ← p.get(DeclaredMethodsKey).declaredMethods
         } {
-            val md = vm.descriptor
+            val md = dm.descriptor
             val parametersCount = md.parametersCount
             val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
-            assert(!vm.target.isStatic)
-            formalParameters(0) = new VirtualFormalParameter(vm, -1)
+            //TODO assert(!dm.target.isStatic)
+            formalParameters(0) = new VirtualFormalParameter(dm, -1)
 
             var p = 1
             while (p <= parametersCount) {
-                formalParameters(p) = new VirtualFormalParameter(vm, -p - 1)
+                formalParameters(p) = new VirtualFormalParameter(dm, -p - 1)
                 p += 1
             }
-            sites += (vm → ConstArray(formalParameters))
+            sites += (dm → ConstArray(formalParameters))
         }
 
         new VirtualFormalParameters(sites)

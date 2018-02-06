@@ -37,10 +37,9 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.{AllocationSite, Method}
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.NoEscape
@@ -58,7 +57,6 @@ import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -100,10 +98,8 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         // Get the TAC code for all methods to make it possible to measure the time for
         // the analysis itself.
         time {
-            val tacai = project.get(DefaultTACAIKey)
+            project.get(DefaultTACAIKey)
             // parallelization is more efficient using parForeachMethodWithBody
-            val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            errors.foreach { e ⇒ error("progress", "generating 3-address code failed", e) }
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {

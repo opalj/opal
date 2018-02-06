@@ -38,7 +38,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.AnnotationLike
 import org.opalj.br.AllocationSite
 import org.opalj.br.BooleanValue
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 
 abstract class EscapePropertyMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
     override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
@@ -80,7 +80,7 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: List[Property]
+        properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` ⇒ true

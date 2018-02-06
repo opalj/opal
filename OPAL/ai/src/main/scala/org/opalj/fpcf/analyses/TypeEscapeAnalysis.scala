@@ -36,7 +36,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.AllocationSites
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
@@ -48,7 +47,6 @@ import org.opalj.fpcf.properties.GlobalType
 import org.opalj.fpcf.properties.PackageLocalType
 import org.opalj.fpcf.properties.MaybePackageLocalType
 import org.opalj.fpcf.properties.AtMost
-import org.opalj.log.OPALLogger.error
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -66,9 +64,9 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
      */
     def determineTypeEscape(cf: ClassFile): PropertyComputationResult = {
         //var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
-
+        //TODO what about lazy escape analysis
         if (cf.isAbstract || !cf.isPackageVisible) {
-            ImmediateResult(cf, GlobalType)
+            Result(cf, GlobalType)
         } else {
             val constructorsNotAccessible = cf.constructors.forall(cs ⇒ cs.isPackagePrivate || cs.isPrivate)
             if (constructorsNotAccessible) {
@@ -82,7 +80,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                         case EP(_, AtMost(NoEscape) | AtMost(EscapeInCallee)) ⇒
                             maybeLocal = true
                         // /dependees += escapeState
-                        case EP(_, _) ⇒ return ImmediateResult(cf, GlobalType)
+                        case EP(_, _) ⇒ return Result(cf, GlobalType)
                         case epk ⇒
                             throw new RuntimeException("Escape information should be present")
                         //dependees += epk
@@ -90,18 +88,18 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                 }
 
                 if (maybeLocal)
-                    ImmediateResult(cf, MaybePackageLocalType)
+                    Result(cf, MaybePackageLocalType)
                 else
-                    ImmediateResult(cf, PackageLocalType)
+                    Result(cf, PackageLocalType)
                 //check escape of allocation
             } else {
-                ImmediateResult(cf, GlobalType)
+                Result(cf, GlobalType)
             }
         }
     }
 }
 
-object TypeEscapeAnalysis extends FPCFAnalysisRunner {
+object TypeEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(TypeEscapeProperty)
 
@@ -122,14 +120,10 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
         val project = Project(org.opalj.bytecode.JRELibraryFolder)
         project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m))
 
-        implicit val logContext = project.logContext
+        //implicit val logContext = project.logContext
         time {
             val tacai = project.get(DefaultTACAIKey)
-            val exceptions = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            if (exceptions.nonEmpty) {
-                exceptions.foreach(println)
-                return ;
-            }
+            project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
         } { t ⇒ println(s"computing the 3-address code took ${t.toSeconds}") }
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
@@ -159,14 +153,14 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
                 cf = local.asInstanceOf[ClassFile]
                 mOfClass ← cf.methods
             } {
-                val errors = project.parForeachMethod() { m ⇒
+                project.parForeachMethod() { m ⇒
                     if (!m.isStatic && !m.isPrivate && !m.isInitializer) {
                         val overriddenMethods = project.overriddenBy(m)
                         if (overriddenMethods.contains(mOfClass)) {
                             if (m.isPublic && m.classFile.isPublic) {
                                 counter1 += 1
                             }
-                            val errors = project.parForeachMethodWithBody() { mi ⇒
+                            project.parForeachMethodWithBody() { mi ⇒
                                 for (inst ← mi.method.body.get.instructions) {
                                     inst match {
                                         case INVOKEVIRTUAL(t, n, d) ⇒
@@ -179,11 +173,9 @@ object TypeEscapeAnalysis extends FPCFAnalysisRunner {
                                     }
                                 }
                             }
-                            errors.foreach { e ⇒ error("progress", "iterating over methods failed", e) }
                         }
                     }
                 }
-                errors.foreach { e ⇒ error("progress", "iterating over methods failed", e) }
 
             }
         } { t ⇒ println(s"generating numbers took ${t.toSeconds}") }

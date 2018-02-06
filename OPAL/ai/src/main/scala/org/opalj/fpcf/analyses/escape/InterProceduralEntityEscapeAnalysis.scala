@@ -42,9 +42,9 @@ import org.opalj.br.cfg.CFG
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.VirtualForwardingMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
@@ -78,7 +78,7 @@ import org.opalj.tac.NonVirtualMethodCall
  * Uses the results of the [[org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis]]
  * attached to the [[org.opalj.br.analyses.VirtualFormalParameter]] entities.
  *
- * Parameter of non-virtual methods are represented as [[org.opalj.br.analyses.FormalParameter]]
+ * Parameter of non-virtual methods are represented as [[org.opalj.br.FormalParameter]]
  *
  * @author Florian Kuebler
  */
@@ -222,21 +222,22 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // to optimize performance, we do not let the analysis run against the existing methods
                 meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val vm = VirtualForwardingMethod(dc, name, descr, target.value)
-                if (project.isSignaturePolymorphic(vm.target.classFile.thisType, vm.target)) {
+                val dm = DefinedMethod(dc, target.value) //TODO is this correct?
+                //val vm = VirtualForwardingMethod(dc, name, descr, target.value)
+                if (project.isSignaturePolymorphic(dm.definedMethod.classFile.thisType, dm.definedMethod)) {
                     //IMPROVE
-                    // check if this is to much (param contains def-site)
+                    // check if this is to much (param c        ontains def-site)
                     meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     if (usesDefSite(receiver)) {
-                        val fp = virtualFormalParameters(vm)
+                        val fp = virtualFormalParameters(dm)
                         assert(fp(0) ne null)
                         handleEscapeState(fp(0), hasAssignment)
 
                     }
                     for (i ← params.indices) {
                         if (usesDefSite(params(i))) {
-                            val fp = virtualFormalParameters(vm)
+                            val fp = virtualFormalParameters(dm)
                             assert(fp(i + 1) ne null)
                             handleEscapeState(fp(i + 1), hasAssignment)
                         }
@@ -410,6 +411,6 @@ class InterProceduralEntityEscapeAnalysis(
 ) extends DefaultEntityEscapeAnalysis
     with AbstractInterProceduralEntityEscapeAnalysis
     with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
+    //TODO with ConfigurationBasedConstructorEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
     with ExceptionAwareEntityEscapeAnalysis

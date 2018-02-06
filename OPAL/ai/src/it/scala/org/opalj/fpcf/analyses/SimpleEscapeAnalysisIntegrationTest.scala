@@ -33,7 +33,6 @@ package analyses
 import org.junit.runner.RunWith
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time

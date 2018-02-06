@@ -38,10 +38,9 @@ import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.AllocationSite
 import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.fpcf.properties.EscapeViaHeapObject
@@ -58,7 +57,6 @@ import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -98,10 +96,8 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         // Get the TAC code for all methods to make it possible to measure the time for
         // the analysis itself.
         time {
-            val tacai = project.get(DefaultTACAIKey)
+            project.get(DefaultTACAIKey)
             // parallelization is more efficient using parForeachMethodWithBody
-            val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            errors.foreach { e ⇒ error("progress", "generating 3-address code failed", e) }
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {

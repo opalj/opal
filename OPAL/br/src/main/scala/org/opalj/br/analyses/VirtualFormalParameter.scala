@@ -61,7 +61,7 @@ package analyses
  *
  * @author Florian Kuebler
  */
-final class VirtualFormalParameter(val method: VirtualForwardingMethod, val origin: Int) {
+final class VirtualFormalParameter(val method: DeclaredMethod, val origin: Int) {
 
     /**
      * @return The index of the parameter or -1 if this formal parameter reflects the

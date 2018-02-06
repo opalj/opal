@@ -38,7 +38,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.AllocationSite
 import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -85,7 +85,7 @@ class SimpleEntityEscapeAnalysis(
         val project:          SomeProject
 ) extends DefaultEntityEscapeAnalysis
     with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
+    //TODO with ConfigurationBasedConstructorEscapeAnalysis
     with SimpleFieldAwareEntityEscapeAnalysis
     with ExceptionAwareEntityEscapeAnalysis
 

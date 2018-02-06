@@ -58,18 +58,18 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
 }
 
 case object FreshReturnValue extends ReturnValueFreshness {
-    override def isRefineable = false
+    override def isRefinable = false
 }
 
 case object PrimitiveReturnValue extends ReturnValueFreshness {
-    override def isRefineable = false
+    override def isRefinable = false
 }
 
 case object NoFreshReturnValue extends ReturnValueFreshness {
-    override def isRefineable = true
+    override def isRefinable = true
 }
 
 case object ConditionalFreshReturnValue extends ReturnValueFreshness {
-    override def isRefineable = true
+    override def isRefinable = true
 }
 

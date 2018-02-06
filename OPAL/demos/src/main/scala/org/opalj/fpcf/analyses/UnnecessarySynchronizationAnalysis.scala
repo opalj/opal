@@ -37,7 +37,6 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.AllocationSites
@@ -46,7 +45,6 @@ import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.DVar
 import org.opalj.tac.New
@@ -88,8 +86,6 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
 
         val tacai = time {
             val tacai = project.get(DefaultTACAIKey)
-            val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            errors.foreach { e ⇒ error("progress", "generating 3-address code failed", e) }
             tacai
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 

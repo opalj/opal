@@ -125,7 +125,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at most
  * [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
- * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.FormalParameter]] are generally
+ * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.
@@ -191,7 +191,7 @@ sealed abstract class EscapeProperty
 }
 
 sealed abstract class FinalEscapeProperty extends EscapeProperty {
-    override def isRefineable: Boolean = false
+    override def isRefinable: Boolean = false
     def meet(that: FinalEscapeProperty): FinalEscapeProperty
 }
 
@@ -207,7 +207,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
             val e = epks.head.e
             val ep = ps(e, key)
             ep.p match {
-                case Conditional(AtMost(property)) ⇒ Iterable(RefineableResult(e, AtMost(property)))
+                case Conditional(AtMost(property)) ⇒ Iterable(RefinableResult(e, AtMost(property)))
                 case Conditional(property)         ⇒ Iterable(Result(e, property))
                 case _                             ⇒ throw new RuntimeException("Non-conditional in cycle")
             }
@@ -686,7 +686,7 @@ trait GlobalEscape extends EscapeProperty {
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = true
 
-    override def isRefineable: Boolean = false
+    override def isRefinable: Boolean = false
 }
 
 /**
@@ -776,7 +776,7 @@ case object EscapeViaStaticField extends GlobalEscape {
  * A refineable property that provides an upper bound. Only refinements to values below or equal to
  * `property` are allowed to perform.
  * This property should be used, if the analysis is not able to compute a more precise property
- * (i.e. for [[org.opalj.fpcf.RefineableResult]]).
+ * (i.e. for [[org.opalj.fpcf.RefinableResult]]).
  *
  * It must not be used to indicate open dependencies, when the analysis has completed analyzing the
  * local method (i.e. for [[org.opalj.fpcf.IntermediateResult]]). In that case [[Conditional]] has to be used.
@@ -791,7 +791,7 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
     override def isBottom = false
     override def isTop = false
     override def propertyName = s"AtMost${property.propertyName}"
-    override def isRefineable = true
+    override def isRefinable = true
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case AtMost(thatProperty)      ⇒ AtMost(thatProperty meet property)
         case Conditional(thatProperty) ⇒ Conditional(this meet thatProperty)
@@ -834,7 +834,7 @@ object AtMost {
  * left (i.e. for [[org.opalj.fpcf.IntermediateResult]]).
  *
  * It must not be used if the analysis can not perform better (i.e. for
- * [[org.opalj.fpcf.RefineableResult]]).
+ * [[org.opalj.fpcf.RefinableResult]]).
  */
 case class Conditional private (property: EscapeProperty) extends EscapeProperty {
     override def propertyValueID: PropertyKeyID = property.propertyValueID + 40
@@ -847,7 +847,7 @@ case class Conditional private (property: EscapeProperty) extends EscapeProperty
     override def isBottom = false
     override def isTop = false
     override def propertyName = s"Conditional${property.propertyName}"
-    override def isRefineable = true
+    override def isRefinable = true
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case Conditional(thatProperty) ⇒ Conditional(thatProperty meet property)
         case _: GlobalEscape           ⇒ that

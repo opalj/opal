@@ -37,8 +37,9 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.br.FormalParameter
 import org.opalj.br.{ArrayAllocationSite, Method, ObjectAllocationSite}
-import org.opalj.br.analyses.{AllocationSites, FormalParameter, Project, PropertyStoreKey, VirtualFormalParameter}
+import org.opalj.br.analyses.{AllocationSites, Project, VirtualFormalParameter}
 import org.opalj.fpcf.analyses.{ReturnValueFreshnessAnalysis, TypeEscapeAnalysis}
 import org.opalj.fpcf.analyses.escape.{InterProceduralEscapeAnalysis, SimpleEscapeAnalysis}
 import org.opalj.fpcf.properties._
@@ -107,8 +108,6 @@ object EscapeEvaluation {
 
                 val tacai = time {
                     val tacai = project.get(DefaultTACAIKey)
-                    val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-                    errors.foreach { e ⇒ println(s"generating 3-address code failed: $e") }
                     tacai
                 } { t ⇒ tacTime = t.toSeconds }
 

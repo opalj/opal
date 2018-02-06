@@ -35,7 +35,7 @@ import scala.annotation.switch
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.analyses.FormalParameter
+import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
@@ -67,7 +67,7 @@ import org.opalj.tac.StaticFunctionCall
 /**
  * An abstract escape analysis for a single entity.
  * These entity can be either a concrete [[org.opalj.br.AllocationSite]]s or
- * [[org.opalj.br.analyses.FormalParameter]]s.
+ * [[org.opalj.br.FormalParameter]]s.
  * All other information such as the defSite, uses or the code correspond to this entity.
  *
  * It is assumed that the tac code has a flat hierarchy, i.e. it is real three address code.
@@ -339,10 +339,10 @@ trait AbstractEntityEscapeAnalysis {
         // note: replace by global escape
         if (dependees.isEmpty || mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
-            if (mostRestrictiveProperty.isRefineable) {
-                RefineableResult(entity, mostRestrictiveProperty)
+            if (mostRestrictiveProperty.isRefinable) {
+                RefinableResult(entity, mostRestrictiveProperty)
             } else {
-                ImmediateResult(entity, mostRestrictiveProperty)
+                Result(entity, mostRestrictiveProperty)
             }
         } else {
             IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)

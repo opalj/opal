@@ -77,7 +77,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
     def determineFreshness(m: Method): PropertyComputationResult = {
         // base types are always fresh
         if (m.returnType.isInstanceOf[BaseType]) {
-            ImmediateResult(m, PrimitiveReturnValue)
+            Result(m, PrimitiveReturnValue)
         } else {
             var dependees: Set[EOptionP[AllocationSite, EscapeProperty]] = Set.empty
             val code = tacaiProvider(m).stmts
@@ -118,7 +118,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             /**
              * A continuation function, that handles updates for the escape state.
              */
-            def c(e: Entity, p: Property, ut: UserUpdateType): PropertyComputationResult = {
+            def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
                 p match {
 
                     case NoEscape | EscapeInCallee ⇒
@@ -145,7 +145,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             }
 
             if (dependees.isEmpty) {
-                ImmediateResult(m, FreshReturnValue)
+                Result(m, FreshReturnValue)
             } else {
                 IntermediateResult(m, ConditionalFreshReturnValue, dependees, c)
             }
@@ -153,7 +153,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
     }
 }
 
-object ReturnValueFreshnessAnalysis extends FPCFAnalysisRunner {
+object ReturnValueFreshnessAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(ReturnValueFreshness)
 

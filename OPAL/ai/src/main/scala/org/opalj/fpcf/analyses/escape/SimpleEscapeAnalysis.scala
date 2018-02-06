@@ -35,9 +35,9 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
+import org.opalj.br.FormalParameter
 import org.opalj.br.VirtualMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.FormalParameter
 import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.cfg.CFG
@@ -51,8 +51,8 @@ import org.opalj.tac.DUVar
 
 /**
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
- * [[org.opalj.br.analyses.FormalParameter]]s (the this parameter of a constructor). All other
- * [[org.opalj.br.analyses.FormalParameter]]s are marked as
+ * [[org.opalj.br.FormalParameter]]s (the this parameter of a constructor). All other
+ * [[org.opalj.br.FormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost(NoEscape)]]. It uses
  * [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] to handle a specific entity.
  *
@@ -88,7 +88,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
      * [[org.opalj.tac.TACode]], the [[org.opalj.tac.Parameters]] and the method in which the entity
      * is defined. Allocation sites that are part of dead code are immediately returned as
      * [[org.opalj.fpcf.properties.NoEscape]].
-     * [[org.opalj.br.analyses.FormalParameter]]s that are not the this local of a constructor are
+     * [[org.opalj.br.FormalParameter]]s that are not the this local of a constructor are
      * flagged as [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
      *
      * @param e The entity whose escape state has to be determined.
@@ -104,13 +104,13 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 // check if the allocation site is not dead
                 if (index != -1)
                     findUsesOfASAndAnalyze(as, index, code, cfg)
-                else /* the allocation site is part of dead code */ ImmediateResult(e, NoEscape)
-            case FormalParameter(m, _) if m.body.isEmpty ⇒ ImmediateResult(e, AtMost(NoEscape))
+                else /* the allocation site is part of dead code */ Result(e, NoEscape)
+            case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, AtMost(NoEscape))
             case FormalParameter(m, -1) if m.name == "<init>" ⇒
                 val TACode(params, code, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
                 doDetermineEscape(e, -1, useSites, code, cfg, m.asVirtualMethod)
-            case FormalParameter(_, _) ⇒ RefineableResult(e, AtMost(NoEscape))
+            case FormalParameter(_, _) ⇒ RefinableResult(e, AtMost(NoEscape))
         }
     }
 }
@@ -118,7 +118,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
 /**
  * A companion object used to start the analysis.
  */
-object SimpleEscapeAnalysis extends FPCFAnalysisRunner {
+object SimpleEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 

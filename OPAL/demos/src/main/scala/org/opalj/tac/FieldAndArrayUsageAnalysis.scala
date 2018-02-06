@@ -31,12 +31,12 @@ package org.opalj.tac
 import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EP
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
@@ -45,8 +45,8 @@ import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -66,7 +66,6 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val logContext = project.logContext
 
         var putFields = 0
         var putFieldsOfAllocation = 0
@@ -84,10 +83,10 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
         var allocations = 0
         var nonDeadAllocations = 0
 
+        implicit val logContext: LogContext = project.logContext
+
         val tacaiProvider = time {
             val tacai = project.get(DefaultTACAIKey)
-            val errors = project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            errors.foreach { e ⇒ error("progress", "generating 3-address code failed", e) }
             tacai
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
