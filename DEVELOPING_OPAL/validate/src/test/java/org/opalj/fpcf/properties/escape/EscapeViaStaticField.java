@@ -28,6 +28,4 @@ public @interface EscapeViaStaticField {
             InterProceduralEscapeAnalysis.class };
 
     boolean performInvokationsDomain() default true;
-
-    boolean arrayDomain() default false;
 }

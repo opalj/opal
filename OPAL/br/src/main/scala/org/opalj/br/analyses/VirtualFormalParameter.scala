@@ -82,3 +82,11 @@ final class VirtualFormalParameter(val method: DeclaredMethod, val origin: Int) 
         s"VirtualFormalParameter(${method.toJava},origin=$origin)"
     }
 }
+
+object VirtualFormalParameter {
+
+    def apply(method: DeclaredMethod, origin: Int): VirtualFormalParameter = new VirtualFormalParameter(method, origin)
+
+    def unapply(fp: VirtualFormalParameter): Some[(DeclaredMethod, Int)] = Some((fp.method, fp.origin))
+
+}

@@ -47,7 +47,6 @@ import org.opalj.fpcf.DeclaredMethodsKey
 class VirtualFormalParameters private[analyses] (
         val data: scala.collection.Map[DeclaredMethod, ConstArray[VirtualFormalParameter]]
 ) {
-
     /**
      * Returns the virtual formal parameters array for the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
@@ -56,7 +55,7 @@ class VirtualFormalParameters private[analyses] (
     def apply(m: DeclaredMethod): ConstArray[VirtualFormalParameter] = data.getOrElse(m, null)
 
     def virtualFormalParameters: Iterable[VirtualFormalParameter] = {
-        // TOOD Why should it ever be null?
+        // todo Why should it ever be null?
         data.values.flatten.filter(_ ne null)
     }
 }
@@ -95,8 +94,8 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
             val md = dm.descriptor
             val parametersCount = md.parametersCount
             val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
-            //TODO assert(!dm.target.isStatic)
-            formalParameters(0) = new VirtualFormalParameter(dm, -1)
+            if (dm.hasDefinition && !dm.methodDefinition.isStatic)
+                formalParameters(0) = new VirtualFormalParameter(dm, -1)
 
             var p = 1
             while (p <= parametersCount) {

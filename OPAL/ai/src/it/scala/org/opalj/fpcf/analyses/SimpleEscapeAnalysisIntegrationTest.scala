@@ -52,7 +52,7 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
         val p = project()
         //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
         PropertyStoreKey.makeAllocationSitesAvailable(p)
-        PropertyStoreKey.makeFormalParametersAvailable(p)
+        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val analysesManager = p.get(FPCFAnalysesManagerKey)
         analysesManager.run(SimpleEscapeAnalysis)
     }

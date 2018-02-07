@@ -41,7 +41,6 @@ import org.opalj.br.Field
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSitesKey
-import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.EntityDerivationFunction
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -121,15 +120,6 @@ object PropertyStoreKey
      */
     def makeAllocationSitesAvailable(p: SomeProject): Unit = {
         addEntityDerivationFunction(p) { AllocationSitesKey.entityDerivationFunction(p) }
-    }
-
-    /**
-     * Makes the set of `FormalParameters`s available to the property store that is created
-     * for the respective project later on. I.e., this method must be called, before this key
-     * is used to get the project's property store.
-     */
-    def makeFormalParametersAvailable(p: SomeProject): Unit = {
-        addEntityDerivationFunction(p) { FormalParametersKey.entityDerivationFunction(p) }
     }
 
     /**

@@ -37,7 +37,7 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.FormalParameter
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.{ArrayAllocationSite, Method, ObjectAllocationSite}
 import org.opalj.br.analyses.{AllocationSites, Project, VirtualFormalParameter}
 import org.opalj.fpcf.analyses.{ReturnValueFreshnessAnalysis, TypeEscapeAnalysis}
@@ -113,7 +113,7 @@ object EscapeEvaluation {
 
                 val propertyStore = time {
                     PropertyStoreKey.makeAllocationSitesAvailable(project)
-                    PropertyStoreKey.makeFormalParametersAvailable(project)
+                    PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
                     if (analysis eq InterProceduralEscapeAnalysis) {
                         PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
                     }
@@ -331,6 +331,6 @@ object EscapeEvaluation {
 
     def countAS(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[ObjectAllocationSite])
     def countAr(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[ArrayAllocationSite])
-    def countFP(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[FormalParameter])
+    def countFP(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[VirtualFormalParameter])
     def countVFP(entities: Traversable[Entity]): Int = entities.count(_.isInstanceOf[VirtualFormalParameter])
 }

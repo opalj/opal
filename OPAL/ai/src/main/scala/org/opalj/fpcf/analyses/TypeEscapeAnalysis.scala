@@ -127,7 +127,7 @@ object TypeEscapeAnalysis extends FPCFEagerAnalysisScheduler {
         } { t ⇒ println(s"computing the 3-address code took ${t.toSeconds}") }
 
         PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeFormalParametersAvailable(project)
+        PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
         PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
         val propertyStore = project.get(PropertyStoreKey)
         //propertyStore.debug = true

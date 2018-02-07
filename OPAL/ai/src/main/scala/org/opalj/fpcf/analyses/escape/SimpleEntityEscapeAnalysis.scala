@@ -36,9 +36,10 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.AllocationSite
-import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.FormalParameter
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -75,19 +76,20 @@ import org.opalj.tac.Throw
  * @author Florian Kuebler
  */
 class SimpleEntityEscapeAnalysis(
-        val entity:           Entity,
-        val defSite:          ValueOrigin,
-        val uses:             IntTrieSet,
-        val code:             Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val cfg:              CFG,
-        val formalParameters: FormalParameters,
-        val propertyStore:    PropertyStore,
-        val project:          SomeProject
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val cfg:                     CFG,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val propertyStore:           PropertyStore,
+    val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    //TODO with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntityEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        //with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntityEscapeAnalysis
 
 /**
  * Handling for exceptions, that are allocated within the current method.
@@ -113,11 +115,11 @@ trait ExceptionAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
                 if (pc.isCatchNode) {
                     val exceptionType = entity match {
                         case as: AllocationSite ⇒ as.allocatedType
-                        case FormalParameter(callee, -1) ⇒
+                        case VirtualFormalParameter(DefinedMethod(_, callee), -1) ⇒
                             callee.classFile.thisType
-                        case FormalParameter(callee, origin) ⇒
+                        case VirtualFormalParameter(callee, origin) ⇒
                             // we would not end in this case if the parameter is not an object
-                            callee.parameterTypes(-2 - origin).asObjectType
+                            callee.descriptor.parameterTypes(-2 - origin).asObjectType
                     }
                     pc.asCatchNode.catchType match {
                         case Some(catchType) ⇒
@@ -233,7 +235,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
- * constructors of a specific class. This analysis sets the [[FormalParameter]] of the this local
+ * constructors of a specific class. This analysis sets the [[org.opalj.br.analyses.VirtualFormalParameter]] of the this local
  * to the defined value.
  */
 trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEntityEscapeAnalysis {
@@ -295,7 +297,8 @@ object ConfigurationBasedConstructorEscapeAnalysis {
 trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
     val project: SomeProject
     val propertyStore: PropertyStore
-    val formalParameters: FormalParameters
+    val virtualFormalParameters: VirtualFormalParameters
+    val declaredMethods: DeclaredMethods
 
     abstract protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
         assert(call.name == "<init>")
@@ -314,7 +317,7 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
         ) match {
                 case Success(callee) ⇒
                     // check if the this local escapes in the callee
-                    val escapeState = propertyStore(formalParameters(callee)(0), EscapeProperty.key)
+                    val escapeState = propertyStore(virtualFormalParameters(declaredMethods(callee))(0), EscapeProperty.key)
                     escapeState match {
                         case EP(_, NoEscape)                                    ⇒ //NOTHING TO DO
                         case EP(_, GlobalEscape)                                ⇒ meetMostRestrictive(GlobalEscape)
@@ -354,7 +357,7 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
         other: Entity, p: Property, u: UpdateType
     ): PropertyComputationResult = {
         other match {
-            case FormalParameter(method, -1) if method.isConstructor ⇒ p match {
+            case VirtualFormalParameter(DefinedMethod(_, method), -1) if method.isConstructor ⇒ p match {
 
                 case GlobalEscape         ⇒ Result(entity, GlobalEscape)
 

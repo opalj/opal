@@ -35,7 +35,6 @@ import scala.annotation.switch
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
@@ -67,7 +66,7 @@ import org.opalj.tac.StaticFunctionCall
 /**
  * An abstract escape analysis for a single entity.
  * These entity can be either a concrete [[org.opalj.br.AllocationSite]]s or
- * [[org.opalj.br.FormalParameter]]s.
+ * [[org.opalj.br.analyses.VirtualFormalParameter]]s.
  * All other information such as the defSite, uses or the code correspond to this entity.
  *
  * It is assumed that the tac code has a flat hierarchy, i.e. it is real three address code.
@@ -92,7 +91,7 @@ trait AbstractEntityEscapeAnalysis {
     //
     // STATE MUTATED WHILE ANALYZING THE METHOD
     //
-    protected[this] var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
+    protected[this] var dependees = Set.empty[EOptionP[Entity, Property]]
     protected[this] var mostRestrictiveProperty: EscapeProperty = NoEscape
 
     def doDetermineEscape(): PropertyComputationResult = {
@@ -322,7 +321,7 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def removeFromDependeesAndComputeResult(
         other: Entity, p: EscapeProperty
     ): PropertyComputationResult = {
-        assert(other.isInstanceOf[FormalParameter] || other.isInstanceOf[VirtualFormalParameter])
+        assert(other.isInstanceOf[VirtualFormalParameter])
         meetMostRestrictive(p)
         dependees = dependees.filter(_.e ne other)
         returnResult
@@ -357,7 +356,7 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def performIntermediateUpdate(
         other: Entity, p: EscapeProperty, intermediateProperty: EscapeProperty
     ): PropertyComputationResult = {
-        assert(other.isInstanceOf[FormalParameter] || other.isInstanceOf[VirtualFormalParameter])
+        assert(other.isInstanceOf[VirtualFormalParameter])
         val newEP = EP(other, p)
         dependees = dependees.filter(_.e ne other) + newEP
         meetMostRestrictive(intermediateProperty)

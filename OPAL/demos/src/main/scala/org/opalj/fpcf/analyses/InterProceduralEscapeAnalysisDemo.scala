@@ -40,7 +40,7 @@ import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.FormalParameter
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.fpcf.properties.EscapeViaHeapObject
@@ -88,7 +88,6 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 }
             )
             PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeFormalParametersAvailable(project)
             PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
@@ -102,11 +101,11 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             InterProceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion()
+            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
-        def countFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[FormalParameter])
+        def countFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[VirtualFormalParameter])
 
         val message =
             s"""|ALLOCATION SITES:

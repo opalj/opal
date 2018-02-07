@@ -35,11 +35,12 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
-import org.opalj.br.FormalParameter
-import org.opalj.br.VirtualMethod
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.cfg.CFG
 import org.opalj.tac.Stmt
 import org.opalj.collection.immutable.IntTrieSet
@@ -51,8 +52,8 @@ import org.opalj.tac.DUVar
 
 /**
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
- * [[org.opalj.br.FormalParameter]]s (the this parameter of a constructor). All other
- * [[org.opalj.br.FormalParameter]]s are marked as
+ * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
+ * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost(NoEscape)]]. It uses
  * [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] to handle a specific entity.
  *
@@ -70,7 +71,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
         uses:    IntTrieSet,
         code:    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
         cfg:     CFG,
-        m:       VirtualMethod
+        m:       DeclaredMethod
     ): AbstractEntityEscapeAnalysis =
         new SimpleEntityEscapeAnalysis(
             e,
@@ -78,7 +79,8 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
             uses,
             code,
             cfg,
-            formalParameters,
+            declaredMethods,
+            virtualFormalParameters,
             propertyStore,
             project
         )
@@ -88,7 +90,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
      * [[org.opalj.tac.TACode]], the [[org.opalj.tac.Parameters]] and the method in which the entity
      * is defined. Allocation sites that are part of dead code are immediately returned as
      * [[org.opalj.fpcf.properties.NoEscape]].
-     * [[org.opalj.br.FormalParameter]]s that are not the this local of a constructor are
+     * [[org.opalj.br.analyses.VirtualFormalParameter]]s that are not the this local of a constructor are
      * flagged as [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
      *
      * @param e The entity whose escape state has to be determined.
@@ -105,12 +107,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 if (index != -1)
                     findUsesOfASAndAnalyze(as, index, code, cfg)
                 else /* the allocation site is part of dead code */ Result(e, NoEscape)
-            case FormalParameter(m, _) if m.body.isEmpty ⇒ Result(e, AtMost(NoEscape))
-            case FormalParameter(m, -1) if m.name == "<init>" ⇒
+            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒ Result(e, AtMost(NoEscape))
+            case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) if m.name == "<init>" ⇒
                 val TACode(params, code, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(e, -1, useSites, code, cfg, m.asVirtualMethod)
-            case FormalParameter(_, _) ⇒ RefinableResult(e, AtMost(NoEscape))
+                doDetermineEscape(e, -1, useSites, code, cfg, dm)
+            case VirtualFormalParameter(_, _) ⇒ RefinableResult(e, AtMost(NoEscape))
         }
     }
 }
@@ -126,7 +128,7 @@ object SimpleEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(project)
-        val fps = FormalParametersKey.entityDerivationFunction(project)._1
+        val fps = VirtualFormalParametersKey.entityDerivationFunction(project)._1
         val ass = AllocationSitesKey.entityDerivationFunction(project)._1
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis

@@ -61,16 +61,15 @@ class EscapeAnalysisTests extends PropertiesTest {
             }
         )
         PropertyStoreKey.makeAllocationSitesAvailable(p)
-        PropertyStoreKey.makeFormalParametersAvailable(p)
         PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val ps = p.get(PropertyStoreKey)
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion()
+        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         (p, ps, as)
     }
 
     describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
+        val as = executeAnalyses(Set.empty, Set.empty)
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
@@ -79,7 +78,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(SimpleEscapeAnalysis))
+        val as = executeAnalyses(Set(SimpleEscapeAnalysis), Set.empty)
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
@@ -88,7 +87,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis))
+        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis), Set.empty)
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,

@@ -30,11 +30,10 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.FormalParameter
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.FormalParameters
+import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.AtMost
@@ -52,7 +51,8 @@ import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
  * @author Florian Kübler
  */
 class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
-    private[this] val formalParameters = propertyStore.context[FormalParameters]
+    private[this] val formalParameters = propertyStore.context[VirtualFormalParameters]
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
@@ -61,14 +61,14 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
             //TODO handle case
         }
         var escapeState: EscapeProperty = NoEscape
-        var dependees: Set[EOptionP[FormalParameter, EscapeProperty]] = Set.empty
+        var dependees: Set[EOptionP[VirtualFormalParameter, EscapeProperty]] = Set.empty
         val methods = project.virtualCall(
             /* use the package in which the concrete method context is defined */
             dm.declaringClassType.asObjectType.packageName,
             dm.declaringClassType, dm.name, dm.descriptor
         )
         for (method ← methods) {
-            propertyStore(formalParameters(method)(-1 - fp.origin), EscapeProperty.key) match {
+            propertyStore(formalParameters(declaredMethods(method))(-1 - fp.origin), EscapeProperty.key) match {
                 case EP(_, p) if p.isFinal ⇒ escapeState = escapeState meet p
                 case EP(_, AtMost(p))      ⇒ escapeState = escapeState meet AtMost(p)
                 case ep @ EP(_, Conditional(p)) ⇒
@@ -83,7 +83,7 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                 case p: EscapeProperty if p.isBottom ⇒ Result(fp, escapeState meet p)
                 case p @ Conditional(property) ⇒
                     escapeState = escapeState meet property
-                    val newEP = EP(other.asInstanceOf[FormalParameter], p)
+                    val newEP = EP(other.asInstanceOf[VirtualFormalParameter], p)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(fp, Conditional(escapeState), dependees, c)
                 case p: EscapeProperty ⇒

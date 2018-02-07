@@ -97,7 +97,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
         val propertyStore = time {
 
             PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeFormalParametersAvailable(project)
+            PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
         time {

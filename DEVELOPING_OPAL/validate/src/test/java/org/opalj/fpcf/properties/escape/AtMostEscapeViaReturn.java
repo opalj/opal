@@ -28,6 +28,4 @@ public @interface AtMostEscapeViaReturn {
             InterProceduralEscapeAnalysis.class };
 
     boolean performInvokationsDomain() default true;
-
-    boolean arrayDomain() default false;
 }

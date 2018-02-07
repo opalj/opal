@@ -34,11 +34,13 @@ package escape
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
-import org.opalj.br.VirtualMethod
-import org.opalj.br.FormalParameter
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.AllocationSitesKey
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParametersKey
 //import org.opalj.br.analyses.FormalParameters
 //import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.cfg.CFG
@@ -66,7 +68,7 @@ class InterProceduralEscapeAnalysis private (
         uses:    IntTrieSet,
         code:    Array[Stmt[V]],
         cfg:     CFG,
-        m:       VirtualMethod
+        m:       DeclaredMethod
     ): AbstractEntityEscapeAnalysis =
         new InterProceduralEntityEscapeAnalysis(
             e,
@@ -74,7 +76,7 @@ class InterProceduralEscapeAnalysis private (
             uses,
             code,
             cfg,
-            formalParameters,
+            declaredMethods,
             virtualFormalParameters,
             m,
             propertyStore,
@@ -82,7 +84,7 @@ class InterProceduralEscapeAnalysis private (
         )
 
     /**
-     * Determine whether the given entity ([[AllocationSite]] or [[FormalParameter]]) escapes
+     * Determine whether the given entity ([[AllocationSite]] or [[org.opalj.br.analyses.VirtualFormalParameter]]) escapes
      * its method.
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
@@ -96,17 +98,21 @@ class InterProceduralEscapeAnalysis private (
                     findUsesOfASAndAnalyze(as, index, code, cfg)
                 else /* the allocation site is part of dead code */ Result(e, NoEscape)
 
-            case FormalParameter(m, _) if m.body.isEmpty ⇒ RefinableResult(e, AtMost(NoEscape))
-            case FormalParameter(m, -1) ⇒
+            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒ RefinableResult(e, AtMost(NoEscape))
+            case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
-                doDetermineEscape(e, param.origin, param.useSites, code, cfg, m.asVirtualMethod)
-            case FormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
+                doDetermineEscape(e, param.origin, param.useSites, code, cfg, dm)
+
+            // parameters of base types are not considered
+            case VirtualFormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
                 RefinableResult(e, AtMost(NoEscape))
-            case FormalParameter(m, i) ⇒
+            case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                doDetermineEscape(e, param.origin, param.useSites, code, cfg, m.asVirtualMethod)
+                doDetermineEscape(e, param.origin, param.useSites, code, cfg, dm)
+            case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
+                throw new IllegalArgumentException()
         }
     }
 }
@@ -135,7 +141,7 @@ object InterProceduralEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
         //val fps = propertyStore.context[FormalParameters].formalParameters.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
         //val ass = propertyStore.context[AllocationSites].allocationSites.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
-        val fps = project.get(FormalParametersKey).formalParameters
+        val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         val ass = project.get(AllocationSitesKey).allocationSites
 
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)

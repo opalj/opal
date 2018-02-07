@@ -31,14 +31,14 @@ package fpcf
 package properties
 package escape
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l1.DefaultArrayValuesBinding
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.ai.domain.l2.PerformInvocations
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 import org.opalj.br.AnnotationLike
 import org.opalj.br.AllocationSite
 import org.opalj.br.BooleanValue
-import org.opalj.br.FormalParameter
 
 abstract class EscapePropertyMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
     override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
@@ -49,13 +49,13 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
 
         // check whether the PerformInvokations domain or the ArrayValuesBinding domain are required
         val requiresPerformInvokationsDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain").asInstanceOf[BooleanValue].value
-        val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
+        //val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
 
         // retrieve the current method and using this the domain used for the TAC
         val m = entity match {
-            case FormalParameter(m, _)   ⇒ m
-            case AllocationSite(m, _, _) ⇒ m
-            case _                       ⇒ throw new RuntimeException(s"unsuported entity $entity")
+            case VirtualFormalParameter(DefinedMethod(_, m), _) ⇒ m
+            case AllocationSite(m, _, _)                        ⇒ m
+            case _                                              ⇒ throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {
             val domain = p.get(SimpleAIKey)(m).domain
@@ -64,11 +64,12 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
                 if (requiresPerformInvokationsDomain) domain.isInstanceOf[PerformInvocations]
                 else !domain.isInstanceOf[PerformInvocations]
 
-            val arrayDomainRelevant =
+            //TODO
+            /*val arrayDomainRelevant =
                 if (requiresArrayDomain) domain.isInstanceOf[DefaultArrayValuesBinding]
-                else !domain.isInstanceOf[DefaultArrayValuesBinding]
+                else !domain.isInstanceOf[DefaultArrayValuesBinding]*/
 
-            analysisRelevant && performInvokationDomainRelevant && arrayDomainRelevant
+            analysisRelevant && performInvokationDomainRelevant //&& arrayDomainRelevant
         } else {
             analysisRelevant
         }

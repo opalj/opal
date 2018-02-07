@@ -34,11 +34,10 @@ package escape
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.VirtualMethod
 import org.opalj.br.Method
 import org.opalj.br.AllocationSite
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.PC
-import org.opalj.br.analyses.FormalParameters
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
@@ -80,7 +79,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         uses:    IntTrieSet,
         code:    Array[Stmt[V]],
         cfg:     CFG,
-        m:       VirtualMethod
+        m:       DeclaredMethod
     ): AbstractEntityEscapeAnalysis
 
     /**
@@ -94,7 +93,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         uses:    IntTrieSet,
         code:    Array[Stmt[V]],
         cfg:     CFG,
-        m:       VirtualMethod
+        m:       DeclaredMethod
     ): PropertyComputationResult = {
         val analysis = entityEscapeAnalysis(
             e,
@@ -123,7 +122,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         val m = as.method
         code(index) match {
             case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                doDetermineEscape(as, index, uses, code, cfg, m.asVirtualMethod)
+                doDetermineEscape(as, index, uses, code, cfg, declaredMethods(m))
             case ExprStmt(`pc`, New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
                 Result(as, NoEscape)
             case CaughtException(`pc`, _, _) ⇒ findUsesOfASAndAnalyze(as, index + 1, code, cfg)
@@ -133,6 +132,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
-    protected[this] lazy val formalParameters: FormalParameters = propertyStore.context[FormalParameters]
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = propertyStore.context[VirtualFormalParameters]
+    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 }

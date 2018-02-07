@@ -75,7 +75,6 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         val propertyStore = time {
 
             PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeFormalParametersAvailable(project)
             PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
 
             val domain = (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)

@@ -35,8 +35,12 @@ import java.net.URL
 import java.io.File
 
 import org.opalj.br.AllocationSite
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.util.ScalaMajorVersion
-import org.opalj.bytecode.RTJar
+//import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -48,14 +52,11 @@ import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
-import org.opalj.br.FormalParameter
 import org.opalj.br.MethodWithBody
 import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.FormalParametersKey
-import org.opalj.br.analyses.FormalParameters
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -88,7 +89,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
-        val libraryClassFiles = ClassFiles(RTJar) ++ propertiesClassFiles
+        val libraryClassFiles = /*ClassFiles(RTJar) ++*/ propertiesClassFiles
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -159,7 +160,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
             if (matcher.isRelevant(p, ats, e, annotation)) {
 
-                it(entityIdentifier(s"$annotationTypeName")) {
+                it(entityIdentifier(s"$annotationTypeName") + System.nanoTime()) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val properties = ps.properties(e)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
@@ -215,17 +216,19 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     // there can't be any annotations of the implicit "this" parameter...
-    def explicitFormalParametersWithAnnotations: Traversable[(FormalParameter, String ⇒ String, Annotations)] = {
-        val formalParameters: FormalParameters = FixtureProject.get(FormalParametersKey)
+    def explicitFormalParametersWithAnnotations: Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
+        val formalParameters: VirtualFormalParameters = FixtureProject.get(VirtualFormalParametersKey)
         for {
-            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            dm ← FixtureProject.get(DeclaredMethodsKey).declaredMethods
+            DefinedMethod(_, m) = dm
+            //m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
         } yield {
-            val fp = formalParameters(m)(i + 1)
-            (fp, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+            val fp = formalParameters(dm)(i + 1)
+            (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${m.toJava(s"@$a")}", annotations)
         }
     }
 

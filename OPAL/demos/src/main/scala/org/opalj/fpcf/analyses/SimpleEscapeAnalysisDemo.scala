@@ -35,11 +35,12 @@ import java.net.URL
 
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
+import org.opalj.br.DefinedMethod
 import org.opalj.br.{AllocationSite, Method}
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.FormalParameter
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.NoEscape
@@ -90,7 +91,6 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
 
             PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeFormalParametersAvailable(project)
             PropertyStoreKey.makeVirtualFormalParametersAvailable(project) //TODO remove me!!!!!
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
@@ -112,7 +112,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
 
         // we are only interested in the this locals of the constructors
-        def countFP(entities: Traversable[Entity]) = entities.collect { case e @ FormalParameter(m, -1) if m.isConstructor ⇒ e }.size
+        def countFP(entities: Traversable[Entity]) = entities.collect { case e @ VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒ e }.size
 
         val message =
             s"""|ALLOCATION SITES:

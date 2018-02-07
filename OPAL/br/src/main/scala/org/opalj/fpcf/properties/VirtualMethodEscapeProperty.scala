@@ -48,15 +48,10 @@ sealed case class VirtualMethodEscapeProperty(
 }
 
 object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInformation {
-    final val key = PropertyKey.create[VirtualMethodEscapeProperty](
-        "VirtualMethodEscapeProperty",
-        apply(AtMost(NoEscape)),
-        cycleResolutionStrategy
-    )
-
     def cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            ???
+            println(s"CYLCE: $epks")
+            List() //TODO
         }
 
     def apply(
@@ -160,5 +155,11 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VAtMostCondEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndReturn)))
     final val VAtMostCondEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndAbnormalReturn)))
     final val VAtMostCondEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)))
+
+    final val key: PropertyKey[VirtualMethodEscapeProperty] = PropertyKey.create[VirtualMethodEscapeProperty](
+        "VirtualMethodEscapeProperty",
+        VAtMostNoEscape,
+        cycleResolutionStrategy
+    )
 
 }

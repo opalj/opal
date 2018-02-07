@@ -28,6 +28,4 @@ public @interface GlobalEscape {
             InterProceduralEscapeAnalysis.class };
 
     boolean requiresPerformInvokationsDomain() default false;
-
-    boolean requiresArrayDomain() default false;
 }

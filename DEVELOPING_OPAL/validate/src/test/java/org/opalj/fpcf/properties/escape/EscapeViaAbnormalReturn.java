@@ -28,6 +28,4 @@ public @interface EscapeViaAbnormalReturn {
             InterProceduralEscapeAnalysis.class };
 
     boolean performInvokationsDomain() default true;
-
-    boolean arrayDomain() default false;
 }
