@@ -113,6 +113,8 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
                 val useSites = params.thisParameter.useSites
                 doDetermineEscape(e, -1, useSites, code, cfg, dm)
             case VirtualFormalParameter(_, _) ⇒ RefinableResult(e, AtMost(NoEscape))
+            case e ⇒
+                throw new IllegalArgumentException(s"can't handle entity $e")
         }
     }
 }
@@ -120,7 +122,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
 /**
  * A companion object used to start the analysis.
  */
-object SimpleEscapeAnalysis extends FPCFEagerAnalysisScheduler {
+object SimpleEscapeAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
@@ -131,6 +133,16 @@ object SimpleEscapeAnalysis extends FPCFEagerAnalysisScheduler {
         val fps = VirtualFormalParametersKey.entityDerivationFunction(project)._1
         val ass = AllocationSitesKey.entityDerivationFunction(project)._1
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
+        analysis
+    }
+
+    /**
+     * Registers the analysis as a lazy computation, that is, the method
+     * will call `ProperytStore.scheduleLazyComputation`.
+     */
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new SimpleEscapeAnalysis(project)
+        propertyStore.scheduleLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis
     }
 }

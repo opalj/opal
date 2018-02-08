@@ -441,6 +441,9 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 
                 case VirtualMethodEscapeProperty(p @ Conditional(_)) ⇒
                     performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                case PropertyIsLazilyComputed ⇒
+                    //TODO
+                    IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
 
                 case _ ⇒
                     throw new UnknownError(s"unexpected escape property ($p) for $other")

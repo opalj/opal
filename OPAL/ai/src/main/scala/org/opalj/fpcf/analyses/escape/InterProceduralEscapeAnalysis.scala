@@ -117,7 +117,7 @@ class InterProceduralEscapeAnalysis private (
     }
 }
 
-object InterProceduralEscapeAnalysis extends FPCFEagerAnalysisScheduler {
+object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
 
     type V = DUVar[Domain#DomainValue]
 
@@ -145,6 +145,18 @@ object InterProceduralEscapeAnalysis extends FPCFEagerAnalysisScheduler {
         val ass = project.get(AllocationSitesKey).allocationSites
 
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
+        analysis
+    }
+
+    /**
+     * Registers the analysis as a lazy computation, that is, the method
+     * will call `ProperytStore.scheduleLazyComputation`.
+     */
+    override protected[fpcf] def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        VirtualCallAggregatingEscapeAnalysis.start(project)
+        val analysis = new InterProceduralEscapeAnalysis(project)
+
+        propertyStore.scheduleLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis
     }
 }

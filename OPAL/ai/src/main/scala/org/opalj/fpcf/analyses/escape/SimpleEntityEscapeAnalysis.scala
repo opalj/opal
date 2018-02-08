@@ -406,6 +406,9 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
                     assert(u eq IntermediateUpdate)
                     performIntermediateUpdate(other, p, AtMost(NoEscape))
 
+                case PropertyIsLazilyComputed ⇒
+                    IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
+
                 case _ ⇒
                     throw new UnknownError(s"unexpected escape property ($p) for constructors")
             }

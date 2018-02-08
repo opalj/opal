@@ -99,6 +99,10 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     } else {
                         IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
                     }
+                case PropertyIsLazilyComputed ⇒
+                    //TODO
+                    IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
+                case _ ⇒ throw new IllegalArgumentException(s"unsupported property $p")
             }
         }
 
@@ -115,7 +119,7 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
 
 }
 
-object VirtualCallAggregatingEscapeAnalysis extends FPCFEagerAnalysisScheduler {
+object VirtualCallAggregatingEscapeAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
@@ -125,6 +129,12 @@ object VirtualCallAggregatingEscapeAnalysis extends FPCFEagerAnalysisScheduler {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
         val vfps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         propertyStore.scheduleForEntities(vfps)(analysis.determineEscape)
+        analysis
+    }
+
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
+        propertyStore.scheduleLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
         analysis
     }
 }
