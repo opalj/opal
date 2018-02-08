@@ -160,7 +160,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
             if (matcher.isRelevant(p, ats, e, annotation)) {
 
-                it(entityIdentifier(s"$annotationTypeName") + System.nanoTime()) {
+                it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val properties = ps.properties(e)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
@@ -228,7 +228,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             if annotations.nonEmpty
         } yield {
             val fp = formalParameters(dm)(i + 1)
-            (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${m.toJava(s"@$a")}", annotations)
+            (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)
         }
     }
 
