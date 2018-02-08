@@ -87,7 +87,7 @@ class SimpleEntityEscapeAnalysis(
     val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
         with ConstructorSensitiveEntityEscapeAnalysis
-        //with ConfigurationBasedConstructorEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
         with SimpleFieldAwareEntityEscapeAnalysis
         with ExceptionAwareEntityEscapeAnalysis
 
@@ -272,9 +272,9 @@ object ConfigurationBasedConstructorEscapeAnalysis {
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-    val ConfigKey = "org.opalj.fpcf.analyses.escape.constructors"
+    val ConfigKey = "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
     val constructors: Map[ObjectType, EscapeProperty] =
-        BaseConfig.as[List[PredefinedResult]](ConfigKey).map { r ⇒
+        BaseConfig.as[Seq[PredefinedResult]](ConfigKey).map { r ⇒
             import scala.reflect.runtime._
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = rootMirror.staticModule(r.escape_of_this)

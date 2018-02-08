@@ -464,6 +464,6 @@ class InterProceduralEntityEscapeAnalysis(
 ) extends DefaultEntityEscapeAnalysis
         with AbstractInterProceduralEntityEscapeAnalysis
         with ConstructorSensitiveEntityEscapeAnalysis
-        //with ConfigurationBasedConstructorEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
         with SimpleFieldAwareEntityEscapeAnalysis
         with ExceptionAwareEntityEscapeAnalysis

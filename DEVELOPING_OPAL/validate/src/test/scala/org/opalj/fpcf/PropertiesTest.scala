@@ -38,7 +38,6 @@ import org.opalj.br.AllocationSite
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.util.ScalaMajorVersion
 //import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
