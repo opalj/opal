@@ -37,8 +37,8 @@ import java.io.File
 import org.opalj.br.AllocationSite
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.util.ScalaMajorVersion
 //import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
@@ -217,15 +217,16 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
     // there can't be any annotations of the implicit "this" parameter...
     def explicitFormalParametersWithAnnotations: Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
-        val formalParameters: VirtualFormalParameters = FixtureProject.get(VirtualFormalParametersKey)
+        val formalParameters = FixtureProject.get(VirtualFormalParametersKey)
+        val declaredMethods = FixtureProject.get(DeclaredMethodsKey)
         for {
-            dm ← FixtureProject.get(DeclaredMethodsKey).declaredMethods
-            DefinedMethod(_, m) = dm
+            m ← FixtureProject.allMethods
             //m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
+            Some(dm) = declaredMethods(DefinedMethod(m.classFile.thisType, m))
         } yield {
             val fp = formalParameters(dm)(i + 1)
             (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)

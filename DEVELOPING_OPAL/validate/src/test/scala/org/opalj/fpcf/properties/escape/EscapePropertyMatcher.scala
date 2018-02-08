@@ -53,9 +53,10 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
 
         // retrieve the current method and using this the domain used for the TAC
         val m = entity match {
-            case VirtualFormalParameter(DefinedMethod(_, m), _) ⇒ m
-            case AllocationSite(m, _, _)                        ⇒ m
-            case _                                              ⇒ throw new RuntimeException(s"unsuported entity $entity")
+            case VirtualFormalParameter(DefinedMethod(dc, m), _) if dc == m.classFile.thisType ⇒ m
+            case VirtualFormalParameter(DefinedMethod(_, _), _) ⇒ return false
+            case AllocationSite(m, _, _) ⇒ m
+            case _ ⇒ throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {
             val domain = p.get(SimpleAIKey)(m).domain
