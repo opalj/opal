@@ -125,7 +125,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at most
  * [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
- * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.FormalParameter]] are generally
+ * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.

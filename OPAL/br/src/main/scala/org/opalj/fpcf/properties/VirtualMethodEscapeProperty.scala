@@ -50,8 +50,17 @@ sealed case class VirtualMethodEscapeProperty(
 object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInformation {
     def cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            println(s"CYLCE: $epks")
-            List() //TODO
+            val e = epks.head.e
+            val ep = ps(e, key)
+            ep.p match {
+                case VirtualMethodEscapeProperty(Conditional(AtMost(property))) ⇒
+                    Iterable(RefinableResult(e, VirtualMethodEscapeProperty(AtMost(property))))
+
+                case VirtualMethodEscapeProperty(Conditional(property)) ⇒
+                    Iterable(Result(e, VirtualMethodEscapeProperty(property)))
+
+                case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
+            }
         }
 
     def apply(

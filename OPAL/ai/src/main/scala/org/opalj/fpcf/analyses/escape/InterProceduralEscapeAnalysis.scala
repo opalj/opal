@@ -135,7 +135,7 @@ object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
             )
         } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
 
-        VirtualCallAggregatingEscapeAnalysis.start(project)
+        VirtualCallAggregatingEscapeAnalysis.startLazily(project)
 
         val analysis = new InterProceduralEscapeAnalysis(project)
 
@@ -153,7 +153,7 @@ object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
      * will call `ProperytStore.scheduleLazyComputation`.
      */
     override protected[fpcf] def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        VirtualCallAggregatingEscapeAnalysis.start(project)
+        VirtualCallAggregatingEscapeAnalysis.startLazily(project)
         val analysis = new InterProceduralEscapeAnalysis(project)
 
         propertyStore.scheduleLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)

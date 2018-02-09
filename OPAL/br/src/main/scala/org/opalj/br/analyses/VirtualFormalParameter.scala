@@ -33,7 +33,7 @@ package analyses
 /**
  * Explicitly models a formal parameter of an virtual method to make it possible to store it in the
  * property store and to compute properties for it.
- * In contrast to the [[FormalParameter]], which models a parameter of a concrete method, virtual
+ * In contrast to the [[VirtualFormalParameter]], which models a parameter of a concrete method, virtual
  * methods include every possible method that overrides the method attached to the
  * [[VirtualForwardingMethod]].
  *
@@ -42,7 +42,7 @@ package analyses
  * That is, the origin of an explicitly declared parameter is always `-(parameter_index + 2)`.
  * The origin of the `this` parameter is `-1`.
  *
- * It should be used to aggregate the properties for every [[FormalParameter]] of a method included
+ * It should be used to aggregate the properties for every [[VirtualFormalParameter]] of a method included
  * in this virtual method.
  *
  * @note The computational type category of the parameters is ignored to ease the mapping.
