@@ -133,5 +133,5 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
     protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = propertyStore.context[VirtualFormalParameters]
-    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 }

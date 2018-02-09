@@ -30,10 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
 import org.opalj.fpcf.properties.FreshReturnValue
@@ -43,17 +40,12 @@ import org.opalj.fpcf.properties.VConditionalFreshReturnValue
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
-import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 
 /**
   * TODO
   * @author Florian Kuebler
   */
 class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
-    private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
     def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
@@ -71,7 +63,7 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
         )
 
         for (method ← methods) {
-            propertyStore(declaredMethods(method), ReturnValueFreshness.key) {
+            propertyStore(declaredMethods(method), ReturnValueFreshness.key) match {
                 case EP(_, NoFreshReturnValue) ⇒ return Result(m, VNoFreshReturnValue)
                 case EP(_, FreshReturnValue)   ⇒
                 case ep @ EP(_, ConditionalFreshReturnValue) ⇒

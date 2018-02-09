@@ -31,13 +31,12 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
 
 /**
@@ -127,7 +126,7 @@ object VirtualCallAggregatingEscapeAnalysis extends FPCFAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        val vfps = project.get(VirtualFormalParametersKey).virtualFormalParameters
+        val vfps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
         propertyStore.scheduleForEntities(vfps)(analysis.determineEscape)
         analysis
     }

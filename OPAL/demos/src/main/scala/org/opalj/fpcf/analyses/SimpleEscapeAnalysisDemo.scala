@@ -91,6 +91,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
 
             PropertyStoreKey.makeAllocationSitesAvailable(project)
+            PropertyStoreKey.makeDeclaredMethodsAvailable(project)
             PropertyStoreKey.makeVirtualFormalParametersAvailable(project) //TODO remove me!!!!!
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }

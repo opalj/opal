@@ -37,10 +37,10 @@ import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.VirtualFormalParameters
 //import org.opalj.br.analyses.FormalParameters
 //import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.cfg.CFG
@@ -141,8 +141,8 @@ object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
 
         //val fps = propertyStore.context[FormalParameters].formalParameters.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
         //val ass = propertyStore.context[AllocationSites].allocationSites.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
-        val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
-        val ass = project.get(AllocationSitesKey).allocationSites
+        val fps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
+        val ass = propertyStore.context[AllocationSites].allocationSites
 
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis

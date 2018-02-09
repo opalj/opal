@@ -31,24 +31,24 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.ValueOrigin
 import org.opalj.ai.Domain
+import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
-import org.opalj.tac.Stmt
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.AtMost
-import org.opalj.tac.TACode
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.DUVar
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACode
 
 /**
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
@@ -130,8 +130,8 @@ object SimpleEscapeAnalysis extends FPCFAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(project)
-        val fps = VirtualFormalParametersKey.entityDerivationFunction(project)._1
-        val ass = AllocationSitesKey.entityDerivationFunction(project)._1
+        val ass = propertyStore.context[AllocationSites].allocationSites
+        val fps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
