@@ -35,6 +35,8 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.AllocationSite
 import org.opalj.br.BaseType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.fpcf.properties.EscapeProperty
@@ -48,6 +50,10 @@ import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
+import org.opalj.fpcf.properties.VConditionalFreshReturnValue
+import org.opalj.fpcf.properties.VFreshReturnValue
+import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
@@ -57,7 +63,9 @@ import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.Assignment
 import org.opalj.tac.Const
+import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.VirtualFunctionCall
 
 /**
  * An analysis that determines for a given method, whether its the return value is a fresh object,
@@ -71,15 +79,14 @@ import org.opalj.tac.StaticFunctionCall
 class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
     private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
+    private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
-    /**
-     * Determines the freshness of the return value.
-     */
-    def determineFreshness(m: Method): PropertyComputationResult = {
+    def doDetermineFreshness(dm: DefinedMethod): PropertyComputationResult = {
+        val m = dm.definedMethod
         // todo hardcode clone on array type
         // base types are always fresh
         if (m.returnType.isInstanceOf[BaseType]) {
-            Result(m, PrimitiveReturnValue)
+            Result(dm, PrimitiveReturnValue)
         } else {
             var dependees: Set[EOptionP[Entity, Property]] = Set.empty
             val code = tacaiProvider(m).stmts
@@ -99,8 +106,8 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             resultState match {
                                 case EP(_, EscapeViaReturn)              ⇒
                                 case EP(_, NoEscape | EscapeInCallee)    ⇒ throw new RuntimeException("unexpected result")
-                                case EP(_, p) if p.isFinal               ⇒ return Result(m, NoFreshReturnValue)
-                                case EP(_, AtMost(_))                    ⇒ return Result(m, NoFreshReturnValue)
+                                case EP(_, p) if p.isFinal               ⇒ return Result(dm, NoFreshReturnValue)
+                                case EP(_, AtMost(_))                    ⇒ return Result(dm, NoFreshReturnValue)
                                 case EP(_, Conditional(NoEscape))        ⇒ throw new RuntimeException("unexpected result")
                                 case EP(_, Conditional(EscapeInCallee))  ⇒ throw new RuntimeException("unexpected result")
                                 case EP(_, Conditional(EscapeViaReturn)) ⇒ dependees += resultState
@@ -109,31 +116,55 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                         // const values are handled as fresh
                         case Assignment(_, _, _: Const) ⇒
 
-                        case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, params)) ⇒
+                        case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
                             if (tgt.usedBy.size == 1 && tgt.usedBy.contains(retPC)) {
-                                project.staticCall(dc, isI, name, desc) match {
-                                    case Success(callee) ⇒
-                                        propertyStore(callee, ReturnValueFreshness.key) match {
-                                            case EP(_, NoFreshReturnValue) ⇒
-                                                return Result(m, NoFreshReturnValue)
-                                            case EP(_, FreshReturnValue) ⇒
-                                            case ep @ EP(_, ConditionalFreshReturnValue) ⇒
-                                                dependees += ep
-                                            case epk ⇒ dependees += epk
-                                        }
-                                    case _ ⇒ return Result(m, NoFreshReturnValue)
+                                val Success(callee) = project.staticCall(dc, isI, name, desc)
+                                propertyStore(callee, ReturnValueFreshness.key) match {
+                                    case EP(_, NoFreshReturnValue) ⇒
+                                        return Result(dm, NoFreshReturnValue)
+                                    case EP(_, FreshReturnValue) ⇒
+                                    case ep @ EP(_, ConditionalFreshReturnValue) ⇒
+                                        dependees += ep
+                                    case epk ⇒ dependees += epk
                                 }
-                                return Result(m, NoFreshReturnValue)
+
+                                return Result(dm, NoFreshReturnValue)
                             } else
-                                return Result(m, NoFreshReturnValue)
+                                return Result(dm, NoFreshReturnValue)
 
+                        case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
+                            if (tgt.usedBy.size == 1 && tgt.usedBy.contains(retPC)) {
+                                val Success(callee) = project.specialCall(dc, isI, name, desc)
+                                propertyStore(callee, ReturnValueFreshness.key) match {
+                                    case EP(_, NoFreshReturnValue) ⇒
+                                        return Result(dm, NoFreshReturnValue)
+                                    case EP(_, FreshReturnValue) ⇒
+                                    case ep @ EP(_, ConditionalFreshReturnValue) ⇒
+                                        dependees += ep
+                                }
 
+                            } else
+                                return Result(dm, NoFreshReturnValue)
+
+                        case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, _, _)) ⇒
+                            if (tgt.usedBy.size == 1 && tgt.usedBy.contains(retPC)) {
+                                val Success(c) = project.instanceCall(m.classFile.thisType, dc, name, desc)
+                                propertyStore(declaredMethods(c), VirtualMethodReturnValueFreshness.key) match {
+                                    case EP(_, VNoFreshReturnValue) ⇒
+                                        return Result(dm, NoFreshReturnValue)
+                                    case EP(_, VFreshReturnValue) ⇒
+                                    case ep @ EP(_, VConditionalFreshReturnValue) ⇒
+                                        dependees += ep
+                                }
+                            } else {
+                                return Result(dm, NoFreshReturnValue)
+                            }
                         // other kinds of assignments came from other methods, fields etc, which we do not track
-                        case Assignment(_, _, _) ⇒ return Result(m, NoFreshReturnValue)
+                        case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
                         case _                   ⇒ throw new RuntimeException("not yet implemented")
                     }
                 } else {
-                    return Result(m, NoFreshReturnValue)
+                    return Result(dm, NoFreshReturnValue)
                 }
 
             }
@@ -166,16 +197,16 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
 
                     }
                     case _: Method ⇒ p match {
-                        case NoFreshReturnValue ⇒
+                        case NoFreshReturnValue | VNoFreshReturnValue ⇒
                             Result(m, NoFreshReturnValue)
-                        case FreshReturnValue ⇒
+                        case FreshReturnValue | VFreshReturnValue ⇒
                             dependees = dependees filter { _.e ne e }
                             if (dependees.isEmpty)
                                 Result(m, FreshReturnValue)
                             else
                                 IntermediateResult(m, ConditionalFreshReturnValue, dependees, c)
 
-                        case ConditionalFreshReturnValue ⇒
+                        case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
                             val newEP = EP(e, p)
                             dependees = dependees.filter(_.e ne e) + newEP
                             IntermediateResult(m, ConditionalFreshReturnValue, dependees, c)
@@ -191,6 +222,15 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             }
         }
     }
+    /**
+     * Determines the freshness of the return value.
+     */
+    def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
+        m match {
+            case dm: DefinedMethod ⇒ doDetermineFreshness(dm)
+            case _                 ⇒ throw new NotImplementedError()
+        }
+    }
 }
 
 object ReturnValueFreshnessAnalysis extends FPCFEagerAnalysisScheduler {
@@ -200,8 +240,10 @@ object ReturnValueFreshnessAnalysis extends FPCFEagerAnalysisScheduler {
     override def usedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val declaredMethods = propertyStore.context[DeclaredMethods].declaredMethods
         val analysis = new ReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleForEntities(project.allMethodsWithBody)(analysis.determineFreshness)
+        VirtualReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
+        propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
     }
 }
