@@ -51,7 +51,7 @@ import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
  */
 class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val formalParameters = propertyStore.context[VirtualFormalParameters]
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = propertyStore.context[DeclaredMethods]
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method

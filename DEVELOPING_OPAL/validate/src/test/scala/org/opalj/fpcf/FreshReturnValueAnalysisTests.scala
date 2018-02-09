@@ -27,42 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.fpcf
-
 import java.net.URL
 
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
 
-/**
- * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
- *
- * @author Florian Kuebler
- */
-class EscapeAnalysisTests extends PropertiesTest {
-
+class FreshReturnValueAnalysisTests extends PropertiesTest {
     override def executeAnalyses(
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        //val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        // val p = Project.recreate(FixtureProject, testConfig)
         val p = FixtureProject.recreate()
 
-        p.getOrCreateProjectInformationKeyInitializationData(
-            SimpleAIKey,
-            (m: Method) ⇒ {
-                new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m) // with DefaultArrayValuesBinding
-            }
-        )
-        PropertyStoreKey.makeAllocationSitesAvailable(p)
         PropertyStoreKey.makeDeclaredMethodsAvailable(p)
+        PropertyStoreKey.makeAllocationSitesAvailable(p)
         PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
+
         val ps = p.get(PropertyStoreKey)
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
@@ -73,27 +53,17 @@ class EscapeAnalysisTests extends PropertiesTest {
         val as = executeAnalyses(Set.empty, Set.empty)
         validateProperties(
             as,
-            allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
-            Set("EscapeProperty")
+            declaredMethodsWithAnnotations,
+            Set("ReturnValueFreshness")
         )
     }
 
-    describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(SimpleEscapeAnalysis), Set.empty)
+    describe("return value freshness analysis is executed") {
+        val as = executeAnalyses(Set(ReturnValueFreshnessAnalysis), Set.empty)
         validateProperties(
             as,
-            allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
-            Set("EscapeProperty")
+            declaredMethodsWithAnnotations,
+            Set("ReturnValueFreshness")
         )
     }
-
-    describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis), Set.empty)
-        validateProperties(
-            as,
-            allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
-            Set("EscapeProperty")
-        )
-    }
-
 }

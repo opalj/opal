@@ -29,42 +29,32 @@
 package org.opalj
 package fpcf
 package properties
-
-sealed trait VirtualMethodReturnValueFreshnessMetaInformation extends PropertyMetaInformation {
-    override final type Self = VirtualMethodReturnValueFreshness
-}
+package return_freshness
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
 
 /**
  * TODO
+ *
  * @author Florian Kuebler
  */
-sealed abstract class VirtualMethodReturnValueFreshness extends Property
-    with VirtualMethodReturnValueFreshnessMetaInformation {
-
-    final def key: PropertyKey[VirtualMethodReturnValueFreshness] =
-        VirtualMethodReturnValueFreshness.key
+class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends AbstractPropertyMatcher {
+    /**
+     * Tests if the computed property is matched by this matcher.
+     *
+     * @param p          The project.
+     * @param as         The OPAL `ObjectType`'s of the executed analyses.
+     * @param entity     The annotated entity.
+     * @param a          The annotation.
+     * @param properties '''All''' properties associated with the given entity.
+     * @return 'None' if the property was successfully matched; 'Some(<String>)' if the
+     *         property was not successfully matched; the String describes the reason
+     *         why the analysis failed.
+     */
+    override def validateProperty(p: Project[_], as: Set[ObjectType], entity: scala.Any, a: AnnotationLike, properties: Traversable[Property]): Option[String] = ???
 }
 
-object VirtualMethodReturnValueFreshness extends VirtualMethodReturnValueFreshnessMetaInformation {
-    final lazy val key: PropertyKey[VirtualMethodReturnValueFreshness] = PropertyKey.create(
-        "VirtualMethodReturnValueFreshness",
-        VNoFreshReturnValue,
-        VNoFreshReturnValue
-    )
-}
-
-case object VFreshReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = false
-}
-
-case object VPrimitiveReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = false
-}
-
-case object VNoFreshReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = true
-}
-
-case object VConditionalFreshReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = true
-}
+class PrimitiveReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.PrimitiveReturnValue)
+class NoFreshReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.NoFreshReturnValue)
+class FreshReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.FreshReturnValue)

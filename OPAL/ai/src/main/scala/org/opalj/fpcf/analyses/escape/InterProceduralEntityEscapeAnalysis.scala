@@ -454,19 +454,19 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 }
 
 class InterProceduralEntityEscapeAnalysis(
-    val entity:                  Entity,
-    val defSite:                 ValueOrigin,
-    val uses:                    IntTrieSet,
-    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val cfg:                     CFG,
-    val declaredMethods:         DeclaredMethods,
-    val virtualFormalParameters: VirtualFormalParameters,
-    val targetMethod:            DeclaredMethod,
-    val propertyStore:           PropertyStore,
-    val project:                 SomeProject
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val targetMethod:            DeclaredMethod,
+        val propertyStore:           PropertyStore,
+        val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-        with AbstractInterProceduralEntityEscapeAnalysis
-        with ConstructorSensitiveEntityEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntityEscapeAnalysis
+    with AbstractInterProceduralEntityEscapeAnalysis
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntityEscapeAnalysis

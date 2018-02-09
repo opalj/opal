@@ -204,6 +204,18 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
+    def declaredMethodsWithAnnotations: Traversable[(DefinedMethod, String ⇒ String, Annotations)] = {
+        val declaredMethods = FixtureProject.get(DeclaredMethodsKey)
+        for {
+            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            dm = declaredMethods(m)
+            annotations = m.runtimeInvisibleAnnotations
+            if annotations.nonEmpty
+        } yield {
+            (dm, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+        }
+    }
+
     def classFilesWithAnnotations: Traversable[(ClassFile, String ⇒ String, Annotations)] = {
         for {
             cf ← FixtureProject.allClassFiles // cannot be parallelized; "it" is not thread safe

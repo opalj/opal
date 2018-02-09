@@ -39,16 +39,20 @@ import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VConditionalFreshReturnValue
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
-  * TODO
-  * @author Florian Kuebler
-  */
+ * TODO
+ * @author Florian Kuebler
+ */
 class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
     def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
+        if (m.descriptor.returnType.isBaseType) {
+            return Result(m, VPrimitiveReturnValue)
+        }
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
@@ -73,7 +77,7 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
 
         def c(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             p match {
-                case NoFreshReturnValue ⇒ return Result(m, VNoFreshReturnValue)
+                case NoFreshReturnValue ⇒ Result(m, VNoFreshReturnValue)
                 case FreshReturnValue ⇒
                     dependees = dependees.filter(_.e ne other)
                     if (dependees.isEmpty)
