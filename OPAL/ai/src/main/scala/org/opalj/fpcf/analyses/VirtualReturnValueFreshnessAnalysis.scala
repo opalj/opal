@@ -72,6 +72,7 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
                 case EP(_, FreshReturnValue)   ⇒
                 case ep @ EP(_, ConditionalFreshReturnValue) ⇒
                     dependees += ep
+                case epk ⇒ dependees += epk
             }
         }
 
