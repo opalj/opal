@@ -31,6 +31,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 
 class FreshReturnValueAnalysisTests extends PropertiesTest {
     override def executeAnalyses(
@@ -44,18 +45,11 @@ class FreshReturnValueAnalysisTests extends PropertiesTest {
         PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
 
         val ps = p.get(PropertyStoreKey)
+
+        InterProceduralEscapeAnalysis.startLazily(p, ps)
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
         (p, ps, as)
-    }
-
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty, Set.empty)
-        validateProperties(
-            as,
-            declaredMethodsWithAnnotations,
-            Set("ReturnValueFreshness")
-        )
     }
 
     describe("return value freshness analysis is executed") {

@@ -88,6 +88,9 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
                     val newEP = EP(other, p)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
+
+                case PropertyIsLazilyComputed ⇒
+                    IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
             }
         }
 
