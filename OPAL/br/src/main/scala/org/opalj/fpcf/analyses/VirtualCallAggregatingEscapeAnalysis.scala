@@ -87,9 +87,7 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     IntermediateResult(fp, Conditional(escapeState), dependees, c)
                 case p: EscapeProperty ⇒
                     escapeState = escapeState meet p
-                    dependees = dependees.filter {
-                        _.e ne other
-                    }
+                    dependees = dependees filter { _.e ne other }
                     if (dependees.isEmpty) {
                         if (escapeState.isRefinable)
                             RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))

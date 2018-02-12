@@ -31,37 +31,37 @@ package fpcf
 package analyses
 package escape
 
-import scala.annotation.switch
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
-import org.opalj.tac.Stmt
-import org.opalj.tac.DUVar
-import org.opalj.tac.UVar
-import org.opalj.tac.Expr
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.PutStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.Assignment
-import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.Throw
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.StaticMethodCall
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.EscapeViaStaticField
+import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.ArrayStore
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.Assignment
+import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
 import org.opalj.tac.Invokedynamic
+import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.PutField
+import org.opalj.tac.PutStatic
+import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.Throw
+import org.opalj.tac.UVar
+import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
+
+import scala.annotation.switch
 
 /**
  * An abstract escape analysis for a single entity.
@@ -321,8 +321,8 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def removeFromDependeesAndComputeResult(
         other: Entity, p: EscapeProperty
     ): PropertyComputationResult = {
-        assert(other.isInstanceOf[VirtualFormalParameter])
         meetMostRestrictive(p)
+        assert(dependees.count(_.e eq other) <= 1)
         dependees = dependees.filter(_.e ne other)
         returnResult
     }
@@ -354,11 +354,10 @@ trait AbstractEntityEscapeAnalysis {
      * the intermediate result is returned.
      */
     protected[this] def performIntermediateUpdate(
-        other: Entity, p: EscapeProperty, intermediateProperty: EscapeProperty
+        newEP: EOptionP[Entity, Property], intermediateProperty: EscapeProperty
     ): PropertyComputationResult = {
-        assert(other.isInstanceOf[VirtualFormalParameter])
-        val newEP = EP(other, p)
-        dependees = dependees.filter(_.e ne other) + newEP
+        assert(dependees.count(_.e eq newEP.e) <= 1)
+        dependees = dependees.filter(_.e ne newEP.e) + newEP
         meetMostRestrictive(intermediateProperty)
         IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
     }

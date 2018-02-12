@@ -287,10 +287,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
         } else {
             dependeeCache.getOrElseUpdate(fp, propertyStore(fp, VirtualMethodEscapeProperty.key))
         }
-        handleEscapeState(escapeState, fp, hasAssignment)
+        handleEscapeState(escapeState, hasAssignment)
     }
 
-    private[this] def handleEscapeState(escapeState: EOptionP[Entity, Property], e: Entity, hasAssignment: Boolean): Unit = {
+    private[this] def handleEscapeState(escapeState: EOptionP[Entity, Property], hasAssignment: Boolean): Unit = {
         escapeState match {
             case EP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 meetMostRestrictive(EscapeInCallee)
@@ -326,7 +326,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 meetMostRestrictive(AtMost(EscapeInCallee))
 
                 dependees += ep
-            case ep @ EP(_, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
+            case ep @ EP(e, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
                 assert(ep.e.isInstanceOf[VirtualFormalParameter])
 
                 if (hasAssignment) {
@@ -337,13 +337,27 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 
                 dependees += ep
 
-            case epkOrConditional ⇒
-                assert(epkOrConditional.e.isInstanceOf[VirtualFormalParameter])
-
-                meetMostRestrictive(EscapeInCallee)
+            case ep @ EP(e, Conditional(p)) ⇒
+                meetMostRestrictive(EscapeInCallee meet p)
 
                 if (hasAssignment)
                     hasReturnValueUseSites += e
+
+                dependees += ep
+
+            case ep @ EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
+                meetMostRestrictive(EscapeInCallee meet p)
+
+                if (hasAssignment)
+                    hasReturnValueUseSites += e
+
+                dependees += ep
+
+            case epkOrConditional ⇒
+                meetMostRestrictive(EscapeInCallee)
+
+                if (hasAssignment)
+                    hasReturnValueUseSites += epkOrConditional.e
 
                 dependees += epkOrConditional
         }
@@ -413,36 +427,36 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                     removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
 
                 case p @ Conditional(NoEscape) ⇒
-                    performIntermediateUpdate(other, p, EscapeInCallee)
+                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
-                case VirtualMethodEscapeProperty(Conditional(NoEscape)) ⇒
-                    performIntermediateUpdate(other, Conditional(NoEscape), EscapeInCallee)
+                case p @ VirtualMethodEscapeProperty(Conditional(NoEscape)) ⇒
+                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
                 case p @ Conditional(EscapeInCallee) ⇒
-                    performIntermediateUpdate(other, p, EscapeInCallee)
+                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
-                case VirtualMethodEscapeProperty(Conditional(EscapeInCallee)) ⇒
-                    performIntermediateUpdate(other, Conditional(EscapeInCallee), EscapeInCallee)
+                case p @ VirtualMethodEscapeProperty(Conditional(EscapeInCallee)) ⇒
+                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
                 case p @ Conditional(EscapeViaReturn) ⇒
                     if (hasReturnValueUseSites contains other)
-                        performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                        performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
                     else
-                        performIntermediateUpdate(other, p, EscapeInCallee)
+                        performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
-                case VirtualMethodEscapeProperty(Conditional(EscapeViaReturn)) ⇒
+                case p @ VirtualMethodEscapeProperty(Conditional(EscapeViaReturn)) ⇒
                     if (hasReturnValueUseSites contains other)
-                        performIntermediateUpdate(other, Conditional(EscapeViaReturn), AtMost(EscapeInCallee))
+                        performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
                     else
-                        performIntermediateUpdate(other, Conditional(EscapeViaReturn), EscapeInCallee)
+                        performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
                 case p @ Conditional(_) ⇒
-                    performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                    performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
 
-                case VirtualMethodEscapeProperty(p @ Conditional(_)) ⇒
-                    performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                case p @ VirtualMethodEscapeProperty(Conditional(_)) ⇒
+                    performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
+
                 case PropertyIsLazilyComputed ⇒
-                    //TODO
                     IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
 
                 case _ ⇒
@@ -454,19 +468,19 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 }
 
 class InterProceduralEntityEscapeAnalysis(
-        val entity:                  Entity,
-        val defSite:                 ValueOrigin,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val cfg:                     CFG,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val targetMethod:            DeclaredMethod,
-        val propertyStore:           PropertyStore,
-        val project:                 SomeProject
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val cfg:                     CFG,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val targetMethod:            DeclaredMethod,
+    val propertyStore:           PropertyStore,
+    val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with AbstractInterProceduralEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntityEscapeAnalysis
+        with AbstractInterProceduralEntityEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntityEscapeAnalysis

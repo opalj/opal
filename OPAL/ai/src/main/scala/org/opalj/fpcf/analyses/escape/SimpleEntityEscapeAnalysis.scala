@@ -392,19 +392,19 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
 
                 case p @ Conditional(NoEscape) ⇒
                     assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p, NoEscape)
+                    performIntermediateUpdate(EP(other, p), NoEscape)
 
                 case p @ Conditional(EscapeInCallee) ⇒
                     assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p, EscapeInCallee)
+                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
 
                 case p @ Conditional(AtMost(EscapeInCallee)) ⇒
                     assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p, AtMost(EscapeInCallee))
+                    performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
 
                 case p @ Conditional(_) ⇒
                     assert(u eq IntermediateUpdate)
-                    performIntermediateUpdate(other, p, AtMost(NoEscape))
+                    performIntermediateUpdate(EP(other, p), AtMost(NoEscape))
 
                 case PropertyIsLazilyComputed ⇒
                     IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
