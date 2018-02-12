@@ -108,6 +108,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                                 case EP(_, NoEscape | EscapeInCallee)    ⇒ throw new RuntimeException("unexpected result")
                                 case EP(_, p) if p.isFinal               ⇒ return Result(dm, NoFreshReturnValue)
                                 case EP(_, AtMost(_))                    ⇒ return Result(dm, NoFreshReturnValue)
+                                case EP(_, Conditional(AtMost(_)))       ⇒ return Result(dm, NoFreshReturnValue)
                                 case EP(_, Conditional(NoEscape))        ⇒ throw new RuntimeException("unexpected result")
                                 case EP(_, Conditional(EscapeInCallee))  ⇒ throw new RuntimeException("unexpected result")
                                 case EP(_, Conditional(EscapeViaReturn)) ⇒ dependees += resultState
@@ -205,6 +206,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             }
                         case _: EscapeProperty if p.isFinal ⇒ Result(dm, NoFreshReturnValue)
                         case AtMost(_)                      ⇒ Result(dm, NoFreshReturnValue)
+                        case Conditional(AtMost(_))         ⇒ Result(dm, NoFreshReturnValue)
 
                         case p @ Conditional(EscapeViaReturn) ⇒
                             val newEP = EP(e, p)
