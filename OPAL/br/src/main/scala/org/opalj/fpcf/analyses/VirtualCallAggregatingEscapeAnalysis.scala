@@ -47,7 +47,7 @@ import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
  *      [[org.opalj.fpcf.properties.EscapeProperty]]
  *      [[org.opalj.br.analyses.VirtualFormalParameter]]
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val formalParameters = propertyStore.context[VirtualFormalParameters]
@@ -84,7 +84,7 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     escapeState = escapeState meet property
                     val newEP = EP(other.asInstanceOf[VirtualFormalParameter], p)
                     dependees = dependees.filter(_.e ne other) + newEP
-                    IntermediateResult(fp, Conditional(escapeState), dependees, c)
+                    IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
                 case p: EscapeProperty ⇒
                     escapeState = escapeState meet p
                     dependees = dependees filter { _.e ne other }
