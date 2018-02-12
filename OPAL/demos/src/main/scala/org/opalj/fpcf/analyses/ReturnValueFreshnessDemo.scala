@@ -35,6 +35,7 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
@@ -53,6 +54,9 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         PropertyStoreKey.makeAllocationSitesAvailable(project)
         PropertyStoreKey.makeDeclaredMethodsAvailable(project)
         val ps = project.get(PropertyStoreKey)
+
+        InterProceduralEscapeAnalysis.startLazily(project, ps)
+
         ReturnValueFreshnessAnalysis.start(project, ps)
         ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
 
