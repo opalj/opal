@@ -34,6 +34,7 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
+import org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 
@@ -64,8 +65,9 @@ class EscapeAnalysisTests extends PropertiesTest {
         PropertyStoreKey.makeDeclaredMethodsAvailable(p)
         PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val ps = p.get(PropertyStoreKey)
+        lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
+        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = true)
         (p, ps, as)
     }
 
@@ -88,7 +90,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis), Set.empty)
+        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis), Set(VirtualCallAggregatingEscapeAnalysis))
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,

@@ -135,8 +135,6 @@ object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
             )
         } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
 
-        VirtualCallAggregatingEscapeAnalysis.startLazily(project)
-
         val analysis = new InterProceduralEscapeAnalysis(project)
 
         //val fps = propertyStore.context[FormalParameters].formalParameters.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)

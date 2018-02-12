@@ -103,6 +103,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             InterProceduralEscapeAnalysis.start(project)
+            VirtualCallAggregatingEscapeAnalysis.startLazily(project)
             propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = true)
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 

@@ -261,7 +261,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
     }
 }
 
-object ReturnValueFreshnessAnalysis extends FPCFEagerAnalysisScheduler {
+object ReturnValueFreshnessAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(ReturnValueFreshness)
 
@@ -270,8 +270,19 @@ object ReturnValueFreshnessAnalysis extends FPCFEagerAnalysisScheduler {
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = propertyStore.context[DeclaredMethods].declaredMethods
         val analysis = new ReturnValueFreshnessAnalysis(project)
-        VirtualReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
         propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
+        analysis
+    }
+
+    /**
+      * Registers the analysis as a lazy computation, that is, the method
+      * will call `ProperytStore.scheduleLazyComputation`.
+      */
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis  = {
+        val analysis = new ReturnValueFreshnessAnalysis(project)
+        propertyStore.scheduleLazyPropertyComputation(
+            ReturnValueFreshness.key, analysis.doDetermineFreshness
+        )
         analysis
     }
 }
