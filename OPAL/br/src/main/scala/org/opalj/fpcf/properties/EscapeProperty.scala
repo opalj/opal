@@ -140,9 +140,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-    extends OrderedProperty
-    with ExplicitlyNamedProperty
-    with EscapePropertyMetaInformation {
+        extends OrderedProperty
+        with ExplicitlyNamedProperty
+        with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -204,12 +204,16 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      */
     val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            val e = epks.head.e
-            val ep = ps(e, key)
-            ep.p match {
-                case Conditional(AtMost(property)) ⇒ Iterable(RefinableResult(e, AtMost(property)))
-                case Conditional(property)         ⇒ Iterable(Result(e, property))
-                case _                             ⇒ throw new RuntimeException("Non-conditional in cycle")
+            val epk = epks.head
+
+            ps(epk) match {
+                case EP(e, Conditional(AtMost(p))) ⇒ Iterable(RefinableResult(e, AtMost(p)))
+                case EP(e, Conditional(p))         ⇒ Iterable(Result(e, p))
+                case EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
+                    Iterable(Result(e, p))
+                case EP(e, VirtualMethodEscapeProperty(Conditional(AtMost(p)))) ⇒
+                    Iterable(RefinableResult(e, AtMost(p)))
+                case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
             }
         }
 

@@ -92,7 +92,8 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     val virtualFormalParameters: VirtualFormalParameters
 
     // STATE MUTATED DURING THE ANALYSIS
-    private[this] val dependeeCache: scala.collection.mutable.Map[Entity, EOptionP[Entity, Property]] = scala.collection.mutable.Map()
+    private[this] val dependeeCache: scala.collection.mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] = scala.collection.mutable.Map()
+    private[this] val vdependeeCache: scala.collection.mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] = scala.collection.mutable.Map()
     private[this] val hasReturnValueUseSites = scala.collection.mutable.Set[Entity]()
 
     protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
@@ -222,6 +223,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
                 val dm = DefinedMethod(dc, target.value)
+                assert(dm ne null)
                 if (project.isSignaturePolymorphic(dm.definedMethod.classFile.thisType, dm.definedMethod)) {
                     //IMPROVE
                     // check if this is to much (param contains def-site)
@@ -285,7 +287,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
         val escapeState = if (isConcreteMethod) {
             dependeeCache.getOrElseUpdate(fp, propertyStore(fp, EscapeProperty.key))
         } else {
-            dependeeCache.getOrElseUpdate(fp, propertyStore(fp, VirtualMethodEscapeProperty.key))
+            vdependeeCache.getOrElseUpdate(fp, propertyStore(fp, VirtualMethodEscapeProperty.key))
         }
         handleEscapeState(escapeState, hasAssignment)
     }
@@ -321,13 +323,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 meetMostRestrictive(AtMost(EscapeInCallee))
 
             case ep @ EP(_, Conditional(AtMost(_)) | VirtualMethodEscapeProperty(Conditional(AtMost(_)))) ⇒
-                assert(ep.e.isInstanceOf[VirtualFormalParameter])
-
                 meetMostRestrictive(AtMost(EscapeInCallee))
 
                 dependees += ep
             case ep @ EP(e, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
-                assert(ep.e.isInstanceOf[VirtualFormalParameter])
 
                 if (hasAssignment) {
                     meetMostRestrictive(AtMost(EscapeInCallee))
@@ -383,10 +382,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                     Result(entity, EscapeViaHeapObject)
 
                 case NoEscape | VirtualMethodEscapeProperty(NoEscape) ⇒
-                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                    removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
 
                 case EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee) ⇒
-                    removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                    removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
 
                 case EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn) ⇒
                     /*
@@ -395,36 +394,36 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                      * eliminates the assignments, if the function called is identity-like
                      */
                     if (hasReturnValueUseSites contains other)
-                        removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                        removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
                     else
-                        removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                        removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
 
                 case EscapeViaParameter | VirtualMethodEscapeProperty(EscapeViaParameter) ⇒
                     // IMPROVE we do not further track the field of the actual parameter
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case EscapeViaAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaAbnormalReturn) ⇒
                     // IMPROVE we do not further track the exception thrown in the callee
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case EscapeViaParameterAndAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaParameterAndAbnormalReturn) ⇒
                     // combines the cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case EscapeViaNormalAndAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaNormalAndAbnormalReturn) ⇒
                     // combines the cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case EscapeViaParameterAndReturn | VirtualMethodEscapeProperty(EscapeViaParameterAndReturn) ⇒
                     // combines the cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case EscapeViaParameterAndNormalAndAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaParameterAndNormalAndAbnormalReturn) ⇒
                     // combines the cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case AtMost(_) | VirtualMethodEscapeProperty(AtMost(_)) ⇒
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case p @ Conditional(NoEscape) ⇒
                     performIntermediateUpdate(EP(other, p), EscapeInCallee)

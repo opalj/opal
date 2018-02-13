@@ -30,8 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyKey.SomeEPKs
-
 sealed trait VirtualMethodEscapePropertyMetaInformation extends PropertyMetaInformation {
     final type Self = VirtualMethodEscapeProperty
 }
@@ -48,20 +46,6 @@ sealed case class VirtualMethodEscapeProperty(
 }
 
 object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInformation {
-    def cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
-        (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            val e = epks.head.e
-            val ep = ps(e, key)
-            ep.p match {
-                case VirtualMethodEscapeProperty(Conditional(AtMost(property))) ⇒
-                    Iterable(RefinableResult(e, VirtualMethodEscapeProperty(AtMost(property))))
-
-                case VirtualMethodEscapeProperty(Conditional(property)) ⇒
-                    Iterable(Result(e, VirtualMethodEscapeProperty(property)))
-
-                case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
-            }
-        }
 
     def apply(
         escapeProperty: EscapeProperty
@@ -168,7 +152,7 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val key: PropertyKey[VirtualMethodEscapeProperty] = PropertyKey.create[VirtualMethodEscapeProperty](
         "VirtualMethodEscapeProperty",
         VAtMostNoEscape,
-        cycleResolutionStrategy
+        EscapeProperty.cycleResolutionStrategy
     )
 
 }

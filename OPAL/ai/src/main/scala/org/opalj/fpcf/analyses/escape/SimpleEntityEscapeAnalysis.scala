@@ -365,30 +365,30 @@ trait ConstructorSensitiveEntityEscapeAnalysis extends AbstractEntityEscapeAnaly
 
                 case EscapeViaHeapObject  ⇒ Result(entity, EscapeViaHeapObject)
 
-                case NoEscape             ⇒ removeFromDependeesAndComputeResult(other, NoEscape)
+                case NoEscape             ⇒ removeFromDependeesAndComputeResult(EP(other, p), NoEscape)
 
-                case EscapeInCallee       ⇒ removeFromDependeesAndComputeResult(other, EscapeInCallee)
+                case EscapeInCallee       ⇒ removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
 
                 case EscapeViaParameter ⇒
                     // we do not further track the field of the actual parameter
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(NoEscape))
 
                 case EscapeViaAbnormalReturn ⇒
                     // this could be the case if `other` is an exception and is thrown in its constructor
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(NoEscape))
 
                 case EscapeViaParameterAndAbnormalReturn ⇒
                     // combines the two cases above
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(NoEscape))
 
                 case AtMost(NoEscape) | AtMost(EscapeViaParameter) | AtMost(EscapeViaAbnormalReturn) |
                     AtMost(EscapeViaParameterAndAbnormalReturn) ⇒
                     //assert(u ne IntermediateUpdate)
-                    removeFromDependeesAndComputeResult(other, AtMost(NoEscape))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(NoEscape))
 
                 case AtMost(EscapeInCallee) ⇒
                     //assert(u ne IntermediateUpdate)
-                    removeFromDependeesAndComputeResult(other, AtMost(EscapeInCallee))
+                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
 
                 case p @ Conditional(NoEscape) ⇒
                     assert(u eq IntermediateUpdate)

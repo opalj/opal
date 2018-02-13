@@ -319,11 +319,12 @@ trait AbstractEntityEscapeAnalysis {
      * has associated property of mostRestrictiveProperty, otherwise build a continuation.
      */
     protected[this] def removeFromDependeesAndComputeResult(
-        other: Entity, p: EscapeProperty
+        other: EP[Entity, Property], p: EscapeProperty
     ): PropertyComputationResult = {
         meetMostRestrictive(p)
-        assert(dependees.count(_.e eq other) <= 1)
-        dependees = dependees.filter(_.e ne other)
+        //TODO what if we depend on two properties for the same entity
+        assert(dependees.count(epk ⇒ (epk.e eq other.e) && epk.pk == other.pk) <= 1)
+        dependees = dependees.filter(epk ⇒ (epk.e ne other.e) && epk.pk == other.pk)
         returnResult
     }
 
@@ -356,8 +357,9 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def performIntermediateUpdate(
         newEP: EOptionP[Entity, Property], intermediateProperty: EscapeProperty
     ): PropertyComputationResult = {
-        assert(dependees.count(_.e eq newEP.e) <= 1)
-        dependees = dependees.filter(_.e ne newEP.e) + newEP
+        //TODO what if we depend on two properties for the same entity
+        assert(dependees.count(epk ⇒ (epk.e eq newEP.e) && epk.pk == newEP.pk) <= 1)
+        dependees = dependees.filter(epk ⇒ (epk.e ne newEP.e) && epk.pk == newEP.pk) + newEP
         meetMostRestrictive(intermediateProperty)
         IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
     }

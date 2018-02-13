@@ -33,7 +33,6 @@ package analyses
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
@@ -55,25 +54,29 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
+
         if (dm.declaringClassType.isArrayType) {
             throw new NotImplementedError()
             //TODO handle case
         }
+
+        // ANALYSIS STATE
         var escapeState: EscapeProperty = NoEscape
         var dependees: Set[EOptionP[VirtualFormalParameter, EscapeProperty]] = Set.empty
+
         val methods = project.virtualCall(
             /* use the package in which the concrete method context is defined */
             dm.declaringClassType.asObjectType.packageName,
             dm.declaringClassType, dm.name, dm.descriptor
         )
+
         for (method ← methods) {
             propertyStore(formalParameters(declaredMethods(method))(-1 - fp.origin), EscapeProperty.key) match {
-                case EP(_, p) if p.isFinal ⇒ escapeState = escapeState meet p
-                case EP(_, AtMost(p))      ⇒ escapeState = escapeState meet AtMost(p)
                 case ep @ EP(_, Conditional(p)) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
-                case epk ⇒ dependees += epk
+                case EP(_, p) ⇒ escapeState = escapeState meet p
+                case epk      ⇒ dependees += epk
             }
         }
 
@@ -83,10 +86,12 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                 case p @ Conditional(property) ⇒
                     escapeState = escapeState meet property
                     val newEP = EP(other.asInstanceOf[VirtualFormalParameter], p)
+                    assert(dependees.count(_.e eq other) <= 1)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
                 case p: EscapeProperty ⇒
                     escapeState = escapeState meet p
+                    assert(dependees.count(_.e eq other) <= 1)
                     dependees = dependees filter { _.e ne other }
                     if (dependees.isEmpty) {
                         if (escapeState.isRefinable)
