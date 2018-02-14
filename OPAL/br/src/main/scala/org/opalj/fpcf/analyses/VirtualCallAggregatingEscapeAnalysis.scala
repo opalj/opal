@@ -82,17 +82,22 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
 
         def c(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             p match {
-                case p: EscapeProperty if p.isBottom ⇒ Result(fp, escapeState meet p)
+                case p: EscapeProperty if p.isBottom ⇒
+                    Result(fp, VirtualMethodEscapeProperty(escapeState meet p))
+
                 case p @ Conditional(property) ⇒
                     escapeState = escapeState meet property
                     val newEP = EP(other.asInstanceOf[VirtualFormalParameter], p)
                     assert(dependees.count(_.e eq other) <= 1)
                     dependees = dependees.filter(_.e ne other) + newEP
                     IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
+
                 case p: EscapeProperty ⇒
                     escapeState = escapeState meet p
+
                     assert(dependees.count(_.e eq other) <= 1)
                     dependees = dependees filter { _.e ne other }
+
                     if (dependees.isEmpty) {
                         if (escapeState.isRefinable)
                             RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))
@@ -101,9 +106,11 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     } else {
                         IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
                     }
+
                 case PropertyIsLazilyComputed ⇒
                     //TODO
                     IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
+
                 case _ ⇒ throw new IllegalArgumentException(s"unsupported property $p")
             }
         }
