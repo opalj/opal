@@ -35,9 +35,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
-import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
@@ -368,92 +366,4 @@ trait AbstractEntityEscapeAnalysis {
      * A continuation function, that handles the updates of property values for entity `other`.
      */
     protected[this] def c(other: Entity, p: Property, u: UpdateType): PropertyComputationResult
-}
-
-trait DefaultEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis {
-    protected[this] override def handlePutField(putField: PutField[V]): Unit = {
-        if (usesDefSite(putField.value))
-            meetMostRestrictive(AtMost(NoEscape))
-    }
-
-    protected[this] override def handleArrayStore(arrayStore: ArrayStore[V]): Unit = {
-        if (usesDefSite(arrayStore.value))
-            meetMostRestrictive(AtMost(NoEscape))
-    }
-
-    protected[this] override def handleThrow(aThrow: Throw[V]): Unit = {
-        if (usesDefSite(aThrow.exception))
-            meetMostRestrictive(AtMost(NoEscape))
-    }
-
-    protected[this] override def handleStaticMethodCall(call: StaticMethodCall[V]): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleVirtualMethodCall(call: VirtualMethodCall[V]): Unit = {
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleExprStmt(exprStmt: ExprStmt[V]): Unit = {
-        handleExpression(exprStmt.expr, hasAssignment = false)
-    }
-
-    protected[this] override def handleAssignment(assignment: Assignment[V]): Unit = {
-        handleExpression(assignment.expr, hasAssignment = true)
-    }
-
-    protected[this] override def handleThisLocalOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
-        assert(call.name == "<init>")
-        if (usesDefSite(call.receiver))
-            meetMostRestrictive(AtMost(NoEscape))
-    }
-
-    protected[this] override def handleParameterOfConstructor(call: NonVirtualMethodCall[V]): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleNonVirtualAndNonConstructorCall(call: NonVirtualMethodCall[V]): Unit = {
-        assert(call.name != "<init>")
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleVirtualFunctionCall(
-        call: VirtualFunctionCall[V], hasAssignment: Boolean
-    ): Unit = {
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], hasAssignment: Boolean
-    ): Unit = {
-        if (usesDefSite(call.receiver) || anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleStaticFunctionCall(
-        call: StaticFunctionCall[V], hasAssignment: Boolean
-    ): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleInvokeDynamic(
-        call: Invokedynamic[V], hasAssignment: Boolean
-    ): Unit = {
-        if (anyParameterUsesDefSite(call.params))
-            meetMostRestrictive(AtMost(EscapeInCallee))
-    }
-
-    protected[this] override def handleOtherKindsOfExpressions(expr: Expr[V]): Unit = {}
-
-    protected[this] override def c(
-        other: Entity, p: Property, u: UpdateType
-    ): PropertyComputationResult = {
-        throw new UnknownError(s"unhandled escape property ($p) for $other")
-    }
 }
