@@ -43,7 +43,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
@@ -88,7 +87,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     val declaredMethods: DeclaredMethods
 
     //TODO Move to non entity based analysis
-    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    val isMethodOverridable: Method ⇒ Answer
     val virtualFormalParameters: VirtualFormalParameters
 
     // STATE MUTATED DURING THE ANALYSIS
@@ -474,6 +473,7 @@ class InterProceduralEntityEscapeAnalysis(
     val cfg:                     CFG,
     val declaredMethods:         DeclaredMethods,
     val virtualFormalParameters: VirtualFormalParameters,
+    val isMethodOverridable:     Method ⇒ Answer,
     val targetMethod:            DeclaredMethod,
     val propertyStore:           PropertyStore,
     val project:                 SomeProject

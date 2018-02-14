@@ -36,13 +36,13 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
-//import org.opalj.br.analyses.FormalParameters
-//import org.opalj.br.analyses.AllocationSites
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties._
@@ -50,8 +50,6 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
-//import org.opalj.util.PerformanceEvaluation.time
-//import org.opalj.log.OPALLogger.info
 
 /**
  * A very simple flow-sensitive inter-procedural escape analysis.
@@ -61,6 +59,8 @@ import org.opalj.tac.TACode
 class InterProceduralEscapeAnalysis private (
         final val project: SomeProject
 ) extends AbstractEscapeAnalysis {
+
+    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     override def entityEscapeAnalysis(
         e:       Entity,
@@ -78,6 +78,7 @@ class InterProceduralEscapeAnalysis private (
             cfg,
             declaredMethods,
             virtualFormalParameters,
+            isMethodOverridable,
             m,
             propertyStore,
             project
