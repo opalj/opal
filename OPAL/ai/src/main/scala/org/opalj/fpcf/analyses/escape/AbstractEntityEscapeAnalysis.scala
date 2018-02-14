@@ -324,7 +324,7 @@ trait AbstractEntityEscapeAnalysis {
         meetMostRestrictive(p)
         //TODO what if we depend on two properties for the same entity
         assert(dependees.count(epk ⇒ (epk.e eq other.e) && epk.pk == other.pk) <= 1)
-        dependees = dependees.filter(epk ⇒ (epk.e ne other.e) && epk.pk == other.pk)
+        dependees = dependees.filter(epk ⇒ (epk.e ne other.e) || epk.pk != other.pk)
         returnResult
     }
 
@@ -359,7 +359,7 @@ trait AbstractEntityEscapeAnalysis {
     ): PropertyComputationResult = {
         //TODO what if we depend on two properties for the same entity
         assert(dependees.count(epk ⇒ (epk.e eq newEP.e) && epk.pk == newEP.pk) <= 1)
-        dependees = dependees.filter(epk ⇒ (epk.e ne newEP.e) && epk.pk == newEP.pk) + newEP
+        dependees = dependees.filter(epk ⇒ (epk.e ne newEP.e) || epk.pk != newEP.pk) + newEP
         meetMostRestrictive(intermediateProperty)
         IntermediateResult(entity, Conditional(mostRestrictiveProperty), dependees, c)
     }
