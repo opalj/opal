@@ -204,16 +204,20 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      */
     val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            val epk = epks.head
+            epks.map {epk =>
+                ps(epk) match {
+                    case EP(e, Conditional(AtMost(p))) ⇒
+                        RefinableResult(e, AtMost(p))
+                    case EP(e, VirtualMethodEscapeProperty(Conditional(AtMost(p)))) ⇒
+                        RefinableResult(e, AtMost(p))
 
-            ps(epk) match {
-                case EP(e, Conditional(AtMost(p))) ⇒ Iterable(RefinableResult(e, AtMost(p)))
-                case EP(e, Conditional(p))         ⇒ Iterable(Result(e, p))
-                case EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
-                    Iterable(Result(e, p))
-                case EP(e, VirtualMethodEscapeProperty(Conditional(AtMost(p)))) ⇒
-                    Iterable(RefinableResult(e, AtMost(p)))
-                case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
+                    case EP(e, Conditional(p))         ⇒
+                        Result(e, p)
+                    case EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
+                        Result(e, p)
+
+                    case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
+                }
             }
         }
 
