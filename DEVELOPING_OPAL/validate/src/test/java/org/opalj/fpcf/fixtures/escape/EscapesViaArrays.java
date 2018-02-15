@@ -45,9 +45,7 @@ public class EscapesViaArrays {
 
         List<Object> attributesList = new
                 @EscapeViaHeapObject(value = "the list is put into the static map", analyses = {})
-                        //TODO what about Interprocedurual
-                @AtMostEscapeInCallee(value = "is passed to map",
-                        analyses = SimpleEscapeAnalysis.class)
+                @AtMostEscapeInCallee(value = "is passed to map")
                         LinkedList<>();
         attributes[0] = new
                 @EscapeViaHeapObject(

@@ -13,6 +13,12 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
+/**
+ * Annotation to state that the allocation site or parameter escapes globally via an assignment to
+ * a heap object (if a proper analysis was scheduled).
+ *
+ * @author Florian Kuebler
+ */
 @PropertyValidator(key = "EscapeProperty", validator = EscapeViaHeapObjectMatcher.class)
 @Target({ TYPE_USE, PARAMETER })
 @Documented

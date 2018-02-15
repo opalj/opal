@@ -34,6 +34,13 @@ import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.VirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 
+/**
+ *  Tests if the return value freshness properties specified in the test project (the classes in the
+ *  (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching is
+ *  delegated to PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ *
+ * @author Florian Kuebler
+ */
 class FreshReturnValueAnalysisTests extends PropertiesTest {
     override def executeAnalyses(
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],

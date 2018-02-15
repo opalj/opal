@@ -13,6 +13,12 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
+/**
+ * Annotation to state that the allocation site or parameter escapes into another method, but it
+ * could escape any further (if a proper analysis was scheduled).
+ *
+ * @author Florian Kuebler
+ */
 @PropertyValidator(key = "EscapeProperty", validator = AtMostEscapeInCalleeMatcher.class)
 @Target({ TYPE_USE, PARAMETER })
 @Documented

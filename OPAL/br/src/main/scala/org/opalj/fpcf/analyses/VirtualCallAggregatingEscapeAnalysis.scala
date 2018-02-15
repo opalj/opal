@@ -108,7 +108,6 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
                     }
 
                 case PropertyIsLazilyComputed ⇒
-                    //TODO
                     IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
 
                 case _ ⇒ throw new IllegalArgumentException(s"unsupported property $p")

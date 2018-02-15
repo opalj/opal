@@ -40,6 +40,12 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.AllocationSite
 import org.opalj.br.BooleanValue
 
+/**
+  * A property matcher that checks whether an annotated allocation or parameter has the specified
+  * escape property.
+  *
+  * @author Florian Kuebler
+  */
 abstract class EscapePropertyMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
     override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
         // check whether the analyses specified in the annotation are present
@@ -65,12 +71,7 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
                 if (requiresPerformInvokationsDomain) domain.isInstanceOf[PerformInvocations]
                 else !domain.isInstanceOf[PerformInvocations]
 
-            //TODO
-            /*val arrayDomainRelevant =
-                if (requiresArrayDomain) domain.isInstanceOf[DefaultArrayValuesBinding]
-                else !domain.isInstanceOf[DefaultArrayValuesBinding]*/
-
-            analysisRelevant && performInvokationDomainRelevant //&& arrayDomainRelevant
+            analysisRelevant && performInvokationDomainRelevant
         } else {
             analysisRelevant
         }

@@ -140,9 +140,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-        extends OrderedProperty
-        with ExplicitlyNamedProperty
-        with EscapePropertyMetaInformation {
+    extends OrderedProperty
+    with ExplicitlyNamedProperty
+    with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -204,14 +204,14 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      */
     val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
-            epks.map {epk =>
+            epks.map { epk ⇒
                 ps(epk) match {
                     case EP(e, Conditional(AtMost(p))) ⇒
                         RefinableResult(e, AtMost(p))
                     case EP(e, VirtualMethodEscapeProperty(Conditional(AtMost(p)))) ⇒
                         RefinableResult(e, AtMost(p))
 
-                    case EP(e, Conditional(p))         ⇒
+                    case EP(e, Conditional(p)) ⇒
                         Result(e, p)
                     case EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
                         Result(e, p)

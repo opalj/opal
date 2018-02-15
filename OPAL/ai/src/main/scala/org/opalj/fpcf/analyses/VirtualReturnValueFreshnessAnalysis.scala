@@ -43,7 +43,9 @@ import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
- * TODO
+ * An analysis that aggregates the results of the [[ReturnValueFreshnessAnalysis]] for all possible
+ * methods represented by a given [[DeclaredMethod]].s
+ *
  * @author Florian Kuebler
  */
 class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
@@ -60,8 +62,8 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
             throw new NotImplementedError()
         }
         val methods = project.virtualCall(
-            m.declaringClassType.asObjectType.packageName, //TODO
-            m.declaringClassType, //TODO
+            m.declaringClassType.asObjectType.packageName, //TODO is this correct?
+            m.declaringClassType,
             m.name,
             m.descriptor
         )

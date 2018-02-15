@@ -275,10 +275,10 @@ object ReturnValueFreshnessAnalysis extends FPCFAnalysisScheduler {
     }
 
     /**
-      * Registers the analysis as a lazy computation, that is, the method
-      * will call `ProperytStore.scheduleLazyComputation`.
-      */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis  = {
+     * Registers the analysis as a lazy computation, that is, the method
+     * will call `ProperytStore.scheduleLazyComputation`.
+     */
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new ReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleLazyPropertyComputation(
             ReturnValueFreshness.key, analysis.doDetermineFreshness

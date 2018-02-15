@@ -85,8 +85,6 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     val targetMethod: DeclaredMethod
     val propertyStore: PropertyStore
     val declaredMethods: DeclaredMethods
-
-    //TODO Move to non entity based analysis
     val isMethodOverridable: Method ⇒ Answer
     val virtualFormalParameters: VirtualFormalParameters
 
@@ -466,20 +464,20 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 }
 
 class InterProceduralEntityEscapeAnalysis(
-    val entity:                  Entity,
-    val defSite:                 ValueOrigin,
-    val uses:                    IntTrieSet,
-    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-    val cfg:                     CFG,
-    val declaredMethods:         DeclaredMethods,
-    val virtualFormalParameters: VirtualFormalParameters,
-    val isMethodOverridable:     Method ⇒ Answer,
-    val targetMethod:            DeclaredMethod,
-    val propertyStore:           PropertyStore,
-    val project:                 SomeProject
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val isMethodOverridable:     Method ⇒ Answer,
+        val targetMethod:            DeclaredMethod,
+        val propertyStore:           PropertyStore,
+        val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-        with AbstractInterProceduralEntityEscapeAnalysis
-        with ConstructorSensitiveEntityEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEntityEscapeAnalysis
-        with ExceptionAwareEntityEscapeAnalysis
+    with AbstractInterProceduralEntityEscapeAnalysis
+    with ConstructorSensitiveEntityEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEntityEscapeAnalysis
+    with ExceptionAwareEntityEscapeAnalysis

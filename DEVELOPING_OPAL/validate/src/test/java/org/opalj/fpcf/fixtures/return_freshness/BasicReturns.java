@@ -4,6 +4,11 @@ import org.opalj.fpcf.properties.return_freshness.FreshReturnValue;
 import org.opalj.fpcf.properties.return_freshness.NoFreshReturnValue;
 import org.opalj.fpcf.properties.return_freshness.PrimitiveReturnValue;
 
+/**
+ * Some basic test cases for the fresh return value analysis.
+ *
+ * @author Florian Kuebler
+ */
 public class BasicReturns {
 
     public static Object global;

@@ -13,6 +13,12 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
+/**
+ * Annotation to state that the allocation site or parameter escapes via a parameter, the methods
+ * return statement and is thrown as exception (if a proper analysis was scheduled).
+ *
+ * @author Florian Kuebler
+ */
 @PropertyValidator(key = "EscapeProperty",
         validator = EscapeViaParameterAndNormalAndAbnormalReturnMatcher.class)
 @Target({ TYPE_USE, PARAMETER })

@@ -35,7 +35,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 
 /**
- * TODO
+ * A property matcher that checks whether the annotated method has the specified return value
+ * freshness property.
  *
  * @author Florian Kuebler
  */

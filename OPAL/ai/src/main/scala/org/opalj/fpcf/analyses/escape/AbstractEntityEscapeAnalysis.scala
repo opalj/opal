@@ -320,7 +320,6 @@ trait AbstractEntityEscapeAnalysis {
         other: EP[Entity, Property], p: EscapeProperty
     ): PropertyComputationResult = {
         meetMostRestrictive(p)
-        //TODO what if we depend on two properties for the same entity
         assert(dependees.count(epk ⇒ (epk.e eq other.e) && epk.pk == other.pk) <= 1)
         dependees = dependees.filter(epk ⇒ (epk.e ne other.e) || epk.pk != other.pk)
         returnResult
@@ -355,7 +354,6 @@ trait AbstractEntityEscapeAnalysis {
     protected[this] def performIntermediateUpdate(
         newEP: EOptionP[Entity, Property], intermediateProperty: EscapeProperty
     ): PropertyComputationResult = {
-        //TODO what if we depend on two properties for the same entity
         assert(dependees.count(epk ⇒ (epk.e eq newEP.e) && epk.pk == newEP.pk) <= 1)
         dependees = dependees.filter(epk ⇒ (epk.e ne newEP.e) || epk.pk != newEP.pk) + newEP
         meetMostRestrictive(intermediateProperty)
