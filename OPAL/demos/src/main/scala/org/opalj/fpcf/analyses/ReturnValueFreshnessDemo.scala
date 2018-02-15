@@ -41,7 +41,8 @@ import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 
 /**
- * TODO
+ * A small demo determining the return value freshness for all methods in the current project.
+ *
  * @author Florian Kuebler
  */
 object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {

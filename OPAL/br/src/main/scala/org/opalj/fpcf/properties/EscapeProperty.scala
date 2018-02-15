@@ -39,8 +39,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 }
 
 /**
- * Specifies the lifetime of object instance. This is classically used for compiler optimizations
- * such as scalar replacement, stack allocation or removal of synchronization.
+ * Specifies the lifetime and accessability of object instance. This is classically used for
+ * compiler optimizations such as scalar replacement, stack allocation or removal of
+ * synchronization.
  * However, other usages such as finding bugs or helping to identify immutable data-structures
  * are also supported.
  *
@@ -68,20 +69,21 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * In the following, we provide further details about the different escape properties:
  *
  * [[NoEscape]] refers to the property of an object instance O created in method M for that
- * !Escapes(O, M) holds and no other method than M has access to O. This implies that there is no
- * method M' != M that can access O (at least when disregarding reflection and native code).
+ * it lifetime ends with the lifetime of M and no other method than M has access to O.
+ * This implies that there is no method M' != M that can access O (at least when disregarding
+ * reflection and native code).
  * Objects with this property can be allocated at the stack or even scalar-replaced [2].
  *
- * An object instance O created in method M and thread T has the property [[EscapeInCallee]], if it
- * holds !Escapes(O, M) but M passes O as a parameter to a method which does not let O escape any
- * further then [[EscapeInCallee]]. This implies that only M and methods M' that are (transitively)
- * called by M have access to O.
+ * An object instance O created in method M and thread T has the property [[EscapeInCallee]], if its
+ * lifetime does not exceed the lifetime of M but M passes O as a parameter to a method which does
+ * not let O escape any further then [[EscapeInCallee]].
+ * This implies that only M and methods M' that are (transitively) called by M have access to O.
  * For objects that have the property [[EscapeInCallee]] no synchronization is needed and they can
  * be allocated on the stack.
  *
  * For objects O, created in method M and thread T, whose lifetime exceeds its method of creation M
  * and is (therefore) accessible by other methods, we provide seven different properties. For all of
- * them we assume that O M and all methods called by M do not let O escape T. But it is not
+ * them we assume that M and all methods called by M do not let O escape the thread T. But it is not
  * guaranteed that O will not escape T via a caller of M.
  * The properties differ in the reason why the lifetime of O exceeds the lifetime of M.
  * In case of [[EscapeViaReturn]] O is returned by M. If O has an exception type and
@@ -98,11 +100,12 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * [[EscapeViaParameterAndAbnormalReturn]], [[EscapeViaParameterAndReturn]],
  * [[EscapeViaNormalAndAbnormalReturn]] and [[EscapeViaParameterAndNormalAndAbnormalReturn]].
  *
- * An object instance O created in method M and thread T has the property [[GlobalEscape]], if it
- * holds that Escapes(O, M) and Escapes(O, T). For example, this is the case if O gets assigned to
- * a static field ([[EscapeViaStaticField]] but also if assigned to a field of an
- * object that has also [[GlobalEscape]] as property ([[EscapeViaHeapObject]]).
- * Objects that have the property  [[GlobalEscape]] have to be allocated on the heap and
+ * An object instance O created in method M and thread T has the property [[GlobalEscape]], if its
+ * lifetime may exceed the lifetime of T (and another thread T'! = T gets access to O).
+ * For example, this is the case if O gets assigned to a static field ([[EscapeViaStaticField]]
+ * but also if assigned to a field of an object that has also [[GlobalEscape]] as property
+ * ([[EscapeViaHeapObject]]).
+ * Objects that have the property [[GlobalEscape]] have to be allocated on the heap and
  * synchronization mechanisms can not be removed/proper synchronization is required if the
  * object is accessed concurrently – the latter may be the goal of static analyses that find
  * concurrency bugs). If the reason for the global escape is unspecified the case class
@@ -122,11 +125,14 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * If we know that the actual property is at most [[EscapeInCallee (i.e. not [[NoEscape]]),
  * [[AtMost]]([[EscapeInCallee]]) should be used.
  * The same holds for every other non-bottom property.
- * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at most
- * [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
+ * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at
+ * most [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
- * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are generally
- * used as [[Entity]] in combination with this property.
+ * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are
+ * generally used as [[Entity]] in combination with this property.
+ *
+ * [[VirtualMethodEscapeProperty]] provides a wrapper of this property addressing aggregated escape
+ * information for parameters of methods in a type hierarchy.
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.
  * "Escape Analysis for Java." In Proceedings of the 14th ACM SIGPLAN Conference on
@@ -140,9 +146,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-    extends OrderedProperty
-    with ExplicitlyNamedProperty
-    with EscapePropertyMetaInformation {
+        extends OrderedProperty
+        with ExplicitlyNamedProperty
+        with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -157,10 +163,11 @@ sealed abstract class EscapeProperty
     /**
      * A unique id for every escape property. Used for table switches.
      */
-    def propertyValueID: Int
+    protected def propertyValueID: Int
 
     /**
-     * Tests if this property describes equal or less restricted escapes than the given property.
+     * Tests if this property describes equal or less restricted escapes than the given property.``
+     * That is if the lifetime OR access bound of the property is greater or equal than `that`.
      * E.g., returns `true` if this property identifies values which [[GlobalEscape]] and the given
      * property (`that`) refers to values that [[NoEscape]].
      *
@@ -201,6 +208,9 @@ object EscapeProperty extends EscapePropertyMetaInformation {
      * This is the default cycle resolution strategy. The resulting property is
      * the meet of all properties in the cycle. Only [[Conditional]] escape properties are expected
      * within the cycle.
+     *
+     * Cycles can contain [[VirtualMethodEscapeProperty]] elements. We take them also into account
+     * and use this strategy also in this property.
      */
     val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
@@ -683,9 +693,10 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProp
  * However, from a pure technical point-of-view it may be useful/necessary to use
  * [[GlobalEscape]] at some point to let depending computations know that no more
  * changes will happen and therefore the dependencies can be deleted.
+ *
  * @see [[EscapeProperty]] for further details.
+ *
  * @author Florian Kuebler
- *          * todo why not final
  */
 trait GlobalEscape extends EscapeProperty {
     override def isBottom: Boolean = true
@@ -808,6 +819,9 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
     }
 }
 
+/**
+ * Companion object that ensures singletons of the possible instances.
+ */
 object AtMost {
     final val AtMostNoEscape = new AtMost(NoEscape)
     final val AtMostEscapeInCallee = new AtMost(EscapeInCallee)
@@ -863,6 +877,9 @@ case class Conditional private (property: EscapeProperty) extends EscapeProperty
     }
 }
 
+/**
+ * Companion object that ensures singletons of the possible instances.
+ */
 object Conditional {
     private[this] val ConditionalNoEscape = new Conditional(NoEscape)
     private[this] val ConditionalEscapeInCallee = new Conditional(EscapeInCallee)
