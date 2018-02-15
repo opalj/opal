@@ -30,12 +30,15 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.fpcf.properties.EscapeProperty
@@ -81,174 +84,201 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
     def doDetermineFreshness(dm: DefinedMethod): PropertyComputationResult = {
+        if (dm.descriptor.returnType.isBaseType)
+            return Result(dm, PrimitiveReturnValue)
+        if (!dm.hasDefinition)
+            return Result(dm, NoFreshReturnValue)
 
-        val m = dm.definedMethod
-        // todo hardcode clone on array type
-        // base types are always fresh
-        if (m.returnType.isBaseType) {
-            Result(dm, PrimitiveReturnValue)
-        } else {
-            var dependees: Set[EOptionP[Entity, Property]] = Set.empty
-            val code = tacaiProvider(m).stmts
-
-            // for every return-value statement check the def-sites
-            for {
-                ReturnValue(_, expr) ← code
-                defSite ← expr.asVar.definedBy
-            } {
-                if (defSite >= 0) {
-                    val stmt = code(defSite)
-                    stmt match {
-                        // if the def-site of the return-value statement is a new, we check the escape state
-                        case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
-                            val allocationSite = allocationSites(m)(pc)
-                            val resultState = propertyStore(allocationSite, EscapeProperty.key)
-                            resultState match {
-                                case EP(_, EscapeViaReturn)              ⇒
-                                case EP(_, NoEscape | EscapeInCallee)    ⇒ throw new RuntimeException("unexpected result")
-                                case EP(_, p) if p.isFinal               ⇒ return Result(dm, NoFreshReturnValue)
-                                case EP(_, AtMost(_))                    ⇒ return Result(dm, NoFreshReturnValue)
-                                case EP(_, Conditional(AtMost(_)))       ⇒ return Result(dm, NoFreshReturnValue)
-                                case EP(_, Conditional(NoEscape))        ⇒ throw new RuntimeException("unexpected result")
-                                case EP(_, Conditional(EscapeInCallee))  ⇒ throw new RuntimeException("unexpected result")
-                                case EP(_, Conditional(EscapeViaReturn)) ⇒ dependees += resultState
-                                case _                                   ⇒ dependees += resultState
-                            }
-                        // const values are handled as fresh
-                        case Assignment(_, _, _: Const) ⇒
-
-                        case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
-                            if (tgt.usedBy.size == 1) {
-                                if (dm.name == "transitiveObjectFactory")
-                                    println(dm.name)
-                                val callee = project.staticCall(dc, isI, name, desc)
-
-                                // unkown method
-                                if (callee.isEmpty)
-                                    return Result(dm, NoFreshReturnValue)
-
-                                propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
-                                    case EP(_, NoFreshReturnValue) ⇒
-                                        return Result(dm, NoFreshReturnValue)
-                                    case EP(_, FreshReturnValue) ⇒
-                                    case ep @ EP(_, ConditionalFreshReturnValue) ⇒
-                                        dependees += ep
-                                    case epk ⇒ dependees += epk
-                                }
-                            } else
-                                return Result(dm, NoFreshReturnValue)
-
-                        case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                            if (tgt.usedBy.size == 1) {
-                                val callee = project.specialCall(dc, isI, name, desc)
-
-                                // unkown method
-                                if (callee.isEmpty)
-                                    return Result(dm, NoFreshReturnValue)
-
-                                propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
-                                    case EP(_, NoFreshReturnValue) ⇒
-                                        return Result(dm, NoFreshReturnValue)
-                                    case EP(_, FreshReturnValue) ⇒
-                                    case ep @ EP(_, ConditionalFreshReturnValue) ⇒
-                                        dependees += ep
-                                    case epk ⇒ dependees += epk
-                                }
-
-                            } else
-                                return Result(dm, NoFreshReturnValue)
-
-                        case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, _, _)) ⇒
-                            if (tgt.usedBy.size == 1) {
-                                val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
-
-                                // unkown method
-                                if (callee.isEmpty)
-                                    return Result(dm, NoFreshReturnValue)
-
-                                propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                                    case EP(_, VNoFreshReturnValue) ⇒
-                                        return Result(dm, NoFreshReturnValue)
-                                    case EP(_, VFreshReturnValue) ⇒
-                                    case ep @ EP(_, VConditionalFreshReturnValue) ⇒
-                                        dependees += ep
-                                    case epk ⇒ dependees += epk
-                                }
-                            } else {
-                                return Result(dm, NoFreshReturnValue)
-                            }
-                        // other kinds of assignments came from other methods, fields etc, which we do not track
-                        case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
-                        case _                   ⇒ throw new RuntimeException("not yet implemented")
-                    }
-                } else {
-                    return Result(dm, NoFreshReturnValue)
-                }
-
-            }
-
-            /**
-             * A continuation function, that handles updates for the escape state.
-             */
-            def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-                if (dm.name == "transitiveObjectFactory")
-                    println(dm.name)
-                e match {
-                    case _: AllocationSite ⇒ p match {
-                        case NoEscape | EscapeInCallee ⇒
-                            throw new RuntimeException("unexpected result")
-                        case EscapeViaReturn ⇒
-                            dependees = dependees.filter { _.e ne e }
-                            if (dependees.isEmpty) {
-                                Result(dm, FreshReturnValue)
-                            } else {
-                                IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
-                            }
-                        case _: EscapeProperty if p.isFinal ⇒ Result(dm, NoFreshReturnValue)
-                        case AtMost(_)                      ⇒ Result(dm, NoFreshReturnValue)
-                        case Conditional(AtMost(_))         ⇒ Result(dm, NoFreshReturnValue)
-
-                        case p @ Conditional(EscapeViaReturn) ⇒
-                            val newEP = EP(e, p)
-                            dependees = dependees.filter(_.e ne e) + newEP
-                            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
-
-                        case Conditional(NoEscape) | Conditional(EscapeInCallee) ⇒
-                            throw new RuntimeException("unexpected result")
-
-                        case PropertyIsLazilyComputed ⇒
-                            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
-
-                    }
-                    case _: DeclaredMethod ⇒ p match {
-                        case NoFreshReturnValue | VNoFreshReturnValue ⇒
-                            Result(dm, NoFreshReturnValue)
-                        case FreshReturnValue | VFreshReturnValue ⇒
-                            dependees = dependees filter { _.e ne e }
-                            if (dependees.isEmpty)
-                                Result(dm, FreshReturnValue)
-                            else
-                                IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
-
-                        case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
-                            val newEP = EP(e, p)
-                            dependees = dependees.filter(_.e ne e) + newEP
-                            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
-
-                        case PropertyIsLazilyComputed ⇒
-                            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
-                    }
-                }
-
-            }
-
-            if (dependees.isEmpty) {
-                Result(dm, FreshReturnValue)
-            } else {
-                IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+        if (dm.declaringClassType.isArrayType) {
+            if (dm.name == "clone" && dm.descriptor == MethodDescriptor.JustReturnsObject) {
+                return Result(dm, FreshReturnValue)
             }
         }
+
+        val m = dm.definedMethod
+        var dependees: Set[EOptionP[Entity, Property]] = Set.empty
+        val code = tacaiProvider(m).stmts
+
+        // for every return-value statement check the def-sites
+        for {
+            ReturnValue(_, expr) ← code
+            defSite ← expr.asVar.definedBy
+        } {
+            // parameters are not fresh by definition
+            if (defSite < 0)
+                return Result(dm, NoFreshReturnValue)
+
+            code(defSite) match {
+                // if the def-site of the return-value statement is a new, we check the escape state
+                case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
+                    val allocationSite = allocationSites(m)(pc)
+                    val resultState = propertyStore(allocationSite, EscapeProperty.key)
+                    resultState match {
+                        case EP(_, EscapeViaReturn)              ⇒
+                        case EP(_, NoEscape | EscapeInCallee)    ⇒ throw new RuntimeException("unexpected result")
+                        case EP(_, p) if p.isFinal               ⇒ return Result(dm, NoFreshReturnValue)
+                        case EP(_, AtMost(_))                    ⇒ return Result(dm, NoFreshReturnValue)
+                        case EP(_, Conditional(AtMost(_)))       ⇒ return Result(dm, NoFreshReturnValue)
+                        case EP(_, Conditional(NoEscape))        ⇒ throw new RuntimeException("unexpected result")
+                        case EP(_, Conditional(EscapeInCallee))  ⇒ throw new RuntimeException("unexpected result")
+                        case EP(_, Conditional(EscapeViaReturn)) ⇒ dependees += resultState
+                        case EP(_, Conditional(_))               ⇒ return Result(dm, NoFreshReturnValue)
+                        case _                                   ⇒ dependees += resultState
+                    }
+
+                // const values are handled as fresh
+                case Assignment(_, _, _: Const) ⇒
+
+                case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
+                    if (tgt.usedBy.size == 1) {
+                        val callee = project.staticCall(dc, isI, name, desc)
+
+                        handleConcreteCall(callee) match {
+                            case Some(toReturn) ⇒ return toReturn
+                            case None           ⇒
+                        }
+                    } else
+                        return Result(dm, NoFreshReturnValue)
+
+                case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
+                    if (tgt.usedBy.size == 1) {
+                        val callee = project.specialCall(dc, isI, name, desc)
+
+                        handleConcreteCall(callee) match {
+                            case Some(toReturn) ⇒ return toReturn
+                            case None           ⇒
+                        }
+
+                    } else
+                        return Result(dm, NoFreshReturnValue)
+
+                case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
+                    if (tgt.usedBy.size == 1) {
+                        val value = receiver.asVar.value.asDomainReferenceValue
+                        if (dc.isArrayType) {
+                            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, dm.descriptor)
+                            handleConcreteCall(callee) match {
+                                case Some(toReturn) ⇒ return toReturn
+                                case None           ⇒
+                            }
+                        } else if (value.isPrecise) {
+                            val preciseType = value.valueType.get
+                            val callee = project.instanceCall(preciseType.asObjectType, dc, name, desc)
+                            handleConcreteCall(callee) match {
+                                case Some(toReturn) ⇒ return toReturn
+                                case None           ⇒
+                            }
+                        } else {
+                            val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
+
+                            // unkown method
+                            if (callee.isEmpty)
+                                return Result(dm, NoFreshReturnValue)
+
+                            propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
+                                case EP(_, VNoFreshReturnValue) ⇒
+                                    return Result(dm, NoFreshReturnValue)
+                                case EP(_, VFreshReturnValue) ⇒
+                                case ep @ EP(_, VConditionalFreshReturnValue) ⇒
+                                    dependees += ep
+                                case epk ⇒ dependees += epk
+                            }
+                        }
+                    } else {
+                        return Result(dm, NoFreshReturnValue)
+                    }
+                // other kinds of assignments came from other methods, fields etc, which we do not track
+                case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
+                case _                   ⇒ throw new RuntimeException("not yet implemented")
+            }
+        }
+
+        def handleConcreteCall(callee: opalj.Result[Method]): Option[PropertyComputationResult] = {
+            // unkown method
+            if (callee.isEmpty)
+                return Some(Result(dm, NoFreshReturnValue))
+
+            propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
+                case EP(_, NoFreshReturnValue) ⇒
+                    return Some(Result(dm, NoFreshReturnValue))
+                case EP(_, FreshReturnValue) ⇒
+                case ep @ EP(_, ConditionalFreshReturnValue) ⇒
+                    dependees += ep
+                case epk ⇒ dependees += epk
+            }
+            None
+        }
+
+        /**
+         * A continuation function, that handles updates for the escape state.
+         */
+        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
+            e match {
+
+                case _: AllocationSite ⇒ p match {
+                    case NoEscape | EscapeInCallee ⇒
+                        throw new RuntimeException("unexpected result")
+
+                    case EscapeViaReturn ⇒
+                        dependees = dependees.filter(epk ⇒ (epk.e ne e) || epk.pk != p.key)
+                        if (dependees.isEmpty) {
+                            Result(dm, FreshReturnValue)
+                        } else {
+                            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+                        }
+
+                    //TODO what escapes via exceptions?
+                    case _: EscapeProperty if p.isFinal ⇒ Result(dm, NoFreshReturnValue)
+
+                    // it could happen anything
+                    case AtMost(_)                      ⇒ Result(dm, NoFreshReturnValue)
+                    case Conditional(AtMost(_))         ⇒ Result(dm, NoFreshReturnValue)
+
+                    case p @ Conditional(EscapeViaReturn) ⇒
+                        val newEP = EP(e, p)
+                        dependees = dependees.filter(epk ⇒ (epk.e ne e) || epk.pk != p.key) + newEP
+                        IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+
+                    case Conditional(NoEscape) | Conditional(EscapeInCallee) ⇒
+                        throw new RuntimeException("unexpected result")
+
+                    // p is worse than via return
+                    case Conditional(_) ⇒ Result(dm, NoFreshReturnValue)
+
+                    case PropertyIsLazilyComputed ⇒
+                        IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+
+                }
+
+                case _: DeclaredMethod ⇒ p match {
+                    case NoFreshReturnValue | VNoFreshReturnValue ⇒
+                        Result(dm, NoFreshReturnValue)
+                    case FreshReturnValue | VFreshReturnValue ⇒
+                        dependees = dependees.filter(epk ⇒ (epk.e ne e) || epk.pk != p.key)
+                        if (dependees.isEmpty)
+                            Result(dm, FreshReturnValue)
+                        else
+                            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+
+                    case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
+                        val newEP = EP(e, p)
+                        dependees = dependees.filter(epk ⇒ (epk.e ne e) || epk.pk != p.key) + newEP
+                        IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+
+                    case PropertyIsLazilyComputed ⇒
+                        IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+                }
+            }
+
+        }
+
+        if (dependees.isEmpty) {
+            Result(dm, FreshReturnValue)
+        } else {
+            IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
+        }
     }
+
     /**
      * Determines the freshness of the return value.
      */

@@ -58,7 +58,7 @@ class FreshReturnValueAnalysisTests extends PropertiesTest {
         VirtualReturnValueFreshnessAnalysis.startLazily(p, ps)
 
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
+        ps.waitOnPropertyComputationCompletion()
         (p, ps, as)
     }
 

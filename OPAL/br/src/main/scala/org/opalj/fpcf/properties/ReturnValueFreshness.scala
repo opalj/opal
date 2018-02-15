@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.fpcf.PropertyKey.SomeEPKs
+
 sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = ReturnValueFreshness
 }
@@ -41,19 +43,34 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class ReturnValueFreshness extends Property
-    with ReturnValueFreshnessPropertyMetaInformation {
+        with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 }
 
 object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation {
+
+    val cycleResolutionStrategy: (PropertyStore, SomeEPKs) ⇒ Iterable[PropertyComputationResult] =
+        (ps: PropertyStore, epks: SomeEPKs) ⇒ {
+            epks.map { epk ⇒
+                ps(epk) match {
+                    case EP(e, ConditionalFreshReturnValue) ⇒
+                        Result(e, FreshReturnValue)
+                    case EP(e, VConditionalFreshReturnValue) ⇒
+                        Result(e, VFreshReturnValue)
+
+                    case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
+                }
+            }
+        }
+
     final lazy val key: PropertyKey[ReturnValueFreshness] = PropertyKey.create(
         // Name of the property
         "ReturnValueFreshness",
         // fallback value
         NoFreshReturnValue,
         // cycle-resolution strategy
-        NoFreshReturnValue
+        cycleResolutionStrategy
     )
 }
 

@@ -60,7 +60,7 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         VirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
 
         ReturnValueFreshnessAnalysis.start(project, ps)
-        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
+        ps.waitOnPropertyComputationCompletion()
 
         val fresh = ps.entities(FreshReturnValue)
         val notFresh = ps.entities(NoFreshReturnValue)
