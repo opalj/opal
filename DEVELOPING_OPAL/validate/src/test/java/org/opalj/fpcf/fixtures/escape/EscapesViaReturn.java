@@ -62,6 +62,18 @@ public class EscapesViaReturn {
         return x;
     }
 
+    public static void handlingReturnGlobalEscape() {
+        Object o = new
+                @EscapeViaStaticField(
+                        value = "the object is passed to an identity function and escapes")
+                @AtMostEscapeInCallee(value = "the domain does not recognize the identity", performInvokationsDomain = false)
+                        Object();
+        Object x = identity(o);
+        if (x != null) {
+            global = x;
+        }
+    }
+
     public void noEscapeAfterCallToIdentiy() {
         Object o = new
                 @EscapeInCallee(

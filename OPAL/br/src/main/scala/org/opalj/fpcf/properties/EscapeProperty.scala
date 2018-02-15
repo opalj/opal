@@ -146,9 +146,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-        extends OrderedProperty
-        with ExplicitlyNamedProperty
-        with EscapePropertyMetaInformation {
+    extends OrderedProperty
+    with ExplicitlyNamedProperty
+    with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -163,7 +163,7 @@ sealed abstract class EscapeProperty
     /**
      * A unique id for every escape property. Used for table switches.
      */
-    protected def propertyValueID: Int
+    def propertyValueID: Int
 
     /**
      * Tests if this property describes equal or less restricted escapes than the given property.``

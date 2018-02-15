@@ -77,6 +77,13 @@ public class AllEscapeStates {
         AllEscapeStates.global = c;
     }
 
+    public static void escapeViaHeapObjectAfterCast() {
+        Object o = globalObject;
+        if (o instanceof AllEscapeStates) {
+            ((AllEscapeStates) o).f = new @EscapeViaHeapObject("assigned to global f") Object();
+        }
+    }
+
     public static void escapeViaParameter(AllEscapeStates param) {
         param.f =
                 new @EscapeViaParameter(value = "passed to parameter", analyses = {})

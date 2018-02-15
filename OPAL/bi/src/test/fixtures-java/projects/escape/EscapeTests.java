@@ -37,77 +37,6 @@ import static annotations.escape.EscapeKeys.*;
  */
 public class EscapeTests {
 
-    public static Object returnEscape() {
-        return new @Escapes(ViaReturn) Object();
-    }
-
-    public static int handlingReturnNoEscape() {
-        Object o = new
-                @Escapes(InCallee)
-                @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
-                        Object();
-        Object x = formalParamReturnEscape(o);
-        if (x == null) {
-            return -1;
-        }
-        return 0;
-    }
-
-    public static void handlingReturnGlobalEscape() {
-        Object o = new
-                @Escapes(ViaStaticField)
-                @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
-                        Object();
-        Object x = formalParamReturnEscape(o);
-        if (x != null) {
-            ClassWithFields.global = x;
-        }
-    }
-
-    public static void handlingReturnNotFurtherTracked() {
-        Object o = new
-                @Escapes(InCallee)
-                @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
-                        Object();
-        formalParamReturnEscape(o);
-    }
-
-    public static void handlingSometimesReturnGlobalEscape(boolean p) {
-        Object o = new @Escapes(ViaStaticField)
-        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
-                Object();
-        Object x = formalParamSometimesReturnEscape(p, o);
-        ClassWithFields.global = x;
-    }
-
-    public static Object multipleEscapes(ClassWithFields param) {
-        ClassWithFields.global = new @Escapes(ViaStaticField) Object();
-        if (param == null) {
-            throw new
-                    @Escapes(ViaAbnormalReturn)
-                    @Escapes(value = ViaAbnormalReturn,
-                            algorithms = { "SimpleEscapeAnalysis",
-                                    "InterproceduralEscapeAnalysis" })
-                            RuntimeException();
-        }
-        param.f =
-                new
-                        @Escapes(ViaParameter)
-                        @Escapes(value = MaybeViaParameter,
-                                algorithms = { "SimpleEscapeAnalysis",
-                                        "InterproceduralEscapeAnalysis" })
-                                Object();
-        Object local = new @Escapes(No) Object();
-        Object noLocal =
-                new
-                        @Escapes(ViaStaticField)
-                        @Escapes(value = MaybeInCallee, algorithms = "SimpleEscapeAnalysis")
-                                Object();
-        if (local != null) {
-            formalParamEscape(noLocal);
-        }
-        return new @Escapes(ViaReturn) Object();
-    }
 
     public static void globalFieldEscape() {
         ClassWithFields.global = new @Escapes(ViaStaticField) Object();
@@ -202,14 +131,6 @@ public class EscapeTests {
                             Object();
     }
 
-    public static void parameterEscape(ClassWithFields param) {
-        param.f =
-                new
-                        @Escapes(ViaParameter)
-                        @Escapes(value = MaybeViaParameter, algorithms = { "SimpleEscapeAnalysis",
-                                "InterproceduralEscapeAnalysis" })
-                                Object();
-    }
 
     public static void exceptionEscape() {
         throw new
@@ -320,13 +241,6 @@ public class EscapeTests {
         ClassWithFields.global = param;
     }
 
-    public static Object formalParamReturnEscape(
-            @Escapes(ViaReturn)
-            @Escapes(value = MaybeNo, algorithms = "SimpleEscapeAnalysis")
-                    Object param
-    ) {
-        return param;
-    }
 
     public static Object formalParamSometimesReturnEscape(
             boolean p,
