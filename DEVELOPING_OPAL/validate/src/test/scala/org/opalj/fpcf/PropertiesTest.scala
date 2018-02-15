@@ -39,7 +39,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.util.ScalaMajorVersion
-//import org.opalj.bytecode.RTJar
+import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -88,7 +88,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
-        val libraryClassFiles = /*ClassFiles(RTJar) ++*/ propertiesClassFiles
+        val libraryClassFiles = ClassFiles(RTJar) ++ propertiesClassFiles
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
