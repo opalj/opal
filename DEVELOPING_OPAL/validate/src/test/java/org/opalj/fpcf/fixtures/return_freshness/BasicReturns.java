@@ -39,4 +39,22 @@ public class BasicReturns {
         global = o;
         return o;
     }
+
+    @NoFreshReturnValue("return value is fresh but gets assigned to static field")
+    public static Object transitiveEscapingObject() {
+        Object o = objectFactory();
+        global = o;
+        return o;
+    }
+
+    @FreshReturnValue("return value does not escape")
+    public static Object transitiveNoEscape() {
+        Object o = objectFactory();
+
+        if (o instanceof BasicReturns) {
+            System.out.println("OK");
+        }
+
+        return o;
+    }
 }

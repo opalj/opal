@@ -32,41 +32,45 @@ package analyses
 
 import org.opalj
 import org.opalj.ai.Domain
+import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.Method
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSites
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
-import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.ReturnValueFreshness
-import org.opalj.fpcf.properties.FreshReturnValue
-import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.FreshReturnValue
+import org.opalj.fpcf.properties.NoEscape
+import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
+import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VConditionalFreshReturnValue
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.TACode
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.New
-import org.opalj.tac.NewArray
 import org.opalj.tac.Assignment
 import org.opalj.tac.Const
+import org.opalj.tac.DUVar
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.New
+import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 
 /**
@@ -79,7 +83,8 @@ import org.opalj.tac.VirtualFunctionCall
  * @author Florian Kuebler
  */
 class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
-    private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
@@ -130,62 +135,64 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case Assignment(_, _, _: Const) ⇒
 
                 case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
-                    if (tgt.usedBy.size == 1) {
-                        val callee = project.staticCall(dc, isI, name, desc)
+                    handleEscape(defSite, tgt.usedBy, code) match {
+                        case Some(toReturn) ⇒ return toReturn
+                        case None ⇒
+                            val callee = project.staticCall(dc, isI, name, desc)
 
-                        handleConcreteCall(callee) match {
-                            case Some(toReturn) ⇒ return toReturn
-                            case None           ⇒
-                        }
-                    } else
-                        return Result(dm, NoFreshReturnValue)
+                            handleConcreteCall(callee) match {
+                                case Some(toReturn) ⇒ return toReturn
+                                case None           ⇒
+                            }
+                    }
 
                 case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                    if (tgt.usedBy.size == 1) {
-                        val callee = project.specialCall(dc, isI, name, desc)
+                    handleEscape(defSite, tgt.usedBy, code) match {
+                        case Some(toReturn) ⇒ return toReturn
+                        case None ⇒
+                            val callee = project.specialCall(dc, isI, name, desc)
 
-                        handleConcreteCall(callee) match {
-                            case Some(toReturn) ⇒ return toReturn
-                            case None           ⇒
-                        }
-
-                    } else
-                        return Result(dm, NoFreshReturnValue)
+                            handleConcreteCall(callee) match {
+                                case Some(toReturn) ⇒ return toReturn
+                                case None           ⇒
+                            }
+                    }
 
                 case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
-                    if (tgt.usedBy.size == 1) {
-                        val value = receiver.asVar.value.asDomainReferenceValue
-                        if (dc.isArrayType) {
-                            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, dm.descriptor)
-                            handleConcreteCall(callee) match {
-                                case Some(toReturn) ⇒ return toReturn
-                                case None           ⇒
-                            }
-                        } else if (value.isPrecise) {
-                            val preciseType = value.valueType.get
-                            val callee = project.instanceCall(preciseType.asObjectType, dc, name, desc)
-                            handleConcreteCall(callee) match {
-                                case Some(toReturn) ⇒ return toReturn
-                                case None           ⇒
-                            }
-                        } else {
-                            val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
+                    handleEscape(defSite, tgt.usedBy, code) match {
+                        case Some(toReturn) ⇒ return toReturn
+                        case None ⇒
+                            val value = receiver.asVar.value.asDomainReferenceValue
+                            if (dc.isArrayType) {
+                                val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, dm.descriptor)
+                                handleConcreteCall(callee) match {
+                                    case Some(toReturn) ⇒ return toReturn
+                                    case None           ⇒
+                                }
+                            } else if (value.isPrecise) {
+                                val preciseType = value.valueType.get
+                                val callee = project.instanceCall(preciseType.asObjectType, dc, name, desc)
+                                handleConcreteCall(callee) match {
+                                    case Some(toReturn) ⇒ return toReturn
+                                    case None           ⇒
+                                }
+                            } else {
+                                val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
 
-                            // unkown method
-                            if (callee.isEmpty)
-                                return Result(dm, NoFreshReturnValue)
-
-                            propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                                case EP(_, VNoFreshReturnValue) ⇒
+                                // unkown method
+                                if (callee.isEmpty)
                                     return Result(dm, NoFreshReturnValue)
-                                case EP(_, VFreshReturnValue) ⇒
-                                case ep @ EP(_, VConditionalFreshReturnValue) ⇒
-                                    dependees += ep
-                                case epk ⇒ dependees += epk
+
+                                propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
+                                    case EP(_, VNoFreshReturnValue) ⇒
+                                        return Result(dm, NoFreshReturnValue)
+                                    case EP(_, VFreshReturnValue) ⇒
+                                    case ep @ EP(_, VConditionalFreshReturnValue) ⇒
+                                        dependees += ep
+                                    case epk ⇒ dependees += epk
+                                }
                             }
-                        }
-                    } else {
-                        return Result(dm, NoFreshReturnValue)
+
                     }
                 // other kinds of assignments came from other methods, fields etc, which we do not track
                 case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
@@ -207,6 +214,18 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case epk ⇒ dependees += epk
             }
             None
+        }
+
+        def handleEscape(defSite1: ValueOrigin, uses1: IntTrieSet, code1: Array[Stmt[V]]) = {
+            new DefaultEntityEscapeAnalysis {
+                override val code: Array[Stmt[V]] = code1
+                override val defSite: ValueOrigin = defSite1
+                override val uses: IntTrieSet = uses1
+                override val entity: Entity = null
+            }.doDetermineEscape() match {
+                case Result(_, EscapeViaReturn) ⇒ None
+                case _                          ⇒ Some(Result(dm, NoFreshReturnValue))
+            }
         }
 
         /**

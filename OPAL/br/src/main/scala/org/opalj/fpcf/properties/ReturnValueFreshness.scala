@@ -43,7 +43,7 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class ReturnValueFreshness extends Property
-        with ReturnValueFreshnessPropertyMetaInformation {
+    with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 }
