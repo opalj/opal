@@ -101,6 +101,10 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         }
 
         val m = dm.definedMethod
+
+        if (m.body.isEmpty)
+            return Result(dm, NoFreshReturnValue)
+
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         val code = tacaiProvider(m).stmts
 
@@ -135,64 +139,41 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case Assignment(_, _, _: Const) ⇒
 
                 case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code) match {
-                        case Some(toReturn) ⇒ return toReturn
-                        case None ⇒
-                            val callee = project.staticCall(dc, isI, name, desc)
+                    handleEscape(defSite, tgt.usedBy, code).map(return _)
 
-                            handleConcreteCall(callee) match {
-                                case Some(toReturn) ⇒ return toReturn
-                                case None           ⇒
-                            }
-                    }
+                    val callee = project.staticCall(dc, isI, name, desc)
+                    handleConcreteCall(callee).map(return _)
 
                 case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code) match {
-                        case Some(toReturn) ⇒ return toReturn
-                        case None ⇒
-                            val callee = project.specialCall(dc, isI, name, desc)
+                    handleEscape(defSite, tgt.usedBy, code).map(return _)
 
-                            handleConcreteCall(callee) match {
-                                case Some(toReturn) ⇒ return toReturn
-                                case None           ⇒
-                            }
-                    }
+                    val callee = project.specialCall(dc, isI, name, desc)
+                    handleConcreteCall(callee).map(return _)
 
                 case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code) match {
-                        case Some(toReturn) ⇒ return toReturn
-                        case None ⇒
-                            val value = receiver.asVar.value.asDomainReferenceValue
-                            if (dc.isArrayType) {
-                                val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, dm.descriptor)
-                                handleConcreteCall(callee) match {
-                                    case Some(toReturn) ⇒ return toReturn
-                                    case None           ⇒
-                                }
-                            } else if (value.isPrecise) {
-                                val preciseType = value.valueType.get
-                                val callee = project.instanceCall(preciseType.asObjectType, dc, name, desc)
-                                handleConcreteCall(callee) match {
-                                    case Some(toReturn) ⇒ return toReturn
-                                    case None           ⇒
-                                }
-                            } else {
-                                val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
+                    handleEscape(defSite, tgt.usedBy, code).map(return _)
 
-                                // unkown method
-                                if (callee.isEmpty)
-                                    return Result(dm, NoFreshReturnValue)
+                    val value = receiver.asVar.value.asDomainReferenceValue
+                    if (dc.isArrayType) {
+                        val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                        handleConcreteCall(callee).map(return _)
+                    } else if (value.isPrecise) {
+                        val preciseType = value.valueType.get
+                        val callee = project.instanceCall(m.classFile.thisType, preciseType, name, desc)
+                        handleConcreteCall(callee).map(return _)
+                    } else {
+                        val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
 
-                                propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                                    case EP(_, VNoFreshReturnValue) ⇒
-                                        return Result(dm, NoFreshReturnValue)
-                                    case EP(_, VFreshReturnValue) ⇒
-                                    case ep @ EP(_, VConditionalFreshReturnValue) ⇒
-                                        dependees += ep
-                                    case epk ⇒ dependees += epk
-                                }
-                            }
+                        // unkown method
+                        if (callee.isEmpty)
+                            return Result(dm, NoFreshReturnValue)
 
+                        propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
+                            case EP(_, VNoFreshReturnValue) ⇒
+                                return Result(dm, NoFreshReturnValue)
+                            case EP(_, VFreshReturnValue) ⇒
+                            case epkOrCond ⇒ dependees += epkOrCond
+                        }
                     }
                 // other kinds of assignments came from other methods, fields etc, which we do not track
                 case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
@@ -209,9 +190,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case EP(_, NoFreshReturnValue) ⇒
                     return Some(Result(dm, NoFreshReturnValue))
                 case EP(_, FreshReturnValue) ⇒
-                case ep @ EP(_, ConditionalFreshReturnValue) ⇒
-                    dependees += ep
-                case epk ⇒ dependees += epk
+                case epkOrCond               ⇒ dependees += epkOrCond
             }
             None
         }
@@ -314,7 +293,8 @@ object ReturnValueFreshnessAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(ReturnValueFreshness)
 
-    override def usedProperties: Set[PropertyKind] = Set(EscapeProperty)
+    override def usedProperties: Set[PropertyKind] =
+        Set(EscapeProperty, VirtualMethodReturnValueFreshness)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = propertyStore.context[DeclaredMethods].declaredMethods

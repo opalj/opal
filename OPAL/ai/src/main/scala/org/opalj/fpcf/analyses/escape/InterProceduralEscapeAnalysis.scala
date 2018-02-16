@@ -124,7 +124,7 @@ object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
-    override def usedProperties: Set[PropertyKind] = Set.empty
+    override def usedProperties: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         /*implicit val logContext = project.logContext
