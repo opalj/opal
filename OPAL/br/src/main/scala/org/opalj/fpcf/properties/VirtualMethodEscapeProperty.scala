@@ -144,7 +144,7 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VAtMostCondEscapeViaReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaReturn)))
     final val VAtMostCondEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaAbnormalReturn)))
 
-    final val VAtMostCondEscapeViaNormalAndAbnormalReturn = VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaNormalAndAbnormalReturn)))
+    final val VAtMostCondEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaNormalAndAbnormalReturn)))
     final val VAtMostCondEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndReturn)))
     final val VAtMostCondEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndAbnormalReturn)))
     final val VAtMostCondEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)))
