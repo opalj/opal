@@ -97,7 +97,7 @@ public class EscapesOfExceptions {
         }
     }
 
-    public static void isThrownInConstructor() throws AnException{
+    public static void isThrownInConstructor() throws AnException {
         new
                 @AtMostNoEscape(value = "analyses do not track the abnormal return any further")
                 @EscapeViaAbnormalReturn(value = "the exception is thrown in its constructor", analyses = {})
@@ -105,10 +105,32 @@ public class EscapesOfExceptions {
     }
 
     static class AnException extends Exception {
-        AnException(boolean b) throws AnException{
+        AnException(boolean b) throws AnException {
             if (b) {
                 throw this;
             }
         }
+    }
+
+
+    public static void fieldWriteOfException() {
+        try {
+            thrownExceptionWithField();
+        } catch (ExceptionWithField e) {
+            e.value = new
+                    @NoEscape(value = "the exception is not thrown further", analyses = {})
+                    @AtMostNoEscape("we do not track fields")
+                            Object();
+        }
+    }
+
+
+    public static void thrownExceptionWithField() throws ExceptionWithField {
+        if (System.currentTimeMillis() == 123123123)
+            throw new @EscapeViaAbnormalReturn("exception is thrown") ExceptionWithField();
+    }
+
+    static class ExceptionWithField extends Exception {
+        public Object value;
     }
 }

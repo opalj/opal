@@ -214,7 +214,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         case s                                    ⇒ throw new UnknownError(s"Unexpected tac: $s")
                     }
 
-                } else if (referenceDefSite >= ai.VMLevelValuesOriginOffset) {
+                } else if (referenceDefSite > ai.VMLevelValuesOriginOffset) {
                     // assigned to field of parameter
                     meetMostRestrictive(AtMost(EscapeViaParameter))
                     /* As may alias information are not easily available we cannot simply use
@@ -227,7 +227,11 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
                         case EP(_, p) if p.isFinal  ⇒
                         case _                      ⇒ dependees += escapeState
                     }*/
-                } else throw new UnknownError(s"Unexpected origin $referenceDefSite")
+                } else {
+                    // we store the value into a field of an exception object. As we do not track
+                    // the field any further we are done.
+                    meetMostRestrictive(AtMost(NoEscape))
+                }
             }
         }
     }
