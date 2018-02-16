@@ -138,18 +138,18 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
                             case Assignment(_, _, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
                                 val callee = project.staticCall(dc, isI, name, desc)
-                                handleConcreteCall(callee).map(return _)
+                                handleConcreteCall(callee).foreach(return _)
 
                             case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
                                 val callee = project.specialCall(dc, isI, name, desc)
-                                handleConcreteCall(callee).map(return _)
+                                handleConcreteCall(callee).foreach(return _)
 
                             case Assignment(_, _, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
 
                                 val value = receiver.asVar.value.asDomainReferenceValue
                                 if (dc.isArrayType) {
                                     val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                                    handleConcreteCall(callee).map(return _)
+                                    handleConcreteCall(callee).foreach(return _)
                                 } else if (value.isPrecise) {
                                     val preciseType = value.valueType.get
                                     val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)

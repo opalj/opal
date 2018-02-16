@@ -139,28 +139,28 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case Assignment(_, _, _: Const) ⇒
 
                 case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).map(return _)
+                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
 
                     val callee = project.staticCall(dc, isI, name, desc)
-                    handleConcreteCall(callee).map(return _)
+                    handleConcreteCall(callee).foreach(return _)
 
                 case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).map(return _)
+                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
 
                     val callee = project.specialCall(dc, isI, name, desc)
-                    handleConcreteCall(callee).map(return _)
+                    handleConcreteCall(callee).foreach(return _)
 
                 case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).map(return _)
+                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
 
                     val value = receiver.asVar.value.asDomainReferenceValue
                     if (dc.isArrayType) {
                         val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                        handleConcreteCall(callee).map(return _)
+                        handleConcreteCall(callee).foreach(return _)
                     } else if (value.isPrecise) {
                         val preciseType = value.valueType.get
                         val callee = project.instanceCall(m.classFile.thisType, preciseType, name, desc)
-                        handleConcreteCall(callee).map(return _)
+                        handleConcreteCall(callee).foreach(return _)
                     } else {
                         val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
 
