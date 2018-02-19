@@ -108,7 +108,7 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VEscapeViaReturn = new VirtualMethodEscapeProperty(EscapeViaReturn)
     final val VEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaAbnormalReturn)
 
-    final val VEscapeViaNormalAndAbnormalReturn = VirtualMethodEscapeProperty(EscapeViaNormalAndAbnormalReturn)
+    final val VEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaNormalAndAbnormalReturn)
     final val VEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(EscapeViaParameterAndReturn)
     final val VEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaParameterAndAbnormalReturn)
     final val VEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(EscapeViaParameterAndNormalAndAbnormalReturn)
@@ -120,7 +120,7 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VAtMostEscapeViaReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaReturn))
     final val VAtMostEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaAbnormalReturn))
 
-    final val VAtMostEscapeViaNormalAndAbnormalReturn = VirtualMethodEscapeProperty(AtMost(EscapeViaNormalAndAbnormalReturn))
+    final val VAtMostEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaNormalAndAbnormalReturn))
     final val VAtMostEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndReturn))
     final val VAtMostEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndAbnormalReturn))
     final val VAtMostEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn))
@@ -132,7 +132,7 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VCondEscapeViaReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))
     final val VCondEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaAbnormalReturn))
 
-    final val VCondEscapeViaNormalAndAbnormalReturn = VirtualMethodEscapeProperty(Conditional(EscapeViaNormalAndAbnormalReturn))
+    final val VCondEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaNormalAndAbnormalReturn))
     final val VCondEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameterAndReturn))
     final val VCondEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameterAndAbnormalReturn))
     final val VCondEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameterAndNormalAndAbnormalReturn))
