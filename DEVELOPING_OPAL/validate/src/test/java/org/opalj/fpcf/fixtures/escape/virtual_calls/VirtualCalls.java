@@ -31,8 +31,10 @@ package org.opalj.fpcf.fixtures.escape.virtual_calls;
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.fixtures.escape.Circle;
+import org.opalj.fpcf.properties.escape.AtMostNoEscape;
 import org.opalj.fpcf.properties.escape.EscapeInCallee;
 import org.opalj.fpcf.properties.escape.AtMostEscapeInCallee;
+import org.opalj.fpcf.properties.escape.NoEscape;
 
 public class VirtualCalls {
 
@@ -54,5 +56,28 @@ public class VirtualCalls {
                         analyses = SimpleEscapeAnalysis.class)
                         Circle();
         return x.copyCircle(c);
+    }
+
+    public void preciseTypeKnown() {
+        Circle c = new
+                @EscapeInCallee(
+                        value = "the type is precise and the parameter is thrown away",
+                        analyses = {InterProceduralEscapeAnalysis.class})
+                @AtMostEscapeInCallee(
+                        value = "intra-procedural analyses don't handle this",
+                        analyses = SimpleEscapeAnalysis.class)
+
+                        Circle();
+        Interface x = new FinalClassExtendsC();
+        x.cyclicFunction(c, 12);
+    }
+
+    public void preciseAndImpreciseType(Interface i) {
+        Circle c = new
+                @AtMostEscapeInCallee("the type is extensible")
+                        Circle();
+        Interface x = new FinalClassExtendsC();
+        x.cyclicFunction(c, 12);
+        i.cyclicFunction(c, 123);
     }
 }

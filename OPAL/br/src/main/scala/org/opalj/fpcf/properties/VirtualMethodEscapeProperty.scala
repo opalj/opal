@@ -45,6 +45,13 @@ sealed case class VirtualMethodEscapeProperty(
         VirtualMethodEscapeProperty(escapeProperty meet other.escapeProperty)
 }
 
+/**
+ * Represents the [[EscapeProperty]] for [[org.opalj.br.analyses.VirtualFormalParameter]] objects
+ * as entity. The underlying property is an aggregation of escape properties of the underlying
+ * parameters of the concrete methods.
+ *
+ * @author Florian Kuebler
+ */
 object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInformation {
 
     def apply(

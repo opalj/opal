@@ -172,7 +172,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             case EP(_, VNoFreshReturnValue) ⇒
                                 return Result(dm, NoFreshReturnValue)
                             case EP(_, VFreshReturnValue) ⇒
-                            case epkOrCond ⇒ dependees += epkOrCond
+                            case epkOrCond                ⇒ dependees += epkOrCond
                         }
                     }
                 // other kinds of assignments came from other methods, fields etc, which we do not track

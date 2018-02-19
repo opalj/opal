@@ -77,9 +77,10 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
     def determineLocality(field: Field): PropertyComputationResult = {
+        // base types can be considered to be local
         if (field.fieldType.isBaseType)
             return Result(field, LocalField)
-        //todo what about baseTypes?
+
         // this analysis can only track private fields
         if (!field.isPrivate)
             return Result(field, NoLocalField)

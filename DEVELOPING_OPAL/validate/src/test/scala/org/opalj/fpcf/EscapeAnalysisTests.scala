@@ -51,14 +51,12 @@ class EscapeAnalysisTests extends PropertiesTest {
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        //val testConfig = AnalysisModeConfigFactory.createConfig(AnalysisModes.OPA)
-        // val p = Project.recreate(FixtureProject, testConfig)
         val p = FixtureProject.recreate()
 
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
             (m: Method) ⇒ {
-                new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m) // with DefaultArrayValuesBinding
+                new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
             }
         )
         PropertyStoreKey.makeAllocationSitesAvailable(p)
@@ -67,7 +65,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         val ps = p.get(PropertyStoreKey)
         lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = true)
+        ps.waitOnPropertyComputationCompletion()
         (p, ps, as)
     }
 
