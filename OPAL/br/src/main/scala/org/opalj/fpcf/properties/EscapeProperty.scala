@@ -219,12 +219,12 @@ object EscapeProperty extends EscapePropertyMetaInformation {
                     case EP(e, Conditional(AtMost(p))) ⇒
                         RefinableResult(e, AtMost(p))
                     case EP(e, VirtualMethodEscapeProperty(Conditional(AtMost(p)))) ⇒
-                        RefinableResult(e, AtMost(p))
+                        RefinableResult(e, VirtualMethodEscapeProperty(AtMost(p)))
 
                     case EP(e, Conditional(p)) ⇒
                         Result(e, p)
                     case EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
-                        Result(e, p)
+                        Result(e, VirtualMethodEscapeProperty(p))
 
                     case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
                 }
