@@ -215,11 +215,12 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         val cloneM = methods.find(m ⇒ m.name == "clone" && (m.descriptor eq cloneDescr))
         cloneM match {
             case Some(m) ⇒ //TODO analyze if it sets the field of an new object
+                var foundOverrideOfField = false
                 val stmts = tacaiProvider(m).stmts
                 for (stmt ← stmts) {
                     stmt match {
                         case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
-
+                            foundOverrideOfField = true
                             // check objRef comes from super.clone // does not escape otherwise
                             checkFreshnessOfValue(objRef, stmt, stmts, m, state, (stmt, method, state) ⇒ {
                                 val superType = field.classFile.superclassType.get
@@ -235,6 +236,9 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
                     }
                 }
+
+                if (!foundOverrideOfField)
+                    return Result(field, NoLocalField)
             case None ⇒ return Result(field, NoLocalField)
         }
 
