@@ -35,6 +35,7 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Field
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
@@ -58,8 +59,8 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Const
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.Expr
 import org.opalj.tac.GetField
-import org.opalj.tac.GetStatic
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
@@ -70,11 +71,128 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 
+/**
+ *
+ * @author Florian Kuebler
+ */
 class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+
+    class State(val field: Field) {
+        var dependees: Set[EOptionP[Entity, Property]] = Set.empty
+
+        def addDependee(ep: EOptionP[Entity, Property]): Unit =
+            dependees += ep
+
+        def removeDependee(ep: EOptionP[Entity, Property]): Unit =
+            dependees = dependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
+
+        def updateDependee(ep: EOptionP[Entity, Property]): Unit = {
+            removeDependee(ep)
+            addDependee(ep)
+        }
+
+        def hasDependees: Boolean = dependees.isEmpty
+    }
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+
+    def handleConcreteCall(callee: org.opalj.Result[Method], state: State): Option[PropertyComputationResult] = {
+        // unkown method
+        if (callee.isEmpty)
+            return Some(Result(state.field, NoLocalField))
+
+        propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
+            case EP(_, NoFreshReturnValue)   ⇒ return Some(Result(state.field, NoLocalField))
+            case EP(_, FreshReturnValue)     ⇒
+            case EP(_, PrimitiveReturnValue) ⇒
+            case epkOrCond                   ⇒ state.addDependee(epkOrCond)
+        }
+        None
+    }
+
+    def checkFreshnessOfDef(stmt: Stmt[V], method: Method, state: State): Option[PropertyComputationResult] = {
+        // the object stored in the field is fresh
+        stmt match {
+            case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒ // fresh by definition
+
+            case Assignment(_, _, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
+                val callee = project.staticCall(dc, isI, name, desc)
+                return handleConcreteCall(callee, state)
+
+            case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
+                val callee = project.specialCall(dc, isI, name, desc)
+                return handleConcreteCall(callee, state)
+
+            case Assignment(_, _, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
+
+                val value = receiver.asVar.value.asDomainReferenceValue
+                if (dc.isArrayType) {
+                    val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                    return handleConcreteCall(callee, state)
+                } else if (value.isPrecise) {
+                    val preciseType = value.valueType.get
+                    val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
+                    return handleConcreteCall(callee, state)
+                } else {
+                    val callee = project.instanceCall(method.classFile.thisType, dc, name, desc)
+                    if (callee.isEmpty)
+                        return Some(Result(state.field, NoLocalField))
+
+                    propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
+                        case EP(_, VNoFreshReturnValue) ⇒
+                            return Some(Result(state.field, NoLocalField))
+                        case EP(_, VFreshReturnValue)     ⇒
+                        case EP(_, VPrimitiveReturnValue) ⇒
+                        case epkOrCnd                     ⇒ state.addDependee(epkOrCnd)
+                    }
+                }
+            case Assignment(_, _, _: Const) ⇒
+
+            case _ ⇒
+                return Some(Result(state.field, NoLocalField))
+
+        }
+        None
+    }
+
+    def checkFreshnessOfValue(
+        value: Expr[V], stmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, state: State
+    ): Option[PropertyComputationResult] = {
+        checkFreshnessOfValue(value, stmt, stmts, method, state, checkFreshnessOfDef)
+    }
+
+    def checkFreshnessOfValue(
+        value: Expr[V], stmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, state: State,
+        checkDef: (Stmt[V], Method, State) ⇒ Option[PropertyComputationResult]
+    ): Option[PropertyComputationResult] = {
+        for (defSite1 ← value.asVar.definedBy) {
+            //TODO what about exceptions
+            if (defSite1 < 0)
+                return Some(Result(state.field, NoLocalField))
+            val stmt = stmts(defSite1)
+
+            val uses1 = stmt match {
+                case Assignment(_, tgt, _) ⇒ tgt.usedBy
+                case _                     ⇒ throw new Error("unexpected def-Site")
+            }
+
+            // the reference stored in the field does not escape by other means
+            new DefaultEntityEscapeAnalysis {
+                override val code: Array[Stmt[V]] = stmts
+                override val defSite: ValueOrigin = defSite1
+                override val uses: IntTrieSet = uses1.filter(_ != stmts.indexOf(stmt))
+                override val entity: Entity = null
+            }.doDetermineEscape() match {
+                case Result(_, NoEscape) ⇒
+                case _                   ⇒ return Some(Result(state.field, NoLocalField))
+            }
+
+            checkDef(stmt, method, state).foreach(r ⇒ return Some(r))
+        }
+        None
+    }
 
     def determineLocality(field: Field): PropertyComputationResult = {
         // base types can be considered to be local
@@ -85,103 +203,52 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         if (!field.isPrivate)
             return Result(field, NoLocalField)
 
-        var dependees: Set[EOptionP[Entity, Property]] = Set.empty
+        val state = new State(field)
 
         val methods = field.classFile.methodsWithBody.map(_._1)
 
+        val thisType = field.classFile.thisType
+        val fieldName = field.name
+        val fieldType = field.fieldType
+        val cloneDescr = MethodDescriptor.JustReturnsObject
+
+        val cloneM = methods.find(m ⇒ m.name == "clone" && (m.descriptor eq cloneDescr))
+        cloneM match {
+            case Some(m) ⇒ //TODO analyze if it sets the field of an new object
+                val stmts = tacaiProvider(m).stmts
+                for (stmt ← stmts) {
+                    stmt match {
+                        case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
+
+                            // check objRef comes from super.clone // does not escape otherwise
+                            checkFreshnessOfValue(objRef, stmt, stmts, m, state, (stmt, method, state) ⇒ {
+                                val superType = field.classFile.superclassType.get
+                                stmt match {
+                                    case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", `cloneDescr`, _, _)) ⇒ None
+                                    case _ ⇒ checkFreshnessOfDef(stmt, method, state)
+                                }
+                            }).foreach(return _)
+
+                            // check if value is fresh
+                            checkFreshnessOfValue(value, stmt, stmts, m, state).foreach(return _)
+                        case _ ⇒
+
+                    }
+                }
+            case None ⇒ return Result(field, NoLocalField)
+        }
+
         // all assignments to the field have to be fresh
         for {
-            method ← methods
+            method ← methods if method.name != "clone" || (method.descriptor ne cloneDescr)
             stmts = tacaiProvider(method).stmts
             stmt ← stmts
         } {
             stmt match {
-                case PutField(_, dc, name, fieldType, objRef, value) if dc == field.classFile.thisType && name == field.name && fieldType == field.fieldType ⇒
+                case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
                     if (objRef.asVar.definedBy != IntTrieSet(-1))
                         return Result(field, NoLocalField)
-                    for (defSite1 ← value.asVar.definedBy) {
-                        if (defSite1 < 0)
-                            return Result(field, NoLocalField)
-
-                        val uses1 = stmts(defSite1) match {
-                            case Assignment(_, tgt, _) ⇒ tgt.usedBy
-                            case _                     ⇒ throw new Error("unexpected def-Site")
-                        }
-
-                        // the reference stored in the field does not escape by other means
-                        new DefaultEntityEscapeAnalysis {
-                            override val code: Array[Stmt[V]] = stmts
-                            override val defSite: ValueOrigin = defSite1
-                            override val uses: IntTrieSet = uses1.filter(_ != stmts.indexOf(stmt))
-                            override val entity: Entity = null
-                        }.doDetermineEscape() match {
-                            case Result(_, NoEscape) ⇒
-                            case _                   ⇒ return Result(field, NoLocalField)
-                        }
-
-                        def handleConcreteCall(callee: org.opalj.Result[Method]): Option[PropertyComputationResult] = {
-                            // unkown method
-                            if (callee.isEmpty)
-                                return Some(Result(field, NoLocalField))
-
-                            propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
-                                case EP(_, NoFreshReturnValue)   ⇒ return Some(Result(field, NoLocalField))
-                                case EP(_, FreshReturnValue)     ⇒
-                                case EP(_, PrimitiveReturnValue) ⇒
-                                case epkOrCond                   ⇒ dependees += epkOrCond
-                            }
-                            None
-                        }
-
-                        // the object stored in the field is fresh
-                        stmts(defSite1) match {
-                            case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒ // fresh by definition
-
-                            case Assignment(_, _, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
-                                val callee = project.staticCall(dc, isI, name, desc)
-                                handleConcreteCall(callee).foreach(return _)
-
-                            case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                                val callee = project.specialCall(dc, isI, name, desc)
-                                handleConcreteCall(callee).foreach(return _)
-
-                            case Assignment(_, _, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
-
-                                val value = receiver.asVar.value.asDomainReferenceValue
-                                if (dc.isArrayType) {
-                                    val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                                    handleConcreteCall(callee).foreach(return _)
-                                } else if (value.isPrecise) {
-                                    val preciseType = value.valueType.get
-                                    val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
-                                    handleConcreteCall(callee).map(return _)
-                                } else {
-                                    val callee = project.instanceCall(method.classFile.thisType, dc, name, desc)
-                                    if (callee.isEmpty)
-                                        return Result(field, NoLocalField)
-
-                                    propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                                        case EP(_, VNoFreshReturnValue) ⇒
-                                            return Result(field, NoLocalField)
-                                        case EP(_, VFreshReturnValue)     ⇒
-                                        case EP(_, VPrimitiveReturnValue) ⇒
-                                        case epkOrCnd ⇒
-                                            dependees += epkOrCnd
-                                    }
-                                }
-                            case Assignment(_, _, _: Const) ⇒
-
-                            case Assignment(_, _, GetField(_, _, _, _, _)) ⇒ //TODO is local?
-                                return Result(field, NoLocalField)
-
-                            case Assignment(_, _, GetStatic(_, _, _, _)) ⇒
-                                return Result(field, NoLocalField)
-
-                            case _ ⇒
-                                return Result(field, NoLocalField)
-
-                        }
-                    }
+                    checkFreshnessOfValue(value, stmt, stmts, method, state).foreach(return _)
 
                 case _ ⇒
             }
@@ -195,7 +262,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             stmt ← stmts
         } {
             stmt match {
-                case Assignment(_, tgt, GetField(_, dc, name, fieldType, objRef)) if dc == field.classFile.thisType && field.name == name && fieldType == field.fieldType ⇒
+                case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, objRef)) ⇒
                     if (objRef.asVar.definedBy != IntTrieSet(-1))
                         return Result(field, NoLocalField)
 
@@ -218,25 +285,26 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     Result(field, NoLocalField)
 
                 case FreshReturnValue | VFreshReturnValue | PrimitiveReturnValue | VPrimitiveReturnValue ⇒
-                    dependees = dependees.filter(epk ⇒ (epk.e ne e) || epk.pk != p.key)
-                    if (dependees.isEmpty)
+                    state.removeDependee(EP(e, p))
+                    if (state.hasDependees)
                         Result(field, LocalField)
                     else
-                        IntermediateResult(field, ConditionalLocalField, dependees, c)
+                        IntermediateResult(field, ConditionalLocalField, state.dependees, c)
                 case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
                     val newEP = EP(e, p)
-                    dependees = dependees.filter(epk ⇒ (epk.e ne e) || epk.pk != p.key) + newEP
-                    IntermediateResult(field, ConditionalLocalField, dependees, c)
+                    state.updateDependee(newEP)
+                    IntermediateResult(field, ConditionalLocalField, state.dependees, c)
 
                 case PropertyIsLazilyComputed ⇒
-                    IntermediateResult(field, ConditionalLocalField, dependees, c)
+                    IntermediateResult(field, ConditionalLocalField, state.dependees, c)
             }
         }
 
-        if (dependees.isEmpty)
+        if (state.hasDependees)
             Result(field, LocalField)
         else
-            IntermediateResult(field, ConditionalLocalField, dependees, c)
+            IntermediateResult(field, ConditionalLocalField, state.dependees, c)
+
     }
 }
 
