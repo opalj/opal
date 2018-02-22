@@ -33,15 +33,22 @@ package analyses
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.AllocationSite
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
+import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
 import org.opalj.fpcf.properties.ConditionalLocalField
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.LocalField
@@ -78,25 +85,63 @@ import org.opalj.tac.VirtualFunctionCall
 class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
     class State(val field: Field) {
-        var dependees: Set[EOptionP[Entity, Property]] = Set.empty
+        private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
+        private[this] var allocationSiteDependees: Set[EOptionP[Entity, EscapeProperty]] = Set.empty
+        private[this] var clonedDependees: Set[EOptionP[Entity, EscapeProperty]] = Set.empty
 
-        def addDependee(ep: EOptionP[Entity, Property]): Unit =
-            dependees += ep
-
-        def removeDependee(ep: EOptionP[Entity, Property]): Unit =
-            dependees = dependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
-
-        def updateDependee(ep: EOptionP[Entity, Property]): Unit = {
-            removeDependee(ep)
-            addDependee(ep)
+        def dependees: Set[EOptionP[Entity, Property]] = {
+            declaredMethodsDependees ++ allocationSiteDependees ++ clonedDependees
         }
 
-        def hasDependees: Boolean = dependees.isEmpty
+        def hasNoDependees: Boolean = {
+            declaredMethodsDependees.isEmpty &&
+                allocationSiteDependees.isEmpty &&
+                clonedDependees.isEmpty
+        }
+
+        def isNormalAllocationSite(e: AllocationSite): Boolean =
+            allocationSiteDependees.exists(_.e == e)
+        def isAllocationSiteOfClone(e: AllocationSite): Boolean =
+            clonedDependees.exists(_.e == e)
+
+        def addMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit =
+            declaredMethodsDependees += ep
+
+        def removeMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit =
+            declaredMethodsDependees = declaredMethodsDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
+
+        def updateMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit = {
+            removeMethodDependee(ep)
+            addMethodDependee(ep)
+        }
+
+        def addClonedAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit =
+            clonedDependees += ep
+
+        def removeClonedAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit =
+            clonedDependees = clonedDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
+
+        def updateClonedAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit = {
+            removeClonedAllocationSiteDependee(ep)
+            addClonedAllocationSiteDependee(ep)
+        }
+
+        def addAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit =
+            allocationSiteDependees += ep
+
+        def removeAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit =
+            allocationSiteDependees = allocationSiteDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
+
+        def updateAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit = {
+            removeAllocationSiteDependee(ep)
+            addAllocationSiteDependee(ep)
+        }
     }
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+    private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 
     def handleConcreteCall(callee: org.opalj.Result[Method], state: State): Option[PropertyComputationResult] = {
         // unkown method
@@ -107,7 +152,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             case EP(_, NoFreshReturnValue)   ⇒ return Some(Result(state.field, NoLocalField))
             case EP(_, FreshReturnValue)     ⇒
             case EP(_, PrimitiveReturnValue) ⇒
-            case epkOrCond                   ⇒ state.addDependee(epkOrCond)
+            case epkOrCond                   ⇒ state.addMethodDependee(epkOrCond)
         }
         None
     }
@@ -145,7 +190,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                             return Some(Result(state.field, NoLocalField))
                         case EP(_, VFreshReturnValue)     ⇒
                         case EP(_, VPrimitiveReturnValue) ⇒
-                        case epkOrCnd                     ⇒ state.addDependee(epkOrCnd)
+                        case epkOrCnd                     ⇒ state.addMethodDependee(epkOrCnd)
                     }
                 }
             case Assignment(_, _, _: Const) ⇒
@@ -158,14 +203,23 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     }
 
     def checkFreshnessOfValue(
-        value: Expr[V], stmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, state: State
+        value: Expr[V], stmts: Array[Stmt[V]], method: Method, state: State
     ): Option[PropertyComputationResult] = {
-        checkFreshnessOfValue(value, stmt, stmts, method, state, checkFreshnessOfDef)
+        checkFreshnessOfValue(value, stmts, method, state, checkFreshnessOfDef, escapeState ⇒ {
+            escapeState match {
+                case EP(_, NoEscape | EscapeInCallee) ⇒ None
+                case EP(_, Conditional(NoEscape) | Conditional(EscapeInCallee)) ⇒
+                    state.addAllocationSiteDependee(escapeState)
+                    None
+                case _ ⇒ Some(Result(state.field, NoLocalField))
+            }
+        })
     }
 
     def checkFreshnessOfValue(
-        value: Expr[V], stmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, state: State,
-        checkDef: (Stmt[V], Method, State) ⇒ Option[PropertyComputationResult]
+        value: Expr[V], stmts: Array[Stmt[V]], method: Method, state: State,
+        checkFreshnessOfDef: (Stmt[V], Method, State) ⇒ Option[PropertyComputationResult],
+        checkEscapeOfDef:    EOptionP[Entity, EscapeProperty] ⇒ Option[PropertyComputationResult]
     ): Option[PropertyComputationResult] = {
         for (defSite1 ← value.asVar.definedBy) {
             //TODO what about exceptions
@@ -178,18 +232,24 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 case _                     ⇒ throw new Error("unexpected def-Site")
             }
 
-            // the reference stored in the field does not escape by other means
-            new DefaultEntityEscapeAnalysis {
-                override val code: Array[Stmt[V]] = stmts
-                override val defSite: ValueOrigin = defSite1
-                override val uses: IntTrieSet = uses1.filter(_ != stmts.indexOf(stmt))
-                override val entity: Entity = null
-            }.doDetermineEscape() match {
-                case Result(_, NoEscape) ⇒
-                case _                   ⇒ return Some(Result(state.field, NoLocalField))
-            }
+            // is the def-site fresh?
+            checkFreshnessOfDef(stmt, method, state).foreach(r ⇒ return Some(r))
 
-            checkDef(stmt, method, state).foreach(r ⇒ return Some(r))
+            // the reference stored in the field does not escape by other means
+            val result = stmt match {
+                case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
+                    propertyStore(allocationSites(method)(pc), EscapeProperty.key)
+                case _ ⇒
+                    val Result(_, escapeState: EscapeProperty) = new DefaultEntityEscapeAnalysis {
+                        override val code: Array[Stmt[V]] = stmts
+                        override val defSite: ValueOrigin = defSite1
+                        override val uses: IntTrieSet = uses1.filter(_ != stmts.indexOf(stmt))
+                        override val entity: Entity = null
+                    }.doDetermineEscape()
+                    EP(null, escapeState)
+
+            }
+            checkEscapeOfDef(result).foreach(r ⇒ return Some(r))
         }
         None
     }
@@ -197,22 +257,23 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     def determineLocality(field: Field): PropertyComputationResult = {
         // base types can be considered to be local
         if (field.fieldType.isBaseType)
-            return Result(field, LocalField)
+            return Result(field, NoLocalField)
 
         // this analysis can only track private fields
         if (!field.isPrivate)
             return Result(field, NoLocalField)
 
         val state = new State(field)
-
-        val methods = field.classFile.methodsWithBody.map(_._1)
-
         val thisType = field.classFile.thisType
         val fieldName = field.name
         val fieldType = field.fieldType
         val cloneDescr = MethodDescriptor.JustReturnsObject
+        val concreteCloneDescr = MethodDescriptor.withNoArgs(thisType)
 
-        val cloneM = methods.find(m ⇒ m.name == "clone" && (m.descriptor eq cloneDescr))
+        val methods = field.classFile.methodsWithBody.map(_._1).toList
+
+        // special handling for the clone method
+        val cloneM = methods.find(m ⇒ m.name == "clone" && ((m.descriptor == cloneDescr) || (m.descriptor == concreteCloneDescr)) && !m.isSynthetic)
         cloneM match {
             case Some(m) ⇒ //TODO analyze if it sets the field of an new object
                 var foundOverrideOfField = false
@@ -221,17 +282,35 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     stmt match {
                         case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
                             foundOverrideOfField = true
-                            // check objRef comes from super.clone // does not escape otherwise
-                            checkFreshnessOfValue(objRef, stmt, stmts, m, state, (stmt, method, state) ⇒ {
-                                val superType = field.classFile.superclassType.get
-                                stmt match {
-                                    case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", `cloneDescr`, _, _)) ⇒ None
-                                    case _ ⇒ checkFreshnessOfDef(stmt, method, state)
-                                }
-                            }).foreach(return _)
 
+                            // check objRef comes from super.clone and does not escape otherwise
+                            checkFreshnessOfValue(
+                                objRef, stmts, m, state,
+                                // it is ok, if the objRef comes from super.clone()
+                                // otherwise it should be fresh
+                                (stmt, method, state) ⇒ {
+                                    val superType = field.classFile.superclassType.get
+                                    stmt match {
+                                        case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", `cloneDescr`, _, _)) ⇒ None
+                                        case _ ⇒ checkFreshnessOfDef(stmt, method, state)
+                                    }
+                                },
+                                // the objRef should not escape returned by the clone function
+                                escapeState ⇒ {
+                                    escapeState match {
+                                        //TODO is no escape ok?
+                                        case EP(_, EscapeViaReturn) ⇒ None
+                                        case EP(_, Conditional(EscapeViaReturn)) ⇒
+                                            state.addClonedAllocationSiteDependee(escapeState)
+                                            None
+                                        case _ ⇒ Some(Result(field, NoLocalField))
+                                    }
+                                }
+                            ).foreach(return _)
+
+                            // TODO what if there is another return value that does not set that field
                             // check if value is fresh
-                            checkFreshnessOfValue(value, stmt, stmts, m, state).foreach(return _)
+                            checkFreshnessOfValue(value, stmts, m, state).foreach(return _)
                         case _ ⇒
 
                     }
@@ -239,12 +318,13 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
                 if (!foundOverrideOfField)
                     return Result(field, NoLocalField)
+
             case None ⇒ return Result(field, NoLocalField)
         }
 
         // all assignments to the field have to be fresh
         for {
-            method ← methods if method.name != "clone" || (method.descriptor ne cloneDescr)
+            method ← methods if method.name != "clone" || (method.descriptor != cloneDescr && (method.descriptor != concreteCloneDescr))
             stmts = tacaiProvider(method).stmts
             stmt ← stmts
         } {
@@ -252,7 +332,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
                     if (objRef.asVar.definedBy != IntTrieSet(-1))
                         return Result(field, NoLocalField)
-                    checkFreshnessOfValue(value, stmt, stmts, method, state).foreach(return _)
+                    checkFreshnessOfValue(value, stmts, method, state).foreach(return _)
 
                 case _ ⇒
             }
@@ -283,32 +363,106 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             }
         }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            p match {
-                case NoFreshReturnValue | VNoFreshReturnValue ⇒
-                    Result(field, NoLocalField)
+        returnResult(state)
+    }
 
-                case FreshReturnValue | VFreshReturnValue | PrimitiveReturnValue | VPrimitiveReturnValue ⇒
-                    state.removeDependee(EP(e, p))
-                    if (state.hasDependees)
-                        Result(field, LocalField)
-                    else
-                        IntermediateResult(field, ConditionalLocalField, state.dependees, c)
-                case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
-                    val newEP = EP(e, p)
-                    state.updateDependee(newEP)
-                    IntermediateResult(field, ConditionalLocalField, state.dependees, c)
+    def continuation(
+        e: Entity, p: Property, ut: UpdateType, state: State
+    ): PropertyComputationResult = {
+        e match {
+            case e: DeclaredMethod ⇒
+                p match {
+                    case NoFreshReturnValue | VNoFreshReturnValue ⇒
+                        Result(state.field, NoLocalField)
 
-                case PropertyIsLazilyComputed ⇒
-                    IntermediateResult(field, ConditionalLocalField, state.dependees, c)
-            }
+                    case FreshReturnValue | VFreshReturnValue | PrimitiveReturnValue | VPrimitiveReturnValue ⇒
+                        state.removeMethodDependee(EP(e, p))
+                        returnResult(state)
+
+                    case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
+                        val newEP = EP(e, p)
+                        state.updateMethodDependee(newEP)
+                        IntermediateResult(
+                            state.field,
+                            ConditionalLocalField,
+                            state.dependees,
+                            continuation(_, _, _, state)
+                        )
+
+                    case PropertyIsLazilyComputed ⇒
+                        IntermediateResult(
+                            state.field,
+                            ConditionalLocalField,
+                            state.dependees,
+                            continuation(_, _, _, state)
+                        )
+                }
+
+            case e: AllocationSite if state.isNormalAllocationSite(e) ⇒
+                p match {
+                    case NoEscape | EscapeInCallee ⇒
+                        state.removeAllocationSiteDependee(EP(e, p.asInstanceOf[EscapeProperty]))
+                        returnResult(state)
+
+                    case p @ Conditional(NoEscape | EscapeInCallee) ⇒
+                        state.updateAllocationSiteDependee(EP(e, p))
+                        IntermediateResult(
+                            state.field,
+                            ConditionalLocalField,
+                            state.dependees,
+                            continuation(_, _, _, state)
+                        )
+
+                    case PropertyIsLazilyComputed ⇒
+                        IntermediateResult(
+                            state.field,
+                            ConditionalLocalField,
+                            state.dependees,
+                            continuation(_, _, _, state)
+                        )
+
+                    case _ ⇒ Result(state.field, NoLocalField)
+                }
+
+            case e: AllocationSite if state.isAllocationSiteOfClone(e) ⇒
+                p match {
+                    case EscapeViaReturn ⇒
+                        state.removeClonedAllocationSiteDependee(EP(e, p.asInstanceOf[EscapeProperty]))
+                        returnResult(state)
+
+                    case p @ Conditional(EscapeViaReturn) ⇒
+                        state.updateClonedAllocationSiteDependee(EP(e, p))
+                        IntermediateResult(
+                            state.field,
+                            ConditionalLocalField,
+                            state.dependees,
+                            continuation(_, _, _, state)
+                        )
+
+                    case PropertyIsLazilyComputed ⇒
+                        IntermediateResult(
+                            state.field,
+                            ConditionalLocalField,
+                            state.dependees,
+                            continuation(_, _, _, state)
+                        )
+
+                    case _ ⇒ Result(state.field, NoLocalField)
+                }
+
         }
+    }
 
-        if (state.hasDependees)
-            Result(field, LocalField)
+    private def returnResult(state: State) = {
+        if (state.hasNoDependees)
+            Result(state.field, LocalField)
         else
-            IntermediateResult(field, ConditionalLocalField, state.dependees, c)
-
+            IntermediateResult(
+                state.field,
+                ConditionalLocalField,
+                state.dependees,
+                continuation(_, _, _, state)
+            )
     }
 }
 
