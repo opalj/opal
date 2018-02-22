@@ -39,7 +39,6 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
@@ -141,7 +140,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
-    private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
+    //private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 
     /**
      * Checks whether a call to a concrete method (no virtual call with imprecise type) has a fresh
@@ -252,7 +251,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         }
 
     private[this] def checkFreshnessOfValue(
-        value: Expr[V], stmts: Array[Stmt[V]], method: Method, state: State,
+        value: Expr[V], useStmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, state: State,
         checkFreshnessOfDef: (Stmt[V], Method, State) ⇒ Option[PropertyComputationResult],
         checkEscapeOfDef:    (EOptionP[Entity, EscapeProperty], State) ⇒ Option[PropertyComputationResult]
     ): Option[PropertyComputationResult] = {
@@ -272,7 +271,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
             // the reference stored in the field does not escape by other means
             // TODO as we do not have real escape analyses for local variables -> use default one
-            val result = stmt match {
+            /*val result = stmt match {
                 case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
                     propertyStore(allocationSites(method)(pc), EscapeProperty.key)
                 case _ ⇒
@@ -284,7 +283,23 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     }.doDetermineEscape()
                     EP(null, escapeState)
 
+            }*/
+            //TODO remove me
+            val result = {
+                new DefaultEntityEscapeAnalysis {
+                    override val code: Array[Stmt[V]] = stmts
+                    override val defSite: ValueOrigin = defSite1
+                    override val uses: IntTrieSet = uses1.filter(use ⇒ use != stmts.indexOf(stmt) && use != stmts.indexOf(useStmt))
+                    override val entity: Entity = null
+                }.doDetermineEscape() match {
+                    case Result(e, escapeState: EscapeProperty) ⇒
+                        EP(e, escapeState)
+                    case RefinableResult(e, escapeState: EscapeProperty) ⇒
+                        EP(e, escapeState)
+                    case _ ⇒ throw new Error()
+                }
             }
+
             checkEscapeOfDef(result, state).foreach(r ⇒ return Some(r))
         }
         None
@@ -321,15 +336,16 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
                             // check objRef comes from super.clone and does not escape otherwise
                             val objRefFresh = checkFreshnessOfValue(
-                                objRef, stmts, m, state, cloneCheckFreshnessOfDef, cloneCheckEscape
+                                objRef, stmt, stmts, m, state, cloneCheckFreshnessOfDef, cloneCheckEscape
                             )
                             objRefFresh.foreach(return _)
 
                             // TODO what if there is another return value that does not set that field
                             // check if value is fresh
                             val valueFresh = checkFreshnessOfValue(
-                                value, stmts, m, state, checkFreshnessOfDef, normalCheckEscape
+                                value, stmt, stmts, m, state, checkFreshnessOfDef, normalCheckEscape
                             )
+
                             valueFresh.foreach(return _)
                         case _ ⇒
 
@@ -353,7 +369,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     if (objRef.asVar.definedBy != IntTrieSet(-1))
                         return Result(field, NoLocalField)
                     checkFreshnessOfValue(
-                        value, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
+                        value, stmt, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
                     ).foreach(return _)
 
                 case _ ⇒
@@ -368,12 +384,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             stmt ← stmts
         } {
             stmt match {
-                case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, objRef)) ⇒
-                    if (objRef.asVar.definedBy != IntTrieSet(-1))
-                        return Result(field, NoLocalField)
-
-                    if (state.field.name == "data")
-                        println()
+                case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, _)) ⇒
 
                     val result = new DefaultEntityEscapeAnalysis {
                         override val code: Array[Stmt[V]] = stmts
