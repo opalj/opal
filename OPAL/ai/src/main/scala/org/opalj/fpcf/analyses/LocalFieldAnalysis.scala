@@ -143,7 +143,11 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
     private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 
-    def handleConcreteCall(callee: org.opalj.Result[Method], state: State): Option[PropertyComputationResult] = {
+    /**
+     * Checks whether a call to a concrete method (no virtual call with imprecise type) has a fresh
+     * return value.
+     */
+    private[this] def handleConcreteCall(callee: org.opalj.Result[Method], state: State): Option[PropertyComputationResult] = {
         // unkown method
         if (callee.isEmpty)
             return Some(Result(state.field, NoLocalField))
@@ -157,7 +161,11 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         None
     }
 
-    def checkFreshnessOfDef(stmt: Stmt[V], method: Method, state: State): Option[PropertyComputationResult] = {
+    /**
+     * We consider a defSite (represented by the stmt) as fresh iff it was allocated in this method,
+     * is a constant or is the result of call to a method with fresh return value.
+     */
+    private[this] def checkFreshnessOfDef(stmt: Stmt[V], method: Method, state: State): Option[PropertyComputationResult] = {
         // the object stored in the field is fresh
         stmt match {
             case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒ // fresh by definition
@@ -202,24 +210,51 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         None
     }
 
-    def checkFreshnessOfValue(
-        value: Expr[V], stmts: Array[Stmt[V]], method: Method, state: State
+    private[this] def cloneCheckFreshnessOfDef(
+        stmt: Stmt[V], method: Method, state: State
     ): Option[PropertyComputationResult] = {
-        checkFreshnessOfValue(value, stmts, method, state, checkFreshnessOfDef, escapeState ⇒ {
-            escapeState match {
-                case EP(_, NoEscape | EscapeInCallee) ⇒ None
-                case EP(_, Conditional(NoEscape) | Conditional(EscapeInCallee)) ⇒
-                    state.addAllocationSiteDependee(escapeState)
-                    None
-                case _ ⇒ Some(Result(state.field, NoLocalField))
-            }
-        })
+        val superType = state.field.classFile.superclassType.get
+        val cloneDescr = MethodDescriptor.JustReturnsObject
+        stmt match {
+            //TODO should also work for super.clone with other descriptor?
+            case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", `cloneDescr`, _, _)) ⇒ None
+            case _ ⇒ checkFreshnessOfDef(stmt, method, state)
+        }
     }
 
-    def checkFreshnessOfValue(
+    private[this] def normalCheckEscape(
+        escapeState: EOptionP[Entity, EscapeProperty], state: State
+    ): Option[PropertyComputationResult] =
+        escapeState match {
+            case EP(_, NoEscape | EscapeInCallee) ⇒ None
+            case EP(_, Conditional(NoEscape) | Conditional(EscapeInCallee)) ⇒
+                state.addAllocationSiteDependee(escapeState)
+                None
+            case EP(_, _) ⇒ Some(Result(state.field, NoLocalField))
+            case _ ⇒
+                state.addAllocationSiteDependee(escapeState)
+                None
+        }
+
+    private[this] def cloneCheckEscape(
+        escapeState: EOptionP[Entity, EscapeProperty], state: State
+    ): Option[PropertyComputationResult] =
+        escapeState match {
+            //TODO is no escape ok?
+            case EP(_, EscapeViaReturn) ⇒ None
+            case EP(_, Conditional(EscapeViaReturn)) ⇒
+                state.addClonedAllocationSiteDependee(escapeState)
+                None
+            case EP(_, _) ⇒ Some(Result(state.field, NoLocalField))
+            case _ ⇒
+                state.addClonedAllocationSiteDependee(escapeState)
+                None
+        }
+
+    private[this] def checkFreshnessOfValue(
         value: Expr[V], stmts: Array[Stmt[V]], method: Method, state: State,
         checkFreshnessOfDef: (Stmt[V], Method, State) ⇒ Option[PropertyComputationResult],
-        checkEscapeOfDef:    EOptionP[Entity, EscapeProperty] ⇒ Option[PropertyComputationResult]
+        checkEscapeOfDef:    (EOptionP[Entity, EscapeProperty], State) ⇒ Option[PropertyComputationResult]
     ): Option[PropertyComputationResult] = {
         for (defSite1 ← value.asVar.definedBy) {
             //TODO what about exceptions
@@ -236,6 +271,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             checkFreshnessOfDef(stmt, method, state).foreach(r ⇒ return Some(r))
 
             // the reference stored in the field does not escape by other means
+            // TODO as we do not have real escape analyses for local variables -> use default one
             val result = stmt match {
                 case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
                     propertyStore(allocationSites(method)(pc), EscapeProperty.key)
@@ -249,7 +285,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     EP(null, escapeState)
 
             }
-            checkEscapeOfDef(result).foreach(r ⇒ return Some(r))
+            checkEscapeOfDef(result, state).foreach(r ⇒ return Some(r))
         }
         None
     }
@@ -284,33 +320,17 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                             foundOverrideOfField = true
 
                             // check objRef comes from super.clone and does not escape otherwise
-                            checkFreshnessOfValue(
-                                objRef, stmts, m, state,
-                                // it is ok, if the objRef comes from super.clone()
-                                // otherwise it should be fresh
-                                (stmt, method, state) ⇒ {
-                                    val superType = field.classFile.superclassType.get
-                                    stmt match {
-                                        case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", `cloneDescr`, _, _)) ⇒ None
-                                        case _ ⇒ checkFreshnessOfDef(stmt, method, state)
-                                    }
-                                },
-                                // the objRef should not escape returned by the clone function
-                                escapeState ⇒ {
-                                    escapeState match {
-                                        //TODO is no escape ok?
-                                        case EP(_, EscapeViaReturn) ⇒ None
-                                        case EP(_, Conditional(EscapeViaReturn)) ⇒
-                                            state.addClonedAllocationSiteDependee(escapeState)
-                                            None
-                                        case _ ⇒ Some(Result(field, NoLocalField))
-                                    }
-                                }
-                            ).foreach(return _)
+                            val objRefFresh = checkFreshnessOfValue(
+                                objRef, stmts, m, state, cloneCheckFreshnessOfDef, cloneCheckEscape
+                            )
+                            objRefFresh.foreach(return _)
 
                             // TODO what if there is another return value that does not set that field
                             // check if value is fresh
-                            checkFreshnessOfValue(value, stmts, m, state).foreach(return _)
+                            val valueFresh = checkFreshnessOfValue(
+                                value, stmts, m, state, checkFreshnessOfDef, normalCheckEscape
+                            )
+                            valueFresh.foreach(return _)
                         case _ ⇒
 
                     }
@@ -332,7 +352,9 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
                     if (objRef.asVar.definedBy != IntTrieSet(-1))
                         return Result(field, NoLocalField)
-                    checkFreshnessOfValue(value, stmts, method, state).foreach(return _)
+                    checkFreshnessOfValue(
+                        value, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
+                    ).foreach(return _)
 
                 case _ ⇒
             }
@@ -350,12 +372,17 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     if (objRef.asVar.definedBy != IntTrieSet(-1))
                         return Result(field, NoLocalField)
 
-                    new DefaultEntityEscapeAnalysis {
+                    if (state.field.name == "data")
+                        println()
+
+                    val result = new DefaultEntityEscapeAnalysis {
                         override val code: Array[Stmt[V]] = stmts
                         override val defSite: ValueOrigin = stmts.indexOf(stmt)
                         override val uses: IntTrieSet = tgt.usedBy
                         override val entity: Entity = null
-                    }.doDetermineEscape() match {
+                    }.doDetermineEscape()
+
+                    result match {
                         case Result(_, NoEscape) ⇒
                         case _                   ⇒ return Result(field, NoLocalField)
                     }
@@ -366,7 +393,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         returnResult(state)
     }
 
-    def continuation(
+    private[this] def continuation(
         e: Entity, p: Property, ut: UpdateType, state: State
     ): PropertyComputationResult = {
         e match {
@@ -453,7 +480,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         }
     }
 
-    private def returnResult(state: State) = {
+    private[this] def returnResult(state: State) = {
         if (state.hasNoDependees)
             Result(state.field, LocalField)
         else
