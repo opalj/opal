@@ -40,6 +40,7 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
 import org.opalj.fpcf.properties.Conditional
@@ -140,6 +141,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+    private[this] val classExtensibility = project.get(ClassExtensibilityKey)
     //private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 
     /**
@@ -355,7 +357,10 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 if (!foundOverrideOfField)
                     return Result(field, NoLocalField)
 
-            case None ⇒ return Result(field, NoLocalField)
+            case None ⇒
+                if (classExtensibility.isClassExtensible(thisType).isNotNo || field.classFile.interfaceTypes.contains(ObjectType.Cloneable))
+                    return Result(field, NoLocalField)
+                // else class is not extensible and does not override clone, which is okay
         }
 
         // all assignments to the field have to be fresh
