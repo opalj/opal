@@ -36,6 +36,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.properties.ExtensibleLocalField
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.NoLocalField
 
@@ -65,10 +66,12 @@ object FieldLocalityDemo extends DefaultOneStepAnalysis {
 
         val local = ps.entities(LocalField)
         val nolocal = ps.entities(NoLocalField)
+        val extLocal = ps.entities(ExtensibleLocalField)
 
         val message =
             s"""|# of local fields: ${local.size}
                 |# of not local fields: ${nolocal.size}
+                |# of extensible local fields: ${extLocal.size}
                 |"""
 
         BasicReport(message.stripMargin('|'))
