@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
- import org.opalj.ai.Domain
+import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
@@ -357,13 +357,17 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
                     }
                 }
-
                 if (!foundOverrideOfField)
                     return Result(field, NoLocalField)
 
             case None ⇒
-                if (classExtensibility.isClassExtensible(thisType).isNotNo || field.classFile.interfaceTypes.contains(ObjectType.Cloneable))
-                    state.updateWithMeet(ExtensibleLocalField)
+                if (classExtensibility.isClassExtensible(thisType).isNotNo) {
+                    if (field.classFile.interfaceTypes.contains(ObjectType.Cloneable)) {
+                        return Result(field, NoLocalField)
+                    } else {
+                        state.updateWithMeet(ExtensibleLocalField)
+                    }
+                }
             // else class is not extensible and does not override clone, which is okay
         }
 
