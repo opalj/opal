@@ -211,7 +211,10 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // the receiver is null, the method is not invoked and the object does not escape
             }
         } else {
-            val target = project.instanceCall(targetMethod.declaringClassType.asObjectType, dc, name, descr)
+            val receiverTye = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                value.upperTypeBound
+            )
+            val target = project.instanceCall(targetMethod.declaringClassType.asObjectType, receiverTye, name, descr)
             if (target.isEmpty || isMethodOverridable(target.value).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
