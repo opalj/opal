@@ -69,6 +69,8 @@ import org.opalj.tac.FunctionCall
 import org.opalj.tac.NewArray
 import org.opalj.tac.Throw
 
+import scala.collection.mutable
+
 /**
  * A very simple intra-procedural escape analysis, that has inter-procedural behavior for the `this`
  * local and has simple field handling.
@@ -243,6 +245,7 @@ trait SimpleFieldAwareEntityEscapeAnalysis extends AbstractEntityEscapeAnalysis 
  * to the defined value.
  */
 trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEntityEscapeAnalysis {
+    val project: SomeProject
     protected[this] abstract override def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     ): Unit = {
@@ -250,7 +253,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEntityEscapeAn
         assert(usesDefSite(call.receiver))
         assert(call.declaringClass.isObjectType)
 
-        val propertyOption = ConfigurationBasedConstructorEscapeAnalysis.constructors.get(
+        val propertyOption = ConfigurationBasedConstructorEscapeAnalysis.predefinedConstructors(project).get(
             call.declaringClass.asObjectType
         )
 
@@ -276,15 +279,25 @@ object ConfigurationBasedConstructorEscapeAnalysis {
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
+    //TODO alternative solution: we do not want to store all results for all projects
+    private[this] val allPredefinedConstructors: mutable.Map[SomeProject, Map[ObjectType, EscapeProperty]] = new mutable.HashMap()
+
+    def predefinedConstructors(p: SomeProject): Map[ObjectType, EscapeProperty] = {
+        allPredefinedConstructors.getOrElseUpdate(
+            p,
+            {
+                p.config.as[Seq[PredefinedResult]](ConfigKey).map { r ⇒
+                    import scala.reflect.runtime._
+                    val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
+                    val module = rootMirror.staticModule(r.escape_of_this)
+                    val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
+                    (ObjectType(r.object_type), property)
+                }.toMap
+            }
+        )
+    }
+
     val ConfigKey = "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
-    val constructors: Map[ObjectType, EscapeProperty] =
-        BaseConfig.as[Seq[PredefinedResult]](ConfigKey).map { r ⇒
-            import scala.reflect.runtime._
-            val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = rootMirror.staticModule(r.escape_of_this)
-            val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
-            (ObjectType(r.object_type), property)
-        }.toMap
 }
 
 /**
