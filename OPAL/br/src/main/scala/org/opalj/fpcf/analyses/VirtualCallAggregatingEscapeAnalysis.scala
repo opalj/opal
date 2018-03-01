@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
@@ -54,21 +55,31 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
+        assert(dm.isInstanceOf[DefinedMethod])
+        val m = dm.methodDefinition
 
         if (dm.declaringClassType.isArrayType) {
-            throw new NotImplementedError()
-            //TODO handle case
+            ??? //TODO handle case
         }
 
         // ANALYSIS STATE
         var escapeState: EscapeProperty = NoEscape
         var dependees: Set[EOptionP[VirtualFormalParameter, EscapeProperty]] = Set.empty
 
-        val methods = project.virtualCall(
-            /* use the package in which the concrete method context is defined */
-            dm.declaringClassType.asObjectType.packageName,
-            dm.declaringClassType, dm.name, dm.descriptor
-        )
+        val maybeFile = project.classFile(dm.declaringClassType.asObjectType)
+
+        val methods = if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration) {
+            project.interfaceCall(
+                /* use the package in which the concrete method context is defined */
+                dm.declaringClassType.asObjectType, dm.name, dm.descriptor
+            )
+        } else {
+            project.virtualCall(
+                /* use the package in which the concrete method context is defined */
+                m.classFile.thisType.packageName,
+                dm.declaringClassType, dm.name, dm.descriptor
+            )
+        }
 
         for (method ← methods) {
             propertyStore(formalParameters(declaredMethods(method))(-1 - fp.origin), EscapeProperty.key) match {
