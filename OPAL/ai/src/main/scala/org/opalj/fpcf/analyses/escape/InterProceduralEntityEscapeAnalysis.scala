@@ -196,25 +196,42 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
     ): Unit = {
         assert(receiver.isVar)
         val value = receiver.asVar.value.asDomainReferenceValue
-        if (dc.isArrayType) {
-            val methodO = project.instanceCall(ObjectType.Object, ObjectType.Object, name, descr)
-            checkParams(methodO, params, hasAssignment)
-            if (usesDefSite(receiver)) handleCall(methodO, 0, hasAssignment)
-        } else if (value.isPrecise) {
-            if (value.isNull.isNoOrUnknown) {
-                val valueType = value.valueType.get
-                assert(targetMethod.declaringClassType.isObjectType)
-                val methodO = project.instanceCall(targetMethod.declaringClassType.asObjectType, valueType, name, descr)
-                checkParams(methodO, params, hasAssignment)
-                if (usesDefSite(receiver)) handleCall(methodO, 0, hasAssignment)
-            } else {
-                // the receiver is null, the method is not invoked and the object does not escape
-            }
-        } else {
-            val receiverTye = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                value.upperTypeBound
+        if (value.isNull.isYes) {
+            // the receiver is null, the method is not invoked and the object does not escape
+            return
+        }
+
+        val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+            value.upperTypeBound
+        )
+
+        if (receiverType.isArrayType) {
+
+            // for arrays we know the concrete method which is defined by java.lang.Object
+            val methodO = project.instanceCall(
+                targetMethod.declaringClassType.asObjectType, ObjectType.Object, name, descr
             )
-            val target = project.instanceCall(targetMethod.declaringClassType.asObjectType, receiverTye, name, descr)
+            checkParams(methodO, params, hasAssignment)
+            if (usesDefSite(receiver))
+                handleCall(methodO, 0, hasAssignment)
+        } else if (value.isPrecise) {
+
+            // if the receiver type is precisely known, we can handle the concrete method
+            val valueType = value.valueType.get
+            assert(targetMethod.declaringClassType.isObjectType)
+            val methodO = project.instanceCall(
+                targetMethod.declaringClassType.asObjectType, valueType, name, descr
+            )
+            checkParams(methodO, params, hasAssignment)
+            if (usesDefSite(receiver))
+                handleCall(methodO, 0, hasAssignment)
+        } else /* non-null, not precise object type */ {
+
+            val target = project.instanceCall(
+                targetMethod.declaringClassType.asObjectType, receiverType, name, descr
+            )
+
+            // did we found a method and is this method not overridable?
             if (target.isEmpty || isMethodOverridable(target.value).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
@@ -222,23 +239,26 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
                 // to optimize performance, we do not let the analysis run against the existing methods
                 meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val dm = DefinedMethod(dc, target.value)
+                val dm = DefinedMethod(receiverType, target.value)
                 assert(dm ne null)
                 if (project.isSignaturePolymorphic(dm.definedMethod.classFile.thisType, dm.definedMethod)) {
                     //IMPROVE
                     // check if this is to much (param contains def-site)
                     meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
+                    // handle the receiver
                     if (usesDefSite(receiver)) {
                         val fp = virtualFormalParameters(dm)
-                        assert(fp(0) ne null)
+                        assert((fp ne null) && (fp(0) ne null))
                         handleEscapeState(fp(0), hasAssignment, isConcreteMethod = false)
 
                     }
+
+                    // handle the parameters
                     for (i ← params.indices) {
                         if (usesDefSite(params(i))) {
                             val fp = virtualFormalParameters(dm)
-                            assert(fp(i + 1) ne null)
+                            assert((fp ne null) && (fp(i + 1) ne null))
                             handleEscapeState(fp(i + 1), hasAssignment, isConcreteMethod = false)
                         }
                     }
@@ -246,7 +266,6 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 
             }
         }
-
     }
 
     private[this] def checkParams(
@@ -467,20 +486,20 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 }
 
 class InterProceduralEntityEscapeAnalysis(
-        val entity:                  Entity,
-        val defSite:                 ValueOrigin,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        val cfg:                     CFG,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val isMethodOverridable:     Method ⇒ Answer,
-        val targetMethod:            DeclaredMethod,
-        val propertyStore:           PropertyStore,
-        val project:                 SomeProject
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
+    val cfg:                     CFG,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val isMethodOverridable:     Method ⇒ Answer,
+    val targetMethod:            DeclaredMethod,
+    val propertyStore:           PropertyStore,
+    val project:                 SomeProject
 ) extends DefaultEntityEscapeAnalysis
-    with AbstractInterProceduralEntityEscapeAnalysis
-    with ConstructorSensitiveEntityEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEntityEscapeAnalysis
-    with ExceptionAwareEntityEscapeAnalysis
+        with AbstractInterProceduralEntityEscapeAnalysis
+        with ConstructorSensitiveEntityEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEntityEscapeAnalysis
+        with ExceptionAwareEntityEscapeAnalysis
