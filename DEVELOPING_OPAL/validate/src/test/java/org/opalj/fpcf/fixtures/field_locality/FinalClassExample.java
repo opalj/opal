@@ -26,28 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.field_locality;
+package org.opalj.fpcf.fixtures.field_locality;
 
-import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.return_freshness.NoFreshReturnValueMatcher;
-import org.opalj.fpcf.properties.return_freshness.NoLocalFieldMatcher;
+import org.opalj.fpcf.properties.field_locality.LocalField;
+import org.opalj.fpcf.properties.field_locality.NoLocalField;
 
-import java.lang.annotation.*;
+public final class FinalClassExample {
 
-/**
- * Annotation to state that the annotated field is not local (if a proper analysis
- * was scheduled).
- *
- * @author Florian Kuebler
- */
-@PropertyValidator(key= "FieldLocality", validator = NoLocalFieldMatcher.class)
-@Target(ElementType.FIELD)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface NoLocalField {
-    
-    /**
-     * Short reasoning of this property
-     */
-    String value();
+    @LocalField("Local as class is final and not Cloneable")
+    private int[] localData;
+
+    @NoLocalField("Not local, because it escapes in getNonLocalData")
+    private int[] nonLocalData;
+
+    public FinalClassExample(int size){
+        localData = new int[size];
+    }
+
+    public int[] getNonLocalData(){
+        return nonLocalData;
+    }
 }

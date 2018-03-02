@@ -26,28 +26,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.field_locality;
+package org.opalj.fpcf.fixtures.field_locality;
 
-import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.return_freshness.NoFreshReturnValueMatcher;
-import org.opalj.fpcf.properties.return_freshness.NoLocalFieldMatcher;
+import org.opalj.fpcf.properties.field_locality.NoLocalField;
 
-import java.lang.annotation.*;
+public class NonLocalFields implements Cloneable {
 
-/**
- * Annotation to state that the annotated field is not local (if a proper analysis
- * was scheduled).
- *
- * @author Florian Kuebler
- */
-@PropertyValidator(key= "FieldLocality", validator = NoLocalFieldMatcher.class)
-@Target(ElementType.FIELD)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface NoLocalField {
-    
-    /**
-     * Short reasoning of this property
-     */
-    String value();
+    @NoLocalField("Not local as it is assigned by constructor")
+    private Object assigned;
+
+    @NoLocalField("Not local as it escapes getValue")
+    private Object escapes;
+
+    @NoLocalField("Not local as cloned object may escape without this being overwritten")
+    private Object copyEscapes;
+
+    public NonLocalFields(Object input){
+        assigned = input;
+    }
+
+    public Object getValue(){
+        return escapes;
+    }
+
+    public Object clone() throws CloneNotSupportedException {
+        NonLocalFields copy = (NonLocalFields) super.clone();
+        copy.assigned = new Object();
+        copy.escapes = new Object();
+        if(System.nanoTime() > 1000){
+            copy.copyEscapes = new Object();
+        }else{
+            copyEscapes = new Object(); // Does not assign field of the copy, but of the original!
+        }
+        return copy;
+    }
 }

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
+ * Copyright (c) 2009 - 2018
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -68,4 +68,5 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
 }
 
 class NoLocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.NoLocalField)
+class ExtensibleLocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.ExtensibleLocalField)
 class LocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.LocalField)

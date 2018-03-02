@@ -29,22 +29,22 @@
 package org.opalj.fpcf.properties.field_locality;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.return_freshness.NoFreshReturnValueMatcher;
-import org.opalj.fpcf.properties.return_freshness.NoLocalFieldMatcher;
+import org.opalj.fpcf.properties.return_freshness.ExtensibleLocalFieldMatcher;
+import org.opalj.fpcf.properties.return_freshness.LocalFieldMatcher;
 
 import java.lang.annotation.*;
 
 /**
- * Annotation to state that the annotated field is not local (if a proper analysis
+ * Annotation to state that the annotated field is extensible local (if a proper analysis
  * was scheduled).
  *
- * @author Florian Kuebler
+ * @author Dominik Helm
  */
-@PropertyValidator(key= "FieldLocality", validator = NoLocalFieldMatcher.class)
+@PropertyValidator(key= "FieldLocality", validator = ExtensibleLocalFieldMatcher.class)
 @Target(ElementType.FIELD)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface NoLocalField {
+public @interface ExtensibleLocalField {
     
     /**
      * Short reasoning of this property

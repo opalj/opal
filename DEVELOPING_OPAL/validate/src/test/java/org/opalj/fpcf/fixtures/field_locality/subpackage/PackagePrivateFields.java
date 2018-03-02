@@ -26,28 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.field_locality;
+package org.opalj.fpcf.fixtures.field_locality.subpackage;
 
-import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.return_freshness.NoFreshReturnValueMatcher;
-import org.opalj.fpcf.properties.return_freshness.NoLocalFieldMatcher;
+import org.opalj.fpcf.properties.field_locality.LocalField;
+import org.opalj.fpcf.properties.field_locality.NoLocalField;
 
-import java.lang.annotation.*;
+public class PackagePrivateFields {
 
-/**
- * Annotation to state that the annotated field is not local (if a proper analysis
- * was scheduled).
- *
- * @author Florian Kuebler
- */
-@PropertyValidator(key= "FieldLocality", validator = NoLocalFieldMatcher.class)
-@Target(ElementType.FIELD)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface NoLocalField {
-    
-    /**
-     * Short reasoning of this property
-     */
-    String value();
+    @LocalField("This field is local although it is used in other classes in this package")
+    int[] localField;
+
+    @NoLocalField("This field is not local because it is assigned in UsesFields.assignField")
+    Object assigned;
+
+    @NoLocalField("This field is not local as it escapes UsesFields.getField")
+    char[] escaped;
+
+    public PackagePrivateFields clone() throws CloneNotSupportedException {
+        PackagePrivateFields copy = (PackagePrivateFields) super.clone();
+        copy.localField = new int[1];
+        copy.assigned = new Object();
+        copy.escaped = new char[1];
+        return copy;
+    }
 }
