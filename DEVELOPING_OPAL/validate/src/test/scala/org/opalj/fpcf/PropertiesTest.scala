@@ -68,6 +68,8 @@ import org.opalj.fpcf.properties.PropertyMatcher
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
+    val withRT = false
+
     /**
      * The representation of the fixture project.
      */
@@ -88,7 +90,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
-        val libraryClassFiles = ClassFiles(RTJar) ++ propertiesClassFiles
+
+        val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(

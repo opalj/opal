@@ -34,13 +34,18 @@ import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
+import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFGNode
+import org.opalj.br.cfg.ExitNode
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
 import org.opalj.fpcf.properties.Conditional
@@ -79,7 +84,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 
 /**
- *
+ * TODO
  * @author Florian Kuebler
  */
 class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
@@ -146,6 +151,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
     private[this] val classExtensibility = project.get(ClassExtensibilityKey)
+    private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
     //private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 
     /**
@@ -215,14 +221,12 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         None
     }
 
-    private[this] def cloneCheckFreshnessOfDef(
+    /*private[this]*/ def cloneCheckFreshnessOfDef(
         stmt: Stmt[V], method: Method, state: State
     ): Option[PropertyComputationResult] = {
         val superType = state.field.classFile.superclassType.get
-        val cloneDescr = MethodDescriptor.JustReturnsObject
         stmt match {
-            //TODO should also work for super.clone with other descriptor?
-            case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", `cloneDescr`, _, _)) ⇒ None
+            case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", descr, _, _)) if descr.parametersCount == 0 ⇒ None
             case _ ⇒ checkFreshnessOfDef(stmt, method, state)
         }
     }
@@ -241,7 +245,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 None
         }
 
-    private[this] def cloneCheckEscape(
+    /*private[this]*/ def cloneCheckEscape(
         escapeState: EOptionP[Entity, EscapeProperty], state: State
     ): Option[PropertyComputationResult] =
         escapeState match {
@@ -256,7 +260,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 None
         }
 
-    private[this] def checkFreshnessOfValue(
+    private[this] def checkFreshnessAndEscapeOfValue(
         value: Expr[V], useStmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, state: State,
         checkFreshnessOfDef: (Stmt[V], Method, State) ⇒ Option[PropertyComputationResult],
         checkEscapeOfDef:    (EOptionP[Entity, EscapeProperty], State) ⇒ Option[PropertyComputationResult]
@@ -268,34 +272,23 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             val stmt = stmts(defSite1)
 
             val uses1 = stmt match {
-                case Assignment(_, tgt, _) ⇒ tgt.usedBy
+                //TODO this is unsound, as the constructor call might let the object escape
+                case Assignment(_, tgt, _: New) ⇒ tgt.usedBy filter {
+                    use ⇒ use != stmts.indexOf(useStmt) && use != tgt.usedBy.filter(_ > defSite1).toChain.min
+                }
+                case Assignment(_, tgt, _) ⇒ tgt.usedBy.filter(_ != stmts.indexOf(useStmt))
                 case _                     ⇒ throw new Error("unexpected def-Site")
             }
 
             // is the def-site fresh?
             checkFreshnessOfDef(stmt, method, state).foreach(r ⇒ return Some(r))
 
-            // the reference stored in the field does not escape by other means
-            // TODO as we do not have real escape analyses for local variables -> use default one
-            /*val result = stmt match {
-                case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
-                    propertyStore(allocationSites(method)(pc), EscapeProperty.key)
-                case _ ⇒
-                    val Result(_, escapeState: EscapeProperty) = new DefaultEntityEscapeAnalysis {
-                        override val code: Array[Stmt[V]] = stmts
-                        override val defSite: ValueOrigin = defSite1
-                        override val uses: IntTrieSet = uses1.filter(_ != stmts.indexOf(stmt))
-                        override val entity: Entity = null
-                    }.doDetermineEscape()
-                    EP(null, escapeState)
-
-            }*/
             //TODO remove me
             val result = {
                 new DefaultEntityEscapeAnalysis {
                     override val code: Array[Stmt[V]] = stmts
                     override val defSite: ValueOrigin = defSite1
-                    override val uses: IntTrieSet = uses1.filter(use ⇒ use != stmts.indexOf(stmt) && use != stmts.indexOf(useStmt))
+                    override val uses: IntTrieSet = uses1
                     override val entity: Entity = null
                 }.doDetermineEscape() match {
                     case Result(e, escapeState: EscapeProperty) ⇒
@@ -312,91 +305,83 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     }
 
     def determineLocality(field: Field): PropertyComputationResult = {
-        // base types can be considered to be local
-        if (field.fieldType.isBaseType)
-            return Result(field, NoLocalField)
-
-        // this analysis can only track private fields
-        if (!field.isPrivate)
-            return Result(field, NoLocalField)
-
         val state = new State(field)
         val thisType = field.classFile.thisType
         val fieldName = field.name
         val fieldType = field.fieldType
-        val cloneDescr = MethodDescriptor.JustReturnsObject
-        val concreteCloneDescr = MethodDescriptor.withNoArgs(thisType)
 
-        val methods = field.classFile.methodsWithBody.map(_._1).toList
+        // base types can be considered to be local
+        // TODO
+        if (fieldType.isBaseType)
+            return Result(field, NoLocalField)
 
-        // special handling for the clone method
-        val cloneM = methods.find(m ⇒ m.name == "clone" && ((m.descriptor == cloneDescr) || (m.descriptor == concreteCloneDescr)) && !m.isSynthetic)
-        cloneM match {
-            case Some(m) ⇒ //TODO analyze if it sets the field of an new object
-                var foundOverrideOfField = false
-                val stmts = tacaiProvider(m).stmts
-                for (stmt ← stmts) {
-                    stmt match {
-                        case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
-                            foundOverrideOfField = true
+        // this analysis can not track public fields
+        if (field.isPublic)
+            return Result(field, NoLocalField)
 
-                            // check objRef comes from super.clone and does not escape otherwise
-                            val objRefFresh = checkFreshnessOfValue(
-                                objRef, stmt, stmts, m, state, cloneCheckFreshnessOfDef, cloneCheckEscape
-                            )
-                            objRefFresh.foreach(return _)
+        var classes: Set[ClassFile] = Set.empty
+        if (field.isPackagePrivate || field.isProtected) {
 
-                            // TODO what if there is another return value that does not set that field
-                            // check if value is fresh
-                            val valueFresh = checkFreshnessOfValue(
-                                value, stmt, stmts, m, state, checkFreshnessOfDef, normalCheckEscape
-                            )
+            val closedPackages = project.get(ClosedPackagesKey)
+            if (!closedPackages.isClosed(thisType.packageName)) {
+                return Result(field, NoLocalField)
+            }
 
-                            valueFresh.foreach(return _)
-                        case _ ⇒
+            classes ++= project.allClassFiles.filter(_.thisType.packageName == thisType.packageName)
+            // todo check if all classes in package: package name ==
+        }
+        if (field.isProtected) {
+            if (typeExtensiblity(thisType).isNotNo) {
+                return Result(field, NoLocalField)
+            }
+            classes ++= project.classHierarchy.allSubclassTypes(thisType, reflexive = false).map(project.classFile(_).get)
+        }
 
-                    }
-                }
-                if (!foundOverrideOfField)
+        val methodsOfThisType = field.classFile.methodsWithBody.map(_._1).toList
+
+        val allMethodsHavingAccess = methodsOfThisType ++ classes.flatMap(_.methodsWithBody.map(_._1))
+
+        // if there is no clone method, the class must not be extensible to be non local
+        // extensible classes can still be extensible local if they dont implement cloneable
+        if (!methodsOfThisType.exists(
+            m ⇒ m.name == "clone" &&
+                m.descriptor.parametersCount == 0 &&
+                !m.isSynthetic
+        )) {
+            if (classExtensibility.isClassExtensible(thisType).isNotNo) {
+                if (field.classFile.interfaceTypes.contains(ObjectType.Cloneable)) {
                     return Result(field, NoLocalField)
-
-            case None ⇒
-                if (classExtensibility.isClassExtensible(thisType).isNotNo) {
-                    if (field.classFile.interfaceTypes.contains(ObjectType.Cloneable)) {
-                        return Result(field, NoLocalField)
-                    } else {
-                        state.updateWithMeet(ExtensibleLocalField)
-                    }
+                } else {
+                    state.updateWithMeet(ExtensibleLocalField)
                 }
+            }
             // else class is not extensible and does not override clone, which is okay
         }
 
-        // all assignments to the field have to be fresh
         for {
-            method ← methods if method.name != "clone" || (method.descriptor != cloneDescr && (method.descriptor != concreteCloneDescr))
-            stmts = tacaiProvider(method).stmts
-            stmt ← stmts
+            method ← allMethodsHavingAccess
+            tacai = tacaiProvider(method)
+            stmts = tacai.stmts
+            (stmt, index) ← stmts.zipWithIndex
         } {
             stmt match {
+                // all assignments to the field have to be fresh
                 case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
-                    if (objRef.asVar.definedBy != IntTrieSet(-1))
-                        return Result(field, NoLocalField)
-                    checkFreshnessOfValue(
+                    checkFreshnessAndEscapeOfValue(
                         value, stmt, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
                     ).foreach(return _)
-
                 case _ ⇒
             }
-
         }
 
-        // no read from field escapes
         for {
-            method ← methods
-            stmts = tacaiProvider(method).stmts
-            stmt ← stmts
+            method ← allMethodsHavingAccess
+            tacai = tacaiProvider(method)
+            stmts = tacai.stmts
+            (stmt, index) ← stmts.zipWithIndex
         } {
             stmt match {
+                // no read from field escapes
                 case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, _)) ⇒
 
                     // TODO later use real escape analysis
@@ -412,6 +397,67 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         case _                   ⇒ return Result(field, NoLocalField)
                     }
                 case _ ⇒
+            }
+        }
+
+        if (fieldName == "localField" && thisType.simpleName == "LocalFieldExample")
+            println()
+        for {
+            method ← allMethodsHavingAccess
+            tacai = tacaiProvider(method)
+            stmts = tacai.stmts
+            (stmt, index) ← stmts.zipWithIndex
+        } {
+            stmt match {
+
+                // always if there is a call to super.clone the field has to be override
+                case Assignment(pc, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
+                    if (descr.parametersCount == 0 && field.classFile.superclassType.get == dc) {
+                        //TODO check escape of left
+
+                        var enqueuedBBs: Set[CFGNode] = Set(tacai.cfg.bb(index))
+                        var worklist: List[CFGNode] = List(tacai.cfg.bb(index))
+
+                        while (worklist.nonEmpty) {
+                            val currentBB = worklist.head
+                            worklist = worklist.tail
+
+                            var foundPut = false
+                            currentBB match {
+                                case currentBB: BasicBlock ⇒
+                                    for (index ← currentBB.startPC to currentBB.endPC) {
+                                        stmts(index) match {
+                                            case putStmt @ PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) ⇒
+                                                if (left.usedBy.contains(index)) {
+                                                    //TODO move me upwards
+                                                    val x = checkFreshnessAndEscapeOfValue(objRef, putStmt, stmts, method, state, cloneCheckFreshnessOfDef, cloneCheckEscape)
+                                                    x.foreach(return _)
+                                                    // we are done
+                                                    foundPut = true
+                                                }
+                                            case _ ⇒
+                                        }
+                                    }
+                                case exit: ExitNode ⇒
+                                    if (exit.isNormalReturnExitNode) {
+                                        return Result(field, NoLocalField)
+                                    }
+                                case _ ⇒
+                            }
+
+                            // exit nodes should have empty successors
+                            if (!foundPut) {
+                                val successors = currentBB.successors.filter(!enqueuedBBs.contains(_))
+                                worklist ++= successors
+                                enqueuedBBs ++= successors
+
+                            }
+                        }
+
+                    }
+
+                case _ ⇒
+
             }
         }
 
