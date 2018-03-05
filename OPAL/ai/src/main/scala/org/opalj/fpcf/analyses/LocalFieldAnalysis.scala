@@ -370,17 +370,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     checkFreshnessAndEscapeOfValue(
                         value, stmt, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
                     ).foreach(return _)
-                case _ ⇒
-            }
-        }
 
-        for {
-            method ← allMethodsHavingAccess
-            tacai = tacaiProvider(method)
-            stmts = tacai.stmts
-            (stmt, index) ← stmts.zipWithIndex
-        } {
-            stmt match {
                 // no read from field escapes
                 case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, _)) ⇒
 
@@ -396,19 +386,6 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         case Result(_, NoEscape) ⇒
                         case _                   ⇒ return Result(field, NoLocalField)
                     }
-                case _ ⇒
-            }
-        }
-
-        if (fieldName == "localField" && thisType.simpleName == "LocalFieldExample")
-            println()
-        for {
-            method ← allMethodsHavingAccess
-            tacai = tacaiProvider(method)
-            stmts = tacai.stmts
-            (stmt, index) ← stmts.zipWithIndex
-        } {
-            stmt match {
 
                 // always if there is a call to super.clone the field has to be override
                 case Assignment(pc, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
@@ -457,7 +434,6 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     }
 
                 case _ ⇒
-
             }
         }
 
