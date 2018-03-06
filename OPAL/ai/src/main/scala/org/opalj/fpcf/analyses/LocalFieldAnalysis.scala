@@ -313,7 +313,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         // base types can be considered to be local
         // TODO
         if (fieldType.isBaseType)
-            return Result(field, NoLocalField)
+            return Result(field, LocalField)
 
         // this analysis can not track public fields
         if (field.isPublic)
@@ -349,7 +349,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 !m.isSynthetic
         )) {
             if (classExtensibility.isClassExtensible(thisType).isNotNo) {
-                if (field.classFile.interfaceTypes.contains(ObjectType.Cloneable)) {
+                if (project.classHierarchy.isSubtypeOf(field.classFile.thisType, ObjectType.Cloneable).isYesOrUnknown) {
                     return Result(field, NoLocalField)
                 } else {
                     state.updateWithMeet(ExtensibleLocalField)
@@ -357,6 +357,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             }
             // else class is not extensible and does not override clone, which is okay
         }
+        //TODO clonable?
 
         for {
             method ← allMethodsHavingAccess
