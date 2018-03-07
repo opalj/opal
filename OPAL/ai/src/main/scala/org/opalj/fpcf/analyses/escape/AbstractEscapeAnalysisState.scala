@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2018
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,26 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.field_locality;
+package org.opalj
+package fpcf
+package analyses
+package escape
 
-import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
+import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
 
-import java.lang.annotation.*;
+import scala.collection.mutable
 
-/**
- * Annotation to state that the annotated field is extensible local (if a proper analysis
- * was scheduled).
- *
- * @author Dominik Helm
- */
-@PropertyValidator(key= "FieldLocality", validator = ExtensibleLocalFieldMatcher.class)
-@Target(ElementType.FIELD)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface ExtensibleLocalField {
-    
+trait AbstractEscapeAnalysisState {
+    private[fpcf] var dependees = Set.empty[EOptionP[Entity, Property]]
+    private[fpcf] var mostRestrictiveProperty: EscapeProperty = NoEscape
+
     /**
-     * Short reasoning of this property
+     * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
+     * given one.
      */
-    String value();
+    @inline private[fpcf] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
+        assert((mostRestrictiveProperty meet prop).lessOrEqualRestrictive(mostRestrictiveProperty))
+        assert(!prop.isInstanceOf[Conditional])
+        mostRestrictiveProperty = mostRestrictiveProperty meet prop
+        assert(!mostRestrictiveProperty.isInstanceOf[Conditional])
+    }
+}
+
+trait DependeeCache {
+    private[fpcf] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
+        mutable.Map()
+    private[fpcf] val vdependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] =
+        mutable.Map()
+}
+
+trait ReturnValueUseSites {
+    private[fpcf] val hasReturnValueUseSites = scala.collection.mutable.Set[Entity]()
 }

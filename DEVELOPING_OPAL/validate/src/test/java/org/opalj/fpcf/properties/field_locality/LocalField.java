@@ -29,8 +29,6 @@
 package org.opalj.fpcf.properties.field_locality;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.return_freshness.FreshReturnValueMatcher;
-import org.opalj.fpcf.properties.return_freshness.LocalFieldMatcher;
 
 import java.lang.annotation.*;
 

@@ -43,7 +43,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
+import org.opalj.fpcf.analyses.escape.FallBackEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
@@ -218,13 +219,12 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             None
         }
 
-        def handleEscape(defSite1: ValueOrigin, uses1: IntTrieSet, code1: Array[Stmt[V]]) = {
-            new DefaultEntityEscapeAnalysis {
-                override val code: Array[Stmt[V]] = code1
-                override val defSite: ValueOrigin = defSite1
-                override val uses: IntTrieSet = uses1
-                override val entity: Entity = null
-            }.doDetermineEscape() match {
+        def handleEscape(defSite: ValueOrigin, uses: IntTrieSet, code: Array[Stmt[V]]) = {
+            val analysis = new FallBackEscapeAnalysis(project)
+            val ctx = analysis.createContext(null, defSite, null, uses, code, null)
+            val escapeState = new AbstractEscapeAnalysisState {}
+
+            analysis.doDetermineEscape(ctx, escapeState) match {
                 case Result(_, EscapeViaReturn) ⇒ None
                 case _                          ⇒ Some(Result(dm, NoFreshReturnValue))
             }

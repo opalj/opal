@@ -33,6 +33,7 @@ package escape
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -45,11 +46,36 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis.V
 import org.opalj.fpcf.properties._
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
+
+class InterProceduralEscapeAnalysisContext(
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val targetMethod:            DeclaredMethod,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[V]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val project:                 SomeProject,
+        val propertyStore:           PropertyStore,
+        val isMethodOverridable:     Method ⇒ Answer
+
+) extends AbstractEscapeAnalysisContext
+    with ProjectContainer
+    with PropertyStoreContainer
+    with IsMethodOverridableContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
+    with CFGContainer
+
+class InterProceduralEscapeAnalysisState()
+    extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
 
 /**
  * A very simple flow-sensitive inter-procedural escape analysis.
@@ -58,35 +84,21 @@ import org.opalj.tac.TACode
  */
 class InterProceduralEscapeAnalysis private (
         final val project: SomeProject
-) extends AbstractEscapeAnalysis {
+) extends DefaultEscapeAnalysis
+    with AbstractInterProceduralEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
+
+    override type AnalysisContext = InterProceduralEscapeAnalysisContext
+    type AnalysisState = InterProceduralEscapeAnalysisState
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
-    override def entityEscapeAnalysis(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntTrieSet,
-        code:    Array[Stmt[V]],
-        cfg:     CFG,
-        m:       DeclaredMethod
-    ): AbstractEntityEscapeAnalysis =
-        new InterProceduralEntityEscapeAnalysis(
-            e,
-            defSite,
-            uses,
-            code,
-            cfg,
-            declaredMethods,
-            virtualFormalParameters,
-            isMethodOverridable,
-            m,
-            propertyStore,
-            project
-        )
-
     /**
-     * Determine whether the given entity ([[AllocationSite]] or [[org.opalj.br.analyses.VirtualFormalParameter]]) escapes
-     * its method.
+     * Determine whether the given entity ([[AllocationSite]] or
+     * [[org.opalj.br.analyses.VirtualFormalParameter]]) escapes its method.
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
@@ -101,11 +113,13 @@ class InterProceduralEscapeAnalysis private (
 
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒ RefinableResult(fp, AtMost(NoEscape))
+            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
+                RefinableResult(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
-                doDetermineEscape(fp, param.origin, param.useSites, code, cfg, dm)
+                val ctx = createContext(fp, param.origin, dm, param.useSites, code, cfg)
+                doDetermineEscape(ctx, createState)
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
@@ -113,35 +127,48 @@ class InterProceduralEscapeAnalysis private (
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                doDetermineEscape(fp, param.origin, param.useSites, code, cfg, dm)
+                val ctx = createContext(fp, param.origin, dm, param.useSites, code, cfg)
+                doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
                 throw new IllegalArgumentException()
         }
     }
+
+    override def createContext(
+        entity:       Entity,
+        defSite:      ValueOrigin,
+        targetMethod: DeclaredMethod,
+        uses:         IntTrieSet,
+        code:         Array[Stmt[V]],
+        cfg:          CFG
+    ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
+        entity,
+        defSite,
+        targetMethod,
+        uses,
+        code,
+        cfg,
+        declaredMethods,
+        virtualFormalParameters,
+        project,
+        propertyStore,
+        isMethodOverridable
+    )
+
+    override def createState: InterProceduralEscapeAnalysisState = new InterProceduralEscapeAnalysisState()
 }
 
 object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
 
-    type V = DUVar[Domain#DomainValue]
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
 
     override def usedProperties: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        /*implicit val logContext = project.logContext
-        time {
-            SimpleEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion(
-                resolveCycles = false,
-                useFallbacksForIncomputableProperties = false
-            )
-        } { t ⇒ info("progress", s"simple escape analysis took ${t.toSeconds}") }*/
-
         val analysis = new InterProceduralEscapeAnalysis(project)
 
-        //val fps = propertyStore.context[FormalParameters].formalParameters.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
-        //val ass = propertyStore.context[AllocationSites].allocationSites.filter(propertyStore(_, EscapeProperty.key).p.isRefineable)
         val fps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
         val ass = propertyStore.context[AllocationSites].allocationSites
 

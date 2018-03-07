@@ -31,9 +31,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -43,47 +41,49 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis.V
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
+
+class SimpleEscapeAnalysisContext(
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val targetMethod:            DeclaredMethod,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[V]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val project:                 SomeProject,
+        val propertyStore:           PropertyStore
+) extends AbstractEscapeAnalysisContext
+    with ProjectContainer
+    with PropertyStoreContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
+    with CFGContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
- * [[org.opalj.fpcf.properties.AtMost(NoEscape)]]. It uses
- * [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] to handle a specific entity.
+ * [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
  *
  *
  * @author Florian Kuebler
  */
-class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEscapeAnalysis {
+class SimpleEscapeAnalysis( final val project: SomeProject)
+    extends DefaultEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
 
-    /**
-     * Creates a [[org.opalj.fpcf.analyses.escape.SimpleEntityEscapeAnalysis]] for the analysis.
-     */
-    override def entityEscapeAnalysis(
-        e:       Entity,
-        defSite: ValueOrigin,
-        uses:    IntTrieSet,
-        code:    Array[Stmt[DUVar[(Domain with RecordDefUse)#DomainValue]]],
-        cfg:     CFG,
-        m:       DeclaredMethod
-    ): AbstractEntityEscapeAnalysis =
-        new SimpleEntityEscapeAnalysis(
-            e,
-            defSite,
-            uses,
-            code,
-            cfg,
-            declaredMethods,
-            virtualFormalParameters,
-            propertyStore,
-            project
-        )
+    override type AnalysisContext = SimpleEscapeAnalysisContext
+    override type AnalysisState = AbstractEscapeAnalysisState
 
     /**
      * Calls [[doDetermineEscape]] with the definition site, the use sites, the
@@ -112,10 +112,33 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) if m.name == "<init>" ⇒
                 val TACode(params, code, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(fp, -1, useSites, code, cfg, dm)
+                val ctx = createContext(fp, -1, dm, useSites, code, cfg)
+                doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(_, _) ⇒ RefinableResult(fp, AtMost(NoEscape))
         }
     }
+
+    override def createContext(
+        entity:       Entity,
+        defSite:      ValueOrigin,
+        targetMethod: DeclaredMethod,
+        uses:         IntTrieSet,
+        code:         Array[Stmt[V]],
+        cfg:          CFG
+    ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
+        entity,
+        defSite,
+        targetMethod,
+        uses,
+        code,
+        cfg,
+        declaredMethods,
+        virtualFormalParameters,
+        project,
+        propertyStore
+    )
+
+    override def createState: AbstractEscapeAnalysisState = new AbstractEscapeAnalysisState {}
 }
 
 /**

@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import org.opalj.ai.Domain
-import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.AllocationSite
 import org.opalj.br.ClassFile
@@ -46,8 +45,8 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.DefaultEntityEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
+import org.opalj.fpcf.analyses.escape.FallBackEscapeAnalysis
 import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -310,13 +309,11 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             checkFreshnessOfDef(stmt, method, state).foreach(r ⇒ return Some(r))
 
             //TODO remove me
+            val analysis = new FallBackEscapeAnalysis(project)
+            val ctx = analysis.createContext(null, defSite1, null, uses1, stmts, null)
+            val escapeState = new AbstractEscapeAnalysisState {}
             val result = {
-                new DefaultEntityEscapeAnalysis {
-                    override val code: Array[Stmt[V]] = stmts
-                    override val defSite: ValueOrigin = defSite1
-                    override val uses: IntTrieSet = uses1
-                    override val entity: Entity = null
-                }.doDetermineEscape() match {
+                analysis.doDetermineEscape(ctx, escapeState) match {
                     case Result(e, escapeState: EscapeProperty) ⇒
                         EP(e, escapeState)
                     case RefinableResult(e, escapeState: EscapeProperty) ⇒
@@ -402,12 +399,12 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, _)) ⇒
 
                     // TODO later use real escape analysis
-                    val result = new DefaultEntityEscapeAnalysis {
-                        override val code: Array[Stmt[V]] = stmts
-                        override val defSite: ValueOrigin = stmts.indexOf(stmt)
-                        override val uses: IntTrieSet = tgt.usedBy
-                        override val entity: Entity = null
-                    }.doDetermineEscape()
+                    val analysis = new FallBackEscapeAnalysis(project)
+                    val ctx = analysis.createContext(
+                        null, stmts.indexOf(stmt), null, tgt.usedBy, stmts, null
+                    )
+                    val escapeState = new AbstractEscapeAnalysisState {}
+                    val result = analysis.doDetermineEscape(ctx, escapeState)
 
                     result match {
                         case Result(_, NoEscape) ⇒

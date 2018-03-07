@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2018
+ * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -29,7 +29,8 @@
 package org.opalj
 package fpcf
 package properties
-package return_freshness
+package field_locality
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
