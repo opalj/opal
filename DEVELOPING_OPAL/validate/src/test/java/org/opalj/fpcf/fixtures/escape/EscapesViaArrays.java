@@ -28,7 +28,6 @@
  */
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.*;
 
 import java.util.*;

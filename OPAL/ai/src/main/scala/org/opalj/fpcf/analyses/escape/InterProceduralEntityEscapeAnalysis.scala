@@ -187,7 +187,7 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
 
     private[this] def handleVirtualCall(
         dc:            ReferenceType,
-        isI:           Boolean,
+        isInterface:   Boolean,
         name:          String,
         descr:         MethodDescriptor,
         receiver:      Expr[V],
@@ -219,9 +219,27 @@ trait AbstractInterProceduralEntityEscapeAnalysis extends AbstractEntityEscapeAn
             // if the receiver type is precisely known, we can handle the concrete method
             val valueType = value.valueType.get
             assert(targetMethod.declaringClassType.isObjectType)
-            val methodO = project.instanceCall(
+            var methodO = project.instanceCall(
                 targetMethod.declaringClassType.asObjectType, valueType, name, descr
             )
+
+            // check if the method is abstract?
+            if (methodO.isEmpty) {
+                project.classFile(receiverType.asObjectType) match {
+                    case Some(cf) ⇒
+                        methodO = if (cf.isInterfaceDeclaration) {
+                            org.opalj.Result(
+                                project.resolveInterfaceMethodReference(valueType.asObjectType, name, descr)
+                            )
+                        } else {
+                            project.resolveClassMethodReference(valueType.asObjectType, name, descr)
+                        }
+                    case None ⇒
+                        meetMostRestrictive(AtMost(EscapeInCallee))
+                        return
+                }
+            }
+
             checkParams(methodO, params, hasAssignment)
             if (usesDefSite(receiver))
                 handleCall(methodO, 0, hasAssignment)

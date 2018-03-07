@@ -176,7 +176,9 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
      * We consider a defSite (represented by the stmt) as fresh iff it was allocated in this method,
      * is a constant or is the result of call to a method with fresh return value.
      */
-    private[this] def checkFreshnessOfDef(stmt: Stmt[V], method: Method, state: State): Option[PropertyComputationResult] = {
+    private[this] def checkFreshnessOfDef(
+        stmt: Stmt[V], method: Method, state: State
+    ): Option[PropertyComputationResult] = {
         // the object stored in the field is fresh
         stmt match {
             case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒ // fresh by definition
@@ -189,27 +191,51 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 val callee = project.specialCall(dc, isI, name, desc)
                 return handleConcreteCall(callee, state)
 
-            case Assignment(_, _, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
+            case Assignment(_, _, VirtualFunctionCall(_, _, _, name, desc, receiver, _)) ⇒
 
                 val value = receiver.asVar.value.asDomainReferenceValue
-                if (dc.isArrayType) {
-                    val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                    return handleConcreteCall(callee, state)
-                } else if (value.isPrecise) {
-                    val preciseType = value.valueType.get
-                    val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
-                    return handleConcreteCall(callee, state)
-                } else {
-                    val callee = project.instanceCall(method.classFile.thisType, dc, name, desc)
-                    if (callee.isEmpty)
-                        return Some(Result(state.field, NoLocalField))
 
-                    propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                        case EP(_, VNoFreshReturnValue) ⇒
+                if (value.isNull.isNotYes) {
+                    val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                        value.upperTypeBound
+                    )
+
+                    if (receiverType.isArrayType) {
+                        val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                        return handleConcreteCall(callee, state)
+                    } else if (value.isPrecise) {
+                        val preciseType = value.valueType.get
+                        val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
+                        return handleConcreteCall(callee, state)
+                    } else {
+                        var callee = project.instanceCall(method.classFile.thisType, receiverType, name, desc)
+
+                        // handle abstract method
+                        if (callee.isEmpty) {
+                            project.classFile(receiverType.asObjectType) match {
+                                case Some(cf) ⇒
+                                    callee = if (cf.isInterfaceDeclaration) {
+                                        org.opalj.Result(
+                                            project.resolveInterfaceMethodReference(receiverType.asObjectType, name, desc)
+                                        )
+                                    } else {
+                                        project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
+                                    }
+                                case None ⇒
+                                    return Some(Result(state.field, NoLocalField))
+                            }
+                        }
+
+                        if (callee.isEmpty)
                             return Some(Result(state.field, NoLocalField))
-                        case EP(_, VFreshReturnValue)     ⇒
-                        case EP(_, VPrimitiveReturnValue) ⇒
-                        case epkOrCnd                     ⇒ state.addMethodDependee(epkOrCnd)
+
+                        propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
+                            case EP(_, VNoFreshReturnValue) ⇒
+                                return Some(Result(state.field, NoLocalField))
+                            case EP(_, VFreshReturnValue)     ⇒
+                            case EP(_, VPrimitiveReturnValue) ⇒
+                            case epkOrCnd                     ⇒ state.addMethodDependee(epkOrCnd)
+                        }
                     }
                 }
             case Assignment(_, _, _: Const) ⇒

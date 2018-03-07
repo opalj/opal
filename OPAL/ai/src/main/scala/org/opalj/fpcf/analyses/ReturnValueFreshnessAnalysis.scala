@@ -154,25 +154,48 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                     handleEscape(defSite, tgt.usedBy, code).foreach(return _)
 
                     val value = receiver.asVar.value.asDomainReferenceValue
-                    if (dc.isArrayType) {
-                        val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                        handleConcreteCall(callee).foreach(return _)
-                    } else if (value.isPrecise) {
-                        val preciseType = value.valueType.get
-                        val callee = project.instanceCall(m.classFile.thisType, preciseType, name, desc)
-                        handleConcreteCall(callee).foreach(return _)
-                    } else {
-                        val callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
 
-                        // unkown method
-                        if (callee.isEmpty)
-                            return Result(dm, NoFreshReturnValue)
+                    if (value.isNull.isNotYes) {
+                        val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                            value.upperTypeBound
+                        )
 
-                        propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                            case EP(_, VNoFreshReturnValue) ⇒
+                        if (receiverType.isArrayType) {
+                            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                            handleConcreteCall(callee).foreach(return _)
+                        } else if (value.isPrecise) {
+                            val preciseType = value.valueType.get
+                            val callee = project.instanceCall(m.classFile.thisType, preciseType, name, desc)
+                            handleConcreteCall(callee).foreach(return _)
+                        } else {
+                            var callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
+
+                            // check if the method is abstract?
+                            if (callee.isEmpty) {
+                                project.classFile(receiverType.asObjectType) match {
+                                    case Some(cf) ⇒
+                                        callee = if (cf.isInterfaceDeclaration) {
+                                            org.opalj.Result(
+                                                project.resolveInterfaceMethodReference(receiverType.asObjectType, name, desc)
+                                            )
+                                        } else {
+                                            project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
+                                        }
+                                    case None ⇒
+                                        return Result(dm, NoFreshReturnValue)
+                                }
+                            }
+
+                            // unkown method
+                            if (callee.isEmpty)
                                 return Result(dm, NoFreshReturnValue)
-                            case EP(_, VFreshReturnValue) ⇒
-                            case epkOrCond                ⇒ dependees += epkOrCond
+
+                            propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
+                                case EP(_, VNoFreshReturnValue) ⇒
+                                    return Result(dm, NoFreshReturnValue)
+                                case EP(_, VFreshReturnValue) ⇒
+                                case epkOrCond                ⇒ dependees += epkOrCond
+                            }
                         }
                     }
                 // other kinds of assignments came from other methods, fields etc, which we do not track
@@ -225,7 +248,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             IntermediateResult(dm, ConditionalFreshReturnValue, dependees, c)
                         }
 
-                    //TODO what escapes via exceptions?
+                    //TODO what if escapes via exceptions?
                     case _: EscapeProperty if p.isFinal ⇒ Result(dm, NoFreshReturnValue)
 
                     // it could happen anything
