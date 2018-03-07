@@ -38,6 +38,7 @@ import org.opalj.br.Method
 import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.PC
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
@@ -111,6 +112,19 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * For some entities a result might be returned immediately.
      */
     def determineEscape(e: Entity): PropertyComputationResult
+
+    def determineEscapeOfAS(as: AllocationSite): PropertyComputationResult = {
+        val TACode(_, code, cfg, _, _) = tacaiProvider(as.method)
+
+        val index = code indexWhere { stmt ⇒ stmt.pc == as.pc }
+
+        // check if the allocation site is not dead
+        if (index != -1)
+            findUsesOfASAndAnalyze(as, index, code, cfg)
+        else /* the allocation site is part of dead code */ Result(as, NoEscape)
+    }
+
+    def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
 
     protected[this] final def findUsesOfASAndAnalyze(
         as:    AllocationSite,

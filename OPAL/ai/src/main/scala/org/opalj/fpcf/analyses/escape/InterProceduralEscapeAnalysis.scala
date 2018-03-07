@@ -90,28 +90,30 @@ class InterProceduralEscapeAnalysis private (
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(_, code, cfg, _, _) = tacaiProvider(m)
+            case as: AllocationSite         ⇒ determineEscapeOfAS(as)
 
-                val index = code indexWhere { stmt ⇒ stmt.pc == pc }
+            case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
 
-                if (index != -1)
-                    findUsesOfASAndAnalyze(as, index, code, cfg)
-                else /* the allocation site is part of dead code */ Result(e, NoEscape)
+            case e ⇒
+                throw new IllegalArgumentException(s"can't handle entity $e")
+        }
+    }
 
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒ RefinableResult(e, AtMost(NoEscape))
+    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
+        fp match {
+            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒ RefinableResult(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
-                doDetermineEscape(e, param.origin, param.useSites, code, cfg, dm)
+                doDetermineEscape(fp, param.origin, param.useSites, code, cfg, dm)
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                RefinableResult(e, AtMost(NoEscape))
+                RefinableResult(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                doDetermineEscape(e, param.origin, param.useSites, code, cfg, dm)
+                doDetermineEscape(fp, param.origin, param.useSites, code, cfg, dm)
             case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
                 throw new IllegalArgumentException()
         }

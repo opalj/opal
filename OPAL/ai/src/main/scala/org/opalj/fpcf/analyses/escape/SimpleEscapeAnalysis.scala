@@ -98,23 +98,22 @@ class SimpleEscapeAnalysis( final val project: SomeProject) extends AbstractEsca
     override def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             // for allocation sites, find the code containing the allocation site
-            case as @ AllocationSite(m, pc, _) ⇒
-                val TACode(_, code, cfg, _, _) = tacaiProvider(m)
+            case as: AllocationSite         ⇒ determineEscapeOfAS(as)
+            case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
+            case e ⇒
+                throw new IllegalArgumentException(s"can't handle entity $e")
+        }
+    }
 
-                val index = code indexWhere { stmt ⇒ stmt.pc == pc }
-
-                // check if the allocation site is not dead
-                if (index != -1)
-                    findUsesOfASAndAnalyze(as, index, code, cfg)
-                else /* the allocation site is part of dead code */ Result(e, NoEscape)
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒ Result(e, AtMost(NoEscape))
+    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
+        fp match {
+            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
+                Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) if m.name == "<init>" ⇒
                 val TACode(params, code, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                doDetermineEscape(e, -1, useSites, code, cfg, dm)
-            case VirtualFormalParameter(_, _) ⇒ RefinableResult(e, AtMost(NoEscape))
-            case e ⇒
-                throw new IllegalArgumentException(s"can't handle entity $e")
+                doDetermineEscape(fp, -1, useSites, code, cfg, dm)
+            case VirtualFormalParameter(_, _) ⇒ RefinableResult(fp, AtMost(NoEscape))
         }
     }
 }
