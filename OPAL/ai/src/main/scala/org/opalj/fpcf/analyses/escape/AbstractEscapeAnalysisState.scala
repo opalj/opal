@@ -39,15 +39,23 @@ import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
 
 import scala.collection.mutable
 
+/**
+ * Stores the state associated with a specific [[AbstractEscapeAnalysisContext]] computed by an
+ * [[AbstractEscapeAnalysis]].
+ * This state contains a set of [[EOptionP]]s from which the resulting escape state depends.
+ * In addition to this, it holds the current most restrictive escape state applicable.
+ *
+ * @author Florian Kuebler
+ */
 trait AbstractEscapeAnalysisState {
-    private[fpcf] var dependees = Set.empty[EOptionP[Entity, Property]]
-    private[fpcf] var mostRestrictiveProperty: EscapeProperty = NoEscape
+    private[escape] var dependees = Set.empty[EOptionP[Entity, Property]]
+    private[escape] var mostRestrictiveProperty: EscapeProperty = NoEscape
 
     /**
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
      * given one.
      */
-    @inline private[fpcf] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
+    @inline private[escape] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
         assert((mostRestrictiveProperty meet prop).lessOrEqualRestrictive(mostRestrictiveProperty))
         assert(!prop.isInstanceOf[Conditional])
         mostRestrictiveProperty = mostRestrictiveProperty meet prop
@@ -55,13 +63,22 @@ trait AbstractEscapeAnalysisState {
     }
 }
 
+/**
+ * Provides a cache for entities to which the [[InterProceduralEscapeAnalysis]] might depend to in
+ * order to have consistent [[EOptionP]] results for a single context until a result is committed
+ * to the [[PropertyStore]].
+ */
 trait DependeeCache {
-    private[fpcf] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
+    private[escape] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
         mutable.Map()
-    private[fpcf] val vdependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] =
+    private[escape] val vdependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] =
         mutable.Map()
 }
 
+/**
+ * Stores the parameters to which the analyses depends on, and whose functions return value is used
+ * any further.
+ */
 trait ReturnValueUseSites {
-    private[fpcf] val hasReturnValueUseSites = scala.collection.mutable.Set[Entity]()
+    private[escape] val hasReturnValueUseSites = scala.collection.mutable.Set[VirtualFormalParameter]()
 }

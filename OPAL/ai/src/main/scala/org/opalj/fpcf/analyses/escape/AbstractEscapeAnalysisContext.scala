@@ -43,19 +43,27 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
 
+/**
+ * Provides the basic information corresponding to an entity to determine its escape information.
+ * Furthermore, it has helper functions to check whether the entity might be used in expressions.
+ *
+ * @see [[AbstractEscapeAnalysis]]
+ *
+ * @author Florian Kuebler
+ */
 trait AbstractEscapeAnalysisContext {
-    val code: Array[Stmt[V]]
     val entity: Entity
     val uses: IntTrieSet
     val defSite: ValueOrigin
     val targetMethod: DeclaredMethod
+    val code: Array[Stmt[V]]
 
     /**
      * Checks whether the expression is a use of the defSite.
      * This method is called on expressions within tac statements. We assume a flat hierarchy, so
      * the expression is expected to be a [[org.opalj.tac.Var]].
      */
-    private[fpcf] final def usesDefSite(expr: Expr[V]): Boolean = {
+    private[escape] final def usesDefSite(expr: Expr[V]): Boolean = {
         assert(expr.isVar)
         expr.asVar.definedBy.contains(defSite)
     }
@@ -64,7 +72,7 @@ trait AbstractEscapeAnalysisContext {
      * If there exists a [[org.opalj.tac.UVar]] in the params of a method call that is a use of the
      * current entity's def-site return true.
      */
-    private[fpcf] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
+    private[escape] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
         assert(params.forall(_.isVar))
         params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) }
     }

@@ -42,6 +42,8 @@ import scala.collection.mutable
  * In the configuration system it is possible to define escape information for the this local in the
  * constructors of a specific class. This analysis sets the [[org.opalj.br.analyses.VirtualFormalParameter]] of the this local
  * to the defined value.
+ *
+ * @author Florian Kuebler
  */
 trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis {
     override type AnalysisContext <: AbstractEscapeAnalysisContext with ProjectContainer

@@ -78,7 +78,7 @@ class InterProceduralEscapeAnalysisState()
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
 
 /**
- * A very simple flow-sensitive inter-procedural escape analysis.
+ * A flow-sensitive inter-procedural escape analysis.
  *
  * @author Florian Kuebler
  */

@@ -71,6 +71,8 @@ class SimpleEscapeAnalysisContext(
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
+  *
+  *
  *
  *
  * @author Florian Kuebler

@@ -42,6 +42,8 @@ import org.opalj.tac.Throw
  * Only if the throw stmt leads to an abnormal return in the cfg, the escape state is decreased
  * down to [[org.opalj.fpcf.properties.EscapeViaAbnormalReturn]]. Otherwise (the exception is caught)
  * the escape state remains the same.
+ *
+ * @author Florian Kuebler
  */
 trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 

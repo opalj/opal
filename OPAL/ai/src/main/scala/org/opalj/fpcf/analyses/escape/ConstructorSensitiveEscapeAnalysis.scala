@@ -57,6 +57,8 @@ import org.opalj.tac.NonVirtualMethodCall
  *
  * For non constructor calls, [[org.opalj.fpcf.properties.AtMost(EscapeInCallee)]] of `e will be `
  * returned whenever the receiver or a parameter is a use of defSite.
+ *
+ * @author Florian Kuebler
  */
 trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     override type AnalysisContext <: AbstractEscapeAnalysisContext with ProjectContainer with PropertyStoreContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer

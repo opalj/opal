@@ -75,15 +75,21 @@ import org.opalj.tac.VirtualMethodCall
 import scala.annotation.switch
 
 /**
- * A trait for different implementations of escape analyses. Provides a factory method for the
- * concrete analysis of a single entity and a method to determine the escape information.
+ * An abstract escape analysis for a concrete [[org.opalj.br.AllocationSite]] or a
+ * [[org.opalj.br.analyses.VirtualFormalParameter]].
+ * The entity and all other information required by the analyses such as the defSite, uses or the
+ * code correspond to this entity are given as [[AbstractEscapeAnalysisContext]].
+ *
+ * It is assumed that the tac code has a flat hierarchy, i.e. it is real three address code.
  *
  * The control-flow is intended to be: Client calls determineEscape. This method extracts the
  * information for the given entity and calls doDetermineEscape.
  *
- *
+ * @define JustIntraProcedural ''This analysis only uses intra-procedural knowledge and does not
+ *                             take the behavior of the called method into consideration.''
  * @author Florian Kuebler
  */
+
 trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]

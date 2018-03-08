@@ -52,6 +52,8 @@ import org.opalj.tac.PutField
  * Very simple handling for fields and arrays. This analysis can detect global escapes via
  * assignments to heap objects. Due to the lack of simple may-alias analysis, this analysis can not
  * determine [[org.opalj.fpcf.properties.NoEscape]] states.
+ *
+ * @author Florian Kuebler
  */
 trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
