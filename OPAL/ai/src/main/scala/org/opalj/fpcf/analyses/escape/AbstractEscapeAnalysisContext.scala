@@ -34,7 +34,6 @@ package escape
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
@@ -76,10 +75,6 @@ trait AbstractEscapeAnalysisContext {
         assert(params.forall(_.isVar))
         params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) }
     }
-}
-
-trait ProjectContainer {
-    val project: SomeProject
 }
 
 trait CFGContainer {

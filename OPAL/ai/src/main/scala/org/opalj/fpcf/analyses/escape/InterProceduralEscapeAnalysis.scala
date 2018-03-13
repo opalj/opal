@@ -67,7 +67,6 @@ class InterProceduralEscapeAnalysisContext(
         val isMethodOverridable:     Method ⇒ Answer
 
 ) extends AbstractEscapeAnalysisContext
-    with ProjectContainer
     with PropertyStoreContainer
     with IsMethodOverridableContainer
     with VirtualFormalParametersContainer

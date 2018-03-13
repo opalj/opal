@@ -49,40 +49,39 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 
 class SimpleEscapeAnalysisContext(
-        val entity:                  Entity,
-        val defSite:                 ValueOrigin,
-        val targetMethod:            DeclaredMethod,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val targetMethod:            DeclaredMethod,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[V]],
+    val cfg:                     CFG,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
-    with ProjectContainer
-    with PropertyStoreContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
-    with CFGContainer
+        with PropertyStoreContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
+        with CFGContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
-  *
-  *
+ *
+ *
  *
  *
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
-    extends DefaultEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        extends DefaultEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState

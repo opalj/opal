@@ -47,7 +47,7 @@ import org.opalj.tac.Throw
  */
 trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with CFGContainer with ProjectContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext with CFGContainer
 
     override protected[this] def handleThrow(
         aThrow: Throw[V]
@@ -72,7 +72,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                     }
                     pc.asCatchNode.catchType match {
                         case Some(catchType) ⇒
-                            if (context.project.classHierarchy.isSubtypeOf(exceptionType, catchType).isYes)
+                            if (classHierarchy.isSubtypeOf(exceptionType, catchType).isYes)
                                 isCaught = true
                         case None ⇒
                     }

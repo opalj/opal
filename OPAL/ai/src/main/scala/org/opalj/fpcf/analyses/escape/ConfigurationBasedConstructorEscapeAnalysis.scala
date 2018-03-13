@@ -32,11 +32,8 @@ package analyses
 package escape
 
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.tac.NonVirtualMethodCall
-
-import scala.collection.mutable
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
@@ -46,7 +43,29 @@ import scala.collection.mutable
  * @author Florian Kuebler
  */
 trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis {
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with ProjectContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext
+
+    private[this] case class PredefinedResult(object_type: String, escape_of_this: String)
+    private[this] val ConfigKey = "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
+
+    import net.ceedubs.ficus.Ficus._
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+    /**
+     * Statically loads the configuration and gets the escape property objects via reflection.
+     *
+     * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
+     */
+    private[this] val predefinedConstructors: Map[ObjectType, EscapeProperty] = {
+        project.config.as[Seq[PredefinedResult]](ConfigKey).map { r ⇒
+            import scala.reflect.runtime._
+            val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
+            val module = rootMirror.staticModule(r.escape_of_this)
+            val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
+            (ObjectType(r.object_type), property)
+        }.toMap
+    }
+
     protected[this] abstract override def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
@@ -54,10 +73,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         assert(context.usesDefSite(call.receiver))
         assert(call.declaringClass.isObjectType)
 
-        val propertyOption =
-            ConfigurationBasedConstructorEscapeAnalysis.predefinedConstructors(context.project).get(
-                call.declaringClass.asObjectType
-            )
+        val propertyOption = predefinedConstructors.get(call.declaringClass.asObjectType)
 
         // the object constructor will not escape the this local
         if (propertyOption.nonEmpty) {
@@ -68,36 +84,3 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
     }
 }
 
-/**
- * The companion object of the [[ConfigurationBasedConstructorEscapeAnalysis]] that statically
- * loads the configuration and gets the escape property objects via reflection.
- *
- * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
- */
-object ConfigurationBasedConstructorEscapeAnalysis {
-
-    private[this] case class PredefinedResult(object_type: String, escape_of_this: String)
-
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-    //TODO alternative solution: we do not want to store all results for all projects
-    private[this] val allPredefinedConstructors: mutable.Map[SomeProject, Map[ObjectType, EscapeProperty]] = new mutable.HashMap()
-
-    def predefinedConstructors(p: SomeProject): Map[ObjectType, EscapeProperty] = {
-        allPredefinedConstructors.getOrElseUpdate(
-            p,
-            {
-                p.config.as[Seq[PredefinedResult]](ConfigKey).map { r ⇒
-                    import scala.reflect.runtime._
-                    val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-                    val module = rootMirror.staticModule(r.escape_of_this)
-                    val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
-                    (ObjectType(r.object_type), property)
-                }.toMap
-            }
-        )
-    }
-
-    val ConfigKey = "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
-}

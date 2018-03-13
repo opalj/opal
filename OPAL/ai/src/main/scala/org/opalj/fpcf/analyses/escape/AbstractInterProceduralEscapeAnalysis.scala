@@ -71,7 +71,7 @@ import org.opalj.tac.VirtualMethodCall
  * @author Florian Kuebler
  */
 trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with ProjectContainer with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
     override type AnalysisState <: AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
 
     protected[this] override def handleStaticMethodCall(
@@ -126,7 +126,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = context.project.specialCall(
+        val methodO = project.specialCall(
             call.declaringClass.asObjectType,
             call.isInterface,
             call.name,
@@ -138,7 +138,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = context.project.specialCall(
+        val methodO = project.specialCall(
             call.declaringClass.asObjectType,
             call.isInterface,
             call.name,
@@ -152,7 +152,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handleNonVirtualFunctionCall(
         call: NonVirtualFunctionCall[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = context.project.specialCall(
+        val methodO = project.specialCall(
             call.declaringClass.asObjectType,
             call.isInterface,
             call.name,
@@ -172,7 +172,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         checkParams(
-            context.project.staticCall(dc.asObjectType, isI, name, descr), params, hasAssignment
+            project.staticCall(dc.asObjectType, isI, name, descr), params, hasAssignment
         )
     }
 
@@ -186,8 +186,6 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(receiver.isVar)
-
-        val project = context.project
         val targetMethod = context.targetMethod
 
         val value = receiver.asVar.value.asDomainReferenceValue
@@ -297,7 +295,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         methodO match {
             case Success(method) ⇒
-                if (context.project.isSignaturePolymorphic(method.classFile.thisType, method)) {
+                if (project.isSignaturePolymorphic(method.classFile.thisType, method)) {
                     //IMPROVE
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
@@ -333,6 +331,9 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     private[this] def handleEscapeState(
         escapeState: EOptionP[Entity, Property], hasAssignment: Boolean
     )(implicit state: AnalysisState): Unit = {
+        assert(escapeState.e.isInstanceOf[VirtualFormalParameter])
+
+        val e = escapeState.e.asInstanceOf[VirtualFormalParameter]
         escapeState match {
             case EP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
@@ -366,7 +367,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
                 state.dependees += ep
-            case ep @ EP(e, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
+            case ep @ EP(_, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
 
                 if (hasAssignment) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
@@ -376,7 +377,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                 state.dependees += ep
 
-            case ep @ EP(e, Conditional(p)) ⇒
+            case ep @ EP(_, Conditional(p)) ⇒
                 state.meetMostRestrictive(EscapeInCallee meet p)
 
                 if (hasAssignment)
@@ -384,7 +385,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                 state.dependees += ep
 
-            case ep @ EP(e, VirtualMethodEscapeProperty(Conditional(p))) ⇒
+            case ep @ EP(_, VirtualMethodEscapeProperty(Conditional(p))) ⇒
                 state.meetMostRestrictive(EscapeInCallee meet p)
 
                 if (hasAssignment)
@@ -396,7 +397,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.meetMostRestrictive(EscapeInCallee)
 
                 if (hasAssignment)
-                    state.hasReturnValueUseSites += epkOrConditional.e
+                    state.hasReturnValueUseSites += e
 
                 state.dependees += epkOrConditional
         }
@@ -410,7 +411,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
             // this entity is passed as parameter (or this local) to a method
-            case _: VirtualFormalParameter ⇒ p match {
+            case other: VirtualFormalParameter ⇒ p match {
 
                 case GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape) ⇒
                     Result(context.entity, GlobalEscape)
