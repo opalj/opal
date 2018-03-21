@@ -198,10 +198,7 @@ package object graphs {
         closedSCCs(g.vertices, g.asTraversable)
     }
 
-    private type DFSNum = Int // always a positive number >= 0
-    private type CSCCId = Int // always a positive number >= 1
-
-    private[this] val Undetermined: CSCCId = -1
+    private[this] val Undetermined: Int = -1
 
     /**
      * Identifies closed strongly connected components in directed (multi-)graphs.
@@ -217,7 +214,7 @@ package object graphs {
         es: N ⇒ Traversable[N]
     ): List[Iterable[N]] = {
 
-        case class NInfo(dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
+        case class NInfo(dfsNum: Int, var cSCCId: Int = Undetermined) {
             override def toString: String = {
                 val cSCCId = this.cSCCId match {
                     case Undetermined ⇒ "Undetermined"
@@ -229,22 +226,21 @@ package object graphs {
 
         val nodeInfo: mutable.HashMap[N, NInfo] = mutable.HashMap.empty
 
-        def setDFSNum(n: N, dfsNum: DFSNum): Unit = {
-            assert(nodeInfo.get(n).isEmpty)
+        def setDFSNum(n: N, dfsNum: Int): Unit = {
             nodeInfo.put(n, NInfo(dfsNum))
         }
         val hasDFSNum: (N) ⇒ Boolean = (n: N) ⇒ nodeInfo.get(n).isDefined
-        val dfsNum: (N) ⇒ DFSNum = (n: N) ⇒ nodeInfo(n).dfsNum
-        val setCSCCId: (N, CSCCId) ⇒ Unit = (n: N, cSCCId: CSCCId) ⇒ nodeInfo(n).cSCCId = cSCCId
-        val cSCCId: (N) ⇒ CSCCId = (n: N) ⇒ nodeInfo(n).cSCCId
+        val dfsNum: (N) ⇒ Int = (n: N) ⇒ nodeInfo(n).dfsNum
+        val setCSCCId: (N, Int) ⇒ Unit = (n: N, cSCCId: Int) ⇒ nodeInfo(n).cSCCId = cSCCId
+        val cSCCId: (N) ⇒ Int = (n: N) ⇒ nodeInfo(n).cSCCId
 
         closedSCCs(ns, es, setDFSNum, hasDFSNum, dfsNum, setCSCCId, cSCCId)
     }
 
     /**
-     * A closed strongly connected component (cSCC) is a set of nodes of a graph where each node
-     * belonging to the cSCC can be reached from another node and no node contains an edge to
-     * another node that does not belong to the cSCC.
+     * A closed strongly connected component (cSCC) is a non-empty set of nodes of a graph where
+     * each node belonging to the cSCC can explicitly be reached from another node and no node
+     * contains an edge to some node that does not belong to the same cSCC.
      *
      * @note    This implementation can handle (arbitrarily degenerated) graphs with up to
      *          Int.MaxValue nodes (if the VM is given enough memory!)
@@ -254,12 +250,71 @@ package object graphs {
     def closedSCCs[N >: Null <: AnyRef](
         ns:        Traversable[N],
         es:        N ⇒ Traversable[N],
-        setDFSNum: (N, DFSNum) ⇒ Unit,
+        setDFSNum: (N, Int) ⇒ Unit,
         hasDFSNum: (N) ⇒ Boolean,
-        dfsNum:    (N) ⇒ DFSNum,
-        setCSCCId: (N, CSCCId) ⇒ Unit,
-        cSCCId:    (N) ⇒ CSCCId
+        dfsNum:    (N) ⇒ Int,
+        setCSCCId: (N, Int) ⇒ Unit,
+        cSCCId:    (N) ⇒ Int
     ): List[Iterable[N]] = {
+        /*
+        // Core Idea: perform depth-first search
+        val NO_CSCC_NODE = -1
+
+        val cSCCs = List.empty[Iterable[N]]
+
+        var nextDFSNum = NO_CSCC_NODE + 1 // the next (not yet used) dfsNum
+
+        def dfs(initialDFSNum: Int, initialN: N): Unit = {
+            if (hasDFSNum(initialN))
+                // the node was already reached from another node ...
+                return ;
+
+            val path = mutable.ArrayBuffer.empty[N]
+            val workstack = mutable.Stack.empty[N]
+
+            def addToPath(n: N): Unit = {
+                path += n
+                setDFSNum(n, nextDFSNum)
+                nextDFSNum += 1
+            }
+
+            addToPath(initialN)
+            workstack.pushAll(es(initialN))
+            while (workstack.nonEmpty) {
+                val n = workstack.pop
+
+                if(hasDFSNum(n)) {
+                    // this node was visited before....
+
+                    val nDFSNum = dfsNum(n)
+                    if (nDFSNum < initialDFSNum) {
+                        // This node either belongs to a path which ends in a node with no
+                        // outgoing edges or belongs to a (previously) identified cSCC;
+                        // hence, all nodes on the path cannot be part of a(nother) cSCC.
+                        path.foreach(n => setDFSNum(NO_CSCC_NODE))
+                    } else {
+
+                    }
+
+                } else {
+                    // the node was not visited before; we are extending our path
+
+                    addToPath(n)
+                    val succN = es(n)
+                    if(succN.nonEmpty) {
+                        workstack.pushAll(succN)
+                    } else {
+                        // We have a path which leads to a node with no outgoing edge;
+                        // hence, all nodes on the path cannot be part of a cSCC.
+                        path.foreach(n => setDFSNum(NO_CSCC_NODE))
+                    }
+                }
+            }
+
+        }
+        ns.foreach { n ⇒ dfs(nextDFSNum, n) }
+        cSCCs
+        */
 
         /* The following is not a strict requirement, more an expectation (however, (c)sccs
          * not reachable from a node in ns will not be detected!
@@ -293,7 +348,7 @@ package object graphs {
          * node that does not belong to the SCC and try to determine if it is connected to some
          * previous SCC. If so, we merge all nodes as they belong to the same SCC.
          */
-        def dfs(initialDFSNum: DFSNum, n: N): DFSNum = {
+        def dfs(initialDFSNum: Int, n: N): Int = {
             if (hasDFSNum(n))
                 return initialDFSNum;
 
@@ -305,7 +360,7 @@ package object graphs {
             val worklist = mutable.Stack.empty[N] // IMPROVE replace by AnyRefArrayStack
 
             // HELPER METHODS
-            def addToPath(n: N): DFSNum = {
+            def addToPath(n: N): Int = {
                 assert(!hasDFSNum(n))
                 val dfsNum = nextDFSNum
                 setDFSNum(n, dfsNum)
