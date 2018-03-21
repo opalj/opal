@@ -68,7 +68,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
     }
 
     "a graph with multiple nodes, but no edges" should "not contain any cSCCs" in {
-        val g = Graph.empty[String] += ("a")
+        val g = Graph.empty[String] += ("a") += "b"
         closedSCCs(g) should be(List.empty)
     }
 
@@ -209,7 +209,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
             permutationCount += 1
             if (random.nextInt(2500) == 1) {
                 testedCount += 1
-                info(s"tested permutation: $aPermutation")
+                // info(s"tested permutation: $aPermutation")
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(6)
 
@@ -241,7 +241,6 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                     ("f" → "c"), ("f" → "g"), ("d" → "e"), ("e" → "d"), ("l" → "m"), ("m" → "l")
                 ) ::: aPermutation
                 testedCount += 1
-                info(s"tested permutation: $data")
                 val g = data.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(13)
 
@@ -267,7 +266,6 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 if (cSCCs != expected) {
                     fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
                 }
-
             }
         }
 
@@ -384,5 +382,76 @@ class ClosedSCCTest extends FlatSpec with Matchers {
         } while (System.currentTimeMillis - seed < 1000)
         info(s"tested $run permutations of the graph (initial seed: $seed)")
     }
+
+    "a graph with a long path leading to a simple cSCC consisting of two nodes" should
+        "contain one cSCC" in {
+            val data = List(("a" → "b"), ("b" → "c"), ("c" → "d"), ("d" → "c"), ("d" -> "d"))
+            data.permutations.foreach { aPermutation ⇒
+                val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                g.vertices.size should be(4)
+
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                cSCCs.size should be(1)
+                val expected = Set("c", "d")
+                if (cSCCs.head != expected) {
+                    fail(s"the graph $g contains one closed SCC $expected, but found $cSCCs")
+                }
+            }
+        }
+
+    "a graph with multiple paths leading to a simple cSCC" should
+        "contain one cSCC" in {
+            val data = List(("a" → "c"), ("b" → "c"), ("c" → "c"))
+            data.permutations.foreach { aPermutation ⇒
+                val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                g.vertices.size should be(3)
+
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                cSCCs.size should be(1)
+                val expected = Set("c")
+                if (cSCCs.head != expected) {
+                    fail(s"the graph $g contains one closed SCC $expected, but found $cSCCs")
+                }
+            }
+        }
+
+    "a graph with a long path leading to two simple cSCCs" should
+        "contain two cSCCs" in {
+            val data = List(("a" → "b"), ("b" → "c"), ("b" → "d"), ("c" -> "c"), ("d" -> "d"))
+            data.permutations.foreach { aPermutation ⇒
+                val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                g.vertices.size should be(4)
+
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                cSCCs.size should be(2)
+                val expected = Set(Set("d"), Set("c"))
+                if (cSCCs != expected) {
+                    fail(s"the graph $g contains two closed SCCs $expected, but found $cSCCs")
+                }
+            }
+        }
+
+    "a graph with two SCCs and two cSCCs" should
+        "contain two cSCCs" in {
+            val data = List(
+                ("a" → "c"), ("b" → "c"), ("c" → "d"), ("d" -> "e"), ("c" -> "f"), ("f" -> "g"),
+                ("d" -> "d"), ("e" -> "e"), ("f" -> "f"), ("g" -> "g")
+            )
+            var permutationCounter = 1
+            data.permutations.take(10000).foreach { aPermutation ⇒
+                val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                val expected = Set(Set("e"), Set("g"))
+                if (cSCCs != expected) {
+                    fail(s"the graph $g\n"+
+                        s"created using permutation: $aPermutation\n"+
+                        s"contains two closed SCCs : $expected\n"+
+                        s"found: $cSCCs")
+                } else {
+                    // info(s"successfully tested permutation $permutationCounter: $aPermutation")
+                    permutationCounter += 1
+                }
+            }
+        }
 
 }
