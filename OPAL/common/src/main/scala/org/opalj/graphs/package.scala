@@ -313,7 +313,7 @@ package object graphs {
                 nextDFSNum += 1
                 dfsNum
             }
-            def pathLength = nextDFSNum - initialDFSNum // <=> path.length
+            def pathLength = path.length
             def killPath(): Unit = { path.clear(); thisPathFirstDFSNum = nextDFSNum }
             def reportPath(p: Iterable[N]): Unit = { cSCCs ::= p }
 
