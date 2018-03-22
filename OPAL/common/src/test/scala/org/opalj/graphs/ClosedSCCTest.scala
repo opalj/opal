@@ -139,14 +139,19 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 ("d" → "e"),
                 ("e" → "d")
             )
+            var permutationCount = 0
             data.permutations.foreach { aPermutation ⇒
+                permutationCount += 1
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(5)
 
                 val cSCCs = closedSCCs(g).map(_.toList.sorted).toSet
                 val expected = Set(List("a", "b"), List("d", "e"))
                 if (cSCCs != expected) {
-                    fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
+                    fail(
+                        s"the graph $g\ncontains two closed SCCs $expected,\n but found $cSCCs\n"+
+                            s"permutation $permutationCount: $aPermutation"
+                    )
                 }
 
             }
@@ -427,6 +432,22 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 val expected = Set(Set("d"), Set("c"))
                 if (cSCCs != expected) {
                     fail(s"the graph $g contains two closed SCCs $expected, but found $cSCCs")
+                }
+            }
+        }
+
+    "a graph with one node with multiple outgoing edges leading to a complex cSCCs" should
+        "contain one cSCC" in {
+            val data = List(("a" → "b"), ("a" → "c"), ("a" → "d"), ("b" -> "c"), ("c" -> "d"), ("d" -> "b"))
+            data.permutations.foreach { aPermutation ⇒
+                val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                g.vertices.size should be(4)
+
+                val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                cSCCs.size should be(1)
+                val expected = Set("b", "c", "d")
+                if (cSCCs.head != expected) {
+                    fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
                 }
             }
         }
