@@ -6,7 +6,9 @@ OPAL was designed from the ground up with *extensibility*, *adaptability* and *s
 ## Main Projects
 OPAL consists of several projects which are found in the folder OPAL:
 
-* **Common**(OPAL/common): Contains common helper classes (e.g. PerformanceEvaluation) useful when analyzing (byte) code such as generic data structures (e.g., TrieMaps) and graph algorithms (e.g., to compute DominatorTrees, to find strongly connected components).
+* **Common**(OPAL/common): Contains general useful functions, data-structures (e.g. TrieMaps) and graph algorithms (e.g., computing strongly connected components, computing dominator information etc.) useful when analyzing (byte) code.
+
+* **Static Analysis Infrastructure**(OPAL/si): Contains a generic lattices based framework for the implementation of modularized static analyses.
 
 * **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 9 bytecode.
 
