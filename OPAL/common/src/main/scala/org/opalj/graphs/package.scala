@@ -238,10 +238,10 @@ package object graphs {
 
             var initialDFSNum: Int = nextDFSNum
 
-            val workstack = mutable.Stack.empty[N]
+            val workstack = mutable.ArrayStack.empty[N] // mutable.Stack.empty[N]
             workstack.push(initialN)
 
-            val path = mutable.ArrayBuffer.empty[N] // IMPROVE Use data structure with efficient "drop"
+            val path = new mutable.ArrayBuffer[N](16) // IMPROVE Use data structure with efficient "drop"
             def markPathAsProcessed(): Unit = {
                 path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
                 path.clear()
@@ -284,9 +284,11 @@ package object graphs {
                             // the cSCC...
                             // ALTERNATIVE CHECK:
                             val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
-                            if (workstack.isEmpty || cSCCandidate.forall(n ⇒
-                                es(n).forall(succN ⇒
-                                    hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/ ))) {
+                            if (workstack.isEmpty ||
+                                cSCCandidate.forall(n ⇒
+                                    es(n).forall(succN ⇒
+                                        hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/
+                                    ))) {
                                 cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
@@ -323,7 +325,7 @@ package object graphs {
                     if (succNs.nonEmpty) {
                         workstack.push(n)
                         workstack.push(PathSegmentSeparator)
-                        workstack.pushAll(succNs)
+                        workstack ++= succNs
                     } else {
                         // We have a path which leads to a node with no outgoing edge;
                         // hence, all nodes on the path cannot be part of a cSCC.
@@ -417,7 +419,7 @@ package object graphs {
             var nextDFSNum = thisPathFirstDFSNum
             var nextCSCCId = 1
             val path = mutable.ArrayBuffer.empty[N]
-            val worklist = mutable.Stack.empty[N]
+            val worklist = mutable.ArrayStack.empty[N]
 
             // HELPER METHODS
             def addToPath(n: N): Int = {
@@ -434,7 +436,9 @@ package object graphs {
 
             // INITIALIZATION
             addToPath(n)
-            worklist.push(n).push(PathElementSeparator).pushAll(es(n))
+            worklist.push(n)
+            worklist.push(PathElementSeparator)
+            worklist ++= es(n)
 
             // PROCESSING
             while (worklist.nonEmpty) {
