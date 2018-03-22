@@ -32,19 +32,25 @@ package analyses
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.properties.ConditionalExtensibleGetter
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
+import org.opalj.fpcf.properties.ConditionalGetter
+import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.FreshReturnValue
+import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VConditionalFreshReturnValue
+import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
+import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
  * An analysis that aggregates the results of the [[ReturnValueFreshnessAnalysis]] for all possible
- * methods represented by a given [[DeclaredMethod]].s
+ * methods represented by a given [[DeclaredMethod]].
  *
  * @author Florian Kuebler
  */
@@ -68,39 +74,91 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
             m.descriptor
         )
 
+        var temporary: VirtualMethodReturnValueFreshness = VFreshReturnValue
+
         for (method ← methods) {
             propertyStore(declaredMethods(method), ReturnValueFreshness.key) match {
                 case EP(_, NoFreshReturnValue) ⇒ return Result(m, VNoFreshReturnValue)
+
                 case EP(_, FreshReturnValue)   ⇒
+
                 case ep @ EP(_, ConditionalFreshReturnValue) ⇒
                     dependees += ep
+
+                case EP(_, Getter) ⇒
+                    temporary = temporary meet VGetter
+
+                case ep @ EP(_, ConditionalGetter) ⇒
+                    temporary = temporary meet VGetter
+                    dependees += ep
+
+                case EP(_, ExtensibleGetter) ⇒
+                    temporary = temporary meet VExtensibleGetter
+
+                case ep @ EP(_, ConditionalExtensibleGetter) ⇒
+                    temporary = temporary meet VExtensibleGetter
+                    dependees += ep
+
                 case epk ⇒ dependees += epk
             }
         }
 
         def c(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             p match {
-                case NoFreshReturnValue ⇒ Result(m, VNoFreshReturnValue)
+                case NoFreshReturnValue ⇒
+                    Result(m, VNoFreshReturnValue)
+
                 case FreshReturnValue ⇒
                     dependees = dependees.filter(_.e ne other)
                     if (dependees.isEmpty)
-                        Result(m, VFreshReturnValue)
+                        Result(m, temporary)
                     else
                         IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
+
+                case Getter ⇒
+                    dependees = dependees.filter(_.e ne other)
+                    temporary = temporary meet VGetter
+                    if (dependees.isEmpty)
+                        Result(m, temporary)
+                    else
+                        IntermediateResult(m, temporary.asConditional, dependees, c)
+
+                case ExtensibleGetter ⇒
+                    dependees = dependees.filter(_.e ne other)
+                    temporary = temporary meet VExtensibleGetter
+                    if (dependees.isEmpty)
+                        Result(m, temporary)
+                    else
+                        IntermediateResult(m, temporary.asConditional, dependees, c)
+
+                case ConditionalGetter ⇒
+                    val newEP = EP(other, p)
+                    dependees = dependees.filter(_.e ne other) + newEP
+                    temporary = temporary meet VGetter
+
+                    IntermediateResult(m, temporary.asConditional, dependees, c)
+
+                case ConditionalExtensibleGetter ⇒
+                    val newEP = EP(other, p)
+                    dependees = dependees.filter(_.e ne other) + newEP
+                    temporary = temporary meet VExtensibleGetter
+
+                    IntermediateResult(m, temporary.asConditional, dependees, c)
+
                 case ConditionalFreshReturnValue ⇒
                     val newEP = EP(other, p)
                     dependees = dependees.filter(_.e ne other) + newEP
-                    IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
+                    IntermediateResult(m, temporary.asConditional, dependees, c)
 
                 case PropertyIsLazilyComputed ⇒
-                    IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
+                    IntermediateResult(m, temporary.asConditional, dependees, c)
             }
         }
 
         if (dependees.isEmpty)
-            Result(m, VFreshReturnValue)
+            Result(m, temporary)
         else
-            IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
+            IntermediateResult(m, temporary.asConditional, dependees, c)
     }
 }
 

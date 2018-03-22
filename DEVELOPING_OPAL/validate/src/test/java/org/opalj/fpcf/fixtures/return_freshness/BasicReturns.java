@@ -1,6 +1,7 @@
 package org.opalj.fpcf.fixtures.return_freshness;
 
 import org.opalj.fpcf.properties.return_freshness.FreshReturnValue;
+import org.opalj.fpcf.properties.return_freshness.Getter;
 import org.opalj.fpcf.properties.return_freshness.NoFreshReturnValue;
 import org.opalj.fpcf.properties.return_freshness.PrimitiveReturnValue;
 
@@ -9,9 +10,11 @@ import org.opalj.fpcf.properties.return_freshness.PrimitiveReturnValue;
  *
  * @author Florian Kuebler
  */
-public class BasicReturns {
+public final class BasicReturns {
 
     public static Object global;
+
+    private Object field = new Object();
 
     @PrimitiveReturnValue("the return value is primitive")
     public static int primitiveReturnValue(int i) {
@@ -57,4 +60,10 @@ public class BasicReturns {
 
         return o;
     }
+
+    @Getter("It is just a getter")
+    public Object getField() {
+        return field;
+    }
+
 }

@@ -70,3 +70,4 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
 class PrimitiveReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.PrimitiveReturnValue)
 class NoFreshReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.NoFreshReturnValue)
 class FreshReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.FreshReturnValue)
+class GetterMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.Getter)

@@ -49,21 +49,21 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 
 class SimpleEscapeAnalysisContext(
-    val entity:                  Entity,
-    val defSite:                 ValueOrigin,
-    val targetMethod:            DeclaredMethod,
-    val uses:                    IntTrieSet,
-    val code:                    Array[Stmt[V]],
-    val cfg:                     CFG,
-    val declaredMethods:         DeclaredMethods,
-    val virtualFormalParameters: VirtualFormalParameters,
-    val project:                 SomeProject,
-    val propertyStore:           PropertyStore
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val targetMethod:            DeclaredMethod,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[V]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val project:                 SomeProject,
+        val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
-        with PropertyStoreContainer
-        with VirtualFormalParametersContainer
-        with DeclaredMethodsContainer
-        with CFGContainer
+    with PropertyStoreContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
+    with CFGContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
@@ -77,11 +77,11 @@ class SimpleEscapeAnalysisContext(
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
-        extends DefaultEscapeAnalysis
-        with ConstructorSensitiveEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEscapeAnalysis
-        with ExceptionAwareEscapeAnalysis {
+    extends DefaultEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState

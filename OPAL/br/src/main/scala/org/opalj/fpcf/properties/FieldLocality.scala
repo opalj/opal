@@ -43,6 +43,10 @@ sealed abstract class FieldLocality extends Property with FieldLocalityMetaInfor
 
     def asConditional: FieldLocality
 
+    def asUnconditional: FieldLocality
+
+    def isConditional: Boolean
+
 }
 
 object FieldLocality extends FieldLocalityMetaInformation {
@@ -50,10 +54,24 @@ object FieldLocality extends FieldLocalityMetaInformation {
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
             epks.map { epk ⇒
                 ps(epk) match {
+                    case EP(e, ConditionalFreshReturnValue) ⇒
+                        Result(e, FreshReturnValue)
+                    case EP(e, ConditionalGetter) ⇒
+                        Result(e, Getter)
+
+                    case EP(e, VConditionalFreshReturnValue) ⇒
+                        Result(e, VFreshReturnValue)
+                    case EP(e, VConditionalGetter) ⇒
+                        Result(e, VGetter)
+
                     case EP(e, ConditionalLocalField) ⇒
                         Result(e, LocalField)
+                    case EP(e, ConditionalLocalFieldWithGetter) ⇒
+                        Result(e, LocalFieldWithGetter)
                     case EP(e, ConditionalExtensibleLocalField) ⇒
                         Result(e, ExtensibleLocalField)
+                    case EP(e, ConditionalExtensibleLocalFieldWithGetter) ⇒
+                        Result(e, ExtensibleLocalFieldWithGetter)
 
                     case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
                 }
@@ -73,47 +91,100 @@ case object LocalField extends FieldLocality {
     override def meet(other: FieldLocality): FieldLocality = other
 
     override def asConditional: FieldLocality = ConditionalLocalField
+
+    override def asUnconditional: FieldLocality = this
+
+    override def isConditional: Boolean = false
 }
 
 case object ExtensibleLocalField extends FieldLocality {
     override def isRefinable: Boolean = true
 
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case LocalField            ⇒ this
-        case ConditionalLocalField ⇒ ConditionalExtensibleLocalField
-        case _                     ⇒ other
+        case LocalField                      ⇒ this
+        case LocalFieldWithGetter            ⇒ ExtensibleLocalFieldWithGetter
+        case ConditionalLocalField           ⇒ ConditionalExtensibleLocalField
+        case ConditionalLocalFieldWithGetter ⇒ ConditionalExtensibleLocalFieldWithGetter
+        case _                               ⇒ other
     }
 
     override def asConditional: FieldLocality = ConditionalExtensibleLocalField
+
+    override def asUnconditional: FieldLocality = this
+
+    override def isConditional: Boolean = false
+}
+
+case object LocalFieldWithGetter extends FieldLocality {
+    override def isRefinable: Boolean = true
+
+    override def meet(other: FieldLocality): FieldLocality = other match {
+        case LocalField                      ⇒ this
+        case ExtensibleLocalField            ⇒ ExtensibleLocalFieldWithGetter
+        case ConditionalLocalField           ⇒ ConditionalExtensibleLocalField
+        case ConditionalLocalFieldWithGetter ⇒ ConditionalExtensibleLocalFieldWithGetter
+        case _                               ⇒ other
+    }
+
+    override def asConditional: FieldLocality = ConditionalLocalFieldWithGetter
+
+    override def asUnconditional: FieldLocality = this
+
+    override def isConditional: Boolean = false
+}
+
+case object ExtensibleLocalFieldWithGetter extends FieldLocality {
+    override def meet(other: FieldLocality): FieldLocality = other match {
+        case NoLocalField                 ⇒ other
+        case other if other.isConditional ⇒ this.asConditional
+        case _                            ⇒ this
+    }
+
+    override def asConditional: FieldLocality = ConditionalExtensibleLocalFieldWithGetter
+
+    override def asUnconditional: FieldLocality = this
+
+    override def isConditional: Boolean = false
+
+    override def isRefinable: Boolean = true
 }
 
 case object NoLocalField extends FieldLocality {
     override def isRefinable: Boolean = true
 
-    override def meet(other: FieldLocality): FieldLocality = other
+    override def meet(other: FieldLocality): FieldLocality = this
 
     override def asConditional: FieldLocality = throw new UnsupportedOperationException()
+
+    override def asUnconditional: FieldLocality = this
+
+    override def isConditional: Boolean = false
 }
 
-case object ConditionalLocalField extends FieldLocality {
+sealed abstract class ConditionalFieldLocality extends FieldLocality {
     override def isRefinable: Boolean = true
 
-    override def meet(other: FieldLocality): FieldLocality = other match {
-        case LocalField           ⇒ this
-        case ExtensibleLocalField ⇒ ConditionalExtensibleLocalField
-        case _                    ⇒ other
+    override def meet(other: FieldLocality): FieldLocality = {
+        (other.asUnconditional meet this.asUnconditional).asConditional
     }
 
     override def asConditional: FieldLocality = this
+
+    override def isConditional: Boolean = true
 }
 
-case object ConditionalExtensibleLocalField extends FieldLocality {
-    override def isRefinable: Boolean = true
+case object ConditionalLocalField extends ConditionalFieldLocality {
+    override def asUnconditional: FieldLocality = LocalField
+}
 
-    override def meet(other: FieldLocality): FieldLocality = other match {
-        case NoLocalField ⇒ other
-        case _            ⇒ this
-    }
+case object ConditionalExtensibleLocalField extends ConditionalFieldLocality {
+    override def asUnconditional: FieldLocality = ExtensibleLocalField
+}
 
-    override def asConditional: FieldLocality = this
+case object ConditionalLocalFieldWithGetter extends ConditionalFieldLocality {
+    override def asUnconditional: FieldLocality = LocalFieldWithGetter
+}
+
+case object ConditionalExtensibleLocalFieldWithGetter extends ConditionalFieldLocality {
+    override def asUnconditional: FieldLocality = ExtensibleLocalFieldWithGetter
 }

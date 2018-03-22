@@ -31,6 +31,7 @@ package fpcf
 import java.net.URL
 
 import org.opalj.br.analyses.Project
+import org.opalj.fpcf.analyses.LocalFieldAnalysis
 import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.VirtualReturnValueFreshnessAnalysis
@@ -59,6 +60,7 @@ class FreshReturnValueAnalysisTests extends PropertiesTest {
         InterProceduralEscapeAnalysis.startLazily(p, ps)
         VirtualCallAggregatingEscapeAnalysis.startLazily(p, ps)
         VirtualReturnValueFreshnessAnalysis.startLazily(p, ps)
+        LocalFieldAnalysis.startLazily(p, ps)
 
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPropertyComputationCompletion()

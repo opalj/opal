@@ -45,24 +45,34 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
 import org.opalj.fpcf.analyses.escape.FallBackEscapeAnalysis
 import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.ConditionalExtensibleGetter
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
+import org.opalj.fpcf.properties.ConditionalGetter
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.ExtensibleLocalField
 import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.FreshReturnValue
+import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.LocalField
+import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
+import org.opalj.fpcf.properties.VConditionalExtensibleGetter
 import org.opalj.fpcf.properties.VConditionalFreshReturnValue
+import org.opalj.fpcf.properties.VConditionalGetter
+import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
+import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
@@ -93,7 +103,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         private[this] var allocationSiteDependees: Set[EOptionP[Entity, EscapeProperty]] = Set.empty
         private[this] var clonedDependees: Set[EOptionP[Entity, EscapeProperty]] = Set.empty
 
-        var temporary: FieldLocality = LocalField
+        private[this] var temporary: FieldLocality = LocalField
 
         def dependees: Set[EOptionP[Entity, Property]] = {
             declaredMethodsDependees ++ allocationSiteDependees ++ clonedDependees
@@ -144,6 +154,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         }
 
         def updateWithMeet(f: FieldLocality): Unit = temporary = temporary.meet(f)
+        def temporaryState: FieldLocality = temporary
     }
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
@@ -163,10 +174,14 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             return Some(Result(state.field, NoLocalField))
 
         propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
-            case EP(_, NoFreshReturnValue)   ⇒ return Some(Result(state.field, NoLocalField))
-            case EP(_, FreshReturnValue)     ⇒
-            case EP(_, PrimitiveReturnValue) ⇒
-            case epkOrCond                   ⇒ state.addMethodDependee(epkOrCond)
+            case EP(_, NoFreshReturnValue)          ⇒ return Some(Result(state.field, NoLocalField))
+            case EP(_, Getter)                      ⇒ return Some(Result(state.field, NoLocalField))
+            case EP(_, ExtensibleGetter)            ⇒ return Some(Result(state.field, NoLocalField))
+            case EP(_, ConditionalGetter)           ⇒ return Some(Result(state.field, NoLocalField))
+            case EP(_, ConditionalExtensibleGetter) ⇒ return Some(Result(state.field, NoLocalField))
+            case EP(_, FreshReturnValue)            ⇒
+            case EP(_, PrimitiveReturnValue)        ⇒
+            case epkOrCond                          ⇒ state.addMethodDependee(epkOrCond)
         }
         None
     }
@@ -231,6 +246,19 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
                             case EP(_, VNoFreshReturnValue) ⇒
                                 return Some(Result(state.field, NoLocalField))
+
+                            case EP(_, VGetter) ⇒
+                                return Some(Result(state.field, NoLocalField))
+
+                            case EP(_, VExtensibleGetter) ⇒
+                                return Some(Result(state.field, NoLocalField))
+
+                            case EP(_, VConditionalGetter) ⇒
+                                return Some(Result(state.field, NoLocalField))
+
+                            case EP(_, VConditionalExtensibleGetter) ⇒
+                                return Some(Result(state.field, NoLocalField))
+
                             case EP(_, VFreshReturnValue)     ⇒
                             case EP(_, VPrimitiveReturnValue) ⇒
                             case epkOrCnd                     ⇒ state.addMethodDependee(epkOrCnd)
@@ -332,6 +360,8 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         val thisType = field.classFile.thisType
         val fieldName = field.name
         val fieldType = field.fieldType
+        if (fieldName == "field")
+            println()
 
         // base types can be considered to be local
         // TODO
@@ -395,8 +425,8 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         value, stmt, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
                     ).foreach(return _)
 
-                // no read from field escapes
-                case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, _)) ⇒
+                // no read from field escapes, if it is returned, we have a getter
+                case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, objRef)) ⇒
 
                     // TODO later use real escape analysis
                     val analysis = new FallBackEscapeAnalysis(project)
@@ -408,7 +438,9 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
                     result match {
                         case Result(_, NoEscape) ⇒
-                        case _                   ⇒ return Result(field, NoLocalField)
+                        case Result(_, EscapeViaReturn) if objRef.asVar.definedBy == IntTrieSet(tac.OriginOfThis) ⇒
+                            state.updateWithMeet(LocalFieldWithGetter)
+                        case _ ⇒ return Result(field, NoLocalField)
                     }
 
                 // always if there is a call to super.clone the field has to be override
@@ -477,20 +509,31 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         state.removeMethodDependee(EP(e, p))
                         returnResult(state)
 
+                    case Getter | VGetter ⇒
+                        Result(state.field, NoLocalField)
+
+                    case ExtensibleGetter | VExtensibleGetter ⇒
+                        Result(state.field, NoLocalField)
+
                     case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
-                        val newEP = EP(e, p)
-                        state.updateMethodDependee(newEP)
+                        state.updateMethodDependee(EP(e, p))
                         IntermediateResult(
                             state.field,
-                            state.temporary.asConditional,
+                            state.temporaryState.asConditional,
                             state.dependees,
                             continuation(_, _, _, state)
                         )
 
+                    case ConditionalGetter | VConditionalGetter ⇒
+                        Result(state.field, NoLocalField)
+
+                    case ConditionalExtensibleGetter | VConditionalExtensibleGetter ⇒
+                        Result(state.field, NoLocalField)
+
                     case PropertyIsLazilyComputed ⇒
                         IntermediateResult(
                             state.field,
-                            state.temporary.asConditional,
+                            state.temporaryState.asConditional,
                             state.dependees,
                             continuation(_, _, _, state)
                         )
@@ -507,7 +550,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         state.updateAllocationSiteDependee(EP(e, p))
                         IntermediateResult(
                             state.field,
-                            state.temporary.asConditional,
+                            state.temporaryState.asConditional,
                             state.dependees,
                             continuation(_, _, _, state)
                         )
@@ -515,7 +558,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     case PropertyIsLazilyComputed ⇒
                         IntermediateResult(
                             state.field,
-                            state.temporary.asConditional,
+                            state.temporaryState.asConditional,
                             state.dependees,
                             continuation(_, _, _, state)
                         )
@@ -533,7 +576,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                         state.updateClonedAllocationSiteDependee(EP(e, p))
                         IntermediateResult(
                             state.field,
-                            state.temporary.asConditional,
+                            state.temporaryState.asConditional,
                             state.dependees,
                             continuation(_, _, _, state)
                         )
@@ -541,7 +584,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                     case PropertyIsLazilyComputed ⇒
                         IntermediateResult(
                             state.field,
-                            state.temporary.asConditional,
+                            state.temporaryState.asConditional,
                             state.dependees,
                             continuation(_, _, _, state)
                         )
@@ -553,11 +596,11 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
 
     private[this] def returnResult(state: State) = {
         if (state.hasNoDependees)
-            Result(state.field, state.temporary)
+            Result(state.field, state.temporaryState)
         else
             IntermediateResult(
                 state.field,
-                state.temporary.asConditional,
+                state.temporaryState.asConditional,
                 state.dependees,
                 continuation(_, _, _, state)
             )
