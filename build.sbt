@@ -106,6 +106,7 @@ lazy val `OPAL` = (project in file("."))
   .enablePlugins(ScalaUnidocPlugin)
   .aggregate(
     common,
+    si,
     bi,
     br,
     da,
@@ -137,6 +138,17 @@ lazy val `Common` = (project in file("OPAL/common"))
   )
   .configs(IntegrationTest)
 
+lazy val si = `StaticAnalysisInfrastructure`
+lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
+    .settings(buildSettings: _*)
+    .settings(
+        name := "StaticAnalysisInfrastructure",
+        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
+        libraryDependencies ++= Dependencies.si
+    )
+    .configs(IntegrationTest)
+    .dependsOn(common % "it->test;test->test;compile->compile")
+
 lazy val bi = `BytecodeInfrastructure`
 lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
   .settings(buildSettings: _*)
@@ -166,7 +178,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
         )
     )
   )
-  .dependsOn(common % "it->test;test->test;compile->compile")
+  .dependsOn(si % "it->test;test->test;compile->compile")
   .configs(IntegrationTest)
   .enablePlugins(JavaFixtureCompiler)
 
