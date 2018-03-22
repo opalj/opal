@@ -30,6 +30,7 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
+import org.opalj.util.PerformanceEvaluation
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -459,20 +460,22 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 ("d" -> "d"), ("e" -> "e"), ("f" -> "f"), ("g" -> "g")
             )
             var permutationCounter = 1
-            data.permutations.take(10000).foreach { aPermutation ⇒
-                val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
-                val cSCCs = closedSCCs(g).map(_.toSet).toSet
-                val expected = Set(Set("e"), Set("g"))
-                if (cSCCs != expected) {
-                    fail(s"the graph $g\n"+
-                        s"created using permutation: $aPermutation\n"+
-                        s"contains two closed SCCs : $expected\n"+
-                        s"found: $cSCCs")
-                } else {
-                    // info(s"successfully tested permutation $permutationCounter: $aPermutation")
-                    permutationCounter += 1
+            PerformanceEvaluation.time {
+                data.permutations.take(20000).foreach { aPermutation ⇒
+                    val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                    val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                    val expected = Set(Set("e"), Set("g"))
+                    if (cSCCs != expected) {
+                        fail(s"the graph $g\n"+
+                            s"created using permutation: $aPermutation\n"+
+                            s"contains two closed SCCs : $expected\n"+
+                            s"found: $cSCCs")
+                    } else {
+                        // info(s"successfully tested permutation $permutationCounter: $aPermutation")
+                        permutationCounter += 1
+                    }
                 }
-            }
+            }(t ⇒ info(s"analyzing 20000 permutations took: ${t.toSeconds}"))
         }
 
 }
