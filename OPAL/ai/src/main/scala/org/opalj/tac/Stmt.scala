@@ -252,6 +252,7 @@ case class Switch[+V <: Var[V]](
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
         defaultTarget = pcToIndex(defaultTarget)
+        index.remapIndexes(pcToIndex)
     }
 
     final override def isSideEffectFree: Boolean = {

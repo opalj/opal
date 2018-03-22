@@ -738,6 +738,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
         apacheANTCH.allSupertypes(mi) should be(UIDSet(
             ObjectType("org/apache/tools/ant/Task"),
+            ObjectType("org/apache/tools/ant/ProjectComponent"),
             ObjectType("org/apache/tools/ant/TaskContainer"),
             ObjectType("org/apache/tools/ant/DynamicAttribute"),
             ObjectType.Object

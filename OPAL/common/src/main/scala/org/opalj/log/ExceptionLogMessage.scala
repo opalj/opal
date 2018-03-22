@@ -27,34 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package log
 
-/**
- * The project type specifies the type of the project/the kind of sources which will be
- * analyzed.
- *
- * @author Michael Eichberg
- */
-object ProjectTypes extends Enumeration {
+import scala.annotation.tailrec
 
-    final val Library = Value("library")
+case class ExceptionLogMessage(
+        level:       Level          = Info,
+        category:    Option[String] = None,
+        baseMessage: String,
+        t:           Throwable
+) extends LogMessage {
 
-    final val CommandLineApplication = Value("command-line application")
-
-    /**
-     * This mode shall be used if a standard Java GUI application is analyzed which is started by
-     * the JVM by calling the application's main method.
-     */
-    final val GUIApplication = Value("gui application")
-
-    final val JEE6WebApplication = Value("jee6+ web application")
-
-}
-
-/**
- * Common constants related to the project type.
- *
- * @note The package defines the type `ProjectType`.
- */
-object ProjectType {
-    final val ConfigKey = "org.opalj.project.type"
+    def message: String = {
+        @tailrec def exceptionToMessage(prefix: String, t: Throwable): String = {
+            val stacktrace = t.getStackTrace.mkString("\t", "\n\t", "")
+            val message = t.getClass.toString()+": "+t.getLocalizedMessage ++ "\n"+stacktrace
+            if (t.getCause != null)
+                exceptionToMessage(message+"\n", t.getCause)
+            else
+                message
+        }
+        exceptionToMessage(baseMessage+"\n", t)
+    }
 }

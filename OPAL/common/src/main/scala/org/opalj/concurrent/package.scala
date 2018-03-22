@@ -130,7 +130,15 @@ package object concurrent {
     //
     private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
         def uncaughtException(t: Thread, e: Throwable): Unit = {
-            handleUncaughtException(e)
+            try {
+                handleUncaughtException(e)
+            } catch {
+                case t: Throwable ⇒
+                    // we shouldn't use the OPALLogger here to ensure that we can report
+                    // Problems related to the logger
+                    Console.err.println("Fatal internal error when reporting errors:")
+                    t.printStackTrace(Console.err)
+            }
         }
     }
 

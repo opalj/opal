@@ -43,6 +43,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 import org.opalj.control.foreachNonNullValue
+import org.opalj.io.process
 import org.opalj.io.processSource
 import org.opalj.graphs.Node
 import org.opalj.log.Warn
@@ -2495,7 +2496,7 @@ object ClassHierarchy {
      * This class hierarchy is primarily useful for testing purposes.
      */
     def preInitializedClassHierarchy: ClassHierarchy = scala.concurrent.blocking {
-        apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
+        apply(classFiles = Traversable.empty, defaultTypeHierarchyDefinitions)(GlobalLogContext)
     }
 
     def noDefaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List.empty
@@ -2505,6 +2506,60 @@ object ClassHierarchy {
         () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
         () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
     )
+
+    def parseTypeHierarchyDefinition(
+        createInputStream: () ⇒ InputStream
+    )(
+        implicit
+        logContext: LogContext
+    ): Seq[TypeDeclaration] = {
+        process(createInputStream()) { in ⇒
+            if (in eq null) {
+                OPALLogger.error(
+                    "internal - class hierarchy",
+                    "loading the predefined class hierarchy failed; "+
+                        "make sure that all resources are found in the correct folders and "+
+                        "try to rebuild the project using \"sbt copyResources\""
+                )
+                Seq.empty;
+            } else {
+                val typeRegExp =
+                    """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
+                processSource(new BufferedSource(in)) { source ⇒
+                    source.getLines.
+                        map(_.trim).
+                        filterNot { l ⇒ l.startsWith("#") || l.length == 0 }.
+                        map { l ⇒
+                            val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l
+                            TypeDeclaration(
+                                ObjectType(theType),
+                                typeKind == "interface",
+                                Option(superclassType).map(ObjectType(_)),
+                                Option(superinterfaceTypes).map { superinterfaceTypes ⇒
+                                    superinterfaceTypes.
+                                        split(',').
+                                        map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
+                                }.getOrElse(UIDSet.empty)
+                            )
+                        }.
+                        toList
+                }
+            }
+        }
+    }
+
+    def apply(
+        classFiles:               Traversable[ClassFile],
+        typeHierarchyDefinitions: Seq[() ⇒ InputStream]  = defaultTypeHierarchyDefinitions
+    )(
+        implicit
+        logContext: LogContext
+    ): ClassHierarchy = {
+
+        // We have to make sure that we have seen all types before we can generate
+        // the arrays to store the information about the types!
+        create(classFiles, typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition))
+    }
 
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined
@@ -2530,9 +2585,9 @@ object ClassHierarchy {
      * and `List` will be a boundary class unless we also analyze the class file that
      * defines `java.util.List`.
      */
-    def apply(
-        classFiles:               Traversable[ClassFile],
-        typeHierarchyDefinitions: Seq[() ⇒ java.io.InputStream] = defaultTypeHierarchyDefinitions()
+    def create(
+        classFiles:       Traversable[ClassFile],
+        typeDeclarations: Traversable[TypeDeclaration]
     )(
         implicit
         logContext: LogContext
@@ -2540,44 +2595,6 @@ object ClassHierarchy {
 
         import Duration.Inf
         import Await.{result ⇒ await}
-
-        def parseTypeHierarchyDefinition(
-            createInputStream: () ⇒ InputStream
-        ): Iterator[TypeDeclaration] = {
-            val in = createInputStream()
-            val typeRegExp =
-                """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
-            val typeDefs = processSource(new BufferedSource(in)) { source ⇒
-                if (source eq null) {
-                    OPALLogger.error(
-                        "internal - class hierarchy",
-                        "loading the predefined class hierarchy failed; "+
-                            "make sure that all resources are found in the correct folders and "+
-                            "try to rebuild the project using \"sbt copyResources\""
-                    )
-                    return Iterator.empty;
-                }
-                source.getLines.map(_.trim).filterNot { l ⇒ l.startsWith("#") || l.length == 0 }
-            }
-            for {
-                typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) ← typeDefs
-            } yield {
-                TypeDeclaration(
-                    ObjectType(theType),
-                    typeKind == "interface",
-                    Option(superclassType).map(ObjectType(_)),
-                    Option(superinterfaceTypes).map { superinterfaceTypes ⇒
-                        superinterfaceTypes.
-                            split(',').
-                            map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
-                    }.getOrElse(UIDSet.empty)
-                )
-            }
-
-        }
-        // We have to make sure that we have seen all types before we can generate
-        // the arrays to store the information about the types!
-        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition)
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)

@@ -26,35 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
+import sbt._
+import sbt.Keys._
+import com.typesafe.sbt.pgp.PgpKeys._
+import sbt.sbtpgp.Compat.publishSignedConfigurationTask
 
-/**
- * The project type specifies the type of the project/the kind of sources which will be
- * analyzed.
- *
- * @author Michael Eichberg
- */
-object ProjectTypes extends Enumeration {
+object PublishingOverwrite {
 
-    final val Library = Value("library")
+  val onSnapshotOverwriteSettings = Seq(
+    publishConfiguration := withOverwrite(publishConfiguration.value, isSnapshot.value),
+    publishSignedConfiguration := withOverwrite(publishSignedConfigurationTask.value, isSnapshot.value),
+    publishLocalConfiguration ~= (_.withOverwrite(true)),
+    publishLocalSignedConfiguration ~= (_.withOverwrite(true))
+  )
 
-    final val CommandLineApplication = Value("command-line application")
+  private def withOverwriteEnabled(config: PublishConfiguration) = {
+    config.withOverwrite(true)
+  }
 
-    /**
-     * This mode shall be used if a standard Java GUI application is analyzed which is started by
-     * the JVM by calling the application's main method.
-     */
-    final val GUIApplication = Value("gui application")
+  private def withOverwrite(config: PublishConfiguration, isSnapshot: Boolean) = {
+    config.withOverwrite(config.overwrite || isSnapshot)
+  }
 
-    final val JEE6WebApplication = Value("jee6+ web application")
-
-}
-
-/**
- * Common constants related to the project type.
- *
- * @note The package defines the type `ProjectType`.
- */
-object ProjectType {
-    final val ConfigKey = "org.opalj.project.type"
 }
