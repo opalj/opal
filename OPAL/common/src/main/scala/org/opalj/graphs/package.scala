@@ -284,49 +284,12 @@ package object graphs {
                             // the cSCC...
                             // ALTERNATIVE CHECK:
                             val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
-                            if (cSCCandidate.forall(n ⇒
+                            if (workstack.isEmpty || cSCCandidate.forall(n ⇒
                                 es(n).forall(succN ⇒
                                     hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/ ))) {
                                 cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
-                            /*
-                            // We are not done if we find a node on the stack without a dfsNum
-                            // before a node with the cSCCDFSNum
-                            // We go the workstack backwards and check if we can find a node
-                            // with a different dfsNum
-
-                            var foundNonCSCCNode = false
-                            var continue = true
-                            //var pathComplete = false
-                            val workstackIterator = workstack.iterator
-                            while (continue && workstackIterator.hasNext) {
-                                val n = workstackIterator.next()
-                                if (n != PathSegmentSeparator) {
-                                    val nHasDFSNum = hasDFSNum(n)
-                                    if (nHasDFSNum) {
-                                        val nDFSNum = dfsNum(n)
-                                        if (nDFSNum == ProcessedNodeNum) {
-                                            continue = false
-                                        } else if (nDFSNum != cSCCDFSNum) {
-                                            foundNonCSCCNode = true
-                                        } else {
-                                            if (foundNonCSCCNode) {
-                                                continue = false
-                                                // still: pathComplete = false
-                                            }
-                                        }
-                                    } else {
-                                        foundNonCSCCNode = true
-                                    }
-                                }
-                            }
-                            if ( /*pathComplete ||*/ continue) {
-                                val cSCC = path.drop(cSCCDFSNum - initialDFSNum)
-                                cSCCs ::= cSCC
-                                markPathAsProcessed()
-                            }
-                            */
                         }
                     }
                 } else if (hasDFSNum(n)) {
@@ -376,10 +339,9 @@ package object graphs {
     }
 
     /*
-
     private[this] val Undetermined: Int = -1
 
-   final def closedSCCs[N >: Null <: AnyRef](
+    final def closedSCCs[N >: Null <: AnyRef](
         ns: Traversable[N],
         es: N ⇒ Traversable[N]
     ): List[Iterable[N]] = {
@@ -416,7 +378,7 @@ package object graphs {
         setCSCCId: (N, Int) ⇒ Unit,
         cSCCId:    (N) ⇒ Int
     ): List[Iterable[N]] = {
-         /* The following is not a strict requirement, more an expectation (however, (c)sccs
+        /* The following is not a strict requirement, more an expectation (however, (c)sccs
          * not reachable from a node in ns will not be detected!
         assert(
             { val allNodes = ns.toSet; allNodes.forall { n ⇒ es(n).forall(allNodes.contains) } },
