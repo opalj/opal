@@ -237,13 +237,15 @@ package object graphs {
         def dfs(initialN: N): Unit = {
 
             var initialDFSNum: Int = nextDFSNum
-            val path = mutable.ArrayBuffer.empty[N] // IMPROVE Use data structure with efficient "drop"
 
+            val workstack = mutable.Stack.empty[N]
+            workstack.push(initialN)
+
+            val path = mutable.ArrayBuffer.empty[N] // IMPROVE Use data structure with efficient "drop"
             def markPathAsProcessed(): Unit = {
                 path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
                 path.clear()
             }
-
             def addToPath(n: N): Unit = {
                 if (path.isEmpty) {
                     // This happens if we have identified a path which does not end
@@ -254,9 +256,6 @@ package object graphs {
                 setDFSNum(n, nextDFSNum)
                 nextDFSNum += 1
             }
-
-            val workstack = mutable.Stack.empty[N]
-            workstack.push(initialN)
 
             while (workstack.nonEmpty) {
                 val n = workstack.pop()
@@ -283,19 +282,19 @@ package object graphs {
 
                             // Test if we are done exploring all paths potentially related to
                             // the cSCC...
+                            // ALTERNATIVE CHECK:
+                            val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
+                            if (cSCCandidate.forall(n ⇒
+                                es(n).forall(succN ⇒
+                                    hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/ ))) {
+                                cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
+                                markPathAsProcessed()
+                            }
+                            /*
                             // We are not done if we find a node on the stack without a dfsNum
                             // before a node with the cSCCDFSNum
                             // We go the workstack backwards and check if we can find a node
                             // with a different dfsNum
-                            // ALTERNATIVE CHECK:
-                            val cSCCandidate = path.drop(cSCCDFSNum - initialDFSNum)
-                            if (cSCCandidate.forall(n ⇒
-                                es(n).forall(succN ⇒
-                                    hasDFSNum(succN) && dfsNum(succN) == cSCCDFSNum))) {
-                                cSCCs ::= cSCCandidate
-                                markPathAsProcessed()
-                            }
-                            /*
 
                             var foundNonCSCCNode = false
                             var continue = true
@@ -369,13 +368,7 @@ package object graphs {
                     }
                 }
             }
-            if (path.nonEmpty) {
-                val newCSCC = path.toIndexedSeq
-                //assert(newCSCC.forall(n ⇒ dfsNum(n) == dfsNum(path.last)))
-                cSCCs ::= newCSCC
-                markPathAsProcessed()
-            }
-
+            assert(path.isEmpty)
         }
 
         ns.foreach(n ⇒ if (!hasDFSNum(n)) dfs(n))
