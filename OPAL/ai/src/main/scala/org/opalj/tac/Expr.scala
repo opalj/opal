@@ -48,7 +48,9 @@ import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodHandle
+import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.analyses.ProjectLike
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -644,6 +646,15 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
     final override def astID: Int = NonVirtualFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
 
+    /**
+     * Identifies the potential call target if it can be found.
+     *
+     * @see [ProjectLike#specialCall] for further details.
+     */
+    def resolveCallTargets(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(declaringClass, isInterface, name, descriptor)
+    }
+
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
         receiver.remapIndexes(pcToIndex)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
@@ -702,6 +713,15 @@ case class StaticFunctionCall[+V <: Var[V]](
     final override def subExpr(index: Int): Expr[V] = params(index)
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         params.forall(param ⇒ p(param))
+    }
+
+    /**
+     * Identifies the potential call target if it can be found.
+     *
+     * @see [ProjectLike#staticCall] for further details.
+     */
+    def resolveCallTargets(implicit p: ProjectLike): Result[Method] = {
+        p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 
     private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
