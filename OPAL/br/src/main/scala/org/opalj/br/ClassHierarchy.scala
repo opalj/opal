@@ -104,8 +104,8 @@ import org.opalj.br.ObjectType.Object
  *          They only ''class type'' that is allowed to have a non-empty set of subinterfaces
  *          is `java.lang.Object`.
  *
- * @param   rootTypes  The set of ''all types'' which have no supertypes or for which we have no
- *          further supertype information because of an incomplete project.
+ * @param   rootTypes  The set of ''all types'' which have no supertypes or for which we have
+ *          no further supertype information because of an incomplete project.
  *          If the class hierarchy is complete then this set contains exactly one element and
  *          that element must identify `java.lang.Object`.
  *
@@ -185,13 +185,23 @@ class ClassHierarchy private (
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
+     * @note    `rootClassTypes` is not necessarily a subset of `rootTypes`. A class which
+     *          has an unknown super class, but implements a known interface is considered
+     *          to belong to `rootClassTypes` but is not a member of `rootTypes` because
+     *          some supertype information exists!
+     *
      * @note    If we load an application and all the jars used to implement it or a library
      *          and all the library it depends on then the class hierarchy '''should not'''
      *          contain multiple root types. However, the (complete) JDK contains some references
      *          to Eclipse classes which are not part of the JDK.
      */
     def rootClassTypes: Iterator[ObjectType] = {
-        rootTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
+        knownTypesMap.iterator filter { objectType ⇒
+            (objectType ne null) && {
+                val oid = objectType.id
+                (superclassTypeMap(oid) eq null) && !interfaceTypesMap(oid)
+            }
+        }
     }
 
     /**
