@@ -64,7 +64,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     private[this] final implicit val thisProjectLike: this.type = this
 
-    implicit def classHierarchy: ClassHierarchy
+    implicit val classHierarchy: ClassHierarchy
 
     def projectType: ProjectType
 
