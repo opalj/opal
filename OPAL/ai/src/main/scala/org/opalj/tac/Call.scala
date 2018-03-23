@@ -74,7 +74,8 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
      * Resolves the call targets taking the domain value information (`isPrecise` and `isNull`)
      * into consideration.
      *
-     * This method require that we have a flat representation!
+     * @note __This method requires that we have a flat representation!__ (That is, the receiver
+     *      is a `Var`.)
      */
     def resolveCallTargets(
         callingContext: ObjectType
