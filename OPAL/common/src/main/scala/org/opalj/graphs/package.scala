@@ -28,11 +28,12 @@
  */
 package org.opalj
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayStack
 
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.collection.mutable.AnyRefArrayStack
+import org.opalj.collection.mutable.AnyRefArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 
@@ -230,6 +231,9 @@ package object graphs {
         val ProcessedNodeNum: Int = -1
         val PathSegmentSeparator: Null = null
 
+        val workstack = new AnyRefArrayStack[N](8) //mutable.ArrayStack.empty[N]
+        val path = new AnyRefArrayBuffer[N](16)
+
         var cSCCs = List.empty[Iterable[N]]
 
         var nextDFSNum = ProcessedNodeNum + 1 // the next (not yet used) dfsNum
@@ -238,13 +242,14 @@ package object graphs {
 
             var initialDFSNum: Int = nextDFSNum
 
-            val workstack = mutable.ArrayStack.empty[N] // mutable.Stack.empty[N]
+            path.resetSize()
+
+            workstack.resetSize()
             workstack.push(initialN)
 
-            val path = new mutable.ArrayBuffer[N](16) // IMPROVE Use data structure with efficient "drop"
             def markPathAsProcessed(): Unit = {
                 path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
-                path.clear()
+                path.resetSize()
             }
             def addToPath(n: N): Unit = {
                 if (path.isEmpty) {
@@ -275,7 +280,7 @@ package object graphs {
                             // This is the trivial case... obviously the end of the path is a
                             // closed SCC.
                             // ALTERNATIVE: val cSCC = path.dropWhile(n ⇒ dfsNum(n) != cSCCDFSNum)
-                            val cSCC = path.drop(cSCCDFSNum - initialDFSNum)
+                            val cSCC = path.slice(startIndex = cSCCDFSNum - initialDFSNum)
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
@@ -283,13 +288,14 @@ package object graphs {
                             // Test if we are done exploring all paths potentially related to
                             // the cSCC...
                             // ALTERNATIVE CHECK:
-                            val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
+                            //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
+                            val cSCCandidate = path.iterator(startIndex = cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
                                 cSCCandidate.forall(n ⇒
                                     es(n).forall(succN ⇒
                                         hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/
                                     ))) {
-                                cSCCs ::= path.drop(cSCCDFSNum - initialDFSNum)
+                                cSCCs ::= path.slice(startIndex = cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
                         }
@@ -324,7 +330,7 @@ package object graphs {
                     val succNs = es(n)
                     if (succNs.nonEmpty) {
                         workstack.push(n)
-                        workstack.push(PathSegmentSeparator)
+                        workstack.push(PathSegmentSeparator: N)
                         workstack ++= succNs
                     } else {
                         // We have a path which leads to a node with no outgoing edge;
