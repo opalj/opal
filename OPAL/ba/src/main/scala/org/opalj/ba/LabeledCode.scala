@@ -57,6 +57,14 @@ class LabeledCode(
         private var instructions: ArrayBuffer[CodeElement[AnyRef]]
 ) {
 
+    /**
+     * Returns a view of the current code elements.
+     *
+     * This iterator is not fail-fast and the result is undetermined if – while the
+     * iteration is not completed – a change of the code is performed.
+     */
+    def codeElements: Iterator[CodeElement[AnyRef]] = instructions.iterator
+
     def removedDeadCode(): Unit = {
         CODE.removeDeadCode(instructions) match {
             case is: ArrayBuffer[CodeElement[AnyRef]] ⇒
@@ -249,6 +257,9 @@ class LabeledCode(
             } ++ explicitAttributes
         )
     }
+
+    override def toString: String = instructions.mkString("LabeledCode(\n\t", "\n\t", "\n)")
+
 }
 
 object LabeledCode {

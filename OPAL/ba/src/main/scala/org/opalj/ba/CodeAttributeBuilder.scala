@@ -87,6 +87,12 @@ class CodeAttributeBuilder[T] private[ba] (
     }
 
     /**
+     * Return an iterator over the code array; hence, will return `null` values whenever
+     * an instruction requires more than one byte in the array!
+     */
+    def bytecodeInstructions: Iterator[Instruction] = instructions.iterator
+
+    /**
      * Defines the max_stack value.
      *
      * (This overrides/disables the automatic computation of this value.)
