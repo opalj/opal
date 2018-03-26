@@ -37,13 +37,15 @@ import org.junit.runner.RunWith
 
 import scala.reflect.runtime.universe._
 
+import org.opalj.util.InMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework
-import org.opalj.util.InMemoryClassLoader
 import org.opalj.br.MethodAttributeBuilder
+import org.opalj.br.ObjectType
+import org.opalj.br.IntegerType
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is
@@ -342,5 +344,58 @@ class MethodBuilderTest extends FlatSpec {
         )
 
         assert(c.instructions.size == 45)
+    }
+
+    it should "not remove live code in nested exception handlers" in {
+        val SystemType = ObjectType("java/lang/System")
+        val PrintStreamType = ObjectType("java/io/PrintStream")
+        val ExceptionType = ObjectType("java/lang/Exception")
+
+        val c = CODE(
+            LabeledGOTO('EP1),
+            LabelElement(PCLabel(0)),
+            /*DEAD*/ ICONST_0,
+            LabelElement(PCLabel(1)),
+            /*DEAD*/ ISTORE_0,
+            TRY('eh0),
+            LabelElement(PCLabel(2)),
+            /*DEAD*/ ACONST_NULL, // INVOKEDYNAMIC ...
+            /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
+            /*DEAD*/ TRY('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
+            /*DEAD*/ RETURN,
+            /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, Some(ExceptionType)),
+            /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
+            /*DEAD*/ RETURN,
+            LabelElement('EP1),
+            ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
+            LabelElement(PCLabel(5)),
+            ISTORE_0,
+            TRYEND('eh0),
+            LabeledGOTO(PCLabel(21)),
+            CATCH('eh0, Some(ExceptionType)),
+            LabelElement(PCLabel(9)),
+            ASTORE_1,
+            LabelElement(PCLabel(10)),
+            GETSTATIC(SystemType, "out", PrintStreamType),
+            LabelElement(PCLabel(13)),
+            BIPUSH(10), // loadstring "got it"
+            LabelElement(PCLabel(15)),
+            INVOKEVIRTUAL(PrintStreamType, "println", MethodDescriptor.JustTakes(IntegerType)),
+            LabelElement(PCLabel(18)),
+            BIPUSH(42),
+            LabelElement(PCLabel(20)),
+            ISTORE_0,
+            LabelElement(PCLabel(21)),
+            ILOAD_0,
+            LabelElement(PCLabel(22)),
+            DUP,
+            POP, // INVOKESTATIC(effekt.Effekt{ void returnWith(int) }),
+            RETURN,
+            LabelElement(PCLabel(23))
+        )
+
+        assert(c.instructions.size == 24)
     }
 }
