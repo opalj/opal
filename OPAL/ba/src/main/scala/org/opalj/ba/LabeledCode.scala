@@ -59,12 +59,10 @@ class LabeledCode(
 
     def removedDeadCode(): Unit = {
         CODE.removeDeadCode(instructions) match {
-            case newInstructions: ArrayBuffer[CodeElement[AnyRef]] ⇒
-                instructions = newInstructions
-            case newInstructions: IndexedSeq[CodeElement[AnyRef]] ⇒
-                instructions =
-                    new ArrayBuffer[CodeElement[AnyRef]](newInstructions.size) ++
-                        newInstructions
+            case is: ArrayBuffer[CodeElement[AnyRef]] ⇒
+                instructions = is
+            case is: IndexedSeq[CodeElement[AnyRef]] ⇒
+                instructions = new ArrayBuffer[CodeElement[AnyRef]](is.size) ++ is
         }
     }
 
