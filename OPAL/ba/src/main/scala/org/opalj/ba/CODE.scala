@@ -197,6 +197,8 @@ object CODE {
                     indexOfFirstInstruction += 1
                 }
                 markedAsLive += indexOfFirstInstruction // we schedule the instruction following the catch
+            } else {
+                // DEBUG: println(s"[markHandlerAsLive] catch $label ($catchIndex) is already live")
             }
         }
 
@@ -249,19 +251,22 @@ object CODE {
                 if (!isLive(currentIndex)) {
                     markedInstructionAsLive = true
 
+                    var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
                     do {
-                        isLive(currentIndex) = true
-                        // DEBUG: println(s"[processMarkedAsLive] setting $currentIndex to live")
-                        isLiveCount += 1
+                        if (!isLive(currentIndex)) {
+                            // This check is primarily required due to the eager marking
+                            // of PCLabels as live.
+                            isLive(currentIndex) = true
+                            isLiveCount += 1
+                        }
+
                         // Currently, we make the assumption that the instruction following the
                         // JSR is live... i.e., a RET exists (which should always be the case for
                         // proper code!)
-                        continueIteration = codeElements(currentIndex) match {
+                        continueIteration = currentInstruction match {
                             case pi: PseudoInstruction ⇒
-                                if (pi.isTry) {
-                                    markHandlerAsLive(pi.asTry)
-                                }
+                                if (pi.isTry) { markHandlerAsLive(pi.asTry) }
                                 true
 
                             case InstructionLikeElement(li) ⇒
@@ -286,10 +291,17 @@ object CODE {
                                     true
                                 }
                         }
+                        // DEBUG: println(s"[processMarkedAsLive] did set $currentIndex to live")
+
                         currentIndex += 1
                     } while (continueIteration
                         && currentIndex < codeElementsSize
-                        && !isLive(currentIndex))
+                        && {
+                            currentInstruction = codeElements(currentIndex)
+                            // In the following we ignore pseudo instructions (in particular PCLabels)
+                            // because they may have been set to live already!
+                            currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                        })
                 }
             }
             markedInstructionAsLive
