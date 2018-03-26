@@ -51,6 +51,12 @@ trait CodeElement[+T] {
 
     def isExceptionHandlerElement: Boolean
 
+    def isTry: Boolean
+
+    def asTry: TRY = throw new ClassCastException(s"cannot cast $this to TRY")
+
+    def isCatch: Boolean
+
     def isControlTransferInstruction: Boolean
 
 }

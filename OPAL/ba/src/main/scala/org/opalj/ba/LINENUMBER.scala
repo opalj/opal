@@ -39,4 +39,8 @@ case class LINENUMBER(lineNumber: Int) extends PseudoInstruction {
 
     final override def isExceptionHandlerElement: Boolean = false
 
+    final override def isTry: Boolean = false
+
+    final override def isCatch: Boolean = false
+
 }
