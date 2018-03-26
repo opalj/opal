@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf.fixtures.field_locality;
 
+import org.opalj.fpcf.properties.field_locality.LocalFieldWithGetter;
 import org.opalj.fpcf.properties.field_locality.NoLocalField;
 
 public class NonLocalFields implements Cloneable {
@@ -35,7 +36,7 @@ public class NonLocalFields implements Cloneable {
     @NoLocalField("Not local as it is assigned by constructor")
     private Object assigned;
 
-    @NoLocalField("Not local as it escapes getValue")
+    @LocalFieldWithGetter("Not local as it escapes getValue")
     private Object escapes;
 
     @NoLocalField("Not local as cloned object may escape without this being overwritten")

@@ -401,14 +401,12 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
                 m.descriptor.parametersCount == 0 &&
                 !m.isSynthetic
         )) {
-            if (classExtensibility.isClassExtensible(thisType).isNotNo) {
-                if (project.classHierarchy.isSubtypeOf(field.classFile.thisType, ObjectType.Cloneable).isYesOrUnknown) {
-                    return Result(field, NoLocalField)
-                } else {
-                    state.updateWithMeet(ExtensibleLocalField)
-                }
+            if (project.classHierarchy.isSubtypeOf(field.classFile.thisType, ObjectType.Cloneable).isYesOrUnknown)
+                return Result(field, NoLocalField)
+
+            if (classExtensibility.isClassExtensible(thisType).isYesOrUnknown) {
+                state.updateWithMeet(ExtensibleLocalField)
             }
-            // else class is not extensible and does not override clone, which is okay
         }
         //TODO clonable?
 
