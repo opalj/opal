@@ -77,22 +77,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handleStaticMethodCall(
         call: StaticMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        handleStaticCall(
-            call.declaringClass, call.isInterface, call.name, call.descriptor, call.params, hasAssignment = false
-        )
+        checkParams(call.resolveCallTarget, call.params, hasAssignment = false)
     }
 
     protected[this] override def handleStaticFunctionCall(
         call: StaticFunctionCall[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        handleStaticCall(
-            call.declaringClass,
-            call.isInterface,
-            call.name,
-            call.descriptor,
-            call.params,
-            hasAssignment
-        )
+        checkParams(call.resolveCallTarget, call.params, hasAssignment)
     }
 
     protected[this] override def handleVirtualMethodCall(
@@ -126,24 +117,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = project.specialCall(
-            call.declaringClass.asObjectType,
-            call.isInterface,
-            call.name,
-            call.descriptor
-        )
-        checkParams(methodO, call.params, hasAssignment = false)
+        checkParams(call.resolveCallTarget, call.params, hasAssignment = false)
     }
 
     protected[this] override def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = project.specialCall(
-            call.declaringClass.asObjectType,
-            call.isInterface,
-            call.name,
-            call.descriptor
-        )
+        val methodO = call.resolveCallTarget
         checkParams(methodO, call.params, hasAssignment = false)
         if (context.usesDefSite(call.receiver))
             handleCall(methodO, 0, hasAssignment = false)
@@ -152,28 +132,10 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handleNonVirtualFunctionCall(
         call: NonVirtualFunctionCall[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = project.specialCall(
-            call.declaringClass.asObjectType,
-            call.isInterface,
-            call.name,
-            call.descriptor
-        )
+        val methodO = call.resolveCallTarget
         checkParams(methodO, call.params, hasAssignment)
         if (context.usesDefSite(call.receiver))
             handleCall(methodO, 0, hasAssignment)
-    }
-
-    private[this] def handleStaticCall(
-        dc:            ReferenceType,
-        isI:           Boolean,
-        name:          String,
-        descr:         MethodDescriptor,
-        params:        Seq[Expr[V]],
-        hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        checkParams(
-            project.staticCall(dc.asObjectType, isI, name, descr), params, hasAssignment
-        )
     }
 
     private[this] def handleVirtualCall(
