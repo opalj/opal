@@ -30,6 +30,7 @@ package org.opalj
 package tac
 
 import org.opalj.br._
+import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -576,6 +577,15 @@ case class NonVirtualMethodCall[+V <: Var[V]](
     final override def asNonVirtualMethodCall: this.type = this
     final override def astID: Int = NonVirtualMethodCall.ASTID
 
+    /**
+     * Identifies the potential call target if it can be found.
+     *
+     * @see [ProjectLike#specialCall] for further details.
+     */
+    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(declaringClass, isInterface, name, descriptor)
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -595,7 +605,8 @@ case class VirtualMethodCall[+V <: Var[V]](
         descriptor:     MethodDescriptor,
         receiver:       Expr[V],
         params:         Seq[Expr[V]]
-) extends InstanceMethodCall[V] {
+) extends InstanceMethodCall[V]
+    with VirtualCall[V] {
 
     final override def asVirtualMethodCall: this.type = this
     final override def astID: Int = VirtualMethodCall.ASTID
@@ -624,6 +635,15 @@ case class StaticMethodCall[+V <: Var[V]](
     final override def astID: Int = StaticMethodCall.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         params.forall(param ⇒ p(param))
+    }
+
+    /**
+     * Identifies the potential call target if it can be found.
+     *
+     * @see [ProjectLike#staticCall] for further details.
+     */
+    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
+        p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 
     private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {

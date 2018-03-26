@@ -87,9 +87,10 @@ object Dependencies {
 
     val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalacheck)
 
-    def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus)
+    def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus, fastutil)
+    val si = Seq()
     val bi = Seq(commonstext)
-    val br = Seq(scalaparsercombinators, fastutil, scalaxml)
+    val br = Seq(scalaparsercombinators, scalaxml)
     val developertools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
 
 }
