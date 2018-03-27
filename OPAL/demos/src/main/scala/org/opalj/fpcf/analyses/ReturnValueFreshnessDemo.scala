@@ -57,6 +57,7 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         val ps = project.get(PropertyStoreKey)
 
         InterProceduralEscapeAnalysis.startLazily(project, ps)
+        LocalFieldAnalysis.startLazily(project, ps)
         VirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
         VirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
 
