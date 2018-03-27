@@ -48,6 +48,7 @@ import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
 import org.opalj.fpcf.analyses.escape.FallBackEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.ConditionalExtensibleGetter
 import org.opalj.fpcf.properties.ConditionalExtensibleLocalField
 import org.opalj.fpcf.properties.ConditionalExtensibleLocalFieldWithGetter
 import org.opalj.fpcf.properties.ConditionalFreshReturnValue
@@ -70,8 +71,10 @@ import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
+import org.opalj.fpcf.properties.VConditionalExtensibleGetter
 import org.opalj.fpcf.properties.VConditionalFreshReturnValue
 import org.opalj.fpcf.properties.VConditionalGetter
+import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
@@ -319,8 +322,16 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
                                 case EP(_, VNoFreshReturnValue) ⇒
                                     return Result(dm, NoFreshReturnValue)
+
                                 case EP(_, VFreshReturnValue) ⇒
-                                case epkOrCond                ⇒ state.addMethodDependee(epkOrCond)
+
+                                case EP(_, VGetter | VConditionalGetter) ⇒
+                                    return Result(dm, NoFreshReturnValue)
+
+                                case EP(_, VExtensibleGetter | VConditionalExtensibleGetter) ⇒
+                                    return Result(dm, NoFreshReturnValue)
+
+                                case epkOrCond ⇒ state.addMethodDependee(epkOrCond)
                             }
                         }
                     }
@@ -339,7 +350,12 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case EP(_, NoFreshReturnValue) ⇒
                     return Some(Result(dm, NoFreshReturnValue))
                 case EP(_, FreshReturnValue) ⇒
-                case epkOrCond               ⇒ state.addMethodDependee(epkOrCond)
+                //IMPROVE
+                case EP(_, Getter | ConditionalGetter) ⇒
+                    return Some(Result(dm, NoFreshReturnValue))
+                case EP(_, ExtensibleGetter | ConditionalExtensibleGetter) ⇒
+                    return Some(Result(dm, NoFreshReturnValue))
+                case epkOrCond ⇒ state.addMethodDependee(epkOrCond)
             }
             None
         }
@@ -406,14 +422,6 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                         else
                             Result(dm, state.temporaryState)
 
-                    case Getter | VGetter ⇒
-                        state.updateWithMeet(Getter)
-                        state.removeMethodDependee(EP(e, p))
-                        if (state.hasDependees)
-                            IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                        else
-                            Result(dm, state.temporaryState)
-
                     case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
                         state.updateMethodDependee(EP(e, p))
                         IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
@@ -422,6 +430,12 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                         state.updateMethodDependee(EP(e, p))
                         state.updateWithMeet(Getter)
                         IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
+
+                    case Getter | VGetter | ConditionalGetter | VConditionalGetter ⇒
+                        Result(dm, NoFreshReturnValue)
+
+                    case ExtensibleGetter | VExtensibleGetter | VConditionalExtensibleGetter | ConditionalExtensibleGetter ⇒
+                        Result(dm, NoFreshReturnValue)
 
                     case PropertyIsLazilyComputed ⇒
                         IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
