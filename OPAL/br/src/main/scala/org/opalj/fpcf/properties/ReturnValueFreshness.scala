@@ -43,7 +43,7 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class ReturnValueFreshness extends Property
-    with ReturnValueFreshnessPropertyMetaInformation {
+        with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 
@@ -61,24 +61,9 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
             epks.map { epk ⇒
                 ps(epk) match {
-                    case EP(e, ConditionalFreshReturnValue) ⇒
-                        Result(e, FreshReturnValue)
-                    case EP(e, ConditionalGetter) ⇒
-                        Result(e, Getter)
-
-                    case EP(e, VConditionalFreshReturnValue) ⇒
-                        Result(e, VFreshReturnValue)
-                    case EP(e, VConditionalGetter) ⇒
-                        Result(e, VGetter)
-
-                    case EP(e, ConditionalLocalField) ⇒
-                        Result(e, LocalField)
-                    case EP(e, ConditionalLocalFieldWithGetter) ⇒
-                        Result(e, LocalFieldWithGetter)
-                    case EP(e, ConditionalExtensibleLocalField) ⇒
-                        Result(e, ExtensibleLocalField)
-                    case EP(e, ConditionalExtensibleLocalFieldWithGetter) ⇒
-                        Result(e, ExtensibleLocalFieldWithGetter)
+                    case EP(e, p: ReturnValueFreshness) if p.isConditional ⇒ Result(e, p.asUnconditional)
+                    case EP(e, p: VirtualMethodReturnValueFreshness) if p.isConditional ⇒ Result(e, p.asUnconditional)
+                    case EP(e, p: FieldLocality) if p.isConditional ⇒ Result(e, p.asUnconditional)
 
                     case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
                 }

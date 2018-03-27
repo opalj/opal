@@ -162,7 +162,6 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
     private[this] val classExtensibility = project.get(ClassExtensibilityKey)
     private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
-    //private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
 
     /**
      * Checks whether a call to a concrete method (no virtual call with imprecise type) has a fresh
@@ -360,8 +359,6 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         val thisType = field.classFile.thisType
         val fieldName = field.name
         val fieldType = field.fieldType
-        if (fieldName == "field")
-            println()
 
         // base types can be considered to be local
         // TODO
@@ -372,7 +369,7 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         if (field.isPublic)
             return Result(field, NoLocalField)
 
-        var classes: Set[ClassFile] = Set.empty
+        var classes: Set[ClassFile] = Set(field.classFile)
         if (field.isPackagePrivate || field.isProtected) {
 
             val closedPackages = project.get(ClosedPackagesKey)
@@ -384,15 +381,15 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
             // todo check if all classes in package: package name ==
         }
         if (field.isProtected) {
-            if (typeExtensiblity(thisType).isNotNo) {
+            if (typeExtensiblity(thisType).isYesOrUnknown) {
                 return Result(field, NoLocalField)
             }
             classes ++= project.classHierarchy.allSubclassTypes(thisType, reflexive = false).map(project.classFile(_).get)
         }
 
-        val methodsOfThisType = field.classFile.methodsWithBody.map(_._1).toList
+        val methodsOfThisType = field.classFile.methodsWithBody.map(_._1)
 
-        val allMethodsHavingAccess = methodsOfThisType ++ classes.flatMap(_.methodsWithBody.map(_._1))
+        val allMethodsHavingAccess = classes.flatMap(_.methodsWithBody.map(_._1))
 
         // if there is no clone method, the class must not be extensible to be non local
         // extensible classes can still be extensible local if they dont implement cloneable
@@ -418,27 +415,36 @@ class LocalFieldAnalysis private ( final val project: SomeProject) extends FPCFA
         } {
             stmt match {
                 // all assignments to the field have to be fresh
-                case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, value) ⇒
-                    checkFreshnessAndEscapeOfValue(
-                        value, stmt, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
-                    ).foreach(return _)
+                case PutField(_, declaredFieldType, `fieldName`, `fieldType`, objRef, value) ⇒
+                    project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
+                        case Some(`field`) ⇒
+                            checkFreshnessAndEscapeOfValue(
+                                value, stmt, stmts, method, state, checkFreshnessOfDef, normalCheckEscape
+                            ).foreach(return _)
+                        case None ⇒ throw new RuntimeException("unexpected case")
+                        case _    ⇒
+                    }
 
                 // no read from field escapes, if it is returned, we have a getter
-                case Assignment(_, tgt, GetField(_, `thisType`, `fieldName`, `fieldType`, objRef)) ⇒
+                case Assignment(_, tgt, GetField(_, declaredFieldType, `fieldName`, `fieldType`, objRef)) ⇒
+                    project.resolveFieldReference(declaredFieldType, fieldName, fieldType) match {
+                        case Some(`field`) ⇒
+                            // TODO later use real escape analysis
+                            val analysis = new FallBackEscapeAnalysis(project)
+                            val ctx = analysis.createContext(
+                                null, stmts.indexOf(stmt), null, tgt.usedBy, stmts, null
+                            )
+                            val escapeState = new AbstractEscapeAnalysisState {}
+                            val result = analysis.doDetermineEscape(ctx, escapeState)
 
-                    // TODO later use real escape analysis
-                    val analysis = new FallBackEscapeAnalysis(project)
-                    val ctx = analysis.createContext(
-                        null, stmts.indexOf(stmt), null, tgt.usedBy, stmts, null
-                    )
-                    val escapeState = new AbstractEscapeAnalysisState {}
-                    val result = analysis.doDetermineEscape(ctx, escapeState)
-
-                    result match {
-                        case Result(_, NoEscape) ⇒
-                        case Result(_, EscapeViaReturn) if objRef.asVar.definedBy == IntTrieSet(tac.OriginOfThis) ⇒
-                            state.updateWithMeet(LocalFieldWithGetter)
-                        case _ ⇒ return Result(field, NoLocalField)
+                            result match {
+                                case Result(_, NoEscape) ⇒
+                                case Result(_, EscapeViaReturn) if objRef.asVar.definedBy == IntTrieSet(tac.OriginOfThis) ⇒
+                                    state.updateWithMeet(LocalFieldWithGetter)
+                                case _ ⇒ return Result(field, NoLocalField)
+                            }
+                        case None ⇒ throw new RuntimeException("unexpected case")
+                        case _    ⇒
                     }
 
                 // always if there is a call to super.clone the field has to be override

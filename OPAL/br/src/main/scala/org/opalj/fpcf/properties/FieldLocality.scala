@@ -54,24 +54,9 @@ object FieldLocality extends FieldLocalityMetaInformation {
         (ps: PropertyStore, epks: SomeEPKs) ⇒ {
             epks.map { epk ⇒
                 ps(epk) match {
-                    case EP(e, ConditionalFreshReturnValue) ⇒
-                        Result(e, FreshReturnValue)
-                    case EP(e, ConditionalGetter) ⇒
-                        Result(e, Getter)
-
-                    case EP(e, VConditionalFreshReturnValue) ⇒
-                        Result(e, VFreshReturnValue)
-                    case EP(e, VConditionalGetter) ⇒
-                        Result(e, VGetter)
-
-                    case EP(e, ConditionalLocalField) ⇒
-                        Result(e, LocalField)
-                    case EP(e, ConditionalLocalFieldWithGetter) ⇒
-                        Result(e, LocalFieldWithGetter)
-                    case EP(e, ConditionalExtensibleLocalField) ⇒
-                        Result(e, ExtensibleLocalField)
-                    case EP(e, ConditionalExtensibleLocalFieldWithGetter) ⇒
-                        Result(e, ExtensibleLocalFieldWithGetter)
+                    case EP(e, p: ReturnValueFreshness) if p.isConditional ⇒ Result(e, p.asUnconditional)
+                    case EP(e, p: VirtualMethodReturnValueFreshness) if p.isConditional ⇒ Result(e, p.asUnconditional)
+                    case EP(e, p: FieldLocality) if p.isConditional ⇒ Result(e, p.asUnconditional)
 
                     case _ ⇒ throw new RuntimeException("Non-conditional in cycle")
                 }
@@ -121,8 +106,8 @@ case object LocalFieldWithGetter extends FieldLocality {
     override def meet(other: FieldLocality): FieldLocality = other match {
         case LocalField                      ⇒ this
         case ExtensibleLocalField            ⇒ ExtensibleLocalFieldWithGetter
-        case ConditionalLocalField           ⇒ ConditionalExtensibleLocalField
-        case ConditionalLocalFieldWithGetter ⇒ ConditionalExtensibleLocalFieldWithGetter
+        case ConditionalLocalField           ⇒ ConditionalLocalFieldWithGetter
+        case ConditionalExtensibleLocalField ⇒ ConditionalExtensibleLocalFieldWithGetter
         case _                               ⇒ other
     }
 
