@@ -211,11 +211,21 @@ class CodeAttributeBuilder[T] private[ba] (
                 methods = IndexedSeq(Method(accessFlags, name, descriptor, IndexedSeq(code)))
             )
             val m = cf.methods.head
-            code = code.copy(attributes = this.attributes :+ computeStackMapTable(m))
+            val newAttributes = this.attributes :+ CodeAttributeBuilder.computeStackMapTable(m)
+            code = code.copy(attributes = newAttributes)
         }
 
         (code, (annotations, warnings))
     }
+
+}
+
+object CodeAttributeBuilder {
+
+    final val warnMessage = s"%s: %s is too small %d < %d"
+
+    // the identifiocation of dead variable potentially leads to "bigger stack map tables"...
+    final val ai = new BaseAI(IdentifyDeadVariables = false)
 
     /**
      * Computes the [[org.opalj.br.StackMapTable]] for the given method. (Requires that
@@ -304,11 +314,11 @@ class CodeAttributeBuilder[T] private[ba] (
             // let's see how the last stack map frame looked like and if we can compute
             // an "optimal" stack map frame item
             val sameLocals = lastVerificationTypeInfoLocals == verificationTypeInfoLocals
-            val emptyStack = verificationTypeInfoStack.isEmpty
             val localsCount = verificationTypeInfoLocals.size
             val lastLocalsCount = lastVerificationTypeInfoLocals.size
             val localsDiffCount = localsCount - lastLocalsCount
-            if (sameLocals && lastverificationTypeInfoStack == verificationTypeInfoStack) {
+            val emptyStack = verificationTypeInfoStack.isEmpty
+            if (sameLocals && emptyStack) {
                 // ---- SameFrame(Extended) ...
                 //
                 val offsetDelta = pc - lastPC - 1
@@ -379,13 +389,4 @@ class CodeAttributeBuilder[T] private[ba] (
         }
         StackMapTable(fs)
     }
-}
-
-object CodeAttributeBuilder {
-
-    final val warnMessage = s"%s: %s is too small %d < %d"
-
-    // the identifiocation of dead variable potentially leads to "bigger stack map tables"...
-    final val ai = new BaseAI(IdentifyDeadVariables = false)
-
 }
