@@ -268,8 +268,17 @@ object CodeAttributeBuilder {
                             TopVariableInfo
 
                         case dv ⇒
-                            index += dv.computationalType.operandSize
-                            dv.verificationTypeInfo
+                            val operandSize = dv.computationalType.operandSize
+                            if (operandSize == 2 && locals(index + 1) != null) {
+                                // This situation may arises in cases where we use a local variable
+                                // with index x for a long value and later on use x + 1 for some
+                                // new value
+                                index += 1
+                                TopVariableInfo
+                            } else {
+                                index += operandSize
+                                dv.verificationTypeInfo
+                            }
                     }
                 )
             }
