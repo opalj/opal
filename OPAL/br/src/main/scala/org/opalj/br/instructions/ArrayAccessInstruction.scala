@@ -40,6 +40,8 @@ abstract class ArrayAccessInstruction
     with ConstantLengthInstruction
     with NoLabels {
 
+    final def mayThrowExceptions: Boolean = true
+
     final def length: Int = 1
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

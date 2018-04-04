@@ -47,6 +47,8 @@ abstract class InvocationInstruction
 
     final override def isInvocationInstruction: Boolean = true
 
+    final def mayThrowExceptions: Boolean = true
+
     /**
      * The simple name of the called method.
      *

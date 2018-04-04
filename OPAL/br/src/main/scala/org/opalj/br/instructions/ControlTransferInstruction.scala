@@ -39,6 +39,8 @@ trait ControlTransferInstructionLike extends InstructionLike {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def expressionResult: NoExpression.type = NoExpression
 
     final override def isControlTransferInstruction: Boolean = true

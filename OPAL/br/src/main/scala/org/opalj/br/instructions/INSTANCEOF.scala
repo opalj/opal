@@ -47,6 +47,8 @@ case class INSTANCEOF(
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def length: Int = INSTANCEOF.length
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1

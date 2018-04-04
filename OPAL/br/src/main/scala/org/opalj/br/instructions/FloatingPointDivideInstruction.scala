@@ -41,6 +41,8 @@ abstract class FloatingPointDivideInstruction extends DivideInstruction {
 
     override final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     override final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

@@ -49,6 +49,8 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def computationalType: ComputationalType = ComputationalTypeInt
 
     final def operator: String = "+ "+constValue

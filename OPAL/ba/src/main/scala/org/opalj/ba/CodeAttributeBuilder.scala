@@ -289,7 +289,19 @@ object CodeAttributeBuilder {
             val verificationTypeInfoLocals: VerificationTypeInfos = {
                 val locals = r.localsArray(pc)
                 if (locals == null) {
-                    val message = m.toJava(s"pc=$pc is dead; unable to compute stack map table")
+                    // let's produce a "good" error message...
+                    val instructions =
+                        c.instructions.
+                            zipWithIndex.
+                            filter(_._1 != null).
+                            map(e ⇒ e._2+": "+e._1)
+                    val instructionsAsString = instructions.mkString("\n\t\t", "\n\t\t", "\n")
+                    val body =
+                        s"; pc $pc is dead; unable to compute stack map table:"+
+                            instructionsAsString
+                    val evaluationDetails = r.evaluated.mkString("evaluated: ", ", ", body)
+                    val ehs = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")
+                    val message = m.toJava(evaluationDetails + ehs)
                     throw new BytecodeProcessingFailedException(message);
                 }
                 computeLocalsVerificationTypeInfo(locals)

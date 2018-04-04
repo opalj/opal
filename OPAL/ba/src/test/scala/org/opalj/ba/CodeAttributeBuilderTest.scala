@@ -81,6 +81,50 @@ class CodeAttributeBuilderTest extends FlatSpec {
         )
     }
 
+    def testEvaluation(
+        codeElements:   Array[CodeElement[AnyRef]],
+        theBRClassFile: br.ClassFile,
+        theBRMethod:    br.Method
+    )(f: ⇒ Unit): Unit = {
+        try {
+            f
+        } catch {
+            case e: VerifyError ⇒
+                val theCode = theBRMethod.body.get
+                val theSMT = theCode.stackMapTable.get
+
+                info(e.toString)
+                info(codeElements.mkString("Code Elements:\n\t\t", "\n\t\t", "\n\t"))
+                info(
+                    theCode.
+                        instructions.zipWithIndex.filter(_._1 != null).
+                        map(_.swap).mkString("Instructions:\n\t\t", "\n\t\t", "\n")
+                )
+                info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
+                info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
+
+                val theDomain = new TypeCheckingDomain(br.Code.BasicClassHierarchy, theBRMethod)
+                val ils = CodeAttributeBuilder.ai.initialLocals(theBRMethod, theDomain)(None)
+                val ios = CodeAttributeBuilder.ai.initialOperands(theBRMethod, theDomain)
+                val r = CodeAttributeBuilder.ai.performInterpretation(theCode, theDomain)(ios, ils)
+                org.opalj.io.writeAndOpen(
+                    org.opalj.ai.common.XHTML.dump(
+                        Some(theBRClassFile),
+                        Some(theBRMethod),
+                        theCode,
+                        Some(
+                            XHTML.instructionsToXHTML("PCs where paths join", r.cfJoins) +
+                                XHTML.evaluatedInstructionsToXHTML(r.evaluated)
+                        ),
+                        r.domain
+                    )(r.cfJoins, r.operandsArray, r.localsArray),
+                    "AIResult",
+                    ".html"
+                )
+                fail(e)
+        }
+    }
+
     it should "be able to compute the correct stack map table" in {
 
         val StringType = ObjectType.String
@@ -142,8 +186,8 @@ class CodeAttributeBuilderTest extends FlatSpec {
             ARETURN,
             LabelElement(PCLabel(29))
         )
-        val c = CODE[AnyRef](codeElements)
 
+        val c = CODE[AnyRef](codeElements)
         val classBuilder = CLASS(
             version = org.opalj.bi.Java8Version,
             accessModifiers = PUBLIC,
@@ -164,55 +208,154 @@ class CodeAttributeBuilderTest extends FlatSpec {
                 METHOD(PUBLIC, "tryCatchFinallyTest", "(Ljava/lang/String;)Ljava/lang/String;", c)
             )
         )
-
         val (brClassFile, _) = classBuilder.toBR()
+        val brMethod = brClassFile.findMethod("tryCatchFinallyTest").head
         val daClassFile = ba.toDA(brClassFile)
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
             Map("TheClass" → rawClassFile), this.getClass.getClassLoader
         )
-
         val clazz = loader.loadClass("TheClass")
-        try {
+        testEvaluation(codeElements, brClassFile, brMethod) {
             val clazzInstance = clazz.newInstance()
             val clazzMethod = clazz.getMethod("tryCatchFinallyTest", classOf[String])
             clazzMethod.invoke(clazzInstance, "test")
-        } catch {
-            case e: VerifyError ⇒
-                val theMethod = brClassFile.findMethod("tryCatchFinallyTest").head
-                val theCode = theMethod.body.get
-                val theSMT = theCode.stackMapTable.get
+        }
+    }
 
-                info(e.toString)
-                info(codeElements.mkString("Code Elements:\n\t\t", "\n\t\t", "\n\t"))
-                info(
-                    theCode.
-                        instructions.zipWithIndex.filter(_._1 != null).
-                        map(_.swap).mkString("Instructions:\n\t\t", "\n\t\t", "\n")
-                )
-                info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
-                info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
+    it should "generate the right stackmap for instance methods with long arguments" in {
+        val LongType = ObjectType.Long
+        val ExceptionType = ObjectType.Exception
 
-                val theDomain = new TypeCheckingDomain(br.Code.BasicClassHierarchy, theMethod)
-                val ils = CodeAttributeBuilder.ai.initialLocals(theMethod, theDomain)(None)
-                val ios = CodeAttributeBuilder.ai.initialOperands(theMethod, theDomain)
-                val r = CodeAttributeBuilder.ai.performInterpretation(theCode, theDomain)(ios, ils)
-                org.opalj.io.writeAndOpen(
-                    org.opalj.ai.common.XHTML.dump(
-                        Some(brClassFile),
-                        Some(theMethod),
-                        theCode,
-                        Some(
-                            XHTML.instructionsToXHTML("PCs where paths join", r.cfJoins) +
-                                XHTML.evaluatedInstructionsToXHTML(r.evaluated)
-                        ),
-                        r.domain
-                    )(r.cfJoins, r.operandsArray, r.localsArray),
-                    "AIResult",
-                    ".html"
-                )
-                fail(e)
+        val longValue = INVOKEVIRTUAL(LongType, "longValue", MethodDescriptor.JustReturnsLong)
+
+        // instancemethod long -> void
+        val codeElements = Array[CodeElement[AnyRef]](
+            LabeledGOTO('EP1),
+            LabelElement(PCLabel(0)),
+            /*DEAD*/ LoadLong(Long.MinValue),
+            /*DEAD*/ LabelElement(PCLabel(3)),
+            /*DEAD*/ LSTORE_1,
+            /*DEAD*/ LabelElement(PCLabel(4)),
+            /*DEAD*/ ACONST_NULL,
+            /*DEAD*/ LabelElement(PCLabel(5)),
+            /*DEAD*/ POP, ACONST_NULL, // INVOKEDYNAMIC run(run.coroutines.Benchmark)),
+            /*DEAD*/ LabelElement(PCLabel(10)),
+            /*DEAD*/ ACONST_NULL, //  get static run.coroutines.Benchmark.DATA : java.util.List[],
+            /*DEAD*/ LabelElement(PCLabel(13)),
+            /*DEAD*/ ASTORE(8),
+            /*DEAD*/ ASTORE(7),
+            /*DEAD*/ LLOAD_1,
+            /*DEAD*/ POP2, ACONST_NULL, // INVOKEDYNAMIC enter(long)
+            /*DEAD*/ POP, // effekt.Effekt{ void push(effekt.runtime.Frame) }),
+            /*DEAD*/ ALOAD(7),
+            /*DEAD*/ ALOAD(8),
+            /*DEAD*/ TRY('EHlambda$findMaxCoroutines$2$entrypoint$1),
+            /*DEAD*/ POP, POP, ACONST_NULL, // INVOKESTATIC(run.coroutines.Coroutine{ run.coroutines.Coroutine call(run.coroutines.CoroutineBody,java.lang.Object) }),
+            /*DEAD*/ RETURN,
+            /*DEAD*/ TRYEND('EHlambda$findMaxCoroutines$2$entrypoint$1),
+            /*DEAD*/ CATCH('EHlambda$findMaxCoroutines$2$entrypoint$1, Some(ExceptionType)),
+            /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
+            /*DEAD*/ RETURN,
+            'EP1,
+            LLOAD_0,
+            LSTORE_1,
+            ACONST_NULL, // INVOKESTATIC(effekt.Effekt{ java.lang.Object result() }),
+            NOP, // CHECKCAST(run.coroutines.Coroutine),
+            LabelElement(PCLabel(16)),
+            ASTORE_3,
+            LabelElement(PCLabel(17)),
+            ALOAD_3,
+            LabelElement(PCLabel(18)),
+            POP, ACONST_NULL, // INVOKEINTERFACE(run.coroutines.Coroutine{ java.lang.Object value() }),
+            LabelElement(PCLabel(23)),
+            CHECKCAST(LongType),
+            LabelElement(PCLabel(26)),
+            LCONST_0, // longValue,
+            LabelElement(PCLabel(29)),
+            LSTORE(4),
+            LabelElement(PCLabel(31)),
+            LLOAD(4),
+            LabelElement(PCLabel(33)),
+            LLOAD_1,
+            LabelElement(PCLabel(34)),
+            LCMP,
+            LabelElement(PCLabel(35)),
+            LabeledIFLE(PCLabel(41)),
+            LabelElement(PCLabel(38)),
+            LLOAD(4),
+            LabelElement(PCLabel(40)),
+            LSTORE_1,
+            LabelElement(PCLabel(41)),
+            ALOAD_3,
+            LabelElement(PCLabel(42)),
+            ASTORE(7),
+            LLOAD_1,
+            ALOAD_3,
+            POP2, POP, ACONST_NULL, // INVOKEDYNAMIC(enter(long,run.coroutines.Coroutine)),
+            POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.runtime.Frame) }),
+            ALOAD(7),
+            TRY('EHlambda$findMaxCoroutines$2$entrypoint$2),
+            POP, ICONST_1, // INVOKEINTERFACE(run.coroutines.Coroutine{ boolean resume() }),
+            RETURN,
+            TRYEND('EHlambda$findMaxCoroutines$2$entrypoint$2),
+            CATCH('EHlambda$findMaxCoroutines$2$entrypoint$2, Some(ExceptionType)),
+            POP, // INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
+            RETURN,
+            /*DEAD*/ 'EP2,
+            /*DEAD*/ LLOAD_0,
+            /*DEAD*/ ALOAD_2,
+            /*DEAD*/ ASTORE_3,
+            /*DEAD*/ LSTORE_1,
+            /*DEAD*/ ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
+            /*DEAD*/ LabelElement(PCLabel(47)),
+            /*DEAD*/ LabeledIFNE(PCLabel(17)),
+            /*DEAD*/ LabelElement(PCLabel(50)),
+            /*DEAD*/ LLOAD_1,
+            /*DEAD*/ LabelElement(PCLabel(51)),
+            /*DEAD*/ longValue,
+            /*DEAD*/ LabelElement(PCLabel(54)),
+            /*DEAD*/ DUP,
+            /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void returnWith(java.lang.Object) }),
+            /*DEAD*/ RETURN,
+            /*DEAD*/ LabelElement(PCLabel(55))
+        )
+
+        val c = CODE(codeElements)
+        val classBuilder = CLASS(
+            version = org.opalj.bi.Java8Version,
+            accessModifiers = PUBLIC,
+            thisType = "TheClass",
+            methods = METHODS(
+                METHOD(
+                    PUBLIC, "<init>", "()V",
+                    CODE[AnyRef](
+                        LINENUMBER(0),
+                        ALOAD_0,
+                        LINENUMBER(1),
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        'return,
+                        LINENUMBER(2),
+                        RETURN
+                    ) MAXSTACK 2 MAXLOCALS 3
+                ),
+                METHOD(PUBLIC.STATIC, "takeLong", "(J)V", c)
+            )
+        )
+        val (brClassFile, _) = classBuilder.toBR()
+        val brMethod = brClassFile.findMethod("takeLong").head
+        val daClassFile = ba.toDA(brClassFile)
+        val rawClassFile = Assembler(daClassFile)
+
+        val loader = new InMemoryClassLoader(
+            Map("TheClass" → rawClassFile), this.getClass.getClassLoader
+        )
+        val clazz = loader.loadClass("TheClass")
+        testEvaluation(codeElements, brClassFile, brMethod) {
+            val clazzInstance = clazz.newInstance()
+            val clazzMethod = clazz.getMethod("takeLong", classOf[String])
+            clazzMethod.invoke(clazzInstance, java.lang.Long.valueOf(1L))
         }
     }
 }

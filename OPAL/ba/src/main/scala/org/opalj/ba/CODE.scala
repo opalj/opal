@@ -125,6 +125,10 @@ object CODE {
         // that need to be processed.
         var markedAsLive: IntTrieSet = IntTrieSet1(0)
 
+        // The special handling is required due to the tracking of this information by the
+        // TypeLevelDomain which is used to compute the stack map table.
+        var monitorInstructionIsUsed = false
+
         // A boolean array containing the information which elements are live.
         val isLive = new Array[Boolean](codeElementsSize)
         var isLiveCount = 0
@@ -204,6 +208,9 @@ object CODE {
 
         // Marks the meta-information related to the (pseudo) instruction with the given index
         // as live.
+        // A try is only marked live when we do the liveness propagation; this is necessary
+        // to detect completely useless try blocks consisting only of instructions which
+        // never throw an exception.
         def markMetaInformationAsLive(index: Int): Unit = {
             var currentIndex = index
             // the code element "0" is already marked as live..
@@ -217,11 +224,6 @@ object CODE {
                     // We basically only want to mark TRYs and Jump Labels belonging to
                     // the code element with the given `index` as live.
                     return ;
-                } else if (currentInstruction.isTry) {
-                    // DEBUG: println(s"[markMetaInformationAsLive] try ${currentInstruction.asTry.id}($index) to live")
-                    isLive(currentIndex) = true
-                    isLiveCount += 1
-                    markHandlerAsLive(currentInstruction.asTry)
                 } else if (!currentInstruction.isExceptionHandlerElement) {
                     // DEBUG: println(s"[markMetaInformationAsLive] scheduling $index")
                     markedAsLive += currentIndex
@@ -254,7 +256,7 @@ object CODE {
                     var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
                     do {
-                        if (!isLive(currentIndex)) {
+                        if (!isLive(currentIndex) && !currentInstruction.isExceptionHandlerElement) {
                             // This check is primarily required due to the eager marking
                             // of PCLabels as live.
                             isLive(currentIndex) = true
@@ -266,7 +268,6 @@ object CODE {
                         // proper code!)
                         continueIteration = currentInstruction match {
                             case pi: PseudoInstruction ⇒
-                                if (pi.isTry) { markHandlerAsLive(pi.asTry) }
                                 true
 
                             case InstructionLikeElement(li) ⇒
@@ -288,6 +289,9 @@ object CODE {
                                 } else if (li.isReturnInstruction || li.isAthrow) {
                                     false
                                 } else {
+                                    if (li.isMonitorInstruction) {
+                                        monitorInstructionIsUsed = true
+                                    }
                                     true
                                 }
                         }
@@ -298,7 +302,8 @@ object CODE {
                         && currentIndex < codeElementsSize
                         && {
                             currentInstruction = codeElements(currentIndex)
-                            // In the following we ignore pseudo instructions (in particular PCLabels)
+                            // In the following we ignore pseudo instructions
+                            // (in particular PCLabels)
                             // because they may have been set to live already!
                             currentInstruction.isPseudoInstruction || !isLive(currentIndex)
                         })
@@ -348,14 +353,20 @@ object CODE {
                             }
 
                         case tryStart @ TRY(label) ⇒
-                            // We have to check if some instruction belonging to the
+                            // We have to check if some relevant instruction belonging to the
                             // try block is live.
                             var nextIndex = index + 1
                             while (nextIndex < codeElementsSize) {
                                 codeElements(nextIndex) match {
 
-                                    case _: InstructionLikeElement[T] ⇒
-                                        if (isLive(nextIndex)) {
+                                    case i: InstructionLikeElement[T] ⇒
+                                        val instruction = i.instruction
+                                        if (isLive(nextIndex) &&
+                                            instruction.mayThrowExceptions &&
+                                            (
+                                                monitorInstructionIsUsed
+                                                || !instruction.isReturnInstruction
+                                            )) {
                                             isLive(index) = true
                                             isLiveCount += 1
                                             markHandlerAsLive(tryStart)
