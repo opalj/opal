@@ -268,7 +268,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             LabelElement(PCLabel(17)),
             ALOAD_3,
             LabelElement(PCLabel(18)),
-            POP, ACONST_NULL, // INVOKEINTERFACE(run.coroutines.Coroutine{ java.lang.Object value() }),
+            POP, LCONST_0, INVOKESTATIC("java/lang/Long", false, "valueOf", "(J)Ljava/lang/Long;"), // INVOKEINTERFACE(run.coroutines.Coroutine{ java.lang.Object value() }),
             LabelElement(PCLabel(23)),
             CHECKCAST(LongType),
             LabelElement(PCLabel(26)),
@@ -293,7 +293,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             ASTORE(7),
             LLOAD_1,
             ALOAD_3,
-            POP2, POP, ACONST_NULL, // INVOKEDYNAMIC(enter(long,run.coroutines.Coroutine)),
+            POP, POP2, ACONST_NULL, // INVOKEDYNAMIC(enter(long,run.coroutines.Coroutine)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.runtime.Frame) }),
             ALOAD(7),
             TRY('EHlambda$findMaxCoroutines$2$entrypoint$2),
@@ -354,7 +354,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         val clazz = loader.loadClass("TheClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
             val clazzInstance = clazz.newInstance()
-            val clazzMethod = clazz.getMethod("takeLong", classOf[String])
+            val clazzMethod = clazz.getMethod("takeLong", classOf[Long])
             clazzMethod.invoke(clazzInstance, java.lang.Long.valueOf(1L))
         }
     }
