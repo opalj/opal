@@ -51,7 +51,6 @@ import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.ConditionalExtensibleGetter
 import org.opalj.fpcf.properties.ConditionalExtensibleLocalField
 import org.opalj.fpcf.properties.ConditionalExtensibleLocalFieldWithGetter
-import org.opalj.fpcf.properties.ConditionalFreshReturnValue
 import org.opalj.fpcf.properties.ConditionalGetter
 import org.opalj.fpcf.properties.ConditionalLocalField
 import org.opalj.fpcf.properties.ConditionalLocalFieldWithGetter
@@ -72,7 +71,6 @@ import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VConditionalExtensibleGetter
-import org.opalj.fpcf.properties.VConditionalFreshReturnValue
 import org.opalj.fpcf.properties.VConditionalGetter
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
@@ -94,7 +92,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 
-private[this] class State {
+class ReturnValueFreshnessState(val dm: DeclaredMethod) {
     private[this] var returnValueDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
     private[this] var allocationSiteDependees: Set[EOptionP[AllocationSite, EscapeProperty]] = Set.empty
@@ -129,21 +127,6 @@ private[this] class State {
 
     def removeAllocationDependee(epOrEpk: EOptionP[AllocationSite, EscapeProperty]): Unit = {
         allocationSiteDependees = allocationSiteDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
-    }
-
-    def updateMethodDependee(epOrEpk: EOptionP[DeclaredMethod, Property]): Unit = {
-        removeMethodDependee(epOrEpk)
-        addMethodDependee(epOrEpk)
-    }
-
-    def updateFieldDependee(epOrEpk: EOptionP[Field, FieldLocality]): Unit = {
-        removeFieldDependee(epOrEpk)
-        addFieldDependee(epOrEpk)
-    }
-
-    def updateAllocationDependee(epOrEpk: EOptionP[AllocationSite, EscapeProperty]): Unit = {
-        removeAllocationDependee(epOrEpk)
-        addAllocationDependee(epOrEpk)
     }
 
     def updateWithMeet(property: ReturnValueFreshness): Unit = {
@@ -186,7 +169,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         if (m.body.isEmpty)
             return Result(dm, NoFreshReturnValue)
 
-        val state = new State()
+        implicit val state = new ReturnValueFreshnessState(dm)
 
         val code = tacaiProvider(m).stmts
 
@@ -205,18 +188,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
                     val allocationSite = allocationSites(m)(pc)
                     val resultState = propertyStore(allocationSite, EscapeProperty.key)
-                    resultState match {
-                        case EP(_, EscapeViaReturn)                   ⇒ // nothing to do
-                        case EP(_, NoEscape | EscapeInCallee)         ⇒ throw new RuntimeException("unexpected result")
-                        case EP(_, p) if p.isFinal                    ⇒ return Result(dm, NoFreshReturnValue)
-                        case EP(_, AtMost(_))                         ⇒ return Result(dm, NoFreshReturnValue)
-                        case EP(_, Conditional(AtMost(_)))            ⇒ return Result(dm, NoFreshReturnValue)
-                        case EP(_, Conditional(NoEscape))             ⇒ throw new RuntimeException("unexpected result")
-                        case EP(_, Conditional(EscapeInCallee))       ⇒ throw new RuntimeException("unexpected result")
-                        case ep @ EP(_, Conditional(EscapeViaReturn)) ⇒ state.addAllocationDependee(ep)
-                        case EP(_, Conditional(_))                    ⇒ return Result(dm, NoFreshReturnValue)
-                        case epk                                      ⇒ state.addAllocationDependee(epk)
-                    }
+                    handleEscapeProperty(resultState).foreach(x ⇒ return Result(dm, x))
 
                 /*
                  * if the def-site came from a field and the field is local except for the existence
@@ -230,39 +202,8 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                         case Some(field) ⇒ field
                         case _           ⇒ return Result(dm, NoFreshReturnValue)
                     }
-                    propertyStore(field, FieldLocality.key) match {
-                        case EP(_, LocalFieldWithGetter) ⇒
-                            state.updateWithMeet(Getter)
-
-                        case ep @ EP(_, ConditionalLocalFieldWithGetter) ⇒
-                            state.updateWithMeet(Getter)
-                            state.addFieldDependee(ep)
-
-                        case EP(_, LocalField) ⇒
-                            throw new RuntimeException("unexpected result")
-
-                        case EP(_, ConditionalLocalField) ⇒
-                            throw new RuntimeException("unexpected result")
-
-                        case EP(_, ExtensibleLocalField) ⇒
-                            throw new RuntimeException("unexpected result")
-
-                        case EP(_, ConditionalExtensibleLocalField) ⇒
-                            throw new RuntimeException("unexpected result")
-
-                        case EP(_, NoLocalField) ⇒
-                            return Result(dm, NoFreshReturnValue)
-
-                        case EP(_, ExtensibleLocalFieldWithGetter) ⇒
-                            state.updateWithMeet(ExtensibleGetter)
-
-                        case ep @ EP(_, ConditionalExtensibleLocalFieldWithGetter) ⇒
-                            state.updateWithMeet(ExtensibleGetter)
-                            state.addFieldDependee(ep)
-
-                        case epk @ EPK(_, _) ⇒
-                            state.addFieldDependee(epk)
-                    }
+                    val locality = propertyStore(field, FieldLocality.key)
+                    handleFieldLocalityProperty(locality).foreach(x ⇒ return Result(dm, x))
 
                 // const values are handled as fresh
                 case Assignment(_, _, _: Const) ⇒
@@ -319,179 +260,14 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             if (callee.isEmpty)
                                 return Result(dm, NoFreshReturnValue)
 
-                            propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key) match {
-                                case EP(_, VNoFreshReturnValue) ⇒
-                                    return Result(dm, NoFreshReturnValue)
-
-                                case EP(_, VFreshReturnValue) ⇒
-
-                                case EP(_, VGetter | VConditionalGetter) ⇒
-                                    return Result(dm, NoFreshReturnValue)
-
-                                case EP(_, VExtensibleGetter | VConditionalExtensibleGetter) ⇒
-                                    return Result(dm, NoFreshReturnValue)
-
-                                case epkOrCond ⇒ state.addMethodDependee(epkOrCond)
-                            }
+                            val rvf = propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key)
+                            handleReturnValueFreshness(rvf).foreach(x ⇒ return Result(dm, x))
                         }
                     }
                 // other kinds of assignments came from other methods, fields etc, which we do not track
                 case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
                 case _                   ⇒ throw new RuntimeException("not yet implemented")
             }
-        }
-
-        def handleConcreteCall(callee: opalj.Result[Method]): Option[PropertyComputationResult] = {
-            // unkown method
-            if (callee.isEmpty)
-                return Some(Result(dm, NoFreshReturnValue))
-
-            propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key) match {
-                case EP(_, NoFreshReturnValue) ⇒
-                    return Some(Result(dm, NoFreshReturnValue))
-                case EP(_, FreshReturnValue) ⇒
-                //IMPROVE
-                case EP(_, Getter | ConditionalGetter) ⇒
-                    return Some(Result(dm, NoFreshReturnValue))
-                case EP(_, ExtensibleGetter | ConditionalExtensibleGetter) ⇒
-                    return Some(Result(dm, NoFreshReturnValue))
-                case epkOrCond ⇒ state.addMethodDependee(epkOrCond)
-            }
-            None
-        }
-
-        def handleEscape(defSite: ValueOrigin, uses: IntTrieSet, code: Array[Stmt[V]]) = {
-            val analysis = new FallBackEscapeAnalysis(project)
-            val ctx = analysis.createContext(null, defSite, null, uses, code, null)
-            val escapeState = new AbstractEscapeAnalysisState {}
-
-            analysis.doDetermineEscape(ctx, escapeState) match {
-                case Result(_, EscapeViaReturn) ⇒ None
-                case _                          ⇒ Some(Result(dm, NoFreshReturnValue))
-            }
-        }
-
-        /**
-         * A continuation function, that handles updates for the escape state.
-         */
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            e match {
-                case e: AllocationSite ⇒ p match {
-                    case NoEscape | EscapeInCallee ⇒
-                        throw new RuntimeException("unexpected result")
-
-                    case EscapeViaReturn ⇒
-                        state.removeAllocationDependee(EP(e, EscapeViaReturn))
-                        if (state.hasDependees) {
-                            IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                        } else {
-                            Result(dm, state.temporaryState)
-                        }
-
-                    //TODO what if escapes via exceptions?
-                    case _: EscapeProperty if p.isFinal ⇒ Result(dm, NoFreshReturnValue)
-
-                    // it could happen anything
-                    case AtMost(_)                      ⇒ Result(dm, NoFreshReturnValue)
-                    case Conditional(AtMost(_))         ⇒ Result(dm, NoFreshReturnValue)
-
-                    case p @ Conditional(EscapeViaReturn) ⇒
-                        val newEP = EP(e, p)
-                        state.updateAllocationDependee(newEP)
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-
-                    case Conditional(NoEscape) | Conditional(EscapeInCallee) ⇒
-                        throw new RuntimeException("unexpected result")
-
-                    // p is worse than via return
-                    case Conditional(_) ⇒ Result(dm, NoFreshReturnValue)
-
-                    case PropertyIsLazilyComputed ⇒
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-
-                }
-
-                case e: DeclaredMethod ⇒ p match {
-                    case NoFreshReturnValue | VNoFreshReturnValue ⇒
-                        Result(dm, NoFreshReturnValue)
-
-                    case FreshReturnValue | VFreshReturnValue ⇒
-                        state.removeMethodDependee(EP(e, p))
-                        if (state.hasDependees)
-                            IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                        else
-                            Result(dm, state.temporaryState)
-
-                    case ConditionalFreshReturnValue | VConditionalFreshReturnValue ⇒
-                        state.updateMethodDependee(EP(e, p))
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-
-                    case ConditionalGetter | VConditionalGetter ⇒
-                        state.updateMethodDependee(EP(e, p))
-                        state.updateWithMeet(Getter)
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-
-                    case Getter | VGetter | ConditionalGetter | VConditionalGetter ⇒
-                        Result(dm, NoFreshReturnValue)
-
-                    case ExtensibleGetter | VExtensibleGetter | VConditionalExtensibleGetter | ConditionalExtensibleGetter ⇒
-                        Result(dm, NoFreshReturnValue)
-
-                    case PropertyIsLazilyComputed ⇒
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                }
-
-                case e: Field ⇒ p match {
-                    case LocalFieldWithGetter ⇒
-                        state.updateWithMeet(Getter)
-                        state.removeFieldDependee(EP(e, LocalFieldWithGetter))
-
-                        if (state.hasDependees) {
-                            IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                        } else {
-                            Result(dm, state.temporaryState)
-                        }
-
-                    case ConditionalLocalFieldWithGetter ⇒
-                        state.updateWithMeet(Getter)
-                        state.updateFieldDependee(EP(e, ConditionalLocalFieldWithGetter))
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-
-                    case NoLocalField ⇒
-                        Result(dm, NoFreshReturnValue)
-
-                    case ExtensibleLocalFieldWithGetter ⇒
-                        state.updateWithMeet(ExtensibleGetter)
-                        state.removeFieldDependee(EP(e, ExtensibleLocalFieldWithGetter))
-
-                        if (state.hasDependees) {
-                            IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                        } else {
-                            Result(dm, state.temporaryState)
-                        }
-
-                    case ConditionalExtensibleLocalFieldWithGetter ⇒
-                        state.updateWithMeet(ExtensibleGetter)
-                        state.updateFieldDependee(EP(e, ConditionalExtensibleLocalFieldWithGetter))
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-
-                    case LocalField ⇒
-                        throw new RuntimeException("unexpected result")
-
-                    case ConditionalLocalField ⇒
-                        throw new RuntimeException("unexpected result")
-
-                    case ExtensibleLocalField ⇒
-                        throw new RuntimeException("unexpected result")
-
-                    case ConditionalExtensibleLocalField ⇒
-                        throw new RuntimeException("unexpected result")
-
-                    case PropertyIsLazilyComputed ⇒
-                        IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-                }
-            }
-
         }
 
         if (state.hasDependees) {
@@ -501,15 +277,154 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         }
     }
 
+    def handleConcreteCall(callee: opalj.Result[Method])(implicit state: ReturnValueFreshnessState): Option[PropertyComputationResult] = {
+        // unkown method
+        if (callee.isEmpty)
+            return Some(Result(state.dm, NoFreshReturnValue))
+
+        val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
+        handleReturnValueFreshness(rvf).foreach(x ⇒ return Some(Result(state.dm, x)))
+        None
+    }
+
+    def handleEscape(defSite: ValueOrigin, uses: IntTrieSet, code: Array[Stmt[V]])(implicit state: ReturnValueFreshnessState) = {
+        val analysis = new FallBackEscapeAnalysis(project)
+        val ctx = analysis.createContext(null, defSite, null, uses, code, null)
+        val escapeState = new AbstractEscapeAnalysisState {}
+
+        analysis.doDetermineEscape(ctx, escapeState) match {
+            case Result(_, EscapeViaReturn) ⇒ None
+            case _                          ⇒ Some(Result(state.dm, NoFreshReturnValue))
+        }
+    }
+
     /**
      * Determines the freshness of the return value.
      */
-    def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
-        m match {
-            case dm @ DefinedMethod(_, me) if me.body.isDefined ⇒ doDetermineFreshness(dm)
-            case dm @ DefinedMethod(_, me) if me.body.isEmpty   ⇒ Result(dm, NoFreshReturnValue)
-            case _                                              ⇒ throw new NotImplementedError()
+    def determineFreshness(m: DeclaredMethod): PropertyComputationResult = m match {
+        case dm @ DefinedMethod(_, me) if me.body.isDefined ⇒ doDetermineFreshness(dm)
+        case dm @ DefinedMethod(_, me) if me.body.isEmpty   ⇒ Result(dm, NoFreshReturnValue)
+        case _                                              ⇒ throw new NotImplementedError()
+    }
+
+    def handleEscapeProperty(ep: EOptionP[AllocationSite, EscapeProperty])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
+        case EP(_, NoEscape | EscapeInCallee) ⇒
+            throw new RuntimeException("unexpected result")
+
+        case EP(_, EscapeViaReturn) ⇒
+            None
+
+        //TODO what if escapes via exceptions?
+        case _ if ep.p.isFinal             ⇒ Some(NoFreshReturnValue)
+
+        // it could happen anything
+        case EP(_, AtMost(_))              ⇒ Some(NoFreshReturnValue)
+        case EP(_, Conditional(AtMost(_))) ⇒ Some(NoFreshReturnValue)
+
+        case EP(_, Conditional(EscapeViaReturn)) ⇒
+            state.addAllocationDependee(ep)
+            None
+
+        case EP(_, Conditional(NoEscape) | Conditional(EscapeInCallee)) ⇒
+            throw new RuntimeException("unexpected result")
+
+        // p is worse than via return
+        case EP(_, Conditional(_)) ⇒ Some(NoFreshReturnValue)
+
+        case _ ⇒
+            state.addAllocationDependee(ep)
+            None
+    }
+
+    def handleFieldLocalityProperty(ep: EOptionP[Field, FieldLocality])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
+        case EP(_, LocalFieldWithGetter) ⇒
+            state.updateWithMeet(Getter)
+            None
+
+        case EP(_, ConditionalLocalFieldWithGetter) ⇒
+            state.updateWithMeet(Getter)
+            state.addFieldDependee(ep)
+            None
+
+        case EP(_, NoLocalField) ⇒
+            Some(NoFreshReturnValue)
+
+        case EP(_, ExtensibleLocalFieldWithGetter) ⇒
+            state.updateWithMeet(ExtensibleGetter)
+            None
+
+        case EP(_, ConditionalExtensibleLocalFieldWithGetter) ⇒
+            state.updateWithMeet(ExtensibleGetter)
+            state.addFieldDependee(ep)
+            None
+
+        case EP(_, LocalField | ConditionalLocalField) ⇒
+            throw new RuntimeException("unexpected result")
+
+        case EP(_, ExtensibleLocalField | ConditionalExtensibleLocalField) ⇒
+            throw new RuntimeException("unexpected result")
+
+        case _ ⇒
+            state.addFieldDependee(ep)
+            None
+    }
+
+    def handleReturnValueFreshness(ep: EOptionP[DeclaredMethod, Property])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
+        case EP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒
+            Some(NoFreshReturnValue)
+
+        case EP(_, FreshReturnValue | VFreshReturnValue) ⇒
+            None
+
+        //IMPROVE
+        case EP(_, Getter | ConditionalGetter | VGetter | VConditionalGetter) ⇒
+            Some(NoFreshReturnValue)
+
+        case EP(_, ExtensibleGetter | ConditionalExtensibleGetter) ⇒
+            Some(NoFreshReturnValue)
+
+        case EP(_, VExtensibleGetter | VConditionalExtensibleGetter) ⇒
+            Some(NoFreshReturnValue)
+
+        case _ ⇒
+            state.addMethodDependee(ep)
+            None
+    }
+
+    /**
+     * A continuation function, that handles updates for the escape state.
+     */
+    def c(e: Entity, p: Property, ut: UpdateType)(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
+        val dm = state.dm
+
+        if (e eq PropertyIsLazilyComputed)
+            return IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c);
+
+        e match {
+            case e: AllocationSite ⇒
+                val newEP = EP(e, p.asInstanceOf[EscapeProperty])
+                state.removeAllocationDependee(newEP)
+                handleEscapeProperty(newEP).foreach(x ⇒ return Result(dm, x))
+
+            case e: DeclaredMethod ⇒
+                val newEP = EP(e, p)
+                state.removeMethodDependee(newEP)
+                handleReturnValueFreshness(newEP).foreach(x ⇒ return Result(dm, x))
+
+            case e: Field ⇒
+                val newEP = EP(e, p.asInstanceOf[FieldLocality])
+                state.removeFieldDependee(newEP)
+                handleFieldLocalityProperty(newEP).foreach(x ⇒ return Result(dm, x))
         }
+
+        returnResult
+    }
+
+    def returnResult(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
+        if (state.hasDependees)
+            IntermediateResult(state.dm, state.temporaryState.asConditional, state.dependees, c)
+        else
+            Result(state.dm, state.temporaryState)
     }
 }
 
