@@ -43,7 +43,7 @@ case class ExceptionLogMessage(
             val stacktrace = t.getStackTrace.mkString("\t", "\n\t", "")
             val message = t.getClass.toString()+": "+t.getLocalizedMessage ++ "\n"+stacktrace
             if (t.getCause != null)
-                exceptionToMessage(message+"\n", t.getCause)
+                exceptionToMessage(prefix + message+"\n", t.getCause)
             else
                 message
         }
