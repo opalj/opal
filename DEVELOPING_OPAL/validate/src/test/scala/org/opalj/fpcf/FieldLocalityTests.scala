@@ -31,7 +31,7 @@ package fpcf
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.LocalFieldAnalysis
+import org.opalj.fpcf.analyses.FieldLocalityAnalysis
 import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.VirtualReturnValueFreshnessAnalysis
@@ -61,7 +61,7 @@ class FieldLocalityTests extends PropertiesTest {
     }
 
     describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(Set(LocalFieldAnalysis), Set.empty)
+        val as = executeAnalyses(Set(FieldLocalityAnalysis), Set.empty)
         validateProperties(
             as,
             fieldsWithAnnotations,

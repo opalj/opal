@@ -37,8 +37,14 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.FreshReturnValue
+import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
+import org.opalj.fpcf.properties.VExtensibleGetter
+import org.opalj.fpcf.properties.VFreshReturnValue
+import org.opalj.fpcf.properties.VGetter
+import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.fpcf.properties.VPrimitiveReturnValue
 
 /**
  * A small demo determining the return value freshness for all methods in the current project.
@@ -57,9 +63,9 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         val ps = project.get(PropertyStoreKey)
 
         InterProceduralEscapeAnalysis.startLazily(project, ps)
-        LocalFieldAnalysis.startLazily(project, ps)
+        FieldLocalityAnalysis.startLazily(project, ps)
         VirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
-        VirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
+        VirtualReturnValueFreshnessAnalysis.start(project, ps)
 
         ReturnValueFreshnessAnalysis.start(project, ps)
         ps.waitOnPropertyComputationCompletion()
@@ -67,11 +73,25 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         val fresh = ps.entities(FreshReturnValue)
         val notFresh = ps.entities(NoFreshReturnValue)
         val prim = ps.entities(PrimitiveReturnValue)
+        val getter = ps.entities(Getter)
+        val extGetter = ps.entities(VExtensibleGetter)
+        val vfresh = ps.entities(VFreshReturnValue)
+        val vnotFresh = ps.entities(VNoFreshReturnValue)
+        val vprim = ps.entities(VPrimitiveReturnValue)
+        val vgetter = ps.entities(VGetter)
+        val vextGetter = ps.entities(VExtensibleGetter)
 
         val message =
             s"""|# of methods with fresh return value: ${fresh.size}
                 |# of methods without fresh return value: ${notFresh.size}
                 |# of methods with primitive return value: ${prim.size}
+                |# of methods that are getters: ${getter.size}
+                |# of methods that are extensible getters: ${extGetter.size}
+                |# of vmethods with fresh return value: ${vfresh.size}
+                |# of vmethods without fresh return value: ${vnotFresh.size}
+                |# of vmethods with primitive return value: ${vprim.size}
+                |# of vmethods that are getters: ${vgetter.size}
+                |# of vmethods that are extensible getters: ${vextGetter.size}
                 |"""
 
         BasicReport(message.stripMargin('|'))
