@@ -53,6 +53,8 @@ abstract class CreateNewArrayInstruction
         CreateNewArrayInstruction.jvmExceptionsAndErrors
     }
 
+    final def mayThrowExceptions: Boolean = true
+
     final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

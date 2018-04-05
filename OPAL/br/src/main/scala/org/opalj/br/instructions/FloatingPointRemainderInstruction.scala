@@ -41,6 +41,8 @@ abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

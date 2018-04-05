@@ -119,7 +119,7 @@ import org.opalj.br.instructions._
  *         ===Idea===
  *         Given an instruction i which may result in a fork of the control-flow (e.g.,
  *         a conditional branch or an invoke instruction that may throw a catched exception).
- *         If the (frist) evaluation of i definitively rules out several possible paths and - on
+ *         If the (first) evaluation of i definitively rules out several possible paths and - on
  *         all paths that are taken - some values are dead, but live on some of the other paths,
  *         then the respectively current values will never be propagated to the remaining paths,
  *         even if the remaining paths are eventually taken!
@@ -840,7 +840,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceScheduling = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
-                        // We Try to first finish the evaluation of the body of, e.g., a loop;
+                        // We try to first finish the evaluation of the body of, e.g., a loop;
                         // Recall that a typical loop has the following bytecode:
                         //      ...
                         //      goto looptest
@@ -2273,37 +2273,60 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //
                     // STORE OPERAND IN LOCAL VARIABLE
                     //
-                    case 58 /*astore*/
-                        | 57 /*dstore*/
-                        | 56 /*fstore*/
-                        | 54 /*istore*/
-                        | 55 /*lstore*/ ⇒
-                        val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
-                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head))
                     case 75 /*astore_0*/
-                        | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
-                        | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(operands.tail, locals.updated(0, operands.head))
+                    case 63 /*lstore_0*/
+                        | 71 /*dstore_0*/ ⇒
+                        val newLocals = locals.
+                            updated(0, operands.head).
+                            updated(1, null) // the 2nd slot is used by the long/double value
+                        fallThrough(operands.tail, newLocals)
+
                     case 76 /*astore_1*/
-                        | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
-                        | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        fallThrough(operands.tail, locals.updated(1, operands.head))
+                        val previousLocal = locals(0)
+                        if (null != previousLocal && {
+                            val verificationTypeInfo = previousLocal.verificationTypeInfo
+                            verificationTypeInfo != DoubleVariableInfo &&
+                                verificationTypeInfo != LongVariableInfo
+                        }) {
+                            fallThrough(operands.tail, locals.updated(1, operands.head))
+                        } else {
+                            fallThrough(
+                                operands.tail,
+                                locals.updated(0, theDomain.TheIllegalValue, operands.head)
+                            )
+                        }
+                    case 72 /*dstore_1*/
+                        | 64 /*lstore_1*/ ⇒
+                        fallThrough(operands.tail, locals.updated(1, operands.head, null))
                     case 77 /*astore_2*/
-                        | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
-                        | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         fallThrough(operands.tail, locals.updated(2, operands.head))
+                    case 73 /*dstore_2*/
+                        | 65 /*lstore_2*/ ⇒
+                        fallThrough(operands.tail, locals.updated(2, operands.head, null))
                     case 78 /*astore_3*/
-                        | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
-                        | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         fallThrough(operands.tail, locals.updated(3, operands.head))
+                    case 74 /*dstore_3*/
+                        | 66 /*lstore_3*/ ⇒
+                        fallThrough(operands.tail, locals.updated(3, operands.head, null))
+
+                    case 58 /*astore*/
+                        | 56 /*fstore*/
+                        | 54 /*istore*/ ⇒
+                        val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
+                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head))
+                    case 57 /*dstore*/
+                        | 55 /*lstore*/ ⇒
+                        val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
+                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head, null))
 
                     //
                     // PUSH CONSTANT VALUE

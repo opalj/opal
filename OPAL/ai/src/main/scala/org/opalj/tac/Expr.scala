@@ -651,7 +651,7 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTargets(implicit p: ProjectLike): Result[Method] = {
+    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
         p.specialCall(declaringClass, isInterface, name, descriptor)
     }
 
@@ -677,7 +677,8 @@ case class VirtualFunctionCall[+V <: Var[V]](
         descriptor:     MethodDescriptor,
         receiver:       Expr[V],
         params:         Seq[Expr[V]]
-) extends InstanceFunctionCall[V] {
+) extends InstanceFunctionCall[V]
+    with VirtualCall[V] {
 
     final override def asVirtualFunctionCall: this.type = this
     final override def astID: Int = VirtualFunctionCall.ASTID
@@ -720,7 +721,7 @@ case class StaticFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#staticCall] for further details.
      */
-    def resolveCallTargets(implicit p: ProjectLike): Result[Method] = {
+    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
         p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 

@@ -50,6 +50,8 @@ case class NEW(
 
     final override def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
 
+    final override def mayThrowExceptions: Boolean = true
+
     final override def length: Int = 3
 
     final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0

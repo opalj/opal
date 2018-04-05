@@ -39,6 +39,8 @@ abstract class ComparisonInstruction extends AlwaysSucceedingStackBasedBinaryAri
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def stackSlotsChange: Int = {
         // take two 2 values and push one int value
         -2 * computationalType.operandSize + 1

@@ -80,7 +80,7 @@ object RewriteLabel {
 case class NamedLabel(name: String) extends InstructionLabel {
     def isPCLabel: Boolean = false
     def pc: PC = throw new UnsupportedOperationException();
-    override def toString: String = s"`$name"
+    override def toString: String = s"'$name"
 }
 
 trait InstructionLabelFactory {

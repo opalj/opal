@@ -56,6 +56,8 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

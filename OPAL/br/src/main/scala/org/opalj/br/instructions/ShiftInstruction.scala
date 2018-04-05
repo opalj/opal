@@ -39,6 +39,8 @@ abstract class ShiftInstruction extends AlwaysSucceedingStackBasedBinaryArithmet
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def isShiftInstruction: Boolean = true
 
     final def stackSlotsChange: Int = -1

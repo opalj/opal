@@ -50,6 +50,8 @@ case object ATHROW extends Instruction with NoLabels {
 
     final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
+    final def mayThrowExceptions: Boolean = true
+
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0

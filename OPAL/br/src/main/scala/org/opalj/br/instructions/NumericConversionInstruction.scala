@@ -45,6 +45,8 @@ abstract class NumericConversionInstruction
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def length: Int = 1
 
     def sourceType: BaseType

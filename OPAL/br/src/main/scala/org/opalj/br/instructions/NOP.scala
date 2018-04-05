@@ -45,6 +45,8 @@ case object NOP extends Instruction with ConstantLengthInstruction with NoLabels
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final val length = 1
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0

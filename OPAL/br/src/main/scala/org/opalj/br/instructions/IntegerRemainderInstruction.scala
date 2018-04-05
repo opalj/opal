@@ -41,6 +41,8 @@ abstract class IntegerRemainderInstruction extends RemainderInstruction {
 
     final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean

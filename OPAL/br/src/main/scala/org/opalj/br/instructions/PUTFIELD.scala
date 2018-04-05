@@ -52,6 +52,8 @@ case class PUTFIELD(
 
     final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
     final def stackSlotsChange: Int = -fieldType.computationalType.operandSize - 1

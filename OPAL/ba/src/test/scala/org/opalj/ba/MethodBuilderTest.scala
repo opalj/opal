@@ -35,15 +35,17 @@ import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import reflect.runtime.universe._
+import scala.reflect.runtime.universe._
 
+import org.opalj.util.InMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework
-import org.opalj.util.InMemoryClassLoader
 import org.opalj.br.MethodAttributeBuilder
+import org.opalj.br.ObjectType
+import org.opalj.br.IntegerType
 
 /**
  * Tests the properties of a method in a class build with the BytecodeAssembler DSL. The class is
@@ -212,9 +214,6 @@ class MethodBuilderTest extends FlatSpec {
         val exceptionTable = attributeBrClassFile.methods.find {
             m ⇒ m.name == "tryCatchFinallyTest"
         }.get.body.get.exceptionHandlers
-
-        println(exceptionTable)
-
         assert(
             exceptionTable.contains(
                 br.ExceptionHandler(2, 14, 17, Some(br.ObjectType("java/lang/Exception")))
@@ -232,6 +231,244 @@ class MethodBuilderTest extends FlatSpec {
         assert(mirror.reflectMethod(method)(-1) == 0)
         assert(mirror.reflectMethod(method)(0) == 1)
         assert(mirror.reflectMethod(method)(1) == 2)
+    }
+
+    "removing dead code related to TRY/CATCH" should "work correctly with \"standard\" TRY/CATCH" in {
+        val c = CODE(
+            LabeledGOTO('b),
+            TRY('try),
+            NOP,
+            TRYEND('try),
+            CATCH('try),
+            ATHROW,
+            'b,
+            ICONST_0,
+            IRETURN
+        )
+        assert(c.instructions(0) == GOTO(3))
+        assert(c.instructions(3) == ICONST_0)
+        assert(c.exceptionHandlers.isEmpty)
+    }
+
+    it should "work correctly with TRY/CATCH when the CATCH precedes the TRY" in {
+        val c = CODE(
+            LabeledGOTO('b),
+            CATCH('try),
+            ATHROW,
+            TRY('try),
+            ICONST_0,
+            TRYEND('try),
+            'b,
+            ICONST_0,
+            IRETURN
+        )
+        assert(c.instructions(0) == GOTO(3))
+        assert(c.instructions(3) == ICONST_0)
+        assert(c.exceptionHandlers.isEmpty)
+    }
+
+    it should "work correctly when the CATCH is between the TRY and the TRYEND" in {
+        // this case is typically found in cases where we have synchronized methods
+        val c = CODE(
+            LabeledGOTO('b),
+            TRY('try),
+            CATCH('try),
+            ICONST_1,
+            IRETURN,
+            TRYEND('try),
+            'b,
+            ICONST_0,
+            IRETURN
+        )
+        assert(c.exceptionHandlers.isEmpty)
+        assert(
+            c.instructions(0) == GOTO(3),
+            c.instructions.mkString("expected: instructions(0) == GOTO(3); found:\n", "\n", "\n")
+        )
+        assert(c.instructions(3) == ICONST_0)
+
+    }
+
+    it should "correctly remove useless TRY/CATCHs if no exceptions are thrown" in {
+        val c = CODE(
+            LabeledGOTO('b),
+            CATCH('try),
+            ATHROW,
+            TRY('try),
+            ICONST_0,
+            'b,
+            ICONST_0,
+            TRYEND('try),
+            IRETURN
+        )
+        assert(c.instructions(0) == GOTO(3))
+        assert(c.instructions(3) == ICONST_0)
+        assert(c.exceptionHandlers.isEmpty)
+    }
+
+    "dead code removal" should "not remove live code" in {
+        // The following test is inspired by a regression posted by Jonathan in relation
+        // to a PR fixing exception handler related issues.
+        val c = CODE(
+            LabeledGOTO('EP1),
+            LabelElement(PCLabel(0)),
+            ALOAD_0,
+            LabelElement(PCLabel(1)),
+            NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() })),
+            POP, ICONST_0, // INVOKEINTERFACE(run.parsers.CharParsers{ boolean alternative() })),
+            ICONST_0, // INVOKESTATIC(effekt.Effekt{ boolean isEffectful() })),
+            LabeledIFEQ('EPResume1),
+            POP,
+            ALOAD_0,
+            POP, ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$1,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
+            POP, //INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
+            RETURN,
+            LabelElement('EP1),
+            ALOAD_0,
+            ASTORE_0,
+            ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
+            LabelElement('EPResume1),
+            LabelElement(PCLabel(6)),
+            LabeledIFEQ(PCLabel(19)),
+            LabelElement(PCLabel(9)),
+            ALOAD_0,
+            LabelElement(PCLabel(10)),
+            NOP, // INVOKESTATIC(effekt.Effekt{ void beforeEffect() }),
+            POP, // INVOKEINTERFACE(run.parsers.CharParsers{ int digit() }),
+            ICONST_1, //INVOKESTATIC(effekt.Effekt{ boolean isEffectful() }),
+            LabeledIFEQ('EPResume2),
+            POP,
+            ALOAD_0,
+            POP, ACONST_NULL, //INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$2,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
+            POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
+            RETURN,
+            /*DEAD*/ LabelElement('EP2),
+            /*DEAD*/ ALOAD_0,
+            /*DEAD*/ ASTORE_0,
+            /*DEAD*/ ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
+            LabelElement('EPResume2),
+            LabelElement(PCLabel(15)),
+            POP,
+            LabelElement(PCLabel(16)),
+            LabeledGOTO(PCLabel(0)),
+            LabelElement(PCLabel(19)),
+            BIPUSH(42),
+            LabelElement(PCLabel(21)),
+            DUP,
+            POP, // INVOKESTATIC(effekt.Effekt{ void returnWith(int) }),
+            RETURN,
+            LabelElement(PCLabel(22))
+        )
+
+        assert(c.instructions.size == 45)
+    }
+
+    it should "aggressively remove useless try markers if no exceptions are thrown" in {
+        val SystemType = ObjectType("java/lang/System")
+        val PrintStreamType = ObjectType("java/io/PrintStream")
+        val ExceptionType = ObjectType("java/lang/Exception")
+
+        val c = CODE(
+            LabeledGOTO('EP1),
+            LabelElement(PCLabel(0)),
+            /*DEAD*/ ICONST_0,
+            LabelElement(PCLabel(1)),
+            /*DEAD*/ ISTORE_0,
+            /*DEAD*/ TRY('eh0),
+            LabelElement(PCLabel(2)),
+            /*DEAD*/ ACONST_NULL, // INVOKEDYNAMIC ...
+            /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
+            /*DEAD*/ TRY('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
+            /*DEAD*/ RETURN,
+            /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, Some(ExceptionType)),
+            /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
+            /*DEAD*/ RETURN,
+            LabelElement('EP1),
+            ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
+            LabelElement(PCLabel(5)),
+            ISTORE_0,
+            /*DEAD*/ TRYEND('eh0),
+            LabeledGOTO(PCLabel(21)),
+            /*DEAD*/ CATCH('eh0, Some(ExceptionType)),
+            LabelElement(PCLabel(9)),
+            /*DEAD*/ ASTORE_1,
+            LabelElement(PCLabel(10)),
+            /*DEAD*/ GETSTATIC(SystemType, "out", PrintStreamType),
+            LabelElement(PCLabel(13)),
+            /*DEAD*/ BIPUSH(10), // loadstring "got it"
+            LabelElement(PCLabel(15)),
+            /*DEAD*/ INVOKEVIRTUAL(PrintStreamType, "println", MethodDescriptor.JustTakes(IntegerType)),
+            LabelElement(PCLabel(18)),
+            /*DEAD*/ BIPUSH(42),
+            LabelElement(PCLabel(20)),
+            /*DEAD*/ ISTORE_0,
+            LabelElement(PCLabel(21)),
+            ILOAD_0,
+            LabelElement(PCLabel(22)),
+            DUP,
+            POP, // INVOKESTATIC(effekt.Effekt{ void returnWith(int) }),
+            RETURN,
+            LabelElement(PCLabel(23))
+        )
+
+        assert(c.instructions.size == 12)
+    }
+
+    it should "not remove live code in nested exception handlers" in {
+        val SystemType = ObjectType("java/lang/System")
+        val PrintStreamType = ObjectType("java/io/PrintStream")
+        val ExceptionType = ObjectType("java/lang/Exception")
+
+        val c = CODE(
+            LabeledGOTO('EP1),
+            LabelElement(PCLabel(0)),
+            /*DEAD*/ ICONST_0,
+            LabelElement(PCLabel(1)),
+            /*DEAD*/ ISTORE_0,
+            TRY('eh0),
+            LabelElement(PCLabel(2)),
+            /*DEAD*/ ACONST_NULL, // INVOKEDYNAMIC ...
+            /*DEAD*/ POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
+            /*DEAD*/ TRY('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
+            /*DEAD*/ RETURN,
+            /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
+            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, Some(ExceptionType)),
+            /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
+            /*DEAD*/ RETURN,
+            LabelElement('EP1),
+            ICONST_1, // INVOKESTATIC(effekt.Effekt{ int resultI() }),
+            ICONST_2,
+            IDIV, // we need an instruction which potentially throws an exception...
+            LabelElement(PCLabel(5)),
+            ISTORE_0,
+            TRYEND('eh0),
+            LabeledGOTO(PCLabel(21)),
+            CATCH('eh0, Some(ExceptionType)),
+            LabelElement(PCLabel(9)),
+            ASTORE_1,
+            LabelElement(PCLabel(10)),
+            GETSTATIC(SystemType, "out", PrintStreamType),
+            LabelElement(PCLabel(13)),
+            BIPUSH(10), // loadstring "got it"
+            LabelElement(PCLabel(15)),
+            INVOKEVIRTUAL(PrintStreamType, "println", MethodDescriptor.JustTakes(IntegerType)),
+            LabelElement(PCLabel(18)),
+            BIPUSH(42),
+            LabelElement(PCLabel(20)),
+            ISTORE_0,
+            LabelElement(PCLabel(21)),
+            ILOAD_0,
+            LabelElement(PCLabel(22)),
+            DUP,
+            POP, // INVOKESTATIC(effekt.Effekt{ void returnWith(int) }),
+            RETURN,
+            LabelElement(PCLabel(23))
+        )
+
+        assert(c.instructions.size == 26)
     }
 
 }

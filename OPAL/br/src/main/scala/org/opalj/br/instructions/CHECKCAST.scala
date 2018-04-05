@@ -49,6 +49,8 @@ case class CHECKCAST(
 
     final def jvmExceptions: List[ObjectType] = CHECKCAST.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def length: Int = 3
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
