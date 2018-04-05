@@ -76,6 +76,7 @@ import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.tac.Assignment
 import org.opalj.tac.Const
@@ -152,12 +153,15 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
     private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
+    def determineFreshness(e: Entity): PropertyComputationResult = e match {
+        case dm: DefinedMethod ⇒ doDetermineFreshness(dm)
+        case _                 ⇒ throw new RuntimeException(s"Unsupported entity $e")
+    }
+
     def doDetermineFreshness(dm: DefinedMethod): PropertyComputationResult = {
 
-        if (dm.descriptor.returnType.isBaseType)
+        if (dm.descriptor.returnType.isBaseType || dm.descriptor.returnType.isVoidType)
             return Result(dm, PrimitiveReturnValue)
-        if (!dm.hasDefinition)
-            return Result(dm, NoFreshReturnValue)
 
         if (dm.declaringClassType.isArrayType) {
             if (dm.name == "clone" && dm.descriptor == MethodDescriptor.JustReturnsObject) {
@@ -165,11 +169,15 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             }
         }
 
+        if (dm.name == "createDTMIterator" && dm.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xpath/internal/XPathContext" && dm.descriptor.parametersCount == 3)
+            println()
+
         val m = dm.definedMethod
         if (m.body.isEmpty)
             return Result(dm, NoFreshReturnValue)
 
-        implicit val state = new ReturnValueFreshnessState(dm)
+        implicit val state: ReturnValueFreshnessState = new ReturnValueFreshnessState(dm)
+        implicit val p: SomeProject = project
 
         val code = tacaiProvider(m).stmts
 
@@ -195,29 +203,32 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                  * of a getter, we can report this method as being a getter.
                  */
                 case Assignment(_, tgt, GetField(_, declaringClass, name, fieldType, objRef)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
                     if (objRef.asVar.definedBy != IntTrieSet(tac.OriginOfThis))
                         return Result(dm, NoFreshReturnValue)
+
                     val field = project.resolveFieldReference(declaringClass, name, fieldType) match {
-                        case Some(field) ⇒ field
-                        case _           ⇒ return Result(dm, NoFreshReturnValue)
+                        case Some(f) ⇒ f
+                        case _       ⇒ return Result(dm, NoFreshReturnValue)
                     }
+
+                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
+
                     val locality = propertyStore(field, FieldLocality.key)
                     handleFieldLocalityProperty(locality).foreach(x ⇒ return Result(dm, x))
 
                 // const values are handled as fresh
                 case Assignment(_, _, _: Const) ⇒
 
-                case Assignment(_, tgt, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
+                case Assignment(_, tgt, call: StaticFunctionCall[V]) ⇒
                     handleEscape(defSite, tgt.usedBy, code).foreach(return _)
 
-                    val callee = project.staticCall(dc, isI, name, desc)
+                    val callee = call.resolveCallTarget
                     handleConcreteCall(callee).foreach(return _)
 
-                case Assignment(_, tgt, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
+                case Assignment(_, tgt, call: NonVirtualFunctionCall[V]) ⇒
                     handleEscape(defSite, tgt.usedBy, code).foreach(return _)
 
-                    val callee = project.specialCall(dc, isI, name, desc)
+                    val callee = call.resolveCallTarget
                     handleConcreteCall(callee).foreach(return _)
 
                 case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
@@ -225,17 +236,22 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
 
                     val value = receiver.asVar.value.asDomainReferenceValue
 
-                    if (value.isNull.isNotYes) {
-                        val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                            value.upperTypeBound
-                        )
+                    if (value.isNull.isNoOrUnknown) {
+                        val receiverType =
+                            project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                                value.upperTypeBound
+                            )
 
                         if (receiverType.isArrayType) {
-                            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                            val callee = project.instanceCall(
+                                ObjectType.Object, ObjectType.Object, name, desc
+                            )
                             handleConcreteCall(callee).foreach(return _)
                         } else if (value.isPrecise) {
                             val preciseType = value.valueType.get
-                            val callee = project.instanceCall(m.classFile.thisType, preciseType, name, desc)
+                            val callee = project.instanceCall(
+                                m.classFile.thisType, preciseType, name, desc
+                            )
                             handleConcreteCall(callee).foreach(return _)
                         } else {
                             var callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
@@ -246,10 +262,14 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                                     case Some(cf) ⇒
                                         callee = if (cf.isInterfaceDeclaration) {
                                             org.opalj.Result(
-                                                project.resolveInterfaceMethodReference(receiverType.asObjectType, name, desc)
+                                                project.resolveInterfaceMethodReference(
+                                                    receiverType.asObjectType, name, desc
+                                                )
                                             )
                                         } else {
-                                            project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
+                                            project.resolveClassMethodReference(
+                                                receiverType.asObjectType, name, desc
+                                            )
                                         }
                                     case None ⇒
                                         return Result(dm, NoFreshReturnValue)
@@ -260,21 +280,19 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                             if (callee.isEmpty)
                                 return Result(dm, NoFreshReturnValue)
 
-                            val rvf = propertyStore(declaredMethods(callee.value), VirtualMethodReturnValueFreshness.key)
+                            val dmCallee = declaredMethods(callee.value)
+                            val rvf = propertyStore(dmCallee, VirtualMethodReturnValueFreshness.key)
                             handleReturnValueFreshness(rvf).foreach(x ⇒ return Result(dm, x))
                         }
                     }
-                // other kinds of assignments came from other methods, fields etc, which we do not track
+
+                // other kinds of assignments like expressions etc.
                 case Assignment(_, _, _) ⇒ return Result(dm, NoFreshReturnValue)
                 case _                   ⇒ throw new RuntimeException("not yet implemented")
             }
         }
 
-        if (state.hasDependees) {
-            IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c)
-        } else {
-            Result(dm, state.temporaryState)
-        }
+        returnResult
     }
 
     def handleConcreteCall(callee: opalj.Result[Method])(implicit state: ReturnValueFreshnessState): Option[PropertyComputationResult] = {
@@ -282,29 +300,34 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         if (callee.isEmpty)
             return Some(Result(state.dm, NoFreshReturnValue))
 
-        val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
-        handleReturnValueFreshness(rvf).foreach(x ⇒ return Some(Result(state.dm, x)))
+        val dmCallee = declaredMethods(callee.value)
+
+        if (dmCallee != state.dm) {
+            val rvf = propertyStore(dmCallee, ReturnValueFreshness.key)
+            handleReturnValueFreshness(rvf).foreach(x ⇒ return Some(Result(state.dm, x)))
+        }
         None
     }
 
-    def handleEscape(defSite: ValueOrigin, uses: IntTrieSet, code: Array[Stmt[V]])(implicit state: ReturnValueFreshnessState) = {
+    // Todo later remove me
+    def handleEscape(
+        defSite: ValueOrigin, uses: IntTrieSet, code: Array[Stmt[V]]
+    )(implicit state: ReturnValueFreshnessState): Option[Result] = {
         val analysis = new FallBackEscapeAnalysis(project)
-        val ctx = analysis.createContext(null, defSite, null, uses, code, null)
+        val ctx = analysis.createContext(
+            entityParam = null,
+            defSiteParam = defSite,
+            targetMethodParam = null,
+            usesParam = uses,
+            codeParam = code,
+            cfgParam = null
+        )
         val escapeState = new AbstractEscapeAnalysisState {}
 
         analysis.doDetermineEscape(ctx, escapeState) match {
             case Result(_, EscapeViaReturn) ⇒ None
             case _                          ⇒ Some(Result(state.dm, NoFreshReturnValue))
         }
-    }
-
-    /**
-     * Determines the freshness of the return value.
-     */
-    def determineFreshness(m: DeclaredMethod): PropertyComputationResult = m match {
-        case dm @ DefinedMethod(_, me) if me.body.isDefined ⇒ doDetermineFreshness(dm)
-        case dm @ DefinedMethod(_, me) if me.body.isEmpty   ⇒ Result(dm, NoFreshReturnValue)
-        case _                                              ⇒ throw new NotImplementedError()
     }
 
     def handleEscapeProperty(ep: EOptionP[AllocationSite, EscapeProperty])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
@@ -315,7 +338,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             None
 
         //TODO what if escapes via exceptions?
-        case _ if ep.p.isFinal             ⇒ Some(NoFreshReturnValue)
+        case EP(_, p) if p.isFinal         ⇒ Some(NoFreshReturnValue)
 
         // it could happen anything
         case EP(_, AtMost(_))              ⇒ Some(NoFreshReturnValue)
@@ -369,7 +392,9 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             None
     }
 
-    def handleReturnValueFreshness(ep: EOptionP[DeclaredMethod, Property])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
+    def handleReturnValueFreshness(
+        ep: EOptionP[DeclaredMethod, Property]
+    )(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
         case EP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒
             Some(NoFreshReturnValue)
 
@@ -386,6 +411,9 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         case EP(_, VExtensibleGetter | VConditionalExtensibleGetter) ⇒
             Some(NoFreshReturnValue)
 
+        case EP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
+            throw new RuntimeException("unexpected property")
+
         case _ ⇒
             state.addMethodDependee(ep)
             None
@@ -394,11 +422,16 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
     /**
      * A continuation function, that handles updates for the escape state.
      */
-    def c(e: Entity, p: Property, ut: UpdateType)(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
+    def c(
+        e: Entity, p: Property, ut: UpdateType
+    )(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
         val dm = state.dm
 
-        if (e eq PropertyIsLazilyComputed)
+        if (p eq PropertyIsLazilyComputed)
             return IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c);
+
+        if (dm.name == "createDTMIterator" && dm.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xpath/internal/XPathContext" && dm.descriptor.parametersCount == 3)
+            println()
 
         e match {
             case e: AllocationSite ⇒
@@ -433,7 +466,7 @@ object ReturnValueFreshnessAnalysis extends FPCFAnalysisScheduler {
     override def derivedProperties: Set[PropertyKind] = Set(ReturnValueFreshness)
 
     override def usedProperties: Set[PropertyKind] =
-        Set(EscapeProperty, VirtualMethodReturnValueFreshness)
+        Set(EscapeProperty, VirtualMethodReturnValueFreshness, FieldLocality)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = propertyStore.context[DeclaredMethods].declaredMethods
@@ -449,7 +482,7 @@ object ReturnValueFreshnessAnalysis extends FPCFAnalysisScheduler {
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new ReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleLazyPropertyComputation(
-            ReturnValueFreshness.key, analysis.doDetermineFreshness
+            ReturnValueFreshness.key, analysis.determineFreshness
         )
         analysis
     }

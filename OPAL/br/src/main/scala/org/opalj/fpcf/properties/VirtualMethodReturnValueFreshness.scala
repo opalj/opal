@@ -62,7 +62,7 @@ object VirtualMethodReturnValueFreshness extends VirtualMethodReturnValueFreshne
     final lazy val key: PropertyKey[VirtualMethodReturnValueFreshness] = PropertyKey.create(
         "VirtualMethodReturnValueFreshness",
         VNoFreshReturnValue,
-        VNoFreshReturnValue
+        ReturnValueFreshness.cycleResolutionStrategy
     )
 }
 

@@ -32,18 +32,10 @@ package analyses
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.properties.ConditionalExtensibleGetter
-import org.opalj.fpcf.properties.ConditionalFreshReturnValue
-import org.opalj.fpcf.properties.ConditionalGetter
-import org.opalj.fpcf.properties.ExtensibleGetter
-import org.opalj.fpcf.properties.FreshReturnValue
-import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
+import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
-import org.opalj.fpcf.properties.VConditionalFreshReturnValue
-import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
-import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
@@ -58,7 +50,7 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
     private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
 
     def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
-        if (m.descriptor.returnType.isBaseType) {
+        if (m.descriptor.returnType.isBaseType || m.descriptor.returnType.isVoidType) {
             return Result(m, VPrimitiveReturnValue)
         }
 
@@ -67,6 +59,9 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
         if (m.declaringClassType.isArrayType) {
             throw new NotImplementedError()
         }
+
+        if (m.name == "createDTMIterator" && m.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xml/internal/dtm/DTMManager" && m.descriptor.parametersCount == 3)
+            println()
         val methods = project.virtualCall(
             m.declaringClassType.asObjectType.packageName, //TODO is this correct?
             m.declaringClassType,
@@ -77,89 +72,56 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
         var temporary: VirtualMethodReturnValueFreshness = VFreshReturnValue
 
         for (method ← methods) {
-            propertyStore(declaredMethods(method), ReturnValueFreshness.key) match {
-                case EP(_, NoFreshReturnValue) ⇒ return Result(m, VNoFreshReturnValue)
-
-                case EP(_, FreshReturnValue)   ⇒
-
-                case ep @ EP(_, ConditionalFreshReturnValue) ⇒
-                    dependees += ep
-
-                case EP(_, Getter) ⇒
-                    temporary = temporary meet VGetter
-
-                case ep @ EP(_, ConditionalGetter) ⇒
-                    temporary = temporary meet VGetter
-                    dependees += ep
-
-                case EP(_, ExtensibleGetter) ⇒
-                    temporary = temporary meet VExtensibleGetter
-
-                case ep @ EP(_, ConditionalExtensibleGetter) ⇒
-                    temporary = temporary meet VExtensibleGetter
-                    dependees += ep
-
-                case epk ⇒ dependees += epk
-            }
+            val rvf = propertyStore(declaredMethods(method), ReturnValueFreshness.key)
+            handleReturnValueFreshness(rvf).foreach(return _)
         }
 
-        def c(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            p match {
-                case NoFreshReturnValue ⇒
-                    Result(m, VNoFreshReturnValue)
+        def handleReturnValueFreshness(
+            eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]
+        ): Option[PropertyComputationResult] = eOptionP match {
+            case EP(_, NoFreshReturnValue) ⇒
+                Some(Result(m, VNoFreshReturnValue))
 
-                case FreshReturnValue ⇒
-                    dependees = dependees.filter(_.e ne other)
-                    if (dependees.isEmpty)
-                        Result(m, temporary)
-                    else
-                        IntermediateResult(m, VConditionalFreshReturnValue, dependees, c)
+            case EP(_, PrimitiveReturnValue) ⇒
+                throw new RuntimeException("unexpected property")
 
-                case Getter ⇒
-                    dependees = dependees.filter(_.e ne other)
-                    temporary = temporary meet VGetter
-                    if (dependees.isEmpty)
-                        Result(m, temporary)
-                    else
-                        IntermediateResult(m, temporary.asConditional, dependees, c)
+            case ep @ EP(_, p) ⇒
+                temporary = temporary meet p.asUnconditional.asVirtualMethodReturnValueFreshness
+                if (p.isConditional)
+                    dependees += ep
+                None
 
-                case ExtensibleGetter ⇒
-                    dependees = dependees.filter(_.e ne other)
-                    temporary = temporary meet VExtensibleGetter
-                    if (dependees.isEmpty)
-                        Result(m, temporary)
-                    else
-                        IntermediateResult(m, temporary.asConditional, dependees, c)
-
-                case ConditionalGetter ⇒
-                    val newEP = EP(other, p)
-                    dependees = dependees.filter(_.e ne other) + newEP
-                    temporary = temporary meet VGetter
-
-                    IntermediateResult(m, temporary.asConditional, dependees, c)
-
-                case ConditionalExtensibleGetter ⇒
-                    val newEP = EP(other, p)
-                    dependees = dependees.filter(_.e ne other) + newEP
-                    temporary = temporary meet VExtensibleGetter
-
-                    IntermediateResult(m, temporary.asConditional, dependees, c)
-
-                case ConditionalFreshReturnValue ⇒
-                    val newEP = EP(other, p)
-                    dependees = dependees.filter(_.e ne other) + newEP
-                    IntermediateResult(m, temporary.asConditional, dependees, c)
-
-                case PropertyIsLazilyComputed ⇒
-                    IntermediateResult(m, temporary.asConditional, dependees, c)
-            }
+            case epk ⇒
+                dependees += epk
+                None
         }
 
-        if (dependees.isEmpty)
-            Result(m, temporary)
-        else
-            IntermediateResult(m, temporary.asConditional, dependees, c)
+        def returnResult(): PropertyComputationResult = {
+            if (dependees.isEmpty)
+                Result(m, temporary)
+            else
+                IntermediateResult(m, temporary.asConditional, dependees, c)
+        }
+
+        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
+            if (p eq PropertyIsLazilyComputed) {
+                return IntermediateResult(m, temporary.asConditional, dependees, c);
+            }
+
+            if (m.name == "createDTMIterator" && m.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xml/internal/dtm/DTMManager" && m.descriptor.parametersCount == 3)
+                println()
+
+            val newEP = EP(e.asInstanceOf[DeclaredMethod], p.asInstanceOf[ReturnValueFreshness])
+            dependees = dependees.filter(_.e ne e)
+
+            handleReturnValueFreshness(newEP).foreach(return _)
+
+            returnResult()
+        }
+
+        returnResult()
     }
+
 }
 
 object VirtualReturnValueFreshnessAnalysis extends FPCFAnalysisScheduler {

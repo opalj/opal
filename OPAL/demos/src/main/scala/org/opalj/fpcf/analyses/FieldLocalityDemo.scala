@@ -37,8 +37,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ExtensibleLocalField
-import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
-import org.opalj.fpcf.properties.FieldLocality
+import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter 
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoLocalField
@@ -72,10 +71,6 @@ object FieldLocalityDemo extends DefaultOneStepAnalysis {
         val extLocal = ps.entities(ExtensibleLocalField)
         val getter = ps.entities(LocalFieldWithGetter)
         val extGetter = ps.entities(ExtensibleLocalFieldWithGetter)
-
-        for (field <- project.allFields) {
-            println(field.toJava + ps(field,FieldLocality.key).p)
-        }
 
         val message =
             s"""|# of local fields: ${local.size}
