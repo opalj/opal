@@ -96,7 +96,8 @@ object ScalacConfiguration {
         val trimmedLines = IO.readLines(cfgFile).map(_.trim).filterNot(_.isEmpty)
         val withoutComments =
             trimmedLines.filterNot(line => line.startsWith("#") || line.startsWith("//"))
-        withoutComments.map(ScalacOptionEntry.apply)
+        val splitArgs = withoutComments.flatMap(line => line.split(' '))
+        splitArgs.map(ScalacOptionEntry.apply)
     }
 
     val globalScalacOptions: Def.SettingsDefinition = {
