@@ -16,9 +16,10 @@
 -Ywarn-nullary-unit
 -Ywarn-nullary-override
 -Ywarn-unused:imports,privates,locals,implicits
-// Buggy (Scala 2.12.4) "-Ywarn-unused:params,patvars"
+// Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
 -Ywarn-infer-any
 -Ywarn-dead-code
 -Ywarn-inaccessible
 -Ywarn-adapted-args
+-Ybackend-parallelism 8
 // (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions
