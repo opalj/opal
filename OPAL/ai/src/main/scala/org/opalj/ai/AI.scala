@@ -119,7 +119,7 @@ import org.opalj.br.instructions._
  *         ===Idea===
  *         Given an instruction i which may result in a fork of the control-flow (e.g.,
  *         a conditional branch or an invoke instruction that may throw a catched exception).
- *         If the (frist) evaluation of i definitively rules out several possible paths and - on
+ *         If the (first) evaluation of i definitively rules out several possible paths and - on
  *         all paths that are taken - some values are dead, but live on some of the other paths,
  *         then the respectively current values will never be propagated to the remaining paths,
  *         even if the remaining paths are eventually taken!
@@ -840,7 +840,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (abruptSubroutineTerminationCount > 0) {
                         handleAbruptSubroutineTermination(forceScheduling = true)
                     } else if (worklist.nonEmpty && cfJoins.contains(targetPC)) {
-                        // We Try to first finish the evaluation of the body of, e.g., a loop;
+                        // We try to first finish the evaluation of the body of, e.g., a loop;
                         // Recall that a typical loop has the following bytecode:
                         //      ...
                         //      goto looptest
