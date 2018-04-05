@@ -60,8 +60,6 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
             throw new NotImplementedError()
         }
 
-        if (m.name == "createDTMIterator" && m.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xml/internal/dtm/DTMManager" && m.descriptor.parametersCount == 3)
-            println()
         val methods = project.virtualCall(
             m.declaringClassType.asObjectType.packageName, //TODO is this correct?
             m.declaringClassType,
@@ -107,9 +105,6 @@ class VirtualReturnValueFreshnessAnalysis private ( final val project: SomeProje
             if (p eq PropertyIsLazilyComputed) {
                 return IntermediateResult(m, temporary.asConditional, dependees, c);
             }
-
-            if (m.name == "createDTMIterator" && m.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xml/internal/dtm/DTMManager" && m.descriptor.parametersCount == 3)
-                println()
 
             val newEP = EP(e.asInstanceOf[DeclaredMethod], p.asInstanceOf[ReturnValueFreshness])
             dependees = dependees.filter(_.e ne e)

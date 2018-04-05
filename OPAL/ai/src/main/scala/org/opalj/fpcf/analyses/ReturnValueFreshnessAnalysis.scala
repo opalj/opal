@@ -169,9 +169,6 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             }
         }
 
-        if (dm.name == "createDTMIterator" && dm.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xpath/internal/XPathContext" && dm.descriptor.parametersCount == 3)
-            println()
-
         val m = dm.definedMethod
         if (m.body.isEmpty)
             return Result(dm, NoFreshReturnValue)
@@ -429,9 +426,6 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
 
         if (p eq PropertyIsLazilyComputed)
             return IntermediateResult(dm, state.temporaryState.asConditional, state.dependees, c);
-
-        if (dm.name == "createDTMIterator" && dm.declaringClassType.asObjectType.fqn == "com/sun/org/apache/xpath/internal/XPathContext" && dm.descriptor.parametersCount == 3)
-            println()
 
         e match {
             case e: AllocationSite ⇒
