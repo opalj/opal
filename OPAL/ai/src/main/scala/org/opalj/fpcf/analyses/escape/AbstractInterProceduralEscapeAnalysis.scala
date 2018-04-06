@@ -287,6 +287,17 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         handleEscapeState(escapeState, hasAssignment)
     }
 
+    private[this] def caseConditionalNoEscape(
+        ep: EOptionP[Entity, Property], hasAssignment: Boolean
+    )(implicit state: AnalysisState): Unit = {
+        state.meetMostRestrictive(EscapeInCallee)
+
+        if (hasAssignment)
+            state.hasReturnValueUseSites += ep.e.asInstanceOf[VirtualFormalParameter]
+
+        state.addDependency(ep)
+    }
+
     private[this] def handleEscapeState(
         escapeState: EOptionP[Entity, Property], hasAssignment: Boolean
     )(implicit state: AnalysisState): Unit = {
@@ -335,17 +346,14 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                 state.addDependency(ep)
 
-            case ep @ EP(_, Conditional(p)) ⇒
-                state.meetMostRestrictive(EscapeInCallee)
+            case ep @ EP(_, Conditional(NoEscape) | VirtualMethodEscapeProperty(Conditional(NoEscape))) ⇒
+                caseConditionalNoEscape(ep, hasAssignment)
 
-                if (hasAssignment)
-                    state.hasReturnValueUseSites += e
+            case ep @ EP(_, Conditional(EscapeInCallee) | VirtualMethodEscapeProperty(Conditional(EscapeInCallee))) ⇒
+                caseConditionalNoEscape(ep, hasAssignment)
 
-                state.addDependency(ep)
-
-            case ep @ EP(_, VirtualMethodEscapeProperty(Conditional(p))) ⇒
-                state.meetMostRestrictive(EscapeInCallee)
-
+            case ep @ EP(_, Conditional(_) | VirtualMethodEscapeProperty(Conditional(_))) ⇒
+                state.meetMostRestrictive(AtMost(EscapeInCallee))
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
 
@@ -355,12 +363,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 throw new UnknownError(s"unexpected escape property ($p) for $e")
 
             case epk ⇒
-                state.meetMostRestrictive(EscapeInCallee)
-
-                if (hasAssignment)
-                    state.hasReturnValueUseSites += e
-
-                state.addDependency(epk)
+                caseConditionalNoEscape(epk, hasAssignment)
         }
     }
 

@@ -98,7 +98,6 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         time {
             val tac = project.get(DefaultTACAIKey)
             project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
-            // parallelization is more efficient using parForeachMethodWithBody
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
