@@ -34,11 +34,12 @@ import scala.reflect.runtime.universe.Type
 import scala.collection.mutable.OpenHashMap
 import scala.collection.mutable.LongMap
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 
 /**
- * A non-concurrent implementation of the property store. Entities are generally only stored if
- * required. I.e.,
+ * A non-concurrent implementation of the property store. Entities are generally only stored on
+ * demand. I.e.,
  *  - they have a property OR
  *  - a computation is already scheduled that will compute the property OR
  *  - we have a `depender`.
@@ -50,14 +51,13 @@ class SequentialPropertyStore private (
 
     type PKId = Long
 
-    private class PropertyValue(
+    // NOTE
+    // For collaboratively computed properties, isFinal maybe false, but we do not have dependees!
+    private[fpcf] class PropertyValue(
             // p is :
-            //   - null as long as no computation is scheduled/runnning.
-            //   - PropertyIsLazilyComputed if the computation is scheduled
+            //   - null if some analyses depend on it, but no lazy computation is scheduled
+            //   - PropertyIsLazilyComputed if the computation is scheduled (to avoid rescheduling)
             //   - a concrete Property.
-            // We require that we always have an explicit representation
-            // for "bottom" w.r.t. the underlying lattice; i.e.,
-            // using null as the bottom value is NOT supported.
             var p:       Property,
             var isFinal: Boolean,
             //
@@ -75,13 +75,11 @@ class SequentialPropertyStore private (
             var dependees: Traversable[SomeEOptionP]
     ) {
 
-        def this(p: Property, isFinal: Boolean) { this(p, isFinal, Map.empty, Traversable.empty) }
+        def this(p: Property) { this(p, true, Map.empty, Nil) }
 
-        /**
-         * @return `true` if the computation of the value of this property has finished and
-         *        we have a (phase) final result.
-         */
-        def isResult: Boolean = dependees.isEmpty
+        def this(dependers: Map[SomeEPK, OnUpdateContinuation]) { this(null, false, dependers, Nil) }
+
+        def this(epk: SomeEPK, c: OnUpdateContinuation) { this(null, false, Map(epk -> c), Nil) }
 
         override def toString: String = {
             "PropertyValue("+
@@ -94,11 +92,7 @@ class SequentialPropertyStore private (
     }
     private object PropertyValue {
         def lazilyComputed: PropertyValue = {
-            new PropertyValue(PropertyIsLazilyComputed, isFinal = false)
-        }
-
-        def noProperty: PropertyValue = {
-            new PropertyValue(null, isFinal = false)
+            new PropertyValue(PropertyIsLazilyComputed, isFinal = false, Map.empty, Nil)
         }
     }
 
@@ -121,11 +115,22 @@ class SequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: Chain[() ⇒ Unit] = Chain.empty
 
-    private[this] var computedPropertyKinds: Set[PropertyKind] = null
+    private[this] var computedPropertyKinds: IntTrieSet = null // has to be set before usage
 
-    private[this] var openPropertyKinds: Set[PropertyKind] = null
+    private[this] var delayedPropertyKinds: IntTrieSet = null // has to be set before usage
 
-    override def isKnown(e: Entity): Boolean = ps.get(e).isDefined
+    override def isKnown(e: Entity): Boolean = ps.contains(e)
+
+    override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
+        ps.contains(e) && {
+            val pkPValue = ps(e)
+            val pkId = pk.id.toLong
+            pkPValue.contains(pkId) && {
+                val p = pkPValue(pkId).p
+                p != null && p != PropertyIsLazilyComputed
+            }
+        }
+    }
 
     override def properties(e: Entity): Iterator[Property] = {
         require(e ne null)
@@ -193,7 +198,7 @@ class SequentialPropertyStore private (
     }
 
     override def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
-        tasks = (() ⇒ handleResult(pc(e))) :&: tasks
+        tasks :&:= (() ⇒ handleResult(pc(e)))
     }
 
     // triggers lazy property computations!
@@ -209,14 +214,11 @@ class SequentialPropertyStore private (
         val r = ps.get(e) match {
             case None ⇒
                 // the entity is unknown
-                lazyComputations.get(pkId) match {
-                    case Some(lc) ⇒
-                        // create PropertyValue to ensure that we do not schedule
-                        // multiple (lazy) computations => the entity is now known
-                        ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
-                        scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
-                    case None ⇒
-                        ps += ((e, LongMap((pkId, PropertyValue.noProperty))))
+                lazyComputations.get(pkId) foreach { lc ⇒
+                    // create PropertyValue to ensure that we do not schedule
+                    // multiple (lazy) computations => the entity is now known
+                    ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
+                    scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
                 }
                 // return the "current" result
                 epk
@@ -236,20 +238,100 @@ class SequentialPropertyStore private (
                 case None ⇒
                     // the entity is known, but the property kind was never
                     // queried before or there is no computation whatsoever..
-                    lazyComputations.get(pkId) match {
-                        case Some(lc) ⇒
-                            // create PropertyState to ensure that we do not schedule
-                            // multiple (lazy) computations => the entity is now known
-                            pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
-                            scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
-
-                        case None ⇒
-                            pkIdPValue += ((pkId, PropertyValue.noProperty))
+                    lazyComputations.get(pkId) foreach { lc ⇒
+                        // create PropertyState to ensure that we do not schedule
+                        // multiple (lazy) computations => the entity is now known
+                        pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
+                        scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
                     }
                     epk
             }
         }
         r.asInstanceOf[EOptionP[epk.e.type, P]]
+    }
+
+    private[fpcf] def getPropertyValue(e: Entity, pkId: PKId): PropertyValue = {
+        if (!ps.contains(e))
+            return null;
+        val pkPValue = ps(e)
+
+        if (!pkPValue.contains(pkId))
+            return null;
+
+        pkPValue(pkId)
+    }
+
+    private[this] def update(
+        e: Entity,
+        p: Property,
+        // Recall that isFinal can be false even though we have no dependees;
+        // This is generally the case for collaboratively computed properties.
+        isFinal:   Boolean,
+        dependees: Traversable[SomeEOptionP]
+    ): Property = {
+
+        val pkId = p.key.id
+        ps.get(e) match {
+            case None ⇒
+                // the entity is not known
+                ps += ((
+                    e,
+                    LongMap((pkId.toLong, new PropertyValue(p, isFinal, Map.empty, dependees)))
+                ))
+                null
+
+            case Some(pkIdPValue) ⇒
+                // the entity is known
+                pkIdPValue.get(pkId.toLong) match {
+                    case None ⇒
+                        // we have no property of the respective kind
+                        pkIdPValue += ((
+                            pkId.toLong,
+                            new PropertyValue(p, isFinal, Map.empty, dependees)
+                        ))
+                        null
+
+                    case Some(pValue) ⇒
+                        val oldP = pValue.p
+                        if (debug && p.isOrderedProperty) {
+                            p.asOrderedProperty.checkIsValidSuccessorOf(oldP)
+                        }
+                        pValue.dependees = dependees
+                        pValue.p = p
+                        if (pValue.isFinal) throw new IllegalStateException(s"already final: $e/$p")
+
+                        pValue.isFinal = isFinal
+                        pValue.dependers foreach { depender ⇒
+                            val (epk, onUpdateContinuation) = depender
+                            tasks :&:= (
+                                if (isFinal) {
+                                    () ⇒ handleResult(onUpdateContinuation(FinalEP(e, p)))
+                                } else {
+                                    () ⇒
+                                        handleResult({
+                                            val newestPValue = ps(e)(pkId.toLong)
+                                            val eps = EPS(e, newestPValue.p, newestPValue.isFinal)
+                                            onUpdateContinuation(eps)
+                                        })
+                                }
+                            )
+                            // Clear depender/dependee lists.
+                            // Given that we have triggered the depender, we now have to remove
+                            // the respective onUpdateContinuation from all dependees of the
+                            // respective depender to avoid that the onUpdateContinuation is
+                            // triggered multiple times!
+                            val dependerPValue = ps(epk.e)(epk.pk.id.toLong)
+                            dependerPValue.dependees foreach { epkOfDepeendeeOfDepender ⇒
+                                val pValueOfDependeeOfDepender = ps(epkOfDepeendeeOfDepender.e)(epkOfDepeendeeOfDepender.pk.id.toLong)
+                                pValueOfDependeeOfDepender.dependers = pValueOfDependeeOfDepender.dependers - (epkOfDepeendeeOfDepender.toEPK)
+                            }
+                            dependerPValue.dependees = Nil
+                        }
+                        pValue.dependers = Map.empty
+
+                        oldP
+                }
+        }
     }
 
     override def set(e: Entity, p: Property): Unit = {
@@ -260,75 +342,9 @@ class SequentialPropertyStore private (
             s"lazy computation scheduled for property kind $pkId"
         )
 
-        val oldP = update(e, p, isFinal = true, Traversable.empty)
+        val oldP = update(e, p, isFinal = true, Nil)
         if (oldP != null) {
-            throw new IllegalStateException(
-                s"associating $e with $p failed; property is already set $oldP"
-            )
-        }
-    }
-
-    private[this] def update(
-        e:         Entity,
-        p:         Property,
-        isFinal:   Boolean,
-        dependees: Traversable[SomeEOptionP]
-    ): Property = {
-        val pkId = p.key.id
-        ps.get(e) match {
-            case None ⇒
-                // the entity is not known
-                ps += ((e, LongMap((pkId.toLong, new PropertyValue(p, isFinal, Map.empty, dependees)))))
-                null
-
-            case Some(pkIdPValue) ⇒
-                // the entity is known
-                pkIdPValue.get(pkId.toLong) match {
-                    case None ⇒
-                        // we have no property of the respective kind
-                        pkIdPValue += ((pkId.toLong, new PropertyValue(p, isFinal, Map.empty, dependees)))
-                        null
-
-                    case Some(pValue) ⇒
-                        val oldP = pValue.p
-                        if (debug && p.isOrderedProperty) {
-                            p.asOrderedProperty.checkIsValidSuccessorOf(oldP)
-                        }
-                        pValue.dependees = dependees
-                        pValue.p = p
-                        if (pValue.isFinal) throw new IllegalStateException(s"$e/$p property is final")
-                        pValue.isFinal = isFinal
-                        pValue.dependers.foreach {
-                            case (epk, onUpdateContinuation) ⇒
-                                tasks :&:= (
-                                    if (isFinal)
-                                        () ⇒ handleResult(
-                                        onUpdateContinuation(e, p, isFinal)
-                                    )
-                                    else
-                                        () ⇒ handleResult({
-                                            val newestPValue = ps(e)(pkId.toLong)
-                                            onUpdateContinuation(
-                                                e, newestPValue.p, newestPValue.isFinal
-                                            )
-                                        })
-                                )
-                                // clear depender/dependee lists...
-                                // given that we have triggered the depender, we now have to remove
-                                // the respective onUpdateContinuation from all dependees of the
-                                // respective depender to avoid that the onUpdateContinuation is
-                                // triggered multiple times
-                                val dependerPValue = ps(epk.e)(epk.pk.id.toLong)
-                                dependerPValue.dependees.foreach { epkOfDepeendeeOfDepender ⇒
-                                    val pValueOfDependeeOfDepender = ps(epkOfDepeendeeOfDepender.e)(epkOfDepeendeeOfDepender.pk.id.toLong)
-                                    pValueOfDependeeOfDepender.dependers = pValueOfDependeeOfDepender.dependers - (epkOfDepeendeeOfDepender.toEPK)
-                                }
-                                dependerPValue.dependees = Traversable.empty
-                        }
-                        pValue.dependers = Map.empty
-
-                        oldP
-                }
+            throw new IllegalStateException(s"associating $e with $p failed; property is $oldP")
         }
     }
 
@@ -338,7 +354,7 @@ class SequentialPropertyStore private (
 
             case NoResult.id ⇒
             // A computation reported no result; i.e., it is not possible to
-            // compute a property for a given entity.
+            // compute a/some property/properties for a given entity.
 
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
@@ -351,11 +367,7 @@ class SequentialPropertyStore private (
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
-                results foreach { ep ⇒
-                    val e = ep.e
-                    val p = ep.p
-                    update(e, p, isFinal = true, dependees = Traversable.empty)
-                }
+                results foreach { ep ⇒ update(ep.e, ep.p, isFinal = true, dependees = Nil) }
 
             //
             // Methods which actually store results...
@@ -363,97 +375,178 @@ class SequentialPropertyStore private (
 
             case Result.id ⇒
                 val Result(e, p) = r
-                update(e, p, isFinal = true, Traversable.empty)
+                update(e, p, isFinal = true, Nil)
 
-            case PhaseResult.id ⇒
-                val PhaseResult(e, p) = r
-                update(e, p, isFinal = false, Traversable.empty)
-
-            case PartialResult.id ⇒ (r: @unchecked) match {
-                case PartialResult(e, pk, u) ⇒
-                    val eOptionP = apply(e, pk)
-                    val newPOption = if (eOptionP.hasProperty) u(Some(eOptionP.p)) else u(None)
-
-                    newPOption.foreach { newP ⇒
-                        update(e, newP, isFinal = false, Traversable.empty)
-                    }
-            }
+            case PartialResult.id ⇒
+                val PartialResult(e, pk, u) = r
+                val eOptionP = apply(e, pk)
+                val newPOption = if (eOptionP.hasProperty) u(Some(eOptionP.p)) else u(None)
+                newPOption foreach { newP ⇒ update(e, newP, isFinal = false, Nil) }
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, p, dependees /*: Traversable[SomeEOptionP]*/ , c) = r
                 // 1. let's check if a dependee is already updated...
-                val noUpdates = dependees.forall { dependee ⇒
+                val noUpdates = dependees forall { dependee ⇒
                     assert(
                         !dependee.isFinal,
                         s"dependency to final property ${dependee.e}/${dependee.p}"
                     )
                     val dependeeE = dependee.e
                     val dependeePKId = dependee.pk.id.toLong
-                    val dependeePValue = ps(dependeeE)(dependeePKId)
+                    val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
                     val isDependeeUpdated =
-                        dependeePValue.p != null &&
+                        dependeePValue != null && dependeePValue.p != null &&
                             dependeePValue.p != PropertyIsLazilyComputed && (
                                 // we (now) have some property
-                                dependeePValue.isFinal ||
-                                dependee.hasNoProperty ||
+                                dependeePValue.isFinal || // ... at least the state is updated
+                                dependee.hasNoProperty || // ... we definitively have a new value
                                 dependee.p != dependeePValue.p
                             )
 
                     if (isDependeeUpdated) {
-                        if (!isInterrupted()) {
-                            tasks :&:= (
-                                if (dependeePValue.isFinal)
-                                    () ⇒ handleResult(c(dependeeE, dependeePValue.p, true))
-                                else
-                                    () ⇒ handleResult({
-                                        val newestPValue = ps(dependeeE)(dependeePKId)
-                                        c(dependeeE, newestPValue.p, newestPValue.isFinal)
-                                    })
-                            )
-                        }
+                        tasks :&:= (
+                            if (dependeePValue.isFinal)
+                                () ⇒ handleResult(c(FinalEP(dependeeE, dependeePValue.p)))
+                            else
+                                () ⇒ handleResult({
+                                    val newestPValue = ps(dependeeE)(dependeePKId)
+                                    c(EPS(dependeeE, newestPValue.p, newestPValue.isFinal))
+                                })
+                        )
                         false
                     } else {
                         true // <= no update
                     }
                 }
+
+                println(s"Handling result: $r - dependee updates: ${!noUpdates}")
+
                 // 2. the most current value of every dependee was taken into account
                 if (noUpdates) {
                     // 2.1. register with depeendees
-                    dependees.foreach { dependee ⇒
+                    dependees foreach { dependee ⇒
                         val dependeeE = dependee.e
                         val dependeePKId = dependee.pk.id.toLong
-                        val dependeePValue = ps(dependeeE)(dependeePKId)
-                        val dependency = (EPK(e, p), c)
-                        dependeePValue.dependers = dependeePValue.dependers + (dependency)
-                    }
+                        val dependerEPK = EPK(e, p)
+                        val dependency = (dependerEPK, c)
+                        ps.get(dependeeE) match {
+                            case None ⇒
+                                // the dependee is not known
+                                ps += ((
+                                    dependeeE,
+                                    LongMap((dependeePKId, new PropertyValue(dependerEPK, c)))
+                                ))
 
+                            case Some(pkPValue) ⇒
+                                pkPValue.get(dependeePKId) match {
+
+                                    case None ⇒
+                                        pkPValue += (dependeePKId, new PropertyValue(dependerEPK, c))
+
+                                    case Some(dependeePValue) ⇒
+                                        val dependeeDependers = dependeePValue.dependers
+                                        dependeePValue.dependers = dependeeDependers + dependency
+                                }
+                        }
+                    }
                     // 2.2. update the value (trigger dependers)
+                    println(s"update: $e => $p (isFinal=false)")
                     update(e, p, isFinal = false, dependees)
+                } else {
+                    // there were updates... hence, we will first process those, before we
+                    // update the ep; i.e., there is currently nothing to do!
+                    println(s"there were updated dependees for $e / $p")
                 }
         }
     }
 
     override def setupPhase(
         computedPropertyKinds: Set[PropertyKind],
-        openPropertyKinds:     Set[PropertyKind]
+        delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        this.computedPropertyKinds = computedPropertyKinds
-        this.openPropertyKinds = openPropertyKinds
+        this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
+        this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
     }
 
     override def waitOnPhaseCompletion(): Unit = {
-        var continue: Boolean = true
-        while (continue) {
-            continue = false
+        var continueComputation: Boolean = false
+        do {
+            continueComputation = false
+
             while (tasks.nonEmpty && !isInterrupted()) {
                 val task = tasks.head
                 tasks = tasks.tail
                 task.apply()
             }
-            // we have reached quiescence. let's check if we have to
-            // fill in fallbacks or if we have to resolve cyclic computations
-            println("todo")
-        }
+
+            if (!isInterrupted()) {
+                // We have reached quiescence. let's check if we have to
+                // fill in fallbacks or if we have to resolve cyclic computations.
+
+                // 1. let's search all EPKs for which we have no analyses scheduled and
+                //    use the fall back for them
+                for {
+                    (e, pkIdPV) ← ps
+                    (pkLongId, pv) ← pkIdPV
+                } {
+                    val pkId = pkLongId.toInt
+                    // Check that we have no running computations and that the
+                    // property will not be computed later on.
+                    if (pv.p == null && !delayedPropertyKinds.contains(pkId)) {
+                        // assert(pv.dependers.isEmpty)
+
+                        val fallbackProperty = PropertyKey.fallbackPropertyBasedOnPkId(this, e, pkId)
+                        val fallbackResult = Result(e, fallbackProperty)
+                        handleResult(fallbackResult)
+
+                        continueComputation = true
+                    }
+                }
+
+                // 2. let's search for cSCCs that only consists of properties which will not be
+                //    updated later on
+                if (!continueComputation) {
+                    val epks: Traversable[SomeEOptionP] =
+                        for {
+                            (e, pkIdPValue) ← ps
+                            (pkLongId, pValue) ← pkIdPValue
+                            pkId = pkLongId.toInt
+                            if pValue.p != null // analyses must always commit some value; hence,
+                            // Both of the following tests are necessary because we may have
+                            // properties which are only computed in a later phase; in that
+                            // case we may have EPKs related to entities which are not used.
+                            if pValue.dependees.nonEmpty // test that this node can be part of a cycle
+                            if pValue.dependers.nonEmpty // test that this node can be part of a cycle
+                        } yield {
+                            EPK(e, pValue.p.key): SomeEOptionP
+                        }
+
+                    val cSCCs = graphs.closedSCCs(
+                        epks,
+                        (epk: SomeEOptionP) ⇒ {
+                            ps(epk.e)(epk.pk.id.toLong).dependees
+                        }
+                    )
+                    for {
+                        cSCC ← cSCCs
+                    } {
+                        val headEPK = cSCC.head
+                        val e = headEPK.e
+                        val p = ps(e)(headEPK.pk.id.toLong).p
+                        val headEPS = IntermediateEP(e, p)
+                        val resolvedEP = PropertyKey.resolveCycle(this, headEPS)
+                        update(resolvedEP.e, resolvedEP.p, isFinal = true, Nil)
+                        continueComputation = true
+                    }
+                }
+
+                if (!continueComputation) {
+                    // We used no fallbacks and found no cycles, but we may still have
+                    // (collaboratively computed) properties (e.g. CallGraph) which are
+                    // not yet final; let's finalize them!
+                }
+            }
+        } while (continueComputation)
     }
 
 }

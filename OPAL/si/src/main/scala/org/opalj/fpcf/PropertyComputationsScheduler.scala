@@ -75,12 +75,12 @@ trait ComputationSpecification {
      */
     def derives: Set[PropertyKind]
 
-    // TODO derivesLazily : Set[PropertyKind]
-
     require(derives.nonEmpty, "the computation does not derive any information")
 
     /**
      * Called by the scheduler to start execution of this analysis.
+     *
+     * The analysis may very well be a lazy computation!
      */
     def schedule(ps: PropertyStore): Unit
 
@@ -94,7 +94,6 @@ trait ComputationSpecification {
 
 }
 
-// TODO Add support for computing schedules where properties are computed by chained analyses
 class AnalysisScenario(
         private[this] var ccs: Set[ComputationSpecification] = Set.empty
 ) {

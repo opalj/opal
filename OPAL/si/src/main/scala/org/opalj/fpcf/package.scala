@@ -30,15 +30,15 @@ package org.opalj
 
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
- * computations on a fixed set of entities. The framework in particular
- * supports the development of static analyses. In this case, the fixpoint computations/
- * static analyses are generally operating on the code and need to be executed until
- * the computation has reached its (implicit) fixpoint. The fixpoint framework explicitly
- * supports cyclic dependencies/computations and performs all computations in parallel.
- * A prime use case of the fixpoint framework
- * are all those analyses that may interact with the results of other analyses.
+ * computations. The framework in particular supports the development of static analyses.
  *
- * For example, an analysis that analyses all field write accessees to determine if we can
+ * In this case, the fixpoint computations/ static analyses are generally operating on the
+ * code and need to be executed until the computation has reached its (implicit) fixpoint.
+ * The fixpoint framework explicitly supports cyclic dependencies/computations.
+ * A prime use case of the fixpoint framework are all those analyses that may interact with
+ * the results of other analyses.
+ *
+ * For example, an analysis that analyzes all field write accesses to determine if we can
  * refine a field's type (for the purpose of the analysis) can (reuse) the information
  * about the return types of methods, which however may depend on the refined field types.
  *
@@ -63,18 +63,25 @@ package object fpcf {
      */
     type Entity = AnyRef
 
+    type SomeEOptionP = EOptionP[_ <: Entity, _ <: Property]
+
+    type SomeEPK = EPK[_ <: Entity, _ <: Property]
+
+    type SomeEPS = EPS[_ <: Entity, _ <: Property]
+
     /**
      * A function that takes an entity and returns a result. The result maybe:
      *  - the final derived property,
      *  - a function that will continue computing the result once the information
-     *      about some other entity is available or,
-     *  - an intermediate result.
+     *    about some other entity is available or,
+     *  - an intermediate result which may be refined later on, but not by the
+     *    current running analysis.
      */
     type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
 
     type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    type OnUpdateContinuation = (Entity, Property, Boolean) ⇒ PropertyComputationResult
+    type OnUpdateContinuation = (SomeEPS) ⇒ PropertyComputationResult
 
     /**
      * A function that continues the computation of a property. It takes
@@ -85,12 +92,6 @@ package object fpcf {
     type SomeContinuation = Continuation[_ <: Property]
 
     type SomePropertyKey = PropertyKey[_ <: Property]
-
-    type SomeEOptionP = EOptionP[_ <: Entity, _ <: Property]
-
-    type SomeEPK = EPK[_ <: Entity, _ <: Property]
-
-    type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
     /**
      * The result of a computation if the computation derives multiple properties

@@ -56,7 +56,7 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
 object PropertyKey {
 
     type SomeEPKs = Iterable[SomeEPK]
-    type CycleResolutionStrategy = (PropertyStore, SomeEPS) ⇒ PropertyComputationResult
+    type CycleResolutionStrategy = (PropertyStore, SomeEPS) ⇒ EP
 
     private[this] val keysLock = new ReentrantReadWriteLock
 
@@ -75,15 +75,11 @@ object PropertyKey {
      *
      * @param fallbackProperty A function that returns the property that will be associated
      *              with those entities for which the property is not explicitly computed.
+     *              This is generally the bottom value of the lattice.
      *
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
-     *              computations. The elements of a cycle are either ex- or implicitly
-     *              '''conditional properties'''. If for a specific property kind conditional
-     *              properties are explicitly modeled, then the respective non-conditional
-     *              property should be returned. If conditional properties are implicit (e.g.,
-     *              if we are referring to a set of values), then the current property can be
-     *              committed. In general, the result is expected to be a PhaseFinalResult,
-     *              but this is not a strict requirement.
+     *              computations. In the vast majority of cases it is sufficient to just commit
+     *              the given value.
      */
     def create[P <: Property](
         name:                    String,
@@ -106,35 +102,9 @@ object PropertyKey {
     def create[P <: Property](
         name:                    String,
         fallback:                P,
-        cycleResolutionStrategy: CycleResolutionStrategy
+        cycleResolutionStrategy: CycleResolutionStrategy = (_, someEPS: SomeEPS) ⇒ someEPS.toEP
     ): PropertyKey[P] = {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
-    }
-
-    private[fpcf] def create[P <: Property](
-        name:                    String,
-        fallback:                (PropertyStore, Entity) ⇒ P,
-        cycleResolutionProperty: P
-    ): PropertyKey[P] = {
-        create(
-            name,
-            fallback,
-            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ {
-                PhaseResult(eOptionP.e, cycleResolutionProperty)
-            }
-        )
-    }
-
-    private[fpcf] def create[P <: Property](
-        name:                    String,
-        fallback:                P,
-        cycleResolutionProperty: P
-    ): PropertyKey[P] = {
-        create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionProperty)
-    }
-
-    private[fpcf] def create[P <: Property](name: String, fallback: P): PropertyKey[P] = {
-        create(name, fallback, fallback)
     }
 
     //
@@ -157,13 +127,21 @@ object PropertyKey {
         e:  Entity,
         pk: PropertyKey[P]
     ): P = {
-        withReadLock(keysLock) { fallbackProperties(pk.id)(ps, e).asInstanceOf[P] }
+        fallbackPropertyBasedOnPkId(ps, e, pk.id).asInstanceOf[P]
+    }
+
+    private[fpcf] def fallbackPropertyBasedOnPkId(
+        ps:   PropertyStore,
+        e:    Entity,
+        pkId: Int
+    ): Property = {
+        withReadLock(keysLock) { fallbackProperties(pkId)(ps, e) }
     }
 
     /**
      * @note This method is intended to be called by the framework.
      */
-    def resolveCycle(ps: PropertyStore, eps: SomeEPS): PropertyComputationResult = {
+    def resolveCycle(ps: PropertyStore, eps: SomeEPS): EP = {
         withReadLock(keysLock) { cycleResolutionStrategies(eps.pk.id)(ps, eps) }
     }
 

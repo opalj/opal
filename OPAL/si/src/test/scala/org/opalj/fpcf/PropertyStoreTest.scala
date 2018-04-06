@@ -47,11 +47,11 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
+abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
     implicit val logContext = GlobalLogContext
 
-    def createPropertyStore(): PropertyStore = SequentialPropertyStore()
+    def createPropertyStore(): PropertyStore
 
     describe("the property store") {
 
@@ -73,11 +73,12 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 val dependee = EPK("d", Palindromes.PalindromeKey)
                 ps(dependee) // we use a fake dependency...
                 doContinue.await() // halt this computation...
+                println("we have a result...")
                 IntermediateResult(
                     "a",
                     Palindromes.MaybePalindrome,
                     Seq(dependee),
-                    (e, p, isFinal) ⇒ { Result("a", Palindromes.Palindrome) }
+                    (eps) ⇒ { Result("a", Palindromes.Palindrome) }
                 )
             }
             val t: Thread = new Thread(() ⇒ ps.waitOnPhaseCompletion())
@@ -87,7 +88,7 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             doContinue.countDown() // let's continue the "first computation"
             t.join()
 
-            // test that the continuatoin did not lead to further tasks
+            // test that the continuation did not lead to further tasks
             ps("a", Palindromes.PalindromeKey) should be(EPS("a", Palindromes.MaybePalindrome, false))
             // test that the scheduled computation related to "d" was not scheduled at all!
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
@@ -99,16 +100,15 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             ps("d", Palindromes.PalindromeKey) should be(EPS("d", Palindromes.Palindrome, true))
         }
 
-        it("should add an entity if queried for its properties") {
+        it("should be able to perform queries w.r.t. unknown entities") {
             val ps = createPropertyStore()
             val pk = Palindromes.PalindromeKey
 
             ps("aba", pk) should be(EPK("aba", pk))
-            assert(ps.isKnown("aba"))
-
             ps(EPK("aa", pk)) should be(EPK("aa", pk))
-            assert(ps.isKnown("aa"))
         }
+
+        // test SET
 
         it("should set an entity's property immediately if set is used") {
             import Palindromes.Palindrome
@@ -288,8 +288,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                     IntermediateResult(
                         e, MaybeSuperPalindrome,
                         Seq(initialsExpectedEP),
-                        (otherE, otherP, otherIsFinal) ⇒ {
-                            if (otherP == Palindrome /*&& ...*/ )
+                        (eps) ⇒ {
+                            if (eps.p == Palindrome /*&& ...*/ )
                                 Result(e, SuperPalindrome)
                             else
                                 Result(e, NoSuperPalindrome)
@@ -303,8 +303,8 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
                 IntermediateResult(
                     "e", Marker.MaybeMarked,
                     Seq(initiallyExpectedEP),
-                    (otherE, otherP, otherIsFinal) ⇒ {
-                        if (otherP.isInstanceOf[SuperPalindromeProperty])
+                    (eps) ⇒ {
+                        if (eps.p.isInstanceOf[SuperPalindromeProperty])
                             Result(e, Marker.IsMarked)
                         else
                             Result(e, Marker.NotMarked)
@@ -319,7 +319,11 @@ class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
             ps("e", sppk) should be(EPS("e", SuperPalindrome, true))
         }
     }
+}
 
+class SequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = SequentialPropertyStore()
 }
 
 // Test fixture related to a simple marker property

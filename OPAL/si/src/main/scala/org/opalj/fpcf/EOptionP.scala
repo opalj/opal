@@ -62,9 +62,11 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def isFinal: Boolean
 
+    final def isRefineable: Boolean = !isFinal
+
     /**
-     * Combines the test if we have a property and – if we have one – if it is equal to the
-     * given one.
+     * Combines the test if we have a property and – if we have one – if it is equal (by
+     * means of equality check) to the given one.
      */
     def is[T >: P](p: T): Boolean = this.hasProperty && p == this.p
 
@@ -93,6 +95,8 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
     final override def hasProperty: Boolean = true
+
+    final def toEP = new EP(e, p)
 
     final override def equals(other: Any): Boolean = {
         other match {
@@ -172,7 +176,7 @@ object SomeProperty {
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
  * Compared to a standard `Tuple2` the entities are compared using reference comparison
- * and not equality based on `equals` checks.
+ * and not equality based on `equals` checks. `PropertyKey`s are compared using equals.
  *
  * @author Michael Eichberg
  */

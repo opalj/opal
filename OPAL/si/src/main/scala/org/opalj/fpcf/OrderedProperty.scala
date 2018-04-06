@@ -33,7 +33,7 @@ package org.opalj.fpcf
  * all properties that are of the same kind have to inherit from ordered property or none.
  *
  * This information is used by the property store when debugging is turned on to test if an
- * analysis which derives a new property always derives a more precise property. These tests
+ * analysis, which derives a new property, always derives a more precise property. These tests
  * are only executed in-phase!
  *
  * @author Michael Eichberg
@@ -42,7 +42,7 @@ trait OrderedProperty extends Property {
 
     /**
      * Tests if this property is a valid successor property of the other property; this
-     * relation is reflexive, that is, a property is a valid success of itself.
+     * relation is reflexive, that is, a property is a valid successor of itself.
      */
     @throws[IllegalArgumentException]("if this property is not a valid successor of other")
     def checkIsValidSuccessorOf(other: Property): Unit

@@ -80,6 +80,9 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
 
 /**
  * Used if the analysis found no entities for which a property could be computed.
+ *
+ * In some cases it makes sense to do, e.g., an analysis per class to compute the properties
+ * for some fields.
  */
 object NoResult extends PropertyComputationResult {
     private[fpcf] final val id = 5
@@ -124,9 +127,10 @@ case class IntermediateResult(
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
 
-    require(dependees.nonEmpty, s"intermediate result $this without open dependencies")
-
+    assert(e ne null)
+    assert(p ne null)
     assert(c ne null, "onUpdateContinuation is null")
+    assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
 
     // TODO Make it possible to activate the assertions!
     //    // End-User oriented assertion:
@@ -189,25 +193,6 @@ case class IncrementalResult[E <: Entity](
 }
 
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 7 }
-
-/**
- * If an analysis is finished and will not return more precise results, but a subsequent
- * analysis (scheduled in a later phase) may refine the results, a ```PhaseResult```
- * has to be used.
- *
- * @note If the given property is not refinable a (Immediate)Result has to be used.
- * @note `PhaseResults` will never lead to cycles as we have no more outgoing dependencies.
- *      The property store can be configured to know which properties are collaboratively
- *      computed in multiple phases; if no subsequent analysis is scheduled the `PropertyStore`
- *      will commit a `PhaseResult` directly as a final result.
- *
- */
-case class PhaseResult(e: Entity, p: Property) extends PropertyComputationResult {
-
-    private[fpcf] final def id = PhaseResult.id
-
-}
-private[fpcf] object PhaseResult { private[fpcf] final val id = 10 }
 
 /**
  * Just a collection of multiple results.
