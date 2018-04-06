@@ -121,7 +121,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         val methodO = call.resolveCallTarget
         checkParams(methodO, call.params, hasAssignment = false)
         if (context.usesDefSite(call.receiver))
-            handleCall(methodO, 0, hasAssignment = false)
+            handleCall(methodO, param = 0, hasAssignment = false)
     }
 
     protected[this] override def handleNonVirtualFunctionCall(
@@ -130,7 +130,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         val methodO = call.resolveCallTarget
         checkParams(methodO, call.params, hasAssignment)
         if (context.usesDefSite(call.receiver))
-            handleCall(methodO, 0, hasAssignment)
+            handleCall(methodO, param = 0, hasAssignment = hasAssignment)
     }
 
     private[this] def handleVirtualCall(
@@ -163,7 +163,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             )
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
-                handleCall(methodO, 0, hasAssignment)
+                handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else if (value.isPrecise) {
 
             // if the receiver type is precisely known, we can handle the concrete method
@@ -194,7 +194,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
-                handleCall(methodO, 0, hasAssignment)
+                handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else /* non-null, not precise object type */ {
 
             val target = project.instanceCall(
@@ -250,6 +250,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     private[this] def handleCall(
         methodO: org.opalj.Result[Method], param: Int, hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+        // we definitively escape into to callee
+        state.meetMostRestrictive(EscapeInCallee)
         methodO match {
             case Success(method) ⇒
                 if (project.isSignaturePolymorphic(method.classFile.thisType, method)) {
@@ -325,7 +327,6 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.addDependency(ep)
 
             case ep @ EP(_, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
-
                 if (hasAssignment) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                     state.hasReturnValueUseSites += e
@@ -335,7 +336,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.addDependency(ep)
 
             case ep @ EP(_, Conditional(p)) ⇒
-                state.meetMostRestrictive(EscapeInCallee meet p)
+                state.meetMostRestrictive(EscapeInCallee)
 
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
@@ -343,7 +344,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.addDependency(ep)
 
             case ep @ EP(_, VirtualMethodEscapeProperty(Conditional(p))) ⇒
-                state.meetMostRestrictive(EscapeInCallee meet p)
+                state.meetMostRestrictive(EscapeInCallee)
 
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e

@@ -102,10 +102,17 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            InterProceduralEscapeAnalysis.start(project)
             VirtualCallAggregatingEscapeAnalysis.startLazily(project)
-            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = true)
+            InterProceduralEscapeAnalysis.start(project)
+            propertyStore.waitOnPropertyComputationCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
+
+        for (e ← propertyStore.entities(AtMost(EscapeViaAbnormalReturn))) {
+            println(s"$e : AtMostEscapeViaAbnormalReturn")
+        }
+        for (e ← propertyStore.entities(AtMost(EscapeInCallee))) {
+            println(s"$e : AtMostEscapeInCallee")
+        }
 
         def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
         def countFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[VirtualFormalParameter])

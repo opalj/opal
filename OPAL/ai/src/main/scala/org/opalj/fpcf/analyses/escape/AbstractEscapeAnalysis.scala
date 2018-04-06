@@ -117,23 +117,32 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                 val value = stmt.asPutStatic.value
                 if (context.usesDefSite(value))
                     state.meetMostRestrictive(EscapeViaStaticField)
+
             case ReturnValue.ASTID ⇒
                 if (context.usesDefSite(stmt.asReturnValue.expr))
                     state.meetMostRestrictive(EscapeViaReturn)
+
             case PutField.ASTID ⇒
                 handlePutField(stmt.asPutField)
+
             case ArrayStore.ASTID ⇒
                 handleArrayStore(stmt.asArrayStore)
+
             case Throw.ASTID ⇒
                 handleThrow(stmt.asThrow)
+
             case StaticMethodCall.ASTID ⇒
                 handleStaticMethodCall(stmt.asStaticMethodCall)
+
             case VirtualMethodCall.ASTID ⇒
                 handleVirtualMethodCall(stmt.asVirtualMethodCall)
+
             case NonVirtualMethodCall.ASTID ⇒
                 handleNonVirtualMethodCall(stmt.asNonVirtualMethodCall)
+
             case ExprStmt.ASTID ⇒
                 handleExprStmt(stmt.asExprStmt)
+
             case Assignment.ASTID ⇒
                 handleAssignment(stmt.asAssignment)
 

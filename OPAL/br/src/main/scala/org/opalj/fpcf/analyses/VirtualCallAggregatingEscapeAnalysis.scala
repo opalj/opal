@@ -82,58 +82,47 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
         }
 
         for (method ← methods) {
-            propertyStore(formalParameters(declaredMethods(method))(-1 - fp.origin), EscapeProperty.key) match {
+            val vfp = formalParameters(declaredMethods(method))(-1 - fp.origin)
+            handleEscapeState(propertyStore(vfp, EscapeProperty.key))
+        }
+
+        def handleEscapeState(eOptionP: EOptionP[VirtualFormalParameter, EscapeProperty]): Unit =
+            eOptionP match {
                 case ep @ EP(_, Conditional(p)) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
                 case EP(_, p) ⇒ escapeState = escapeState meet p
                 case epk      ⇒ dependees += epk
             }
+
+        def returnResult: PropertyComputationResult = {
+            if (escapeState.isBottom || dependees.isEmpty)
+                if (escapeState.isRefinable)
+                    RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))
+                else
+                    Result(fp, VirtualMethodEscapeProperty(escapeState))
+            else
+                IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, continuation)
         }
 
-        def c(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            p match {
-                case p: EscapeProperty if p.isBottom ⇒
-                    Result(fp, VirtualMethodEscapeProperty(escapeState meet p))
+        def continuation(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
+            if (p eq PropertyIsLazilyComputed)
+                IntermediateResult(
+                    fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, continuation
+                )
 
-                case p @ Conditional(property) ⇒
-                    escapeState = escapeState meet property
-                    val newEP = EP(other.asInstanceOf[VirtualFormalParameter], p)
-                    assert(dependees.count(_.e eq other) <= 1)
-                    dependees = dependees.filter(_.e ne other) + newEP
-                    IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
+            val newEP = EP(
+                other.asInstanceOf[VirtualFormalParameter], p.asInstanceOf[EscapeProperty]
+            )
 
-                case p: EscapeProperty ⇒
-                    escapeState = escapeState meet p
+            assert(dependees.count(_.e eq other) <= 1)
+            dependees = dependees filter { _.e ne other }
+            handleEscapeState(newEP)
 
-                    assert(dependees.count(_.e eq other) <= 1)
-                    dependees = dependees filter { _.e ne other }
-
-                    if (dependees.isEmpty) {
-                        if (escapeState.isRefinable)
-                            RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))
-                        else
-                            Result(fp, VirtualMethodEscapeProperty(escapeState))
-                    } else {
-                        IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
-                    }
-
-                case PropertyIsLazilyComputed ⇒
-                    IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
-
-                case _ ⇒ throw new IllegalArgumentException(s"unsupported property $p")
-            }
+            returnResult
         }
 
-        if (escapeState.isBottom || dependees.isEmpty) {
-            if (escapeState.isRefinable) {
-                RefinableResult(fp, VirtualMethodEscapeProperty(escapeState))
-            } else {
-                Result(fp, VirtualMethodEscapeProperty(escapeState))
-            }
-        } else {
-            IntermediateResult(fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, c)
-        }
+        returnResult
     }
 
 }

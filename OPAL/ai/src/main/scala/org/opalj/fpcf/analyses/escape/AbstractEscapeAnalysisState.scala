@@ -62,16 +62,31 @@ trait AbstractEscapeAnalysisState {
         assert(!_mostRestrictiveProperty.isInstanceOf[Conditional])
     }
 
-    private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
+    /**
+     * Adds an entity property pair (or epk) into the set of dependees.
+     */
+    @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         _dependees += eOptionP
     }
 
-    private[escape] final def removeDependency(ep: EP[Entity, Property]): Unit = {
+    /**
+     * Removes the entity property pair (or epk) that correspond to the given ep from the set of
+     * dependees.
+     */
+    @inline private[escape] final def removeDependency(ep: EP[Entity, Property]): Unit = {
         assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
         _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
     }
 
+    /**
+     * The set of open dependees.
+     */
     private[escape] final def dependees: Set[EOptionP[Entity, Property]] = _dependees
+
+    /**
+     * The currently most restrictive escape property. It can get even more restrictive during the
+     * analysis.
+     */
     private[escape] final def mostRestrictiveProperty: EscapeProperty = _mostRestrictiveProperty
 }
 
