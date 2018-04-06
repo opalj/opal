@@ -48,19 +48,31 @@ import scala.collection.mutable
  * @author Florian Kuebler
  */
 trait AbstractEscapeAnalysisState {
-    private[escape] var dependees = Set.empty[EOptionP[Entity, Property]]
-    private[escape] var mostRestrictiveProperty: EscapeProperty = NoEscape
+    private[this] var _dependees = Set.empty[EOptionP[Entity, Property]]
+    private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
     /**
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
      * given one.
      */
     @inline private[escape] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
-        assert((mostRestrictiveProperty meet prop).lessOrEqualRestrictive(mostRestrictiveProperty))
+        assert((_mostRestrictiveProperty meet prop).lessOrEqualRestrictive(_mostRestrictiveProperty))
         assert(!prop.isInstanceOf[Conditional])
-        mostRestrictiveProperty = mostRestrictiveProperty meet prop
-        assert(!mostRestrictiveProperty.isInstanceOf[Conditional])
+        _mostRestrictiveProperty = _mostRestrictiveProperty meet prop
+        assert(!_mostRestrictiveProperty.isInstanceOf[Conditional])
     }
+
+    private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
+        _dependees += eOptionP
+    }
+
+    private[escape] final def removeDependency(ep: EP[Entity, Property]): Unit = {
+        assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
+        _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
+    }
+
+    private[escape] final def dependees: Set[EOptionP[Entity, Property]] = _dependees
+    private[escape] final def mostRestrictiveProperty: EscapeProperty = _mostRestrictiveProperty
 }
 
 /**

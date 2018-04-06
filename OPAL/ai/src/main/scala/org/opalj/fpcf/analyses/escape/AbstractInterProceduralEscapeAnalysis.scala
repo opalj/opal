@@ -41,13 +41,7 @@ import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.fpcf.properties.EscapeViaHeapObject
-import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameter
-import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
@@ -72,6 +66,7 @@ import org.opalj.tac.VirtualMethodCall
  */
 trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
+
     override type AnalysisState <: AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
 
     protected[this] override def handleStaticMethodCall(
@@ -327,8 +322,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
             case ep @ EP(_, Conditional(AtMost(_)) | VirtualMethodEscapeProperty(Conditional(AtMost(_)))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
+                state.addDependency(ep)
 
-                state.dependees += ep
             case ep @ EP(_, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
 
                 if (hasAssignment) {
@@ -337,7 +332,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 } else
                     state.meetMostRestrictive(EscapeInCallee)
 
-                state.dependees += ep
+                state.addDependency(ep)
 
             case ep @ EP(_, Conditional(p)) ⇒
                 state.meetMostRestrictive(EscapeInCallee meet p)
@@ -345,7 +340,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
 
-                state.dependees += ep
+                state.addDependency(ep)
 
             case ep @ EP(_, VirtualMethodEscapeProperty(Conditional(p))) ⇒
                 state.meetMostRestrictive(EscapeInCallee meet p)
@@ -353,123 +348,45 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
 
-                state.dependees += ep
+                state.addDependency(ep)
 
-            case epkOrConditional ⇒
+            case EP(_, p) ⇒
+                throw new UnknownError(s"unexpected escape property ($p) for $e")
+
+            case epk ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
 
-                state.dependees += epkOrConditional
+                state.addDependency(epk)
         }
     }
 
-    abstract override protected[this] def c(
+    abstract override protected[this] def continuation(
         other: Entity, p: Property, u: UpdateType
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
+        if (p eq PropertyIsLazilyComputed)
+            return IntermediateResult(
+                context.entity,
+                Conditional(state.mostRestrictiveProperty),
+                state.dependees,
+                continuation
+            )
+
+        val newEP = EP(other, p)
+
         other match {
             case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
             // this entity is passed as parameter (or this local) to a method
-            case other: VirtualFormalParameter ⇒ p match {
+            case other: VirtualFormalParameter ⇒
+                state.removeDependency(newEP)
+                handleEscapeState(newEP, state.hasReturnValueUseSites contains other)
+                returnResult
 
-                case GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape) ⇒
-                    Result(context.entity, GlobalEscape)
-
-                case EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField) ⇒
-                    Result(context.entity, EscapeViaStaticField)
-
-                case EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject) ⇒
-                    Result(context.entity, EscapeViaHeapObject)
-
-                case NoEscape | VirtualMethodEscapeProperty(NoEscape) ⇒
-                    removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
-
-                case EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee) ⇒
-                    removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
-
-                case EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn) ⇒
-                    /*
-                     * IMPROVE we do not further track the return value of the callee.
-                     * But the org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-                     * eliminates the assignments, if the function called is identity-like
-                     */
-                    if (state.hasReturnValueUseSites contains other)
-                        removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-                    else
-                        removeFromDependeesAndComputeResult(EP(other, p), EscapeInCallee)
-
-                case EscapeViaParameter | VirtualMethodEscapeProperty(EscapeViaParameter) ⇒
-                    // IMPROVE we do not further track the field of the actual parameter
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case EscapeViaAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaAbnormalReturn) ⇒
-                    // IMPROVE we do not further track the exception thrown in the callee
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case EscapeViaParameterAndAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaParameterAndAbnormalReturn) ⇒
-                    // combines the cases above
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case EscapeViaNormalAndAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaNormalAndAbnormalReturn) ⇒
-                    // combines the cases above
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case EscapeViaParameterAndReturn | VirtualMethodEscapeProperty(EscapeViaParameterAndReturn) ⇒
-                    // combines the cases above
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case EscapeViaParameterAndNormalAndAbnormalReturn | VirtualMethodEscapeProperty(EscapeViaParameterAndNormalAndAbnormalReturn) ⇒
-                    // combines the cases above
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case AtMost(_) | VirtualMethodEscapeProperty(AtMost(_)) ⇒
-                    removeFromDependeesAndComputeResult(EP(other, p), AtMost(EscapeInCallee))
-
-                case p @ Conditional(NoEscape) ⇒
-                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
-
-                case p @ VirtualMethodEscapeProperty(Conditional(NoEscape)) ⇒
-                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
-
-                case p @ Conditional(EscapeInCallee) ⇒
-                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
-
-                case p @ VirtualMethodEscapeProperty(Conditional(EscapeInCallee)) ⇒
-                    performIntermediateUpdate(EP(other, p), EscapeInCallee)
-
-                case p @ Conditional(EscapeViaReturn) ⇒
-                    if (state.hasReturnValueUseSites contains other)
-                        performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
-                    else
-                        performIntermediateUpdate(EP(other, p), EscapeInCallee)
-
-                case p @ VirtualMethodEscapeProperty(Conditional(EscapeViaReturn)) ⇒
-                    if (state.hasReturnValueUseSites contains other)
-                        performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
-                    else
-                        performIntermediateUpdate(EP(other, p), EscapeInCallee)
-
-                case p @ Conditional(_) ⇒
-                    performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
-
-                case p @ VirtualMethodEscapeProperty(Conditional(_)) ⇒
-                    performIntermediateUpdate(EP(other, p), AtMost(EscapeInCallee))
-
-                case PropertyIsLazilyComputed ⇒
-                    IntermediateResult(
-                        context.entity,
-                        Conditional(state.mostRestrictiveProperty),
-                        state.dependees,
-                        c
-                    )
-
-                case _ ⇒
-                    throw new UnknownError(s"unexpected escape property ($p) for $other")
-            }
-            case _ ⇒ super.c(other, p, u)
+            case _ ⇒ super.continuation(other, p, u)
         }
     }
 }

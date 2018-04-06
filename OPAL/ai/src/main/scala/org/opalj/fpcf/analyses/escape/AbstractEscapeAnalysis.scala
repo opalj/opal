@@ -43,7 +43,6 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.Conditional
-import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.NoEscape
@@ -316,20 +315,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
     /**
-     * Sets mostRestrictiveProperty to the lower bound of p and the current most restrictive and
-     * remove entity `other` from dependees. If this entity does not depend on any more results it
-     * has associated property of mostRestrictiveProperty, otherwise build a continuation.
-     */
-    protected[this] def removeFromDependeesAndComputeResult(
-        other: EP[Entity, Property], p: EscapeProperty
-    )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
-        state.meetMostRestrictive(p)
-        assert(state.dependees.count(epk ⇒ (epk.e eq other.e) && epk.pk == other.pk) <= 1)
-        state.dependees = state.dependees.filter(epk ⇒ (epk.e ne other.e) || epk.pk != other.pk)
-        returnResult
-    }
-
-    /**
      * This method is called, after the entity has been analyzed. If there is no dependee left or
      * the entity escapes globally, the result is returned directly.
      * Otherwise, the `maybe` version of the current escape state is returned as
@@ -349,29 +334,14 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                 Result(context.entity, state.mostRestrictiveProperty)
             }
         } else {
-            IntermediateResult(context.entity, Conditional(state.mostRestrictiveProperty), state.dependees, c)
+            IntermediateResult(context.entity, Conditional(state.mostRestrictiveProperty), state.dependees, continuation)
         }
-    }
-
-    /**
-     * In the list of dependees the result of `other` is updated with the new property `p`.
-     * The current escape state is updated to the `non-maybe` version of `newProp` and
-     * the intermediate result is returned.
-     */
-    protected[this] def performIntermediateUpdate(
-        newEP:                EOptionP[Entity, Property],
-        intermediateProperty: EscapeProperty
-    )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
-        assert(state.dependees.count(epk ⇒ (epk.e eq newEP.e) && epk.pk == newEP.pk) <= 1)
-        state.dependees = state.dependees.filter(epk ⇒ (epk.e ne newEP.e) || epk.pk != newEP.pk) + newEP
-        state.meetMostRestrictive(intermediateProperty)
-        IntermediateResult(context.entity, Conditional(state.mostRestrictiveProperty), state.dependees, c)
     }
 
     /**
      * A continuation function, that handles the updates of property values for entity `other`.
      */
-    protected[this] def c(
+    protected[this] def continuation(
         other: Entity, p: Property, u: UpdateType
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult
 

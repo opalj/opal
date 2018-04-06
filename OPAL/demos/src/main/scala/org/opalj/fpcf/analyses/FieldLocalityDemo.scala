@@ -37,7 +37,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ExtensibleLocalField
-import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter 
+import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoLocalField
