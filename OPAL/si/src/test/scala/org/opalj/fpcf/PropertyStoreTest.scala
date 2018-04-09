@@ -349,9 +349,223 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
         it("should be possible to have computations with multiple updates") {
 
-            // let's compute the set of reached values...
-            case class Node(val i: Int, values: Set[String])
+            import scala.collection.mutable
 
+            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
+                override def hashCode: Int = name.hashCode()
+                override def equals(other: Any): Boolean = other match {
+                    case that: Node ⇒ this.name equals that.name
+                    case _          ⇒ false
+                }
+                override def toString: String = name
+            }
+            object Node { def apply(name: String) = new Node(name) }
+
+            // DESCRIPTION OF A GRAPH (WITH CYCLES)
+            val nodeA = Node("a")
+            val nodeB = Node("b")
+            val nodeC = Node("c")
+            val nodeD = Node("d")
+            val nodeE = Node("e")
+            val nodeR = Node("r")
+            nodeA.targets += nodeB // the graph:
+            nodeB.targets += nodeC // a -> b -> c
+            nodeB.targets += nodeD //        ↘︎ d
+            nodeD.targets += nodeD //           d ⟲
+            nodeD.targets += nodeE //           d -> e
+            nodeE.targets += nodeR //                e -> r
+            nodeR.targets += nodeB //       ↖︎-----------↵︎
+            val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
+
+            val ReachableNodesKey: PropertyKey[ReachableNodes] = {
+                PropertyKey.create(
+                    "ReachableNodes",
+                    (_: PropertyStore, e: Entity) ⇒ {
+                        /*IDIOM IF NO FALLBACK IS EXPECTED/SUPPORTED*/
+                        throw new UnknownError(s"no fallback for $e available")
+                    },
+                    (_: PropertyStore, eps: SomeEPS) ⇒ eps.toEP
+                )
+            }
+            case class ReachableNodes(nodes: scala.collection.Set[Node]) extends Property {
+                type Self = ReachableNodes
+                def key = ReachableNodesKey
+            }
+            object NoReachableNodes extends ReachableNodes(Set.empty) {
+                override def toString: String = "NoReachableNodes"
+            }
+
+            val ps = createPropertyStore()
+
+            /* The following analysis only uses the new information given to it and updates
+                                 * the set of observed dependees.
+                                 */
+            def analysis(n: Node): PropertyComputationResult = {
+                val nTargets = n.targets
+                if (nTargets.isEmpty)
+                    return Result(n, NoReachableNodes);
+
+                val allDependees: mutable.Set[Node] =
+                    nTargets.clone - n // self-dependencies are ignored!
+                var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
+                    ps(allDependees, ReachableNodesKey).toSet
+
+                // incremental computation
+                def c(dependee: SomeEPS): PropertyComputationResult = {
+                    // Get the set of currently reachable nodes:
+                    val EPS(_, ReachableNodes(alreadyReachableNodes), isFinal) = dependee
+
+                    // Get the set of nodes reached by the dependee:
+                    val ReachableNodes(depeendeeReachableNodes) = dependee.p
+
+                    // Compute the new set of reachable nodes:
+                    val newReachableNodes = alreadyReachableNodes ++ depeendeeReachableNodes
+                    val newP = ReachableNodes(newReachableNodes)
+
+                    // Adapt the set of dependeePs to ensure termination
+                    dependeePs = dependeePs.filter { _.e ne dependee.e }
+                    if (!isFinal) {
+                        dependeePs ++= Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
+                    }
+                    if (dependeePs.nonEmpty)
+                        IntermediateResult(n, newP, dependeePs, c)
+                    else
+                        Result(n, newP)
+                }
+
+                // initial computation
+                val reachableNodes =
+                    dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
+                        if (dependee.hasProperty) {
+                            if (dependee.isFinal) { dependeePs -= dependee }
+                            reachableNodes ++ dependee.p.nodes
+                        } else {
+                            reachableNodes
+                        }
+                    }
+                val intermediateP = ReachableNodes(
+                    if (n.targets contains n)
+                        reachableNodes + n
+                    else
+                        reachableNodes
+                )
+                IntermediateResult(n, intermediateP, dependeePs, c)
+            }
+
+            ps.scheduleForEntities(nodeEntities)(analysis)
+            ps.waitOnPhaseCompletion()
+
+            // the graph:
+            // a -> b -> c
+            //      b -> d
+            //           d ⟲
+            //           d -> e
+            //                e -> r
+            //       ↖︎----------< r
+            ps(nodeA, ReachableNodesKey) should be(FinalEP(nodeA, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeB, ReachableNodesKey) should be(FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeC, ReachableNodesKey) should be(FinalEP(nodeC, ReachableNodes(Set())))
+            ps(nodeD, ReachableNodesKey) should be(FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeE, ReachableNodesKey) should be(FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeR, ReachableNodesKey) should be(FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+        }
+
+        it("should be possible to execute an analysis incrementally") {
+            import scala.collection.mutable
+
+            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
+                override def hashCode: Int = name.hashCode()
+                override def equals(other: Any): Boolean = other match {
+                    case that: Node ⇒ this.name equals that.name
+                    case _          ⇒ false
+                }
+                override def toString: String = name
+            }
+            object Node { def apply(name: String) = new Node(name) }
+
+            // DESCRIPTION OF A TREE
+            val nodeRoot = Node("Root")
+            val nodeLRoot = Node("Root->L")
+            val nodeLLRoot = Node("Root->L->L")
+            val nodeRRoot = Node("Root->R")
+            val nodeLRRoot = Node("Root->R->L")
+            val nodeRRRoot = Node("Root->R->R")
+            nodeRoot.targets += nodeLRoot
+            nodeRoot.targets += nodeRRoot
+            nodeLRoot.targets += nodeLLRoot
+            nodeRRoot.targets += nodeLRRoot
+            nodeRRoot.targets += nodeRRRoot
+
+            val TreeLevelKey: PropertyKey[TreeLevel] = {
+                PropertyKey.create(
+                    "TreeLevel",
+                    (ps: PropertyStore, e: Entity) ⇒ ???,
+                    (ps: PropertyStore, eps: SomeEPS) ⇒ ???
+                )
+            }
+            case class TreeLevel(length: Int) extends Property {
+                final type Self = TreeLevel
+                final def key = TreeLevelKey
+                final def isRefineable = false
+            }
+
+            val ps = createPropertyStore()
+
+            /* The following analysis only uses the new information given to it and updates
+                 * the set of observed dependees.
+                 */
+            def analysis(level: Int)(n: Node): PropertyComputationResult = {
+                val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
+                    n.targets.map(t ⇒ (analysis(level + 1) _, t))
+                IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
+            }
+
+            // the dot in ".<||<" is necessary to shut-up scalariform...
+            ps.scheduleForEntity(nodeRoot)(analysis(0))
+            ps.waitOnPhaseCompletion
+
+            ps(nodeRoot, TreeLevelKey) should be(FinalEP(nodeRoot, TreeLevel(0)))
+            ps(nodeRRoot, TreeLevelKey) should be(FinalEP(nodeRRoot, TreeLevel(1)))
+            ps(nodeRRRoot, TreeLevelKey) should be(FinalEP(nodeRRRoot, TreeLevel(2)))
+            ps(nodeLRRoot, TreeLevelKey) should be(FinalEP(nodeLRRoot, TreeLevel(2)))
+            ps(nodeLRoot, TreeLevelKey) should be(FinalEP(nodeLRoot, TreeLevel(1)))
+            ps(nodeLLRoot, TreeLevelKey) should be(FinalEP(nodeLLRoot, TreeLevel(2)))
+        }
+
+        it("should never pass a `PropertyIsLazilyComputed` to clients") {
+            import Palindromes.NoPalindrome
+            import Palindromes.Palindrome
+            import Palindromes.MaybePalindrome
+            val ppk = Palindromes.PalindromeKey
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ppk), Set.empty)
+
+            ps.registerLazyPropertyComputation(
+                ppk,
+                (e: Entity) ⇒ {
+                    val p = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
+                    Result(e, p)
+                }
+            )
+            ps.scheduleForEntity(
+                "aaa"
+            ) { s: String ⇒
+                    ps("a", ppk) match {
+                        case epk: EPK[_, _] ⇒
+                            IntermediateResult(
+                                s, MaybePalindrome,
+                                List(epk),
+                                (eps: SomeEPS) ⇒ {
+                                    if (eps.p == PropertyIsLazilyComputed)
+                                        fail("clients should never see PropertyIsLazilyComputed")
+                                    else
+                                        Result(s, Palindrome)
+                                }
+                            )
+                        case _ ⇒ fail("unexpected result")
+                    }
+                }
         }
 
         it("should be possible to execute an analysis which analyzes a huge circle") {
