@@ -107,7 +107,7 @@ class VirtualCallAggregatingEscapeAnalysis private ( final val project: SomeProj
 
         def continuation(other: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
             if (p eq PropertyIsLazilyComputed)
-                IntermediateResult(
+                return IntermediateResult(
                     fp, VirtualMethodEscapeProperty(Conditional(escapeState)), dependees, continuation
                 )
 

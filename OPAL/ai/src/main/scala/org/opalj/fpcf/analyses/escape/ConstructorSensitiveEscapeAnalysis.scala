@@ -159,7 +159,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         other: Entity, p: Property, u: UpdateType
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
         if (p eq PropertyIsLazilyComputed)
-            IntermediateResult(
+            return IntermediateResult(
                 context.entity,
                 Conditional(state.mostRestrictiveProperty),
                 state.dependees,
