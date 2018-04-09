@@ -80,6 +80,18 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 }
 
 /**
+ * Factory and extractor for [[EPK]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object EOptionP {
+
+    def unapply[E <: Entity, P <: Property](eOptP: EOptionP[E, P]): Option[(E, PropertyKey[P])] = {
+        Some((eOptP.e, eOptP.pk))
+    }
+}
+
+/**
  * A pairing of an [[Entity]] and an associated [[Property]] along with its state.
  *
  * @note entities are compared using reference equality and properties are compared using `equals`.
@@ -233,4 +245,52 @@ object NoProperty {
 
 }
 
-class EP(val e: Entity, val p: Property)
+/**
+ * Pairing of an `Entity` and a `Property`.
+ */
+case class EP(val e: Entity, val p: Property) {
+    override def toString: String = {
+        s"EP(e=$e@${System.identityHashCode(e).toHexString},p=$p)"
+    }
+}
+
+/*
+/**
+ * Mutable set of EOptionP values which contains at most one value per Entity/PropertyKind pair.
+ *
+ * This set enable efficient updates of the set since an EPK, IntermediateEP and a FinalEP
+ * share the same slot and a traversal of the set is not required when updating a value!
+ *
+ * @param data
+ */
+class EOptionPSet[E <: Entity, P <: Property] private(
+                    private val data : scala.collection.mutable.TreeMap[Entity, PropertyKey2EOptionPMap[E,P] ]
+                         ){
+
+    def put (eOptP : EOptionP[E,P]) : this.type = {
+        this
+    }
+
+    def remove(eOptP : EOptionP[E,P]) : this.type = {
+        data(eOptP)
+    }
+
+    def isEmpty = data.isEmpty
+
+    def nonEmpty = data.nonEmpty
+
+    def foreach[T](f : EOptionP => T) : Unit = {
+        ???
+    }
+}
+
+private[fpcf] class PropertyKey2EOptionPMap[E <: Entity, P <: Property] {
+    var data : Array[EOptionP[E,P]] = new Array[EOptionP[E,P]](4)
+    var size0 : Int
+} {
+
+    def remove(eOptP : EOptionP[E,P]) : Boolean /*isEmpty*/ = {
+        data(eOptP)
+    }
+}
+*/

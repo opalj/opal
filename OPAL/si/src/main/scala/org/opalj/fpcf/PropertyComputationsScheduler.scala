@@ -78,9 +78,15 @@ trait ComputationSpecification {
     require(derives.nonEmpty, "the computation does not derive any information")
 
     /**
+     * Has to be true if a computation is performed lazily. This is used to check that we
+     * never schedule multiple analyses which compute the same kind of property.
+     */
+    def isLazy: Boolean
+
+    /**
      * Called by the scheduler to start execution of this analysis.
      *
-     * The analysis may very well be a lazy computation!
+     * The analysis may very well be a lazy computation.
      */
     def schedule(ps: PropertyStore): Unit
 
@@ -95,11 +101,21 @@ trait ComputationSpecification {
 }
 
 class AnalysisScenario(
-        private[this] var ccs: Set[ComputationSpecification] = Set.empty
+        private[this] var ccs:                      Set[ComputationSpecification] = Set.empty,
+        private[this] var lazilyComputedProperties: Set[PropertyKind]             = Set.empty
 ) {
 
     def +=(cs: ComputationSpecification): Unit = this.synchronized {
         ccs += cs
+        if (cs.isLazy) {
+            if (cs.derives.exists(lazilyComputedProperties.contains)) {
+                throw new IllegalArgumentException(
+                    s"overlapping sets of lazily computed properties ($cs)"
+                )
+            } else {
+                lazilyComputedProperties ++= cs.derives
+            }
+        }
     }
 
     /**

@@ -162,11 +162,36 @@ abstract class PropertyStore {
     //
 
     /**
-     * Returns `true` if the given entity is known to the property store.
+     * Returns `true` if the given entity is known to the property store. Here, `isKnown` can mean
+     *  - that we actually have a property, or
+     *  - a computation is scheduled/running to compute some property, or
+     *  - an analysis has a dependency on some (not yet finally computed) property, or
+     *  - that the store just eagerly created the data structures necessary to associate
+     *    properties with the entity.
      */
     def isKnown(e: Entity): Boolean
 
+    /**
+     * Tests if we have a property for the entity with the respective kind. If `hasProperty`
+     * returns `true` a subsequent `apply` will return an `EPS` (no `EPK`).
+     */
+    final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
+
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
+
+    /**
+     * Returns the current property of the respected kind associated with the given entity.
+     *
+     * This method is generally only useful when the property store has reached a state of
+     * quiescence and – as a client – I do not want to distinguish between the case if
+     * a specific value was computed or not.
+     */
+    def currentPropertyOrFallback[P <: Property](e: Entity, pk: PropertyKey[P]): P = {
+        this(e, pk) match {
+            case EPS(_, p, _) ⇒ p.asInstanceOf[P]
+            case _            ⇒ PropertyKey.fallbackProperty(this, e, pk)
+        }
+    }
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -194,7 +219,7 @@ abstract class PropertyStore {
         apply(es, pmi.key)
     }
 
-    def apply[P <: Property](e: Entity, pk: PropertyKey[P]): EOptionP[e.type, P]
+    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
 
     /**
      * Returns the property of the respective property kind `pk` currently associated
@@ -212,13 +237,9 @@ abstract class PropertyStore {
      * @note   Querying a property may trigger the computation of the property.
      * @param  epk An entity/property key pair.
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
-     *         `EP(e,Property)` otherwise; in the later case `EP` may encapsulate a property that
-     *         is the final result of a computation `ep.isPropertyFinal === true` even though the
-     *         property as such is in general refinable. Hence, to determine if the property in
-     *         the current analysis context is final it is necessary to call the `EP` object's
-     *         `isPropertyFinal` method.
+     *         `Final|IntermediateEP(e,Property)` otherwise.
      */
-    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[epk.e.type, P]
+    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
 
     /**
      * Returns an iterator of the different properties associated with the given element.
@@ -300,7 +321,7 @@ abstract class PropertyStore {
      * queried. In general, this requires that lazy property computations are scheduled before
      * any eager analysis that potentially reads the value.
      */
-    def scheduleLazyPropertyComputation[P <: Property](
+    def registerLazyPropertyComputation[P <: Property](
         pk: PropertyKey[P],
         pc: SomePropertyComputation
     ): Unit
@@ -357,6 +378,10 @@ abstract class PropertyStore {
      * performed. I.e., first all _closed_ strongly connected components will be identified
      * that do not contain any properties for which we will compute (in a future phase) any
      * more refined values. Then the values will be made final.
+     *
+     * If the store is interrupted, waitOnPhaseCompletion will return as soon as all running
+     * computations are finished. By updating the isInterrupted state and calling
+     * waitOnPhaseCompletion again computations can be continued.
      *
      * @note   If a second thread is used to register [[PropertyComputation]] functions
      *         no guarantees are given; it is recommended to schedule all property computation

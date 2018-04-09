@@ -52,7 +52,9 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             derives:           Set[PropertyKind]
     ) extends ComputationSpecification {
 
-        def schedule(ps: PropertyStore): Unit = ???
+        override def isLazy = false
+
+        override def schedule(ps: PropertyStore): Unit = ???
 
     }
 

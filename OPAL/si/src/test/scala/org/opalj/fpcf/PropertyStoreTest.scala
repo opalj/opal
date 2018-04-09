@@ -28,9 +28,6 @@
  */
 package org.opalj.fpcf
 
-//import scala.collection.mutable
-//import scala.collection.{Set => SomeSet}
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.junit.runner.RunWith
@@ -55,7 +52,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
     describe("the property store") {
 
-        it("directly after creation it should be empty") {
+        it("directly after creation it should be empty (entities(...) and properties(...))") {
             val ps = createPropertyStore()
             ps.entities(_ ⇒ true) should be('Empty)
             ps.entities(Palindromes.Palindrome) should be('Empty)
@@ -68,12 +65,12 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
         it("should be possible to interrupt the computations") {
             val ps = createPropertyStore()
-            val doContinue = new CountDownLatch(1)
+            ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
+
             ps.scheduleForEntity("a") { e ⇒
+                ps.isInterrupted = () ⇒ true
                 val dependee = EPK("d", Palindromes.PalindromeKey)
                 ps(dependee) // we use a fake dependency...
-                doContinue.await() // halt this computation...
-                println("we have a result...")
                 IntermediateResult(
                     "a",
                     Palindromes.MaybePalindrome,
@@ -81,16 +78,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     (eps) ⇒ { Result("a", Palindromes.Palindrome) }
                 )
             }
-            val t: Thread = new Thread(() ⇒ ps.waitOnPhaseCompletion())
-            t.start()
-            ps.isInterrupted = () ⇒ true
+            ps.waitOnPhaseCompletion()
             ps.scheduleForEntity("d")(e ⇒ Result("d", Palindromes.Palindrome))
-            doContinue.countDown() // let's continue the "first computation"
-            t.join()
 
-            // test that the continuation did not lead to further tasks
             ps("a", Palindromes.PalindromeKey) should be(EPS("a", Palindromes.MaybePalindrome, false))
-            // test that the scheduled computation related to "d" was not scheduled at all!
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
 
             // let's test that – if we resume the computation – the results are as expected!
@@ -108,9 +99,41 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps(EPK("aa", pk)) should be(EPK("aa", pk))
         }
 
+        it("should be possible to test if a store has a property") {
+            import Palindromes.Palindrome
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindromes.PalindromeKey, Palindromes.SuperPalindromeKey), Set.empty)
+
+            val palindromeKey = Palindromes.PalindromeKey
+            val superPalindromeKey = Palindromes.SuperPalindromeKey
+
+            ps.hasProperty("aba", palindromeKey) should be(false)
+            ps.hasProperty("aba", superPalindromeKey) should be(false)
+
+            ps.set("aba", Palindrome)
+            ps.hasProperty("aba", palindromeKey) should be(true)
+            ps.hasProperty("cbc", palindromeKey) should be(false)
+            ps.hasProperty("aba", superPalindromeKey) should be(false)
+
+            ps.scheduleForEntity("a") { e ⇒
+                ps.isInterrupted = () ⇒ true
+                val dependee = EPK("d", Palindromes.PalindromeKey)
+                ps(dependee) // we use a fake dependency...
+                IntermediateResult(
+                    "a",
+                    Palindromes.MaybePalindrome,
+                    Seq(dependee),
+                    (eps) ⇒ { Result("a", Palindromes.Palindrome) }
+                )
+            }
+            ps.waitOnPhaseCompletion()
+            ps.hasProperty("a", palindromeKey) should be(true)
+            ps.hasProperty("d", palindromeKey) should be(false)
+        }
+
         // test SET
 
-        it("should set an entity's property immediately if set is used") {
+        it("set should set an entity's property immediately") {
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
             val pk = Palindromes.PalindromeKey
@@ -144,7 +167,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("abca", sppk) should be(EPS("abca", NoSuperPalindrome, true))
         }
 
-        it("should be able to enumerate all explicitly set properties of a entity") {
+        it("should be able to enumerate all explicitly set properties of an entity") {
             import Palindromes.Palindrome
             import Palindromes.SuperPalindrome
             import Palindromes.NoPalindrome
@@ -180,12 +203,13 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             import Palindromes.NoPalindrome
 
             val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
+
             val pk = Palindromes.PalindromeKey
             val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
             ps.scheduleForEntities(es) { e ⇒
                 Result(e, if (e.reverse == e) Palindrome else NoPalindrome)
             }
-
             ps.waitOnPhaseCompletion()
 
             ps.entities(pk).map(_.e).toSet should be(es)
@@ -212,10 +236,11 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
 
-            val ps = createPropertyStore()
             val pk = Palindromes.PalindromeKey
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(pk), Set.empty)
 
-            ps.scheduleLazyPropertyComputation(
+            ps.registerLazyPropertyComputation(
                 pk,
                 (e: Entity) ⇒ {
                     val p =
@@ -237,11 +262,12 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
 
-            val ps = createPropertyStore()
             val pk = Palindromes.PalindromeKey
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(pk), Set.empty)
 
             val invocationCount = new AtomicInteger(0)
-            ps.scheduleLazyPropertyComputation(
+            ps.registerLazyPropertyComputation(
                 pk,
                 (e: Entity) ⇒ {
                     invocationCount.incrementAndGet()
@@ -266,10 +292,12 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             import Palindromes.MaybeSuperPalindrome
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
+
             val ps = createPropertyStore()
+            ps.setupPhase(Set(ppk, sppk), Set.empty)
 
             val invocationCount = new AtomicInteger(0)
-            ps.scheduleLazyPropertyComputation(
+            ps.registerLazyPropertyComputation(
                 ppk,
                 (e: Entity) ⇒ {
                     invocationCount.incrementAndGet()
@@ -277,7 +305,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     Result(e, p)
                 }
             )
-            ps.scheduleLazyPropertyComputation(
+            ps.registerLazyPropertyComputation(
                 sppk,
                 (e: Entity) ⇒ {
                     invocationCount.incrementAndGet()
@@ -318,12 +346,75 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("e", ppk) should be(EPS("e", Palindrome, true))
             ps("e", sppk) should be(EPS("e", SuperPalindrome, true))
         }
+
+        it("should be possible to have computations with multiple updates") {
+
+            // let's compute the set of reached values...
+            case class Node(val i: Int, values: Set[String])
+
+        }
+
+        it("should be possible to execute an analysis which analyzes a huge circle") {
+            import scala.collection.mutable
+
+            val testSizes = Set(1, 5, 50000)
+            for (testSize ← testSizes) {
+                // 1. we create a ((very) long) chain
+                val firstNode = Node(0.toString)
+                val allNodes = mutable.Set(firstNode)
+                var prevNode = firstNode
+                for { i ← 1 to testSize } {
+                    val nextNode = Node(i.toString)
+                    allNodes += nextNode
+                    prevNode.targets += nextNode
+                    prevNode = nextNode
+                }
+                prevNode.targets += firstNode
+
+                // 2. we create the store
+                val store = createPropertyStore()
+                store.setupPhase(Set(Purity.Key), Set.empty)
+
+                def purityAnalysis(node: Node): PropertyComputationResult = {
+                    def c(successorNode: SomeEOptionP): PropertyComputationResult = {
+                        // HERE - For this test case only, we can simple get to the previous
+                        // node from the one that was updated.
+                        successorNode match {
+
+                            case epk: EPK[_, _] ⇒
+                                IntermediateResult(node, Pure, Iterable(epk), c)
+
+                            case eps @ IntermediateEP(_, Pure) ⇒
+                                IntermediateResult(node, Pure, Iterable(eps), c)
+
+                            // required when we resolve the cycle
+                            case FinalEP(_, Pure)          ⇒ Result(node, Pure)
+
+                            // the following three cases should never happen...
+                            case IntermediateEP(_, Impure) ⇒ ???
+                            case FinalEP(_, Impure)        ⇒ ???
+                        }
+                    }: PropertyComputationResult
+
+                    val nextNode = node.targets.head // HERE: we always have only one successor
+                    c(store(nextNode, Purity.Key))
+                }
+                // 4. execute analysis
+                store.scheduleForEntities(allNodes)(purityAnalysis)
+                store.waitOnPhaseCompletion()
+
+                // 5. let's evaluate the result
+                store.entities(Purity.Key) foreach { ep ⇒
+                    if (ep.p != Pure) {
+                        info(store.toString(true))
+                        fail(s"Node(${ep.e}) is not Pure (${ep.p})")
+                    }
+                }
+
+                info(s"test succeeded with $testSize node(s) in a circle")
+            }
+        }
     }
-}
-
-class SequentialPropertyStoreTest extends PropertyStoreTest {
-
-    def createPropertyStore(): PropertyStore = SequentialPropertyStore()
 }
 
 // Test fixture related to a simple marker property
@@ -384,3 +475,27 @@ object Palindromes {
     case object MaybeSuperPalindrome extends SuperPalindromeProperty
 }
 
+sealed trait Purity extends Property {
+    final type Self = Purity
+    final def key = Purity.Key
+}
+object Purity {
+    final val Key = PropertyKey.create[Purity]("Purity", Impure)
+}
+case object Pure extends Purity
+case object Impure extends Purity
+
+class Node(
+        val name:    String,
+        val targets: scala.collection.mutable.Set[Node] = scala.collection.mutable.Set.empty
+) {
+
+    override def hashCode: Int = name.hashCode()
+    override def equals(other: Any): Boolean = other match {
+        case that: Node ⇒ this.name equals that.name
+        case _          ⇒ false
+    }
+
+    override def toString: String = name // RECALL: Nodes are potentially used in cycles.
+}
+object Node { def apply(name: String) = new Node(name) }
