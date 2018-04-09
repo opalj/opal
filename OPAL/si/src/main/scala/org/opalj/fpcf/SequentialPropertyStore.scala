@@ -49,7 +49,6 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - we have a `depender`.
  */
 class SequentialPropertyStore private (
-
         val ctx: Map[Type, AnyRef]
 )(
         implicit

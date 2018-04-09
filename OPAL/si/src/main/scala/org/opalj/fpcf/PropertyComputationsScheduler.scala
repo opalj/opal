@@ -108,13 +108,13 @@ class AnalysisScenario(
     def +=(cs: ComputationSpecification): Unit = this.synchronized {
         ccs += cs
         if (cs.isLazy) {
-            if (cs.derives.exists(lazilyComputedProperties.contains)) {
-                throw new IllegalArgumentException(
-                    s"overlapping sets of lazily computed properties ($cs)"
+            cs.derives.find(lazilyComputedProperties.contains).foreach { p ⇒
+                throw new SpecificationViolation(
+                    s"registration of $cs failed; $p is already computed by an analysis"
                 )
-            } else {
-                lazilyComputedProperties ++= cs.derives
             }
+
+            lazilyComputedProperties ++= cs.derives
         }
     }
 
@@ -173,22 +173,14 @@ class AnalysisScenario(
         implicit
         logContext: LogContext
     ): Schedule = this.synchronized {
-        // 1. check that each property is derived by only one analysis
+
         var derived: Set[PropertyKind] = Set.empty
         var uses: Set[PropertyKind] = Set.empty
-        ccs.foreach { cs ⇒
-            cs.derives.foreach { pk ⇒
-                if (derived.contains(pk)) {
-                    val pkName = PropertyKey.name(pk)
-                    val message = s"the property $pkName is derived by multiple analyses"
-                    throw SpecificationViolation(message)
-                } else {
-                    derived += pk
-                }
-            }
+        ccs foreach { cs ⇒
+            cs.derives foreach { pk ⇒ derived += pk }
             uses ++= cs.uses
         }
-        // 2. check for properties that are not derived
+        // 1. check for properties that are not derived
         val underived = uses -- derived
         if (underived.nonEmpty) {
             val underivedInfo = underived.iterator.map(up ⇒ PropertyKey.name(up)).mkString(", ")
@@ -196,10 +188,10 @@ class AnalysisScenario(
             OPALLogger.warn("analysis configuration", message)
         }
 
-        // 3. compute the schedule
+        // 2. compute the schedule
         var batches: Chain[Chain[ComputationSpecification]] = Naught // MUTATED!!!!
         // Idea: to compute the batches we compute which properties are computed in which round.
-        // 3.1. create dependency graph between analyses
+        // 2.1. create dependency graph between analyses
 
         val computationDependencies = this.computationDependencies
         while (computationDependencies.nonEmpty) {
@@ -237,7 +229,7 @@ case class Schedule(
             val computedProperties =
                 batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
             val openProperties =
-                batches.dropWhile(_ ne batch).tail. // collect properties derived by remaining batches
+                batches.dropWhile(_ ne batch).tail. // collect properties derived in the future
                     map(batch ⇒ batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)).
                     reduceOption((l, r) ⇒ l ++ r).
                     getOrElse(Set.empty)
