@@ -389,6 +389,8 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             val nodeF = Node("f")
             val nodeG = Node("g")
             val nodeH = Node("h")
+            val nodeI = Node("i")
+            val nodeJ = Node("j")
             val nodeR = Node("r")
             nodeA.targets += nodeB // the graph:
             nodeA.targets += nodeF // a -> f
@@ -396,6 +398,12 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             nodeA.targets += nodeG // a -> g
             nodeG.targets += nodeH //      g -> h
             nodeA.targets += nodeH // a -> h
+            nodeF.targets += nodeJ // f -> j
+            nodeF.targets += nodeI // f -> i
+            nodeH.targets += nodeJ // h <-> j
+            nodeJ.targets += nodeH // ...
+            nodeJ.targets += nodeI // j <-> i
+            nodeI.targets += nodeJ // ...
             nodeB.targets += nodeC // a -> b -> c
             nodeB.targets += nodeD //        ↘︎  d
             nodeD.targets += nodeD //           d ⟲
@@ -403,7 +411,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             nodeE.targets += nodeR //                e -> r
             nodeR.targets += nodeB //       ↖︎------------↵︎
             val nodeEntities = List[Node](
-                nodeA, nodeB, nodeC, nodeD, nodeE, nodeF, nodeG, nodeH, nodeR
+                nodeA, nodeB, nodeC, nodeD, nodeE, nodeF, nodeG, nodeH, nodeI, nodeJ, nodeR
             )
 
             object ReachableNodes {
@@ -451,9 +459,12 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     val newUB = ReachableNodes(allDependees)
 
                     // Adapt the set of dependeePs to ensure termination
-                    dependeePs = dependeePs.filter { _.e ne dependee.e }
                     if (!eps.isFinal) {
-                        dependeePs ++= Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
+                        dependeePs =
+                            dependeePs.filter { _.e ne dependee.e } ++
+                                Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
+                    } else {
+                        dependeePs = Set.empty
                     }
                     if (dependeePs.nonEmpty)
                         IntermediateResult(n, AllNodes, newUB, dependeePs, c)
@@ -488,6 +499,9 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             // the graph:
             // a -> f -> h
+            // a -> f -> j
+            // a -> f -> i
+            //           h <-> j <-> i
             // a -> g -> h
             // a -> h
             // a -> b -> c
