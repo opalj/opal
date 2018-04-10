@@ -49,10 +49,9 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     case class BasicComputationSpecification(
             override val name: String,
             uses:              Set[PropertyKind],
-            derives:           Set[PropertyKind]
+            derives:           Set[PropertyKind],
+            isLazy:            Boolean           = false
     ) extends ComputationSpecification {
-
-        override def isLazy = false
 
         override def schedule(ps: PropertyStore): Unit = ???
 
@@ -62,10 +61,10 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
     val pks: Array[PropertyKind] = new Array[PropertyKind](11)
     (0 to 10).foreach { i ⇒
-        pks(i) = PropertyKey.create[Null](
+        pks(i) = PropertyKey.create[Null, Null](
             "p"+(i),
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
+            (ps: PropertyStore, eps: SomeEPS) ⇒ ???
         )
     }
 
@@ -123,6 +122,12 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         Set(pks(10))
     )
 
+    val c10 = BasicComputationSpecification(
+        "c10",
+        Set.empty,
+        Set(pks(10)) // this one also derives property 10
+    )
+
     //**********************************************************************************************
     //
     // TESTS
@@ -138,6 +143,13 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         it("should be possible to create an empty schedule") {
             val batches = (new AnalysisScenario(Set())).computeSchedule.batches
             batches should be('empty)
+        }
+
+        it("should be possible to create a schedule where a property is computed by multiple computations") {
+            val batches = (new AnalysisScenario(Set(c9, c10))).computeSchedule.batches
+            batches.size should be(2)
+            batches.head.head should be(c10)
+            batches.tail.head.head should be(c9)
         }
 
         it("should be possible to create a schedule with one computation") {

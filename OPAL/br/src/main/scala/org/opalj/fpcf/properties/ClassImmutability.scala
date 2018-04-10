@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.ObjectType
+
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = ClassImmutability
@@ -132,7 +134,7 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
         MutableObjectDueToUnresolvableDependency,
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable (type and object wise) hence, we can leverage the "immutability"
-        (_: PropertyStore, eps: SomeEPS) ⇒ FinalEP(eps.e, ImmutableObject)
+        (_: PropertyStore, eps: EPS[ObjectType, ClassImmutability]) ⇒ FinalEP(eps.e, ImmutableObject)
     )
 }
 
@@ -148,7 +150,7 @@ case object ImmutableObject extends ClassImmutability {
 
     final val correspondingTypeImmutability = ImmutableType
 
-    override def checkIsValidSuccessorOf(other: Property): Unit = {
+    override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
         if (other != ImmutableObject) {
             throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
         }
@@ -166,7 +168,7 @@ case object ImmutableContainer extends ClassImmutability {
 
     final val correspondingTypeImmutability = ImmutableContainerType
 
-    override def checkIsValidSuccessorOf(other: Property): Unit = {
+    override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
         if (other == ImmutableObject) {
             throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
         }
@@ -180,7 +182,7 @@ sealed trait MutableObject extends ClassImmutability {
     def reason: String
     final val correspondingTypeImmutability = MutableType
 
-    override def checkIsValidSuccessorOf(other: Property): Unit = {
+    override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
         if (other == ImmutableObject || other == ImmutableContainer) {
             throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this")
         }

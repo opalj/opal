@@ -69,9 +69,24 @@ import org.opalj.fpcf.properties.SelfReferenceLeakage
  *
  * @author Michael Eichberg
  */
-class SelfReferenceLeakageAnalysis(val debug: Boolean) {
+class L0SelfReferenceLeakageAnalysis(
+                                  val project : SomeProject,
+                                      val debug: Boolean
+                                  ) extends FPCFAnalysis {
 
     val SelfReferenceLeakage = org.opalj.fpcf.properties.SelfReferenceLeakage.Key
+
+
+    /**
+     * Analyzes the given method to determine if it leaks the self reference.
+     *
+     * Currently, this method just returns `true`; it is intended to be overriden by
+     * subclasses.
+     */
+    def leaksSelfReference(method: Method): Boolean = {
+        // e.g., use AI()...
+        return true;
+    }
 
     /**
      * Determines for the given class file if any method may leak the self reference (`this`).
@@ -82,9 +97,6 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
     private[this] def determineSelfReferenceLeakageContinuation(
         classFile:       ClassFile,
         immediateResult: Boolean
-    )(
-        implicit
-        project: SomeProject
     ): PropertyComputationResult = {
 
         import project.logContext
@@ -137,13 +149,6 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
             return false;
         }
 
-        // This method performs a thorough data-flow analysis to determine if the self reference
-        // (`this`) is eventually leaked.
-        def leaksSelfReference(method: Method): Boolean = {
-            // AI()...
-            return true;
-        }
-
         val doesLeakSelfReference =
             classFile.methods exists { m ⇒
                 if (m.isNative ||
@@ -185,13 +190,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
         }
     }
 
-    def determineSelfReferenceLeakage(
-        classFile: ClassFile
-    )(
-        implicit
-        project: SomeProject, store: PropertyStore
-    ): PropertyComputationResult = {
-        import project.logContext
+    def determineSelfReferenceLeakage(classFile: ClassFile): PropertyComputationResult = {
 
         if (classFile.thisType eq ObjectType.Object) {
             if (debug)
@@ -202,7 +201,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
             return Result(classFile, DoesNotLeakSelfReference);
         }
 
-        // Let's check the supertypes w.r.t. their leakage property.
+        // Let's check the direct supertypes w.r.t. their leakage property.
         val superclassType = classFile.superclassType.get
         val superclassFileOption = project.classFile(superclassType)
         val interfaceTypesOption = classFile.interfaceTypes.map(project.classFile)
@@ -223,7 +222,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
             if (superclassType ne ObjectType.Object)
                 superclassFileOption.get +: interfaceTypesOption.map(_.get)
             else
-                interfaceTypesOption.map(_.get)
+                Seq.empty
 
         if (superClassFiles.nonEmpty) {
             if (debug)
@@ -233,30 +232,26 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
                 )
             var dependees = Map.empty[Entity, EOptionP[Entity, SelfReferenceLeakage]]
 
-            store(superClassFiles, SelfReferenceLeakage).foreach {
-                case EPS(_, DoesNotLeakSelfReference, isFinal) ⇒
-                    assert(isFinal)
-                // otherwise: ignore/OK!
+            propertyStore(superClassFiles, SelfReferenceLeakage) foreach {
+                case epk @ EPK(e, _) ⇒                    dependees += ((e, epk))
 
-                case eps @ EPS(e, LeaksSelfReference, isFinal) ⇒
-                    if (debug)
-                        OPALLogger.debug(
-                            "analysis result",
-                            s"${classFile.thisType.toJava} leaks its self reference via a supertype"
-                        )
+                case eps@ EPS(_, DoesNotLeakSelfReference, isFinal) ⇒
                     if (isFinal)
                         return Result(classFile, LeaksSelfReference);
                     else
                         dependees += ((e, eps))
 
-                case epk @ EPK(e, _) ⇒
-                    dependees += ((e, epk))
+                case EPS(_, LeaksSelfReference, isFinal) ⇒
+                    assert(isFinal)
+                    return Result(classFile, LeaksSelfReference);
+
             }
 
             if (dependees.isEmpty) {
                 determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
             } else {
-                def c(e: Entity, p: Property, isFinal: Boolean): PropertyComputationResult = {
+                def c(eps : SomeEPS): PropertyComputationResult = {
+                    val EPS(e, p, isFinal) = eps
                     p match {
                         case LeaksSelfReference ⇒
                             if (isFinal) {
@@ -281,13 +276,23 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
     }
 }
 
-object SelfReferenceLeakageAnalysis {
+object L0SelfReferenceLeakageAnalysis extends FPCFEagerAnalysisScheduler {
 
-    def start(implicit project: SomeProject): Unit = {
-        implicit val ps = project.get(PropertyStoreKey)
+    def uses: Set[PropertyKind] = Set.empty
+
+    def derives: Set[PropertyKind] = Set(SelfReferenceLeakage.Key)
+
+    /**
+     * Starts the analysis for the given `project`. This method is typically implicitly
+     * called by the [[FPCFAnalysesManager]].
+     */
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val debug = project.config.getBoolean("org.opalj.fcpf.analysis.selfreferenceleakage.debug")
-        val analysis = new SelfReferenceLeakageAnalysis(debug)
-        ps.scheduleForEntities(project.allProjectClassFiles)(analysis.determineSelfReferenceLeakage)
+        val analysis = new L0SelfReferenceLeakageAnalysis(project, debug)
+        import analysis.determineSelfReferenceLeakage
+        import project.allProjectClassFiles
+        propertyStore.scheduleForEntities(allProjectClassFiles)(determineSelfReferenceLeakage)
+        analysis
     }
 
 }

@@ -91,7 +91,7 @@ object NoResult extends PropertyComputationResult {
 /**
  * Encapsulates an intermediate result of the computation of a property.
  *
- * Intermediate results are to be used if further refinements are possible and may happen.
+ * Intermediate results are to be used if further refinements are possible.
  * Hence, if a property of any of the dependees changes (outgoing dependencies),
  * the given continuation `c` is invoked.
  *
@@ -108,6 +108,9 @@ object NoResult extends PropertyComputationResult {
  *      A dependee must have been queried; directly returning a dependee without a prior querying
  *      of the property store can lead to unexpected results.
  *
+ *      An `IntermediateResult` returned by an `OnUpdateContinuation` must contain the EPS given
+ *      to the continuation function or a newer EPS.
+ *
  * @param c
  *      The function which is called if a property of any of the dependees is updated.
  *      `c` does not have to be thread safe unless the same instance of `c` is returned multiple
@@ -120,31 +123,19 @@ object NoResult extends PropertyComputationResult {
  * @note All elements on which the result declares to be dependent on must have been queried
  *      before (using one of the `apply` functions of the property store.)
  */
-case class IntermediateResult(
+case class IntermediateResult[P <: Property](
         e:         Entity,
-        p:         Property,
+        lb:        P,
+        ub:        P,
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
 
     assert(e ne null)
-    assert(p ne null)
+    assert(lb ne null)
+    assert(ub ne null)
     assert(c ne null, "onUpdateContinuation is null")
     assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
-
-    // TODO Make it possible to activate the assertions!
-    //    // End-User oriented assertion:
-    //    assert(
-    //        dependees.map(eOptP ⇒ eOptP.toEPK).toSet.size == dependees.size,
-    //        s"the intermediate result's dependees list ${dependees.mkString("(", ",", ")")} "+
-    //            "contains duplicate entries (E - PK pairs)!"
-    //    )
-    //
-    //    // End-User oriented assertion:
-    //    assert(
-    //        { val dependerEPK = EPK(e, p.key); !dependees.exists(_ == dependerEPK) },
-    //        s"the computation of ${EPK(e, p.key)} depends on its own: ${dependees.find(_ == EPK(e, p.key))}"
-    //    )
 
     private[fpcf] final def id = IntermediateResult.id
 
@@ -152,10 +143,12 @@ case class IntermediateResult(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(e, p, otherDependeeEs, _) if (this.e eq e) && this.p == p ⇒
+            case IntermediateResult(e, lb, ub, otherDependees, _) if (
+                (this.e eq e) && this.lb == lb && this.ub == ub
+            ) ⇒
                 val dependees = this.dependees
-                dependees.size == otherDependeeEs.size &&
-                    dependees.forall(thisDependee ⇒ otherDependeeEs.exists(_ == thisDependee))
+                dependees.size == otherDependees.size &&
+                    dependees.forall(thisDependee ⇒ otherDependees.exists(_ == thisDependee))
 
             case _ ⇒
                 false
@@ -163,7 +156,7 @@ case class IntermediateResult(
     }
 
     override def toString: String = {
-        s"IntermediateResult($e,$p,dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+        s"IntermediateResult($e,lb=$lb,ub=$ub,dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
 private[fpcf] object IntermediateResult {
@@ -234,10 +227,10 @@ private[fpcf] object Results {
  *          and `Some(NewProperty)` otherwise.
  * @tparam P The type of the property.
  */
-case class PartialResult[P <: Property](
-        e:  Entity,
+case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
+        e:  E,
         pk: PropertyKey[P],
-        u:  Option[P] ⇒ Option[P]
+        u:  EOptionP[E, P] ⇒ Option[EPS[E, P]]
 ) extends PropertyComputationResult {
 
     private[fpcf] final def id = PartialResult.id
@@ -245,3 +238,4 @@ case class PartialResult[P <: Property](
 }
 private[fpcf] object PartialResult { private[fpcf] final val id = 9 }
 
+case class PropertyBounds[P <: Property](lb: P, ub: P)

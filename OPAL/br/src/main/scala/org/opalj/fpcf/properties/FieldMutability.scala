@@ -108,7 +108,7 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
                         throw new IllegalArgumentException(m)
                 }
             },
-            (_, someEPS: SomeEPS) ⇒ FinalEP(someEPS.e, someEPS.p)
+            (_, eps: EPS[Field, FieldMutability]) ⇒ eps.toUBEP
         )
     }
 

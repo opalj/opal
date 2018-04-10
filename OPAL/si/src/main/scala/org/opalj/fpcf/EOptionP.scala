@@ -62,20 +62,31 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def isFinal: Boolean
 
-    final def isRefineable: Boolean = !isFinal
+    final def isRefinable: Boolean = !isFinal
 
     /**
-     * Combines the test if we have a property and – if we have one – if it is equal (by
+     * Combines the test if we have a final property and – if we have one – if it is equal (by
      * means of equality check) to the given one.
      */
-    def is[T >: P](p: T): Boolean = this.hasProperty && p == this.p
+    def is[T >: P](p: T): Boolean = this.hasProperty && isFinal && this.ub == p
 
     /**
-     * Returns the property if it is available otherwise an `UnsupportedOperationException` is
-     * thrown.
+     * Returns the upper bound of the property if it is available otherwise an
+     * `UnsupportedOperationException` is thrown.
+     *
+     * @note If the property is final, the lb (and ub) will return the final property `p`.
      */
     @throws[UnsupportedOperationException]("if no property is available")
-    def p: P
+    def ub: P
+
+    /**
+     * Returns the lower bound of the property if it is available
+     * otherwise an `UnsupportedOperationException` is thrown.
+     *
+     * @note If the property is final, the lb (and ub) will return the final property `p`.
+     */
+    @throws[UnsupportedOperationException]("if no property is available")
+    def lb: P
 
 }
 
@@ -100,29 +111,29 @@ object EOptionP {
  */
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
-    override val p: P
-
-    final override def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
+    final override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
-    final override def hasProperty: Boolean = true
+    final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
-    final def toEP = new EP(e, p)
+    final override def hasProperty: Boolean = true
 
     final override def equals(other: Any): Boolean = {
         other match {
             case that: EPS[_, _] ⇒
-                (that.e eq this.e) && this.isFinal == that.isFinal && this.p == that.p
+                (that.e eq this.e) && this.lb == that.lb && this.ub == that.ub
             case _ ⇒
                 false
         }
     }
 
-    final override def hashCode: Int = (e.hashCode() * 727 + p.hashCode()) * (if (isFinal) 3 else 5)
+    final override def hashCode: Int = {
+        ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
+    }
 
     final override def toString: String = {
-        s"EPS(${e}@${System.identityHashCode(e).toHexString},$p,isFinal=$isFinal)"
+        s"EPS(${e}@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,(derived)isFinal=$isFinal))"
     }
 }
 
@@ -133,38 +144,48 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
  */
 object EPS {
 
-    def apply[E <: Entity, P <: Property](e: E, p: P, isFinal: Boolean): EPS[E, P] = {
-        if (isFinal)
-            FinalEP(e, p)
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
+        if (lb == ub)
+            FinalEP(e, ub)
         else
-            IntermediateEP(e, p)
+            IntermediateEP(e, lb, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = {
-        Some((eps.e, eps.p, eps.isFinal))
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
+        Some((eps.e, eps.lb, eps.ub))
     }
 
 }
 
-final class IntermediateEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS[E, P] {
+final class IntermediateEP[+E <: Entity, +P <: Property](
+        val e:  E,
+        val lb: P,
+        val ub: P
+) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
 }
 
 object IntermediateEP {
 
-    def apply[E <: Entity, P <: Property](e: E, p: P): IntermediateEP[E, P] = {
-        new IntermediateEP(e, p)
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): IntermediateEP[E, P] = {
+        new IntermediateEP(e, lb, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: IntermediateEP[E, P]): Option[(E, P)] = {
-        Some((eps.e, eps.p))
+    def unapply[E <: Entity, P <: Property](eps: IntermediateEP[E, P]): Option[(E, P, P)] = {
+        Some((eps.e, eps.lb, eps.ub))
     }
 }
 
-final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS[E, P] {
+final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
     override def isFinal: Boolean = true
+
+    final override def lb: P = ub
+
+    final def p: P = ub // or lb
+
+    final def toEP = new EP(e, p)
 
 }
 
@@ -173,14 +194,8 @@ object FinalEP {
     def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
 
     def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Option[(E, P)] = {
-        Some((eps.e, eps.p))
+        Some((eps.e, eps.lb))
     }
-
-}
-
-object SomeProperty {
-
-    def unapply[P <: Property](eps: EPS[_, P]): Option[P] = Some(eps.p)
 
 }
 
@@ -197,7 +212,9 @@ final class EPK[+E <: Entity, +P <: Property](
         val pk: PropertyKey[P]
 ) extends EOptionP[E, P] {
 
-    override def p: Nothing = throw new UnsupportedOperationException()
+    override def lb: Nothing = throw new UnsupportedOperationException()
+
+    override def ub: Nothing = throw new UnsupportedOperationException()
 
     override def isFinal: Boolean = false
 
@@ -246,51 +263,10 @@ object NoProperty {
 }
 
 /**
- * Pairing of an `Entity` and a `Property`.
+ * Pairing of an `Entity` and a single, final `Property`.
  */
-case class EP(val e: Entity, val p: Property) {
+case class EP[+E <: Entity, +P <: Property](e: E, p: P) {
     override def toString: String = {
         s"EP(e=$e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 }
-
-/*
-/**
- * Mutable set of EOptionP values which contains at most one value per Entity/PropertyKind pair.
- *
- * This set enable efficient updates of the set since an EPK, IntermediateEP and a FinalEP
- * share the same slot and a traversal of the set is not required when updating a value!
- *
- * @param data
- */
-class EOptionPSet[E <: Entity, P <: Property] private(
-                    private val data : scala.collection.mutable.TreeMap[Entity, PropertyKey2EOptionPMap[E,P] ]
-                         ){
-
-    def put (eOptP : EOptionP[E,P]) : this.type = {
-        this
-    }
-
-    def remove(eOptP : EOptionP[E,P]) : this.type = {
-        data(eOptP)
-    }
-
-    def isEmpty = data.isEmpty
-
-    def nonEmpty = data.nonEmpty
-
-    def foreach[T](f : EOptionP => T) : Unit = {
-        ???
-    }
-}
-
-private[fpcf] class PropertyKey2EOptionPMap[E <: Entity, P <: Property] {
-    var data : Array[EOptionP[E,P]] = new Array[EOptionP[E,P]](4)
-    var size0 : Int
-} {
-
-    def remove(eOptP : EOptionP[E,P]) : Boolean /*isEmpty*/ = {
-        data(eOptP)
-    }
-}
-*/

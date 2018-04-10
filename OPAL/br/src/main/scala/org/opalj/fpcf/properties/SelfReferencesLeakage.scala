@@ -49,7 +49,7 @@ object SelfReferenceLeakage {
 }
 
 /**
- * Models the top of the self-refrences leakage lattice; always has to be committed using `Result`.
+ * Models the top of the self-references leakage lattice.
  */
 case object DoesNotLeakSelfReference extends SelfReferenceLeakage
 

@@ -31,11 +31,11 @@ package org.opalj.fpcf
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.junit.runner.RunWith
-import org.opalj.fpcf.Palindromes.SuperPalindromeProperty
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterEach
+
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -46,6 +46,9 @@ import org.opalj.log.GlobalLogContext
 @RunWith(classOf[JUnitRunner])
 abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
 
+    import Palindromes.NoPalindrome
+    import Palindromes.Palindrome
+
     implicit val logContext = GlobalLogContext
 
     def createPropertyStore(): PropertyStore
@@ -55,7 +58,9 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         it("directly after creation it should be empty (entities(...) and properties(...))") {
             val ps = createPropertyStore()
             ps.entities(_ ⇒ true) should be('Empty)
-            ps.entities(Palindromes.Palindrome) should be('Empty)
+            ps.entities(Palindromes.Palindrome, Palindromes.Palindrome) should be('Empty)
+            ps.entities(Palindromes.NoPalindrome, Palindromes.Palindrome) should be('Empty)
+            ps.entities(Palindromes.NoPalindrome, Palindromes.NoPalindrome) should be('Empty)
             ps.entities(Palindromes.PalindromeKey) should be('Empty)
 
             ps.properties("<DOES NOT EXIST>") should be('Empty)
@@ -73,22 +78,23 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 ps(dependee) // we use a fake dependency...
                 IntermediateResult(
                     "a",
-                    Palindromes.MaybePalindrome,
+                    NoPalindrome,
+                    Palindrome,
                     Seq(dependee),
-                    (eps) ⇒ { Result("a", Palindromes.Palindrome) }
+                    (eps) ⇒ { Result("a", Palindrome) }
                 )
             }
             ps.waitOnPhaseCompletion()
-            ps.scheduleForEntity("d")(e ⇒ Result("d", Palindromes.Palindrome))
+            ps.scheduleForEntity("d")(e ⇒ Result("d", Palindrome))
 
-            ps("a", Palindromes.PalindromeKey) should be(EPS("a", Palindromes.MaybePalindrome, false))
+            ps("a", Palindromes.PalindromeKey) should be(IntermediateEP("a", NoPalindrome, Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
 
             // let's test that – if we resume the computation – the results are as expected!
             ps.isInterrupted = () ⇒ false
             ps.waitOnPhaseCompletion()
-            ps("a", Palindromes.PalindromeKey) should be(EPS("a", Palindromes.Palindrome, true))
-            ps("d", Palindromes.PalindromeKey) should be(EPS("d", Palindromes.Palindrome, true))
+            ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
+            ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
         }
 
         it("should be able to perform queries w.r.t. unknown entities") {
@@ -121,9 +127,9 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 ps(dependee) // we use a fake dependency...
                 IntermediateResult(
                     "a",
-                    Palindromes.MaybePalindrome,
+                    NoPalindrome, Palindrome,
                     Seq(dependee),
-                    (eps) ⇒ { Result("a", Palindromes.Palindrome) }
+                    (eps) ⇒ { Result("a", Palindrome) }
                 )
             }
             ps.waitOnPhaseCompletion()
@@ -140,10 +146,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             val ps = createPropertyStore()
 
             ps.set("aba", Palindrome)
-            ps("aba", pk) should be(EPS("aba", Palindrome, true))
+            ps("aba", pk) should be(FinalEP("aba", Palindrome))
 
             ps.set("abca", NoPalindrome)
-            ps("abca", pk) should be(EPS("abca", NoPalindrome, true))
+            ps("abca", pk) should be(FinalEP("abca", NoPalindrome))
         }
 
         it("should allow setting different properties w.r.t. one entity") {
@@ -158,13 +164,13 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps.set("aba", Palindrome)
             ps.set("aba", SuperPalindrome)
 
-            ps("aba", ppk) should be(EPS("aba", Palindrome, true))
-            ps("aba", sppk) should be(EPS("aba", SuperPalindrome, true))
+            ps("aba", ppk) should be(FinalEP("aba", Palindrome))
+            ps("aba", sppk) should be(FinalEP("aba", SuperPalindrome))
 
             ps.set("abca", NoPalindrome)
             ps.set("abca", NoSuperPalindrome)
-            ps("abca", ppk) should be(EPS("abca", NoPalindrome, true))
-            ps("abca", sppk) should be(EPS("abca", NoSuperPalindrome, true))
+            ps("abca", ppk) should be(FinalEP("abca", NoPalindrome))
+            ps("abca", sppk) should be(FinalEP("abca", NoSuperPalindrome))
         }
 
         it("should be able to enumerate all explicitly set properties of an entity") {
@@ -184,7 +190,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps.entities(ppk).map(_.e).toSet should be(Set("aba", "abca"))
             ps.entities(sppk).map(_.e).toSet should be(Set("aba", "abca"))
 
-            ps.properties("aba").toSet should be(Set(Palindrome, SuperPalindrome))
+            ps.properties("aba").toSet should be(Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome)))
         }
 
         it("should not set an entity's property if it already has a property") {
@@ -213,22 +219,23 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps.waitOnPhaseCompletion()
 
             ps.entities(pk).map(_.e).toSet should be(es)
-            ps.entities(p ⇒ p == Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
-            ps.entities(p ⇒ p == NoPalindrome).toSet should be(Set("fd", "zu"))
-            ps.entities(Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
-            ps.entities(NoPalindrome).toSet should be(Set("fd", "zu"))
+            ps.entities(eps ⇒ eps.lb == Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
+            ps.entities(eps ⇒ eps.ub == NoPalindrome).toSet should be(Set("fd", "zu"))
+            ps.entities(Palindrome, Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
+            ps.entities(NoPalindrome, NoPalindrome).toSet should be(Set("fd", "zu"))
             ps.entities(pk).toSet should be(Set(
-                EPS("aba", Palindrome, true),
-                EPS("cc", Palindrome, true),
-                EPS("d", Palindrome, true),
-                EPS("fd", NoPalindrome, true),
-                EPS("zu", NoPalindrome, true),
-                EPS("aaabbbaaa", Palindrome, true)
+                FinalEP("aba", Palindrome),
+                FinalEP("cc", Palindrome),
+                FinalEP("d", Palindrome),
+                FinalEP("fd", NoPalindrome),
+                FinalEP("zu", NoPalindrome),
+                FinalEP("aaabbbaaa", Palindrome)
             ))
 
             es.foreach { e ⇒
                 val expected = if (e.reverse == e) Palindrome else NoPalindrome
-                ps.properties(e).toSet should be(Set(expected))
+                ps.properties(e).map(_.ub).toSet should be(Set(expected))
+                ps.properties(e).map(_.lb).toSet should be(Set(expected))
             }
         }
 
@@ -255,7 +262,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             ps.waitOnPhaseCompletion()
 
-            ps("aba", pk) should be(EPS("aba", Palindrome, true))
+            ps("aba", pk) should be(FinalEP("aba", Palindrome))
         }
 
         it("should not trigger a lazy property computation multiple times") {
@@ -289,7 +296,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             import Palindromes.NoPalindrome
             import Palindromes.NoSuperPalindrome
             import Palindromes.SuperPalindrome
-            import Palindromes.MaybeSuperPalindrome
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
 
@@ -314,10 +320,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     ps(e, ppk) should be(initialsExpectedEP)
 
                     IntermediateResult(
-                        e, MaybeSuperPalindrome,
+                        e, NoSuperPalindrome, SuperPalindrome,
                         Seq(initialsExpectedEP),
                         (eps) ⇒ {
-                            if (eps.p == Palindrome /*&& ...*/ )
+                            if (eps.lb == Palindrome /*&& ...*/ )
                                 Result(e, SuperPalindrome)
                             else
                                 Result(e, NoSuperPalindrome)
@@ -329,29 +335,253 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 val initiallyExpectedEP = EPK("e", sppk)
                 ps("e", sppk) should be(initiallyExpectedEP)
                 IntermediateResult(
-                    "e", Marker.MaybeMarked,
+                    "e", Marker.NotMarked, Marker.IsMarked,
                     Seq(initiallyExpectedEP),
                     (eps) ⇒ {
-                        if (eps.p.isInstanceOf[SuperPalindromeProperty])
-                            Result(e, Marker.IsMarked)
-                        else
-                            Result(e, Marker.NotMarked)
+                        if (eps.isFinal)
+                            fail("premature final value")
+
+                        IntermediateResult(
+                            "e", Marker.NotMarked, Marker.IsMarked,
+                            Seq(eps),
+                            (eps) ⇒ {
+                                if (!eps.isFinal)
+                                    fail("unexpected non final value")
+
+                                if (eps.lb == SuperPalindrome)
+                                    Result(e, Marker.IsMarked)
+                                else
+                                    Result(e, Marker.NotMarked)
+                            }
+                        )
+
                     }
                 )
             }
 
             ps.waitOnPhaseCompletion()
 
-            ps("e", Marker.MarkerKey) should be(EPS("e", Marker.IsMarked, true))
-            ps("e", ppk) should be(EPS("e", Palindrome, true))
-            ps("e", sppk) should be(EPS("e", SuperPalindrome, true))
+            ps("e", ppk) should be(FinalEP("e", Palindrome))
+            ps("e", sppk) should be(FinalEP("e", SuperPalindrome))
+            ps("e", Marker.MarkerKey) should be(FinalEP("e", Marker.IsMarked))
         }
 
         it("should be possible to have computations with multiple updates") {
 
-            // let's compute the set of reached values...
-            case class Node(val i: Int, values: Set[String])
+            import scala.collection.mutable
 
+            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
+                override def hashCode: Int = name.hashCode()
+                override def equals(other: Any): Boolean = other match {
+                    case that: Node ⇒ this.name equals that.name
+                    case _          ⇒ false
+                }
+                override def toString: String = name
+            }
+            object Node { def apply(name: String) = new Node(name) }
+
+            // DESCRIPTION OF A GRAPH (WITH CYCLES)
+            val nodeA = Node("a")
+            val nodeB = Node("b")
+            val nodeC = Node("c")
+            val nodeD = Node("d")
+            val nodeE = Node("e")
+            val nodeR = Node("r")
+            nodeA.targets += nodeB // the graph:
+            nodeB.targets += nodeC // a -> b -> c
+            nodeB.targets += nodeD //        ↘︎ d
+            nodeD.targets += nodeD //           d ⟲
+            nodeD.targets += nodeE //           d -> e
+            nodeE.targets += nodeR //                e -> r
+            nodeR.targets += nodeB //       ↖︎-----------↵︎
+            val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
+
+            object ReachableNodes {
+                val Key: PropertyKey[ReachableNodes] =
+
+                    PropertyKey.create[Node, ReachableNodes](
+                        "ReachableNodes",
+                        (_: PropertyStore, e: Node) ⇒ AllNodes,
+                        (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.toUBEP
+                    )
+            }
+            case class ReachableNodes(nodes: scala.collection.Set[Node]) extends Property {
+                type Self = ReachableNodes
+                def key = ReachableNodes.Key
+            }
+            object NoReachableNodes extends ReachableNodes(Set.empty) {
+                override def toString: String = "NoReachableNodes"
+            }
+            object AllNodes extends ReachableNodes(nodeEntities.toSet) {
+                override def toString: String = "AllNodes"
+            }
+
+            val ps = createPropertyStore()
+
+            /* The following analysis only uses the new information given to it and updates
+                                 * the set of observed dependees.
+                                 */
+            def analysis(n: Node): PropertyComputationResult = {
+                val nTargets = n.targets
+                if (nTargets.isEmpty)
+                    return Result(n, NoReachableNodes);
+
+                var allDependees: mutable.Set[Node] =
+                    nTargets.clone - n // self-dependencies are ignored!
+                var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
+                    ps(allDependees, ReachableNodes.Key).toSet
+
+                // incremental computation
+                def c(dependee: SomeEPS): PropertyComputationResult = {
+                    // Get the set of currently reachable nodes:
+                    val eps @ EPS(_, _ /*lb*/ , ReachableNodes(depeendeeReachableNodes)) = dependee
+
+                    // Compute the new set of reachable nodes:
+                    allDependees = allDependees ++ depeendeeReachableNodes
+                    val newUB = ReachableNodes(allDependees)
+
+                    // Adapt the set of dependeePs to ensure termination
+                    dependeePs = dependeePs.filter { _.e ne dependee.e }
+                    if (!eps.isFinal) {
+                        dependeePs ++= Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
+                    }
+                    if (dependeePs.nonEmpty)
+                        IntermediateResult(n, AllNodes, newUB, dependeePs, c)
+                    else
+                        Result(n, newUB)
+                }
+
+                // initial computation
+                val reachableNodes =
+                    dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
+                        if (dependee.hasProperty) {
+                            if (dependee.isFinal) { dependeePs -= dependee }
+                            reachableNodes ++ dependee.ub.nodes
+                        } else {
+                            reachableNodes
+                        }
+                    }
+                val currentReachableNodes = ReachableNodes(
+                    if (n.targets contains n)
+                        reachableNodes + n
+                    else
+                        reachableNodes
+                )
+                IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
+            }
+
+            ps.scheduleForEntities(nodeEntities)(analysis)
+            ps.waitOnPhaseCompletion()
+
+            // the graph:
+            // a -> b -> c
+            //      b -> d
+            //           d ⟲
+            //           d -> e
+            //                e -> r
+            //       ↖︎----------< r
+            ps(nodeA, ReachableNodes.Key) should be(FinalEP(nodeA, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeB, ReachableNodes.Key) should be(FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeC, ReachableNodes.Key) should be(FinalEP(nodeC, ReachableNodes(Set())))
+            ps(nodeD, ReachableNodes.Key) should be(FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeE, ReachableNodes.Key) should be(FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeR, ReachableNodes.Key) should be(FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+        }
+
+        it("should be possible to execute an analysis incrementally") {
+            import scala.collection.mutable
+
+            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
+                override def hashCode: Int = name.hashCode()
+                override def equals(other: Any): Boolean = other match {
+                    case that: Node ⇒ this.name equals that.name
+                    case _          ⇒ false
+                }
+                override def toString: String = name
+            }
+            object Node { def apply(name: String) = new Node(name) }
+
+            // DESCRIPTION OF A TREE
+            val nodeRoot = Node("Root")
+            val nodeLRoot = Node("Root->L")
+            val nodeLLRoot = Node("Root->L->L")
+            val nodeRRoot = Node("Root->R")
+            val nodeLRRoot = Node("Root->R->L")
+            val nodeRRRoot = Node("Root->R->R")
+            nodeRoot.targets += nodeLRoot
+            nodeRoot.targets += nodeRRoot
+            nodeLRoot.targets += nodeLLRoot
+            nodeRRoot.targets += nodeLRRoot
+            nodeRRoot.targets += nodeRRRoot
+
+            val TreeLevelKey: PropertyKey[TreeLevel] = {
+                PropertyKey.create(
+                    "TreeLevel",
+                    (ps: PropertyStore, e: Entity) ⇒ ???,
+                    (ps: PropertyStore, eps: SomeEPS) ⇒ ???
+                )
+            }
+            case class TreeLevel(length: Int) extends Property {
+                final type Self = TreeLevel
+                final def key = TreeLevelKey
+                final def isRefineable = false
+            }
+
+            val ps = createPropertyStore()
+
+            /* The following analysis only uses the new information given to it and updates
+                 * the set of observed dependees.
+                 */
+            def analysis(level: Int)(n: Node): PropertyComputationResult = {
+                val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
+                    n.targets.map(t ⇒ (analysis(level + 1) _, t))
+                IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
+            }
+
+            // the dot in ".<||<" is necessary to shut-up scalariform...
+            ps.scheduleForEntity(nodeRoot)(analysis(0))
+            ps.waitOnPhaseCompletion
+
+            ps(nodeRoot, TreeLevelKey) should be(FinalEP(nodeRoot, TreeLevel(0)))
+            ps(nodeRRoot, TreeLevelKey) should be(FinalEP(nodeRRoot, TreeLevel(1)))
+            ps(nodeRRRoot, TreeLevelKey) should be(FinalEP(nodeRRRoot, TreeLevel(2)))
+            ps(nodeLRRoot, TreeLevelKey) should be(FinalEP(nodeLRRoot, TreeLevel(2)))
+            ps(nodeLRoot, TreeLevelKey) should be(FinalEP(nodeLRoot, TreeLevel(1)))
+            ps(nodeLLRoot, TreeLevelKey) should be(FinalEP(nodeLLRoot, TreeLevel(2)))
+        }
+
+        it("should never pass a `PropertyIsLazilyComputed` to clients") {
+            val ppk = Palindromes.PalindromeKey
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ppk), Set.empty)
+
+            ps.registerLazyPropertyComputation(
+                ppk,
+                (e: Entity) ⇒ {
+                    val p = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
+                    Result(e, p)
+                }
+            )
+            ps.scheduleForEntity(
+                "aaa"
+            ) { s: String ⇒
+                    ps("a", ppk) match {
+                        case epk: EPK[_, _] ⇒
+                            IntermediateResult(
+                                s, NoPalindrome, Palindrome,
+                                List(epk),
+                                (eps: SomeEPS) ⇒ {
+                                    if (eps.lb == PropertyIsLazilyComputed ||
+                                        eps.ub == PropertyIsLazilyComputed)
+                                        fail("clients should never see PropertyIsLazilyComputed")
+                                    else
+                                        Result(s, Palindrome)
+                                }
+                            )
+                        case _ ⇒ fail("unexpected result")
+                    }
+                }
         }
 
         it("should be possible to execute an analysis which analyzes a huge circle") {
@@ -382,17 +612,17 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         successorNode match {
 
                             case epk: EPK[_, _] ⇒
-                                IntermediateResult(node, Pure, Iterable(epk), c)
+                                IntermediateResult(node, Impure, Pure, Iterable(epk), c)
 
-                            case eps @ IntermediateEP(_, Pure) ⇒
-                                IntermediateResult(node, Pure, Iterable(eps), c)
+                            case eps @ IntermediateEP(_, lb, ub) ⇒
+                                IntermediateResult(node, lb, ub, Iterable(eps), c)
 
                             // required when we resolve the cycle
-                            case FinalEP(_, Pure)          ⇒ Result(node, Pure)
+                            case FinalEP(_, Pure)             ⇒ Result(node, Pure)
 
                             // the following three cases should never happen...
-                            case IntermediateEP(_, Impure) ⇒ ???
-                            case FinalEP(_, Impure)        ⇒ ???
+                            case IntermediateEP(_, Impure, _) ⇒ ???
+                            case FinalEP(_, Impure)           ⇒ ???
                         }
                     }: PropertyComputationResult
 
@@ -404,10 +634,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 store.waitOnPhaseCompletion()
 
                 // 5. let's evaluate the result
-                store.entities(Purity.Key) foreach { ep ⇒
-                    if (ep.p != Pure) {
+                store.entities(Purity.Key) foreach { eps ⇒
+                    if (eps.lb != Pure) {
                         info(store.toString(true))
-                        fail(s"Node(${ep.e}) is not Pure (${ep.p})")
+                        fail(s"Node(${eps.e}) is not Pure (${eps.lb})")
                     }
                 }
 
@@ -420,9 +650,9 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 // Test fixture related to a simple marker property
 object Marker {
     final val MarkerKey = {
-        PropertyKey.create[MarkerProperty](
+        PropertyKey.create[Entity, MarkerProperty](
             "Marker",
-            (ps: PropertyStore, e: Entity) ⇒ MaybeMarked,
+            (ps: PropertyStore, e: Entity) ⇒ NotMarked,
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
@@ -433,16 +663,15 @@ object Marker {
     }
     case object IsMarked extends MarkerProperty
     case object NotMarked extends MarkerProperty
-    case object MaybeMarked extends MarkerProperty
 }
 
 // Test fixture related to Palindromes.
 object Palindromes {
 
     final val PalindromeKey = {
-        PropertyKey.create[PalindromeProperty](
+        PropertyKey.create[Entity, PalindromeProperty](
             "Palindrome",
-            (ps: PropertyStore, e: Entity) ⇒ MaybePalindrome,
+            (ps: PropertyStore, e: Entity) ⇒ NoPalindrome,
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
@@ -453,15 +682,14 @@ object Palindromes {
     }
     case object Palindrome extends PalindromeProperty
     case object NoPalindrome extends PalindromeProperty
-    case object MaybePalindrome extends PalindromeProperty
 
-    // We consider a Palindrome a SuperPalindrom if also the first half
+    // We consider a Palindrome a SuperPalindrome if also the first half
     // is a Palindrome. If the entities' size is odd, the middle element
     // is ignored.
     final val SuperPalindromeKey = {
-        PropertyKey.create[SuperPalindromeProperty](
+        PropertyKey.create[Entity, SuperPalindromeProperty](
             "SuperPalindrome",
-            (ps: PropertyStore, e: Entity) ⇒ MaybeSuperPalindrome,
+            (ps: PropertyStore, e: Entity) ⇒ NoSuperPalindrome,
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
         )
     }
@@ -472,7 +700,6 @@ object Palindromes {
     }
     case object SuperPalindrome extends SuperPalindromeProperty
     case object NoSuperPalindrome extends SuperPalindromeProperty
-    case object MaybeSuperPalindrome extends SuperPalindromeProperty
 }
 
 sealed trait Purity extends Property {
@@ -480,7 +707,7 @@ sealed trait Purity extends Property {
     final def key = Purity.Key
 }
 object Purity {
-    final val Key = PropertyKey.create[Purity]("Purity", Impure)
+    final val Key = PropertyKey.create[Entity, Purity]("Purity", Impure)
 }
 case object Pure extends Purity
 case object Impure extends Purity

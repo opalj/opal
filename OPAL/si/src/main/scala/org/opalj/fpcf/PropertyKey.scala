@@ -56,13 +56,13 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
 object PropertyKey {
 
     type SomeEPKs = Iterable[SomeEPK]
-    type CycleResolutionStrategy = (PropertyStore, SomeEPS) ⇒ FinalEP[Entity, Property]
+    type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ FinalEP[E, P]
 
     private[this] val keysLock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
     private[this] val fallbackProperties = ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
-    private[this] val cycleResolutionStrategies = ArrayBuffer.empty[CycleResolutionStrategy]
+    private[this] val cycleResolutionStrategies = ArrayBuffer.empty[CycleResolutionStrategy[Entity, Property]]
     private[this] var lastKeyId: Int = -1
 
     /**
@@ -81,10 +81,10 @@ object PropertyKey {
      *              computations. In the vast majority of cases it is sufficient to just commit
      *              the given value.
      */
-    def create[P <: Property](
+    def create[E <: Entity, P <: Property](
         name:                    String,
-        fallbackProperty:        (PropertyStore, Entity) ⇒ P,
-        cycleResolutionStrategy: CycleResolutionStrategy
+        fallbackProperty:        (PropertyStore, E) ⇒ P,
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P]
     ): PropertyKey[P] = {
         withWriteLock(keysLock) {
             if (propertyKeyNames.contains(name)) {
@@ -93,16 +93,16 @@ object PropertyKey {
 
             lastKeyId += 1
             propertyKeyNames += name
-            fallbackProperties += fallbackProperty
-            cycleResolutionStrategies += cycleResolutionStrategy
+            fallbackProperties += fallbackProperty.asInstanceOf[(PropertyStore, Entity) ⇒ Property]
+            cycleResolutionStrategies += cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
             new PropertyKey(lastKeyId)
         }
     }
 
-    def create[P <: Property](
+    def create[E <: Entity, P <: Property](
         name:                    String,
         fallback:                P,
-        cycleResolutionStrategy: CycleResolutionStrategy = (_, someEPS: SomeEPS) ⇒ FinalEP(someEPS.e, someEPS.p)
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_, eps: EPS[E, P]) ⇒ eps.toUBEP
     ): PropertyKey[P] = {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
     }
@@ -141,8 +141,13 @@ object PropertyKey {
     /**
      * @note This method is intended to be called by the framework.
      */
-    def resolveCycle(ps: PropertyStore, eps: SomeEPS): FinalEP[Entity, Property] = {
-        withReadLock(keysLock) { cycleResolutionStrategies(eps.pk.id)(ps, eps) }
+
+    def resolveCycle[E <: Entity, P <: Property](
+        ps: PropertyStore, eps: EPS[E, P]
+    ): FinalEP[E, P] = {
+        withReadLock(keysLock) {
+            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[FinalEP[E, P]]
+        }
     }
 
     /**
