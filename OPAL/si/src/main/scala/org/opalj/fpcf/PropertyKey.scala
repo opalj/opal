@@ -56,7 +56,7 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
 object PropertyKey {
 
     type SomeEPKs = Iterable[SomeEPK]
-    type CycleResolutionStrategy = (PropertyStore, SomeEPS) ⇒ EP
+    type CycleResolutionStrategy = (PropertyStore, SomeEPS) ⇒ FinalEP[Entity, Property]
 
     private[this] val keysLock = new ReentrantReadWriteLock
 
@@ -102,7 +102,7 @@ object PropertyKey {
     def create[P <: Property](
         name:                    String,
         fallback:                P,
-        cycleResolutionStrategy: CycleResolutionStrategy = (_, someEPS: SomeEPS) ⇒ someEPS.toEP
+        cycleResolutionStrategy: CycleResolutionStrategy = (_, someEPS: SomeEPS) ⇒ FinalEP(someEPS.e, someEPS.p)
     ): PropertyKey[P] = {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
     }
@@ -141,7 +141,7 @@ object PropertyKey {
     /**
      * @note This method is intended to be called by the framework.
      */
-    def resolveCycle(ps: PropertyStore, eps: SomeEPS): EP = {
+    def resolveCycle(ps: PropertyStore, eps: SomeEPS): FinalEP[Entity, Property] = {
         withReadLock(keysLock) { cycleResolutionStrategies(eps.pk.id)(ps, eps) }
     }
 

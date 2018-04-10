@@ -79,7 +79,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable hence, we can leverage the "immutability" of one of the members of
         // the cycle and wait for the automatic propagation...
-        ImmutableType
+        (_: PropertyStore, eps: SomeEPS) ⇒ FinalEP(eps.e, ImmutableType)
     )
 }
 
@@ -103,7 +103,7 @@ case object ImmutableType extends TypeImmutability {
 
 }
 
-case object ConditionallyImmutableType extends TypeImmutability {
+case object ImmutableContainerType extends TypeImmutability {
 
     override def isImmutable: Boolean = false
     override def isConditionallyImmutable: Boolean = true

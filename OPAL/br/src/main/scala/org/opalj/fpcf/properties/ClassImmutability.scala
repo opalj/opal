@@ -104,8 +104,8 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * @author Michael Eichberg
  */
 sealed trait ClassImmutability
-    extends OrderedProperty
-    with ClassImmutabilityPropertyMetaInformation {
+        extends OrderedProperty
+        with ClassImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `ClassImmutability` properties.
@@ -132,7 +132,7 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
         MutableObjectDueToUnresolvableDependency,
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable (type and object wise) hence, we can leverage the "immutability"
-        ImmutableObject
+        (_: PropertyStore, eps: SomeEPS) ⇒ FinalEP(eps.e, ImmutableObject)
     )
 }
 
@@ -162,9 +162,9 @@ case object ImmutableObject extends ClassImmutability {
  * it is not possible for a client to set a field or to call a method that updates the direct
  * internal state; changing the transitive state may be possible.
  */
-case object ConditionallyImmutableObject extends ClassImmutability {
+case object ImmutableContainer extends ClassImmutability {
 
-    final val correspondingTypeImmutability = ConditionallyImmutableType
+    final val correspondingTypeImmutability = ImmutableContainerType
 
     override def checkIsValidSuccessorOf(other: Property): Unit = {
         if (other == ImmutableObject) {
@@ -181,7 +181,7 @@ sealed trait MutableObject extends ClassImmutability {
     final val correspondingTypeImmutability = MutableType
 
     override def checkIsValidSuccessorOf(other: Property): Unit = {
-        if (other == ImmutableObject || other == ConditionallyImmutableObject) {
+        if (other == ImmutableObject || other == ImmutableContainer) {
             throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this")
         }
     }
