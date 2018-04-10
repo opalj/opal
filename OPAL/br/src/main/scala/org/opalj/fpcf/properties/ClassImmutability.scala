@@ -106,8 +106,8 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * @author Michael Eichberg
  */
 sealed trait ClassImmutability
-        extends OrderedProperty
-        with ClassImmutabilityPropertyMetaInformation {
+    extends OrderedProperty
+    with ClassImmutabilityPropertyMetaInformation {
 
     /**
      * Returns the key used by all `ClassImmutability` properties.
