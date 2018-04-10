@@ -215,7 +215,6 @@ class SequentialPropertyStore private (
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
-     * <
      */
     private[fpcf] def getPropertyValue(e: Entity, pkId: PKId): PropertyValue = {
         if (!ps.contains(e))
@@ -247,7 +246,7 @@ class SequentialPropertyStore private (
         val pkId = ub.key.id
         ps.get(e) match {
             case None ⇒
-                // The entity is unknown:
+                // The entity is unknown (=> there are no dependers/dependees):
                 ps += ((
                     e,
                     LongMap((pkId.toLong, new PropertyValue(lb, ub, Map.empty, newDependees)))
@@ -261,7 +260,8 @@ class SequentialPropertyStore private (
                 pkIdPValue.get(pkId.toLong) match {
 
                     case None ⇒
-                        // But, we have no property of the respective kind:
+                        // But, we have no property of the respective kind
+                        // (=> there are still no dependers/dependees):
                         pkIdPValue += ((
                             pkId.toLong,
                             new PropertyValue(lb, ub, Map.empty, newDependees)
@@ -402,6 +402,7 @@ class SequentialPropertyStore private (
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
+
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val noUpdates = newDependees forall { newDependee ⇒
@@ -635,6 +636,7 @@ private[fpcf] class PropertyValue(
     }
 }
 private[fpcf] object PropertyValue {
+
     def lazilyComputed: PropertyValue = {
         new PropertyValue(
             PropertyIsLazilyComputed,
@@ -643,6 +645,7 @@ private[fpcf] object PropertyValue {
             Nil
         )
     }
+
 }
 
 /**

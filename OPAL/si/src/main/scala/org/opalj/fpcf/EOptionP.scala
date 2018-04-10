@@ -131,10 +131,6 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     final override def hashCode: Int = {
         ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
     }
-
-    final override def toString: String = {
-        s"EPS(${e}@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,(derived)isFinal=$isFinal))"
-    }
 }
 
 /**
@@ -164,6 +160,10 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 ) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
+
+    final override def toString: String = {
+        s"IntermediateEP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
+    }
 }
 
 object IntermediateEP {
@@ -185,7 +185,9 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
 
     final def p: P = ub // or lb
 
-    final def toEP = new EP(e, p)
+    final override def toString: String = {
+        s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
+    }
 
 }
 
@@ -260,13 +262,4 @@ object NoProperty {
 
     def unapply(eOptP: EOptionP[_, _]): Boolean = eOptP.hasNoProperty
 
-}
-
-/**
- * Pairing of an `Entity` and a single, final `Property`.
- */
-case class EP[+E <: Entity, +P <: Property](e: E, p: P) {
-    override def toString: String = {
-        s"EP(e=$e@${System.identityHashCode(e).toHexString},p=$p)"
-    }
 }
