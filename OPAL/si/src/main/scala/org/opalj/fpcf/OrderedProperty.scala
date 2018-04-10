@@ -41,10 +41,10 @@ package org.opalj.fpcf
 trait OrderedProperty extends Property {
 
     /**
-     * Tests if this property is a valid successor property of the other property; this
-     * relation is reflexive, that is, a property is a valid successor of itself.
+     * Tests if this property is more precise than the given one (more precise means, a value
+     * more to the top in the underlying lattice.)
      */
-    @throws[IllegalArgumentException]("if this property is not a valid successor of other")
-    def checkIsValidSuccessorOf(other: Property): Unit
+    @throws[IllegalArgumentException]("if this property is not more precise than the given one")
+    def checkIsMoreOrEquallyPreciseThan(other: Property): Unit
 
 }

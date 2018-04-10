@@ -69,6 +69,8 @@ package object fpcf {
 
     type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
+    type SomeEP = EP[_ <: Entity, _ <: Property]
+
     /**
      * A function that takes an entity and returns a result. The result maybe:
      *  - the final derived property,
@@ -97,7 +99,7 @@ package object fpcf {
      * The result of a computation if the computation derives multiple properties
      * at the same time.
      */
-    type ComputationResults = Traversable[EP]
+    type ComputationResults = Traversable[SomeEP]
 
     type PropertyKeyID = Int
 

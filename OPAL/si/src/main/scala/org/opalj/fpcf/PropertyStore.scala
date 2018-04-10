@@ -186,10 +186,13 @@ abstract class PropertyStore {
      * quiescence and – as a client – I do not want to distinguish between the case if
      * a specific value was computed or not.
      */
-    def currentPropertyOrFallback[P <: Property](e: Entity, pk: PropertyKey[P]): P = {
+    def currentPropertyOrFallback[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P]
+    ): EOptionP[E, P] = {
         this(e, pk) match {
-            case EPS(_, p, _) ⇒ p.asInstanceOf[P]
-            case _            ⇒ PropertyKey.fallbackProperty(this, e, pk)
+            case eOptionP: EOptionP[E, P] ⇒ eOptionP
+            case _                        ⇒ FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
         }
     }
 
@@ -255,32 +258,34 @@ abstract class PropertyStore {
      * @param e An entity stored in the property store.
      * @return `Iterator[Property]`
      */
-    def properties(e: Entity): Iterator[Property]
+    def properties[E <: Entity](e: E): Iterator[EPS[E, Property]]
 
     /**
      * Returns all entities which have a property of the respective kind. This method
      * returns a consistent snapshot view of the store w.r.t. the given
      * [[PropertyKey]].
      *
-     * @note Lazy property computations are not triggered.
+     * @note Does not trigger lazy property computations.
      */
     def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]]
 
     /**
-     * Returns all entities that currently have a specific property.
+     * Returns all entities that currently have the given property bounds.
+     * (In case of final properties the bounds are equal.)
      *
      * @note Does not trigger lazy property computations.
      */
-    def entities[P <: Property](p: P): Iterator[Entity]
+    def entities[P <: Property](lb: P, ub: P): Iterator[Entity]
 
     /**
-     * The set of all entities which already have a property that pass the given filter.
+     * The set of all entities which already have an entity property state that passes
+     * the given filter.
      *
      * This method returns a snapshot.
      *
-     * @note This method will not trigger lazy property computations.
+     * @note Does not trigger lazy property computations.
      */
-    def entities(propertyFilter: Property ⇒ Boolean): Iterator[Entity]
+    def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity]
 
     /**
      * Directly associates the given property `p` with property kind `pk` with the given entity
