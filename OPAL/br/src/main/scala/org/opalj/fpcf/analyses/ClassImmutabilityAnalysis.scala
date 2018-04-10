@@ -335,7 +335,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                             dependees = for {
                                 (e, eOptsP) ← dependees
-                                newDependees = eOptsP.filterNot(_.pk == TypeImmutability)
+                                newDependees = eOptsP.filterNot(_.pk == TypeImmutability.key)
                                 if newDependees.nonEmpty
                             } yield e → newDependees
 
@@ -346,7 +346,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                             dependees = for {
                                 (e, eOptsP) ← dependees
-                                newDependees = eOptsP.filterNot(_.pk == TypeImmutability)
+                                newDependees = eOptsP.filterNot(_.pk == TypeImmutability.key)
                                 if newDependees.nonEmpty
                             } yield e → newDependees
 

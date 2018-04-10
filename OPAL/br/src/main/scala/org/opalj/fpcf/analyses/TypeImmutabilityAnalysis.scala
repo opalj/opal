@@ -75,7 +75,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
         if (cf.exists(_.isFinal) || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
             val c = new OnUpdateContinuation { c ⇒
-                def apply(eps: EPS[Entity, Property]): PropertyComputationResult = {
+                def apply(eps: SomeEPS): PropertyComputationResult = {
                     eps.ub match {
                         case p: ClassImmutability ⇒
                             val thisP = p.correspondingTypeImmutability
