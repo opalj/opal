@@ -61,7 +61,7 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
     def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
         val thisType = classFile.thisType
         val fields = classFile.fields
-        // IMPROVE Use access flags matcher instead of querying the access flags one after another.
+        // IMPROVE [L1] Use access flags matcher instead of querying the access flags one after another.
         val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
         if (psnfFields.isEmpty) {
             return NoResult;
