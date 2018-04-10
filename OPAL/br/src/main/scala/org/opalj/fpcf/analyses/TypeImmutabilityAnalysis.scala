@@ -30,16 +30,14 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.ConditionallyImmutableType
-import org.opalj.fpcf.properties.MutableType
 import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.ImmutableContainerType
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.MutableType
+import org.opalj.fpcf.properties.TypeImmutability
 
 /**
  * Determines the mutability of a specific type by checking if all subtypes of a specific
@@ -49,117 +47,109 @@ import org.opalj.fpcf.properties.ClassImmutability
  */
 class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
+    def doDetermineTypeMutability(typeExtensibility: ObjectType ⇒ Answer)(e: Entity): PropertyComputationResult = e match {
+        case t: ObjectType ⇒ step1(typeExtensibility)(t)
+        case _ ⇒
+            val m = e.getClass.getSimpleName+" is not an org.opalj.br.ObjectType"
+            throw new IllegalArgumentException(m)
+    }
+
     /**
-     * @param cf A class file which is not the class file of `java.lang.Object`.
+     * @param t An object type which is not `java.lang.Object`.
      */
     def step1(
         typeExtensibility: ObjectType ⇒ Answer
     )(
-        cf: ClassFile
+        t: ObjectType
     ): PropertyComputationResult = {
-        typeExtensibility(cf.thisType) match {
-            case Yes | Unknown ⇒ Result(cf.thisType, MutableType)
-            case No            ⇒ step2(cf)
+        typeExtensibility(t) match {
+            case Yes | Unknown ⇒ Result(t, MutableType)
+            case No            ⇒ step2(t)
         }
     }
 
-    def step2(cf: ClassFile): PropertyComputationResult = {
-        val thisE = cf.thisType
-        val directSubtypes = classHierarchy.directSubtypesOf(cf.thisType)
+    def step2(t: ObjectType): PropertyComputationResult = {
+        val directSubtypes = classHierarchy.directSubtypesOf(t)
 
-        if (cf.isFinal || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
+        val cf = project.classFile(t)
+        if (cf.exists(_.isFinal) || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
             val c = new OnUpdateContinuation { c ⇒
-                def apply(e: Entity, p: Property, isFinal: Boolean): PropertyComputationResult = {
-                    p match {
+                def apply(eps: EPS[Entity, Property]): PropertyComputationResult = {
+                    eps.p match {
                         case p: ClassImmutability ⇒
                             val thisP = p.correspondingTypeImmutability
-                            if (isFinal)
-                                Result(thisE, thisP)
+                            if (eps.isFinal)
+                                Result(t, thisP)
                             else
-                                IntermediateResult(thisE, thisP, Seq(EPS(e, p, isFinal)), c)
+                                IntermediateResult(t, thisP, Seq(eps), c)
                     }
                 }
             }
 
-            ps(thisE, ClassImmutability.key) match {
+            ps(t, ClassImmutability.key) match {
                 case eps @ EPS(_, p, isFinal) ⇒
                     val thisP = p.correspondingTypeImmutability
                     if (isFinal)
-                        Result(thisE, thisP)
+                        Result(t, thisP)
                     else {
-                        IntermediateResult(thisE, thisP, Seq(eps), c)
+                        IntermediateResult(t, thisP, Seq(eps), c)
                     }
 
                 case epk ⇒
                     val dependees = Traversable(epk)
-                    IntermediateResult(thisE, MutableType, dependees, c)
+                    IntermediateResult(t, MutableType, dependees, c)
             }
         } else {
-            val unavailableSubtype = directSubtypes.find(t ⇒ project.classFile(t).isEmpty)
-            if (unavailableSubtype.isDefined) {
-                val thisType = thisE.toJava
-                val subtype = unavailableSubtype.get.toJava
-                OPALLogger.warn(
-                    "project configuration", s"$thisType's subtype $subtype is not available"
-                )
-                // Obviously the type hierarchy is incomplete;
-                // hence, we have to make a safe and sound approximation!
-                return Result(thisE, MutableType);
-            }
-
-            val directSubclasses = directSubtypes map { subtype ⇒ project.classFile(subtype).get }
-
             var dependencies = Map.empty[Entity, EOptionP[Entity, TypeImmutability]]
             var joinedImmutability: TypeImmutability = ImmutableType // this may become "Mutable..."
             var maxImmutability: TypeImmutability = ImmutableType
 
-            directSubclasses foreach { subclassFile ⇒
-                val subtypeE = subclassFile.thisType
-                ps(subtypeE, TypeImmutability.key) match {
+            directSubtypes foreach { subtype ⇒
+                ps(subtype, TypeImmutability.key) match {
                     case EPS(_, ImmutableType, isFinal) ⇒
                         assert(isFinal) /* otherwise ignore*/
 
                     case eps @ EPS(_, MutableType, isFinal) ⇒
                         if (isFinal) {
-                            return Result(cf, MutableType);
+                            return Result(t, MutableType);
                         }
                         joinedImmutability = MutableType
-                        dependencies += ((subtypeE, eps))
+                        dependencies += ((subtype, eps))
 
-                    case eps @ EPS(_, subtypeP @ ConditionallyImmutableType, isFinal) ⇒
+                    case eps @ EPS(_, subtypeP @ ImmutableContainerType, isFinal) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeP)
                         if (isFinal) {
                             maxImmutability = subtypeP
                         } else {
-                            dependencies += ((subtypeE, eps))
+                            dependencies += ((subtype, eps))
                         }
 
                     case epk ⇒
                         joinedImmutability = MutableType
-                        dependencies += ((subtypeE, epk))
+                        dependencies += ((subtype, epk))
 
                 }
             }
 
             if (dependencies.isEmpty) {
-                Result(cf, maxImmutability)
+                Result(t, maxImmutability)
             } else if (joinedImmutability == maxImmutability) {
                 // E.g., as soon as one subtype is ConditionallyImmutable, we are at most
                 // ConditionallyImmutable, even if all other subtype may even be immutable!
-                Result(cf, joinedImmutability)
+                Result(t, joinedImmutability)
             } else {
                 // when we reach this point, we have dependencies to types for which
                 // we have non-final information; joinedImmutability is either MutableType
                 // or ConditionallyMutableType
-                def c(e: Entity, p: Property, isFinal: Boolean): PropertyComputationResult = {
+                def c(eps: EPS[Entity, Property]): PropertyComputationResult = {
 
                     ///*debug*/ val previousDependencies = dependencies
                     ///*debug*/ val previousJoinedImmutability = joinedImmutability
 
                     def nextResult(): PropertyComputationResult = {
                         if (dependencies.isEmpty) {
-                            Result(thisE, maxImmutability)
+                            Result(t, maxImmutability)
                         } else {
                             joinedImmutability = maxImmutability
                             val depIt = dependencies.values.iterator
@@ -174,22 +164,23 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 }
                             }
                             if (joinedImmutability == maxImmutability) {
-                                assert(maxImmutability == ConditionallyImmutableType)
-                                Result(thisE, maxImmutability)
+                                assert(maxImmutability == ImmutableContainerType)
+                                Result(t, maxImmutability)
                             } else {
-                                IntermediateResult(thisE, joinedImmutability, dependencies.values, c)
+                                IntermediateResult(t, joinedImmutability, dependencies.values, c)
                             }
                         }
                     }
 
+                    val EPS(e, p, isFinal) = eps
                     p match {
                         case ImmutableType ⇒
                             dependencies = dependencies - e
                             nextResult()
 
-                        case p @ ConditionallyImmutableType ⇒
+                        case p @ ImmutableContainerType ⇒
                             if (isFinal) {
-                                maxImmutability = ConditionallyImmutableType
+                                maxImmutability = ImmutableContainerType
                                 dependencies = dependencies - e
                             } else {
                                 dependencies = dependencies.updated(e, EPS(e, p, isFinal))
@@ -199,18 +190,24 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                         case p @ MutableType ⇒
                             assert(joinedImmutability == MutableType)
                             if (isFinal) {
-                                Result(thisE, MutableType)
+                                Result(t, MutableType)
                             } else {
                                 dependencies = dependencies.updated(e, EPS(e, p, isFinal))
-                                IntermediateResult(thisE, MutableType, dependencies.values, c)
+                                IntermediateResult(t, MutableType, dependencies.values, c)
                             }
                     }
                 }
 
-                IntermediateResult(thisE, joinedImmutability, dependencies.values, c)
+                IntermediateResult(t, joinedImmutability, dependencies.values, c)
             }
         }
     }
+}
+
+trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
+    override def derives: Set[PropertyKind] = Set(TypeImmutability)
+
+    override def uses: Set[PropertyKind] = Set(ClassImmutability)
 }
 
 /**
@@ -218,24 +215,43 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
  *
  * @author Michael Eichberg
  */
-object TypeImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
-
-    override def derives: Set[PropertyKind] = Set(TypeImmutability)
-
-    override def uses: Set[PropertyKind] = Set(ClassImmutability)
+object EagerTypeImmutabilityAnalysis
+        extends TypeImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
 
         // An optimization, if the analysis also includes the JDK.
-        project.classFile(ObjectType.Object) foreach { ps.set(_, MutableType) }
+        ps.set(ObjectType.Object, MutableType)
 
-        ps.scheduleForEntities(project.allClassFiles.filter(_.thisType ne ObjectType.Object)) {
+        val types = project.allClassFiles.filter(_.thisType ne ObjectType.Object).map(_.thisType)
+
+        ps.scheduleForEntities(types) {
             analysis.step1(typeExtensibility)
         }
 
         analysis
     }
 
+}
+
+object LazyTypeImmutabilityAnalysis
+        extends TypeImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    /**
+     * Registers the analysis as a lazy computation, that is, the method
+     * will call `ProperytStore.scheduleLazyComputation`.
+     */
+    override protected[fpcf] def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+
+        val typeExtensibility = p.get(TypeExtensibilityKey)
+        val analysis = new TypeImmutabilityAnalysis(p)
+
+        // An optimization, if the analysis also includes the JDK.
+        ps.set(ObjectType.Object, MutableType)
+
+        ps.registerLazyPropertyComputation(TypeImmutability.key, analysis.step1(typeExtensibility))
+        analysis
+
+    }
 }

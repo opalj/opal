@@ -115,7 +115,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
-    final def toUBEP: EP[E, P] = new EP(e, ub)
+    final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
     final override def hasProperty: Boolean = true
 
