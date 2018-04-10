@@ -48,7 +48,6 @@ import org.opalj.fpcf.properties.MutableObjectByAnalysis
 import org.opalj.fpcf.properties.MutableObject
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableContainer
-import org.opalj.fpcf.properties.MutableObjectDueToIncompleteAnalysis
 import org.opalj.log.LogContext
 
 /**
@@ -134,9 +133,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         }
 
                         propertyStore(superClassType, ClassImmutability.key) match {
-                            case EPS(_, p: MutableObject, _) ⇒ Result(t, p)
-                            case eps @ EPS(_, _: ClassImmutability, isFinal) ⇒
-                                determineClassImmutability(superClassType, eps, isFinal)(cf)
+                            case EPS(_, _, p: MutableObject) ⇒ Result(t, p)
+                            case eps: EPS[ObjectType, ClassImmutability] ⇒
+                                determineClassImmutability(superClassType, eps, eps.isFinal)(cf)
                             case epk ⇒
                                 determineClassImmutability(
                                     superClassType,
@@ -182,19 +181,20 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         var hasFieldsWithUnknownMutability = false
 
         val nonFinalInstanceFields = cf.fields.filter { f ⇒ !f.isStatic && !f.isFinal }
-        dependees ++= propertyStore(nonFinalInstanceFields, FieldMutability) collect {
-            case EPS(_, _: NonFinalField, isFinal) ⇒
-                assert(isFinal)
+        dependees ++= (propertyStore(nonFinalInstanceFields, FieldMutability) collect {
+            case EPS(_, _, _: NonFinalField) ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
                 return createResultForAllSubtypes(t, MutableObjectByAnalysis);
-
-            case epk @ EPK(e, _) ⇒
+            case ep @ IntermediateEP(e, _, _) ⇒
+                hasFieldsWithUnknownMutability = true
+                (e, Set[EOptionP[Entity, Property]](ep))
+            case epk @ EPK(e: Entity, _) ⇒
                 // <=> The mutability information is not yet available.
                 hasFieldsWithUnknownMutability = true
-                (e, Set(epk))
+                (e, Set[EOptionP[Entity, Property]](epk))
 
-            // case EPS(e, p: EffectivelyFinalField,true) => we can ignore effectively final fields
-        }
+            // case EPS(e, p: EffectivelyFinalField, _) => we can ignore effectively final fields
+        }).toMap
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
@@ -262,7 +262,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val hasMutableOrConditionallyImmutableField =
             // IMPROVE Use the precise type of the field (if available)!
             fieldTypesImmutability.exists { eOptP ⇒
-                eOptP.hasProperty && (eOptP.p.isMutable || eOptP.p.isConditionallyImmutable)
+                eOptP.hasProperty && (eOptP.ub.isMutable || eOptP.ub.isConditionallyImmutable)
             }
 
         if (hasMutableOrConditionallyImmutableField) {
@@ -271,7 +271,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             val fieldTypesWithUndecidedMutability: Traversable[EOptionP[Entity, Property]] =
                 // Recall: we don't have fields which are mutable or conditionally immutable
                 fieldTypesImmutability.filterNot { eOptP ⇒
-                    eOptP.hasProperty && eOptP.p == ImmutableType && eOptP.isFinal
+                    eOptP.hasProperty && eOptP.ub == ImmutableType && eOptP.isFinal
                 }
             fieldTypesWithUndecidedMutability.foreach { eOptP ⇒
                 val eOptsP = dependees(eOptP.e)
@@ -296,17 +296,10 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             );
         }
 
-        val initialImmutability: ClassImmutability = {
-            if (hasFieldsWithUnknownMutability || !superClassMutabilityIsFinal)
-                MutableObjectDueToIncompleteAnalysis
-            else
-                ImmutableObject
-        }
-
         def c(someEPS: SomeEPS): PropertyComputationResult = {
             //[DEBUG]             val oldDependees = dependees
             val e = someEPS.e
-            val p = someEPS.p
+            val p = someEPS.ub
             e match {
                 // Field Mutability related dependencies:
                 //
@@ -367,7 +360,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                     }
 
-                    if (someEPS.isRefineable) {
+                    if (someEPS.isRefinable) {
                         dependees = dependees.updated(e, dependees(e) + someEPS)
                     }
 
@@ -403,18 +396,24 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 Result(t, maxLocalImmutability)
 
             } else {
-                IntermediateResult(t, maxLocalImmutability, dependees.flatMap(_._2), c)
+                IntermediateResult(
+                    t, MutableObjectByAnalysis, maxLocalImmutability, dependees.flatMap(_._2), c
+                )
 
             }
         }
 
         //[DEBUG] assert(initialImmutability.isRefinable)
-        val result = IntermediateResult(t, maxLocalImmutability, dependees.flatMap(_._2), c)
+        val result = IntermediateResult(
+            t, MutableObjectByAnalysis, maxLocalImmutability, dependees.flatMap(_._2), c
+        )
         if (lazyComputation)
             result
         else {
             val isFinal = dependees.isEmpty
-            createIncrementalResult(t, EPS(t, maxLocalImmutability, isFinal), isFinal, result)
+            createIncrementalResult(
+                t, EPS(t, MutableObjectByAnalysis, maxLocalImmutability), isFinal, result
+            )
         }
     }
 }
