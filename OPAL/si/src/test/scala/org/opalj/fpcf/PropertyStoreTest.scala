@@ -386,15 +386,25 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             val nodeC = Node("c")
             val nodeD = Node("d")
             val nodeE = Node("e")
+            val nodeF = Node("f")
+            val nodeG = Node("g")
+            val nodeH = Node("h")
             val nodeR = Node("r")
             nodeA.targets += nodeB // the graph:
+            nodeA.targets += nodeF // a -> f
+            nodeF.targets += nodeH //      f -> h
+            nodeA.targets += nodeG // a -> g
+            nodeG.targets += nodeH //      g -> h
+            nodeA.targets += nodeH // a -> h
             nodeB.targets += nodeC // a -> b -> c
-            nodeB.targets += nodeD //        ↘︎ d
+            nodeB.targets += nodeD //        ↘︎  d
             nodeD.targets += nodeD //           d ⟲
             nodeD.targets += nodeE //           d -> e
             nodeE.targets += nodeR //                e -> r
-            nodeR.targets += nodeB //       ↖︎-----------↵︎
-            val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
+            nodeR.targets += nodeB //       ↖︎------------↵︎
+            val nodeEntities = List[Node](
+                nodeA, nodeB, nodeC, nodeD, nodeE, nodeF, nodeG, nodeH, nodeR
+            )
 
             object ReachableNodes {
                 val Key: PropertyKey[ReachableNodes] =
@@ -467,25 +477,43 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     else
                         reachableNodes
                 )
-                IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
+                if (dependeePs.isEmpty)
+                    Result(n, currentReachableNodes)
+                else
+                    IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
             }
 
             ps.scheduleForEntities(nodeEntities)(analysis)
             ps.waitOnPhaseCompletion()
 
             // the graph:
+            // a -> f -> h
+            // a -> g -> h
+            // a -> h
             // a -> b -> c
             //      b -> d
             //           d ⟲
             //           d -> e
             //                e -> r
             //       ↖︎----------< r
-            ps(nodeA, ReachableNodes.Key) should be(FinalEP(nodeA, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeB, ReachableNodes.Key) should be(FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeC, ReachableNodes.Key) should be(FinalEP(nodeC, ReachableNodes(Set())))
-            ps(nodeD, ReachableNodes.Key) should be(FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeE, ReachableNodes.Key) should be(FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeR, ReachableNodes.Key) should be(FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            ps(nodeA, ReachableNodes.Key) should be(
+                FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+            )
+            ps(nodeB, ReachableNodes.Key) should be(
+                FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+            ps(nodeC, ReachableNodes.Key) should be(
+                FinalEP(nodeC, ReachableNodes(Set()))
+            )
+            ps(nodeD, ReachableNodes.Key) should be(
+                FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+            ps(nodeE, ReachableNodes.Key) should be(
+                FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+            ps(nodeR, ReachableNodes.Key) should be(
+                FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
         }
 
         it("should be possible to execute an analysis incrementally") {
