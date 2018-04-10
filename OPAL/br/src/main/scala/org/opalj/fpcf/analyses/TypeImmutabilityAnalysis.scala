@@ -76,29 +76,26 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             val c = new OnUpdateContinuation { c ⇒
                 def apply(eps: EPS[Entity, Property]): PropertyComputationResult = {
-                    eps.p match {
+                    eps.ub match {
                         case p: ClassImmutability ⇒
                             val thisP = p.correspondingTypeImmutability
                             if (eps.isFinal)
                                 Result(t, thisP)
                             else
-                                IntermediateResult(t, thisP, Seq(eps), c)
+                                IntermediateResult(t, MutableType, thisP, Seq(eps), c)
                     }
                 }
             }
 
             ps(t, ClassImmutability.key) match {
-                case eps @ EPS(_, p, isFinal) ⇒
+                case FinalEP(_, p) ⇒
+                    Result(t, p.correspondingTypeImmutability)
+                case eps @ IntermediateEP(_, _, p) ⇒
                     val thisP = p.correspondingTypeImmutability
-                    if (isFinal)
-                        Result(t, thisP)
-                    else {
-                        IntermediateResult(t, thisP, Seq(eps), c)
-                    }
-
+                    IntermediateResult(t, MutableType, thisP, Seq(eps), c)
                 case epk ⇒
                     val dependees = Traversable(epk)
-                    IntermediateResult(t, MutableType, dependees, c)
+                    IntermediateResult(t, MutableType, ImmutableType, dependees, c)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, TypeImmutability]]
@@ -107,23 +104,18 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             directSubtypes foreach { subtype ⇒
                 ps(subtype, TypeImmutability.key) match {
-                    case EPS(_, ImmutableType, isFinal) ⇒
-                        assert(isFinal) /* otherwise ignore*/
+                    case FinalEP(_, ImmutableType) ⇒
 
-                    case eps @ EPS(_, MutableType, isFinal) ⇒
-                        if (isFinal) {
-                            return Result(t, MutableType);
-                        }
-                        joinedImmutability = MutableType
-                        dependencies += ((subtype, eps))
+                    case EPS(_, _, MutableType) ⇒
+                        return Result(t, MutableType);
 
-                    case eps @ EPS(_, subtypeP @ ImmutableContainerType, isFinal) ⇒
+                    case FinalEP(_, subtypeP @ ImmutableContainerType) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeP)
-                        if (isFinal) {
-                            maxImmutability = subtypeP
-                        } else {
-                            dependencies += ((subtype, eps))
-                        }
+                        maxImmutability = subtypeP
+
+                    case eps @ IntermediateEP(_, subtypeP, _) ⇒
+                        joinedImmutability = joinedImmutability.meet(subtypeP)
+                        dependencies += ((subtype, eps))
 
                     case epk ⇒
                         joinedImmutability = MutableType
@@ -157,7 +149,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             while (continue && depIt.hasNext) {
                                 val n = depIt.next()
                                 if (n.hasProperty)
-                                    joinedImmutability = joinedImmutability.meet(n.p)
+                                    joinedImmutability = joinedImmutability.meet(n.lb)
                                 else {
                                     joinedImmutability = MutableType
                                     continue = false
@@ -167,38 +159,34 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 assert(maxImmutability == ImmutableContainerType)
                                 Result(t, maxImmutability)
                             } else {
-                                IntermediateResult(t, joinedImmutability, dependencies.values, c)
+                                IntermediateResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
                             }
                         }
                     }
 
-                    val EPS(e, p, isFinal) = eps
-                    p match {
-                        case ImmutableType ⇒
+                    eps match {
+                        case FinalEP(e, ImmutableType) ⇒
                             dependencies = dependencies - e
                             nextResult()
 
-                        case p @ ImmutableContainerType ⇒
-                            if (isFinal) {
-                                maxImmutability = ImmutableContainerType
-                                dependencies = dependencies - e
-                            } else {
-                                dependencies = dependencies.updated(e, EPS(e, p, isFinal))
-                            }
+                        case EPS(_, _, MutableType) ⇒
+                            Result(t, MutableType)
+
+                        case FinalEP(e, subtypeP @ ImmutableContainerType) ⇒
+                            maxImmutability = ImmutableContainerType
+                            dependencies = dependencies - e
                             nextResult()
 
-                        case p @ MutableType ⇒
-                            assert(joinedImmutability == MutableType)
-                            if (isFinal) {
-                                Result(t, MutableType)
-                            } else {
-                                dependencies = dependencies.updated(e, EPS(e, p, isFinal))
-                                IntermediateResult(t, MutableType, dependencies.values, c)
-                            }
+                        case eps @ IntermediateEP(e, _, subtypeP: TypeImmutability) ⇒
+                            dependencies = dependencies.updated(
+                                e, eps.asInstanceOf[EOptionP[Entity, TypeImmutability]]
+                            )
+                            maxImmutability = maxImmutability.meet(subtypeP)
+                            nextResult()
                     }
                 }
 
-                IntermediateResult(t, joinedImmutability, dependencies.values, c)
+                IntermediateResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
             }
         }
     }

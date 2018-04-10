@@ -102,7 +102,7 @@ object PropertyKey {
     def create[E <: Entity, P <: Property](
         name:                    String,
         fallback:                P,
-        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_, eps: EPS[E, P]) ⇒ eps.toUBEP
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.toUBEP
     ): PropertyKey[P] = {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
     }
