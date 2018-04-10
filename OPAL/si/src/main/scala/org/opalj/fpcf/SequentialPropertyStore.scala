@@ -488,6 +488,7 @@ class SequentialPropertyStore private (
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
     }
 
+    private[this] var quiescenceCounter = 0
     override def waitOnPhaseCompletion(): Unit = {
         var continueComputation: Boolean = false
         do {
@@ -498,6 +499,7 @@ class SequentialPropertyStore private (
                 tasks = tasks.tail
                 task.apply()
             }
+            if (tasks.isEmpty) quiescenceCounter += 1
 
             if (!isInterrupted()) {
                 // We have reached quiescence. let's check if we have to
@@ -561,7 +563,10 @@ class SequentialPropertyStore private (
                                 cSCC.take(10).mkString("", ",", "...")
                             else
                                 cSCC.mkString(",")
-                        info("analysis progress", s"resolving cycle: ${cycleAsText} => $newEP")
+                        info(
+                            "analysis progress",
+                            s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                        )
                         update(newEP.e, newEP.p, newEP.p, notifyDependers = true, Nil)
                         continueComputation = true
                     }
