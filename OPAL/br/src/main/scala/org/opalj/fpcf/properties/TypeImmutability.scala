@@ -59,7 +59,7 @@ sealed trait TypeImmutability extends OrderedProperty with TypeImmutabilityPrope
     final def key = TypeImmutability.key
 
     def isImmutable: Boolean
-    def isConditionallyImmutable: Boolean
+    def isImmutableContainer: Boolean
     /** `true` if the mutability is unknown or if the type is mutable.*/
     def isMutable: Boolean
 
@@ -81,7 +81,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable hence, we can leverage the "immutability" of one of the members of
         // the cycle and wait for the automatic propagation...
-        (_: PropertyStore, eps: EPS[ObjectType, TypeImmutability]) ⇒ FinalEP(eps.e, ImmutableType)
+        (_: PropertyStore, eps: EPS[ObjectType, TypeImmutability]) ⇒ eps.toUBEP
     )
 }
 
@@ -92,7 +92,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
 case object ImmutableType extends TypeImmutability {
 
     override def isImmutable: Boolean = true
-    override def isConditionallyImmutable: Boolean = false
+    override def isImmutableContainer: Boolean = false
     override def isMutable: Boolean = false
 
     override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
@@ -108,7 +108,7 @@ case object ImmutableType extends TypeImmutability {
 case object ImmutableContainerType extends TypeImmutability {
 
     override def isImmutable: Boolean = false
-    override def isConditionallyImmutable: Boolean = true
+    override def isImmutableContainer: Boolean = true
     override def isMutable: Boolean = false
 
     def meet(that: TypeImmutability): TypeImmutability = if (that == MutableType) that else this
@@ -123,7 +123,7 @@ case object ImmutableContainerType extends TypeImmutability {
 case object MutableType extends TypeImmutability {
 
     override def isImmutable: Boolean = false
-    override def isConditionallyImmutable: Boolean = false
+    override def isImmutableContainer: Boolean = false
     override def isMutable: Boolean = true
 
     def meet(other: TypeImmutability): this.type = this
