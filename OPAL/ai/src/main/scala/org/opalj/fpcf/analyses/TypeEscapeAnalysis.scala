@@ -32,21 +32,21 @@ package analyses
 
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.TypeEscapeProperty
-import org.opalj.fpcf.properties.GlobalType
-import org.opalj.fpcf.properties.PackageLocalType
-import org.opalj.fpcf.properties.MaybePackageLocalType
+import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.GlobalType
+import org.opalj.fpcf.properties.MaybePackageLocalType
+import org.opalj.fpcf.properties.NoEscape
+import org.opalj.fpcf.properties.PackageLocalType
+import org.opalj.fpcf.properties.TypeEscapeProperty
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -54,6 +54,7 @@ import org.opalj.util.PerformanceEvaluation.time
  * Computes whether all allocations of a type does not escape their method.
  * Uses the [[org.opalj.fpcf.properties.TypeEscapeProperty]].
  *
+ * @note This requires the escape analysis to be terminated (eager).
  *
  * @author Florian Kuebler
  */
@@ -76,11 +77,11 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
                 for (allocation ← allocations) {
                     val escapeState = propertyStore(allocation, EscapeProperty.key)
                     escapeState match {
-                        case EP(_, NoEscape | EscapeInCallee) ⇒
-                        case EP(_, AtMost(NoEscape) | AtMost(EscapeInCallee)) ⇒
+                        case FinalEP(_, NoEscape | EscapeInCallee) ⇒
+                        case FinalEP(_, AtMost(NoEscape) | AtMost(EscapeInCallee)) ⇒
                             maybeLocal = true
                         // /dependees += escapeState
-                        case EP(_, _) ⇒ return Result(cf, GlobalType)
+                        case FinalEP(_, _) ⇒ return Result(cf, GlobalType)
                         case epk ⇒
                             throw new RuntimeException("Escape information should be present")
                         //dependees += epk
@@ -101,9 +102,9 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
 
 object TypeEscapeAnalysis extends FPCFEagerAnalysisScheduler {
 
-    override def derivedProperties: Set[PropertyKind] = Set(TypeEscapeProperty)
+    override def derives: Set[PropertyKind] = Set(TypeEscapeProperty)
 
-    override def usedProperties: Set[PropertyKind] = Set(EscapeProperty)
+    override def uses: Set[PropertyKind] = Set(EscapeProperty)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         //val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -126,24 +127,21 @@ object TypeEscapeAnalysis extends FPCFEagerAnalysisScheduler {
             project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
         } { t ⇒ println(s"computing the 3-address code took ${t.toSeconds}") }
 
-        PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
         val propertyStore = project.get(PropertyStoreKey)
         //propertyStore.debug = true
         time {
-            InterProceduralEscapeAnalysis.start(project, propertyStore)
-            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
+            EagerInterProceduralEscapeAnalysis.start(project, propertyStore)
+            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ println(s"escape analysis took ${t.toSeconds}") }
 
         time {
             TypeEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion(useFallbacksForIncomputableProperties = false)
+            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ println(s"type escape analysis took ${t.toSeconds}") }
 
-        val globalType = propertyStore.entities(GlobalType)
-        val localType = propertyStore.entities(PackageLocalType)
-        val maybeLocalType = propertyStore.entities(MaybePackageLocalType)
+        val globalType = propertyStore.entities(GlobalType, GlobalType)
+        val localType = propertyStore.entities(PackageLocalType, PackageLocalType)
+        val maybeLocalType = propertyStore.entities(MaybePackageLocalType, MaybePackageLocalType)
         var counter1 = 0
         var counter2 = 0
 

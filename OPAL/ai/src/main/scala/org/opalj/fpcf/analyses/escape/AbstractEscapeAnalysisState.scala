@@ -32,7 +32,6 @@ package analyses
 package escape
 
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
@@ -57,9 +56,7 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
         assert((_mostRestrictiveProperty meet prop).lessOrEqualRestrictive(_mostRestrictiveProperty))
-        assert(!prop.isInstanceOf[Conditional])
         _mostRestrictiveProperty = _mostRestrictiveProperty meet prop
-        assert(!_mostRestrictiveProperty.isInstanceOf[Conditional])
     }
 
     /**
@@ -73,7 +70,7 @@ trait AbstractEscapeAnalysisState {
      * Removes the entity property pair (or epk) that correspond to the given ep from the set of
      * dependees.
      */
-    @inline private[escape] final def removeDependency(ep: EP[Entity, Property]): Unit = {
+    @inline private[escape] final def removeDependency(ep: EPS[Entity, Property]): Unit = {
         assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
         _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
     }

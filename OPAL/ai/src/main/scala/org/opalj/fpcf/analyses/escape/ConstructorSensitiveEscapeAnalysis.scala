@@ -35,7 +35,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
@@ -93,61 +92,61 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         eOptionP: EOptionP[Entity, Property]
     )(implicit state: AnalysisState): Unit = {
         eOptionP match {
-            case EP(_, NoEscape) ⇒ //NOTHING TO DO
+            case FinalEP(_, NoEscape) ⇒ //NOTHING TO DO
 
-            case EP(_, GlobalEscape) ⇒
+            case FinalEP(_, GlobalEscape) ⇒
                 state.meetMostRestrictive(GlobalEscape)
 
-            case EP(_, EscapeViaStaticField) ⇒
+            case FinalEP(_, EscapeViaStaticField) ⇒
                 state.meetMostRestrictive(EscapeViaStaticField)
 
-            case EP(_, EscapeViaHeapObject) ⇒
+            case FinalEP(_, EscapeViaHeapObject) ⇒
                 state.meetMostRestrictive(EscapeViaHeapObject)
 
-            case EP(_, EscapeInCallee) ⇒
+            case FinalEP(_, EscapeInCallee) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case EP(_, AtMost(EscapeInCallee)) ⇒
+            case FinalEP(_, AtMost(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case EP(_, EscapeViaParameter) ⇒
+            case FinalEP(_, EscapeViaParameter) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case EP(_, EscapeViaAbnormalReturn) ⇒
+            case FinalEP(_, EscapeViaAbnormalReturn) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case EP(_, EscapeViaParameterAndAbnormalReturn) ⇒
+            case FinalEP(_, EscapeViaParameterAndAbnormalReturn) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case EP(_, AtMost(NoEscape)) ⇒
+            case FinalEP(_, AtMost(NoEscape)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case EP(_, AtMost(EscapeViaParameter)) ⇒
+            case FinalEP(_, AtMost(EscapeViaParameter)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case EP(_, AtMost(EscapeViaAbnormalReturn)) ⇒
+            case FinalEP(_, AtMost(EscapeViaAbnormalReturn)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case EP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒
+            case FinalEP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case ep @ EP(_, Conditional(NoEscape)) ⇒
-                state.addDependency(ep)
-
-            case ep @ EP(_, Conditional(EscapeInCallee)) ⇒
-                state.meetMostRestrictive(EscapeInCallee)
-                state.addDependency(ep)
-
-            case ep @ EP(_, Conditional(AtMost(EscapeInCallee))) ⇒
-                state.meetMostRestrictive(AtMost(EscapeInCallee))
-                state.addDependency(ep)
-
-            case ep @ EP(_, Conditional(_)) ⇒
-                state.meetMostRestrictive(AtMost(NoEscape))
-                state.addDependency(ep)
-
-            case EP(_, p) ⇒
+            case FinalEP(_, p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for constructors")
+
+            case ep @ IntermediateEP(_, _, NoEscape) ⇒
+                state.addDependency(ep)
+
+            case ep @ IntermediateEP(_, _, EscapeInCallee) ⇒
+                state.meetMostRestrictive(EscapeInCallee)
+                state.addDependency(ep)
+
+            case ep @ IntermediateEP(_, _, AtMost(EscapeInCallee)) ⇒
+                state.meetMostRestrictive(AtMost(EscapeInCallee))
+                state.addDependency(ep)
+
+            case ep @ IntermediateEP(_, _, _) ⇒
+                state.meetMostRestrictive(AtMost(NoEscape))
+                state.addDependency(ep)
 
             // result not yet finished
             case epk ⇒
@@ -156,23 +155,15 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     abstract override protected[this] def continuation(
-        other: Entity, p: Property, u: UpdateType
+        someEPS: SomeEPS
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
-        if (p eq PropertyIsLazilyComputed)
-            return IntermediateResult(
-                context.entity,
-                Conditional(state.mostRestrictiveProperty),
-                state.dependees,
-                continuation
-            )
 
-        val newEP = EP(other, p)
-        other match {
+        someEPS.e match {
             case VirtualFormalParameter(DefinedMethod(_, method), -1) if method.isConstructor ⇒
-                state.removeDependency(newEP)
-                handleEscapeState(newEP)
+                state.removeDependency(someEPS)
+                handleEscapeState(someEPS)
                 returnResult
-            case _ ⇒ super.continuation(other, p, u)
+            case _ ⇒ super.continuation(someEPS)
         }
     }
 }

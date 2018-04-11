@@ -31,13 +31,15 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis.V
+import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
@@ -51,6 +53,10 @@ import org.opalj.tac.UVar
  * @author Florian Kuebler
  */
 trait AbstractEscapeAnalysisContext {
+
+
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
     val entity: Entity
     val uses: IntTrieSet
     val defSite: ValueOrigin

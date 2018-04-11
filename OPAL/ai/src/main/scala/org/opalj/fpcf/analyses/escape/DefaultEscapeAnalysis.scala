@@ -157,8 +157,8 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {}
 
     protected[this] override def continuation(
-        other: Entity, p: Property, u: UpdateType
+        someEPS: SomeEPS
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
-        throw new UnknownError(s"unhandled escape property ($p) for $other")
+        throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
     }
 }

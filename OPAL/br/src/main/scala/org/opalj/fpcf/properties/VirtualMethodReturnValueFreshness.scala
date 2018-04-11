@@ -46,12 +46,6 @@ sealed abstract class VirtualMethodReturnValueFreshness extends Property
 
     def asReturnValueFreshness: ReturnValueFreshness
 
-    def asConditional: VirtualMethodReturnValueFreshness
-
-    def asUnconditional: VirtualMethodReturnValueFreshness
-
-    def isConditional: Boolean
-
     def meet(other: VirtualMethodReturnValueFreshness): VirtualMethodReturnValueFreshness = {
         val m = this.asReturnValueFreshness meet other.asReturnValueFreshness
         m.asVirtualMethodReturnValueFreshness
@@ -61,103 +55,27 @@ sealed abstract class VirtualMethodReturnValueFreshness extends Property
 object VirtualMethodReturnValueFreshness extends VirtualMethodReturnValueFreshnessMetaInformation {
     final lazy val key: PropertyKey[VirtualMethodReturnValueFreshness] = PropertyKey.create(
         "VirtualMethodReturnValueFreshness",
-        VNoFreshReturnValue,
-        ReturnValueFreshness.cycleResolutionStrategy
+        VNoFreshReturnValue
     )
 }
 
 case object VFreshReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = false
-
     override def asReturnValueFreshness: ReturnValueFreshness = FreshReturnValue
-
-    override def asConditional: VirtualMethodReturnValueFreshness = VConditionalFreshReturnValue
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = this
-
-    override def isConditional: Boolean = false
 }
 
 case object VPrimitiveReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = false
 
     override def asReturnValueFreshness: ReturnValueFreshness = PrimitiveReturnValue
-
-    override def asConditional: VirtualMethodReturnValueFreshness = throw new UnsupportedOperationException()
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = this
-
-    override def isConditional: Boolean = false
 }
 
 case object VNoFreshReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = true
-
     override def asReturnValueFreshness: ReturnValueFreshness = NoFreshReturnValue
-
-    override def asConditional: VirtualMethodReturnValueFreshness = throw new UnsupportedOperationException()
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = this
-
-    override def isConditional: Boolean = false
 }
 
 case object VGetter extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = true
-
     override def asReturnValueFreshness: ReturnValueFreshness = Getter
-
-    override def asConditional: VirtualMethodReturnValueFreshness = VConditionalGetter
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = this
-
-    override def isConditional: Boolean = false
 }
 
 case object VExtensibleGetter extends VirtualMethodReturnValueFreshness {
     override def asReturnValueFreshness: ReturnValueFreshness = ExtensibleGetter
-
-    override def asConditional: VirtualMethodReturnValueFreshness = VConditionalExtensibleGetter
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = this
-
-    override def isRefinable: Boolean = true
-
-    override def isConditional: Boolean = false
-}
-
-case object VConditionalFreshReturnValue extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = true
-
-    override def asReturnValueFreshness: ReturnValueFreshness = ConditionalFreshReturnValue
-
-    override def asConditional: VirtualMethodReturnValueFreshness = this
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = VFreshReturnValue
-
-    override def isConditional: Boolean = true
-}
-
-case object VConditionalGetter extends VirtualMethodReturnValueFreshness {
-    override def isRefinable: Boolean = true
-
-    override def asReturnValueFreshness: ReturnValueFreshness = ConditionalGetter
-
-    override def asConditional: VirtualMethodReturnValueFreshness = this
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = VGetter
-
-    override def isConditional: Boolean = true
-}
-
-case object VConditionalExtensibleGetter extends VirtualMethodReturnValueFreshness {
-    override def asReturnValueFreshness: ReturnValueFreshness = ConditionalExtensibleGetter
-
-    override def asConditional: VirtualMethodReturnValueFreshness = this
-
-    override def asUnconditional: VirtualMethodReturnValueFreshness = VExtensibleGetter
-
-    override def isRefinable: Boolean = true
-
-    override def isConditional: Boolean = true
 }

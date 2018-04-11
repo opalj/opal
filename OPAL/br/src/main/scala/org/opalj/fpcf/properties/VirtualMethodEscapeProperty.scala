@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.DeclaredMethod
+
 sealed trait VirtualMethodEscapePropertyMetaInformation extends PropertyMetaInformation {
     final type Self = VirtualMethodEscapeProperty
 }
@@ -38,8 +40,6 @@ sealed case class VirtualMethodEscapeProperty(
         escapeProperty: EscapeProperty
 ) extends Property with VirtualMethodEscapePropertyMetaInformation {
     final def key: PropertyKey[VirtualMethodEscapeProperty] = VirtualMethodEscapeProperty.key
-
-    final override def isRefinable: Boolean = escapeProperty.isRefinable
 
     def meet(other: VirtualMethodEscapeProperty) =
         VirtualMethodEscapeProperty(escapeProperty meet other.escapeProperty)
@@ -81,25 +81,6 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
         case AtMost(EscapeViaNormalAndAbnormalReturn) ⇒ VAtMostEscapeViaNormalAndAbnormalReturn
         case AtMost(EscapeViaParameterAndNormalAndAbnormalReturn) ⇒ VAtMostEscapeViaParameterAndNormalAndAbnormalReturn
 
-        case Conditional(NoEscape) ⇒ VCondNoEscape
-        case Conditional(EscapeInCallee) ⇒ VCondEscapeInCallee
-        case Conditional(EscapeViaParameter) ⇒ VCondEscapeViaParameter
-        case Conditional(EscapeViaReturn) ⇒ VCondEscapeViaReturn
-        case Conditional(EscapeViaAbnormalReturn) ⇒ VCondEscapeViaAbnormalReturn
-        case Conditional(EscapeViaParameterAndReturn) ⇒ VCondEscapeViaParameterAndReturn
-        case Conditional(EscapeViaParameterAndAbnormalReturn) ⇒ VCondEscapeViaParameterAndAbnormalReturn
-        case Conditional(EscapeViaNormalAndAbnormalReturn) ⇒ VCondEscapeViaNormalAndAbnormalReturn
-        case Conditional(EscapeViaParameterAndNormalAndAbnormalReturn) ⇒ VCondEscapeViaParameterAndNormalAndAbnormalReturn
-        case Conditional(AtMost(NoEscape)) ⇒ VAtMostCondNoEscape
-        case Conditional(AtMost(EscapeInCallee)) ⇒ VAtMostCondEscapeInCallee
-        case Conditional(AtMost(EscapeViaParameter)) ⇒ VAtMostCondEscapeViaParameter
-        case Conditional(AtMost(EscapeViaReturn)) ⇒ VAtMostCondEscapeViaReturn
-        case Conditional(AtMost(EscapeViaAbnormalReturn)) ⇒ VAtMostCondEscapeViaAbnormalReturn
-        case Conditional(AtMost(EscapeViaParameterAndReturn)) ⇒ VAtMostCondEscapeViaParameterAndReturn
-        case Conditional(AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ VAtMostCondEscapeViaParameterAndAbnormalReturn
-        case Conditional(AtMost(EscapeViaNormalAndAbnormalReturn)) ⇒ VAtMostCondEscapeViaNormalAndAbnormalReturn
-        case Conditional(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)) ⇒ VAtMostCondEscapeViaParameterAndNormalAndAbnormalReturn
-
         case _ ⇒ throw new RuntimeException(s"Unsupported property: $escapeProperty")
 
     }
@@ -132,34 +113,9 @@ object VirtualMethodEscapeProperty extends VirtualMethodEscapePropertyMetaInform
     final val VAtMostEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndAbnormalReturn))
     final val VAtMostEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn))
 
-    final val VCondNoEscape = new VirtualMethodEscapeProperty(Conditional(NoEscape))
-    final val VCondEscapeInCallee = new VirtualMethodEscapeProperty(Conditional(EscapeInCallee))
-
-    final val VCondEscapeViaParameter = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameter))
-    final val VCondEscapeViaReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))
-    final val VCondEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaAbnormalReturn))
-
-    final val VCondEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaNormalAndAbnormalReturn))
-    final val VCondEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameterAndReturn))
-    final val VCondEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameterAndAbnormalReturn))
-    final val VCondEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(EscapeViaParameterAndNormalAndAbnormalReturn))
-
-    final val VAtMostCondNoEscape = new VirtualMethodEscapeProperty(Conditional(AtMost(NoEscape)))
-    final val VAtMostCondEscapeInCallee = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeInCallee)))
-
-    final val VAtMostCondEscapeViaParameter = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameter)))
-    final val VAtMostCondEscapeViaReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaReturn)))
-    final val VAtMostCondEscapeViaAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaAbnormalReturn)))
-
-    final val VAtMostCondEscapeViaNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaNormalAndAbnormalReturn)))
-    final val VAtMostCondEscapeViaParameterAndReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndReturn)))
-    final val VAtMostCondEscapeViaParameterAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndAbnormalReturn)))
-    final val VAtMostCondEscapeViaParameterAndNormalAndAbnormalReturn = new VirtualMethodEscapeProperty(Conditional(AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)))
-
-    final val key: PropertyKey[VirtualMethodEscapeProperty] = PropertyKey.create[VirtualMethodEscapeProperty](
+    final val key: PropertyKey[VirtualMethodEscapeProperty] = PropertyKey.create[DeclaredMethod, VirtualMethodEscapeProperty](
         "VirtualMethodEscapeProperty",
-        VAtMostNoEscape,
-        EscapeProperty.cycleResolutionStrategy
+        VAtMostNoEscape
     )
 
 }

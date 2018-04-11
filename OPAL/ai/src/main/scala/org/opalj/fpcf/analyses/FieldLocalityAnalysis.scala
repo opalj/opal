@@ -47,10 +47,6 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
-import org.opalj.fpcf.analyses.escape.FallBackEscapeAnalysis
-import org.opalj.fpcf.properties.Conditional
-import org.opalj.fpcf.properties.ConditionalExtensibleGetter
-import org.opalj.fpcf.properties.ConditionalGetter
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaReturn
@@ -66,8 +62,6 @@ import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
-import org.opalj.fpcf.properties.VConditionalExtensibleGetter
-import org.opalj.fpcf.properties.VConditionalGetter
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
@@ -343,24 +337,24 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
     private[this] def handleReturnValueFreshness(
         eOptionP: EOptionP[DeclaredMethod, Property]
     )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
-        case EP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒
+        case FinalEP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒
             Some(Result(state.field, NoLocalField))
 
-        case EP(_, Getter | VGetter) ⇒
+        case FinalEP(_, Getter | VGetter) ⇒
             Some(Result(state.field, NoLocalField))
 
-        case EP(_, ExtensibleGetter | VExtensibleGetter) ⇒
+        case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
             Some(Result(state.field, NoLocalField))
 
-        case EP(_, ConditionalGetter | VConditionalGetter) ⇒
+        case IntermediateEP(_, _, Getter | VGetter) ⇒
             Some(Result(state.field, NoLocalField))
 
-        case EP(_, ConditionalExtensibleGetter | VConditionalExtensibleGetter) ⇒
+        case IntermediateEP(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
             Some(Result(state.field, NoLocalField))
 
-        case EP(_, FreshReturnValue | VFreshReturnValue)         ⇒ None
+        case FinalEP(_, FreshReturnValue | VFreshReturnValue)         ⇒ None
 
-        case EP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒ None
+        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒ None
 
         case epkOrCnd ⇒
             state.addMethodDependee(epkOrCnd)
@@ -370,16 +364,20 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
     private[this] def handleEscapeState(
         eOptionP: EOptionP[Entity, EscapeProperty], isClone: Boolean
     )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
-        case EP(_, NoEscape | EscapeInCallee) ⇒ None
+        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ None
 
-        case EP(_, Conditional(NoEscape | EscapeInCallee)) ⇒
+        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addAllocationSiteDependee(eOptionP)
             None
-        case EP(_, EscapeViaReturn) if isClone ⇒ None
-        case EP(_, Conditional(EscapeViaReturn)) if isClone ⇒
+
+        case FinalEP(_, EscapeViaReturn) if isClone ⇒ None
+
+        case IntermediateEP(_, _, EscapeViaReturn) if isClone ⇒
             state.addClonedAllocationSiteDependee(eOptionP)
             None
-        case EP(_, _) ⇒ Some(Result(state.field, NoLocalField))
+
+        case EPS(_, _, _) ⇒ Some(Result(state.field, NoLocalField))
+
         case _ if isClone ⇒
             state.addClonedAllocationSiteDependee(eOptionP)
             None
@@ -465,25 +463,18 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
     }
 
     private[this] def continuation(
-        e: Entity, p: Property, ut: UpdateType
+        someEPS: SomeEPS
     )(implicit state: FieldLocalityState): PropertyComputationResult = {
-        if (p eq PropertyIsLazilyComputed)
-            return IntermediateResult(
-                state.field,
-                state.temporaryState.asConditional,
-                state.dependees,
-                continuation
-            )
 
-        e match {
-            case e: DeclaredMethod ⇒
-                val newEP = EP(e, p)
+        someEPS.e match {
+            case _: DeclaredMethod ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Property]]
                 state.removeMethodDependee(newEP)
                 handleReturnValueFreshness(newEP).foreach(return _)
 
             // order matters: normal allocation sites must not escape via return
             case e: AllocationSite ⇒
-                val newEP = EP(e, p.asInstanceOf[EscapeProperty])
+                val newEP = someEPS.asInstanceOf[EOptionP[AllocationSite, EscapeProperty]]
                 state.removeAllocationSiteDependee(newEP)
                 handleEscapeState(newEP, state.isAllocationSiteOfClone(e)).foreach(return _)
         }
@@ -496,14 +487,22 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
         else
             IntermediateResult(
                 state.field,
-                state.temporaryState.asConditional,
+                NoLocalField,
+                state.temporaryState,
                 state.dependees,
                 continuation
             )
     }
 }
 
-object FieldLocalityAnalysis extends FPCFAnalysisScheduler {
+trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+    override def derives: Set[PropertyKind] = Set(FieldLocality)
+
+    override def uses: Set[PropertyKind] =
+        Set(ReturnValueFreshness, VirtualMethodReturnValueFreshness)
+}
+
+object EagerFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val allFields = project.allFields
@@ -511,6 +510,9 @@ object FieldLocalityAnalysis extends FPCFAnalysisScheduler {
         propertyStore.scheduleForEntities(allFields)(analysis.determineLocality)
         analysis
     }
+}
+
+object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
@@ -518,15 +520,9 @@ object FieldLocalityAnalysis extends FPCFAnalysisScheduler {
      */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(project)
-        propertyStore.scheduleLazyPropertyComputation(
+        propertyStore.registerLazyPropertyComputation(
             FieldLocality.key, analysis.determineLocality
         )
         analysis
     }
-
-    override def derivedProperties: Set[PropertyKind] = Set(FieldLocality)
-
-    override def usedProperties: Set[PropertyKind] =
-        Set(ReturnValueFreshness, VirtualMethodReturnValueFreshness)
-
 }

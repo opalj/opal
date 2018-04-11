@@ -42,9 +42,10 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.Conditional
+import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
+import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
@@ -337,13 +338,13 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         // note: replace by global escape
         if (state.dependees.isEmpty || state.mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
-            if (state.mostRestrictiveProperty.isRefinable) {
-                RefinableResult(context.entity, state.mostRestrictiveProperty)
+            if (state.mostRestrictiveProperty.isInstanceOf[AtMost]) {
+                IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
             } else {
                 Result(context.entity, state.mostRestrictiveProperty)
             }
         } else {
-            IntermediateResult(context.entity, Conditional(state.mostRestrictiveProperty), state.dependees, continuation)
+            IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, state.dependees, continuation)
         }
     }
 
@@ -351,7 +352,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * A continuation function, that handles the updates of property values for entity `other`.
      */
     protected[this] def continuation(
-        other: Entity, p: Property, u: UpdateType
+        someEPS: SomeEPS
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult
 
     /**

@@ -41,9 +41,8 @@ class EscapePropertyTest extends FlatSpec with Matchers {
         EscapeViaParameterAndReturn, EscapeViaParameterAndAbnormalReturn, EscapeViaNormalAndAbnormalReturn,
         EscapeViaParameterAndNormalAndAbnormalReturn)
     val atMostProperties = basicProperties map { AtMost(_) }
-    val conditionalProperties = (basicProperties map { Conditional(_) }) ++ (atMostProperties map { Conditional(_) })
     val globalEscapes = List(GlobalEscape, EscapeViaStaticField, EscapeViaHeapObject)
-    val allProperties = basicProperties ++ atMostProperties ++ conditionalProperties ++ globalEscapes
+    val allProperties = basicProperties ++ atMostProperties ++ globalEscapes
 
     behavior of "the meet operator"
 

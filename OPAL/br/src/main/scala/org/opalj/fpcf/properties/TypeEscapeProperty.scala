@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.ClassFile
+
 sealed trait TypeEscapePropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeEscapeProperty
@@ -37,14 +39,14 @@ sealed trait TypeEscapePropertyMetaInformation extends PropertyMetaInformation {
 
 sealed abstract class TypeEscapeProperty extends Property with TypeEscapePropertyMetaInformation {
 
-    final def key = TypeEscapeProperty.key
+    final def key: PropertyKey[TypeEscapeProperty] = TypeEscapeProperty.key
 }
 
 object TypeEscapeProperty extends TypeEscapePropertyMetaInformation {
 
-    final val key = PropertyKey.create[TypeEscapeProperty]("TypeEscapeProperty", MaybePackageLocalType, MaybePackageLocalType)
+    final val key = PropertyKey.create[ClassFile, TypeEscapeProperty]("TypeEscapeProperty", MaybePackageLocalType)
 }
 
-case object GlobalType extends TypeEscapeProperty { final val isRefinable = false }
-case object PackageLocalType extends TypeEscapeProperty { final val isRefinable = false }
-case object MaybePackageLocalType extends TypeEscapeProperty { final val isRefinable = true }
+case object GlobalType extends TypeEscapeProperty
+case object PackageLocalType extends TypeEscapeProperty
+case object MaybePackageLocalType extends TypeEscapeProperty

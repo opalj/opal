@@ -38,7 +38,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.Conditional
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaHeapObject
@@ -305,39 +304,42 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
         val e = escapeState.e.asInstanceOf[VirtualFormalParameter]
         escapeState match {
-            case EP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
+            case FinalEP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case EP(_, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
+            case FinalEP(_, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case EP(_, GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape)) ⇒
+            case FinalEP(_, GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape)) ⇒
                 state.meetMostRestrictive(GlobalEscape)
 
-            case EP(_, EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField)) ⇒
+            case FinalEP(_, EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField)) ⇒
                 state.meetMostRestrictive(EscapeViaStaticField)
 
-            case EP(_, EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject)) ⇒
+            case FinalEP(_, EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject)) ⇒
                 state.meetMostRestrictive(EscapeViaHeapObject)
 
-            case EP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) if hasAssignment ⇒
+            case FinalEP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) if hasAssignment ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case EP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
+            case FinalEP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
             // we do not track parameters or exceptions in the callee side
-            case EP(_, p) if p.isFinal ⇒
+            case FinalEP(_, p) if !p.isInstanceOf[AtMost] ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case EP(_, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
+            case FinalEP(_, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case ep @ EP(_, Conditional(AtMost(_)) | VirtualMethodEscapeProperty(Conditional(AtMost(_)))) ⇒
+            case FinalEP(_, p) ⇒
+                throw new UnknownError(s"unexpected escape property ($p) for $e")
+
+            case ep @ IntermediateEP(_, _, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 state.addDependency(ep)
 
-            case ep @ EP(_, Conditional(EscapeViaReturn) | VirtualMethodEscapeProperty(Conditional(EscapeViaReturn))) ⇒
+            case ep @ IntermediateEP(_, _, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
                 if (hasAssignment) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                     state.hasReturnValueUseSites += e
@@ -346,21 +348,18 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                 state.addDependency(ep)
 
-            case ep @ EP(_, Conditional(NoEscape) | VirtualMethodEscapeProperty(Conditional(NoEscape))) ⇒
+            case ep @ IntermediateEP(_, _, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 caseConditionalNoEscape(ep, hasAssignment)
 
-            case ep @ EP(_, Conditional(EscapeInCallee) | VirtualMethodEscapeProperty(Conditional(EscapeInCallee))) ⇒
+            case ep @ IntermediateEP(_, _, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
                 caseConditionalNoEscape(ep, hasAssignment)
 
-            case ep @ EP(_, Conditional(_) | VirtualMethodEscapeProperty(Conditional(_))) ⇒
+            case ep @ IntermediateEP(_, _, _) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
 
                 state.addDependency(ep)
-
-            case EP(_, p) ⇒
-                throw new UnknownError(s"unexpected escape property ($p) for $e")
 
             case epk ⇒
                 caseConditionalNoEscape(epk, hasAssignment)
@@ -368,29 +367,21 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     abstract override protected[this] def continuation(
-        other: Entity, p: Property, u: UpdateType
+        someEPS: SomeEPS
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
-        if (p eq PropertyIsLazilyComputed)
-            return IntermediateResult(
-                context.entity,
-                Conditional(state.mostRestrictiveProperty),
-                state.dependees,
-                continuation
-            )
 
-        val newEP = EP(other, p)
 
-        other match {
+        someEPS.e match {
             case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
             // this entity is passed as parameter (or this local) to a method
             case other: VirtualFormalParameter ⇒
-                state.removeDependency(newEP)
-                handleEscapeState(newEP, state.hasReturnValueUseSites contains other)
+                state.removeDependency(someEPS)
+                handleEscapeState(someEPS, state.hasReturnValueUseSites contains other)
                 returnResult
 
-            case _ ⇒ super.continuation(other, p, u)
+            case _ ⇒ super.continuation(someEPS)
         }
     }
 }

@@ -46,7 +46,7 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis.V
+import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis.V
 import org.opalj.fpcf.properties._
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
@@ -54,24 +54,24 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 
 class InterProceduralEscapeAnalysisContext(
-        val entity:                  Entity,
-        val defSite:                 ValueOrigin,
-        val targetMethod:            DeclaredMethod,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method ⇒ Answer
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val targetMethod:            DeclaredMethod,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[V]],
+    val cfg:                     CFG,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore,
+    val isMethodOverridable:     Method ⇒ Answer
 
 ) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with IsMethodOverridableContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
-    with CFGContainer
+        with PropertyStoreContainer
+        with IsMethodOverridableContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
+        with CFGContainer
 
 class InterProceduralEscapeAnalysisState()
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -81,14 +81,14 @@ class InterProceduralEscapeAnalysisState()
  *
  * @author Florian Kuebler
  */
-class InterProceduralEscapeAnalysis private (
-        final val project: SomeProject
+class InterProceduralEscapeAnalysis private[analyses] (
+    final val project: SomeProject
 ) extends DefaultEscapeAnalysis
-    with AbstractInterProceduralEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        with AbstractInterProceduralEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
@@ -113,7 +113,7 @@ class InterProceduralEscapeAnalysis private (
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
-                RefinableResult(fp, AtMost(NoEscape))
+                IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
@@ -122,7 +122,7 @@ class InterProceduralEscapeAnalysis private (
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                RefinableResult(fp, AtMost(NoEscape))
+                IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
@@ -157,13 +157,15 @@ class InterProceduralEscapeAnalysis private (
     override def createState: InterProceduralEscapeAnalysisState = new InterProceduralEscapeAnalysisState()
 }
 
-object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
+trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification {
 
+    override def derives: Set[PropertyKind] = Set(EscapeProperty)
+
+    override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+}
+
+object EagerInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisScheduler with FPCFEagerAnalysisScheduler {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
-
-    override def derivedProperties: Set[PropertyKind] = Set(EscapeProperty)
-
-    override def usedProperties: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(project)
@@ -174,16 +176,17 @@ object InterProceduralEscapeAnalysis extends FPCFAnalysisScheduler {
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
+}
 
+object LazyInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
     override protected[fpcf] def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        VirtualCallAggregatingEscapeAnalysis.startLazily(project)
         val analysis = new InterProceduralEscapeAnalysis(project)
 
-        propertyStore.scheduleLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
+        propertyStore.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis
     }
 }
