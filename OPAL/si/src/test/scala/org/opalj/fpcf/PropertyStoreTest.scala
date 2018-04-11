@@ -370,16 +370,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             import scala.collection.mutable
 
-            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
-                override def hashCode: Int = name.hashCode()
-                override def equals(other: Any): Boolean = other match {
-                    case that: Node ⇒ this.name equals that.name
-                    case _          ⇒ false
-                }
-                override def toString: String = name
-            }
-            object Node { def apply(name: String) = new Node(name) }
-
             // DESCRIPTION OF A GRAPH (WITH CYCLES)
             val nodeA = Node("a")
             val nodeB = Node("b")
@@ -418,7 +408,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 val Key: PropertyKey[ReachableNodes] =
 
                     PropertyKey.create[Node, ReachableNodes](
-                        "ReachableNodes",
+                        s"ReachableNodes(t=${System.nanoTime()})",
                         (_: PropertyStore, e: Node) ⇒ AllNodes,
                         (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.toUBEP
                     )
@@ -526,6 +516,8 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps(nodeR, ReachableNodes.Key) should be(
                 FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
             )
+
+            info("number of executed tasks:"+ps.executedTasks)
         }
 
         it("should be possible to execute an analysis incrementally") {
@@ -556,7 +548,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             val TreeLevelKey: PropertyKey[TreeLevel] = {
                 PropertyKey.create(
-                    "TreeLevel",
+                    s"TreeLevel(t=${System.nanoTime()}",
                     (ps: PropertyStore, e: Entity) ⇒ ???,
                     (ps: PropertyStore, eps: SomeEPS) ⇒ ???
                 )
