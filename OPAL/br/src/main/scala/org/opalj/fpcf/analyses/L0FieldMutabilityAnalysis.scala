@@ -39,7 +39,7 @@ import org.opalj.fpcf.properties.DeclaredFinalField
 import org.opalj.fpcf.properties.FieldMutability
 
 /**
- * Determines if a private static non-final field is always initialized at most once or
+ * Determines if a private, static, non-final field is always initialized at most once or
  * if a field is or can be mutated after (lazy) initialization. Field read and writes at
  * initialization time (e.g., if the current class object is registered in some publically
  * available data-store) are not considered. This is in-line with the semantics of final,
@@ -61,12 +61,13 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
     def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
         val thisType = classFile.thisType
         val fields = classFile.fields
-        // IMPROVE Use access flags matcher instead of querying the access flags one after another.
+        // IMPROVE [L1] Use access flags matcher instead of querying the access flags one after another.
         val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
-        if (psnfFields.isEmpty)
+        if (psnfFields.isEmpty) {
             return NoResult;
+        }
 
-        val finalFields = fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
+        val finalFields = fields.collect { case f if f.isFinal ⇒ new FinalEP(f, DeclaredFinalField) }
 
         var effectivelyFinalFields = psnfFields
         val allMethodsIterator = classFile.methods.iterator
@@ -102,9 +103,9 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
 
         val psnfFieldsAnalysisResult = psnfFields map { f ⇒
             if (effectivelyFinalFields.contains(f))
-                EP(f, EffectivelyFinalField)
+                new FinalEP(f, EffectivelyFinalField)
             else
-                EP(f, NonFinalFieldByAnalysis)
+                new FinalEP(f, NonFinalFieldByAnalysis)
         }
 
         MultiResult(psnfFieldsAnalysisResult ++ finalFields)
@@ -116,7 +117,9 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
  */
 object L0FieldMutabilityAnalysis extends FPCFEagerAnalysisScheduler {
 
-    def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
+    def uses: Set[PropertyKind] = Set.empty
+
+    def derives: Set[PropertyKind] = Set(FieldMutability)
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0FieldMutabilityAnalysis(project)

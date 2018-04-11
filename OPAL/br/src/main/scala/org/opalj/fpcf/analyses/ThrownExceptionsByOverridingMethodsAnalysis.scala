@@ -110,7 +110,7 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
                 case epk ⇒ dependees += epk
             }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, isFinal: Boolean): PropertyComputationResult = {
             methodIsRefinable = false
             p match {
                 case c: AllThrownExceptionsByOverridingMethods ⇒
@@ -166,15 +166,15 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
  */
 object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisScheduler {
 
-    override def usedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
+    override def uses: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
-    override def derivedProperties: Set[PropertyKind] = {
+    override def derives: Set[PropertyKind] = {
         Set(properties.ThrownExceptionsByOverridingMethods.Key)
     }
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
-        val allMethods = project.allMethodsWithBody
+        val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
         ps.scheduleForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
         analysis
     }

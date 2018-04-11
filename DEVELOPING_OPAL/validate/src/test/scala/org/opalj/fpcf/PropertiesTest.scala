@@ -164,7 +164,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
-                    val properties = ps.properties(e)
+                    val epss = ps.properties(e).toIndexedSeq
+                    assert(epss.forall(_.isFinal))
+                    val properties = epss.map(_.toUBEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
@@ -271,11 +273,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(PropertyStoreKey)
+        ps.setupPhase(eagerAnalysisRunners.flatMap(_.derives.map(_.asInstanceOf[PropertyMetaInformation].key)))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion(
-            resolveCycles = true,
-            useFallbacksForIncomputableProperties = true
-        )
+        ps.waitOnPhaseCompletion()
         (p, ps, as)
     }
 }

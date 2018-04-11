@@ -235,7 +235,7 @@ class L1ThrownExceptionsAnalysis private (
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Int] @unchecked) if i.value != 0 ⇒
+                            case LDCInt(value) if value != 0 ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -252,7 +252,7 @@ class L1ThrownExceptionsAnalysis private (
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Long] @unchecked) if i.value != 0L ⇒
+                            case LoadLong(value) if value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -284,7 +284,7 @@ class L1ThrownExceptionsAnalysis private (
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
+        def c(e: Entity, p: Property, isFinal: Boolean): PropertyComputationResult = {
             p match {
                 case e: NoExceptionsAreThrown ⇒
                     if (exceptions.isEmpty)
@@ -347,11 +347,11 @@ class L1ThrownExceptionsAnalysis private (
  */
 object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
 
-    override def usedProperties: Set[PropertyKind] = {
+    override def uses: Set[PropertyKind] = {
         Set(properties.ThrownExceptionsByOverridingMethods.Key)
     }
 
-    override def derivedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;

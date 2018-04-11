@@ -38,11 +38,17 @@ import org.opalj.br.analyses.SomeProject
  */
 trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
+    override final def isLazy: Boolean = false
+
+    final override def schedule(ps: PropertyStore): Unit = {
+        start(ps.context[org.opalj.br.analyses.SomeProject], ps)
+    }
+
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    final protected[fpcf] def start(project: SomeProject): FPCFAnalysis = {
+    def start(project: SomeProject): FPCFAnalysis = {
         start(project, project.get(PropertyStoreKey))
     }
 
@@ -50,5 +56,5 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    protected[fpcf] def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis
+    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis
 }

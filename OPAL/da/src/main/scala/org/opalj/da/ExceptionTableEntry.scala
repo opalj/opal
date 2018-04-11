@@ -45,8 +45,7 @@ case class ExceptionTableEntry(
 ) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        // IMPROVE Write it out as a table row (adapt toXHTML) in ExceptionTable
+        // IMPROVE [L2] Write it out as a table row (adapt toXHTML) in ExceptionTable
         <li>try [{ start_pc }-{ end_pc }) catch { handler_pc } { if (catch_type != 0) { asJavaObjectType(catch_type).asSpan("") } else Text("<ANY>") }</li>
     }
 }
-

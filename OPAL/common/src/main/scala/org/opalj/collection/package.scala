@@ -39,6 +39,8 @@ import scala.collection.JavaConverters._
  */
 package object collection {
 
+    type AnIntSet = IntSet[_]
+
     //
     // Helpers related to Lists
     //

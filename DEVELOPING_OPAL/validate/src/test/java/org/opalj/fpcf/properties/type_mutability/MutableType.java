@@ -26,28 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj.fpcf.properties.type_mutability;
+
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * A `PropertyObserver` is a function that is called if the property associated
- * with the respective entity is computed or refined.
+ * Annotation to state that the annotated type mutable.
  *
- * The parameters of the function are the observed element (dependee) and its
- * (then available/refined) property.
- *
- * ==Core Properties==
- * All implementations of a `PropertyObserver` never directly execute/continue
- * the analysis but schedules it if necessary.
- *
- * @author Michael Eichberg
+ * @author Florian Kuebler
  */
-private[fpcf] trait PropertyObserver extends ((Entity, Property, UpdateType) ⇒ Unit) {
+@PropertyValidator(key = "TypeImmutability", validator = MutableTypeMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface MutableType {
 
     /**
-     * The entity and property key for which the property of the observed element
-     * is necessary.
+     * A short reasoning of this property.
      */
-    def dependerEPK: SomeEPK
-
+    String value();// default = "N/A";
 }
-

@@ -26,14 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 /**
- * An entity and a specific associated property if it is available.
+ * An entity and an associated property - if it is available.
  *
  * @author Michael Eichberg
  */
-abstract class EOptionP[+E <: Entity, +P <: Property] private[fpcf] () {
+sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
      * The entity.
@@ -49,106 +50,144 @@ abstract class EOptionP[+E <: Entity, +P <: Property] private[fpcf] () {
     def toEPK: EPK[E, P]
 
     /**
-     * Returns `true` if and only if we have a property and the property was stored in the
-     * store using (Immediate)(Multi)Result or if the property is final by itself.
-     */
-    def isPropertyFinal: Boolean
-
-    /**
      * @return `true` if the entity is associated with a property.
      */
     def hasProperty: Boolean
 
-    final def hasNoProperty: Boolean = !hasProperty
+    def hasNoProperty: Boolean = !hasProperty
 
     /**
-     * Combines the test if we have a property and if we have one if it is equal to the given one.
+     * Returns `true` if and only if we have a property and the property was stored in the
+     * store using `(Multi)Result`. I.e., a `PhaseFinal` property is not considered to be final.
      */
-    final def is[T >: P](p: T): Boolean = this.hasProperty && p == this.p
+    def isFinal: Boolean
+
+    final def isRefinable: Boolean = !isFinal
 
     /**
-     * Returns the property if it is available otherwise an `UnsupportedOperationException` is
-     * thrown.
+     * Combines the test if we have a final property and – if we have one – if it is equal (by
+     * means of equality check) to the given one.
+     */
+    def is[T >: P](p: T): Boolean = this.hasProperty && isFinal && this.ub == p
+
+    /**
+     * Returns the upper bound of the property if it is available otherwise an
+     * `UnsupportedOperationException` is thrown.
+     *
+     * @note If the property is final, the lb (and ub) will return the final property `p`.
      */
     @throws[UnsupportedOperationException]("if no property is available")
-    def p: P
+    def ub: P
 
-    override def toString: String = s"EOptionP($e,$p)"
+    /**
+     * Returns the lower bound of the property if it is available
+     * otherwise an `UnsupportedOperationException` is thrown.
+     *
+     * @note If the property is final, the lb (and ub) will return the final property `p`.
+     */
+    @throws[UnsupportedOperationException]("if no property is available")
+    def lb: P
+
 }
 
 /**
- * Factory object to create [[EP]] and [[EPK]] objects.
+ * Factory and extractor for [[EPK]] objects.
+ *
+ * @author Michael Eichberg
  */
 object EOptionP {
 
-    def apply[E <: Entity, P <: Property](
-        e:       E,
-        pk:      PropertyKey[P],
-        pOption: Option[P]
-    ): EOptionP[E, P] = {
-        pOption match {
-            case Some(p) ⇒ EP(e, p)
-            case None    ⇒ EPK(e, pk)
-        }
+    def unapply[E <: Entity, P <: Property](eOptP: EOptionP[E, P]): Option[(E, PropertyKey[P])] = {
+        Some((eOptP.e, eOptP.pk))
     }
 }
 
 /**
- * A pairing of an [[Entity]] and an associated [[Property]].
+ * A pairing of an [[Entity]] and an associated [[Property]] along with its state.
  *
  * @note entities are compared using reference equality and properties are compared using `equals`.
  *
  * @author Michael Eichberg
  */
-// TODO Add property state information
-sealed class EP[+E <: Entity, +P <: Property](
-        val e: E,
-        val p: P
-) extends EOptionP[E, P] with Product2[E, P] {
+sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
-    override def _1: E = e
-    override def _2: P = p
+    final override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
 
-    def isPropertyFinal: Boolean = p.isFinal
+    final override def toEPK: EPK[E, P] = EPK(e, pk)
 
-    def hasProperty: Boolean = true
+    final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
-    override def equals(other: Any): Boolean = {
+    final override def hasProperty: Boolean = true
+
+    final override def equals(other: Any): Boolean = {
         other match {
-            case that: EP[_, _] ⇒ (that.e eq this.e) && this.p == that.p
-            case _              ⇒ false
+            case that: EPS[_, _] ⇒
+                (that.e eq this.e) && this.lb == that.lb && this.ub == that.ub
+            case _ ⇒
+                false
         }
     }
 
-    override def canEqual(that: Any): Boolean = that.isInstanceOf[EP[_, _]]
-
-    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
-
-    def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
-
-    def toEPK: EPK[E, P] = EPK(e, pk)
-
-    override def toString: String = {
-        s"EP(${e}@${System.identityHashCode(e).toHexString},$p)"
+    final override def hashCode: Int = {
+        ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
     }
 }
 
 /**
- * Provides a factory and an extractor for [[EP]] objects.
+ * Provides a factory and an extractor for [[EPS]] objects.
  *
  * @author Michael Eichberg
  */
-object EP {
+object EPS {
 
-    def apply[E <: Entity, P <: Property](e: E, p: P): EP[E, P] = new EP(e, p)
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
+        if (lb == ub)
+            FinalEP(e, ub)
+        else
+            IntermediateEP(e, lb, ub)
+    }
 
-    def unapply[E <: Entity, P <: Property](ep: EP[E, P]): Option[(E, P)] = Some((ep.e, ep.p))
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
+        Some((eps.e, eps.lb, eps.ub))
+    }
 
 }
 
-final class FinalEP[+E <: Entity, +P <: Property](e: E, p: P) extends EP[E, P](e, p) {
+final class IntermediateEP[+E <: Entity, +P <: Property](
+        val e:  E,
+        val lb: P,
+        val ub: P
+) extends EPS[E, P] {
 
-    override def isPropertyFinal: Boolean = true
+    override def isFinal: Boolean = false
+
+    final override def toString: String = {
+        s"IntermediateEP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
+    }
+}
+
+object IntermediateEP {
+
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): IntermediateEP[E, P] = {
+        new IntermediateEP(e, lb, ub)
+    }
+
+    def unapply[E <: Entity, P <: Property](eps: IntermediateEP[E, P]): Option[(E, P, P)] = {
+        Some((eps.e, eps.lb, eps.ub))
+    }
+}
+
+final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
+
+    override def isFinal: Boolean = true
+
+    final override def lb: P = ub
+
+    final def p: P = ub // or lb
+
+    final override def toString: String = {
+        s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
+    }
 
 }
 
@@ -156,11 +195,9 @@ object FinalEP {
 
     def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
 
-}
-
-object SomeProperty {
-
-    def unapply[P <: Property](ep: EP[_, P]): Option[P] = Some(ep.p)
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Option[(E, P)] = {
+        Some((eps.e, eps.lb))
+    }
 
 }
 
@@ -168,25 +205,24 @@ object SomeProperty {
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
  * Compared to a standard `Tuple2` the entities are compared using reference comparison
- * and not equality based on `equals` checks.
+ * and not equality based on `equals` checks. `PropertyKey`s are compared using equals.
  *
  * @author Michael Eichberg
  */
 final class EPK[+E <: Entity, +P <: Property](
         val e:  E,
         val pk: PropertyKey[P]
-) extends EOptionP[E, P] with Product2[E, PropertyKey[P]] {
+) extends EOptionP[E, P] {
 
-    override def _1: E = e
-    override def _2: PropertyKey[P] = pk
+    override def lb: Nothing = throw new UnsupportedOperationException()
 
-    def isPropertyFinal: Boolean = false
+    override def ub: Nothing = throw new UnsupportedOperationException()
 
-    def hasProperty: Boolean = false
+    override def isFinal: Boolean = false
 
-    def p: Nothing = throw new UnsupportedOperationException()
+    override def hasProperty: Boolean = false
 
-    def toEPK: this.type = this
+    override def toEPK: this.type = this
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -194,8 +230,6 @@ final class EPK[+E <: Entity, +P <: Property](
             case _               ⇒ false
         }
     }
-
-    override def canEqual(that: Any): Boolean = that.isInstanceOf[EPK[_, _]]
 
     override def hashCode: Int = e.hashCode() * 511 + pk.id
 
@@ -213,7 +247,11 @@ final class EPK[+E <: Entity, +P <: Property](
  */
 object EPK {
 
-    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EPK[E, P] = new EPK(e, pk)
+    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EPK[e.type, P] = new EPK(e, pk)
+
+    def apply[E <: Entity, P <: Property](e: E, p: P): EPK[E, P] = {
+        new EPK(e, p.key.asInstanceOf[PropertyKey[P]])
+    }
 
     def unapply[E <: Entity, P <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
         Some((epk.e, epk.pk))
