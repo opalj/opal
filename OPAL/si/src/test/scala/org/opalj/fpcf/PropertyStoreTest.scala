@@ -426,10 +426,11 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             val ps = createPropertyStore()
 
-            /* The following analysis only uses the new information given to it and updates
-                                 * the set of observed dependees.
-                                 */
-            def analysis(n: Node): PropertyComputationResult = {
+            /*
+             * The following analysis only uses the new information given to it and updates
+             * the set of observed dependees.
+             */
+            def reachableNodesAnalysis(n: Node): PropertyComputationResult = {
                 val nTargets = n.targets
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
@@ -481,8 +482,82 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 else
                     IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
             }
+            ps.scheduleForEntities(nodeEntities)(reachableNodesAnalysis)
 
-            ps.scheduleForEntities(nodeEntities)(analysis)
+            def reachableNodesCountAnalysis(n: Node): PropertyComputationResult = {
+                var dependees: List[SomeEOptionP] = Nil
+                var ub: Int = n.targets.size
+
+                def c(eps: SomeEOptionP): PropertyComputationResult = {
+                    eps match {
+
+                        case IntermediateEP(_, _, ReachableNodesCount(otherUB)) ⇒
+                            if (ub + otherUB > 4)
+                                Result(n, TooManyNodesReachable)
+                            else {
+                                dependees = eps :: dependees.filter(_.e ne eps.e)
+                                IntermediateResult(
+                                    n, TooManyNodesReachable, ReachableNodesCount(ub),
+                                    dependees,
+                                    c
+                                )
+                            }
+
+                        case FinalEP(_, reachableNodesCount: ReachableNodesCount) ⇒
+                            ub += reachableNodesCount.value
+                            if (ub > 4) {
+                                Result(n, TooManyNodesReachable)
+                            } else if (dependees.tail.isEmpty) {
+                                Result(n, ReachableNodesCount(ub))
+                            } else {
+                                dependees = dependees.filter(_.e ne eps.e)
+                                IntermediateResult(
+                                    n, TooManyNodesReachable, ReachableNodesCount(ub),
+                                    dependees,
+                                    c
+                                )
+                            }
+                    }
+                }
+
+                n.targets forall { successor ⇒
+                    if (successor == n) {
+                        ub = TooManyNodesReachable.value
+                        false // we are done...
+                    } else {
+                        ps(successor, ReachableNodesCount.Key) match {
+                            case epk: EPK[_, _] ⇒
+                                dependees ::= epk
+                                true
+                            case iep @ IntermediateEP(_, _, ReachableNodesCount(otherUB)) ⇒
+                                if (ub + otherUB > 4) {
+                                    ub = TooManyNodesReachable.value
+                                    false
+                                } else {
+                                    // we have to wait for the final value before we can add the count
+                                    dependees ::= iep
+                                    true
+                                }
+                            case FinalEP(_, reachableNodesCount) ⇒
+                                ub += reachableNodesCount.value
+                                true
+                        }
+                    }
+                }
+                if (ub > 4)
+                    Result(n, TooManyNodesReachable)
+                else if (dependees.isEmpty)
+                    Result(n, ReachableNodesCount(ub))
+                else
+                    IntermediateResult(
+                        n, TooManyNodesReachable, ReachableNodesCount(ub),
+                        dependees,
+                        c
+                    )
+            }
+            ps.registerLazyPropertyComputation(ReachableNodesCount.Key, reachableNodesCountAnalysis)
+            ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
+
             ps.waitOnPhaseCompletion()
 
             // the graph:
@@ -756,3 +831,24 @@ class Node(
     override def toString: String = name // RECALL: Nodes are potentially used in cycles.
 }
 object Node { def apply(name: String) = new Node(name) }
+
+object ReachableNodesCount {
+    val Key: PropertyKey[ReachableNodesCount] =
+
+        PropertyKey.create[Node, ReachableNodesCount](
+            s"ReachableNodesCount",
+            (_: PropertyStore, e: Node) ⇒ TooManyNodesReachable,
+            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ FinalEP(eps.e, TooManyNodesReachable)
+        )
+}
+case class ReachableNodesCount(value: Int) extends Property {
+    type Self = ReachableNodesCount
+    def key = ReachableNodesCount.Key
+}
+
+object NoNodesReachable extends ReachableNodesCount(0) {
+    override def toString: String = "NoNodesReachable"
+}
+object TooManyNodesReachable extends ReachableNodesCount(64) {
+    override def toString: String = "TooManyNodesReachable"
+}
