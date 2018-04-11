@@ -459,12 +459,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     val newUB = ReachableNodes(allDependees)
 
                     // Adapt the set of dependeePs to ensure termination
+                    dependeePs = dependeePs.filter { _.e ne dependee.e }
                     if (!eps.isFinal) {
-                        dependeePs =
-                            dependeePs.filter { _.e ne dependee.e } ++
-                                Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
-                    } else {
-                        dependeePs = Set.empty
+                        dependeePs ++=
+                            Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
                     }
                     if (dependeePs.nonEmpty)
                         IntermediateResult(n, AllNodes, newUB, dependeePs, c)
@@ -501,7 +499,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             // a -> f -> h
             // a -> f -> j
             // a -> f -> i
-            //           h <-> j <-> i
+            //           h <-> j <-> i // this cycle is resolved in multiple steps...
             // a -> g -> h
             // a -> h
             // a -> b -> c
@@ -509,7 +507,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             //           d ⟲
             //           d -> e
             //                e -> r
-            //       ↖︎----------< r
+            //       ↖︎-----------< r
             ps(nodeA, ReachableNodes.Key) should be(
                 FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
             )
@@ -566,7 +564,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             case class TreeLevel(length: Int) extends Property {
                 final type Self = TreeLevel
                 final def key = TreeLevelKey
-                final def isRefineable = false
             }
 
             val ps = createPropertyStore()
@@ -580,7 +577,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
             }
 
-            // the dot in ".<||<" is necessary to shut-up scalariform...
             ps.scheduleForEntity(nodeRoot)(analysis(0))
             ps.waitOnPhaseCompletion
 
