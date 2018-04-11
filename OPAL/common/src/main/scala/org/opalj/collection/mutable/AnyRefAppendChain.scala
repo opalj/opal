@@ -48,7 +48,7 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
 
     def nonEmpty = h != null
 
-    def getAndRemoveHead(): N = {
+    def take(): N = {
         val v = h.v
         h = h.rest
         if (h == null) l == null

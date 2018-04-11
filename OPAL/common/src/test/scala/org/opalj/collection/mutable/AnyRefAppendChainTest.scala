@@ -65,13 +65,13 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
 
         c.head should be("c")
         c.last should be("a")
-        c.getAndRemoveHead() should be("c")
+        c.take() should be("c")
         c.head should be("b")
         c.last should be("a")
-        c.getAndRemoveHead() should be("b")
+        c.take() should be("b")
         c.head should be("a")
         c.last should be("a")
-        c.getAndRemoveHead() should be("a")
+        c.take() should be("a")
         c should be('empty)
     }
 
@@ -82,13 +82,13 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
 
         c.head should be("a")
         c.last should be("c")
-        c.getAndRemoveHead() should be("a")
+        c.take() should be("a")
         c.head should be("b")
         c.last should be("c")
-        c.getAndRemoveHead() should be("b")
+        c.take() should be("b")
         c.head should be("c")
         c.last should be("c")
-        c.getAndRemoveHead() should be("c")
+        c.take() should be("c")
 
         c should be('empty)
     }
@@ -96,9 +96,9 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
     it should ("after removing pre-/appended elements the list should be empty") in {
         val c = new AnyRefAppendChain[AnyRef]()
         c.append("a").prepend("b").append("c")
-        c.getAndRemoveHead() should be("b")
-        c.getAndRemoveHead() should be("a")
-        c.getAndRemoveHead() should be("c")
+        c.take() should be("b")
+        c.take() should be("a")
+        c.take() should be("c")
         c should be('empty)
         c should not be ('nonEmpty)
         assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
