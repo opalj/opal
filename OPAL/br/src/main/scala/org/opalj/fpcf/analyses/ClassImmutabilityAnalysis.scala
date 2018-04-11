@@ -257,7 +257,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val hasMutableOrConditionallyImmutableField =
             // IMPROVE Use the precise type of the field (if available)!
             fieldTypesImmutability.exists { eOptP ⇒
-                eOptP.hasProperty && (eOptP.ub.isMutable || eOptP.ub.isConditionallyImmutable)
+                eOptP.hasProperty && (eOptP.ub.isMutable || eOptP.ub.isImmutableContainer)
             }
 
         if (hasMutableOrConditionallyImmutableField) {
