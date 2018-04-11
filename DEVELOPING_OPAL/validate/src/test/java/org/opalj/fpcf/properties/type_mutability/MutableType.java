@@ -29,7 +29,6 @@
 package org.opalj.fpcf.properties.type_mutability;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.field_mutability.NonFinalMatcher;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -40,7 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Florian Kuebler
  */
-@PropertyValidator(key = "TypeImmutability", validator = AbstractTypeImmutabilityMatcher.MutableTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability", validator = MutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface MutableType {

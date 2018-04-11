@@ -52,8 +52,8 @@ class AbstractTypeImmutabilityMatcher(val property: TypeImmutability) extends Ab
             None
         }
     }
-
-    class ImmutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableType)
-    class ImmutableContainerTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainerType)
-    class MutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.MutableType)
 }
+
+class ImmutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableType)
+class ImmutableContainerTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainerType)
+class MutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.MutableType)

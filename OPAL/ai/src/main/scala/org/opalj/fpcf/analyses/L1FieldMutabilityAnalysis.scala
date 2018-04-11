@@ -128,7 +128,10 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         //     }
         // }
 
-        for ((method, pc) ← fieldAccessInformation.writeAccesses(field)) {
+        for {
+            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
+            pc ← pcs
+        } {
             val stmts = tacai(method).stmts
             stmts.find(_.pc == pc) match {
                 case None ⇒ // nothing to do as the put field is dead

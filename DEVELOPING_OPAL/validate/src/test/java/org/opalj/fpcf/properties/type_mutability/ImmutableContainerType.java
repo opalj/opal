@@ -39,7 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Florian Kuebler
  */
-@PropertyValidator(key = "TypeImmutability", validator = AbstractTypeImmutabilityMatcher.ImmutableContainerTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability", validator = ImmutableContainerTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface ImmutableContainerType {

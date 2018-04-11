@@ -52,24 +52,24 @@ class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends 
             None
         }
     }
+}
 
-    class ImmutableObjectMatcher extends AbstractClassImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableObject)
-    class ImmutableContainerObjectMatcher extends AbstractClassImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainer)
-    class MutableObjectMatcher extends AbstractPropertyMatcher {
-        override def validateProperty(
-            p:          Project[_],
-            as:         Set[ObjectType],
-            entity:     scala.Any,
-            a:          AnnotationLike,
-            properties: Traversable[Property]
-        ): Option[String] = {
-            if (properties.exists {
-                case _: org.opalj.fpcf.properties.MutableObject ⇒ true
-                case _                                          ⇒ false
-            })
-                Some(a.elementValuePairs.head.value.asStringValue.value)
-            else
-                None
-        }
+class ImmutableObjectMatcher extends AbstractClassImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableObject)
+class ImmutableContainerObjectMatcher extends AbstractClassImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainer)
+class MutableObjectMatcher extends AbstractPropertyMatcher {
+    override def validateProperty(
+        p:          Project[_],
+        as:         Set[ObjectType],
+        entity:     scala.Any,
+        a:          AnnotationLike,
+        properties: Traversable[Property]
+    ): Option[String] = {
+        if (properties.exists {
+            case _: org.opalj.fpcf.properties.MutableObject ⇒ true
+            case _                                          ⇒ false
+        })
+            Some(a.elementValuePairs.head.value.asStringValue.value)
+        else
+            None
     }
 }

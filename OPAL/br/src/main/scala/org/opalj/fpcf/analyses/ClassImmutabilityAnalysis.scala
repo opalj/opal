@@ -138,7 +138,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                                     superClassType,
                                     eps,
                                     eps.isFinal,
-                                    lazyComputation = true)(cf)
+                                    lazyComputation = true
+                                )(cf)
                             case epk ⇒
                                 determineClassImmutability(
                                     superClassType,
@@ -176,7 +177,6 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     ): PropertyComputationResult = {
         // assert(superClassMutability.isMutable.isNoOrUnknown)
         val t = cf.thisType
-
 
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
 
@@ -454,7 +454,7 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
  * @author Michael Eichberg
  */
 object EagerClassImmutabilityAnalysis
-        extends ClassImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends ClassImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
 
@@ -474,7 +474,7 @@ object EagerClassImmutabilityAnalysis
 }
 
 object LazyClassImmutabilityAnalysis
-        extends ClassImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends ClassImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

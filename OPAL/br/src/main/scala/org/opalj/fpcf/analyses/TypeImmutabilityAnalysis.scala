@@ -80,7 +80,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             val c = new OnUpdateContinuation { c ⇒
                 def apply(eps: SomeEPS): PropertyComputationResult = {
                     eps match {
-                        case EPS(_, lb: ClassImmutability, ub:ClassImmutability) ⇒
+                        case EPS(_, lb: ClassImmutability, ub: ClassImmutability) ⇒
                             val thisLB = lb.correspondingTypeImmutability
                             val thisUB = ub.correspondingTypeImmutability
                             if (eps.isFinal)
@@ -239,7 +239,7 @@ trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
  * @author Michael Eichberg
  */
 object EagerTypeImmutabilityAnalysis
-        extends TypeImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends TypeImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -260,7 +260,7 @@ object EagerTypeImmutabilityAnalysis
 }
 
 object LazyTypeImmutabilityAnalysis
-        extends TypeImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends TypeImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
