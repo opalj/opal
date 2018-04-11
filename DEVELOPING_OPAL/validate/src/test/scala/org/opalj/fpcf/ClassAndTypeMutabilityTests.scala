@@ -43,7 +43,7 @@ class ClassAndTypeMutabilityTests extends PropertiesTest {
 
     describe("the field, class and type mutability analyses are executed") {
         val as = executeAnalyses(Set(L0FieldMutabilityAnalysis, EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis))
-        validateProperties(as, classFilesWithAnnotations, Set("TypeImmutability", "ClassImmutability"))
+        validateProperties(as, classFilesWithAnnotations.map(tp ⇒ (tp._1.thisType, tp._2, tp._3)), Set("TypeImmutability", "ClassImmutability"))
     }
 
 }
