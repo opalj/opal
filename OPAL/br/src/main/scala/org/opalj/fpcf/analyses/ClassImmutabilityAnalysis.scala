@@ -88,7 +88,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         immutability: MutableObject
     ): MultiResult = {
         val allSubtypes = classHierarchy.allSubclassTypes(t, reflexive = true)
-        val r = allSubtypes.map { st ⇒ new EP(st, immutability) }.toSeq
+        val r = allSubtypes.map { st ⇒ new FinalEP(st, immutability) }.toSeq
         MultiResult(r)
     }
 
@@ -405,7 +405,7 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        handleResult(MultiResult(allInterfaces.map(cf ⇒ new EP(cf.thisType, ImmutableObject))))
+        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalEP(cf.thisType, ImmutableObject))))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
