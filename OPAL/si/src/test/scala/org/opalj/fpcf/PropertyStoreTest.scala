@@ -370,37 +370,45 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             import scala.collection.mutable
 
-            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
-                override def hashCode: Int = name.hashCode()
-                override def equals(other: Any): Boolean = other match {
-                    case that: Node ⇒ this.name equals that.name
-                    case _          ⇒ false
-                }
-                override def toString: String = name
-            }
-            object Node { def apply(name: String) = new Node(name) }
-
             // DESCRIPTION OF A GRAPH (WITH CYCLES)
             val nodeA = Node("a")
             val nodeB = Node("b")
             val nodeC = Node("c")
             val nodeD = Node("d")
             val nodeE = Node("e")
+            val nodeF = Node("f")
+            val nodeG = Node("g")
+            val nodeH = Node("h")
+            val nodeI = Node("i")
+            val nodeJ = Node("j")
             val nodeR = Node("r")
             nodeA.targets += nodeB // the graph:
+            nodeA.targets += nodeF // a -> f
+            nodeF.targets += nodeH //      f -> h
+            nodeA.targets += nodeG // a -> g
+            nodeG.targets += nodeH //      g -> h
+            nodeA.targets += nodeH // a -> h
+            nodeF.targets += nodeJ // f -> j
+            nodeF.targets += nodeI // f -> i
+            nodeH.targets += nodeJ // h <-> j
+            nodeJ.targets += nodeH // ...
+            nodeJ.targets += nodeI // j <-> i
+            nodeI.targets += nodeJ // ...
             nodeB.targets += nodeC // a -> b -> c
-            nodeB.targets += nodeD //        ↘︎ d
+            nodeB.targets += nodeD //        ↘︎  d
             nodeD.targets += nodeD //           d ⟲
             nodeD.targets += nodeE //           d -> e
             nodeE.targets += nodeR //                e -> r
-            nodeR.targets += nodeB //       ↖︎-----------↵︎
-            val nodeEntities = List[Node](nodeA, nodeB, nodeC, nodeD, nodeE, nodeR)
+            nodeR.targets += nodeB //       ↖︎------------↵︎
+            val nodeEntities = List[Node](
+                nodeA, nodeB, nodeC, nodeD, nodeE, nodeF, nodeG, nodeH, nodeI, nodeJ, nodeR
+            )
 
             object ReachableNodes {
                 val Key: PropertyKey[ReachableNodes] =
 
                     PropertyKey.create[Node, ReachableNodes](
-                        "ReachableNodes",
+                        s"ReachableNodes(t=${System.nanoTime()})",
                         (_: PropertyStore, e: Node) ⇒ AllNodes,
                         (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.toUBEP
                     )
@@ -418,10 +426,11 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             val ps = createPropertyStore()
 
-            /* The following analysis only uses the new information given to it and updates
-                                 * the set of observed dependees.
-                                 */
-            def analysis(n: Node): PropertyComputationResult = {
+            /*
+             * The following analysis only uses the new information given to it and updates
+             * the set of observed dependees.
+             */
+            def reachableNodesAnalysis(n: Node): PropertyComputationResult = {
                 val nTargets = n.targets
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
@@ -443,7 +452,8 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     // Adapt the set of dependeePs to ensure termination
                     dependeePs = dependeePs.filter { _.e ne dependee.e }
                     if (!eps.isFinal) {
-                        dependeePs ++= Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
+                        dependeePs ++=
+                            Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
                     }
                     if (dependeePs.nonEmpty)
                         IntermediateResult(n, AllNodes, newUB, dependeePs, c)
@@ -467,25 +477,122 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     else
                         reachableNodes
                 )
-                IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
+                if (dependeePs.isEmpty)
+                    Result(n, currentReachableNodes)
+                else
+                    IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
             }
+            ps.scheduleForEntities(nodeEntities)(reachableNodesAnalysis)
 
-            ps.scheduleForEntities(nodeEntities)(analysis)
+            def reachableNodesCountAnalysis(n: Node): PropertyComputationResult = {
+                var dependees: List[SomeEOptionP] = Nil
+                var ub: Int = n.targets.size
+
+                def c(eps: SomeEOptionP): PropertyComputationResult = {
+                    eps match {
+
+                        case IntermediateEP(_, _, ReachableNodesCount(otherUB)) ⇒
+                            if (ub + otherUB > 4)
+                                Result(n, TooManyNodesReachable)
+                            else {
+                                dependees = eps :: dependees.filter(_.e ne eps.e)
+                                IntermediateResult(
+                                    n, TooManyNodesReachable, ReachableNodesCount(ub),
+                                    dependees,
+                                    c
+                                )
+                            }
+
+                        case FinalEP(_, reachableNodesCount: ReachableNodesCount) ⇒
+                            ub += reachableNodesCount.value
+                            if (ub > 4) {
+                                Result(n, TooManyNodesReachable)
+                            } else if (dependees.tail.isEmpty) {
+                                Result(n, ReachableNodesCount(ub))
+                            } else {
+                                dependees = dependees.filter(_.e ne eps.e)
+                                IntermediateResult(
+                                    n, TooManyNodesReachable, ReachableNodesCount(ub),
+                                    dependees,
+                                    c
+                                )
+                            }
+                    }
+                }
+
+                n.targets forall { successor ⇒
+                    if (successor == n) {
+                        ub = TooManyNodesReachable.value
+                        false // we are done...
+                    } else {
+                        ps(successor, ReachableNodesCount.Key) match {
+                            case epk: EPK[_, _] ⇒
+                                dependees ::= epk
+                                true
+                            case iep @ IntermediateEP(_, _, ReachableNodesCount(otherUB)) ⇒
+                                if (ub + otherUB > 4) {
+                                    ub = TooManyNodesReachable.value
+                                    false
+                                } else {
+                                    // we have to wait for the final value before we can add the count
+                                    dependees ::= iep
+                                    true
+                                }
+                            case FinalEP(_, reachableNodesCount) ⇒
+                                ub += reachableNodesCount.value
+                                true
+                        }
+                    }
+                }
+                if (ub > 4)
+                    Result(n, TooManyNodesReachable)
+                else if (dependees.isEmpty)
+                    Result(n, ReachableNodesCount(ub))
+                else
+                    IntermediateResult(
+                        n, TooManyNodesReachable, ReachableNodesCount(ub),
+                        dependees,
+                        c
+                    )
+            }
+            ps.registerLazyPropertyComputation(ReachableNodesCount.Key, reachableNodesCountAnalysis)
+            ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
+
             ps.waitOnPhaseCompletion()
 
             // the graph:
+            // a -> f -> h
+            // a -> f -> j
+            // a -> f -> i
+            //           h <-> j <-> i // this cycle is resolved in multiple steps...
+            // a -> g -> h
+            // a -> h
             // a -> b -> c
             //      b -> d
             //           d ⟲
             //           d -> e
             //                e -> r
-            //       ↖︎----------< r
-            ps(nodeA, ReachableNodes.Key) should be(FinalEP(nodeA, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeB, ReachableNodes.Key) should be(FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeC, ReachableNodes.Key) should be(FinalEP(nodeC, ReachableNodes(Set())))
-            ps(nodeD, ReachableNodes.Key) should be(FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeE, ReachableNodes.Key) should be(FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
-            ps(nodeR, ReachableNodes.Key) should be(FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))))
+            //       ↖︎-----------< r
+            ps(nodeA, ReachableNodes.Key) should be(
+                FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+            )
+            ps(nodeB, ReachableNodes.Key) should be(
+                FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+            ps(nodeC, ReachableNodes.Key) should be(
+                FinalEP(nodeC, ReachableNodes(Set()))
+            )
+            ps(nodeD, ReachableNodes.Key) should be(
+                FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+            ps(nodeE, ReachableNodes.Key) should be(
+                FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+            ps(nodeR, ReachableNodes.Key) should be(
+                FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+            )
+
+            info("number of executed tasks:"+ps.executedTasks)
         }
 
         it("should be possible to execute an analysis incrementally") {
@@ -516,7 +623,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
             val TreeLevelKey: PropertyKey[TreeLevel] = {
                 PropertyKey.create(
-                    "TreeLevel",
+                    s"TreeLevel(t=${System.nanoTime()}",
                     (ps: PropertyStore, e: Entity) ⇒ ???,
                     (ps: PropertyStore, eps: SomeEPS) ⇒ ???
                 )
@@ -524,7 +631,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             case class TreeLevel(length: Int) extends Property {
                 final type Self = TreeLevel
                 final def key = TreeLevelKey
-                final def isRefineable = false
             }
 
             val ps = createPropertyStore()
@@ -538,7 +644,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
             }
 
-            // the dot in ".<||<" is necessary to shut-up scalariform...
             ps.scheduleForEntity(nodeRoot)(analysis(0))
             ps.waitOnPhaseCompletion
 
@@ -726,3 +831,24 @@ class Node(
     override def toString: String = name // RECALL: Nodes are potentially used in cycles.
 }
 object Node { def apply(name: String) = new Node(name) }
+
+object ReachableNodesCount {
+    val Key: PropertyKey[ReachableNodesCount] =
+
+        PropertyKey.create[Node, ReachableNodesCount](
+            s"ReachableNodesCount",
+            (_: PropertyStore, e: Node) ⇒ TooManyNodesReachable,
+            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ FinalEP(eps.e, TooManyNodesReachable)
+        )
+}
+case class ReachableNodesCount(value: Int) extends Property {
+    type Self = ReachableNodesCount
+    def key = ReachableNodesCount.Key
+}
+
+object NoNodesReachable extends ReachableNodesCount(0) {
+    override def toString: String = "NoNodesReachable"
+}
+object TooManyNodesReachable extends ReachableNodesCount(64) {
+    override def toString: String = "TooManyNodesReachable"
+}

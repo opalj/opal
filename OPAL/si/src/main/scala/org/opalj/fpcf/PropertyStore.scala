@@ -155,6 +155,9 @@ abstract class PropertyStore {
      */
     override def toString: String = toString(false)
 
+    /** Simple counter of the number of tasks that were executed. */
+    def executedTasks: Int
+
     //
     //
     // CORE FUNCTIONALITY

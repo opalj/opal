@@ -26,53 +26,61 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
+package org.opalj.collection
+package mutable
 
 /**
- * A method's line number table.
+ * A mutable (linke-lists based) chain that enable o(1) append and prepend operations.
+ * However, only removing the head element is a constant operation!
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable extends CodeAttribute {
+class AnyRefAppendChain[N >: Null <: AnyRef] private (
+        private var h: AnyRefAppendChainElement[N],
+        private var l: AnyRefAppendChainElement[N]
+) {
 
-    def lineNumbers: LineNumbers
+    def this() {
+        this(null, null)
+    }
 
-    def lookupLineNumber(pc: PC): Option[Int] // IMPROVE [L2] Define and use IntOption
+    def isEmpty = h == null
 
-    def firstLineNumber(): Option[Int] // IMPROVE [L2] Define and use IntOption
+    def nonEmpty = h != null
 
-    override def kindId: Int = LineNumberTable.KindId
+    def take(): N = {
+        val v = h.v
+        h = h.rest
+        if (h == null) l = null
+        v
+    }
 
-    override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        other match {
-            case that: LineNumberTable ⇒ this.similar(that)
-            case _                     ⇒ false
+    def head: N = h.v
+
+    def last: N = l.v
+
+    def prepend(v: N): this.type = {
+        if (h == null) {
+            h = new AnyRefAppendChainElement(v, null)
+            l = h
+        } else {
+            h = new AnyRefAppendChainElement(v, h)
         }
+        this
     }
 
-    def similar(other: LineNumberTable): Boolean = {
-        val thisLineNumbers = this.lineNumbers
-        val otherLineNumbers = other.lineNumbers
-        // the order of two line number tables need to be identical
-        thisLineNumbers.size == otherLineNumbers.size &&
-            thisLineNumbers == otherLineNumbers
-    }
-
-    override def remapPCs(codeSize: PC, f: PC ⇒ PC): LineNumberTable = {
-        val newLineNumbers = List.newBuilder[LineNumber]
-        lineNumbers.foreach { ln ⇒
-            val newLNOption = ln.remapPCs(codeSize, f)
-            if (newLNOption.isDefined) newLineNumbers += newLNOption.get
+    def append(v: N): this.type = {
+        if (l == null) {
+            h = new AnyRefAppendChainElement(v, null)
+            l = h
+        } else {
+            val newL = new AnyRefAppendChainElement(v, null)
+            l.rest = newL
+            l = newL
         }
-        UnpackedLineNumberTable(newLineNumbers.result())
+        this
     }
+
 }
 
-object LineNumberTable {
-
-    final val KindId = 19
-
-    def unapply(lnt: LineNumberTable): Option[LineNumbers] = Some(lnt.lineNumbers)
-
-}
+private[mutable] class AnyRefAppendChainElement[T](val v: T, var rest: AnyRefAppendChainElement[T])

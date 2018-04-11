@@ -28,8 +28,26 @@
  */
 package org.opalj.fpcf
 
-class SequentialPropertyStoreTest extends PropertyStoreTest {
+class DelayUpdatesSequentialPropertyStoreTest extends PropertyStoreTest {
 
-    def createPropertyStore(): PropertyStore = SequentialPropertyStore()
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = true
+        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.delayHandlingOfDependerNotification = true
+        s
+    }
+
+}
+
+class ForceUpdatesSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = false
+        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.delayHandlingOfDependerNotification = false
+        s
+    }
 
 }
