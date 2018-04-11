@@ -72,7 +72,10 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
         c.head should be("a")
         c.last should be("a")
         c.take() should be("a")
+
         c should be('empty)
+        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
+        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().last)
     }
 
     it should ("return the appended elements in order") in {
@@ -91,6 +94,8 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
         c.take() should be("c")
 
         c should be('empty)
+        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
+        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().last)
     }
 
     it should ("after removing pre-/appended elements the list should be empty") in {
@@ -99,6 +104,7 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
         c.take() should be("b")
         c.take() should be("a")
         c.take() should be("c")
+
         c should be('empty)
         c should not be ('nonEmpty)
         assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)

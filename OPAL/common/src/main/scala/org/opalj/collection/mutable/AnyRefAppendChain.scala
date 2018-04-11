@@ -51,7 +51,7 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
     def take(): N = {
         val v = h.v
         h = h.rest
-        if (h == null) l == null
+        if (h == null) l = null
         v
     }
 
