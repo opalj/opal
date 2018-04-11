@@ -33,24 +33,21 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import org.opalj.collection.immutable.Chain
-
 import org.opalj.br.TestSupport.biProject
-
 import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.Field
 import org.opalj.br.ClassFile
 import org.opalj.br.AllocationSite
 import org.opalj.br.ObjectAllocationSite
-import org.opalj.br.FormalParameter
 import org.opalj.br.instructions.NEW
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.AllocationSitesKey
-import org.opalj.br.analyses.FormalParameters
-import org.opalj.br.analyses.FormalParametersKey
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 
 /**
  * @author Michael Eichberg
@@ -157,16 +154,17 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         assert(p != null)
         assert(p.allClassFiles.nonEmpty)
 
-        PropertyStoreKey.makeFormalParametersAvailable(p)
+        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
 
         // WE HAVE TO USE THE KEY TO TRIGGER THE COMPUTATION OF THE ENTITY DERIVATION FUNCTION(S)
         val ps = p.get(PropertyStoreKey)
 
-        assert(p.has(FormalParametersKey).isDefined)
+        assert(p.has(VirtualFormalParametersKey).isDefined)
 
         it("should contain the formal parameters") {
 
-            val allFPs: Iterable[FormalParameter] = ps.context[FormalParameters].formalParameters
+            val allFPs: Iterable[VirtualFormalParameter] =
+                ps.context[VirtualFormalParameters].virtualFormalParameters
 
             val formalParametersCount = allFPs.size
 

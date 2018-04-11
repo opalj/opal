@@ -70,6 +70,8 @@ class AllocationSites private[analyses] (
         allocationsByType.getOrElse(t, ConstArray.empty)
     }
 
+    def allocationSites: Iterable[AllocationSite] = allocationsByType.values.flatten.filter(_ ne null)
+
     def iterator: Iterator[AllocationSite] = {
         new AbstractIterator[AllocationSite] {
 

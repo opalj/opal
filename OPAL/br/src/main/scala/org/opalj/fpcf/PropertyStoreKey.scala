@@ -33,9 +33,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.typeOf
-
 import scala.collection.JavaConverters._
-
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.br.Method
@@ -43,9 +41,9 @@ import org.opalj.br.Field
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.AllocationSitesKey
-import org.opalj.br.analyses.FormalParametersKey
 import org.opalj.br.analyses.EntityDerivationFunction
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.VirtualFormalParametersKey
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -125,21 +123,21 @@ object PropertyStoreKey
     }
 
     /**
-     * Makes the set of `FormalParameters`s available to the property store that is created
-     * for the respective project later on. I.e., this method must be called, before this key
-     * is used to get the project's property store.
-     */
-    def makeFormalParametersAvailable(p: SomeProject): Unit = {
-        addEntityDerivationFunction(p) { FormalParametersKey.entityDerivationFunction(p) }
-    }
-
-    /**
      * Makes the set of [[org.opalj.br.DeclaredMethod]]s available to the property store
      * that is created for the respective project later on. I.e., this method must be called,
      * before this key is used to get the project's property store.
      */
     def makeDeclaredMethodsAvailable(p: SomeProject): Unit = {
         addEntityDerivationFunction(p) { DeclaredMethodsKey.entityDerivationFunction(p) }
+    }
+
+    /**
+     * Makes the set of [[org.opalj.br.analyses.VirtualFormalParameter]]s available to the property store
+     * that is created for the respective project later on. I.e., this method must be called,
+     * before this key is used to get the project's property store.
+     */
+    def makeVirtualFormalParametersAvailable(p: SomeProject): Unit = {
+        addEntityDerivationFunction(p) { VirtualFormalParametersKey.entityDerivationFunction(p) }
     }
 
     /**

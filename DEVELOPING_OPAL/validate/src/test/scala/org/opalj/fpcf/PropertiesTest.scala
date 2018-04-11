@@ -34,6 +34,10 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import org.opalj.br.AllocationSite
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.bytecode.RTJar
 import org.opalj.br.Type
@@ -47,10 +51,11 @@ import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
-import org.opalj.br.FormalParameter
+import org.opalj.br.MethodWithBody
+import org.opalj.br.TAOfNew
+import org.opalj.br.analyses.AllocationSites
+import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.FormalParametersKey
-import org.opalj.br.analyses.FormalParameters
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -62,6 +67,8 @@ import org.opalj.fpcf.properties.PropertyMatcher
  * @author Michael Eichberg
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
+
+    val withRT = false
 
     /**
      * The representation of the fixture project.
@@ -83,7 +90,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val (cf, _) = cfSrc
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
-        val libraryClassFiles = ClassFiles(RTJar) ++ propertiesClassFiles
+
+        val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -199,6 +207,18 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
+    def declaredMethodsWithAnnotations: Traversable[(DefinedMethod, String ⇒ String, Annotations)] = {
+        val declaredMethods = FixtureProject.get(DeclaredMethodsKey)
+        for {
+            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            dm = declaredMethods(m)
+            annotations = m.runtimeInvisibleAnnotations
+            if annotations.nonEmpty
+        } yield {
+            (dm, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+        }
+    }
+
     def classFilesWithAnnotations: Traversable[(ClassFile, String ⇒ String, Annotations)] = {
         for {
             cf ← FixtureProject.allClassFiles // cannot be parallelized; "it" is not thread safe
@@ -210,17 +230,38 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     // there can't be any annotations of the implicit "this" parameter...
-    def explicitFormalParametersWithAnnotations: Traversable[(FormalParameter, String ⇒ String, Annotations)] = {
-        val formalParameters: FormalParameters = FixtureProject.get(FormalParametersKey)
+    def explicitFormalParametersWithAnnotations: Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
+        val formalParameters = FixtureProject.get(VirtualFormalParametersKey)
+        val declaredMethods = FixtureProject.get(DeclaredMethodsKey)
         for {
-            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            m ← FixtureProject.allMethods
+            //m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
+            Some(dm) = declaredMethods(DefinedMethod(m.classFile.thisType, m))
         } yield {
-            val fp = formalParameters(m)(i + 1)
-            (fp, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+            val fp = formalParameters(dm)(i + 1)
+            (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)
+        }
+    }
+
+    def allocationSitesWithAnnotations: Traversable[(AllocationSite, String ⇒ String, Traversable[AnnotationLike])] = {
+        val allocationSites: AllocationSites = FixtureProject.get(AllocationSitesKey)
+        for {
+            cf ← FixtureProject.allClassFiles
+            m @ MethodWithBody(code) ← cf.methods
+            (pc, as) ← allocationSites(m)
+            annotations = code.runtimeInvisibleTypeAnnotations filter { ta ⇒
+                ta.target match {
+                    case TAOfNew(`pc`) ⇒ true
+                    case _             ⇒ false
+                }
+            }
+            if annotations.nonEmpty
+        } yield {
+            (as, (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in ${m.toJava(s"@$a").substring(24)})", annotations)
         }
     }
 
