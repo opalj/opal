@@ -34,7 +34,8 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
-import org.opalj.br.AllocationSite
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -51,10 +52,7 @@ import org.opalj.br.StringValue
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
-import org.opalj.br.MethodWithBody
 import org.opalj.br.TAOfNew
-import org.opalj.br.analyses.AllocationSites
-import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.PropertyMatcher
 
@@ -249,12 +247,13 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def allocationSitesWithAnnotations: Traversable[(AllocationSite, String ⇒ String, Traversable[AnnotationLike])] = {
-        val allocationSites: AllocationSites = FixtureProject.get(AllocationSitesKey)
+    def allocationSitesWithAnnotations: Traversable[(DefinitionSite, String ⇒ String, Traversable[AnnotationLike])] = {
+        val allocationSites: Seq[DefinitionSite] = FixtureProject.get(DefinitionSitesKey).getAllocationSites
         for {
-            cf ← FixtureProject.allClassFiles
-            m @ MethodWithBody(code) ← cf.methods
-            (pc, as) ← allocationSites(m)
+            as ← allocationSites
+            m = as.method
+            pc = as.pc
+            code = m.body.get
             annotations = code.runtimeInvisibleTypeAnnotations filter { ta ⇒
                 ta.target match {
                     case TAOfNew(`pc`) ⇒ true
@@ -275,7 +274,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val ps = p.get(PropertyStoreKey)
         ps.setupPhase(eagerAnalysisRunners.flatMap(_.derives.map(_.asInstanceOf[PropertyMetaInformation].key)))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
+        val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
         ps.waitOnPhaseCompletion()
-        (p, ps, as)
+        (p, ps, as ++ las)
     }
 }

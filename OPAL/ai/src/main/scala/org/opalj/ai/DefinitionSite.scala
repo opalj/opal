@@ -27,11 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package ai
 
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.br.Method
 
-sealed class DefinitionSite(val method: Method, val pc: PC) {
+sealed class DefinitionSite(val method: Method, val pc: PC, val uses: PCs) {
+
     def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSite]
 
     override def equals(other: Any): Boolean = other match {
@@ -49,8 +50,12 @@ sealed class DefinitionSite(val method: Method, val pc: PC) {
 
     override def toString = s"DefinitionSite($method, $pc)"
 }
-final class DefinitionSiteWithFilteredUses(method: Method, pc: PC, val uses: IntTrieSet)
-        extends DefinitionSite(method, pc) {
+
+object DefinitionSite {
+    def unapply(ds: DefinitionSite): Option[(Method, PC, PCs)] = Some((ds.method, ds.pc, ds.uses))
+}
+final class DefinitionSiteWithFilteredUses(method: Method, pc: PC, uses: PCs)
+    extends DefinitionSite(method, pc, uses) {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSiteWithFilteredUses]
 

@@ -291,6 +291,13 @@ abstract class PropertyStore {
     def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity]
 
     /**
+     * Returns all final entities with the given property.
+     *
+     * @note Does not trigger lazy property computations.
+     */
+    def finalEntities[P <: Property](p: P): Iterator[Entity] = entities(p, p)
+
+    /**
      * Directly associates the given property `p` with property kind `pk` with the given entity
      * `e` if `e` has no property of the respective kind. The set property is always final.
      *

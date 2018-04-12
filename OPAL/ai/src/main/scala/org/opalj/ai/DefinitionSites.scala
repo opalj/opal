@@ -27,21 +27,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package ai
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
-class DefinitionSites {
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.ANEWARRAY
+import org.opalj.br.instructions.MULTIANEWARRAY
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.NEWARRAY
+
+import scala.collection.JavaConverters._
+
+class DefinitionSites(val project: SomeProject) {
     val definitionSites = new ConcurrentHashMap[DefinitionSite, DefinitionSite]()
+    private[this] val aiResult = project.get(SimpleAIKey)
 
     def apply(m: Method, pc: PC): DefinitionSite = {
-        val defSite = new DefinitionSite(m, pc)
-        definitionSites.putIfAbsent(defSite, defSite)
+        val uses = aiResult(m).domain.safeUsedBy(pc)
+        val defSite = new DefinitionSite(m, pc, uses)
+        val prev = definitionSites.putIfAbsent(defSite, defSite)
+        if (prev == null) defSite else defSite
     }
 
     def apply(m: Method, pc: PC, uses: PCs): DefinitionSiteWithFilteredUses = {
         val defSite = new DefinitionSiteWithFilteredUses(m, pc, uses)
-        definitionSites.putIfAbsent(defSite, defSite).asInstanceOf[DefinitionSiteWithFilteredUses]
+        val prev = definitionSites.putIfAbsent(defSite, defSite).asInstanceOf[DefinitionSiteWithFilteredUses]
+        if (prev == null) defSite else defSite
     }
+
+    def getAllocationSites: Seq[DefinitionSite] = {
+        val allocationSites = new ConcurrentLinkedQueue[DefinitionSite]()
+
+        project.parForeachMethodWithBody() { methodInfo ⇒
+            val m = methodInfo.method
+            val code = m.body.get
+            for ((pc, instr) ← code) {
+                instr.opcode match {
+                    case NEW.opcode | NEWARRAY.opcode | ANEWARRAY.opcode | MULTIANEWARRAY.opcode ⇒
+                        val defSite: DefinitionSite = apply(m, pc)
+                        allocationSites.add(defSite)
+                    case _ ⇒
+                }
+            }
+        }
+        allocationSites.asScala.toSeq
+    }
+
 }
