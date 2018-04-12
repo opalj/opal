@@ -351,10 +351,10 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
             state.addFieldDependee(ep)
             None
 
-        case EPS(_, _, LocalField) ⇒
+        case FinalEP(_, LocalField) ⇒
             throw new RuntimeException("unexpected result")
 
-        case EPS(_, _, ExtensibleLocalField) ⇒
+        case FinalEP(_, ExtensibleLocalField) ⇒
             throw new RuntimeException("unexpected result")
 
         case _ ⇒
