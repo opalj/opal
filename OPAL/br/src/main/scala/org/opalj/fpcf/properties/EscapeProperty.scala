@@ -145,9 +145,9 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-        extends OrderedProperty
-        with ExplicitlyNamedProperty
-        with EscapePropertyMetaInformation {
+    extends OrderedProperty
+    with ExplicitlyNamedProperty
+    with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -203,8 +203,6 @@ sealed abstract class FinalEscapeProperty extends EscapeProperty {
 }
 
 object EscapeProperty extends EscapePropertyMetaInformation {
-
-
 
     final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(
         // Name of the property

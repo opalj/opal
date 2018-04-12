@@ -31,15 +31,16 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.ai.DefinitionSite
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
@@ -49,15 +50,11 @@ import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
-import org.opalj.tac.CaughtException
 import org.opalj.tac.DUVar
-import org.opalj.tac.DVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Invokedynamic
-import org.opalj.tac.New
-import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PutField
@@ -339,7 +336,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         if (state.dependees.isEmpty || state.mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
             if (state.mostRestrictiveProperty.isInstanceOf[AtMost]) {
-                IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
+                //TODO IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
+                Result(context.entity, state.mostRestrictiveProperty)
             } else {
                 Result(context.entity, state.mostRestrictiveProperty)
             }
@@ -361,37 +359,28 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      */
     def determineEscape(e: Entity): PropertyComputationResult
 
-    def determineEscapeOfAS(as: AllocationSite): PropertyComputationResult = {
-        val TACode(_, code, cfg, _, _) = tacaiProvider(as.method)
+    def determineEscapeOfDS(defSite: DefinitionSite): PropertyComputationResult = {
+        val TACode(_, code, cfg, _, _) = tacaiProvider(defSite.method)
 
-        val index = code indexWhere { stmt ⇒ stmt.pc == as.pc }
+        val index = code indexWhere { stmt ⇒ stmt.pc == defSite.pc }
 
         // check if the allocation site is not dead
         if (index != -1)
-            findUsesOfASAndAnalyze(as, index, code, cfg)
-        else /* the allocation site is part of dead code */ Result(as, NoEscape)
+            findUsesAndAnalyze(defSite, index, code, cfg)
+        else /* the allocation site is part of dead code */ Result(defSite, NoEscape)
     }
 
     def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
 
-    protected[this] final def findUsesOfASAndAnalyze(
-        as:    AllocationSite,
-        index: PC,
-        code:  Array[Stmt[V]],
-        cfg:   CFG
+    protected[this] final def findUsesAndAnalyze(
+        defSite: DefinitionSite,
+        index:   PC,
+        code:    Array[Stmt[V]],
+        cfg:     CFG
     ): PropertyComputationResult = {
-        val pc = as.pc
-        val m = as.method
-        code(index) match {
-            case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                val ctx = createContext(as, index, declaredMethods(m), uses, code, cfg)
-                doDetermineEscape(ctx, createState)
-            case ExprStmt(`pc`, New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
-                Result(as, NoEscape)
-            case CaughtException(`pc`, _, _) ⇒ findUsesOfASAndAnalyze(as, index + 1, code, cfg)
-            case stmt ⇒
-                throw new RuntimeException(s"This analysis can't handle entity: $as for $stmt")
-        }
+        val uses = defSite.uses.map(pc ⇒ code.indexWhere(_.pc == pc)).filter(_ != -1)
+        val ctx = createContext(defSite, index, declaredMethods(defSite.method), uses, code, cfg)
+        doDetermineEscape(ctx, createState)
     }
 
     def createContext(
@@ -406,6 +395,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     def createState: AnalysisState
 
     protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
-    protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = propertyStore.context[VirtualFormalParameters]
-    protected[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+    protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = project.get(VirtualFormalParametersKey)
+    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 }

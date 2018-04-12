@@ -34,6 +34,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.GlobalEscape
@@ -51,8 +52,8 @@ import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
  * @author Florian Kuebler
  */
 class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    private[this] val formalParameters = propertyStore.context[VirtualFormalParameters]
-    private[this] val declaredMethods = propertyStore.context[DeclaredMethods]
+    private[this] val formalParameters = project.get(VirtualFormalParametersKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
@@ -99,7 +100,8 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
         def returnResult: PropertyComputationResult = {
             if (escapeState.isBottom || dependees.isEmpty)
                 if (escapeState.isInstanceOf[AtMost])
-                    IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                    //IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                    Result(fp, escapeState.asAggregatedProperty)
                 else
                     Result(fp, escapeState.asAggregatedProperty)
             else

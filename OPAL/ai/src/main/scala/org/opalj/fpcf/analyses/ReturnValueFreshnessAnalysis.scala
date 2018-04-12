@@ -31,20 +31,19 @@ package fpcf
 package analyses
 
 import org.opalj
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSites
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
-import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -77,7 +76,6 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
@@ -85,12 +83,12 @@ import org.opalj.tac.VirtualFunctionCall
 class ReturnValueFreshnessState(val dm: DeclaredMethod) {
     private[this] var returnValueDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
-    private[this] var allocationSiteDependees: Set[EOptionP[AllocationSite, EscapeProperty]] = Set.empty
+    private[this] var defSiteDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
 
     private[this] var temporary: ReturnValueFreshness = FreshReturnValue
 
     def dependees: Set[EOptionP[Entity, Property]] = {
-        returnValueDependees ++ fieldDependees ++ allocationSiteDependees
+        returnValueDependees ++ fieldDependees ++ defSiteDependees
     }
 
     def hasDependees: Boolean = dependees.nonEmpty
@@ -103,8 +101,8 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
         fieldDependees += epOrEpk
     }
 
-    def addAllocationDependee(epOrEpk: EOptionP[AllocationSite, EscapeProperty]): Unit = {
-        allocationSiteDependees += epOrEpk
+    def addDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
+        defSiteDependees += epOrEpk
     }
 
     def removeMethodDependee(epOrEpk: EOptionP[DeclaredMethod, Property]): Unit = {
@@ -115,8 +113,8 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
         fieldDependees = fieldDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
     }
 
-    def removeAllocationDependee(epOrEpk: EOptionP[AllocationSite, EscapeProperty]): Unit = {
-        allocationSiteDependees = allocationSiteDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
+    def removeDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
+        defSiteDependees = defSiteDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
     }
 
     def updateWithMeet(property: ReturnValueFreshness): Unit = {
@@ -136,11 +134,11 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
  *
  * @author Florian Kuebler
  */
-class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
-    private[this] val allocationSites: AllocationSites = propertyStore.context[AllocationSites]
-    private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
 
     def determineFreshness(e: Entity): PropertyComputationResult = e match {
         case dm: DefinedMethod ⇒ doDetermineFreshness(dm)
@@ -180,7 +178,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
             code(defSite) match {
                 // if the def-site of the return-value statement is a new, we check the escape state
                 case Assignment(pc, _, New(_, _) | NewArray(_, _, _)) ⇒
-                    val allocationSite = allocationSites(m)(pc)
+                    val allocationSite = definitionSites(m, pc)
                     val resultState = propertyStore(allocationSite, EscapeProperty.key)
                     handleEscapeProperty(resultState).foreach(x ⇒ return Result(dm, x))
 
@@ -188,7 +186,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                  * if the def-site came from a field and the field is local except for the existence
                  * of a getter, we can report this method as being a getter.
                  */
-                case Assignment(_, tgt, GetField(_, declaringClass, name, fieldType, objRef)) ⇒
+                case Assignment(pc, tgt, GetField(_, declaringClass, name, fieldType, objRef)) ⇒
                     if (objRef.asVar.definedBy != IntTrieSet(tac.OriginOfThis))
                         return Result(dm, NoFreshReturnValue)
 
@@ -196,8 +194,8 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                         case Some(f) ⇒ f
                         case _       ⇒ return Result(dm, NoFreshReturnValue)
                     }
-
-                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
+                    val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
+                    handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
                     val locality = propertyStore(field, FieldLocality.key)
                     handleFieldLocalityProperty(locality).foreach(x ⇒ return Result(dm, x))
@@ -205,20 +203,23 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
                 // const values are handled as fresh
                 case Assignment(_, _, _: Const) ⇒
 
-                case Assignment(_, tgt, call: StaticFunctionCall[V]) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
+                case Assignment(pc, tgt, call: StaticFunctionCall[V]) ⇒
+                    val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
+                    handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
                     val callee = call.resolveCallTarget
                     handleConcreteCall(callee).foreach(return _)
 
-                case Assignment(_, tgt, call: NonVirtualFunctionCall[V]) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
+                case Assignment(pc, tgt, call: NonVirtualFunctionCall[V]) ⇒
+                    val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
+                    handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
                     val callee = call.resolveCallTarget
                     handleConcreteCall(callee).foreach(return _)
 
-                case Assignment(_, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
-                    handleEscape(defSite, tgt.usedBy, code).foreach(return _)
+                case Assignment(pc, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
+                    val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
+                    handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
                     val value = receiver.asVar.value.asDomainReferenceValue
 
@@ -295,28 +296,7 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         None
     }
 
-    // Todo later remove me
-    def handleEscape(
-        defSite: ValueOrigin, uses: IntTrieSet, code: Array[Stmt[V]]
-    )(implicit state: ReturnValueFreshnessState): Option[Result] = {
-        val analysis = new FallBackEscapeAnalysis(project)
-        val ctx = analysis.createContext(
-            entityParam = null,
-            defSiteParam = defSite,
-            targetMethodParam = null,
-            usesParam = uses,
-            codeParam = code,
-            cfgParam = null
-        )
-        val escapeState = new AbstractEscapeAnalysisState {}
-
-        analysis.doDetermineEscape(ctx, escapeState) match {
-            case Result(_, EscapeViaReturn) ⇒ None
-            case _                          ⇒ Some(Result(state.dm, NoFreshReturnValue))
-        }
-    }
-
-    def handleEscapeProperty(ep: EOptionP[AllocationSite, EscapeProperty])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
+    def handleEscapeProperty(ep: EOptionP[DefinitionSite, EscapeProperty])(implicit state: ReturnValueFreshnessState): Option[ReturnValueFreshness] = ep match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒
             throw new RuntimeException("unexpected result")
 
@@ -326,25 +306,26 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         case FinalEP(_, AtMost(_)) ⇒ Some(NoFreshReturnValue)
 
         //TODO what if escapes via exceptions?
-        case FinalEP(_, p) ⇒
+        case FinalEP(_, _) ⇒
             Some(NoFreshReturnValue)
 
-        // it could happen anything
+        // anything could happen
         case IntermediateEP(_, _, AtMost(_)) ⇒
             Some(NoFreshReturnValue)
 
         case IntermediateEP(_, _, EscapeViaReturn) ⇒
-            state.addAllocationDependee(ep)
+            state.addDefSiteDependee(ep)
             None
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
-            throw new RuntimeException("unexpected result")
+            state.addDefSiteDependee(ep)
+            None
 
         // p is worse than via return
         case IntermediateEP(_, _, _) ⇒ Some(NoFreshReturnValue)
 
         case _ ⇒
-            state.addAllocationDependee(ep)
+            state.addDefSiteDependee(ep)
             None
     }
 
@@ -418,9 +399,9 @@ class ReturnValueFreshnessAnalysis private ( final val project: SomeProject) ext
         val dm = state.dm
 
         someEPS.e match {
-            case _: AllocationSite ⇒
-                val newEP = someEPS.asInstanceOf[EOptionP[AllocationSite, EscapeProperty]]
-                state.removeAllocationDependee(newEP)
+            case _: DefinitionSite ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
+                state.removeDefSiteDependee(newEP)
                 handleEscapeProperty(newEP).foreach(x ⇒ return Result(dm, x))
 
             case _: DeclaredMethod ⇒

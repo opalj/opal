@@ -31,18 +31,19 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
-import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
@@ -54,24 +55,24 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 
 class InterProceduralEscapeAnalysisContext(
-    val entity:                  Entity,
-    val defSite:                 ValueOrigin,
-    val targetMethod:            DeclaredMethod,
-    val uses:                    IntTrieSet,
-    val code:                    Array[Stmt[V]],
-    val cfg:                     CFG,
-    val declaredMethods:         DeclaredMethods,
-    val virtualFormalParameters: VirtualFormalParameters,
-    val project:                 SomeProject,
-    val propertyStore:           PropertyStore,
-    val isMethodOverridable:     Method ⇒ Answer
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val targetMethod:            DeclaredMethod,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[V]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val project:                 SomeProject,
+        val propertyStore:           PropertyStore,
+        val isMethodOverridable:     Method ⇒ Answer
 
 ) extends AbstractEscapeAnalysisContext
-        with PropertyStoreContainer
-        with IsMethodOverridableContainer
-        with VirtualFormalParametersContainer
-        with DeclaredMethodsContainer
-        with CFGContainer
+    with PropertyStoreContainer
+    with IsMethodOverridableContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
+    with CFGContainer
 
 class InterProceduralEscapeAnalysisState()
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -82,13 +83,13 @@ class InterProceduralEscapeAnalysisState()
  * @author Florian Kuebler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends DefaultEscapeAnalysis
-        with AbstractInterProceduralEscapeAnalysis
-        with ConstructorSensitiveEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEscapeAnalysis
-        with ExceptionAwareEscapeAnalysis {
+    with AbstractInterProceduralEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
@@ -96,12 +97,12 @@ class InterProceduralEscapeAnalysis private[analyses] (
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     /**
-     * Determine whether the given entity ([[AllocationSite]] or
+     * Determine whether the given entity ([[org.opalj.ai.DefinitionSite]] or
      * [[org.opalj.br.analyses.VirtualFormalParameter]]) escapes its method.
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            case as: AllocationSite         ⇒ determineEscapeOfAS(as)
+            case as: DefinitionSite         ⇒ determineEscapeOfDS(as)
 
             case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
 
@@ -113,7 +114,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
-                IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
@@ -122,7 +124,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
                 val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
@@ -168,10 +171,10 @@ object EagerInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisS
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new InterProceduralEscapeAnalysis(project)
 
-        val fps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
-        val ass = propertyStore.context[AllocationSites].allocationSites
+        val analysis = new InterProceduralEscapeAnalysis(project)
+        val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
+        val ass = project.get(DefinitionSitesKey).getAllocationSites
 
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis

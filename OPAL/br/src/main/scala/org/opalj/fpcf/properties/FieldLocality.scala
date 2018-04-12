@@ -56,25 +56,25 @@ case object LocalField extends FieldLocality {
 case object ExtensibleLocalField extends FieldLocality {
 
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case LocalField                      ⇒ this
-        case LocalFieldWithGetter            ⇒ ExtensibleLocalFieldWithGetter
-        case _                               ⇒ other
+        case LocalField           ⇒ this
+        case LocalFieldWithGetter ⇒ ExtensibleLocalFieldWithGetter
+        case _                    ⇒ other
     }
 }
 
 case object LocalFieldWithGetter extends FieldLocality {
 
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case LocalField                      ⇒ this
-        case ExtensibleLocalField            ⇒ ExtensibleLocalFieldWithGetter
-        case _                               ⇒ other
+        case LocalField           ⇒ this
+        case ExtensibleLocalField ⇒ ExtensibleLocalFieldWithGetter
+        case _                    ⇒ other
     }
 }
 
 case object ExtensibleLocalFieldWithGetter extends FieldLocality {
     override def meet(other: FieldLocality): FieldLocality = other match {
-        case NoLocalField                 ⇒ other
-        case _                            ⇒ this
+        case NoLocalField ⇒ other
+        case _            ⇒ this
     }
 }
 

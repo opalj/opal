@@ -33,14 +33,14 @@ package analyses
 import org.opalj.br.analyses.Project
 import java.net.URL
 
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.AllocationSites
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.log.LogContext
@@ -74,9 +74,6 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
 
         val propertyStore = time {
 
-            PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
-
             val domain = (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
             project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain)
 
@@ -89,16 +86,16 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            InterProceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion()
+            EagerInterProceduralEscapeAnalysis.start(project)
+            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
-        val allocationSites = propertyStore.context[AllocationSites]
+        val allocationSites = project.get(DefinitionSitesKey).getAllocationSites
         val objects = time {
             for {
-                method ← project.allMethodsWithBody
-                (_, as) ← allocationSites(method)
-                EP(_, escape) = propertyStore(as, EscapeProperty.key)
+                as ← allocationSites
+                method = as.method
+                FinalEP(_, escape) = propertyStore(as, EscapeProperty.key)
                 if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
                 code = tacai(method).stmts
                 defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)

@@ -31,10 +31,11 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.AllocationSite
+import org.opalj.ai.DefinitionSite
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.tac.Assignment
 import org.opalj.tac.Throw
 
 /**
@@ -63,7 +64,11 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
             for (pc ← successors) {
                 if (pc.isCatchNode) {
                     val exceptionType = context.entity match {
-                        case as: AllocationSite ⇒ as.allocatedType
+                        case defSite: DefinitionSite ⇒
+                            val Assignment(_, left, _) = context.code.find(_.pc == defSite.pc).get
+                            classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                                left.value.asDomainReferenceValue.upperTypeBound
+                            )
                         case VirtualFormalParameter(DefinedMethod(_, callee), -1) ⇒
                             callee.classFile.thisType
                         case VirtualFormalParameter(callee, origin) ⇒

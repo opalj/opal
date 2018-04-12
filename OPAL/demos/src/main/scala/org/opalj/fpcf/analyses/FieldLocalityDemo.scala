@@ -35,7 +35,7 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ExtensibleLocalField
 import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.fpcf.properties.LocalField
@@ -53,24 +53,21 @@ object FieldLocalityDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
-        PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeDeclaredMethodsAvailable(project)
         val ps = project.get(PropertyStoreKey)
 
-        InterProceduralEscapeAnalysis.startLazily(project, ps)
-        VirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
-        VirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
-        ReturnValueFreshnessAnalysis.startLazily(project, ps)
+        LazyInterProceduralEscapeAnalysis.startLazily(project, ps)
+        LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
+        LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
+        LazyReturnValueFreshnessAnalysis.startLazily(project, ps)
 
-        FieldLocalityAnalysis.start(project, ps)
-        ps.waitOnPropertyComputationCompletion()
+        EagerFieldLocalityAnalysis.start(project, ps)
+        ps.waitOnPhaseCompletion()
 
-        val local = ps.entities(LocalField)
-        val nolocal = ps.entities(NoLocalField)
-        val extLocal = ps.entities(ExtensibleLocalField)
-        val getter = ps.entities(LocalFieldWithGetter)
-        val extGetter = ps.entities(ExtensibleLocalFieldWithGetter)
+        val local = ps.finalEntities(LocalField)
+        val nolocal = ps.finalEntities(NoLocalField)
+        val extLocal = ps.finalEntities(ExtensibleLocalField)
+        val getter = ps.finalEntities(LocalFieldWithGetter)
+        val extGetter = ps.finalEntities(ExtensibleLocalFieldWithGetter)
 
         val message =
             s"""|# of local fields: ${local.size}

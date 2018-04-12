@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package properties
 package escape
+import org.opalj.ai.DefinitionSite
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
@@ -37,7 +38,6 @@ import org.opalj.ai.domain.l2.PerformInvocations
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 import org.opalj.br.AnnotationLike
-import org.opalj.br.AllocationSite
 import org.opalj.br.BooleanValue
 
 /**
@@ -61,7 +61,7 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
         val m = entity match {
             case VirtualFormalParameter(DefinedMethod(dc, m), _) if dc == m.classFile.thisType ⇒ m
             case VirtualFormalParameter(DefinedMethod(_, _), _) ⇒ return false
-            case AllocationSite(m, _, _) ⇒ m
+            case DefinitionSite(m, _, _) ⇒ m
             case _ ⇒ throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {

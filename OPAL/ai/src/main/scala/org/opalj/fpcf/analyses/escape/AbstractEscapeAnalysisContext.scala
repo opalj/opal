@@ -54,7 +54,6 @@ import org.opalj.tac.UVar
  */
 trait AbstractEscapeAnalysisContext {
 
-
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     val entity: Entity

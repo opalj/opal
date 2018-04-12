@@ -32,15 +32,15 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.ai.DefinitionSite
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.AllocationSite
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -87,9 +87,6 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                     new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // new DefaultDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding //primitivetacidomain
                 }
             )
-            PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeDeclaredMethodsAvailable(project)
-            PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 
@@ -101,68 +98,68 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            VirtualCallAggregatingEscapeAnalysis.startLazily(project)
-            InterProceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPropertyComputationCompletion()
+            LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project)
+            EagerInterProceduralEscapeAnalysis.start(project)
+            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
-        for (e ← propertyStore.entities(AtMost(EscapeViaAbnormalReturn))) {
+        for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {
             println(s"$e : AtMostEscapeViaAbnormalReturn")
         }
-        for (e ← propertyStore.entities(AtMost(EscapeInCallee))) {
+        for (e ← propertyStore.finalEntities(AtMost(EscapeInCallee))) {
             println(s"$e : AtMostEscapeInCallee")
         }
 
-        def countAS(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[AllocationSite])
-        def countFP(entities: Traversable[Entity]) = entities.count(_.isInstanceOf[VirtualFormalParameter])
+        def countAS(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[DefinitionSite])
+        def countFP(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[VirtualFormalParameter])
 
         val message =
             s"""|ALLOCATION SITES:
-                |# of local objects: ${countAS(propertyStore.entities(NoEscape))}
-                |# of objects escaping in a callee: ${countAS(propertyStore.entities(EscapeInCallee))}
-                |# of escaping objects via return: ${countAS(propertyStore.entities(EscapeViaReturn))}
-                |# of escaping objects via abnormal return: ${countAS(propertyStore.entities(EscapeViaAbnormalReturn))}
-                |# of escaping objects via parameter: ${countAS(propertyStore.entities(EscapeViaParameter))}
-                |# of escaping objects via normal and abnormal return: ${countAS(propertyStore.entities(EscapeViaNormalAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal return: ${countAS(propertyStore.entities(EscapeViaParameterAndReturn))}
-                |# of escaping objects via parameter and abnormal return: ${countAS(propertyStore.entities(EscapeViaParameterAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal and abnormal return: ${countAS(propertyStore.entities(EscapeViaParameterAndNormalAndAbnormalReturn))}
-                |# of escaping objects via static field: ${countAS(propertyStore.entities(EscapeViaStaticField))}
-                |# of escaping objects via heap objects: ${countAS(propertyStore.entities(EscapeViaHeapObject))}
-                |# of global escaping objects: ${countAS(propertyStore.entities(GlobalEscape))}
-                |# of at most local object: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(NoEscape)) ⇒ e })}
-                |# of escaping object at most in callee: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeInCallee)) ⇒ e })}
-                |# of escaping object at most via return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaReturn)) ⇒ e })}
-                |# of escaping object at most via abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaAbnormalReturn)) ⇒ e })}
-                |# of escaping object at most via parameter: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameter)) ⇒ e })}
-                |# of escaping object at most via normal and abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaNormalAndAbnormalReturn)) ⇒ e })}
-                |# of escaping object at most via parameter and normal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameterAndReturn)) ⇒ e })}
-                |# of escaping object at most via parameter and abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ e })}
-                |# of escaping object at most via parameter and normal and abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)) ⇒ e })}
+                |# of local objects: ${countAS(propertyStore.finalEntities(NoEscape))}
+                |# of objects escaping in a callee: ${countAS(propertyStore.finalEntities(EscapeInCallee))}
+                |# of escaping objects via return: ${countAS(propertyStore.finalEntities(EscapeViaReturn))}
+                |# of escaping objects via abnormal return: ${countAS(propertyStore.finalEntities(EscapeViaAbnormalReturn))}
+                |# of escaping objects via parameter: ${countAS(propertyStore.finalEntities(EscapeViaParameter))}
+                |# of escaping objects via normal and abnormal return: ${countAS(propertyStore.finalEntities(EscapeViaNormalAndAbnormalReturn))}
+                |# of escaping objects via parameter and normal return: ${countAS(propertyStore.finalEntities(EscapeViaParameterAndReturn))}
+                |# of escaping objects via parameter and abnormal return: ${countAS(propertyStore.finalEntities(EscapeViaParameterAndAbnormalReturn))}
+                |# of escaping objects via parameter and normal and abnormal return: ${countAS(propertyStore.finalEntities(EscapeViaParameterAndNormalAndAbnormalReturn))}
+                |# of escaping objects via static field: ${countAS(propertyStore.finalEntities(EscapeViaStaticField))}
+                |# of escaping objects via heap objects: ${countAS(propertyStore.finalEntities(EscapeViaHeapObject))}
+                |# of global escaping objects: ${countAS(propertyStore.finalEntities(GlobalEscape))}
+                |# of at most local object: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(NoEscape)) ⇒ e })}
+                |# of escaping object at most in callee: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeInCallee)) ⇒ e })}
+                |# of escaping object at most via return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaReturn)) ⇒ e })}
+                |# of escaping object at most via abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaAbnormalReturn)) ⇒ e })}
+                |# of escaping object at most via parameter: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameter)) ⇒ e })}
+                |# of escaping object at most via normal and abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaNormalAndAbnormalReturn)) ⇒ e })}
+                |# of escaping object at most via parameter and normal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameterAndReturn)) ⇒ e })}
+                |# of escaping object at most via parameter and abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ e })}
+                |# of escaping object at most via parameter and normal and abnormal return: ${countAS(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)) ⇒ e })}
                 |
                 |
                 |FORMAL PARAMETERS:
-                |# of local objects: ${countFP(propertyStore.entities(NoEscape))}
-                |# of objects escaping in a callee: ${countFP(propertyStore.entities(EscapeInCallee))}
-                |# of escaping objects via return: ${countFP(propertyStore.entities(EscapeViaReturn))}
-                |# of escaping objects via abnormal return: ${countFP(propertyStore.entities(EscapeViaAbnormalReturn))}
-                |# of escaping objects via parameter: ${countFP(propertyStore.entities(EscapeViaParameter))}
-                |# of escaping objects via normal and abnormal return: ${countFP(propertyStore.entities(EscapeViaNormalAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal return: ${countFP(propertyStore.entities(EscapeViaParameterAndReturn))}
-                |# of escaping objects via parameter and abnormal return: ${countFP(propertyStore.entities(EscapeViaParameterAndAbnormalReturn))}
-                |# of escaping objects via parameter and normal and abnormal return: ${countFP(propertyStore.entities(EscapeViaParameterAndNormalAndAbnormalReturn))}
-                |# of escaping objects via static field: ${countFP(propertyStore.entities(EscapeViaStaticField))}
-                |# of escaping objects via heap objects: ${countFP(propertyStore.entities(EscapeViaHeapObject))}
-                |# of global escaping objects: ${countFP(propertyStore.entities(GlobalEscape))}
-                |# of at most local object: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(NoEscape)) ⇒ e })}
-                |# of escaping object at most in callee: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeInCallee)) ⇒ e })}
-                |# of escaping object at most via return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaReturn)) ⇒ e })}
-                |# of escaping object at most via abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaAbnormalReturn)) ⇒ e })}
-                |# of escaping object at most via parameter: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameter)) ⇒ e })}
-                |# of escaping object at most via normal and abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaNormalAndAbnormalReturn)) ⇒ e })}
-                |# of escaping object at most via parameter and normal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameterAndReturn)) ⇒ e })}
-                |# of escaping object at most via parameter and abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ e })}
-                |# of escaping object at most via parameter and normal and abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case EP(e, AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)) ⇒ e })}"""
+                |# of local objects: ${countFP(propertyStore.finalEntities(NoEscape))}
+                |# of objects escaping in a callee: ${countFP(propertyStore.finalEntities(EscapeInCallee))}
+                |# of escaping objects via return: ${countFP(propertyStore.finalEntities(EscapeViaReturn))}
+                |# of escaping objects via abnormal return: ${countFP(propertyStore.finalEntities(EscapeViaAbnormalReturn))}
+                |# of escaping objects via parameter: ${countFP(propertyStore.finalEntities(EscapeViaParameter))}
+                |# of escaping objects via normal and abnormal return: ${countFP(propertyStore.finalEntities(EscapeViaNormalAndAbnormalReturn))}
+                |# of escaping objects via parameter and normal return: ${countFP(propertyStore.finalEntities(EscapeViaParameterAndReturn))}
+                |# of escaping objects via parameter and abnormal return: ${countFP(propertyStore.finalEntities(EscapeViaParameterAndAbnormalReturn))}
+                |# of escaping objects via parameter and normal and abnormal return: ${countFP(propertyStore.finalEntities(EscapeViaParameterAndNormalAndAbnormalReturn))}
+                |# of escaping objects via static field: ${countFP(propertyStore.finalEntities(EscapeViaStaticField))}
+                |# of escaping objects via heap objects: ${countFP(propertyStore.finalEntities(EscapeViaHeapObject))}
+                |# of global escaping objects: ${countFP(propertyStore.finalEntities(GlobalEscape))}
+                |# of at most local object: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(NoEscape)) ⇒ e })}
+                |# of escaping object at most in callee: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeInCallee)) ⇒ e })}
+                |# of escaping object at most via return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaReturn)) ⇒ e })}
+                |# of escaping object at most via abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaAbnormalReturn)) ⇒ e })}
+                |# of escaping object at most via parameter: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameter)) ⇒ e })}
+                |# of escaping object at most via normal and abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaNormalAndAbnormalReturn)) ⇒ e })}
+                |# of escaping object at most via parameter and normal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameterAndReturn)) ⇒ e })}
+                |# of escaping object at most via parameter and abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒ e })}
+                |# of escaping object at most via parameter and normal and abnormal return: ${countFP(propertyStore.entities(EscapeProperty.key).collect { case FinalEP(e, AtMost(EscapeViaParameterAndNormalAndAbnormalReturn)) ⇒ e })}"""
 
         BasicReport(message.stripMargin('|'))
     }

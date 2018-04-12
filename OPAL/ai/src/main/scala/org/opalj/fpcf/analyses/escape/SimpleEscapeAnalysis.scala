@@ -31,43 +31,43 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.ValueOrigin
-import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis.V
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 
 class SimpleEscapeAnalysisContext(
-    val entity:                  Entity,
-    val defSite:                 ValueOrigin,
-    val targetMethod:            DeclaredMethod,
-    val uses:                    IntTrieSet,
-    val code:                    Array[Stmt[V]],
-    val cfg:                     CFG,
-    val declaredMethods:         DeclaredMethods,
-    val virtualFormalParameters: VirtualFormalParameters,
-    val project:                 SomeProject,
-    val propertyStore:           PropertyStore
+        val entity:                  Entity,
+        val defSite:                 ValueOrigin,
+        val targetMethod:            DeclaredMethod,
+        val uses:                    IntTrieSet,
+        val code:                    Array[Stmt[V]],
+        val cfg:                     CFG,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val project:                 SomeProject,
+        val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
-        with PropertyStoreContainer
-        with VirtualFormalParametersContainer
-        with DeclaredMethodsContainer
-        with CFGContainer
+    with PropertyStoreContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
+    with CFGContainer
 
 /**
- * A simple escape analysis that can handle [[org.opalj.br.AllocationSite]]s and
+ * A simple escape analysis that can handle [[org.opalj.ai.DefinitionSite]]s and
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
@@ -78,11 +78,11 @@ class SimpleEscapeAnalysisContext(
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
-        extends DefaultEscapeAnalysis
-        with ConstructorSensitiveEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEscapeAnalysis
-        with ExceptionAwareEscapeAnalysis {
+    extends DefaultEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
@@ -100,7 +100,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
             // for allocation sites, find the code containing the allocation site
-            case as: AllocationSite         ⇒ determineEscapeOfAS(as)
+            case defSite: DefinitionSite    ⇒ determineEscapeOfDS(defSite)
             case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
             case e ⇒
                 throw new IllegalArgumentException(s"can't handle entity $e")
@@ -116,7 +116,10 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
                 val useSites = params.thisParameter.useSites
                 val ctx = createContext(fp, -1, dm, useSites, code, cfg)
                 doDetermineEscape(ctx, createState)
-            case VirtualFormalParameter(_, _) ⇒ IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+            case VirtualFormalParameter(_, _) ⇒
+                //TODO
+                //IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                Result(fp, AtMost(NoEscape))
         }
     }
 
@@ -155,9 +158,9 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
 object EagerSimpleEscapeAnalysis extends SimpleEscapeAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
+        val ass = project.get(DefinitionSitesKey).getAllocationSites
         val analysis = new SimpleEscapeAnalysis(project)
-        val ass = propertyStore.context[AllocationSites].allocationSites
-        val fps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
         propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }

@@ -30,8 +30,8 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.AllocationSite
 import org.opalj.br.DeclaredMethod
+import org.opalj.ai.DefinitionSite
 import org.opalj.br.Field
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
@@ -39,21 +39,21 @@ import org.opalj.fpcf.properties.LocalField
 
 class FieldLocalityState(val field: Field) {
     private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
-    private[this] var allocationSiteDependees: Set[EOptionP[Entity, EscapeProperty]] = Set.empty
+    private[this] var definitionSitesDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
 
-    private[this] var clonedDependees: Set[Entity] = Set.empty
+    private[this] var clonedDependees: Set[DefinitionSite] = Set.empty
 
     private[this] var temporary: FieldLocality = LocalField
 
     def dependees: Set[EOptionP[Entity, Property]] = {
-        declaredMethodsDependees ++ allocationSiteDependees
+        declaredMethodsDependees ++ definitionSitesDependees
     }
 
     def hasNoDependees: Boolean = {
         declaredMethodsDependees.isEmpty &&
-            allocationSiteDependees.isEmpty
+            definitionSitesDependees.isEmpty
     }
-    def isAllocationSiteOfClone(e: AllocationSite): Boolean =
+    def isDefinitionSiteOfClone(e: DefinitionSite): Boolean =
         clonedDependees.contains(e)
 
     def addMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit =
@@ -67,20 +67,20 @@ class FieldLocalityState(val field: Field) {
         addMethodDependee(ep)
     }
 
-    def addClonedAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit = {
-        addAllocationSiteDependee(ep)
+    def addClonedDefinitionSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
+        addDefinitionSiteDependee(ep)
         clonedDependees += ep.e
     }
 
-    def addAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit =
-        allocationSiteDependees += ep
+    def addDefinitionSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit =
+        definitionSitesDependees += ep
 
-    def removeAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit =
-        allocationSiteDependees = allocationSiteDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
+    def removeDefinitionSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit =
+        definitionSitesDependees = definitionSitesDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
 
-    def updateAllocationSiteDependee(ep: EOptionP[Entity, EscapeProperty]): Unit = {
-        removeAllocationSiteDependee(ep)
-        addAllocationSiteDependee(ep)
+    def updateAllocationSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
+        removeDefinitionSiteDependee(ep)
+        addDefinitionSiteDependee(ep)
     }
 
     def updateWithMeet(f: FieldLocality): Unit = temporary = temporary.meet(f)

@@ -34,9 +34,9 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -59,13 +59,10 @@ class EscapeAnalysisTests extends PropertiesTest {
                 new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
             }
         )
-        PropertyStoreKey.makeAllocationSitesAvailable(p)
-        PropertyStoreKey.makeDeclaredMethodsAvailable(p)
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val ps = p.get(PropertyStoreKey)
         lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion()
+        ps.waitOnPhaseCompletion()
         (p, ps, as)
     }
 
@@ -79,7 +76,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(SimpleEscapeAnalysis), Set.empty)
+        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set.empty)
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
@@ -88,7 +85,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(InterProceduralEscapeAnalysis), Set(VirtualCallAggregatingEscapeAnalysis))
+        val as = executeAnalyses(Set(EagerInterProceduralEscapeAnalysis), Set(LazyVirtualCallAggregatingEscapeAnalysis))
         validateProperties(
             as,
             allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,

@@ -34,14 +34,14 @@ import org.junit.runner.RunWith
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Let the [[SimpleEscapeAnalysis]] run against all BI projects and the JDK.
+ * Let the [[EagerSimpleEscapeAnalysis]] run against all BI projects and the JDK.
  *
  * @author Florian Kübler
  */
@@ -51,10 +51,8 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
     def checkProject(project: () ⇒ SomeProject): Unit = {
         val p = project()
         //SimpleAIKey.domainFactory = (p, m) ⇒ new PrimitiveTACAIDomain(p, m)
-        PropertyStoreKey.makeAllocationSitesAvailable(p)
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
         val analysesManager = p.get(FPCFAnalysesManagerKey)
-        analysesManager.run(SimpleEscapeAnalysis)
+        analysesManager.run(EagerSimpleEscapeAnalysis)
     }
 
     allBIProjects() foreach { biProject ⇒

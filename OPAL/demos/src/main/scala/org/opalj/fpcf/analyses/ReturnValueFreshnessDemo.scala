@@ -35,7 +35,7 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
@@ -57,29 +57,26 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
-        PropertyStoreKey.makeAllocationSitesAvailable(project)
-        PropertyStoreKey.makeDeclaredMethodsAvailable(project)
         val ps = project.get(PropertyStoreKey)
 
-        InterProceduralEscapeAnalysis.startLazily(project, ps)
-        FieldLocalityAnalysis.startLazily(project, ps)
-        VirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
-        VirtualReturnValueFreshnessAnalysis.start(project, ps)
+        LazyInterProceduralEscapeAnalysis.startLazily(project, ps)
+        LazyFieldLocalityAnalysis.startLazily(project, ps)
+        LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
+        LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
 
-        ReturnValueFreshnessAnalysis.start(project, ps)
-        ps.waitOnPropertyComputationCompletion()
+        EagerReturnValueFreshnessAnalysis.start(project, ps)
+        ps.waitOnPhaseCompletion()
 
-        val fresh = ps.entities(FreshReturnValue)
-        val notFresh = ps.entities(NoFreshReturnValue)
-        val prim = ps.entities(PrimitiveReturnValue)
-        val getter = ps.entities(Getter)
-        val extGetter = ps.entities(VExtensibleGetter)
-        val vfresh = ps.entities(VFreshReturnValue)
-        val vnotFresh = ps.entities(VNoFreshReturnValue)
-        val vprim = ps.entities(VPrimitiveReturnValue)
-        val vgetter = ps.entities(VGetter)
-        val vextGetter = ps.entities(VExtensibleGetter)
+        val fresh = ps.finalEntities(FreshReturnValue)
+        val notFresh = ps.finalEntities(NoFreshReturnValue)
+        val prim = ps.finalEntities(PrimitiveReturnValue)
+        val getter = ps.finalEntities(Getter)
+        val extGetter = ps.finalEntities(VExtensibleGetter)
+        val vfresh = ps.finalEntities(VFreshReturnValue)
+        val vnotFresh = ps.finalEntities(VNoFreshReturnValue)
+        val vprim = ps.finalEntities(VPrimitiveReturnValue)
+        val vgetter = ps.finalEntities(VGetter)
+        val vextGetter = ps.finalEntities(VExtensibleGetter)
 
         val message =
             s"""|# of methods with fresh return value: ${fresh.size}

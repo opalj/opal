@@ -32,13 +32,17 @@ package analyses
 
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.AllocationSite
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSiteWithFilteredUses
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.ai.DefinitionSites
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -46,7 +50,6 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.AbstractEscapeAnalysisState
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaReturn
@@ -88,11 +91,13 @@ import org.opalj.tac.VirtualFunctionCall
  * TODO
  * @author Florian Kuebler
  */
-class FieldLocalityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
+class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
-    private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
+    private[this] val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    private[this] val aiResult = project.get(SimpleAIKey)
 
     def determineLocality(field: Field): PropertyComputationResult = {
         implicit val state = new FieldLocalityState(field)
@@ -133,11 +138,11 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
         } {
             stmt match {
                 // all assignments to the field have to be fresh
-                case PutField(_, declaredFieldType, `fieldName`, `fieldType`, objRef, value) ⇒
+                case put @ PutField(_, declaredFieldType, `fieldName`, `fieldType`, objRef, value) ⇒
                     project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
                         case Some(`field`) ⇒
                             checkFreshnessAndEscapeOfValue(
-                                value, stmt, stmts, method, isClone = false
+                                value, put, stmts, method, isClone = false
                             ).foreach(return _)
                         case None ⇒ throw new RuntimeException("unexpected case")
                         case _    ⇒
@@ -147,13 +152,13 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
                 case stmt @ Assignment(_, _, GetField(_, declaredType, `fieldName`, `fieldType`, _)) ⇒
                     project.resolveFieldReference(declaredType, fieldName, fieldType) match {
                         case Some(`field`) ⇒
-                            handleGetField(stmt, stmts).foreach(return _)
+                            handleGetField(stmt, stmts, method).foreach(return _)
                         case None ⇒ throw new RuntimeException("unexpected case")
                         case _    ⇒
                     }
 
                 // always if there is a call to super.clone the field has to be override
-                case Assignment(pc, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
+                case Assignment(_, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
                     if (descr.parametersCount == 0 && field.classFile.superclassType.get == dc) {
                         handleSuperCloneCall(index, method, left.usedBy, tacai).foreach(return _)
                     }
@@ -165,28 +170,11 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
         returnResult
     }
 
-    def handleGetField(stmt: Assignment[V], stmts: Array[Stmt[V]])(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
-        // TODO later use real escape analysis
-        val analysis = new FallBackEscapeAnalysis(project)
-        val ctx = analysis.createContext(
-            entityParam = null,
-            defSiteParam = stmts.indexOf(stmt),
-            targetMethodParam = null,
-            usesParam = stmt.targetVar.usedBy,
-            codeParam = stmts,
-            cfgParam = null
-        )
-        val escapeState = new AbstractEscapeAnalysisState {}
-        val result = analysis.doDetermineEscape(ctx, escapeState)
-
-        val objRef = stmt.expr.asGetField.objRef
-        result match {
-            case Result(_, NoEscape) ⇒ None
-            case Result(_, EscapeViaReturn) if objRef.asVar.definedBy == IntTrieSet(tac.OriginOfThis) ⇒
-                state.updateWithMeet(LocalFieldWithGetter)
-                None
-            case _ ⇒ Some(Result(state.field, NoLocalField))
-        }
+    def handleGetField(
+        definingStmt: Assignment[V], stmts: Array[Stmt[V]], method: Method
+    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
+        val escape = propertyStore(definitionSites(method, definingStmt.pc), EscapeProperty.key)
+        handleEscapeOfGetField(escape)
 
     }
 
@@ -216,7 +204,6 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
                         tacai.stmts(index) match {
                             case putStmt @ PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) ⇒
                                 if (uses.contains(index)) {
-                                    //TODO move me upwards
                                     checkFreshnessAndEscapeOfValue(
                                         objRef, putStmt, tacai.stmts, method, isClone = true
                                     ).foreach(x ⇒ return Some(x))
@@ -362,32 +349,79 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
     }
 
     private[this] def handleEscapeState(
-        eOptionP: EOptionP[Entity, EscapeProperty], isClone: Boolean
+        eOptionP: EOptionP[DefinitionSiteWithFilteredUses, EscapeProperty], isClone: Boolean
     )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒ None
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
-            state.addAllocationSiteDependee(eOptionP)
+            if (isClone)
+                state.addClonedDefinitionSiteDependee(eOptionP)
+            else
+                state.addDefinitionSiteDependee(eOptionP)
             None
 
         case FinalEP(_, EscapeViaReturn) if isClone ⇒ None
 
         case IntermediateEP(_, _, EscapeViaReturn) if isClone ⇒
-            state.addClonedAllocationSiteDependee(eOptionP)
+            state.addClonedDefinitionSiteDependee(eOptionP)
             None
 
         case EPS(_, _, _) ⇒ Some(Result(state.field, NoLocalField))
 
         case _ if isClone ⇒
-            state.addClonedAllocationSiteDependee(eOptionP)
+            state.addClonedDefinitionSiteDependee(eOptionP)
             None
         case _ ⇒
-            state.addAllocationSiteDependee(eOptionP)
+            state.addDefinitionSiteDependee(eOptionP)
             None
     }
 
+    private[this] def handleEscapeOfGetField(
+        eOptionP: EOptionP[DefinitionSite, EscapeProperty]
+    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
+        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ None
+        case FinalEP(e, EscapeViaReturn) ⇒
+            if (isGetFieldOfReceiver(e)) {
+                state.updateWithMeet(LocalFieldWithGetter)
+                None
+            } else
+                Some(Result(state.field, NoLocalField))
+
+        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+            state.addDefinitionSiteDependee(eOptionP)
+            None
+
+        case IntermediateEP(e, _, EscapeViaReturn) ⇒
+            if (isGetFieldOfReceiver(e)) {
+                state.updateWithMeet(LocalFieldWithGetter)
+                state.addDefinitionSiteDependee(eOptionP)
+                None
+            } else
+                Some(Result(state.field, NoLocalField))
+            None
+
+        case EPS(_, _, _) ⇒
+            Some(Result(state.field, NoLocalField))
+
+        case _ ⇒
+            state.addDefinitionSiteDependee(eOptionP)
+            None
+
+    }
+
+    private[this] def isGetFieldOfReceiver(defSite: DefinitionSite): Boolean = {
+        val stmt = tacaiProvider(defSite.method).stmts.find(_.pc == defSite.pc)
+        val objRef = stmt match {
+
+            case Some(Assignment(_, _, getField: GetField[V])) ⇒ getField.objRef
+            case Some(_) | None ⇒
+                throw new RuntimeException("unexpected case")
+        }
+        objRef.asVar.definedBy == tac.SelfReferenceParameter
+    }
+
     private[this] def checkFreshnessAndEscapeOfValue(
-        value: Expr[V], useStmt: Stmt[V], stmts: Array[Stmt[V]], method: Method, isClone: Boolean
+        value: Expr[V], putField: PutField[V], stmts: Array[Stmt[V]], method: Method, isClone: Boolean
     )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
         for (defSite1 ← value.asVar.definedBy) {
             //TODO what about exceptions
@@ -395,33 +429,13 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
                 return Some(Result(state.field, NoLocalField))
             val stmt = stmts(defSite1)
 
-            val uses1 = stmt match {
-                //TODO this is unsound, as the constructor call might let the object escape
-                case Assignment(_, tgt, _: New) ⇒ tgt.usedBy filter {
-                    use ⇒ use != stmts.indexOf(useStmt) && use != tgt.usedBy.filter(_ > defSite1).toChain.min
-                }
-                case Assignment(_, tgt, _) ⇒ tgt.usedBy.filter(_ != stmts.indexOf(useStmt))
-                case _                     ⇒ throw new Error("unexpected def-Site")
-            }
-
             // is the def-site fresh?
             checkFreshnessOfDef(stmt, method, isClone).foreach(r ⇒ return Some(r))
 
-            //TODO remove me
-            val analysis = new FallBackEscapeAnalysis(project)
-            val ctx = analysis.createContext(null, defSite1, null, uses1, stmts, null)
-            val escapeState = new AbstractEscapeAnalysisState {}
-            val result = {
-                analysis.doDetermineEscape(ctx, escapeState) match {
-                    case Result(e, escapeState: EscapeProperty) ⇒
-                        EP(e, escapeState)
-                    case RefinableResult(e, escapeState: EscapeProperty) ⇒
-                        EP(e, escapeState)
-                    case _ ⇒ throw new Error()
-                }
-            }
-
-            handleEscapeState(result, isClone).foreach(r ⇒ return Some(r))
+            val filteredUses = aiResult(method).domain.usedBy(stmt.pc).filter(_ != putField.pc)
+            val defSiteEntity = definitionSites(method, stmt.pc, filteredUses)
+            val escape = propertyStore(defSiteEntity, EscapeProperty.key)
+            handleEscapeState(escape, isClone).foreach(r ⇒ return Some(r))
         }
         None
     }
@@ -472,11 +486,16 @@ class FieldLocalityAnalysis private ( final val project: SomeProject) extends FP
                 state.removeMethodDependee(newEP)
                 handleReturnValueFreshness(newEP).foreach(return _)
 
+            case e: DefinitionSiteWithFilteredUses ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSiteWithFilteredUses, EscapeProperty]]
+                state.removeDefinitionSiteDependee(newEP)
+                handleEscapeState(newEP, state.isDefinitionSiteOfClone(e)).foreach(return _)
+
             // order matters: normal allocation sites must not escape via return
-            case e: AllocationSite ⇒
-                val newEP = someEPS.asInstanceOf[EOptionP[AllocationSite, EscapeProperty]]
-                state.removeAllocationSiteDependee(newEP)
-                handleEscapeState(newEP, state.isAllocationSiteOfClone(e)).foreach(return _)
+            case e: DefinitionSite ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
+                state.removeDefinitionSiteDependee(newEP)
+                handleEscapeOfGetField(newEP).foreach(return _)
         }
         returnResult
     }

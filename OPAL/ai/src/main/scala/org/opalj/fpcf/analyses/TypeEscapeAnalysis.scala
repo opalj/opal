@@ -34,17 +34,13 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.AllocationSites
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.GlobalType
 import org.opalj.fpcf.properties.MaybePackageLocalType
-import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.PackageLocalType
 import org.opalj.fpcf.properties.TypeEscapeProperty
 import org.opalj.tac.DefaultTACAIKey
@@ -60,10 +56,13 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
 
+    //private[this] val definitionSites = project.get(DefinitionSitesKey)
+
     /**
      * Determines whether the type escapes.
      */
     def determineTypeEscape(cf: ClassFile): PropertyComputationResult = {
+        ??? /*
         //var dependees = Set.empty[EOptionP[Entity, EscapeProperty]]
         //TODO what about lazy escape analysis
         if (cf.isAbstract || !cf.isPackageVisible) {
@@ -71,7 +70,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
         } else {
             val constructorsNotAccessible = cf.constructors.forall(cs ⇒ cs.isPackagePrivate || cs.isPrivate)
             if (constructorsNotAccessible) {
-                val as = propertyStore.context[AllocationSites]
+                val as = definitionSites(m)
                 val allocations = as.apply(cf.thisType)
                 var maybeLocal = false
                 for (allocation ← allocations) {
@@ -96,7 +95,7 @@ class TypeEscapeAnalysis private ( final val project: SomeProject) extends FPCFA
             } else {
                 Result(cf, GlobalType)
             }
-        }
+        }*/
     }
 }
 

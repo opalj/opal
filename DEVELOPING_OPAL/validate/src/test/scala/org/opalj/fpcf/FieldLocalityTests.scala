@@ -28,40 +28,22 @@
  */
 package org.opalj
 package fpcf
-import java.net.URL
-
-import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.FieldLocalityAnalysis
-import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.VirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 class FieldLocalityTests extends PropertiesTest {
-    override def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
-    ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        val p = FixtureProject.recreate()
-
-        PropertyStoreKey.makeDeclaredMethodsAvailable(p)
-        PropertyStoreKey.makeAllocationSitesAvailable(p)
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
-
-        val ps = p.get(PropertyStoreKey)
-
-        InterProceduralEscapeAnalysis.startLazily(p, ps)
-        VirtualCallAggregatingEscapeAnalysis.startLazily(p, ps)
-        VirtualReturnValueFreshnessAnalysis.startLazily(p, ps)
-        ReturnValueFreshnessAnalysis.startLazily(p, ps)
-
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion()
-        (p, ps, as)
-    }
+    val lazyAnalysisScheduler = Set(
+        LazyInterProceduralEscapeAnalysis,
+        LazyVirtualCallAggregatingEscapeAnalysis,
+        LazyVirtualReturnValueFreshnessAnalysis,
+        LazyReturnValueFreshnessAnalysis
+    )
 
     describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(Set(FieldLocalityAnalysis), Set.empty)
+        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
         validateProperties(
             as,
             fieldsWithAnnotations,

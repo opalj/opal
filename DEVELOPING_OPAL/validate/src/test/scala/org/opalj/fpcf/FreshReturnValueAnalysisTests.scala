@@ -28,14 +28,11 @@
  */
 package org.opalj
 package fpcf
-import java.net.URL
-
-import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.FieldLocalityAnalysis
-import org.opalj.fpcf.analyses.ReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.VirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
  *  Tests if the return value freshness properties specified in the test project (the classes in the
@@ -45,30 +42,16 @@ import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis
  * @author Florian Kuebler
  */
 class FreshReturnValueAnalysisTests extends PropertiesTest {
-    override def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
-    ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
-        val p = FixtureProject.recreate()
 
-        PropertyStoreKey.makeDeclaredMethodsAvailable(p)
-        PropertyStoreKey.makeAllocationSitesAvailable(p)
-        PropertyStoreKey.makeVirtualFormalParametersAvailable(p)
-
-        val ps = p.get(PropertyStoreKey)
-
-        InterProceduralEscapeAnalysis.startLazily(p, ps)
-        VirtualCallAggregatingEscapeAnalysis.startLazily(p, ps)
-        VirtualReturnValueFreshnessAnalysis.startLazily(p, ps)
-        FieldLocalityAnalysis.startLazily(p, ps)
-
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPropertyComputationCompletion()
-        (p, ps, as)
-    }
+    val lazyAnalysisScheduler = Set(
+        LazyInterProceduralEscapeAnalysis,
+        LazyVirtualCallAggregatingEscapeAnalysis,
+        LazyVirtualReturnValueFreshnessAnalysis,
+        LazyFieldLocalityAnalysis
+    )
 
     describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(Set(ReturnValueFreshnessAnalysis), Set.empty)
+        val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisScheduler)
         validateProperties(
             as,
             declaredMethodsWithAnnotations,

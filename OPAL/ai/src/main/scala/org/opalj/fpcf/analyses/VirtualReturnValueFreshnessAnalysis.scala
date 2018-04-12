@@ -47,7 +47,7 @@ import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
  * @author Florian Kuebler
  */
 class VirtualReturnValueFreshnessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    private[this] val declaredMethods: DeclaredMethods = propertyStore.context[DeclaredMethods]
+    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
         if (m.descriptor.returnType.isBaseType || m.descriptor.returnType.isVoidType) {

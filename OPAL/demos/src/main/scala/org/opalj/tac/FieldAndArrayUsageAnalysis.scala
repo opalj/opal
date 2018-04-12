@@ -31,13 +31,13 @@ package org.opalj.tac
 import org.opalj.br.analyses.Project
 import java.net.URL
 
+import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.AllocationSitesKey
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.EP
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -90,26 +90,22 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
             tacai
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
-        val ass = time {
-            project.get(AllocationSitesKey)
+        val (defSites, ass) = time {
+            val defSites = project.get(DefinitionSitesKey)
+            (defSites, defSites.getAllocationSites)
         } { t ⇒ info("progress", s"allocationSites took ${t.toSeconds}") }
 
         val propertyStore = time {
-
-            PropertyStoreKey.makeAllocationSitesAvailable(project)
-            PropertyStoreKey.makeVirtualFormalParametersAvailable(project)
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
         time {
-            SimpleEscapeAnalysis.start(project, propertyStore)
-            propertyStore.waitOnPropertyComputationCompletion(
-                resolveCycles = true,
-                useFallbacksForIncomputableProperties = false
-            )
+            EagerSimpleEscapeAnalysis.start(project, propertyStore)
+            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
-            m ← project.allMethodsWithBody
-            (pc, as) ← ass(m)
+            as ← ass
+            pc = as.pc
+            m = as.method
             code = tacaiProvider(m).stmts
             lineNumbers = tacaiProvider(m).lineNumberTable
             index = code indexWhere { stmt ⇒ stmt.pc == pc }
@@ -172,20 +168,20 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                         if (pcsOfNewArrays.nonEmpty) {
                                             arrayStoresOfAllocation += 1
                                             for (pc ← pcsOfNewArrays) {
-                                                val as = ass(m)(pc)
+                                                val as = defSites(m, pc)
                                                 propertyStore(as, EscapeProperty.key) match {
-                                                    case EP(_, NoEscape | AtMost(NoEscape)) ⇒
+                                                    case FinalEP(_, NoEscape | AtMost(NoEscape)) ⇒
                                                         maybeNoEscapingArrays += 1
-                                                    case EP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
+                                                    case FinalEP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
                                                         maybeInCalleeArrays += 1
-                                                    case EP(_, EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
+                                                    case FinalEP(_, EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
                                                         maybeViaParamArrays += 1
-                                                    case EP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
+                                                    case FinalEP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
                                                         maybeViaReturn += 1
-                                                    case EP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
+                                                    case FinalEP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
                                                         maybeViaAbnormal += 1
-                                                    case EP(_, p) if p.isBottom ⇒ globalArrays += 1
-                                                    case _                      ⇒ maybeInCallerArrays += 1
+                                                    case FinalEP(_, p) if p.isBottom ⇒ globalArrays += 1
+                                                    case _                           ⇒ maybeInCallerArrays += 1
                                                 }
                                             }
 
@@ -197,7 +193,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                             println(
                                                                 s"""
                                                                     |${m.toJava}:
-                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} new ${as.allocatedType}
+                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} new ${as}
                                                                     |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(pcOfStore)} $arrayStore}
                                                                  """.stripMargin
                                                             )
