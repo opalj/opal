@@ -30,47 +30,55 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.ObjectType
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
-import org.opalj.br.collection.UpperTypeBounds
 
 /**
- * The set of exceptions thrown by a method, including the exceptions including the exceptions
- * thrown by overriding methods, if the set of overriding methods is finite.
+ * The set of exceptions thrown by a method, including the exceptions thrown by overriding methods.
+ * If the type hierarchy is extensible then the set is generally unbounded.
  *
- * It uses the ThrownExceptions property to gather information about the exceptions thrown by a
- * particular method.
+ * Information about `ThrownExceptionsByOverridingMethods` is generally associated with
+ * `DeclaredMethods`. I.e., the information is not attached to `Method` objects!
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
 object ThrownExceptionsByOverridingMethods {
 
-    private[this] final val cycleResolutionStrategy = {
-        (ps: PropertyStore, eps: SomeEPS) ⇒ { Result(eps.e, eps.p) }: Result
+    def fallbackPropertyComputation(
+        ps: PropertyStore,
+        dm: br.DeclaredMethod
+    ): ThrownExceptionsByOverridingMethods = {
+        if (!dm.hasDefinition)
+            return SomeException;
+
+        val m = dm.methodDefinition
+        if (m.isFinal || m.isStatic || m.isInitializer || m.isPrivate) {
+            new ThrownExceptionsByOverridingMethods(ThrownExceptionsFallback(ps, m).types)
+        } else {
+            SomeException
+        }
     }
 
     final val Key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
-        PropertyKey.create[ThrownExceptionsByOverridingMethods](
-            "ThrownExceptionsByOverridingMethods",
-            Unknown,
-            cycleResolutionStrategy
+        PropertyKey.create[br.DeclaredMethod, ThrownExceptionsByOverridingMethods](
+            name = "ThrownExceptionsByOverridingMethods",
+            fallbackPropertyComputation = fallbackPropertyComputation _,
+            (_: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptionsByOverridingMethods]) ⇒ eps.toUBEP
         )
-
     }
 
     final val NoExceptions = new ThrownExceptionsByOverridingMethods()
 
-    final val Unknown =
-        new ThrownExceptionsByOverridingMethods(
-            exceptions = UpperTypeBounds(Set(ObjectType.Throwable))
-        )
+    final val SomeException = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 }
 
 case class ThrownExceptionsByOverridingMethods(
         exceptions: BRTypesSet = BRTypesSet.empty
 ) extends Property {
+
     final type Self = ThrownExceptionsByOverridingMethods
+
     final def key = ThrownExceptionsByOverridingMethods.Key
+
 }
 
