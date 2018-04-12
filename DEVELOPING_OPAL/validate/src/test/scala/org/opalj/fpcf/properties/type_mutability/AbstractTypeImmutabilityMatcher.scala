@@ -28,32 +28,32 @@
  */
 package org.opalj
 package fpcf
+package properties
+package type_mutability
 
-import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
 
-/**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
- *
- * @author Michael Eichberg
- */
-class FieldMutabilityTests extends PropertiesTest {
-
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
+class AbstractTypeImmutabilityMatcher(val property: TypeImmutability) extends AbstractPropertyMatcher {
+    override def validateProperty(
+        p:          Project[_],
+        as:         Set[ObjectType],
+        entity:     scala.Any,
+        a:          AnnotationLike,
+        properties: Traversable[Property]
+    ): Option[String] = {
+        if (!properties.exists {
+            case `property` ⇒ true
+            case _          ⇒ false
+        }) {
+            Some(a.elementValuePairs.head.value.asStringValue.value)
+        } else {
+            None
+        }
     }
-
-    describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(L0FieldMutabilityAnalysis))
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerL1FieldMutabilityAnalysis))
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
 }
+
+class ImmutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableType)
+class ImmutableContainerTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainerType)
+class MutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.MutableType)

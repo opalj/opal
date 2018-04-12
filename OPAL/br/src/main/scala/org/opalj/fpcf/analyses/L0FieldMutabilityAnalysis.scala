@@ -67,7 +67,7 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
             return NoResult;
         }
 
-        val finalFields = fields.collect { case f if f.isFinal ⇒ new EP(f, DeclaredFinalField) }
+        val finalFields = fields.collect { case f if f.isFinal ⇒ new FinalEP(f, DeclaredFinalField) }
 
         var effectivelyFinalFields = psnfFields
         val allMethodsIterator = classFile.methods.iterator
@@ -103,9 +103,9 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
 
         val psnfFieldsAnalysisResult = psnfFields map { f ⇒
             if (effectivelyFinalFields.contains(f))
-                new EP(f, EffectivelyFinalField)
+                new FinalEP(f, EffectivelyFinalField)
             else
-                new EP(f, NonFinalFieldByAnalysis)
+                new FinalEP(f, NonFinalFieldByAnalysis)
         }
 
         MultiResult(psnfFieldsAnalysisResult ++ finalFields)

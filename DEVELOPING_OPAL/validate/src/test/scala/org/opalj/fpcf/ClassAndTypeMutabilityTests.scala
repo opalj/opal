@@ -26,10 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
 
 /**
@@ -37,23 +37,13 @@ import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
  * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
  * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
- * @author Michael Eichberg
+ * @author Florian Kuebler
  */
-class FieldMutabilityTests extends PropertiesTest {
+class ClassAndTypeMutabilityTests extends PropertiesTest {
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(L0FieldMutabilityAnalysis))
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerL1FieldMutabilityAnalysis))
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
+    describe("the field, class and type mutability analyses are executed") {
+        val as = executeAnalyses(Set(L0FieldMutabilityAnalysis, EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis))
+        validateProperties(as, classFilesWithAnnotations.map(tp ⇒ (tp._1.thisType, tp._2, tp._3)), Set("TypeImmutability", "ClassImmutability"))
     }
 
 }
