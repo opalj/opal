@@ -41,16 +41,16 @@ object Dependencies {
         val scalatest = "3.0.5"
         val scalacheck = "1.13.5"
 
-        val scalaxml = "1.0.6"
-        val playjson = "2.6.8"
+        val scalaxml = "1.1.0"
+        val playjson = "2.6.9"
         val ficus = "1.4.3"
-        val commonstext = "1.2"
-        val scalaparsercombinators = "1.0.7"
+        val commonstext = "1.3"
+        val scalaparsercombinators = "1.1.0"
 
         val scalafx = "8.0.144-R12"
         val controlsfx = "8.40.14"
         val txtmark = "0.16"
-        val jacksonDF = "2.9.4"
+        val jacksonDF = "2.9.5"
         val chocosolver = "4.0.6"
         val fastutil = "8.1.1"
     }
