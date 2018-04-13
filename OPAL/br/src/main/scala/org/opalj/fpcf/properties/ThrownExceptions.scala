@@ -83,8 +83,6 @@ case class ThrownExceptions(types: BRTypesSet) extends Property {
             """ThrownExceptionsAreUnknown(reason="the exception type is unknown")"""
         else if (this == ThrownExceptions.MethodBodyIsNotAvailable)
             """ThrownExceptionsAreUnknown(reason="method body is not available")"""
-        else if (this == ThrownExceptions.MethodIsOverrideable)
-            """ThrownExceptionsAreUnknown(reason="method could be overridden by unknown method")"""
         else if (this == ThrownExceptions.AnalysisLimitation)
             """ThrownExceptionsAreUnknown(reason="analysis limitation")"""
         else if (this == ThrownExceptions.SomeException)
@@ -118,8 +116,12 @@ object ThrownExceptions {
 
     final val MethodBodyIsNotAvailable = new ThrownExceptions(BRTypesSet.SomeException)
 
-    final val MethodIsOverrideable = new ThrownExceptions(BRTypesSet.SomeException)
-
     final val AnalysisLimitation = new ThrownExceptions(BRTypesSet.SomeException)
+
+    final val MethodIsAbstract = new ThrownExceptions(BRTypesSet.SomeException)
+
+    final val MethodCalledThrowsUnknownExceptions = new ThrownExceptions(BRTypesSet.SomeException)
+
+    final val UnresolvedInvokeDynamicInstruction = new ThrownExceptions(BRTypesSet.SomeException)
 
 }
