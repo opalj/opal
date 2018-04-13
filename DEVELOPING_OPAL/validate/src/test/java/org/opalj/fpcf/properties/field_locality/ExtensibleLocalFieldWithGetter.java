@@ -38,7 +38,7 @@ import java.lang.annotation.*;
  *
  * @author Dominik Helm
  */
-@PropertyValidator(key= "FieldLocality", validator = ExtensibleLocalFieldMatcher.class)
+@PropertyValidator(key= "FieldLocality", validator = ExtensibleLocalFieldWithGetterMatcher.class)
 @Target(ElementType.FIELD)
 @Documented
 @Retention(RetentionPolicy.CLASS)

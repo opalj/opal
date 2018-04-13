@@ -32,7 +32,7 @@ import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
-@PropertyValidator(key= "FieldLocality", validator = LocalFieldMatcher.class)
+@PropertyValidator(key= "FieldLocality", validator = LocalFieldWithGetterMatcher.class)
 @Target(ElementType.FIELD)
 @Documented
 @Retention(RetentionPolicy.CLASS)

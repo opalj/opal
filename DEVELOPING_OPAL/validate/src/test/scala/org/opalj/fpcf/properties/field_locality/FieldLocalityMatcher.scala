@@ -71,5 +71,5 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
 class NoLocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.NoLocalField)
 class ExtensibleLocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.ExtensibleLocalField)
 class LocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.LocalField)
-class ExtensibleLocalFieldMatcherWithGetter extends FieldLocalityMatcher(org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter)
-class LocalFieldMatcherWitGetter extends FieldLocalityMatcher(org.opalj.fpcf.properties.LocalFieldWithGetter)
+class ExtensibleLocalFieldWithGetterMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter)
+class LocalFieldWithGetterMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.LocalFieldWithGetter)

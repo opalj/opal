@@ -435,7 +435,7 @@ trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
 
 object EagerReturnValueFreshnessAnalysis extends ReturnValueFreshnessAnalysisScheduler with FPCFEagerAnalysisScheduler {
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val declaredMethods = propertyStore.context[DeclaredMethods].declaredMethods
+        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new ReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
