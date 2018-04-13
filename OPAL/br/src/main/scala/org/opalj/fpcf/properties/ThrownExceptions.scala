@@ -55,6 +55,12 @@ import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
  * }
  * }}}
  *
+ * Information about `ThrownExceptions` is generally associated with `DeclaredMethods`. I.e.,
+ * the information is not attached to `Method` objects!
+ *
+ * Note that the top-value of the lattice is the empty set and the bottom value is the set
+ * of all exceptions.
+ *
  * @author Michael Eichberg
  */
 case class ThrownExceptions(types: BRTypesSet) extends Property {
@@ -64,8 +70,8 @@ case class ThrownExceptions(types: BRTypesSet) extends Property {
     final def key = ThrownExceptions.Key
 
     /**
-     * Returns `true` if and only if the method does not yet throw exceptions. I.e., if
-     * this property is still refineable then this property may still change. Otherwise,
+     * Returns `true` if and only if the method does not '''yet''' throw exceptions. I.e., if
+     * this property is still refinable then this property may still change. Otherwise,
      * the analysis was able to determine that no exceptions are thrown.
      */
     def throwsNoExceptions: Boolean = types.isEmpty
@@ -81,6 +87,8 @@ case class ThrownExceptions(types: BRTypesSet) extends Property {
             """ThrownExceptionsAreUnknown(reason="method could be overridden by unknown method")"""
         else if (this == ThrownExceptions.AnalysisLimitation)
             """ThrownExceptionsAreUnknown(reason="analysis limitation")"""
+        else if (this == ThrownExceptions.SomeException)
+            """ThrownExceptionsAreUnknown(reason="<unspecified>")"""
         else
             super.toString
     }
@@ -88,27 +96,30 @@ case class ThrownExceptions(types: BRTypesSet) extends Property {
 
 object ThrownExceptions {
 
-    private val cycleResolutionStrategy = {
-        (ps: PropertyStore, eps: SomeEPS) ⇒ { Result(eps.e, eps.p) }: Result
-    }
-
     final val Key: PropertyKey[ThrownExceptions] = {
-        PropertyKey.create("ThrownExceptions", ThrownExceptionsFallback, cycleResolutionStrategy)
+        PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
+            "ThrownExceptions",
+            ThrownExceptionsFallback,
+            (ps: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptions]) ⇒ eps.toUBEP
+        )
     }
 
-    final val NoExceptions = new ThrownExceptions(BRTypesSet.empty)
+    final val NoExceptions: ThrownExceptions = new ThrownExceptions(BRTypesSet.empty)
 
-    // in the following we use a specific instance to identify a specific reason...
+    //
+    // In the following we use specific instances to identify specific reasons...
+    //
+
     final def SomeException = new ThrownExceptions(BRTypesSet.SomeException)
 
-    final val MethodIsNative = SomeException
+    final val MethodIsNative = new ThrownExceptions(BRTypesSet.SomeException)
 
-    final val UnknownExceptionIsThrown = SomeException
+    final val UnknownExceptionIsThrown = new ThrownExceptions(BRTypesSet.SomeException)
 
-    final val MethodBodyIsNotAvailable = SomeException
+    final val MethodBodyIsNotAvailable = new ThrownExceptions(BRTypesSet.SomeException)
 
-    final val MethodIsOverrideable = SomeException
+    final val MethodIsOverrideable = new ThrownExceptions(BRTypesSet.SomeException)
 
-    final val AnalysisLimitation = SomeException
+    final val AnalysisLimitation = new ThrownExceptions(BRTypesSet.SomeException)
 
 }

@@ -55,14 +55,20 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    type SomeEPKs = Iterable[SomeEPK]
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ FinalEP[E, P]
 
     private[this] val keysLock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
-    private[this] val fallbackProperties = ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
-    private[this] val cycleResolutionStrategies = ArrayBuffer.empty[CycleResolutionStrategy[Entity, Property]]
+
+    private[this] val fallbackProperties = {
+        ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
+    }
+
+    private[this] val cycleResolutionStrategies = {
+        ArrayBuffer.empty[CycleResolutionStrategy[Entity, Property]]
+    }
+
     private[this] var lastKeyId: Int = -1
 
     /**
@@ -73,18 +79,18 @@ object PropertyKey {
      *              uniqueness it is recommended to prepend (parts of) the package name of property.
      *              Properties defined by OPAL start with "opalj."
      *
-     * @param fallbackProperty A function that returns the property that will be associated
-     *              with those entities for which the property is not explicitly computed.
-     *              This is generally the bottom value of the lattice.
+     * @param fallbackPropertyComputation A function that returns the property that will be
+     *              associated with those entities for which the property is not explicitly
+     *              computed. This is generally the bottom value of the lattice.
      *
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
      *              computations. In the vast majority of cases it is sufficient to just commit
      *              the given value.
      */
     def create[E <: Entity, P <: Property](
-        name:                    String,
-        fallbackProperty:        (PropertyStore, E) ⇒ P,
-        cycleResolutionStrategy: CycleResolutionStrategy[E, P]
+        name:                        String,
+        fallbackPropertyComputation: (PropertyStore, E) ⇒ P,
+        cycleResolutionStrategy:     CycleResolutionStrategy[E, P]
     ): PropertyKey[P] = {
         withWriteLock(keysLock) {
             if (propertyKeyNames.contains(name)) {
@@ -93,18 +99,21 @@ object PropertyKey {
 
             lastKeyId += 1
             propertyKeyNames += name
-            fallbackProperties += fallbackProperty.asInstanceOf[(PropertyStore, Entity) ⇒ Property]
-            cycleResolutionStrategies += cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
+            fallbackProperties +=
+                fallbackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Property]
+            cycleResolutionStrategies +=
+                cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
+
             new PropertyKey(lastKeyId)
         }
     }
 
     def create[E <: Entity, P <: Property](
         name:                    String,
-        fallback:                P,
+        fallbackProperty:        P,
         cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.toUBEP
     ): PropertyKey[P] = {
-        create(name, (ps: PropertyStore, e: Entity) ⇒ fallback, cycleResolutionStrategy)
+        create(name, (ps: PropertyStore, e: Entity) ⇒ fallbackProperty, cycleResolutionStrategy)
     }
 
     //

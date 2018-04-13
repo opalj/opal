@@ -53,5 +53,7 @@ object SelfReferenceLeakage {
  */
 case object DoesNotLeakSelfReference extends SelfReferenceLeakage
 
-// models the bottom the lattice
+/**
+ * Models the bottom of the lattice.
+  */
 case object LeaksSelfReference extends SelfReferenceLeakage

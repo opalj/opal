@@ -70,12 +70,11 @@ import org.opalj.fpcf.properties.SelfReferenceLeakage
  * @author Michael Eichberg
  */
 class L0SelfReferenceLeakageAnalysis(
-                                  val project : SomeProject,
-                                      val debug: Boolean
-                                  ) extends FPCFAnalysis {
+        val project: SomeProject,
+        val debug:   Boolean
+) extends FPCFAnalysis {
 
     val SelfReferenceLeakage = org.opalj.fpcf.properties.SelfReferenceLeakage.Key
-
 
     /**
      * Analyzes the given method to determine if it leaks the self reference.
@@ -233,9 +232,9 @@ class L0SelfReferenceLeakageAnalysis(
             var dependees = Map.empty[Entity, EOptionP[Entity, SelfReferenceLeakage]]
 
             propertyStore(superClassFiles, SelfReferenceLeakage) foreach {
-                case epk @ EPK(e, _) ⇒                    dependees += ((e, epk))
+                case epk @ EPK(e, _) ⇒ dependees += ((e, epk))
 
-                case eps@ EPS(_, DoesNotLeakSelfReference, isFinal) ⇒
+                case eps @ EPS(_, DoesNotLeakSelfReference, isFinal) ⇒
                     if (isFinal)
                         return Result(classFile, LeaksSelfReference);
                     else
@@ -250,7 +249,7 @@ class L0SelfReferenceLeakageAnalysis(
             if (dependees.isEmpty) {
                 determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
             } else {
-                def c(eps : SomeEPS): PropertyComputationResult = {
+                def c(eps: SomeEPS): PropertyComputationResult = {
                     val EPS(e, p, isFinal) = eps
                     p match {
                         case LeaksSelfReference ⇒

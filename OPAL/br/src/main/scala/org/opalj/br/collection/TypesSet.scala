@@ -38,8 +38,8 @@ package collection
  */
 abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
-    def concreteTypes: Set[ObjectType]
-    def upperTypeBounds: Set[ObjectType]
+    def concreteTypes: Set[ObjectType] // IMPROVE [L2] Use UIDSet
+    def upperTypeBounds: Set[ObjectType] // IMPROVE [L2] Use UIDSet
 
     /**
      * Returns `true` if this set is empty.

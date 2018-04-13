@@ -38,7 +38,7 @@ import scala.collection.AbstractIterator
  * index of the bottom value is (`length-1`).
  *
  * @note __This stack generally keeps all references and is only intended to be used to
- *       store elements that outlive the stack otherwise, garbage collection may be prevented.__
+ *       store elements that outlive the stack. Otherwise, garbage collection may be prevented.__
  *
  * @param data The array containing the values.
  * @param size0 The number of stored values.

@@ -30,14 +30,14 @@ package org.opalj.collection
 package mutable
 
 /**
- * A mutable (linke-lists based) chain that enable o(1) append and prepend operations.
+ * A mutable chain (basically a linked-list) that enables o(1) append and prepend operations.
  * However, only removing the head element is a constant operation!
  *
  * @author Michael Eichberg
  */
 class AnyRefAppendChain[N >: Null <: AnyRef] private (
-        private var h: AnyRefAppendChainElement[N],
-        private var l: AnyRefAppendChainElement[N]
+        private var h: AnyRefAppendChainNode[N],
+        private var l: AnyRefAppendChainNode[N]
 ) {
 
     def this() {
@@ -61,20 +61,20 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
 
     def prepend(v: N): this.type = {
         if (h == null) {
-            h = new AnyRefAppendChainElement(v, null)
+            h = new AnyRefAppendChainNode(v, null)
             l = h
         } else {
-            h = new AnyRefAppendChainElement(v, h)
+            h = new AnyRefAppendChainNode(v, h)
         }
         this
     }
 
     def append(v: N): this.type = {
         if (l == null) {
-            h = new AnyRefAppendChainElement(v, null)
+            h = new AnyRefAppendChainNode(v, null)
             l = h
         } else {
-            val newL = new AnyRefAppendChainElement(v, null)
+            val newL = new AnyRefAppendChainNode(v, null)
             l.rest = newL
             l = newL
         }
@@ -83,4 +83,4 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
 
 }
 
-private[mutable] class AnyRefAppendChainElement[T](val v: T, var rest: AnyRefAppendChainElement[T])
+private[mutable] class AnyRefAppendChainNode[T](val v: T, var rest: AnyRefAppendChainNode[T])
