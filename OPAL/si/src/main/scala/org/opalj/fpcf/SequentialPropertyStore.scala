@@ -141,7 +141,8 @@ class SequentialPropertyStore private (
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         for {
             (e, pkIdPValue) ← ps.iterator
-            pValue ← pkIdPValue.values
+            (pkId, pValue) ← pkIdPValue
+            if pkId == pk.id
             eps ← pValue.toEPS[Entity](e)
         } yield {
             eps.asInstanceOf[EPS[Entity, P]]
