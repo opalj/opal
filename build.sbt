@@ -70,7 +70,7 @@ addCommandAlias("compileAll", "; copyResources ; scalastyle ; test:compile ; tes
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
 
-addCommandAlias("cleanAll", "; clean ; test:clean ; it:clean ; cleanFiles")
+addCommandAlias("cleanAll", "; clean ; cleanCache ; cleanLocal ; test:clean ; it:clean ; cleanFiles")
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
