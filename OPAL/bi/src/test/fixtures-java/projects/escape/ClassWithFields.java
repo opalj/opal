@@ -34,6 +34,7 @@ package escape;
 public class ClassWithFields {
     public static Object global;
     public Object f;
+    public ClassWithFields g;
 
     public ClassWithFields() {
     }

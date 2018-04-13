@@ -140,7 +140,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                         return Result(field, NonFinalFieldByAnalysis)
                 case Some(stmt: PutField[DUVar[_]]) ⇒
                     val objRef = stmt.objRef
-                    if (!method.isConstructor || objRef.asVar.usedBy != SelfReferenceParameter) {
+                    if (!method.isConstructor || objRef.asVar.definedBy != SelfReferenceParameter) {
                         // note that here we assume real three address code (flat hierarchy)
 
                         // for instance fields it is okay if they are written in the constructor
