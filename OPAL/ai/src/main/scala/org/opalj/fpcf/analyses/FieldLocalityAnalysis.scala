@@ -124,7 +124,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 if (subtypes.exists { subtype ⇒
                     project.classHierarchy.isSubtypeOf(subtype, ObjectType.Cloneable).isYesOrUnknown
 
-                }) state.updateWithMeet(ExtensibleLocalField)
+                }) {
+                    state.updateWithMeet(ExtensibleLocalField)
+                }
             } else {
                 state.updateWithMeet(ExtensibleLocalField)
             }
@@ -446,6 +448,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         // base types can be considered to be local
         if (fieldType.isBaseType)
             return Some(Result(field, LocalField))
+
+        if (field.isStatic)
+            return Some(Result(field, NoLocalField))
 
         // this analysis can not track public fields
         if (field.isPublic)
