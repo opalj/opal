@@ -125,7 +125,7 @@ trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 
 object EagerVirtualReturnValueFreshnessAnalysis extends VirtualReturnValueFreshnessAnalysisScheduler with FPCFEagerAnalysisScheduler {
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val declaredMethods = propertyStore.context[DeclaredMethods].declaredMethods
+        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
