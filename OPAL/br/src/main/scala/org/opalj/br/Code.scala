@@ -520,7 +520,7 @@ final class Code private (
                         // compute predecessors
                         val predecessorPCs = allPredecessorPCs(nextPC)
                         if (predecessorPCs eq null) {
-                            allPredecessorPCs(nextPC) = new IntTrieSet1(pc)
+                            allPredecessorPCs(nextPC) = IntTrieSet1(pc)
                         } else {
                             allPredecessorPCs(nextPC) = predecessorPCs + pc
                         }

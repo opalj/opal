@@ -277,7 +277,7 @@ object DominatorTree {
 
             val v = vertex(semi(w))
             val b = bucket(v)
-            bucket(v) = if (b ne null) { b + w } else { new IntTrieSet1(w) }
+            bucket(v) = if (b ne null) { b + w } else { IntTrieSet1(w) }
 
             ancestor(w) = parent(w)
 

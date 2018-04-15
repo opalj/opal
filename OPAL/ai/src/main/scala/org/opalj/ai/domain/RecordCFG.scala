@@ -191,7 +191,7 @@ trait RecordCFG
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            successors(currentPC) = new IntTrieSet1(successorPC)
+            successors(currentPC) = IntTrieSet1(successorPC)
         else {
             val newSuccessorsOfPC = successorsOfPC + successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
@@ -457,7 +457,7 @@ trait RecordCFG
         regularSuccessorsOnly: Boolean,
         p:                     PC ⇒ Boolean
     ): Boolean = {
-        var visitedSuccessors: IntTrieSet = new IntTrieSet1(pc)
+        var visitedSuccessors: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
@@ -551,7 +551,7 @@ trait RecordCFG
      * Computes the transitive hull of all instructions reachable from the given instruction.
      */
     def allReachable(pc: PC): IntTrieSet = {
-        var allReachable: IntTrieSet = new IntTrieSet1(pc)
+        var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
             val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
@@ -623,7 +623,7 @@ trait RecordCFG
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
                         if (oldPredecessorsOfSuccessor eq null) {
-                            new IntTrieSet1(pc)
+                            IntTrieSet1(pc)
                         } else {
                             oldPredecessorsOfSuccessor + pc
                         }

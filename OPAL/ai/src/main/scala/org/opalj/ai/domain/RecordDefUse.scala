@@ -105,7 +105,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    @inline final def ValueOrigins(vo: Int): IntTrieSet = new IntTrieSet1(vo)
+    @inline final def ValueOrigins(vo: Int): IntTrieSet = IntTrieSet1(vo)
     final def NoValueOrigins: IntTrieSet = EmptyIntTrieSet
 
     // Stores the information where the value defined by an instruction is

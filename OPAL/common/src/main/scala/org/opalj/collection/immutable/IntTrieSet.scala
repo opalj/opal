@@ -152,7 +152,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = this
     override def map(f: Int ⇒ Int): IntTrieSet = this
     override def -(i: Int): this.type = this
-    override def +(i: Int): IntTrieSet1 = new IntTrieSet1(i)
+    override def +(i: Int): IntTrieSet1 = IntTrieSet1(i)
     override def intersect(other: IntTrieSet): IntTrieSet = this
     override def subsetOf(other: IntTrieSet): Boolean = true
     override def iterator: Iterator[Int] = Iterator.empty
@@ -176,7 +176,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = this.+(i)
 }
 
-final case class IntTrieSet1(i: Int) extends IntTrieSetL {
+final case class IntTrieSet1 private(i: Int) extends IntTrieSetL {
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
@@ -189,7 +189,7 @@ final case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override def map(f: Int ⇒ Int): IntTrieSet = {
         val newI = f(i)
         if (newI != i)
-            new IntTrieSet1(newI)
+            IntTrieSet1(newI)
         else
             this
     }
@@ -221,6 +221,33 @@ final case class IntTrieSet1(i: Int) extends IntTrieSetL {
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = this.+(i)
 }
 
+object IntTrieSet1 {
+
+val CacheLowerBound = -256 // inclusive
+val CacheUpperBound = 1025 // exclusive
+
+private[this] val cache : Array[IntTrieSet1] = {
+    val a = new Array[IntTrieSet1](CacheUpperBound + (-CacheLowerBound))
+    var v = CacheLowerBound
+    var index = 0
+    while (v < CacheUpperBound) {
+        a(index) = v
+        index += 1
+        v += 1
+    }
+a
+    }
+
+ def apply(v : Value) = {
+if(v >= CacheLowerBound && v<CacheUpperBound){
+    a(v+(-CacheLowerBound))
+}     else {
+    new IntTrieSet(v)
+}
+ }
+
+}
+
 /**
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
@@ -233,7 +260,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def hasMultipleElements: Boolean = true
     override def size: Int = 2
     override def head: Int = i2
-    override def getAndRemove: (Int, IntTrieSet) = (i2, new IntTrieSet1(i1))
+    override def getAndRemove: (Int, IntTrieSet) = (i2, IntTrieSet1(i1))
 
     override def iterator: Iterator[Int] = new AbstractIterator[Int] {
         private[this] var i = 0
@@ -249,10 +276,10 @@ private[immutable] final class IntTrieSet2 private[immutable] (
             if (p(i2))
                 this
             else
-                new IntTrieSet1(i1)
+                IntTrieSet1(i1)
         } else {
             if (p(i2))
-                new IntTrieSet1(i2)
+                IntTrieSet1(i2)
             else
                 EmptyIntTrieSet
         }
@@ -271,8 +298,8 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = f(i1) ++ f(i2)
 
     override def -(i: Int): IntTrieSet = {
-        if (i == i1) new IntTrieSet1(i2)
-        else if (i == i2) new IntTrieSet1(i1)
+        if (i == i1) IntTrieSet1(i2)
+        else if (i == i2) IntTrieSet1(i1)
         else this
     }
     override def +(i: Int): IntTrieSet = if (i1 == i | i2 == i) this else IntTrieSet.from(i1, i2, i)
@@ -285,7 +312,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
                     if (other.contains(this.i2)) {
                         this
                     } else {
-                        new IntTrieSet1(this.i1)
+                        IntTrieSet1(this.i1)
                     }
                 } else if (other.contains(this.i2)) {
                     IntTrieSet1(this.i2)
@@ -357,17 +384,17 @@ private[immutable] final class IntTrieSet3 private[immutable] (
                 if (p(i3))
                     new IntTrieSet2(i1, i3)
                 else
-                    new IntTrieSet1(i1)
+                    IntTrieSet1(i1)
             }
         } else {
             if (p(i2)) {
                 if (p(i3))
                     new IntTrieSet2(i2, i3)
                 else
-                    new IntTrieSet1(i2)
+                    IntTrieSet1(i2)
             } else {
                 if (p(i3))
-                    new IntTrieSet1(i3)
+                    IntTrieSet1(i3)
                 else
                     EmptyIntTrieSet
             }
@@ -666,11 +693,11 @@ object IntTrieSet {
 
     def empty: IntTrieSet = EmptyIntTrieSet
 
-    def apply(i1: Int): IntTrieSet = new IntTrieSet1(i1)
+    def apply(i1: Int): IntTrieSet = IntTrieSet1(i1)
 
     def apply(i1: Int, i2: Int): IntTrieSet = {
         if (i1 == i2)
-            new IntTrieSet1(i1)
+            IntTrieSet1(i1)
         else {
             from(i1, i2)
         }
@@ -747,9 +774,9 @@ object IntTrieSet {
     private[immutable] def from(i1: Int, i2: Int, i3: Int, i4: Int, level: Int): IntTrieSet = {
         val root =
             if (((i1 >>> level) & 1) == 0)
-                new IntTrieSetN(new IntTrieSet1(i1), EmptyIntTrieSet, 1)
+                new IntTrieSetN(IntTrieSet1(i1), EmptyIntTrieSet, 1)
             else
-                new IntTrieSetN(EmptyIntTrieSet, new IntTrieSet1(i1), 1)
+                new IntTrieSetN(EmptyIntTrieSet, IntTrieSet1(i1), 1)
 
         root + (i2, level) + (i3, level) + (i4, level)
     }
