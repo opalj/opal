@@ -91,7 +91,8 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             !factoryITS.isEmpty &&
             !factoryITS.hasMultipleElements &&
             factoryITS.head == v &&
-            factoryITS == directITS &&
+            viaEmptyITS.hashCode == factoryITS.hashCode &&
+            viaEmptyITS == factoryITS
     }
 
     property("create IntTrieSet from Set (i.e., no duplicates)") = forAll { s: IntArraySet ⇒

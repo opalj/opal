@@ -176,7 +176,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = this.+(i)
 }
 
-final case class IntTrieSet1 private(i: Int) extends IntTrieSetL {
+final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
@@ -223,28 +223,51 @@ final case class IntTrieSet1 private(i: Int) extends IntTrieSetL {
 
 object IntTrieSet1 {
 
-val CacheLowerBound = -256 // inclusive
-val CacheUpperBound = 1025 // exclusive
+    // The preallocation of the IntTrieSet1 data structures costs ~2Mb memory;
+    // however, we use it as the backbone Infrastructure for storing CFGs and
+    // def-use information; in both cases, we generally require HUGE numbers
+    // of such sets in the preconfigured ranges and therefore we avoid allocating
+    // several hundred million instances (in case of a thorough analysis of the
+    // JDK) and corresponding memory.
+    val Cache1LowerBound = -100000 - (48 * 1024) // inclusive
+    val Cache1UpperBound = -99999 // exclusive
+    val Cache2LowerBound = -2048 // inclusive
+    val Cache2UpperBound = 48 * 1024 // exclusive
 
-private[this] val cache : Array[IntTrieSet1] = {
-    val a = new Array[IntTrieSet1](CacheUpperBound + (-CacheLowerBound))
-    var v = CacheLowerBound
-    var index = 0
-    while (v < CacheUpperBound) {
-        a(index) = v
-        index += 1
-        v += 1
-    }
-a
+    private[this] val cache1: Array[IntTrieSet1] = {
+        val a = new Array[IntTrieSet1](Cache1UpperBound + (-Cache1LowerBound))
+        var v = Cache1LowerBound
+        var index = 0
+        while (v < Cache1UpperBound) {
+            a(index) = new IntTrieSet1(v)
+            index += 1
+            v += 1
+        }
+        a
     }
 
- def apply(v : Value) = {
-if(v >= CacheLowerBound && v<CacheUpperBound){
-    a(v+(-CacheLowerBound))
-}     else {
-    new IntTrieSet(v)
-}
- }
+    private[this] val cache2: Array[IntTrieSet1] = {
+        val a = new Array[IntTrieSet1](Cache2UpperBound + (-Cache2LowerBound))
+        var v = Cache2LowerBound
+        var index = 0
+        while (v < Cache2UpperBound) {
+            a(index) = new IntTrieSet1(v)
+            index += 1
+            v += 1
+        }
+        a
+    }
+
+    def apply(v: Int) = {
+        if (v >= Cache1LowerBound && v < Cache1UpperBound) {
+            cache1(v + (-Cache1LowerBound))
+        } else if (v >= Cache2LowerBound && v < Cache2UpperBound) {
+            cache2(v + (-Cache2LowerBound))
+        } else {
+            println("returning NEW set:"+v)
+            new IntTrieSet1(v)
+        }
+    }
 
 }
 
