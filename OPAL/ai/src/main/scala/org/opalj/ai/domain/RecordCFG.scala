@@ -800,25 +800,26 @@ trait RecordCFG
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
-            // 1.1.    Let's check if the handler was executed at all.
-            if unsafeWasExecuted(exceptionHandler.handlerPC)
-            // 1.2.    The handler may be shared by multiple try blocks, hence, we have
-            //         to ensure the we have at least one instruction in the try block
-            //         that jumps to the handler.
-            if handlesException(exceptionHandler)
         } {
-            val handlerPC = exceptionHandler.handlerPC
-            val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
-            var handlerBB = bbs(handlerPC)
-            if (handlerBB eq null) {
-                handlerBB = new BasicBlock(handlerPC)
-                handlerBB.addPredecessor(catchNode)
-                bbs(handlerPC) = handlerBB
-            } else {
-                handlerBB.addPredecessor(catchNode)
+            if ( // 1.1.    Let's check if the handler was executed at all.
+            unsafeWasExecuted(exceptionHandler.handlerPC) &&
+                // 1.2.    The handler may be shared by multiple try blocks, hence, we have
+                //         to ensure the we have at least one instruction in the try block
+                //         that jumps to the handler.
+                handlesException(exceptionHandler)) {
+                val handlerPC = exceptionHandler.handlerPC
+                val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+                val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                var handlerBB = bbs(handlerPC)
+                if (handlerBB eq null) {
+                    handlerBB = new BasicBlock(handlerPC)
+                    handlerBB.addPredecessor(catchNode)
+                    bbs(handlerPC) = handlerBB
+                } else {
+                    handlerBB.addPredecessor(catchNode)
+                }
+                catchNode.addSuccessor(handlerBB)
             }
-            catchNode.addSuccessor(handlerBB)
         }
 
         // 2. iterate over the code to determine the basic block boundaries
