@@ -264,7 +264,6 @@ object IntTrieSet1 {
         } else if (v >= Cache2LowerBound && v < Cache2UpperBound) {
             cache2(v + (-Cache2LowerBound))
         } else {
-            println("returning NEW set:"+v)
             new IntTrieSet1(v)
         }
     }
