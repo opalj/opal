@@ -81,7 +81,10 @@ sealed abstract class IntTrieSet
     private[immutable] def contains(value: Int, key: Int): Boolean
 }
 
-class FilteredIntTrieSet(private val s: IntTrieSet, private val p: Int ⇒ Boolean) extends IntTrieSet {
+class FilteredIntTrieSet(
+        private val s: IntTrieSet,
+        private val p: Int ⇒ Boolean
+) extends IntTrieSet {
 
     override def iterator: Iterator[Int] = s.iterator.withFilter(p)
     override def intIterator: IntIterator = s.intIterator.withFilter(p)
@@ -467,18 +470,38 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     }
 }
 
+private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
+
+    final override def isSingletonSet: Boolean = size == 1
+    final override def hasMultipleElements: Boolean = size > 1
+    final override def isEmpty: Boolean = false
+
+    final override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
+
+    final override def toChain: Chain[Int] = {
+        val cb = new Chain.ChainBuilder[Int]()
+        foreach(i ⇒ cb += i)
+        cb.result()
+    }
+
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntTrieSet ⇒ that.size == this.size && this.subsetOf(that)
+            case _                ⇒ false
+        }
+    }
+
+    final override def hashCode: Int = foldLeft(1)(31 * _ + _)
+}
+
 private[immutable] final class IntTrieSetN private[immutable] (
         private val left:  IntTrieSet, // can be empty, but never null!
         private val right: IntTrieSet, // can be empty, but never null!
         val size:          Int
-) extends IntTrieSet { intSet ⇒
+) extends IntTrieSetNN { intSet ⇒
 
     assert(left.size + right.size == size)
-    assert(size > 0)
-
-    override def isSingletonSet: Boolean = false
-    override def hasMultipleElements: Boolean = true
-    override def isEmpty: Boolean = false
+    assert(size > 0) // <= can be "one" at construction time
 
     override def head: Int = if (left.nonEmpty) left.head else right.head
 
@@ -502,11 +525,12 @@ private[immutable] final class IntTrieSetN private[immutable] (
             i += 1
         }
     }
-    override def map(f: Int ⇒ Int): IntTrieSet = {
+
+    final override def map(f: Int ⇒ Int): IntTrieSet = {
         foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + f(_))
     }
 
-    override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
+    final override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
         foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++ f(_))
     }
 
@@ -521,14 +545,14 @@ private[immutable] final class IntTrieSetN private[immutable] (
             if (newLeft eq left)
                 this
             else
-                new IntTrieSetN(newLeft, right, size + 1)
+                IntTrieSetN(newLeft, right, size + 1)
         } else {
             val right = this.right
             val newRight = right + (i, level + 1)
             if (newRight eq right)
                 this
             else
-                new IntTrieSetN(left, newRight, size + 1)
+                IntTrieSetN(left, newRight, size + 1)
         }
     }
 
@@ -564,16 +588,16 @@ private[immutable] final class IntTrieSetN private[immutable] (
             if (newLeft eq left)
                 this
             else {
-                val newSize = size - 1
-                if (newSize == 0)
-                    EmptyIntTrieSet
-                else if (newSize == 1) {
-                    if (newLeft.isEmpty)
-                        right.constringe()
-                    else
-                        newLeft.constringe()
-                } else {
-                    new IntTrieSetN(newLeft, right, newSize)
+                (size - 1) match {
+                    case 0 ⇒
+                        EmptyIntTrieSet
+                    case 1 ⇒
+                        if (newLeft.isEmpty)
+                            right.constringe()
+                        else
+                            newLeft.constringe()
+                    case newSize ⇒
+                        IntTrieSetN(newLeft, right, newSize)
                 }
             }
         } else {
@@ -591,7 +615,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
                     else
                         newRight.constringe()
                 } else {
-                    new IntTrieSetN(left, newRight, newSize)
+                    IntTrieSetN(left, newRight, newSize)
                 }
             }
         }
@@ -638,7 +662,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
             } else {
                 val (v, newLeft) = left.getAndRemove
                 val theNewLeft = if (leftSize == 2) newLeft.constringe() else newLeft
-                (v, new IntTrieSetN(theNewLeft, right, leftSize - 1 + rightSize))
+                (v, IntTrieSetN(theNewLeft, right, leftSize - 1 + rightSize))
             }
         } else {
             // ...leftSize <= right.size
@@ -649,7 +673,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
             } else {
                 val (v, newRight) = right.getAndRemove
                 val theNewRight = if (rightSize == 2) newRight.constringe() else newRight
-                (v, new IntTrieSetN(left, theNewRight, size - 1))
+                (v, IntTrieSetN(left, theNewRight, size - 1))
             }
         }
     }
@@ -679,25 +703,240 @@ private[immutable] final class IntTrieSetN private[immutable] (
         if (newRightSize <= 2) {
             newRight = newRight.constringe()
         }
-        new IntTrieSetN(newLeft, newRight, newLeftSize + newRightSize)
+        IntTrieSetN(newLeft, newRight, newLeftSize + newRightSize)
     }
 
-    override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
+}
 
-    override def toChain: Chain[Int] = {
-        val cb = new Chain.ChainBuilder[Int]()
-        foreach(i ⇒ cb += i)
-        cb.result()
+private[immutable] object IntTrieSetN {
+
+    def apply(
+        left:  IntTrieSet, // can be empty, but never null!
+        right: IntTrieSet, // can be empty, but never null!
+        size:  Int
+    ): IntTrieSet = {
+        if (right.isEmpty)
+            new IntTrieSetNJustLeft(left)
+        else if (left.isEmpty)
+            new IntTrieSetNJustRight(right)
+        else
+            new IntTrieSetN(left, right, size)
     }
+}
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: IntTrieSet ⇒ that.size == this.size && this.subsetOf(that)
-            case _                ⇒ false
+private[immutable] final class IntTrieSetNJustRight private[immutable] (
+        private val right: IntTrieSet // can't be empty, left is already empty
+) extends IntTrieSetNN { intSet ⇒
+
+    assert(size > 0) // <= can be "one" at construction time
+
+    override def size: Int = right.size
+    override def head: Int = right.head
+    override def exists(p: Int ⇒ Boolean): Boolean = right.exists(p)
+    override def forall(p: Int ⇒ Boolean): Boolean = right.forall(p)
+    override def foreach[U](f: Int ⇒ U): Unit = right.foreach(f)
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = right.foreachPair(f)
+    override def map(f: Int ⇒ Int): IntTrieSet = right.map(f)
+    override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = right.flatMap(f)
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = right.foldLeft(z)(f)
+
+    override private[immutable] def +(i: Int, level: Int): IntTrieSet = {
+        if (((i >>> level) & 1) == 0) {
+            IntTrieSetN(IntTrieSet1(i), right, size + 1)
+        } else {
+            val right = this.right
+            val newRight = right + (i, level + 1)
+            if (newRight eq right)
+                this
+            else
+                new IntTrieSetNJustRight(newRight)
         }
     }
 
-    override def hashCode: Int = foldLeft(1)(31 * _ + _)
+    override def +(i: Int): IntTrieSet = this.+(i, 0)
+
+    override private[immutable] def contains(value: Int, key: Int): Boolean = {
+        if ((key & 1) == 0)
+            false
+        else
+            right.contains(value, key >>> 1)
+    }
+
+    override def contains(value: Int): Boolean = this.contains(value, value)
+
+    /**
+     * Ensures that subtrees which contain less than 3 elements are represented using
+     * a cannonical representation.
+     */
+    override private[immutable] def constringe(): IntTrieSet = {
+        assert(size <= 2)
+        right.constringe()
+    }
+
+    private[immutable] def -(i: Int, key: Int): IntTrieSet = {
+        if ((key & 1) == 0) {
+            this
+        } else {
+            val right = this.right
+            val newRight = right.-(i, key >>> 1)
+            if (newRight eq right)
+                this
+            else {
+                val newSize = size - 1
+                if (newSize == 0)
+                    EmptyIntTrieSet
+                else if (newSize == 1) {
+                    newRight.constringe()
+                } else {
+                    new IntTrieSetNJustRight(newRight)
+                }
+            }
+        }
+    }
+
+    def -(i: Int): IntTrieSet = this.-(i, i)
+
+    def intIterator: IntIterator = right.intIterator
+    def iterator: Iterator[Int] = right.iterator
+
+    override def getAndRemove: (Int, IntTrieSet) = {
+        // try to reduce the tree size by removing an element from the
+        // bigger subtree
+        val right = this.right
+        val rightSize = right.size
+        if (right.isSingletonSet) {
+            (right.head, EmptyIntTrieSet)
+        } else {
+            val (v, newRight) = right.getAndRemove
+            val theNewRight = if (rightSize == 2) newRight.constringe() else newRight
+            (v, new IntTrieSetNJustRight(theNewRight))
+        }
+
+    }
+
+    override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
+        val right = this.right
+        val newRight = right.filter(p)
+        if (newRight eq right)
+            return this;
+
+        val newRightSize = newRight.size
+        if (newRightSize <= 2) {
+            newRight.constringe()
+        } else {
+            new IntTrieSetNJustRight(newRight)
+        }
+    }
+
+}
+
+private[immutable] final class IntTrieSetNJustLeft private[immutable] (
+        private val left: IntTrieSet // cannot be empty; right is empty
+) extends IntTrieSetNN { intSet ⇒
+
+    assert(size > 0) // <= can be "one" at construction time
+
+    override def size: Int = left.size
+
+    override def head: Int = left.head
+    override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p)
+    override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p)
+    override def foreach[U](f: Int ⇒ U): Unit = left.foreach(f)
+    override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = left.foreachPair(f)
+    override def map(f: Int ⇒ Int): IntTrieSet = left.map(f)
+    override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = left.flatMap(f)
+    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = left.foldLeft(z)(f)
+
+    override private[immutable] def +(i: Int, level: Int): IntTrieSet = {
+        if (((i >>> level) & 1) == 0) {
+            val left = this.left
+            val newLeft = left + (i, level + 1)
+            if (newLeft eq left)
+                this
+            else
+                new IntTrieSetNJustLeft(newLeft)
+        } else {
+            new IntTrieSetN(left, IntTrieSet1(i), size + 1)
+        }
+    }
+
+    override def +(i: Int): IntTrieSet = this.+(i, 0)
+
+    override private[immutable] def contains(value: Int, key: Int): Boolean = {
+        if ((key & 1) == 0)
+            left.contains(value, key >>> 1)
+        else
+            false
+
+    }
+
+    override def contains(value: Int): Boolean = this.contains(value, value)
+
+    /**
+     * Ensures that subtrees which contain less than 3 elements are represented using
+     * a cannonical representation.
+     */
+    override private[immutable] def constringe(): IntTrieSet = {
+        assert(size <= 2)
+        left.constringe()
+    }
+
+    private[immutable] def -(i: Int, key: Int): IntTrieSet = {
+        if ((key & 1) == 0) {
+            val left = this.left
+            val newLeft = left.-(i, key >>> 1)
+            if (newLeft eq left)
+                this
+            else {
+                val newSize = size - 1
+                newSize match {
+                    case 0 ⇒
+                        EmptyIntTrieSet
+                    case 1 ⇒
+                        newLeft.constringe()
+                    case _ ⇒
+                        new IntTrieSetNJustLeft(newLeft)
+                }
+            }
+        } else {
+            this
+        }
+    }
+
+    def -(i: Int): IntTrieSet = this.-(i, i)
+
+    def intIterator: IntIterator = left.intIterator
+
+    def iterator: Iterator[Int] = left.iterator
+
+    override def getAndRemove: (Int, IntTrieSet) = {
+        // try to reduce the tree size by removing an element from the
+        // bigger subtree
+        val left = this.left
+        val leftSize = left.size
+        if (leftSize == 1) { // => right is empty!
+            (left.head, EmptyIntTrieSet)
+        } else {
+            val (v, newLeft) = left.getAndRemove
+            val theNewLeft = if (leftSize == 2) newLeft.constringe() else newLeft
+            (v, new IntTrieSetNJustLeft(theNewLeft))
+        }
+
+    }
+
+    override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
+        val left = this.left
+        val newLeft = left.filter(p)
+        if (newLeft eq left)
+            return this;
+
+        val newLeftSize = newLeft.size
+        if (newLeftSize <= 2) {
+            newLeft.constringe()
+        } else {
+            new IntTrieSetNJustLeft(newLeft)
+        }
+    }
 
 }
 
@@ -789,16 +1028,16 @@ object IntTrieSet {
     }
 
     /**
-     * Constructs a new IntTrie from the given distinct values.
+     * Constructs a new `IntTrieSet` from the given distinct values.
      *
-     * If level is > 0 then all values have to have the least significant bits up until level!
+     * If level is > 0 then all values have to have the same least significant bits up until level!
      */
     private[immutable] def from(i1: Int, i2: Int, i3: Int, i4: Int, level: Int): IntTrieSet = {
         val root =
             if (((i1 >>> level) & 1) == 0)
-                new IntTrieSetN(IntTrieSet1(i1), EmptyIntTrieSet, 1)
+                new IntTrieSetNJustLeft(IntTrieSet1(i1))
             else
-                new IntTrieSetN(EmptyIntTrieSet, IntTrieSet1(i1), 1)
+                new IntTrieSetNJustRight(IntTrieSet1(i1))
 
         root + (i2, level) + (i3, level) + (i4, level)
     }
