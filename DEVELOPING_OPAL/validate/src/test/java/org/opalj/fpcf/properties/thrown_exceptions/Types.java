@@ -26,34 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.thrown_exceptions
+package org.opalj.fpcf.properties.thrown_exceptions;
 
-import org.opalj.br.{AnnotationLike, ObjectType}
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{Entity, Property}
-import org.opalj.fpcf.properties.{AbstractPropertyMatcher, ThrownExceptions}
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Matches a methods's `ThrownExceptionsAreUnknown` property.
+ * Annotation to state the thrown exception types.
  *
  * @author Andreas Muttscheller
  */
-class ThrownExceptionsAreUnknownMatcher extends AbstractPropertyMatcher {
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface Types {
 
-    def validateProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          AnnotationLike,
-        properties: Traversable[Property]
-    ): Option[String] = {
-        if (properties.forall { p ⇒
-            !p.isInstanceOf[ThrownExceptionsAreUnknown] || p.key != ThrownExceptions.Key
-        }) {
-            None
-        } else {
-            Some(a.elementValuePairs.head.value.toString)
-        }
-    }
-
+    Class<? extends Throwable>[] concrete() default  {};
+    Class<? extends Throwable>[] upperBound() default  {Throwable.class};
 }

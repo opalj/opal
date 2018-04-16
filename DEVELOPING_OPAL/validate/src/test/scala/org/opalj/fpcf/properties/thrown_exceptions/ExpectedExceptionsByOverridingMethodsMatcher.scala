@@ -41,7 +41,7 @@ import org.opalj.br.ObjectType
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-class ExpectedExceptionsByOverridingMethodsMatcher extends AbstractPropertyMatcher {
+class ExpectedExceptionsByOverridingMethodsMatcher extends AbstractPropertyMatcher with ExceptionTypeExtractor {
 
     def validateProperty(
         p:          SomeProject,
@@ -50,9 +50,24 @@ class ExpectedExceptionsByOverridingMethodsMatcher extends AbstractPropertyMatch
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (properties.forall { p ⇒
-            !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
-        }) {
+        val (concreteTypeExceptions, upperBoundTypeExceptions) =
+            getConcreteAndUpperBoundExceptionAnnotations(p, a)
+
+        val annotationType = a.annotationType.asObjectType
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
+        val requiredAnalysis = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+
+        val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
+            properties.forall {
+                case ate: ThrownExceptionsByOverridingMethods ⇒
+                    ate.exceptions.nonEmpty &&
+                        concreteTypeExceptions.forall(ate.exceptions.concreteTypes.contains(_)) &&
+                        upperBoundTypeExceptions.forall(ate.exceptions.upperTypeBounds.contains(_))
+                case _ ⇒ true
+            }
+
+        if (isPropertyValid) {
             None
         } else {
             Some(a.elementValuePairs.head.value.toString)
