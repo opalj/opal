@@ -32,7 +32,7 @@ package br
 import org.opalj.br.instructions.Instruction
 
 /**
- * An efficient (i.e., no typecasts...) representation of an instruction and its pc.
+ * An efficient (i.e., no (un)boxing...) representation of an instruction and its pc.
  *
  *
  * @param pc The program counter of an instruction.

@@ -29,8 +29,6 @@
 package org.opalj
 package br
 
-import org.opalj.br.instructions.Instruction
-
 /**
  * An efficient (i.e., no (un)boxing...) representation of an instruction (identified)
  * by its pc in a method.
