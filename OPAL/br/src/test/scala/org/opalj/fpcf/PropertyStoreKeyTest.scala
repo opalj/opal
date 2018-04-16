@@ -39,6 +39,7 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.br.TestSupport.biProject
 
 import org.opalj.br.PC
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.Method
 import org.opalj.br.Field
 import org.opalj.br.ClassFile
@@ -91,7 +92,7 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
             val as = p.allMethodsWithBody flatMap { m ⇒
                 val code = m.body.get
                 val as = code collectWithIndex {
-                    case (pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
+                    case PCAndInstruction(pc, NEW(_)) ⇒ new ObjectAllocationSite(m, pc)
                 }
                 if (as.nonEmpty) allAs ::= as
                 as

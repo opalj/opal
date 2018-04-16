@@ -178,7 +178,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = Chain.empty[Int]
         while (its.nonEmpty) {
-            val (v, newIts) = its.getAndRemove
+            val IntHeadAndRestOfSet(v, newIts) = its.getAndRemove
             removed :&:= v
             its = newIts
         }

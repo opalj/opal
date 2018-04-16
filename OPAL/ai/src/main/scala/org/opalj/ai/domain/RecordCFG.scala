@@ -40,6 +40,7 @@ import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
@@ -466,11 +467,11 @@ trait RecordCFG
             visitedSuccessors ++= successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
-                    l ++ (
-                        successorsOf(r, regularSuccessorsOnly) withFilter { pc ⇒
-                            !visitedSuccessors.contains(pc)
-                        }
-                    )
+                    var newL = l
+                    successorsOf(r, regularSuccessorsOnly) foreach { pc ⇒
+                        if (!visitedSuccessors.contains(pc)) newL += pc
+                    }
+                    newL
                 }
         }
         false
@@ -491,7 +492,7 @@ trait RecordCFG
 
         // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         var visitedSuccessors = Set(pc)
-        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
+        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator) // REFACTOR fromSeq(Iterator...)
         while (successorsToVisit.nonEmpty) {
             val nextPC = successorsToVisit.pop()
             if (nextPC == successorPC)
@@ -554,7 +555,7 @@ trait RecordCFG
         var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
                 allReachable += succPC
@@ -656,7 +657,7 @@ trait RecordCFG
 
     /**
      * Returns the dominator tree; see
-     * [[[[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]]]
+     * [[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]
      * for details regarding the properties of the dominator tree.
      *
      * @note   To get the list of all evaluated instructions and their dominators.
