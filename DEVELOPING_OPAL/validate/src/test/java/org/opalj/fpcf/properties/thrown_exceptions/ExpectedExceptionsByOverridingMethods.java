@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf.properties.thrown_exceptions;
 
+import org.opalj.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.Documented;
@@ -52,5 +53,10 @@ public @interface ExpectedExceptionsByOverridingMethods {
     /**
      * A short reasoning of this property.
      */
-    Class<? extends Throwable>[] value() default  {};
+    String reason() default "";
+
+    Types value() default @Types;
+
+    /** The (set of) analyses that strictly need to be executed before the test makes sense. */
+    Class<? extends FPCFAnalysis>[] requires() default {};
 }

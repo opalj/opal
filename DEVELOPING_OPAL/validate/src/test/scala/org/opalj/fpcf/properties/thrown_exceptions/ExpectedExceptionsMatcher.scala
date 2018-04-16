@@ -34,13 +34,50 @@ package thrown_exceptions
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
+/**
+ * Trait to extract the concrete and upper bound exceptions specified in the test cases.
+ *
+ * @author Andreas Muttscheller
+ */
+private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractPropertyMatcher {
+    def getConcreteAndUpperBoundExceptionAnnotations(
+        p: SomeProject,
+        a: AnnotationLike
+    ): (IndexedSeq[ObjectType], IndexedSeq[ObjectType]) = {
+        val annotationType = a.annotationType.asObjectType
+        val exceptionTypesAnnotation = getValue(
+            p,
+            annotationType,
+            a.elementValuePairs,
+            "value"
+        ).asAnnotationValue.annotation
+
+        val concreteTypeExceptions = getValue(
+            p,
+            exceptionTypesAnnotation.annotationType.asObjectType,
+            exceptionTypesAnnotation.elementValuePairs,
+            "concrete"
+        ).asArrayValue
+        val upperBoundTypeExceptions = getValue(
+            p,
+            exceptionTypesAnnotation.annotationType.asObjectType,
+            exceptionTypesAnnotation.elementValuePairs,
+            "upperBound"
+        ).asArrayValue
+
+        (
+            concreteTypeExceptions.values.map(ev ⇒ ev.asClassValue.value.asObjectType),
+            upperBoundTypeExceptions.values.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        )
+    }
+}
 
 /**
  * Matches a methods's `ThrownExceptions` property.
  *
  * @author Andreas Muttscheller
  */
-class ExpectedExceptionsMatcher extends AbstractPropertyMatcher {
+class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTypeExtractor {
 
     def validateProperty(
         p:          SomeProject,
@@ -49,9 +86,24 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (properties.forall { p ⇒
-            !p.isInstanceOf[NoExceptionsAreThrown] || p.key != ThrownExceptions.Key
-        }) {
+        val (concreteTypeExceptions, upperBoundTypeExceptions) =
+            getConcreteAndUpperBoundExceptionAnnotations(p, a)
+
+        val annotationType = a.annotationType.asObjectType
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
+        val requiredAnalysis = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+
+        val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
+            properties.forall {
+                case t: ThrownExceptions ⇒
+                    t.types.nonEmpty &&
+                        concreteTypeExceptions.forall(t.types.concreteTypes.contains(_)) &&
+                        upperBoundTypeExceptions.forall(t.types.upperTypeBounds.contains(_))
+                case _ ⇒ true
+            }
+
+        if (isPropertyValid) {
             None
         } else {
             Some(a.elementValuePairs.head.value.toString)

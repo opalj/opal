@@ -30,6 +30,7 @@ package org.opalj.fpcf
 
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.properties.ThrownExceptions
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -40,12 +41,40 @@ import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
  */
 class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
-    describe("no analysis is scheduled") {
+    object DummyProperty {
+        final val Key: PropertyKey[DummyProperty] =
+            PropertyKey.create[Entity, DummyProperty](
+                "DummyProperty",
+                new DummyProperty
+            )
+    }
+
+    sealed class DummyProperty extends Property {
+        override type Self = DummyProperty
+
+        override def key = DummyProperty.Key
+    }
+
+    describe("no analysis is scheduled and fallback is used") {
         val as = executeAnalyses(Set.empty)
+        val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+        val (p, ps, _) = as
+        for {
+            (e, _, annotations) ← methodsWithAnnotations
+            if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
+        } {
+            val epk = EPK(e, ThrownExceptions.Key)
+            ps.scheduleForEntity(e) { e ⇒
+                IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), { (_) ⇒ NoResult })
+            }
+        }
+
+        ps.waitOnPhaseCompletion()
+
         validateProperties(
             as,
             methodsWithAnnotations,
-            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+            pk
         )
     }
 
