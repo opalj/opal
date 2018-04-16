@@ -219,7 +219,7 @@ object IntIterator {
         def hasNext: Boolean = !returned
         def next(): Int = { returned = true; i }
         override def toArray: Array[Int] = { val as = new Array[Int](1); as(0) = i; as }
-        override def toSet: IntTrieSet = new IntTrieSet1(i)
+        override def toSet: IntTrieSet = IntTrieSet1(i)
     }
 
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {

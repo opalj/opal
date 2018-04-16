@@ -32,6 +32,7 @@ package info
 
 import java.net.URL
 
+import org.opalj.br.PCInMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.StringConstantsInformationKey
@@ -64,7 +65,7 @@ object StringConstants extends DefaultOneStepAnalysis {
                 replace("\t", "\\t").
                 replace("\"", "\\\"")
             locations.map { methodPc ⇒
-                val (method, pc) = methodPc
+                val PCInMethod(method, pc) = methodPc
                 method.toJava(s"pc=$pc")
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }

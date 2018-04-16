@@ -252,7 +252,7 @@ object ConstantsBuffer {
         val allLDC = for {
             method ← classFile.methods
             if method.body.isDefined
-            (_ /*pc*/ , instruction) ← method.body.get
+            PCAndInstruction(_ /*pc*/ , instruction) ← method.body.get
             if instruction.opcode == LDC.opcode
         } yield {
             instruction.asInstanceOf[LDC[_]]

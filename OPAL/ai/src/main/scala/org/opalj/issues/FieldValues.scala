@@ -34,9 +34,10 @@ import scala.xml.Group
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import org.opalj.collection.immutable.Chain
-import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.{PCAndInstruction ⇒ BRPCAndInstruction}
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.ai.AIResult
 
@@ -56,9 +57,9 @@ class FieldValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectReadFieldValues: Chain[(PC, String)] = {
+    def collectReadFieldValues: Chain[(PC, String)] = { // IMPROVE Use PCAndValue datastructure
         code.collectWithIndex {
-            case (pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
+            case BRPCAndInstruction(pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
                 val nextPC = instr.indexOfNextInstruction(pc)
                 val operands = operandsArray(nextPC)
                 operands != null &&

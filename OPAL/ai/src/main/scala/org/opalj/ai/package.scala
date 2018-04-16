@@ -102,8 +102,8 @@ package object ai {
     type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory
 
-    type PC = org.opalj.br.PC
-    type PCs = org.opalj.br.PCs
+    final type PC = Int // <=> org.opalj.br.PC
+    final type PCs = org.opalj.br.PCs
     final def NoPCs = org.opalj.br.NoPCs
 
     /**

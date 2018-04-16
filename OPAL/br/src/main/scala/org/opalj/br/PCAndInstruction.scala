@@ -27,21 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package collection
-package immutable
+package br
+
+import org.opalj.br.instructions.Instruction
 
 /**
- * A set of integers which supports (reasonable) efficient `getAndRemove` operations.
+ * An efficient (i.e., no (un)boxing...) representation of an instruction and its pc.
  *
+ *
+ * @param pc The program counter of an instruction.
+ * @param i The instruction with the respective program counter.
  * @author Michael Eichberg
  */
-trait IntWorkSet[T <: IntWorkSet[T]] { intSet: T ⇒
-
-    /**
-     * Gets a value and returns the new set without that value.
-     */
-    def getAndRemove: IntHeadAndRestOfSet[T]
-
-}
-
-case class IntHeadAndRestOfSet[T <: IntWorkSet[T]](value: Int, set: T)
+case class PCAndInstruction(pc: Int /* PC */ , i: Instruction)

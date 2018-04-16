@@ -86,7 +86,10 @@ case class Calls(
             method ← classFile.methods
             body ← method.body
             pc ← body collectWithIndex {
-                case (pc, MethodInvocationInstruction(receiver, _ /*isInterface*/ , name, descriptor)) if properties.isDefinedAt((receiver, name, descriptor)) &&
+                case PCAndInstruction(
+                    pc,
+                    MethodInvocationInstruction(receiver, _ /*isInterface*/ , name, descriptor)
+                    ) if properties.isDefinedAt((receiver, name, descriptor)) &&
                     properties((receiver, name, descriptor)) ⇒ pc
             }
         } {
