@@ -40,6 +40,7 @@ import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
@@ -191,7 +192,7 @@ trait RecordCFG
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            successors(currentPC) = new IntTrieSet1(successorPC)
+            successors(currentPC) = IntTrieSet1(successorPC)
         else {
             val newSuccessorsOfPC = successorsOfPC + successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
@@ -457,7 +458,7 @@ trait RecordCFG
         regularSuccessorsOnly: Boolean,
         p:                     PC ⇒ Boolean
     ): Boolean = {
-        var visitedSuccessors: IntTrieSet = new IntTrieSet1(pc)
+        var visitedSuccessors: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
@@ -466,11 +467,11 @@ trait RecordCFG
             visitedSuccessors ++= successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
-                    l ++ (
-                        successorsOf(r, regularSuccessorsOnly) withFilter { pc ⇒
-                            !visitedSuccessors.contains(pc)
-                        }
-                    )
+                    var newL = l
+                    successorsOf(r, regularSuccessorsOnly) foreach { pc ⇒
+                        if (!visitedSuccessors.contains(pc)) newL += pc
+                    }
+                    newL
                 }
         }
         false
@@ -491,7 +492,7 @@ trait RecordCFG
 
         // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         var visitedSuccessors = Set(pc)
-        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
+        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator) // REFACTOR fromSeq(Iterator...)
         while (successorsToVisit.nonEmpty) {
             val nextPC = successorsToVisit.pop()
             if (nextPC == successorPC)
@@ -551,10 +552,10 @@ trait RecordCFG
      * Computes the transitive hull of all instructions reachable from the given instruction.
      */
     def allReachable(pc: PC): IntTrieSet = {
-        var allReachable: IntTrieSet = new IntTrieSet1(pc)
+        var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
                 allReachable += succPC
@@ -623,7 +624,7 @@ trait RecordCFG
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
                         if (oldPredecessorsOfSuccessor eq null) {
-                            new IntTrieSet1(pc)
+                            IntTrieSet1(pc)
                         } else {
                             oldPredecessorsOfSuccessor + pc
                         }
@@ -656,7 +657,7 @@ trait RecordCFG
 
     /**
      * Returns the dominator tree; see
-     * [[[[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]]]
+     * [[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]
      * for details regarding the properties of the dominator tree.
      *
      * @note   To get the list of all evaluated instructions and their dominators.
@@ -800,25 +801,26 @@ trait RecordCFG
         val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
-            // 1.1.    Let's check if the handler was executed at all.
-            if unsafeWasExecuted(exceptionHandler.handlerPC)
-            // 1.2.    The handler may be shared by multiple try blocks, hence, we have
-            //         to ensure the we have at least one instruction in the try block
-            //         that jumps to the handler.
-            if handlesException(exceptionHandler)
         } {
-            val handlerPC = exceptionHandler.handlerPC
-            val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
-            var handlerBB = bbs(handlerPC)
-            if (handlerBB eq null) {
-                handlerBB = new BasicBlock(handlerPC)
-                handlerBB.addPredecessor(catchNode)
-                bbs(handlerPC) = handlerBB
-            } else {
-                handlerBB.addPredecessor(catchNode)
+            if ( // 1.1.    Let's check if the handler was executed at all.
+            unsafeWasExecuted(exceptionHandler.handlerPC) &&
+                // 1.2.    The handler may be shared by multiple try blocks, hence, we have
+                //         to ensure the we have at least one instruction in the try block
+                //         that jumps to the handler.
+                handlesException(exceptionHandler)) {
+                val handlerPC = exceptionHandler.handlerPC
+                val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+                val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                var handlerBB = bbs(handlerPC)
+                if (handlerBB eq null) {
+                    handlerBB = new BasicBlock(handlerPC)
+                    handlerBB.addPredecessor(catchNode)
+                    bbs(handlerPC) = handlerBB
+                } else {
+                    handlerBB.addPredecessor(catchNode)
+                }
+                catchNode.addSuccessor(handlerBB)
             }
-            catchNode.addSuccessor(handlerBB)
         }
 
         // 2. iterate over the code to determine the basic block boundaries

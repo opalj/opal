@@ -68,7 +68,9 @@ case object EmptyIntArraySet extends IntArraySet {
     override def size: Int = 0
     override def max: Int = throw new UnsupportedOperationException("empty set")
     override def min: Int = throw new UnsupportedOperationException("empty set")
-    override def getAndRemove: (Int, IntArraySet) = throw new UnsupportedOperationException("empty")
+    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
+        throw new UnsupportedOperationException("empty")
+    }
     override def foreach[U](f: Int ⇒ U): Unit = {}
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
@@ -108,7 +110,9 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def max: Int = this.i
     override def min: Int = this.i
-    override def getAndRemove: (Int, IntArraySet) = (i, EmptyIntArraySet)
+    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
+        IntHeadAndRestOfSet(i, EmptyIntArraySet)
+    }
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
     override def map(f: Int ⇒ Int): IntArraySet = {
         val i = this.i
@@ -171,7 +175,9 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def size: Int = 2
     override def min: Int = this.i1
     override def max: Int = this.i2
-    override def getAndRemove: (Int, IntArraySet) = (i2, new IntArraySet1(i1))
+    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
+        IntHeadAndRestOfSet(i2, new IntArraySet1(i1))
+    }
 
     override def iterator: Iterator[Int] = new AbstractIterator[Int] {
         private[this] var i = 0
@@ -277,7 +283,9 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def size: Int = 3
     override def min: Int = this.i1
     override def max: Int = this.i3
-    override def getAndRemove: (Int, IntArraySet) = (i3, new IntArraySet2(i1, i2)) // TODO Remove
+    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
+        IntHeadAndRestOfSet(i3, new IntArraySet2(i1, i2))
+    } // TODO Remove
 
     override def iterator: Iterator[Int] = new AbstractIterator[Int] {
         var i = 0
@@ -402,11 +410,11 @@ case class IntArraySetN private[immutable] (
     override def isEmpty: Boolean = false
     override def max: Int = is(is.length - 1)
     override def min: Int = is(0)
-    override def getAndRemove: (Int, IntArraySet) = { // TODO Remove
+    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = { // TODO Remove
         if (is.length > 4)
-            (max, new IntArraySetN(is.init))
+            IntHeadAndRestOfSet(max, new IntArraySetN(is.init))
         else
-            (max, new IntArraySet3(is(0), is(1), is(2)))
+            IntHeadAndRestOfSet(max, new IntArraySet3(is(0), is(1), is(2)))
     }
     override def foreach[U](f: Int ⇒ U): Unit = {
         val max = is.length
@@ -496,7 +504,9 @@ case class IntArraySetN private[immutable] (
         }
     }
 
-    override def contains(value: Int): Boolean = Arrays.binarySearch(is, 0, size, value) >= 0
+    override def contains(value: Int): Boolean = {
+        Arrays.binarySearch(is, 0, size, value) >= 0
+    }
 
     override def exists(p: Int ⇒ Boolean): Boolean = {
         var i = 0
@@ -657,7 +667,7 @@ private[immutable] class FilteredIntArraySet(
     override def max: Int = getFiltered.max
     override def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = getFiltered.flatMap(f)
-    override def getAndRemove: (Int, IntArraySet) = getFiltered.getAndRemove // TODO remove
+    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = getFiltered.getAndRemove // TODO remove
     override def -(i: Int): IntArraySet = getFiltered - i
     override def +(i: Int): IntArraySet = getFiltered + 1
     override def toChain: Chain[Int] = intIterator.toChain

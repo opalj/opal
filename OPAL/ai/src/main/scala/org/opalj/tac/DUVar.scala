@@ -162,7 +162,7 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val newOrigin = pcToIndex(origin)
         origin = newOrigin
         useSites = useSites.map { useSite ⇒
-            // use site are always positive...
+            // a use site is always positive...
             val newUseSite = pcToIndex(useSite)
             if (newUseSite == newOrigin)
                 newUseSite + 1

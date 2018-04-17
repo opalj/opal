@@ -91,26 +91,28 @@ class CodeAttributeTest extends FlatSpec with Matchers {
 
     it should "be able to collect all jump targets" in {
         codeOfPut.collectWithIndex({
-            case (pc, cbi: SimpleConditionalBranchInstruction[_]) ⇒
+            case PCAndInstruction(pc, cbi: SimpleConditionalBranchInstruction[_]) ⇒
                 Seq(cbi.indexOfNextInstruction(pc)(codeOfPut), pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
     }
 
     it should "be able to handle the case where no instruction is found" in {
-        codeOfPut.collectWithIndex({ case (pc, IMUL) ⇒ (pc, IMUL) }) should equal(Naught)
+        codeOfPut.collectWithIndex({
+            case PCAndInstruction(pc, IMUL) ⇒ (pc, IMUL)
+        }) should equal(Naught)
     }
 
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
 
     it should "be able to correctly identify the first matching instruction" in {
         codeOfPut collectFirstWithIndex {
-            case (pc, ICONST_1) ⇒ (pc, ICONST_1)
+            case PCAndInstruction(pc, ICONST_1) ⇒ (pc, ICONST_1)
         } should equal(Some((20, ICONST_1)))
     }
 
     it should "be able to handle the case where no instruction is found" in {
         codeOfPut.collectFirstWithIndex({
-            case (pc, IMUL) ⇒ (pc, IMUL)
+            case PCAndInstruction(pc, IMUL) ⇒ (pc, IMUL)
         }) should be(None)
     }
 
@@ -141,7 +143,8 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     behavior of "the \"Code\" attribute's associateWithIndex method"
 
     it should "be able to associate all instructions with the correct index" in {
-        codeOfGet.associateWithIndex() should be(
+        val instructions: Seq[PCAndInstruction] = for { i ← codeOfGet } yield i
+        instructions should be(
             Seq(
                 (0, ALOAD_0),
                 (1, GETFIELD(immutbleListClass, "e", ObjectType.Object)),

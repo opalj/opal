@@ -48,6 +48,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
+import org.opalj.br.PCAndInstruction
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -84,7 +85,7 @@ object SecondInstrumentation extends App {
                 val lCode = LabeledCode(code)
                 var modified = false
                 for {
-                    (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
+                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
                     param = operandsArray(pc).head
                     // if param.asDomainReferenceValue.valueType.get == CollectionType
                     if param.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes

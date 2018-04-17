@@ -69,6 +69,7 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodHandle_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
@@ -288,7 +289,7 @@ package object ba { ba ⇒
 
         var modifiedByWide = false
         code foreach { e ⇒
-            val (pc, i) = e
+            val PCAndInstruction(pc, i) = e
             val opcode = i.opcode
             instructions.writeByte(opcode)
 

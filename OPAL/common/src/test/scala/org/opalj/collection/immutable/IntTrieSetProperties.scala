@@ -85,16 +85,14 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("create singleton IntTrieSet") = forAll { v: Int ⇒
         val factoryITS = IntTrieSet1(v)
-        val directITS = new IntTrieSet1(v)
         val viaEmptyITS = EmptyIntTrieSet + v
         factoryITS.size == 1 &&
             factoryITS.isSingletonSet &&
             !factoryITS.isEmpty &&
             !factoryITS.hasMultipleElements &&
             factoryITS.head == v &&
-            factoryITS == directITS &&
-            directITS == viaEmptyITS &&
-            directITS.hashCode == viaEmptyITS.hashCode
+            viaEmptyITS.hashCode == factoryITS.hashCode &&
+            viaEmptyITS == factoryITS
     }
 
     property("create IntTrieSet from Set (i.e., no duplicates)") = forAll { s: IntArraySet ⇒
@@ -180,7 +178,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = Chain.empty[Int]
         while (its.nonEmpty) {
-            val (v, newIts) = its.getAndRemove
+            val IntHeadAndRestOfSet(v, newIts) = its.getAndRemove
             removed :&:= v
             its = newIts
         }

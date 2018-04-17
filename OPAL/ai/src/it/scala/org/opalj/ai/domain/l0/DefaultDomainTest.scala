@@ -37,6 +37,7 @@ import org.scalatest.junit.JUnitRunner
 import java.net.URL
 
 import org.opalj.br.Method
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
 
 /**
@@ -64,7 +65,7 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
         val operandsArray = result.operandsArray
         val evaluatedInstructions = result.evaluatedInstructions
         for {
-            (pc, instruction) ← result.code
+            PCAndInstruction(pc, instruction) ← result.code
             if evaluatedInstructions.contains(pc)
             operands = operandsArray(pc)
         } {

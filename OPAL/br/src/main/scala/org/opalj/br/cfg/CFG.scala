@@ -292,7 +292,7 @@ case class CFG(
             }
             predecessorPCs
         } else {
-            new IntTrieSet1(code.pcOfPreviousInstruction(pc))
+            IntTrieSet1(code.pcOfPreviousInstruction(pc))
         }
     }
 
