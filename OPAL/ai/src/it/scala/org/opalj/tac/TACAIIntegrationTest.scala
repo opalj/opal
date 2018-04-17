@@ -70,8 +70,8 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             if !Thread.currentThread().isInterrupted
             m ← cf.methods
             body ← m.body
-            aiResult = BaseAI(m, domainFactory(project, m))
         } {
+            val aiResult = BaseAI(m, domainFactory(project, m))
             try {
 
                 val TACode(params, tacAICode, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
