@@ -39,6 +39,12 @@ package collection
 trait IntCollectionWithStableOrdering[T <: IntSet[T]] { intSet: T ⇒
 
     def subsetOf(other: T): Boolean = {
+        val thisSize = this.size
+        val otherSize = other.size
+        if (thisSize > otherSize)
+            return false;
+
+        // IMPROVE Add check if the remaining size is sufficient to warrant a continued subsetOf check
         val thisIt = this.intIterator
         val otherIt = other.intIterator
         while (thisIt.hasNext && otherIt.hasNext) {
