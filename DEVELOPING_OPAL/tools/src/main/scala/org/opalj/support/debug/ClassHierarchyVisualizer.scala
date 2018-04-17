@@ -52,7 +52,7 @@ object ClassHierarchyVisualizer {
 
         val classHierarchy =
             if (args.length == 0) {
-                ClassHierarchy.preInitializedClassHierarchy
+                ClassHierarchy.PreInitializedClassHierarchy
             } else {
                 val classFiles =
                     (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒

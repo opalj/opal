@@ -66,7 +66,7 @@ trait ControlTransferInstruction extends Instruction with ControlTransferInstruc
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC]
 
     final override def asControlTransferInstruction: ControlTransferInstruction = this

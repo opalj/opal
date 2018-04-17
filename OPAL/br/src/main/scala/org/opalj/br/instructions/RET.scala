@@ -60,7 +60,7 @@ case class RET(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
     }
@@ -70,7 +70,7 @@ case class RET(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC] = {
         nextInstructions(currentPC, false /*irrelevant*/ ).toIterator
     }

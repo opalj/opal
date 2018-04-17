@@ -50,7 +50,7 @@ object LocalPointsTo {
         // ... now let's take the first method that matches our filter
         val m = cf.methods.filter(m ⇒ m.signatureToJava().contains(args(1))).head
         // ... let's get one of the default pre-initialized class hierarchies (typically we want a project!)
-        val ch = Code.BasicClassHierarchy
+        val ch = ClassHierarchy.PreInitializedClassHierarchy
         // ... perform the data-flow analysis
         val aiResult = BaseAI(m, new PrimitiveTACAIDomain(ch, m))
         // now, we can transform the bytecode to three-address code

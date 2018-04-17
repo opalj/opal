@@ -360,6 +360,10 @@ private[immutable] final class IntTrieSet2 private[immutable] (
 
     override def toChain: Chain[Int] = i1 :&: i2 :&: Naught
 
+    override def subsetOf(other: IntTrieSet): Boolean = {
+        other.size >= 2 && other.contains(i1) && other.contains(i2)
+    }
+
     override def equals(other: Any): Boolean = {
         other match {
             case that: IntTrieSet ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
@@ -460,6 +464,10 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     def forall(f: Int ⇒ Boolean): Boolean = f(i1) && f(i2) && f(i3)
     def toChain: Chain[Int] = i1 :&: i2 :&: i3 :&: Naught
 
+    override def subsetOf(other: IntTrieSet): Boolean = {
+        other.size >= 3 && other.contains(i1) && other.contains(i2) && other.contains(i3)
+    }
+
     override def equals(other: Any): Boolean = {
         other match {
             case that: IntTrieSet ⇒
@@ -493,10 +501,23 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
         cb.result()
     }
 
+    // IMPROVE implement specialized: override def subsetOf(other: IntTrieSet): Boolean
+
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: IntTrieSet ⇒ that.size == this.size && this.subsetOf(that)
-            case _                ⇒ false
+            case that: IntTrieSet ⇒
+                that.size == this.size && {
+                    // we have stable orderings!
+                    val thisIt = this.intIterator
+                    val otherIt = that.intIterator
+                    var allEqual = true
+                    while (thisIt.hasNext && allEqual) {
+                        allEqual = thisIt.next() == otherIt.next()
+                    }
+                    allEqual
+                }
+            case _ ⇒
+                false
         }
     }
 

@@ -64,7 +64,7 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }

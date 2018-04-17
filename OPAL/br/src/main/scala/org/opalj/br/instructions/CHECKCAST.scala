@@ -77,7 +77,7 @@ case class CHECKCAST(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

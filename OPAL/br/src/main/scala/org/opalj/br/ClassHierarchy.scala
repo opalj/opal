@@ -2504,7 +2504,7 @@ object ClassHierarchy {
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    def preInitializedClassHierarchy: ClassHierarchy = scala.concurrent.blocking {
+    lazy val PreInitializedClassHierarchy: ClassHierarchy = {
         apply(classFiles = Traversable.empty, defaultTypeHierarchyDefinitions)(GlobalLogContext)
     }
 

@@ -73,7 +73,7 @@ case object NOP extends Instruction with ConstantLengthInstruction with NoLabels
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }
