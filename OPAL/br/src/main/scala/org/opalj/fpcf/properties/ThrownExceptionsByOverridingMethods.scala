@@ -70,6 +70,8 @@ object ThrownExceptionsByOverridingMethods {
     final val NoExceptions = new ThrownExceptionsByOverridingMethods()
 
     final val SomeException = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
+
+    final val MethodIsOverridable = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 }
 
 case class ThrownExceptionsByOverridingMethods(
