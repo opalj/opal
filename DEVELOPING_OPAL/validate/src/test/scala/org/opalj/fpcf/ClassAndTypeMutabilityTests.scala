@@ -29,8 +29,8 @@
 package org.opalj.fpcf
 
 import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -42,7 +42,10 @@ import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
 class ClassAndTypeMutabilityTests extends PropertiesTest {
 
     describe("the field, class and type mutability analyses are executed") {
-        val as = executeAnalyses(Set(L0FieldMutabilityAnalysis, EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis))
+        val as = executeAnalyses(Set(
+            EagerL0FieldMutabilityAnalysis,
+            EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis
+        ))
         validateProperties(as, classFilesWithAnnotations.map(tp ⇒ (tp._1.thisType, tp._2, tp._3)), Set("TypeImmutability", "ClassImmutability"))
     }
 

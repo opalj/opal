@@ -191,7 +191,10 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         dependees ++= (propertyStore(nonFinalInstanceFields, FieldMutability) collect {
             case FinalEP(_, _: NonFinalField) ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
-                return createResultForAllSubtypes(t, MutableObjectByAnalysis);
+                if (lazyComputation)
+                    return Result(t, MutableObjectByAnalysis);
+                else
+                    return createResultForAllSubtypes(t, MutableObjectByAnalysis);
             case ep @ IntermediateEP(e, _, _) ⇒
                 hasFieldsWithUnknownMutability = true
                 (e, ep)

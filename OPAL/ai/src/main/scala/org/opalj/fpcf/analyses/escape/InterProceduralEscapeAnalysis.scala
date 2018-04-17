@@ -186,7 +186,7 @@ object LazyInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisSc
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override protected[fpcf] def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(project)
 
         propertyStore.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
