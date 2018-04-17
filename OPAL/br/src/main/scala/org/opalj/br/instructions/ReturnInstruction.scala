@@ -75,7 +75,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Naught

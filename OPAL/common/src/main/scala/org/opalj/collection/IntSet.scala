@@ -29,6 +29,7 @@
 package org.opalj
 package collection
 
+import java.util.function.IntConsumer
 import scala.collection.mutable.Builder
 
 import org.opalj.collection.immutable.Chain
@@ -53,7 +54,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
      */
     def size: Int
 
-    def foreach[U](f: Int ⇒ U): Unit
+    def foreach(f: IntConsumer): Unit
     def withFilter(p: (Int) ⇒ Boolean): T
     def map(f: Int ⇒ Int): T
     def flatMap(f: Int ⇒ T): T

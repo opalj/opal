@@ -79,7 +79,7 @@ object TACNaive {
      * @param   method A method with a body. I.e., a non-native, non-abstract method.
      * @param classHierarchy The class hierarchy of the project defining the given method.
      *          If the class hierarchy is not available, you can use:
-     *          `Code.BasicClassHierarchy`.
+     *          `ClassHierarchy.PreInitializedClassHierarchy`.
      * @return The array with the generated statements.
      */
     // IMPROVE Make it explicit that op0 is the thrown exception in case of an exception handler! (Currently, op0 just exists and only by checking the exception handler table it becomes obvious where op0 is comming from.)

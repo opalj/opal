@@ -132,7 +132,7 @@ final class Code private (
         compareAttributes(other.attributes, config).isEmpty
     }
 
-    import Code.BasicClassHierarchy
+    import ClassHierarchy.PreInitializedClassHierarchy
 
     @inline final def codeSize: Int = instructions.length
 
@@ -374,7 +374,10 @@ final class Code private (
      * In case of exception handlers the sound overapproximation is made that
      * all exception handlers with a fitting type may be reached on multiple paths.
      */
-    def cfJoins(implicit classHierarchy: ClassHierarchy = BasicClassHierarchy): IntTrieSet = {
+    def cfJoins(
+        implicit
+        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
+    ): IntTrieSet = {
         /* OLD - DOESN'T USE THE CLASS HIERARCHY!
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -663,7 +666,7 @@ final class Code private (
      */
     def cfPCs(
         implicit
-        classHierarchy: ClassHierarchy = BasicClassHierarchy
+        classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
     ): (IntTrieSet /*joins*/ , IntTrieSet /*forks*/ , IntMap[IntTrieSet] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
@@ -847,7 +850,7 @@ final class Code private (
         exception: ObjectType
     )(
         implicit
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[ExceptionHandler] = {
         import classHierarchy.isSubtypeOf
 
@@ -1664,7 +1667,7 @@ final class Code private (
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def stackDepthAt(
         atPC:           Int,
-        classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Int = {
         stackDepthAt(atPC, CFGFactory(this, classHierarchy))
     }
@@ -1810,12 +1813,6 @@ object Code {
     final val KindId = 6
 
     /**
-     * Used to determine the potential handlers in case that an exception is
-     * thrown by an instruction.
-     */
-    val BasicClassHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
-
-    /**
      * The maximum number of registers required to execute the code - independent
      * of the number of parameters.
      *
@@ -1867,7 +1864,7 @@ object Code {
     def computeCFG(
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
-        classHierarchy:    ClassHierarchy     = ClassHierarchy.preInitializedClassHierarchy
+        classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
     ): CFG = {
         CFGFactory(
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
@@ -1885,7 +1882,7 @@ object Code {
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
     def computeMaxStack(
         instructions:      Array[Instruction],
-        classHierarchy:    ClassHierarchy     = ClassHierarchy.preInitializedClassHierarchy,
+        classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy,
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty
     ): Int = {
         computeMaxStack(

@@ -53,7 +53,7 @@ case object MONITORENTER extends SynchronizationInstruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

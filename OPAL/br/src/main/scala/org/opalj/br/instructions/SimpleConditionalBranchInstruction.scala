@@ -87,7 +87,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         val nextInstruction = indexOfNextInstruction(currentPC)
         val jumpInstruction = currentPC + branchoffset

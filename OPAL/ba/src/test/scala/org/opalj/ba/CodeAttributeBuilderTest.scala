@@ -54,7 +54,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
     behavior of "CodeAttributeBuilder when the code is invalid"
 
     "the CodeAttributeBuilder" should "warn about a too small max_locals/max_stack values" in {
-        implicit val ch = br.Code.BasicClassHierarchy
+        implicit val ch = br.ClassHierarchy.PreInitializedClassHierarchy
         val md = MethodDescriptor("(II)I")
         val code = (CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0)
         val (_, (_, warnings)) = code(bi.Java5Version, FakeObjectType, ACC_PUBLIC.mask, "test", md)
@@ -103,7 +103,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
                 info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
                 info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
 
-                val theDomain = new TypeCheckingDomain(br.Code.BasicClassHierarchy, theBRMethod)
+                val theDomain = new TypeCheckingDomain(br.ClassHierarchy.PreInitializedClassHierarchy, theBRMethod)
                 val ils = CodeAttributeBuilder.ai.initialLocals(theBRMethod, theDomain)(None)
                 val ios = CodeAttributeBuilder.ai.initialOperands(theBRMethod, theDomain)
                 val r = CodeAttributeBuilder.ai.performInterpretation(theCode, theDomain)(ios, ils)

@@ -126,7 +126,7 @@ class CodeAttributeBuilder[T] private[ba] (
         method:           Method
     )(
         implicit
-        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (br.Code, (Map[br.PC, T], List[String])) = {
         this(
             classFileVersion, method.classFile.thisType,

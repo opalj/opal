@@ -29,6 +29,8 @@
 package org.opalj
 package graphs
 
+import java.util.function.IntFunction
+
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
@@ -72,7 +74,7 @@ class UnidirectionalGraph(
             sSuccessors
     }
 
-    def edges: Int ⇒ IntIterator = (n: Int) ⇒ { theSuccessors(n).intIterator }
+    def edges: IntFunction[IntIterator] = (n: Int) ⇒ { theSuccessors(n).intIterator }
 
     /**
      * Adds a new edge between the given vertices.
