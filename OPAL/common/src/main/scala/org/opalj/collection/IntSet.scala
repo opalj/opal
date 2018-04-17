@@ -30,6 +30,7 @@ package org.opalj
 package collection
 
 import java.util.function.IntConsumer
+
 import scala.collection.mutable.Builder
 
 import org.opalj.collection.immutable.Chain
@@ -43,14 +44,14 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
 
     def isEmpty: Boolean
     def nonEmpty: Boolean = !isEmpty
-    /** Tests if this set exactly one element (complexity: O(1)). */
+    /** Tests if this set has exactly one element (complexity: O(1)). */
     def isSingletonSet: Boolean
     /** Tests if this set has more than one element (complexity: O(1)). */
     def hasMultipleElements: Boolean
 
     /**
      * The size of the set; may not be a constant operation; if possible use isEmpty, nonEmpty,
-     * etc.
+     * etc.; or lookup the complexity in the concrete data structures.
      */
     def size: Int
 
