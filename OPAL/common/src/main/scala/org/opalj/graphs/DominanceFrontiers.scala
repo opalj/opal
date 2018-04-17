@@ -216,7 +216,7 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) accept { y ⇒ if (dt.dom(y) != n) s = s + y }
             } catch {
                 case t: Throwable ⇒
                     throw new Throwable(s"failed iterating over successors of node $n", t)

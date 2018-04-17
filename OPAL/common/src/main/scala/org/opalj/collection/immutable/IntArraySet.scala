@@ -31,6 +31,7 @@ package collection
 package immutable
 
 import java.util.Arrays
+import java.util.function.IntConsumer
 
 import scala.collection.AbstractIterator
 import scala.collection.mutable.Builder
@@ -71,7 +72,7 @@ case object EmptyIntArraySet extends IntArraySet {
     override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
         throw new UnsupportedOperationException("empty")
     }
-    override def foreach[U](f: Int ⇒ U): Unit = {}
+    override def foreach(f: IntConsumer): Unit = {}
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
     override def map(f: Int ⇒ Int): IntArraySet = this
@@ -106,7 +107,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i) }
+    override def foreach(f: IntConsumer): Unit = { f.accept(i) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def max: Int = this.i
     override def min: Int = this.i
@@ -204,7 +205,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
         }
     }
     override def reverseIntIterator: IntIterator = IntIterator(i2, i1)
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
+    override def foreach(f: IntConsumer): Unit = { f.accept(i1); f.accept(i2) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = f(i1, i2)
 
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
@@ -311,7 +312,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
         }
     }
     override def reverseIntIterator: IntIterator = IntIterator(i3, i2, i1)
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
+    override def foreach(f: IntConsumer): Unit = { f.accept(i1); f.accept(i2); f.accept(i3) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
 
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
@@ -416,11 +417,11 @@ case class IntArraySetN private[immutable] (
         else
             IntHeadAndRestOfSet(max, new IntArraySet3(is(0), is(1), is(2)))
     }
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach(f: IntConsumer): Unit = {
         val max = is.length
         var i = 0
         while (i < max) {
-            f(is(i))
+            f.accept(is(i))
             i += 1
         }
     }
@@ -547,7 +548,7 @@ case class IntArraySetN private[immutable] (
 
     override def toChain: Chain[Int] = {
         val cb = new Chain.ChainBuilder[Int]()
-        foreach(i ⇒ cb += i)
+        foreach((i: Int) ⇒ cb += i)
         cb.result()
     }
 
@@ -638,7 +639,7 @@ private[immutable] class FilteredIntArraySet(
         }
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach(f: IntConsumer): Unit = {
         if (filteredS ne null) {
             filteredS.foreach(f)
         } else {
@@ -647,7 +648,7 @@ private[immutable] class FilteredIntArraySet(
             var j = 0
             while (j < max) {
                 val i = is(j)
-                if (p(i)) f(i)
+                if (p(i)) f.accept(i)
                 j += 1
             }
         }

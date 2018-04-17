@@ -28,8 +28,9 @@
  */
 package org.opalj
 
-import scala.collection.mutable.ArrayStack
+import java.util.function.IntFunction
 
+import scala.collection.mutable.ArrayStack
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.mutable.AnyRefArrayStack
@@ -579,8 +580,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ IntIterator,
-        filterSingletons: Boolean           = false
+        es:               IntFunction[IntIterator], // Int ⇒ IntIterator,
+        filterSingletons: Boolean                  = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION

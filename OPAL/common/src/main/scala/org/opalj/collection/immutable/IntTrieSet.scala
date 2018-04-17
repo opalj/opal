@@ -30,6 +30,7 @@ package org.opalj
 package collection
 package immutable
 
+import java.util.function.IntConsumer
 import scala.collection.AbstractIterator
 
 /**
@@ -89,7 +90,7 @@ class FilteredIntTrieSet(
     override def iterator: Iterator[Int] = s.iterator.withFilter(p)
     override def intIterator: IntIterator = s.intIterator.withFilter(p)
 
-    override def foreach[U](f: Int ⇒ U): Unit = s.foreach { i ⇒ if (p(i)) f(i) }
+    override def foreach(f: IntConsumer): Unit = s.foreach { i ⇒ if (p(i)) f.accept(i) }
     override def map(f: Int ⇒ Int): IntTrieSet = {
         s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c + f(i) else c }
     }
@@ -151,7 +152,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def getAndRemove: IntHeadAndRestOfSet[IntTrieSet] = {
         throw new UnsupportedOperationException("empty")
     }
-    override def foreach[U](f: Int ⇒ U): Unit = {}
+    override def foreach(f: IntConsumer): Unit = {}
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = this
     override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = this
@@ -186,7 +187,7 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
     override def size: Int = 1
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i) }
+    override def foreach(f: java.util.function.IntConsumer): Unit = { f.accept(i) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def getAndRemove: IntHeadAndRestOfSet[IntTrieSet] = {
         IntHeadAndRestOfSet(i, EmptyIntTrieSet: IntTrieSet)
@@ -300,7 +301,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     }
     override def intIterator: IntIterator = IntIterator(i1, i2)
 
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
+    override def foreach(f: IntConsumer): Unit = { f.accept(i1); f.accept(i2) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2) }
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
         if (p(i1)) {
@@ -403,7 +404,7 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     }
     override def intIterator: IntIterator = IntIterator(i1, i2, i3)
 
-    override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
+    override def foreach(f: IntConsumer): Unit = { f.accept(i1); f.accept(i2); f.accept(i3) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
 
     override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
@@ -488,7 +489,7 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
 
     final override def toChain: Chain[Int] = {
         val cb = new Chain.ChainBuilder[Int]()
-        foreach(i ⇒ cb += i)
+        foreach((i: Int) ⇒ cb += i)
         cb.result()
     }
 
@@ -516,7 +517,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
     override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p) || right.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p) && right.forall(p)
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach(f: IntConsumer): Unit = {
         left.foreach(f)
         right.foreach(f)
     }
@@ -742,7 +743,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
     override def head: Int = right.head
     override def exists(p: Int ⇒ Boolean): Boolean = right.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = right.forall(p)
-    override def foreach[U](f: Int ⇒ U): Unit = right.foreach(f)
+    override def foreach(f: IntConsumer): Unit = right.foreach(f)
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = right.foreachPair(f)
     override def map(f: Int ⇒ Int): IntTrieSet = right.map(f)
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = right.flatMap(f)
@@ -849,7 +850,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
     override def head: Int = left.head
     override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p)
-    override def foreach[U](f: Int ⇒ U): Unit = left.foreach(f)
+    override def foreach(f: IntConsumer): Unit = left.foreach(f)
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = left.foreachPair(f)
     override def map(f: Int ⇒ Int): IntTrieSet = left.map(f)
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = left.flatMap(f)

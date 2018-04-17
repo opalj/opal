@@ -30,9 +30,9 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.function.IntFunction
 
 import scala.io.BufferedSource
 import scala.collection.AbstractIterator
@@ -41,7 +41,6 @@ import scala.collection.generic.Growable
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-
 import org.opalj.control.foreachNonNullValue
 import org.opalj.io.process
 import org.opalj.io.processSource
@@ -2864,7 +2863,7 @@ object ClassHierarchy {
                         // 1. Do we have a cycle in the extracted type information ?
                         {
                             val ns = knownTypesMap.size
-                            val es = (oid: Int) ⇒ {
+                            val es: IntFunction[IntIterator] = (oid: Int) ⇒ {
                                 if (knownTypesMap(oid) ne null) {
                                     val it =
                                         subinterfaceTypesMap(oid).map(_.id).iterator ++
