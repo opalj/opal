@@ -125,7 +125,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     val c10 = BasicComputationSpecification(
         "c10",
         Set.empty,
-        Set(pks(10)) // this one also derives property 10
+        Set(pks(10)) // this one also derives property 10; e.g., at a more basic level
     )
 
     //**********************************************************************************************
@@ -148,8 +148,6 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         it("should be possible to create a schedule where a property is computed by multiple computations") {
             val batches = (new AnalysisScenario(Set(c9, c10))).computeSchedule.batches
             batches.size should be(2)
-            batches.head.head should be(c10)
-            batches.tail.head.head should be(c9)
         }
 
         it("should be possible to create a schedule with one computation") {
