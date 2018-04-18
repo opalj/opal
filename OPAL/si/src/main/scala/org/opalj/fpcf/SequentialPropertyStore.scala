@@ -432,6 +432,7 @@ class SequentialPropertyStore private (
                 newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
             case IntermediateResult.id ⇒
+                // IMPROVE Process all dependee updates
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
 
                 // 1. let's check if a new dependee is already updated...
@@ -488,7 +489,6 @@ class SequentialPropertyStore private (
                 }
 
                 // 2.1. update the value (trigger dependers/clear old dependees)
-                // IMPROVE Delay notification (which requires intensive tests that we do not loose notifications.)
                 update(e, lb, ub, newDependees)
 
                 // println(s"update: $e => $p (isFinal=false;notifyDependers=true)")
