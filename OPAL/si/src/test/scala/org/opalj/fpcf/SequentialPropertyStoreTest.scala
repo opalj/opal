@@ -51,3 +51,15 @@ class ForceUpdatesSequentialPropertyStoreTest extends PropertyStoreTest {
     }
 
 }
+
+class DefaultSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = false
+        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.delayHandlingOfDependerNotification = true
+        s
+    }
+
+}
