@@ -58,7 +58,7 @@ class SequentialPropertyStore private (
     /**
      * This variable can always be changed.
      */
-    var delayHandlingOfNonFinalDependeeUpdates: Boolean = false
+    var delayHandlingOfNonFinalDependeeUpdates: Boolean = true
     var delayHandlingOfFinalDependeeUpdates: Boolean = false
     var delayHandlingOfDependerNotification: Boolean = true
 
