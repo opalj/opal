@@ -30,8 +30,7 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.{Chain, IntArraySet, IntHeadAndRestOfSet}
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -62,7 +61,7 @@ final class DominanceFrontiers private (
         var transitiveDF = this.df(n)
         var nodesToVisit = transitiveDF - n
         while (nodesToVisit.nonEmpty) {
-            val (nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            val IntHeadAndRestOfSet(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
             nodesToVisit = newNodesToVisit
             val nextDF = this.df(nextN)
             transitiveDF ++= nextDF
@@ -217,7 +216,7 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) accept { y ⇒ if (dt.dom(y) != n) s = s + y }
             } catch {
                 case t: Throwable ⇒
                     throw new Throwable(s"failed iterating over successors of node $n", t)

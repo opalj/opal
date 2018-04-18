@@ -52,7 +52,7 @@ package object analyses {
 
     type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
 
-    type StringConstantsInformation = Map[String, ConstArray[(Method, PC)]]
+    type StringConstantsInformation = Map[String, ConstArray[PCInMethod]]
 
     /**
      * An analysis that may produce a result.

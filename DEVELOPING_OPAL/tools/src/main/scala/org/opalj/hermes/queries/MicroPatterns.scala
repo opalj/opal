@@ -33,12 +33,14 @@ package queries
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.Field
+import org.opalj.br.PC
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ArrayLoadInstruction
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
@@ -481,8 +483,7 @@ object MicroPatterns extends FeatureQuery {
             !method.body.get.instructions.exists { i ⇒ i.isInstanceOf[FieldReadAccess] }) {
             return false
         }
-
-        val instructions = method.body.get.associateWithIndex().toMap
+        val instructions = method.body.get.foldLeft(Map.empty[PC, Instruction])((m, pc, i) ⇒ m + ((pc, i)))
         val result = BaseAI(method, new AnalysisDomain(theProject, method))
         val returns = instructions.filter(i ⇒ i._2.isInstanceOf[ReturnValueInstruction])
 
@@ -500,8 +501,7 @@ object MicroPatterns extends FeatureQuery {
             !method.body.get.instructions.exists { i ⇒ i.isInstanceOf[FieldWriteAccess] }) {
             return false
         }
-
-        val instructions = method.body.get.associateWithIndex().toMap
+        val instructions = method.body.get.foldLeft(Map.empty[PC, Instruction])((m, pc, i) ⇒ m + ((pc, i)))
         val result = BaseAI(method, new AnalysisDomain(theProject, method))
         val puts = instructions.filter(i ⇒ i._2.isInstanceOf[FieldWriteAccess])
 

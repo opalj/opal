@@ -30,11 +30,10 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.Code
 import org.opalj.br.ClassHierarchy
 
 /**
- * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
+ * This class uses OPAL's `PreInitializedClassHierarchy` (see `ClassHierarchy` for details)
  * for class hierarchy related queries.
  *
  * '''Use this trait ONLY if you just want to do some testing.'''
@@ -58,6 +57,6 @@ trait PredefinedClassHierarchy extends TheClassHierarchy {
 
 object PredefinedClassHierarchy {
 
-    final val classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+    final val classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
 
 }

@@ -29,6 +29,10 @@
 package org.opalj
 package graphs
 
+import java.util.function.IntConsumer
+import java.util.function.Consumer
+import java.util.function.IntFunction
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
@@ -48,15 +52,19 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with just one node" should "result in a post dominator tree with a single node" in {
         val g = Graph.empty[Int] += 0
-        val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-        val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
-
+        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
+        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
+        val existNodes = Set(0)
         val dt = time {
             PostDominatorTree(
                 Some(0),
                 (i: Int) ⇒ i == 0,
                 IntTrieSet.empty,
-                Set(0).foreach,
+                (f: IntConsumer) ⇒ existNodes.foreach(e ⇒ f.accept(e)),
                 foreachSuccessorOf, foreachPredecessorOf,
                 0
             )
@@ -76,15 +84,19 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
 
     "a simple tree with multiple exits" should "result in a corresponding postdominator tree" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
-        val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-        val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
+        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
         val existNodes = Set(3, 4)
         val dt = time {
             PostDominatorTree(
                 None,
                 existNodes.contains,
                 IntTrieSet.empty,
-                existNodes.foreach,
+                (f: IntConsumer) ⇒ existNodes.foreach(e ⇒ f.accept(e)),
                 foreachSuccessorOf, foreachPredecessorOf,
                 4
             )
@@ -110,15 +122,19 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with a cycle" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (0 → 4) += (2 → 1)
-        val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-        val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
+        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
         val existNodes = Set(3, 4)
         val dt = time {
             PostDominatorTree(
                 None,
                 existNodes.contains,
                 IntTrieSet.empty,
-                existNodes.foreach,
+                (f: IntConsumer) ⇒ existNodes.foreach(e ⇒ f.accept(e)),
                 foreachSuccessorOf, foreachPredecessorOf,
                 4
             )
@@ -152,15 +168,19 @@ class PostDominatorTreeTest extends FlatSpec with Matchers {
 
     "a path with multiple artificial exit points" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2)
-        val foreachSuccessorOf = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-        val foreachPredecessorOf = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
+        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        }
         val existNodes = Set(1, 2)
         val dt = time {
             PostDominatorTree(
                 None,
                 existNodes.contains,
                 IntTrieSet.empty,
-                existNodes.foreach,
+                (f: IntConsumer) ⇒ existNodes.foreach(e ⇒ f.accept(e)),
                 foreachSuccessorOf, foreachPredecessorOf,
                 2
             )

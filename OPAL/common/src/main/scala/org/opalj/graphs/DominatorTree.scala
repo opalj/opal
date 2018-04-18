@@ -29,6 +29,10 @@
 package org.opalj
 package graphs
 
+import java.util.function.IntFunction
+import java.util.function.IntConsumer
+import java.util.function.Consumer
+
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
@@ -45,7 +49,7 @@ import org.opalj.collection.immutable.IntTrieSet1
 final class DominatorTree private (
         final val startNode:            Int,
         final val hasVirtualStartNode:  Boolean,
-        final val foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        final val foreachSuccessorOf:   IntFunction[Consumer[IntConsumer]], //Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
         private[graphs] final val idom: Array[Int]
 ) extends AbstractDominatorTree {
 
@@ -62,18 +66,21 @@ final class DominatorTree private (
 object DominatorTree {
 
     // def fornone(g: Int ⇒ Unit): Unit = { /*nothing to do*/ }
-    final val fornone: (Int ⇒ Unit) ⇒ Unit = (_: Int ⇒ Unit) ⇒ {}
+    //final val fornone: (Int ⇒ Unit) ⇒ Unit = (_: Int ⇒ Unit) ⇒ {}
+    final val fornone: Consumer[IntConsumer] = {
+        new Consumer[IntConsumer] { override def accept(f: IntConsumer): Unit = {} }
+    }
 
     /**
      * Convenience factory method for dominator trees; see
-     * [[[[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]]]
+     * [[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]
      * for details.
      */
     def apply(
         startNode:                Int,
         startNodeHasPredecessors: Boolean,
-        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachSuccessorOf:       IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+        foreachPredecessorOf:     IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
         maxNode:                  Int
     ): DominatorTree = {
         this(
@@ -85,7 +92,7 @@ object DominatorTree {
             (
                 startNode: Int,
                 hasVirtualStartNode: Boolean,
-                foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+                foreachSuccessorOf: IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
                 idom: Array[Int]
             ) ⇒ {
                 new DominatorTree(startNode, hasVirtualStartNode, foreachSuccessorOf, idom)
@@ -130,10 +137,11 @@ object DominatorTree {
     def apply[D <: AbstractDominatorTree](
         startNode:                Int,
         startNodeHasPredecessors: Boolean,
-        foreachSuccessorOf:       Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf:     Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachSuccessorOf:       IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+        foreachPredecessorOf:     IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
         maxNode:                  Int,
-        dominatorTreeFactory:     ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+        //dominatorTreeFactory:     ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+        dominatorTreeFactory: ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ IntFunction[Consumer[IntConsumer]], Array[Int]) ⇒ D
     ): D = {
 
         if (startNodeHasPredecessors) {
@@ -143,18 +151,18 @@ object DominatorTree {
                 true,
                 /* newForeachSuccessorOf */ (n: Int) ⇒ {
                     if (n == newStartNode)
-                        (f: Int ⇒ Unit) ⇒ { f(startNode) }
+                        (f: IntConsumer) ⇒ { f.accept(startNode) }
                     else
                         foreachSuccessorOf(n)
-                },
+                }: Consumer[IntConsumer],
                 /* newForeachPredecessorOf */ (n: Int) ⇒ {
                     if (n == newStartNode)
-                        (f: Int ⇒ Unit) ⇒ {}
+                        (f: IntConsumer) ⇒ {}
                     else if (n == startNode)
-                        (f: Int ⇒ Unit) ⇒ { f(newStartNode) }
+                        (f: IntConsumer) ⇒ { f.accept(newStartNode) }
                     else
                         foreachPredecessorOf(n)
-                },
+                }: Consumer[IntConsumer],
                 newStartNode,
                 dominatorTreeFactory
             );
@@ -173,10 +181,11 @@ object DominatorTree {
     private[graphs] def create[D <: AbstractDominatorTree](
         startNode:            Int,
         hasVirtualStartNode:  Boolean,
-        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
-        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachSuccessorOf:   IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        foreachPredecessorOf: IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
         maxNode:              Int,
-        dominatorTreeFactory: ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+        // dominatorTreeFactory: ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int ⇒ ((Int ⇒ Unit) ⇒ Unit), Array[Int]) ⇒ D
+        dominatorTreeFactory: ( /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ IntFunction[Consumer[IntConsumer]], Array[Int]) ⇒ D
     ): D = {
         val max = maxNode + 1
 
@@ -207,7 +216,7 @@ object DominatorTree {
                 vertex(n) = v
                 dom(v) = v
 
-                foreachSuccessorOf(v) { w ⇒
+                foreachSuccessorOf(v) accept { (w: Int) ⇒
                     if (semi(w) == 0) {
                         parent(w) = v
                         vertexStack.push(w)
@@ -267,7 +276,7 @@ object DominatorTree {
             val w = vertex(i)
 
             // Step 2
-            foreachPredecessorOf(w) { (v: Int) ⇒
+            foreachPredecessorOf(w) accept { (v: Int) ⇒
                 val u = eval(v)
                 val uSemi = semi(u)
                 if (uSemi < semi(w)) {
@@ -277,7 +286,7 @@ object DominatorTree {
 
             val v = vertex(semi(w))
             val b = bucket(v)
-            bucket(v) = if (b ne null) { b + w } else { new IntTrieSet1(w) }
+            bucket(v) = if (b ne null) { b + w } else { IntTrieSet1(w) }
 
             ancestor(w) = parent(w)
 

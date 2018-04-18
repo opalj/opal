@@ -36,6 +36,7 @@ import play.api.libs.json.JsValue
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 import org.opalj.br.PC
+import org.opalj.br.{PCAndInstruction ⇒ BRPCAndInstruction}
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
@@ -54,7 +55,10 @@ class MethodReturnValues(
 
     def collectMethodReturnValues: Chain[(PC, String)] = {
         code.collectWithIndex {
-            case (pc, instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)) if !descriptor.returnType.isVoidType && {
+            case BRPCAndInstruction(
+                pc,
+                instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)
+                ) if !descriptor.returnType.isVoidType && {
                 val nextPC = instr.indexOfNextInstruction(pc)
                 val operands = operandsArray(nextPC)
                 operands != null &&

@@ -73,7 +73,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

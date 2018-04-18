@@ -119,7 +119,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         )
 
         it("should correctly reflect the instanceof Object instruction") {
-            val statements = TACNaive(method = TypecheckStringMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = TypecheckStringMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -129,7 +129,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the instanceof List instruction") {
-            val statements = TACNaive(method = TypecheckListMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = TypecheckListMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -140,7 +140,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the checkcast instruction") {
-            val statements = TACNaive(method = CheckcastMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = CheckcastMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -165,7 +165,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the d2f instruction") {
-            val statements = TACNaive(method = D2FMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = D2FMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -175,7 +175,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the d2i instruction") {
-            val statements = TACNaive(method = D2IMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = D2IMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -185,7 +185,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the d2l instruction") {
-            val statements = TACNaive(method = D2LMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = D2LMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -195,7 +195,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the f2d instruction") {
-            val statements = TACNaive(method = F2DMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = F2DMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -205,7 +205,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the f2l instruction") {
-            val statements = TACNaive(method = F2LMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = F2LMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -215,7 +215,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the f2i instruction") {
-            val statements = TACNaive(method = F2IMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = F2IMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -225,7 +225,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the l2d instruction") {
-            val statements = TACNaive(method = L2DMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = L2DMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -235,7 +235,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the l2f instruction") {
-            val statements = TACNaive(method = L2FMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = L2FMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -245,7 +245,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the l2i instruction") {
-            val statements = TACNaive(method = L2IMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = L2IMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -255,7 +255,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the i2d instruction") {
-            val statements = TACNaive(method = I2DMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = I2DMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -265,7 +265,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the i2l instruction") {
-            val statements = TACNaive(method = I2LMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = I2LMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -275,7 +275,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the i2f instruction") {
-            val statements = TACNaive(method = I2FMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = I2FMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -285,7 +285,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the i2c instruction") {
-            val statements = TACNaive(method = I2CMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = I2CMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -295,7 +295,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the i2b instruction") {
-            val statements = TACNaive(method = I2BMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = I2BMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
@@ -305,7 +305,7 @@ class TACNaiveCastTest extends TACNaiveTest {
         }
 
         it("should correctly reflect the i2s instruction") {
-            val statements = TACNaive(method = I2SMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val statements = TACNaive(method = I2SMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)

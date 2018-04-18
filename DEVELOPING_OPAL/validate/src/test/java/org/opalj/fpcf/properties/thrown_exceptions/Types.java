@@ -28,29 +28,19 @@
  */
 package org.opalj.fpcf.properties.thrown_exceptions;
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.properties.PropertyValidator;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state the (transitivley) thrown exceptions.
+ * Annotation to state the thrown exception types.
  *
  * @author Andreas Muttscheller
- * @author Michael Eichberg
  */
-@PropertyValidator(key = "ThrownExceptionsAreUnknown",validator = ThrownExceptionsAreUnknownMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ThrownExceptionsAreUnknown {
+public @interface Types {
 
-    /**
-     * A short reasoning of this property.
-     */
-    String reason();
-
-    /** The (set of) analyses that strictly need to be executed before the test makes sense. */
-    Class<? extends FPCFAnalysis>[] requires() default {};
+    Class<? extends Throwable>[] concrete() default  {};
+    Class<? extends Throwable>[] upperBound() default  {Throwable.class};
 }

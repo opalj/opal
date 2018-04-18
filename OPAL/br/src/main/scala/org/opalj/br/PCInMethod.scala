@@ -26,34 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.thrown_exceptions
-
-import org.opalj.br.{AnnotationLike, ObjectType}
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{Entity, Property}
-import org.opalj.fpcf.properties.{AbstractPropertyMatcher, ThrownExceptions}
+package org.opalj
+package br
 
 /**
- * Matches a methods's `ThrownExceptionsAreUnknown` property.
+ * An efficient (i.e., no (un)boxing...) representation of an instruction (identified)
+ * by its pc in a method.
  *
- * @author Andreas Muttscheller
+ * @param pc The program counter of an instruction.
+ * @param method The declaring method.
+ * @author Michael Eichberg
  */
-class ThrownExceptionsAreUnknownMatcher extends AbstractPropertyMatcher {
-
-    def validateProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          AnnotationLike,
-        properties: Traversable[Property]
-    ): Option[String] = {
-        if (properties.forall { p ⇒
-            !p.isInstanceOf[ThrownExceptionsAreUnknown] || p.key != ThrownExceptions.Key
-        }) {
-            None
-        } else {
-            Some(a.elementValuePairs.head.value.toString)
-        }
-    }
-
-}
+case class PCInMethod(method: Method, pc: Int /* PC */ )

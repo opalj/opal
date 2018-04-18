@@ -73,7 +73,7 @@ case object WIDE extends Instruction with ConstantLengthInstruction with NoLabel
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }

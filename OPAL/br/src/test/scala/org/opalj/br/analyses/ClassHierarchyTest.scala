@@ -63,7 +63,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     val jlsCHCreator = List(() ⇒ getClass.getResourceAsStream(jlsCHFile))
     val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
 
-    val preInitCH = ClassHierarchy.preInitializedClassHierarchy
+    val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
     val javaLangCHCreator = List(() ⇒ getClass.getResourceAsStream(javaLangCHFile))

@@ -38,6 +38,7 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.{PCAndInstruction ⇒ BRPCAndInstruction}
 import org.opalj.da.ClassFile
 
 /**
@@ -140,7 +141,10 @@ trait APIFeatureQuery extends FeatureQuery {
             if !isInterrupted()
             source ← project.source(cf)
             m @ MethodWithBody(code) ← cf.methods
-            (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
+            BRPCAndInstruction(
+                pc,
+                mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)
+                ) ← code
             if declClass.isObjectType
             if apiTypes.contains(declClass.asObjectType)
             apiFeature ← apiFeatures

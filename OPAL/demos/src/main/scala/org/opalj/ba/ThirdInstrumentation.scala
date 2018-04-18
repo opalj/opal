@@ -60,6 +60,7 @@ import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.IFGT
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.PCAndInstruction
 
 /**
  * Demonstrates how to perform an instrumentation where we need more information about the code
@@ -95,7 +96,7 @@ object ThirdInstrumentation extends App {
                 var removeDeadCode = false
                 if (m.name == "killMe1") {
                     for {
-                        (pc, LoadString("kill me")) ← code // the search can be done either based on the original code or the lcode
+                        PCAndInstruction(pc, LoadString("kill me")) ← code // the search can be done either based on the original code or the lcode
                     } {
                         val stackDepth = code.stackDepthAt(pc, cfg)
                         val cleanStackAndReturn = new Array[CodeElement[AnyRef]](stackDepth + 1)
@@ -110,7 +111,7 @@ object ThirdInstrumentation extends App {
                     removeDeadCode = true
                 } else if (m.name == "killMe2") {
                     for {
-                        (pc, LoadString("kill me")) ← code
+                        PCAndInstruction(pc, LoadString("kill me")) ← code
                     } {
                         // NOTE: when we throw an exception, we don't have to take of the
                         //       size of the stack!
@@ -145,13 +146,13 @@ object ThirdInstrumentation extends App {
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
 
                 for {
-                    (pc, GETSTATIC(SystemType, "out", _)) ← code
+                    PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) ← code
                 } {
                     lCode.replace(pc, Seq(GETSTATIC(SystemType, "err", PrintStreamType)))
                 }
 
                 for {
-                    (pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
+                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
                 } {
                     lCode.insert(
@@ -167,7 +168,7 @@ object ThirdInstrumentation extends App {
 
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
-                for ((pc, IRETURN) ← code) {
+                for (PCAndInstruction(pc, IRETURN) ← code) {
                     val gtTarget = Symbol(pc+":>")
                     val printlnTarget = Symbol(pc+":println")
                     lCode.insert(

@@ -45,6 +45,7 @@ import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.br.instructions.LabeledJSR
 import org.opalj.br.instructions.LabeledJSR_W
@@ -246,7 +247,7 @@ object CODE {
             var markedInstructionAsLive = false
             while (markedAsLive.nonEmpty) {
                 // mark all code elements which can be executed subsequently as live
-                val (nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
+                val IntHeadAndRestOfSet(nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
                 markedAsLive = newMarkedAsLive
 
                 var currentIndex = nextIndex

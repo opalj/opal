@@ -105,7 +105,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    @inline final def ValueOrigins(vo: Int): IntTrieSet = new IntTrieSet1(vo)
+    @inline final def ValueOrigins(vo: Int): IntTrieSet = IntTrieSet1(vo)
     final def NoValueOrigins: IntTrieSet = EmptyIntTrieSet
 
     // Stores the information where the value defined by an instruction is
@@ -177,13 +177,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * The first/top value on the stack has index 0 and the second value - if it exists -
      * has index two; independent of the computational category of the values.
      */
-    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
+    def operandOrigin(pc: /*PC*/ Int, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
 
     /**
      * Returns the instruction(s) which define(s) the value found in the register variable with
      * index `registerIndex` and the program counter `pc`.
      */
-    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
+    def localOrigin(pc: /*PC*/ Int, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
      * Returns the instructions which use the value or implicit exception identified by the given
@@ -239,7 +239,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         unused
     }
 
-    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
+    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: /*PC*/ Int): Unit = {
         usedValues.foreach { usedValue ⇒
             if (usedValue > VMLevelValuesOriginOffset) {
                 val usedIndex = usedValue + parametersOffset
@@ -267,14 +267,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     protected[this] def propagate(
-        currentPC:    PC,
-        successorPC:  PC,
+        currentPC: /*PC*/ Int,
+        successorPC: /*PC*/ Int,
         newDefOps:    Chain[ValueOrigins],
         newDefLocals: Registers[ValueOrigins]
     )(
         implicit
         cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean
+        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean
     ): Boolean = {
         if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
             var forceScheduling = false
@@ -440,9 +440,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     protected[this] def newDefOpsForExceptionalControlFlow(
-        currentPC:          PC,
+        currentPC: /*PC*/   Int,
         currentInstruction: Instruction,
-        successorPC:        PC
+        successorPC: /*PC*/ Int
     )(
         implicit
         operandsArray: OperandsArray
@@ -478,16 +478,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * exceptional control flow.
      */
     protected[this] def stackOperation(
-        currentPC:                PC,
+        currentPC: /*PC*/         Int,
         currentInstruction:       Instruction,
-        successorPC:              PC,
+        successorPC: /*PC*/       Int,
         isExceptionalControlFlow: Boolean,
         usedValues:               Int,
         pushesValue:              Boolean
     )(
         implicit
         cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean,
+        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean,
         operandsArray:           OperandsArray
     ): Boolean = {
         val currentDefOps = defOps(currentPC)
@@ -508,13 +508,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     protected[this] def registerReadWrite(
-        currentPC:   PC,
-        successorPC: PC,
+        currentPC: /*PC*/ Int,
+        successorPC: /*PC*/ Int,
         index:       Int
     )(
         implicit
         cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean,
+        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean,
         localsArray:             LocalsArray
     ): Boolean = {
         val currentDefLocals = defLocals(currentPC)
@@ -529,13 +529,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
      */
     private[this] def handleFlow(
-        currentPC:                PC,
-        successorPC:              PC,
+        currentPC:                Int /*PC*/ ,
+        successorPC:              Int /*PC*/ ,
         isExceptionalControlFlow: Boolean
     )(
         implicit
         cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: (PC) ⇒ Boolean,
+        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean,
         operandsArray:           OperandsArray,
         localsArray:             LocalsArray
     ): Boolean = {
@@ -891,7 +891,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val operandsArray = aiResult.operandsArray
         val localsArray = aiResult.localsArray
         val subroutineInstructions = aiResult.subroutineInstructions
-        implicit val isSubroutineInstruction: PC ⇒ Boolean = subroutineInstructions.contains
+        implicit val isSubroutineInstruction: Int /*PC*/ ⇒ Boolean = subroutineInstructions.contains
         implicit val cfJoins = aiResult.cfJoins
 
         // General idea related to JSR/RET:
