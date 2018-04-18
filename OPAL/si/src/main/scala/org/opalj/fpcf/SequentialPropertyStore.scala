@@ -429,7 +429,7 @@ class SequentialPropertyStore private (
                 type P = Property
                 val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
                 val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
-                newEPSOption foreach {newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil)                }
+                newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
@@ -437,9 +437,9 @@ class SequentialPropertyStore private (
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val noUpdates = newDependees forall { newDependee ⇒
-                    /*user level*/assert(
-                    !newDependee.isFinal, s"dependency to final property: $newDependee"
-                )
+                    /*user level*/ assert(
+                        !newDependee.isFinal, s"dependency to final property: $newDependee"
+                    )
                     val dependeeE = newDependee.e
                     val dependeePKId = newDependee.pk.id.toLong
                     val dependeePValue = getPropertyValue(dependeeE, dependeePKId)

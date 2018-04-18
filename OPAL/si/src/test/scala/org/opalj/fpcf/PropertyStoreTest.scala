@@ -366,7 +366,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("e", Marker.MarkerKey) should be(FinalEP("e", Marker.IsMarked))
         }
 
-        it("should be possible to have computations with multiple updates") {
+        describe("handling of computations with multiple updates") {
 
             import scala.collection.mutable
 
@@ -413,9 +413,16 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.toUBEP
                     )
             }
-            case class ReachableNodes(nodes: scala.collection.Set[Node]) extends Property {
+            case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
                 type Self = ReachableNodes
                 def key = ReachableNodes.Key
+                def checkIsEqualOrBetterThan(other: Self): Unit = {
+                    if (!this.nodes.subsetOf(other.nodes)) {
+                        throw new IllegalArgumentException(
+                            this+" is not equal or better than "+other
+                        )
+                    }
+                }
             }
             object NoReachableNodes extends ReachableNodes(Set.empty) {
                 override def toString: String = "NoReachableNodes"
@@ -424,13 +431,11 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 override def toString: String = "AllNodes"
             }
 
-            val ps = createPropertyStore()
-
             /*
              * The following analysis only uses the new information given to it and updates
              * the set of observed dependees.
              */
-            def reachableNodesAnalysis(n: Node): PropertyComputationResult = {
+            def reachableNodesAnalysis(ps: PropertyStore)(n: Node): PropertyComputationResult = {
                 val nTargets = n.targets
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
@@ -482,9 +487,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 else
                     IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c)
             }
-            ps.scheduleForEntities(nodeEntities)(reachableNodesAnalysis)
 
-            def reachableNodesCountAnalysis(n: Node): PropertyComputationResult = {
+            def reachableNodesCountAnalysis(ps: PropertyStore)(
+                n: Node
+            ): PropertyComputationResult = {
                 var dependees: List[SomeEOptionP] = Nil
                 var ub: Int = n.targets.size
 
@@ -555,11 +561,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         c
                     )
             }
-            ps.registerLazyPropertyComputation(ReachableNodesCount.Key, reachableNodesCountAnalysis)
-            ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
-
-            ps.waitOnPhaseCompletion()
-
             // the graph:
             // a -> f -> h
             // a -> f -> j
@@ -573,26 +574,71 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             //           d -> e
             //                e -> r
             //       ↖︎-----------< r
-            ps(nodeA, ReachableNodes.Key) should be(
-                FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
-            )
-            ps(nodeB, ReachableNodes.Key) should be(
-                FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-            )
-            ps(nodeC, ReachableNodes.Key) should be(
-                FinalEP(nodeC, ReachableNodes(Set()))
-            )
-            ps(nodeD, ReachableNodes.Key) should be(
-                FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-            )
-            ps(nodeE, ReachableNodes.Key) should be(
-                FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-            )
-            ps(nodeR, ReachableNodes.Key) should be(
-                FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-            )
+            it("should be possible using eagerly scheduled computations") {
+                val dropCount = (System.nanoTime() % 10000).toInt
+                for (nodeEntitiesPermutation ← nodeEntities.permutations.drop(dropCount).take(10)) {
 
-            info("number of executed tasks:"+ps.executedTasks)
+                    val ps = createPropertyStore()
+                    ps.registerLazyPropertyComputation(
+                        ReachableNodesCount.Key, reachableNodesCountAnalysis(ps)
+                    )
+                    ps.scheduleForEntities(nodeEntitiesPermutation)(reachableNodesAnalysis(ps))
+                    ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
+
+                    ps.waitOnPhaseCompletion()
+
+                    ps(nodeA, ReachableNodes.Key) should be(
+                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                    )
+                    ps(nodeB, ReachableNodes.Key) should be(
+                        FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    ps(nodeC, ReachableNodes.Key) should be(
+                        FinalEP(nodeC, ReachableNodes(Set()))
+                    )
+                    ps(nodeD, ReachableNodes.Key) should be(
+                        FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    ps(nodeE, ReachableNodes.Key) should be(
+                        FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    ps(nodeR, ReachableNodes.Key) should be(
+                        FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+
+                    info(
+                        s"(dropCount = $dropCount) number of executed tasks:"+ps.scheduledTasks+
+                            "; number of executed onUpdateContinuations:"+ps.scheduledOnUpdateComputations
+                    )
+                }
+            }
+            it("should be possible using lazy scheduled computations") {
+
+                val ps = createPropertyStore()
+                ps.registerLazyPropertyComputation(
+                    ReachableNodes.Key, reachableNodesAnalysis(ps)
+                )
+                ps(nodeA, ReachableNodes.Key) // forces the evaluation for all nodes...
+                ps.waitOnPhaseCompletion()
+                ps(nodeA, ReachableNodes.Key) should be(
+                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                )
+                ps(nodeB, ReachableNodes.Key) should be(
+                    FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                ps(nodeC, ReachableNodes.Key) should be(
+                    FinalEP(nodeC, ReachableNodes(Set()))
+                )
+                ps(nodeD, ReachableNodes.Key) should be(
+                    FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                ps(nodeE, ReachableNodes.Key) should be(
+                    FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                ps(nodeR, ReachableNodes.Key) should be(
+                    FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+            }
         }
 
         it("should be possible to execute an analysis incrementally") {
@@ -807,15 +853,23 @@ object Palindromes {
     case object NoSuperPalindrome extends SuperPalindromeProperty
 }
 
-sealed trait Purity extends Property {
+sealed trait Purity extends OrderedProperty {
     final type Self = Purity
     final def key = Purity.Key
 }
 object Purity {
     final val Key = PropertyKey.create[Entity, Purity]("Purity", Impure)
 }
-case object Pure extends Purity
-case object Impure extends Purity
+case object Pure extends Purity {
+    def checkIsEqualOrBetterThan(other: Purity): Unit = { /* always true */ }
+}
+case object Impure extends Purity {
+    def checkIsEqualOrBetterThan(other: Purity): Unit = {
+        if (other != Impure) {
+            throw new IllegalArgumentException(other+" is not equal or better than "+this)
+        }
+    }
+}
 
 class Node(
         val name:    String,
@@ -841,9 +895,17 @@ object ReachableNodesCount {
             (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ FinalEP(eps.e, TooManyNodesReachable)
         )
 }
-case class ReachableNodesCount(value: Int) extends Property {
+case class ReachableNodesCount(value: Int) extends OrderedProperty {
     type Self = ReachableNodesCount
     def key = ReachableNodesCount.Key
+
+    @throws[IllegalArgumentException]("if this property is not more precise than the given one")
+    def checkIsEqualOrBetterThan(other: ReachableNodesCount): Unit = {
+        if (this.value > other.value) {
+            throw new IllegalArgumentException(other+" is not equal or better than "+this)
+        }
+    }
+
 }
 
 object NoNodesReachable extends ReachableNodesCount(0) {
