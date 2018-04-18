@@ -172,6 +172,10 @@ class SequentialPropertyStore private (
         pk: PropertyKey[P],
         pc: SomePropertyComputation
     ): Unit = {
+        assert(
+            tasks.isEmpty,
+            "lazy computations should only be registered while no analysis are scheduled"
+        )
         lazyComputations += ((pk.id.toLong, pc))
     }
 
@@ -216,18 +220,22 @@ class SequentialPropertyStore private (
                     epk
 
                 case Some(pValue) ⇒
-                    val ub = pValue.ub
+                    val ub = pValue.ub // or lb... doesn't matter
                     if (ub != null && ub != PropertyIsLazilyComputed)
                         // we have a property
                         EPS(e, pValue.lb.asInstanceOf[P], pValue.ub.asInstanceOf[P])
-                    else
+                    else {
                         // We do not (yet) have a value, but a lazy property
                         // computation is already scheduled (if available).
                         // Recall that it is a strict requirement that a
                         // dependee which is listed in the set of dependees
                         // of an IntermediateResult must have been queried
+                        /*internal*/ assert(
+                            !lazyComputations.contains(pkId) || ub == PropertyIsLazilyComputed
+                        )
                         // before.
                         epk
+                    }
             }
         }
     }
@@ -262,6 +270,13 @@ class SequentialPropertyStore private (
     ): Boolean = {
 
         val pkId = ub.key.id
+        /*user level*/ assert(ub.key == lb.key)
+        /*user level*/ assert(
+            !lb.isOrderedProperty || {
+                val ubAsOP = ub.asOrderedProperty
+                ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
+            }
+        )
         ps.get(e) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
@@ -425,7 +440,9 @@ class SequentialPropertyStore private (
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val noUpdates = newDependees forall { newDependee ⇒
-                    assert(!newDependee.isFinal, s"dependency to final property: $newDependee")
+                    /*user level*/assert(
+                    !newDependee.isFinal, s"dependency to final property: $newDependee"
+                )
                     val dependeeE = newDependee.e
                     val dependeePKId = newDependee.pk.id.toLong
                     val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
