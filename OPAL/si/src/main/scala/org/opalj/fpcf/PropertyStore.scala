@@ -155,8 +155,17 @@ abstract class PropertyStore {
      */
     override def toString: String = toString(false)
 
-    /** Simple counter of the number of tasks that were executed. */
-    def executedTasks: Int
+    /**
+     * Simple counter of the number of tasks that were executed to perform an initial
+     * computation of a property for some entity.
+     */
+    def scheduledTasks: Int
+
+    /**
+     * Simple counter of the number of tasks (OnUpdateContinuations) that were executed
+     * in response to an updated property.
+     */
+    def scheduledOnUpdateComputations: Int
 
     //
     //

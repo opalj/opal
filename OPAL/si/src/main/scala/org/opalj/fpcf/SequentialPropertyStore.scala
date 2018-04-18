@@ -58,15 +58,19 @@ class SequentialPropertyStore private (
     /**
      * This variable can always be changed.
      */
-    var delayHandlingOfNonFinalDependeeUpdates: Boolean = true
-    var delayHandlingOfFinalDependeeUpdates: Boolean = true
+    var delayHandlingOfNonFinalDependeeUpdates: Boolean = false
+    var delayHandlingOfFinalDependeeUpdates: Boolean = false
     var delayHandlingOfDependerNotification: Boolean = true
 
-    type PKId = Long
+    final type PKId = Long
 
-    protected[this] var executedTasksCounter: Int = 0
+    protected[this] var scheduledTasksCounter: Int = 0
+    final def scheduledTasks: Int = scheduledTasksCounter
 
-    final def executedTasks: Int = executedTasksCounter
+    protected[this] var scheduledOnUpdateComputationsCounter: Int = 0
+    final def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+
+    private[this] var quiescenceCounter = 0
 
     // --------------------------------------------------------------------------------------------
     //
@@ -172,6 +176,7 @@ class SequentialPropertyStore private (
     }
 
     override def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
+        scheduledTasksCounter += 1
         tasks.append(() ⇒ handleResult(pc(e)))
     }
 
@@ -441,6 +446,7 @@ class SequentialPropertyStore private (
                         // the updated value (minimize the overall number of notifications.)
                         // println(s"update: $e => $p (isFinal=false;notifyDependers=false)")
 
+                        scheduledOnUpdateComputationsCounter += 1
                         if (dependeePValue.isFinal) {
                             val t = () ⇒ {
                                 handleResult(c(FinalEP(dependeeE, dependeePValue.ub)))
@@ -514,7 +520,6 @@ class SequentialPropertyStore private (
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
     }
 
-    private[this] var quiescenceCounter = 0
     override def waitOnPhaseCompletion(): Unit = {
         var continueComputation: Boolean = false
         do {
@@ -522,7 +527,6 @@ class SequentialPropertyStore private (
 
             while (tasks.nonEmpty && !isInterrupted()) {
                 tasks.take().apply()
-                executedTasksCounter += 1
             }
             if (tasks.isEmpty) quiescenceCounter += 1
 
