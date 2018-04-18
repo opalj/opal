@@ -268,8 +268,7 @@ class SequentialPropertyStore private (
         ub:           Property,
         newDependees: Traversable[SomeEOptionP]
     ): Boolean = {
-
-        val pkId = ub.key.id
+        val pkId = ub.key.id.toLong
         /*user level*/ assert(ub.key == lb.key)
         /*user level*/ assert(
             !lb.isOrderedProperty || {
@@ -282,100 +281,101 @@ class SequentialPropertyStore private (
                 // The entity is unknown (=> there are no dependers/dependees):
                 ps += ((
                     e,
-                    LongMap((pkId.toLong, new PropertyValue(lb, ub, Map.empty, newDependees)))
+                    LongMap((pkId, new PropertyValue(lb, ub, Map.empty, newDependees)))
                 ))
-                // Recall that registration with the new dependees is done by
-                // IntermediateResult if required.
+                // registration with the new dependees is done when processing IntermediateResult
                 true
 
-            case Some(pkIdPValue) ⇒
-                // The entity is known:
-                pkIdPValue.get(pkId.toLong) match {
+            case Some(pkIdPValue) ⇒ /* The entity is known: */ pkIdPValue.get(pkId) match {
 
-                    case None ⇒
-                        // But, we have no property of the respective kind
-                        // (=> there are still no dependers/dependees):
-                        pkIdPValue += ((
-                            pkId.toLong,
-                            new PropertyValue(lb, ub, Map.empty, newDependees)
-                        ))
-                        // Recall that registration with the new dependees is done by
-                        // IntermediateResult if required.
-                        true
+                case None ⇒
+                    // A property of the respective kind was not yet stored/requested.
+                    // (=> there are no dependers/dependees):
+                    pkIdPValue += ((pkId, new PropertyValue(lb, ub, Map.empty, newDependees)))
+                    // registration with the new dependees is done when processing IntermediateResult
+                    true
 
-                    case Some(pValue) ⇒
-                        // The entity is known and we have a property value for the respective
-                        // kind; i.e., we may have (old) dependees and/or also dependers.
+                case Some(pValue) ⇒
+                    // The entity is known and we have a property value for the respective
+                    // kind; i.e., we may have (old) dependees and/or also dependers.
 
-                        // 1. Check and update property:
-                        if (debug && lb.isOrderedProperty) {
-                            lb.asOrderedProperty.checkIsMoreOrEquallyPreciseThan(pValue.lb)
-                            pValue.ub.asOrderedProperty.checkIsMoreOrEquallyPreciseThan(ub)
+                    // 1. Check and update property:
+                    if (debug) {
+                        if (pValue.isFinal) {
+                            throw new IllegalStateException(
+                                s"already final: $e@${identityHashCode(e).toHexString}/$ub"
+                            )
                         }
-                        val oldPValueIsFinal = pValue.isFinal
-                        if (oldPValueIsFinal) {
-                            val message = s"already final: $e@${identityHashCode(e).toHexString}/$ub"
-                            throw new IllegalStateException(message)
+                        if (lb.isOrderedProperty) {
+                            val lbAsOP = lb.asOrderedProperty
+                            lbAsOP.checkIsEqualOrBetterThan(pValue.lb.asInstanceOf[lbAsOP.Self])
+                            val pValueUBAsOP = pValue.ub.asOrderedProperty
+                            pValueUBAsOP.checkIsEqualOrBetterThan(ub.asInstanceOf[pValueUBAsOP.Self])
                         }
-                        val oldLB = pValue.lb
-                        val oldUB = pValue.ub
-                        pValue.lb = lb
-                        pValue.ub = ub
-                        // Updating lb und ub MAY CHANGE THE PValue.isFinal property!
-                        val newPValueIsFinal = pValue.isFinal
+                    }
 
-                        // 2. Clear old dependees (remove onUpdateContinuation from dependees)
-                        //    and then update dependees
-                        val epk = EPK(e, ub /*or lb*/ )
-                        for {
-                            EOptionP(oldDependeeE, oldDependeePk) ← pValue.dependees
-                        } {
-                            val dependeePValue = ps(oldDependeeE)(oldDependeePk.id.toLong)
-                            val dependersOfDependee = dependeePValue.dependers
-                            dependeePValue.dependers = dependersOfDependee - epk
-                        }
-                        pValue.dependees = newDependees
+                    val oldLB = pValue.lb
+                    val oldUB = pValue.ub
+                    pValue.lb = lb
+                    pValue.ub = ub
+                    // Updating lb und ub MAY CHANGE THE PValue.isFinal property!
+                    val newPValueIsFinal = pValue.isFinal
 
-                        // 3. Notify dependers if necessary
-                        if (lb != oldLB || ub != oldUB || newPValueIsFinal) {
+                    // 2. Clear old dependees (remove onUpdateContinuation from dependees)
+                    //    and then update dependees
+                    val epk = EPK(e, ub /*or lb*/ )
+                    for {
+                        EOptionP(oldDependeeE, oldDependeePk) ← pValue.dependees
+                    } {
+                        val dependeePValue = ps(oldDependeeE)(oldDependeePk.id.toLong)
+                        val dependersOfDependee = dependeePValue.dependers
+                        dependeePValue.dependers = dependersOfDependee - epk
+                    }
+                    pValue.dependees = newDependees
 
-                            pValue.dependers foreach { depender ⇒
-                                val (dependerEPK, onUpdateContinuation) = depender
-                                val t =
-                                    if (newPValueIsFinal) {
-                                        () ⇒ handleResult(onUpdateContinuation(FinalEP(e, ub)))
-                                    } else {
-                                        () ⇒
-                                            {
-                                                // get the most current pValue(!)
-                                                val pValue = ps(e)(pkId.toLong)
-                                                val eps = EPS(e, pValue.lb, pValue.ub)
-                                                handleResult(onUpdateContinuation(eps))
-                                            }
-                                    }
+                    // 3. Notify dependers if necessary
+                    if (lb != oldLB || ub != oldUB || newPValueIsFinal) {
 
-                                if (delayHandlingOfDependerNotification)
-                                    tasks.append(t)
-                                else
-                                    tasks.prepend(t)
-                                // Clear depender/dependee lists.
-                                // Given that we have triggered the depender, we now have
-                                // to remove the respective onUpdateContinuation from all
-                                // dependees of the respective depender to avoid that the
-                                // onUpdateContinuation is triggered multiple times!
-                                val dependerPValue = ps(dependerEPK.e)(dependerEPK.pk.id.toLong)
-                                dependerPValue.dependees foreach { epkOfDepeendeeOfDepender ⇒
-                                    val pValueOfDependeeOfDepender = ps(epkOfDepeendeeOfDepender.e)(epkOfDepeendeeOfDepender.pk.id.toLong)
-                                    pValueOfDependeeOfDepender.dependers -= dependerEPK
+                        pValue.dependers foreach { depender ⇒
+                            val (dependerEPK, onUpdateContinuation) = depender
+                            val t =
+                                if (newPValueIsFinal) {
+                                    () ⇒ handleResult(onUpdateContinuation(FinalEP(e, ub)))
+                                } else {
+                                    () ⇒
+                                        {
+                                            // get the most current pValue(!)
+                                            val pValue = ps(e)(pkId.toLong)
+                                            val eps = EPS(e, pValue.lb, pValue.ub)
+                                            handleResult(onUpdateContinuation(eps))
+                                        }
                                 }
-                                dependerPValue.dependees = Nil
+                            scheduledOnUpdateComputationsCounter += 1
+                            if (delayHandlingOfDependerNotification)
+                                tasks.append(t)
+                            else
+                                tasks.prepend(t)
+                            // Clear depender/dependee lists.
+                            // Given that we have triggered the depender, we now have
+                            // to remove the respective onUpdateContinuation from all
+                            // dependees of the respective depender to avoid that the
+                            // onUpdateContinuation is triggered multiple times!
+                            val dependerPValue = ps(dependerEPK.e)(dependerEPK.pk.id.toLong)
+                            dependerPValue.dependees foreach { epkOfDepeendeeOfDepender ⇒
+                                val pValueOfDependeeOfDepender =
+                                    ps(epkOfDepeendeeOfDepender.e)(
+                                        epkOfDepeendeeOfDepender.pk.id.toLong
+                                    )
+                                pValueOfDependeeOfDepender.dependers -= dependerEPK
                             }
-                            pValue.dependers = Map.empty
-
+                            dependerPValue.dependees = Nil
                         }
+                        pValue.dependers = Map.empty
 
-                        oldLB == null /*AND/OR oldUB == null*/
-                }
+                    }
+
+                    oldLB == null /*AND/OR oldUB == null*/
+            }
         }
     }
 
@@ -429,10 +429,7 @@ class SequentialPropertyStore private (
                 type P = Property
                 val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
                 val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
-                newEPSOption foreach {
-                    newEPS ⇒
-                        update(e, newEPS.lb, newEPS.ub, Nil)
-                }
+                newEPSOption foreach {newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil)                }
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
@@ -512,12 +509,12 @@ class SequentialPropertyStore private (
                                     LongMap((dependeePKId, new PropertyValue(dependerEPK, c)))
                                 ))
 
-                            case Some(pkPValue) ⇒
-                                pkPValue.get(dependeePKId) match {
+                            case Some(dependeePKIdPValue) ⇒
+                                dependeePKIdPValue.get(dependeePKId) match {
 
                                     case None ⇒
                                         val newPValue = new PropertyValue(dependerEPK, c)
-                                        pkPValue += (dependeePKId, newPValue)
+                                        dependeePKIdPValue += (dependeePKId, newPValue)
 
                                     case Some(dependeePValue) ⇒
                                         val dependeeDependers = dependeePValue.dependers
