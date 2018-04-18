@@ -31,9 +31,10 @@ package org.opalj.fpcf
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.concurrent.Locking.withReadLock
 import org.opalj.concurrent.Locking.withWriteLock
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * A value object that identifies a specific kind of properties. Every entity in
@@ -54,6 +55,18 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  * @author Michael Eichberg
  */
 object PropertyKey {
+
+    {
+        // Log the information whether a production build or a development build is used.
+        implicit val logContext = GlobalLogContext
+        try {
+            assert(false)
+            // when we reach this point assertions are turned off
+            info(FrameworkName, "Production Build")
+        } catch {
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
+        }
+    }
 
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ FinalEP[E, P]
 
