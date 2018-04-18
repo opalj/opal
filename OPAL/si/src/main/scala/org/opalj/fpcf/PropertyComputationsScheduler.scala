@@ -197,7 +197,8 @@ class AnalysisScenario(
         while (computationDependencies.nonEmpty) {
             var leafComputations = computationDependencies.leafNodes
             while (leafComputations.nonEmpty) {
-                batches = batches ++! leafComputations.map(Chain.singleton(_)).to[Chain] // assign each computation to its own "batch"
+                // assign each computation to its own "batch"
+                batches = batches ++! leafComputations.map(Chain.singleton(_)).to[Chain]
                 computationDependencies --= leafComputations
                 leafComputations = computationDependencies.leafNodes
             }
@@ -205,7 +206,8 @@ class AnalysisScenario(
             while (cyclicComputations.nonEmpty) {
                 val cyclicComputation = cyclicComputations.head
                 cyclicComputations = cyclicComputations.tail
-                batches = batches ++! (new :&:(cyclicComputation.to[Chain])) // assign cyclic computations to one batch
+                // assign cyclic computations to one batch
+                batches = batches ++! (new :&:(cyclicComputation.to[Chain]))
                 computationDependencies --= cyclicComputation
             }
         }
