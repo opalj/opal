@@ -56,20 +56,22 @@ package org.opalj
  */
 package object fpcf {
 
+    final val FrameworkName = "OPAL Static Analyses Infrastructure"
+
     /**
      * The type of the values stored in a property store.
      *
      * Basically, a simple type alias to facilitate comprehension of the code.
      */
-    type Entity = AnyRef
+    final type Entity = AnyRef
 
-    type SomeEOptionP = EOptionP[_ <: Entity, _ <: Property]
+    final type SomeEOptionP = EOptionP[_ <: Entity, _ <: Property]
 
-    type SomeEPK = EPK[_ <: Entity, _ <: Property]
+    final type SomeEPK = EPK[_ <: Entity, _ <: Property]
 
-    type SomeEPS = EPS[_ <: Entity, _ <: Property]
+    final type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
-    type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
+    final type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
@@ -79,28 +81,28 @@ package object fpcf {
      *  - an intermediate result which may be refined later on, but not by the
      *    current running analysis.
      */
-    type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
+    final type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
 
-    type SomePropertyComputation = PropertyComputation[_ <: Entity]
+    final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    type OnUpdateContinuation = (SomeEPS) ⇒ PropertyComputationResult
+    final type OnUpdateContinuation = (SomeEPS) ⇒ PropertyComputationResult
 
     /**
      * A function that continues the computation of a property. It takes
      * the entity + property of the entity on which the computation depends.
      */
-    type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
+    final type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
 
-    type SomeContinuation = Continuation[_ <: Property]
+    final type SomeContinuation = Continuation[_ <: Property]
 
-    type SomePropertyKey = PropertyKey[_ <: Property]
+    final type SomePropertyKey = PropertyKey[_ <: Property]
 
     /**
      * The result of a computation if the computation derives multiple properties
      * at the same time.
      */
-    type ComputationResults = Traversable[SomeFinalEP]
+    final type ComputationResults = Traversable[SomeFinalEP]
 
-    type PropertyKeyID = Int
+    final type PropertyKeyID = Int
 
 }
