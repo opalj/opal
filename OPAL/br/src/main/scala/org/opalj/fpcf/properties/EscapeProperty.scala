@@ -100,10 +100,10 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
  * If they simply don't know the actual property they should use [[MaybeNoEscape]].
- * If we know that the actual property is at most [[ArgEscape]] (i.e., not [[NoEscape]],
+ * If we know that the actual property is at most [[ArgEscape]] (i.e., not [[NoEscape]]),
  * [[MaybeArgEscape]] should be used.
  * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
- * property is at most [[MethodEscape]] (i.e., neither [[NoEscape]] nor [[ArgEscape]].
+ * property is at most [[MethodEscape]] (i.e., neither [[NoEscape]] nor [[ArgEscape]]).
  *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
