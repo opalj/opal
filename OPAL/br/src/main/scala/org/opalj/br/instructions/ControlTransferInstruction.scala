@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@ trait ControlTransferInstruction extends Instruction with ControlTransferInstruc
      * @return All instructions to which this instruction explicitly jumps to. (The instruction to
      *         which an if-instruction i potentially falls through, is not a jump target
      *         w.r.t. i; it may still be a jump target w.r.t. some other control transfer
-     *         instruction).
+     *         instruction.)
      */
     def jumpTargets(
         currentPC: PC
