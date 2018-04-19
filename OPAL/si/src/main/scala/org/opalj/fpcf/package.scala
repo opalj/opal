@@ -28,6 +28,9 @@
  */
 package org.opalj
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
+
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
  * computations. The framework in particular supports the development of static analyses.
@@ -51,12 +54,29 @@ package org.opalj
  *      “A is the depender, B is the dependee”.
  *          `===`
  *      “B is depended on by A”
- *
  * @author Michael Eichberg
  */
 package object fpcf {
 
     final val FrameworkName = "OPAL Static Analyses Infrastructure"
+
+    {
+        // Log the information whether a production build or a development build is used.
+        implicit val logContext = GlobalLogContext
+        try {
+            assert(false)
+            // when we reach this point assertions are turned off
+            info(FrameworkName, "Production Build")
+        } catch {
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
+        }
+    }
+
+    /**
+     * The maximum number of Property Kinds that is (currently!) supported. Increasing this
+     * number will increase the required memory.
+     */
+    final val SupportedPropertyKinds: Int = 128
 
     /**
      * The type of the values stored in a property store.
