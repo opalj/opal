@@ -82,8 +82,8 @@ import org.opalj.concurrent.ConcurrentExceptions
  * This class has several purposes:
  *
  *  1. It is a container for `ClassFile`s.
- *  1. It directly gives access to the project's class hierarchy.
- *  1. It serves as a container for project-wide information (e.g., a call graph,
+ *  2. It directly gives access to the project's class hierarchy.
+ *  3. It serves as a container for project-wide information (e.g., a call graph,
  *     information about the mutability of classes, constant values,...) that can
  *     be queried using [[org.opalj.br.analyses.ProjectInformationKey]]s.
  *     The list of project wide information that can be made available is equivalent
@@ -308,7 +308,7 @@ class Project[Source] private (
 
         def classifyPotentiallyFunctionalInterface(classFile: ClassFile): Unit = {
             if (!classFile.isInterfaceDeclaration) {
-                // This may happen for "broken" projects (which we finde,e.g., in case of
+                // This may happen for "broken" projects (which we find, e.g., in case of
                 // the JDK/Qualitas Corpus).
                 noSAMInterface(classFile.thisType)
                 return ;
@@ -431,7 +431,7 @@ class Project[Source] private (
 
     /**
      * Gets the project information key specific initialization object. If an object is already
-     * registered that object will be used otherwise `info` will be evaluated and that value
+     * registered, that object will be used otherwise `info` will be evaluated and that value
      * will be added and also returned.
      *
      * @note    Initialization data is discarded once the key is used.
@@ -477,7 +477,7 @@ class Project[Source] private (
      * Returns the information attached to this project that is identified by the
      * given `ProjectInformationKey`.
      *
-     * If the information was not yet required the information is computed and
+     * If the information was not yet required, the information is computed and
      * returned. Subsequent calls will directly return the information.
      *
      * @note    (Development Time)
@@ -1543,7 +1543,7 @@ object Project {
      * project and uses the (new) configuration. The old project
      * configuration is — by default – used as a fallback, so not all values have to be updated.
      *
-     * If you just want to clear the derived data using `Project.recreate` is more efficient.
+     * If you just want to clear the derived data, using `Project.recreate` is more efficient.
      */
     def recreate[Source](
         project:                Project[Source],
@@ -1885,7 +1885,7 @@ object Project {
             case t: Throwable ⇒ OPALLogger.unregister(logContext); throw t
         }
     } { t ⇒
-        // If an exception was thrown the logContext is no longer available!
+        // If an exception was thrown, the logContext is no longer available!
         val lc = if (OPALLogger.isUnregistered(logContext)) GlobalLogContext else logContext
         info("project setup", s"creating the project took ${t.toSeconds}")(lc)
     }
