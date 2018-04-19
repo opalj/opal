@@ -5,4 +5,4 @@ fixed-point computations (see _fpcf_ package for more information).
 
 ## Remarks
 This project contains (among others) macros.
-Hence, it need to be compiled/need to be available before other projects can be compiled.
+Hence, it needs to be compiled/needs to be available before other projects can be compiled.
