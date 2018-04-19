@@ -60,10 +60,10 @@ import org.opalj.log.LogContext
  *
  * ==Control Flow==
  *  1. The standard parameters are checked.
- *  1. The analysis is called to let it verify the analysis specific parameters.
- *  1. The [[Project]] is created.
- *  1. The `analyze` method of the [[Analysis]] is called with the project and the parameters.
- *  1. The results are printed.
+ *  2. The analysis is called to let it verify the analysis specific parameters.
+ *  3. The [[Project]] is created.
+ *  4. The `analyze` method of the [[Analysis]] is called with the project and the parameters.
+ *  5. The results are printed.
  *
  * @author Michael Eichberg
  * @author Arne Lottmann
@@ -90,7 +90,7 @@ trait AnalysisExecutor {
 
     /**
      * Checks if the (additional) parameters are understood by
-     * the analysis. If an error is found a list of issues is returned and the analysis
+     * the analysis. If an error is found, a list of issues is returned and the analysis
      * will not be executed.
      *
      * This method '''must be''' overridden if the analysis defines additional
