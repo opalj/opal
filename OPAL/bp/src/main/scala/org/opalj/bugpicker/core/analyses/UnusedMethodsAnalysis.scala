@@ -53,18 +53,18 @@ object UnusedMethodsAnalysis {
 
     /**
      * Checks if the given method is used/is potentially useable. If the method is not used
-     * and is also not potentially useable by future clients then an issue is created
+     * and is also not potentially useable by future clients, then an issue is created
      * and returned.
      *
-     * If any of the following conditions is true the method is considered as being called.
+     * If any of the following conditions is true, the method is considered as being called.
      * - The method is the target of a method call in the calculated call graph.
      * - The method is a private (empty) default constructor in a final class. Such constructors
      *      are usually defined to avoid instantiations of the respective class.
      * - The method is a private constructor in a final class that always throws an exception.
      *      Such constructors are usually defined to avoid instantiations of the
-     *      respective class. E.g.
+     *      respective class. E.g.,
      *      `private XYZ(){throw new UnsupportedOperationException()`
-     * - The method is "the finalize" method
+     * - The method is "the finalize" method.
      */
     def apply(
         theProject:           SomeProject,
