@@ -96,14 +96,14 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * [[MaybeArgEscape]] and [[MethodEscape]] are incomparable.
  * A dot graph of the lattice can be found under br/src/main/resources/org/opalj/fpcf/properties.
  *
- * Algorithms are free to over approximate this property, i.e. for object
+ * Algorithms are free to over approximate this property, i.e., for object
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
  * If they simply don't know the actual property they should use [[MaybeNoEscape]].
- * If we know that the actual property is at most [[ArgEscape]] (i.e. not [[NoEscape]],
+ * If we know that the actual property is at most [[ArgEscape]] (i.e., not [[NoEscape]],
  * [[MaybeArgEscape]] should be used.
  * The same holds for [[MaybeMethodEscape]]. It should be used if we know that the actual
- * property is at most [[MethodEscape]] (i.e. neither [[NoEscape]] nor [[ArgEscape]].
+ * property is at most [[MethodEscape]] (i.e., neither [[NoEscape]] nor [[ArgEscape]].
  *
  * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.FormalParameter]] are generally
  * used as [[Entity]] in combination with this property.
@@ -120,7 +120,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @param  level The escape level; the higher the value the more restricted can the usage of the
  *         respective value be.
  *         E.g., a client might only interested in objects that do not escape. In this case he
- *         reject all objects whose escape level is smaller than the escape level of [[NoEscape]].
+ *         rejects all objects whose escape level is smaller than the escape level of [[NoEscape]].
  *         In the case of [[MaybeNoEscape]] he could run a more precise analysis.
  *         The precise value is subject to change without notice and should
  *         not be used!
@@ -459,7 +459,7 @@ case object MaybeMethodEscape extends EscapeProperty(1) {
  * }}}
  * An analysis is only expected to return [[GlobalEscapeViaStaticFieldAssignment]] for the object o
  * instantiated in m, if the analyses ''knows'' that m is called and the parameter b is
- * potentially `true`. If the above code is found in a library it may very well be the case that
+ * potentially `true`. If the above code is found in a library, it may very well be the case that
  * certain parameter values/combinations will never be used in a certain setting and – therefore –
  * o does not escape.
  *
