@@ -48,6 +48,11 @@ sealed abstract class IntArraySet
     with IntWorkSet[IntArraySet] // TODO Remove this mixin as soon as we have a better data-structure!
     with IntCollectionWithStableOrdering[IntArraySet] {
 
+    /**
+     * Returns each pairing of two values. I.e., if the set contains 1, 4, 8, the pairings
+     * (1,4),(1,8) and (4,8) will be returned; the pairings (4,1) etc. will not be returned.
+     * The order between the two values is not defined.
+     */
     def foreachPair[U](f: (Int, Int) ⇒ U): Unit
 
     def reverseIntIterator: IntIterator

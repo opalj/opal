@@ -45,6 +45,11 @@ sealed abstract class IntTrieSet
     with IntCollectionWithStableOrdering[IntTrieSet]
     with IntWorkSet[IntTrieSet] { intSet ⇒
 
+    /**
+     * Returns each pairing of two values. I.e., if the set contains 1, 4, 8, the pairings
+     * ((1,4) XOR (4,1)),((1,8) XOR (8,1)) and ((4,8) XOR (8,4)) will be returned; hence,
+     * the order between the two values is not defined.
+     */
     def foreachPair[U](f: (Int, Int) ⇒ U): Unit
     def intersect(other: IntTrieSet): IntTrieSet = {
         if (other.size <= 2)
@@ -53,7 +58,7 @@ sealed abstract class IntTrieSet
 
         val (smallerSet, largerSet) = if (other.size > this.size) (this, other) else (other, this)
         var r = smallerSet
-        val it = smallerSet.iterator
+        val it = smallerSet.intIterator
         while (it.hasNext) {
             val n = it.next
             if (!largerSet.contains(n)) {
@@ -67,7 +72,7 @@ sealed abstract class IntTrieSet
     def getAndRemove: IntHeadAndRestOfSet[IntTrieSet]
 
     def filter(p: Int ⇒ Boolean): IntTrieSet
-    override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet
+    override def withFilter(p: Int ⇒ Boolean): IntTrieSet
 
     final override def toString: String = mkString("IntTrieSet(", ",", ")")
 
