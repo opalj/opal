@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ package br
 import org.opalj.collection.immutable.UShortPair
 
 /**
- * Given a class files's main elements the attribute is build.
+ * Given a class files' main elements the attribute is build.
  *
  * @see The ''BytecodeAssember framework'' for an example usage.
  *
