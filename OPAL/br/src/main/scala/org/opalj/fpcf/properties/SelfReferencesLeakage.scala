@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 
 /**
- * This property determines if an object leaks it's self reference (`this`) by passing
+ * This property determines if an object leaks its self reference (`this`) by passing
  * it to methods or assigning it to fields.
  */
 sealed trait SelfReferenceLeakage extends Property {
