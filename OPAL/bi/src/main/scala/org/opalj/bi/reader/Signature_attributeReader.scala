@@ -46,7 +46,7 @@ trait Signature_attributeReader extends AttributeReader {
     type Signature_attribute >: Null <: Attribute
 
     /**
-     * Returns `true` if an exception is to be raise if an invalid signature is found.
+     * Returns `true` if an exception is to be raised if an invalid signature is found.
      * The default is to just log the invalid signature and to otherwise ignore it.
      *
      * This method is intended to be overridden.
