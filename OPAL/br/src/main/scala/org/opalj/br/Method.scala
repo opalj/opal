@@ -77,7 +77,7 @@ sealed abstract class JVMMethod
     /**
      * The ''access flags'' of this method. Though it is possible to
      * directly work with the `accessFlags` field, it may be more convenient to use
-     * the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
+     * the respective methods (`isNative`, `isAbstract`, ...) to query the access flags.
      */
     def accessFlags: Int
 
@@ -97,7 +97,7 @@ sealed abstract class JVMMethod
      * This method's defined attributes. (Which attributes are available
      * generally depends on the configuration of the class file reader. However,
      * the `Code_Attribute` is – if it was loaded – always directly accessible by
-     * means of the `body` attribute.).
+     * means of the `body` attribute.)
      */
     def attributes: Attributes
 
@@ -488,7 +488,7 @@ object Method {
      * Returns `true` if the method is object serialization related.
      * That is, if the declaring class is `Externalizable` then the methods `readObject` and
      * `writeObject` are unused.
-     * If the declaring class is '''only''' `Seralizable` then the write and read
+     * If the declaring class is '''only''' `Seralizable`, then the write and read
      * external methods are not serialization related unless a subclass exists that inherits
      * these two methods and implements the interface `Externalizable`.
      *
