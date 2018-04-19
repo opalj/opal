@@ -49,9 +49,9 @@ import org.opalj.log.OPALLogger
  *  - ... it is passed to a method,
  *  - ... it is stored in an array,
  *  - ... it is returned,
- *  - ... the object itself leaks it's self reference (`this`) by:
+ *  - ... the object itself leaks its self reference (`this`) by:
  *      - ... storing `this` in some static field or,
- *      - ... storing it's self reference in a data-structure (another object or array)
+ *      - ... storing its self reference in a data-structure (another object or array)
  *        passed to it (by assigning to a field or calling a method),
  *      - ... if a superclass leaks the self reference.
  *
@@ -89,7 +89,7 @@ class SelfReferenceLeakageAnalysis(val debug: Boolean) {
         }
 
         // This method just implements a very quick check if there is any potential
-        // that the method may leak it's self reference. Hence, if this method returns
+        // that the method may leak its self reference. Hence, if this method returns
         // true, a more thorough analysis is useful/necessary.
         def potentiallyLeaksSelfReference(method: Method): Boolean = {
             val returnType = method.returnType
