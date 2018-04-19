@@ -956,7 +956,7 @@ trait RecordCFG
         val infiniteLoopHeaders = this.infiniteLoopHeaders
         if (infiniteLoopHeaders.nonEmpty) {
             val dominatorTree = this.dominatorTree
-            var additionalExitNodes = infiniteLoopHeaders.flatMap { loopHeaderPC ⇒
+            var additionalExitNodes = infiniteLoopHeaders flatMap { loopHeaderPC ⇒
                 predecessors(loopHeaderPC).withFilter { predecessorPC ⇒
                     // 1. let's ensure that the predecessor actually belongs to the loop...
                     loopHeaderPC == predecessorPC ||
@@ -965,9 +965,11 @@ trait RecordCFG
             }
             // Now we have to ensure to select the outer most exit pcs which are dominated by
             // other additional exit nodes...
-            additionalExitNodes.foreachPair { (exitPC1, exitPC2) ⇒
+            additionalExitNodes foreachPair { (exitPC1, exitPC2) ⇒
                 if (dominatorTree.strictlyDominates(exitPC1, exitPC2))
                     additionalExitNodes -= exitPC1
+                else (dominatorTree.strictlyDominates(exitPC2, exitPC1))
+                    additionalExitNodes -= exitPC2
             }
             PostDominatorTree(
                 uniqueExitNode,
