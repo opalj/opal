@@ -52,9 +52,9 @@ class PerformanceEvaluation extends Locking {
 
     /**
      * Times the execution of the given method / function literal / code block and
-     * adds it to the execution time of previous methods / function literals/ code blocks
+     * adds it to the execution time of previous methods / function literals / code blocks
      * that were measured and for which the same symbol was used. <br/>
-     * E.g. <code>time('base_analysis){ ... do something ... }</code>
+     * E.g., <code>time('base_analysis){ ... do something ... }</code>
      *
      * @param s Symbol used to put multiple measurements into relation.
      * @param f The function that will be evaluated and for which the execution
