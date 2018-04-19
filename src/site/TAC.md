@@ -1,4 +1,4 @@
-# 3-Address Code / Quadruples Code / Static Single Assigment Form
+# 3-Address Code / Quadruples Code / Static Single Assignment Form
 OPAL enables you to transform Java bytecode into a 3-address code (TAC) which is also sometimes called "Quadruples Code". The standard representation provided by OPAL is always in SSA form and is created after performing a low-level, highly configurable data-flow analysis; based on the configured low-level analysis, the amount of additional information about the program's values may differ greatly. In the simplest case, only basic type information is provided. In more advanced cases, constant computations are perfomed, constants are propagated, must-alias information is provided, dead paths due to programming errors/context-dependent impossible paths are automatically pruned, and so on. In all cases the 3-address code (in the following called **TAC**) immediately provides complete def-use information and the control-flow graph is also reified.
 
 ## Using the 3-Address Code (TAC)
@@ -58,7 +58,7 @@ Given the following very simple loop implemented in Java.
         }
     }
 
-The three address code will be:
+The three-address code will be:
 
     static void endless(){
          // <start>, 3 →
@@ -120,7 +120,7 @@ In this case the initial three-address code will be:
         7:/*pc=21:*/ goto 5
     }
 
-In the above example, the `static` method `endless` defines,e.g., a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).
+In the above example, the `static` method `endless` defines, e.g., a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).
 
 Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5` independent of the method being static or not. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
 
@@ -140,7 +140,7 @@ The following demonstrates how to get advanced type information about a specific
         }
      }
 
-we can get the 3-address code (using, e.g., the `sbt console`) as follows (the method is part of OPAL's test suite):
+We can get the 3-address code (using, e.g., the `sbt console`) as follows (the method is part of OPAL's test suite):
 
     import org.opalj._
     val p = br.analyses.Project(new java.io.File("OPAL/bi/target/scala-2.12/resource_managed/test/ai.jar"))
@@ -179,14 +179,14 @@ Given the method's three-address code, we can now get the definition sites and t
             println(defSites.mkString(", ") + " => "+ v.asDomainReferenceValue)
         }
 
-In this case, the def-site is 2 for the first return statement (index: 3) and `-2` for the last return statement; i.e., in the latter case the value of the first (formal/explicitly declared) parameter is returned, but now the type is `FileNotFoundException with Cloneable`; i.e., if the method returns successfully (statement 5), then the returned value inherits from `java.io.FileNotFoundException` and also implements the marker interface `Cloneable`. *Note that, the precise type information that is available is determined by the underlying data-flow analysis; however, type information at the described level is generally available.*
+In this case, the def-site is 2 for the first return statement (index: 3) and `-2` for the last return statement; i.e., in the latter case the value of the first (formal/explicitly declared) parameter is returned, but now the type is `FileNotFoundException with Cloneable`; i.e., if the method returns successfully (statement 5), then the returned value inherits from `java.io.FileNotFoundException` and also implements the marker interface `Cloneable`. *Note that the precise type information that is available is determined by the underlying data-flow analysis; however, type information at the described level is generally available.*
 
 
 ---
 
 ## Summary
 
- - The definition sites of the (explicitly declared )parameters of a method have the ids `[-2...-2-#Parameters]`.
+ - The definition sites of the (explicitly declared) parameters of a method have the ids `[-2...-2-#Parameters]`.
  - A use-site always references the statement where the variable is initialized. Hence, use-sites are always in the range `[0..index of the last instruction]`
  - The standard TAC AST as well as all standard optimizations/transformations keep the AST flat; i.e., nested expressions are always [`ValueExpr`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.ValueExpr).
  - Code that was identified as dead by the underlying analysis is stripped away.
