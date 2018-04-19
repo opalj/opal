@@ -77,7 +77,7 @@ Extracts calls of methods which use `sun.misc.Unsafe`. Closely related methods a
 ## Park
   The park and unpark methods are contained in the *Park*
       group. With them, it is possible to block and unblock a
-      thread’s execution.
+      thread's execution.
 
 ## Throw
   The throwException method is contained in the *Throw*
