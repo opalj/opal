@@ -94,7 +94,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     /**
      * Compares this field with the given one for structural equality.
      *
-     * Two fields are structurlly equaly if they have the same names, flags, type and attributes.
+     * Two fields are structurally equal if they have the same names, flags, type and attributes.
      * In the latter case, the order doesn't matter!
      */
     def similar(other: JVMField, config: SimilarityTestConfiguration): Boolean = {
