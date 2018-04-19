@@ -128,7 +128,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     val domain = new BaseDomain(testProject, method)
                     val result = BaseAI(method, domain)
 
-                    // the abstract interpretation succeed
+                    // the abstract interpretation succeeded
                     result should not be ('wasAborted)
 
                     // the method was non-empty
