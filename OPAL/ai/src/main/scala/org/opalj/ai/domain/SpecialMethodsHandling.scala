@@ -75,17 +75,17 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         val sourceIsNull = refIsNull(pc, source)
         val destIsNull = refIsNull(pc, dest)
         if (sourceIsNull.isYes || destIsNull.isYes) {
-            return justThrows(NullPointerException(pc)); // <=== early return
+            return justThrows(VMNullPointerException(pc)); // <=== early return
         }
 
         var exceptions: List[ExceptionValue] = List.empty
         if (sourceIsNull.isUnknown || destIsNull.isUnknown)
-            exceptions ::= NullPointerException(pc)
+            exceptions ::= VMNullPointerException(pc)
 
         // IMPROVE The support for identifying ArrayStoreExceptions for System.arraycopy methods
-        exceptions ::= ArrayStoreException(pc)
+        exceptions ::= VMArrayStoreException(pc)
 
-        exceptions ::= InitializedObjectValue(pc, ObjectType.IndexOutOfBoundsException)
+        exceptions ::= InitializedObjectValue(ValueOriginForVMLevelValue(pc), ObjectType.IndexOutOfBoundsException)
         if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
             intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
             intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo)
