@@ -34,7 +34,7 @@ import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
 /**
- * Loads class files form a JAR archive and prints the signature and module related
+ * Loads class files from a JAR archive and prints the signature and module related
  * information of the classes.
  *
  * @author Michael Eichberg
