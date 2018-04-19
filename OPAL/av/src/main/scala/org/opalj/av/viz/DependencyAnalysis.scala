@@ -256,7 +256,7 @@ object DependencyAnalysis extends AnalysisExecutor {
                     ))
                 else
                     ""
-            // read the the template
+            // read the template
             var htmlDocument = scala.io.Source.fromFile(template.getPath())(scala.io.Codec.UTF8).mkString
 
             if (!htmlDocument.contains("<%DATA%>") || !htmlDocument.contains("<%PACKAGES%>")) {
