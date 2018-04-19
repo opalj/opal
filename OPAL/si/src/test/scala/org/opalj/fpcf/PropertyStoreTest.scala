@@ -57,6 +57,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
         it("directly after creation it should be empty (entities(...) and properties(...))") {
             val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
             ps.entities(_ ⇒ true) should be('Empty)
             ps.entities(Palindromes.Palindrome, Palindromes.Palindrome) should be('Empty)
             ps.entities(Palindromes.NoPalindrome, Palindromes.Palindrome) should be('Empty)
@@ -97,9 +98,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
         }
 
-        it("should be able to perform queries w.r.t. unknown entities") {
-            val ps = createPropertyStore()
+        it("should be able to perform queries w.r.t. unknown entities / property keys") {
             val pk = Palindromes.PalindromeKey
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
             ps("aba", pk) should be(EPK("aba", pk))
             ps(EPK("aa", pk)) should be(EPK("aa", pk))
@@ -139,7 +141,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
         // test SET
 
-        it("set should set an entity's property immediately") {
+        it("set should set an entity's property immediately (even if setupPhase has not be called)") {
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
             val pk = Palindromes.PalindromeKey
@@ -190,7 +192,8 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps.entities(ppk).map(_.e).toSet should be(Set("aba", "abca"))
             ps.entities(sppk).map(_.e).toSet should be(Set("aba", "abca"))
 
-            ps.properties("aba").toSet should be(Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome)))
+            val expected = Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome))
+            ps.properties("aba").toSet should be(expected)
         }
 
         it("should not set an entity's property if it already has a property") {
@@ -609,6 +612,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 for (nodeEntitiesPermutation ← nodeEntities.permutations.drop(dropCount).take(10)) {
 
                     val ps = createPropertyStore()
+                    ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
                     ps.registerLazyPropertyComputation(
                         ReachableNodesCount.Key, reachableNodesCountAnalysis(ps)
                     )
@@ -637,7 +641,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     )
 
                     info(
-                        s"(dropCount = $dropCount) number of executed tasks:"+ps.scheduledTasks+
+                        s"(id of first permutation = ${dropCount + 1}) number of executed tasks:"+ps.scheduledTasks+
                             "; number of executed onUpdateContinuations:"+ps.scheduledOnUpdateComputations
                     )
                 }
@@ -645,6 +649,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             it("should be possible using lazy scheduled computations") {
 
                 val ps = createPropertyStore()
+                ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
                 ps.registerLazyPropertyComputation(
                     ReachableNodes.Key, reachableNodesAnalysis(ps)
                 )
@@ -723,6 +728,59 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 )
             }
 
+            it("should be possible when a lazy computation depends on properties for which no analysis is scheduled") {
+
+                val ps = createPropertyStore()
+                ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                // WE DO NOT SCHEDULE ReachableNodes
+                ps.registerLazyPropertyComputation(
+                    ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                )
+                nodeEntities.foreach { node ⇒ ps(node, ReachableNodesCount.Key) }
+                ps.waitOnPhaseCompletion()
+
+                // actually, the "fallback" value
+                ps(nodeA, ReachableNodes.Key) should be(
+                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
+                )
+
+                // now let's check if we have the correct notification of the
+                // of the lazily dependent computations
+                val expected = ReachableNodesCount(11)
+                ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
+                ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
+                ps(nodeC, ReachableNodesCount.Key) should be(FinalEP(nodeC, expected))
+                ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
+                ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
+                ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
+            }
+
+            it("should be possible when a lazy computation depends on properties for which analysis seems to be scheduled, but no analysis actually produces results") {
+
+                val ps = createPropertyStore()
+                ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
+                // WE DO NOT SCHEDULE ReachableNodes
+                ps.registerLazyPropertyComputation(
+                    ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                )
+                nodeEntities.foreach { node ⇒ ps(node, ReachableNodesCount.Key) }
+                ps.waitOnPhaseCompletion()
+
+                // actually, the "fallback" value
+                ps(nodeA, ReachableNodes.Key) should be(
+                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
+                )
+
+                // now let's check if we have the correct notification of the
+                // of the lazily dependent computations
+                val expected = ReachableNodesCount(11)
+                ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
+                ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
+                ps(nodeC, ReachableNodesCount.Key) should be(FinalEP(nodeC, expected))
+                ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
+                ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
+                ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
+            }
         }
 
         it("should be possible to execute an analysis incrementally") {
@@ -764,6 +822,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             }
 
             val ps = createPropertyStore()
+            ps.setupPhase(Set(TreeLevelKey), Set.empty)
 
             /* The following analysis only uses the new information given to it and updates
                  * the set of observed dependees.

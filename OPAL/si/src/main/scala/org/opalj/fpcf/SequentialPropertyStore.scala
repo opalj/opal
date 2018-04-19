@@ -78,6 +78,7 @@ class SequentialPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
+    // TODO Rotate data structure.... Array[AnyRefMap[Entity,PropertyValue]] // the index is determined by the PropertyKey ID
     // map from
     // entity =>
     //        (long) map from
@@ -192,32 +193,60 @@ class SequentialPropertyStore private (
     // triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
         val e = epk.e
-        val pkId = epk.pk.id.toLong
+        val pk = epk.pk
+        val pkIdInt = pk.id
+        val pkId = pkIdInt.toLong
 
         ps.get(e) match {
             case None ⇒
                 // the entity is unknown
-                lazyComputations.get(pkId) foreach { lc ⇒
-                    // create PropertyValue to ensure that we do not schedule
-                    // multiple (lazy) computations => the entity is now known
-                    ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
-                    scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                lazyComputations.get(pkId) match {
+                    case Some(lc) ⇒
+                        // create PropertyValue to ensure that we do not schedule
+                        // multiple (lazy) computations => the entity is now known
+                        ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
+                        scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                        // return the "current" result
+                        epk
+
+                    case None ⇒
+                        assert(
+                            computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
+                            "setup phase was not called"
+                        )
+                        if (computedPropertyKinds.contains(pkIdInt) ||
+                            delayedPropertyKinds.contains(pkIdInt)) {
+                            epk
+                        } else {
+                            FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
+                        }
                 }
-                // return the "current" result
-                epk
 
             case Some(pkIdPValue) ⇒ pkIdPValue.get(pkId) match {
 
                 case None ⇒
                     // the entity is known, but the property kind was never
                     // queried before or there is no computation whatsoever..
-                    lazyComputations.get(pkId) foreach { lc ⇒
-                        // create PropertyState to ensure that we do not schedule
-                        // multiple (lazy) computations => the entity is now known
-                        pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
-                        scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                    lazyComputations.get(pkId) match {
+                        case Some(lc) ⇒
+                            // create PropertyState to ensure that we do not schedule
+                            // multiple (lazy) computations => the entity is now known
+                            pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
+                            scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                            epk
+
+                        case None ⇒
+                            assert(
+                                computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
+                                "setup phase was not called"
+                            )
+                            if (computedPropertyKinds.contains(pkIdInt) ||
+                                delayedPropertyKinds.contains(pkIdInt)) {
+                                epk
+                            } else {
+                                FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
+                            }
                     }
-                    epk
 
                 case Some(pValue) ⇒
                     val ub = pValue.ub // or lb... doesn't matter
@@ -567,6 +596,10 @@ class SequentialPropertyStore private (
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
+                        info(
+                            "analysis progress",
+                            s"using fallback property $fallbackProperty for $e (though an analysis was supposedly scheduled)"
+                        )
                         handleResult(fallbackResult)
 
                         continueComputation = true
@@ -624,6 +657,7 @@ class SequentialPropertyStore private (
                     // We used no fallbacks and found no cycles, but we may still have
                     // (collaboratively computed) properties (e.g. CallGraph) which are
                     // not yet final; let's finalize them!
+                    // TODO Implement finalization of collaboratively computed properties
                 }
             }
         } while (continueComputation)
