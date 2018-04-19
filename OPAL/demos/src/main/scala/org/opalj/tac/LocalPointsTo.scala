@@ -33,7 +33,7 @@ import java.io.FileInputStream
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.br.Code
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.reader.Java9Framework
 
