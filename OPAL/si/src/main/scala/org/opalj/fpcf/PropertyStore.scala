@@ -194,17 +194,17 @@ abstract class PropertyStore {
     /**
      * Returns the current property of the respected kind associated with the given entity.
      *
-     * This method is generally only useful when the property store has reached a state of
+     * This method is generally only useful when the property store has reached
      * quiescence and – as a client – I do not want to distinguish between the case if
      * a specific value was computed or not.
      */
     def currentPropertyOrFallback[E <: Entity, P <: Property](
         e:  E,
         pk: PropertyKey[P]
-    ): EOptionP[E, P] = {
+    ): EPS[E, P] = {
         this(e, pk) match {
-            case eOptionP: EOptionP[E, P] ⇒ eOptionP
-            case _                        ⇒ FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
+            case eps: EPS[E, P] ⇒ eps
+            case _              ⇒ FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
         }
     }
 
