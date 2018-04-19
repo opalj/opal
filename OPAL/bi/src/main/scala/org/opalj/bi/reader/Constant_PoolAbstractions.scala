@@ -49,7 +49,7 @@ trait Constant_PoolAbstractions {
     // The underlying idea is that the class file specific transformations are stored
     // in the class file's constant pool. The constant pool is basically loaded
     // first and then passed to all subsequently loaded class file elements
-    // (Methods,Fields,..)
+    // (Methods, Fields, ...)
 
     type ClassFile
 
