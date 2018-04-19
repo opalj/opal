@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ trait Java7Framework
     extends Java7LibraryFramework
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
-    // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
+    // THOUGH THE BOOTSTRAPMETHODS ATTRIBUTE IS A CLASS-LEVEL ATTRIBUTE
     // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
     with BootstrapMethods_attributeBinding
     with StackMapTable_attributeBinding
