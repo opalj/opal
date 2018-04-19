@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ package instructions
 
 /**
  * Implemented by all arithmetic instructions that have one (runtime-dependent) operand;
- * i.e. the [[NegateInstruction]]s.
+ * i.e., the [[NegateInstruction]]s.
  *
  * @author Michael Eichberg
  */
