@@ -204,7 +204,7 @@ public class ExceptionUsages {
     private final static class FooBar extends Foo {
         @Override
         @DoesNotThrowException(
-            reason="just returns constant, class is final and private, may not be overridden",
+            reason="just returns constant, class is final, may not be overridden",
             requires={}
         )
         public int baz() {
@@ -259,9 +259,8 @@ public class ExceptionUsages {
         }
     }
 
-    @ExpectedExceptions(
-        reason="just calls empty default constructor and \"empty\" method of final class",
-        requires={L1ThrownExceptionsAnalysis.class}
+    @DoesNotThrowException(
+        reason="just calls empty default constructor and \"empty\" method of final class"
     )
     public int noSubclasses() {
         FooBar foobar = new FooBar();

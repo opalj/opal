@@ -43,15 +43,12 @@ import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
  * @author Michael Eichberg
  */
 object ThrownExceptionsByOverridingMethods {
+    def apply(exceptions: BRTypesSet = BRTypesSet.empty): ThrownExceptionsByOverridingMethods = new ThrownExceptionsByOverridingMethods(exceptions)
 
     def fallbackPropertyComputation(
         ps: PropertyStore,
-        dm: br.DeclaredMethod
+        m:  br.Method
     ): ThrownExceptionsByOverridingMethods = {
-        if (!dm.hasDefinition)
-            return SomeException;
-
-        val m = dm.methodDefinition
         if (m.isFinal || m.isStatic || m.isInitializer || m.isPrivate) {
             new ThrownExceptionsByOverridingMethods(ThrownExceptionsFallback(ps, m).types)
         } else {
@@ -60,10 +57,10 @@ object ThrownExceptionsByOverridingMethods {
     }
 
     final val Key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
-        PropertyKey.create[br.DeclaredMethod, ThrownExceptionsByOverridingMethods](
+        PropertyKey.create[br.Method, ThrownExceptionsByOverridingMethods](
             name = "ThrownExceptionsByOverridingMethods",
             fallbackPropertyComputation = fallbackPropertyComputation _,
-            (_: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptionsByOverridingMethods]) ⇒ eps.toUBEP
+            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒ eps.toUBEP
         )
     }
 
@@ -82,5 +79,6 @@ case class ThrownExceptionsByOverridingMethods(
 
     final def key = ThrownExceptionsByOverridingMethods.Key
 
+    override def toString: String = s"ThrownExceptionsByOverridingMethods(${exceptions.toString})"
 }
 

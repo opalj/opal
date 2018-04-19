@@ -36,12 +36,13 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.properties.AllThrownExceptions
-import org.opalj.fpcf.properties.ThrownExceptionsFallback
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.properties.ThrownExceptions
+import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods
+import org.opalj.fpcf.properties.ThrownExceptionsFallback
+import org.opalj.util.PerformanceEvaluation._
 
 /**
  * Prints out the information about the exceptions thrown by methods.
@@ -49,16 +50,17 @@ import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
  * @author Michael Eichberg
  * @author Andreas Muttschelller
  */
-object ThrownExceptions extends DefaultOneStepAnalysis {
+object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
 
     override def title: String = "Thrown Exceptions"
 
     override def description: String = "computes the set of exceptions thrown by methods"
 
     final val L1TEParameter = "-analysis=L1ThrownExceptionsAnalysis"
+    final val suppressPerMethodReports = "-suppressPerMethodReports"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
-        super.checkAnalysisSpecificParameters(parameters.filter(_ != L1TEParameter))
+        super.checkAnalysisSpecificParameters(parameters.filter(p ⇒ p != L1TEParameter && p != suppressPerMethodReports))
     }
 
     def doAnalyze(
@@ -68,46 +70,53 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val ps = project.get(PropertyStoreKey)
+        ps.setupPhase(
+            Set(ThrownExceptions.Key, ThrownExceptionsByOverridingMethods.Key),
+            Set.empty
+        )
 
-        if (parameters.contains(L1TEParameter)) {
-            L1ThrownExceptionsAnalysis.start(project, ps)
-            // IMPROVE ThrownExceptionsByOverridingMethods.startLazily(project, ps) is for no apparent reason totally crashing..
-            ThrownExceptionsByOverridingMethodsAnalysis.start(project, ps)
-        } else {
-            val fallbackAnalysis = new ThrownExceptionsFallback(ps)
-            ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
-        }
-
-        ps.waitOnPropertyComputationCompletion(true)
-
-        val methodsWithAllThrownExceptions = {
-            ps.entities((p: Property) ⇒ p.isInstanceOf[AllThrownExceptions]).map { e ⇒
-                e.asInstanceOf[Method]
+        time {
+            if (parameters.contains(L1TEParameter)) {
+                ThrownExceptionsByOverridingMethodsAnalysis.startLazily(project, ps)
+                L1ThrownExceptionsAnalysis.start(project, ps)
+            } else {
+                val fallbackAnalysis = new ThrownExceptionsFallback(ps)
+                ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
             }
-        }
-        val methodsWhichDoNotThrowExceptions = methodsWithAllThrownExceptions.filter { m ⇒
-            ps(m, fpcf.properties.ThrownExceptions.Key).p.throwsNoExceptions
+
+            ps.waitOnPhaseCompletion()
+        } { n ⇒
+            println(s"ThrownExceptionsAnalysis took ${n.toSeconds.toString}")
         }
 
-        val methodsWithAllThrownExceptionsCount = methodsWithAllThrownExceptions.size
-        val privateMethodsWithAllThrownExceptionsCount =
-            methodsWithAllThrownExceptions.count(_.isPrivate)
+        val allMethods = ps.entities(ThrownExceptions.Key).toIterable
+        val (epsWithThrownExceptions, epsWhichDoNotThrowExceptions) =
+            allMethods.partition(_.ub.throwsNoExceptions)
+        val methodsWithThrownExceptions = epsWithThrownExceptions.map(_.e.asInstanceOf[Method])
+        val privateMethodsWhichDoNotThrowExceptions = epsWhichDoNotThrowExceptions.map(_.e.asInstanceOf[Method])
+
+        val methodsWithThrownExceptionsCount = methodsWithThrownExceptions.size
+        val privateMethodsWithThrownExceptionsCount =
+            methodsWithThrownExceptions.count(_.isPrivate)
         val methodsWhichDoNotThrowExceptionsCount =
-            methodsWhichDoNotThrowExceptions.view.count(_.isPrivate)
+            privateMethodsWhichDoNotThrowExceptions.count(_.isPrivate)
 
-        val report = methodsWithAllThrownExceptions.map { e ⇒
-            val m: Method = e.asInstanceOf[Method]
-            val thrownExceptions = ps(m, fpcf.properties.ThrownExceptions.Key).p
-            s"${m.toJava} ⇒ $thrownExceptions"
-        }.toList.sorted.mkString("\n")
+        val report = if (parameters.contains(suppressPerMethodReports))
+            ""
+        else
+            epsWithThrownExceptions.map { p ⇒
+                val m = p.e.asInstanceOf[Method]
+                s"${m.toJava} ⇒ ${p.ub}"
+            }.toList.sorted.mkString("\n")
 
         BasicReport(
-            report+
+            report +
+                ps.toString(false)+
                 "\n\nNumber of methods for which the set of thrown exceptions is known: "+
-                methodsWithAllThrownExceptionsCount+"\n"+
-                s" ... private methods: $privateMethodsWithAllThrownExceptionsCount\n"+
-                s" ... which throw no exceptions: ${methodsWhichDoNotThrowExceptions.size}\n"+
-                s" ... ... private methods: $methodsWhichDoNotThrowExceptionsCount"
+                methodsWithThrownExceptionsCount + s" / ${allMethods.size}\n"+
+                s" ... private methods: $privateMethodsWithThrownExceptionsCount\n"+
+                s" ... which throw no exceptions: $methodsWhichDoNotThrowExceptionsCount\n"+
+                s" ... ... private methods: ${privateMethodsWhichDoNotThrowExceptions.size}"
         )
     }
 }

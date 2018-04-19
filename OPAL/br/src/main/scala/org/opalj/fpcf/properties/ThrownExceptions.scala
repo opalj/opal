@@ -85,14 +85,18 @@ case class ThrownExceptions(types: BRTypesSet) extends Property {
             """ThrownExceptionsAreUnknown(reason="method body is not available")"""
         else if (this == ThrownExceptions.AnalysisLimitation)
             """ThrownExceptionsAreUnknown(reason="analysis limitation")"""
+        else if (this == ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+            """ThrownExceptionsAreUnknown(reason="Method called throws unknown exception")"""
         else if (this == ThrownExceptions.SomeException)
             """ThrownExceptionsAreUnknown(reason="<unspecified>")"""
         else
-            super.toString
+            s"ThrownExceptions(${types.toString})"
     }
 }
 
 object ThrownExceptions {
+
+    def apply(types: BRTypesSet): ThrownExceptions = new ThrownExceptions(types)
 
     final val Key: PropertyKey[ThrownExceptions] = {
         PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
