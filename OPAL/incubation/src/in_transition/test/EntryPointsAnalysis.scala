@@ -50,7 +50,7 @@ class EntryPointsAnalysis private (val project: SomeProject) extends FPCFAnalysi
     val MainMethodDescriptor = MethodDescriptor(ArrayType(ObjectType.String), VoidType)
 
     /*
-   * This method is only called in the corresponding analysis runner. Therefore it it guaranteed that
+   * This method is only called in the corresponding analysis runner. Therefore it is guaranteed that
    * the analysisMode during the execution is always a desktop application.
    */
     def determineEntrypoints(method: Method): PropertyComputationResult = {
