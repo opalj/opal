@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Provides the generic infrastructure that is implemented by all factories for
  * FPCF analyses.
- * Analyses that are created sing this factory will then be run using the [[PropertyStore]].
+ * Analyses that are created using this factory will then be run using the [[PropertyStore]].
  * I.e., this trait is typically implemented by the singleton object that facilitates
  * the creation of analyses.
  *
