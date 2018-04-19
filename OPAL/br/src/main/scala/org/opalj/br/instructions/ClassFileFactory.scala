@@ -142,14 +142,14 @@ object ClassFileFactory {
      *       because the code contains no relevant control-flow.)
      *
      * @note It is expected that `methodDescriptor` and `receiverMethodDescriptor` are
-     *       "compatible", i.e. it would be possible to have the method described by
+     *       "compatible", i.e., it would be possible to have the method described by
      *       `methodDescriptor` forward to `receiverMethodDescriptor`.
      *
      * This requires that for their return types, one of the following statements holds true:
      *
      * - `methodDescriptor`'s return type is [[VoidType]] (so no returning is necessary)
      * - `receiverMethodDescriptor`'s return type is assignable to `methodDescriptor`'s
-     *      (e.g. a "smaller" numerical type, (un)boxable, a subtype, etc)
+     *      (e.g., a "smaller" numerical type, (un)boxable, a subtype, etc)
      * - `receiverMethodDescriptor` returns `Object`: in this case, we assume that `Object`
      *   stands for "generic return type" and expect the receiver method to return an
      *   object of a type compatible to the forwarder method's return type
@@ -163,7 +163,7 @@ object ClassFileFactory {
      * - `methodDescriptor`'s first parameter is of the same type as `receiverType`,
      *   and the remaining parameters are compatible to `receiverMethodDescriptor`'s
      *   entire parameter list (this is, effectively, an explicit `this` and occurs for
-     *   example with references to instance methods: e.g. `String::isEmpty`, a zero
+     *   example with references to instance methods: e.g., `String::isEmpty`, a zero
      *   argument method, could be turned into the Predicate method `test(String)`)
      * - the last `n` parameters of `receiverMethodDescriptor` are identical to the
      *   parameters of `methodDescriptor`, where `n = methodDescriptor.parametersCount`
@@ -200,7 +200,7 @@ object ClassFileFactory {
      *  MethodDescriptor(IndexedSeq(ByteType, ByteType, IntegerType), IntegerType)
      * }}}
      *
-     * @param definingType The defining type; if the type is `Serializable` the interface '''has
+     * @param definingType The defining type; if the type is `Serializable`, the interface '''has
      *                     to be a direct super interface'''.
      *
      * @param invocationInstruction the opcode of the invocation instruction
@@ -316,7 +316,7 @@ object ClassFileFactory {
         // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
         // instruction on a static interface method.
         // Given that none of the generated methods contains any control-flow instructions
-        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
+        // (gotos, ifs, switches, ...) we don't have to create a StackmapTableAttribute.
         ClassFile(
             0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
@@ -571,7 +571,7 @@ object ClassFileFactory {
         // We need a version 52 classfile, because prior version don't support an INVOKESTATIC
         // instruction on a static interface method.
         // Given that none of the generated methods contains any control-flow instructions
-        // (gotos, ifs, switches,...) we don't have to create a StackmapTableAttribute.
+        // (gotos, ifs, switches, ...) we don't have to create a StackmapTableAttribute.
         ClassFile(
             0, 52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
@@ -586,7 +586,7 @@ object ClassFileFactory {
 
     /**
      * Returns true if the method invocation described by the given Opcode and method name
-     * is a "NewInvokeSpecial" invocation (i.e. a reference to a constructor, like so:
+     * is a "NewInvokeSpecial" invocation (i.e., a reference to a constructor, like so:
      * `Object::new`).
      */
     def isNewInvokeSpecial(opcode: Opcode, methodName: String): Boolean = {
@@ -595,7 +595,7 @@ object ClassFileFactory {
 
     /**
      * Returns true if the given parameters identify a Java 8 method reference to an
-     * instance or interface method (i.e. a reference to a virtual method, like so:
+     * instance or interface method (i.e., a reference to a virtual method, like so:
      * `ArrayList::size` or `List::size`). In this case, the resulting functional interface's method
      * has one parameter more than the referenced method because the referenced method's
      * implicit `this` parameter becomes explicit.
@@ -797,7 +797,7 @@ object ClassFileFactory {
      * Creates the `writeReplace` method for a lambda proxy class. It is used
      * to create a `SerializedLambda` object which holds the serialized lambda.
      *
-     * The parameters of the SerializedLambda class map as following:
+     * The parameters of the SerializedLambda class map are as following:
      *   capturingClass = definingType
      *   functionalInterfaceClass = definingType.theSuperinterfaceTypes.head (This is the functional interface)
      *   functionalInterfaceMethodName = functionalInterfaceMethodName
