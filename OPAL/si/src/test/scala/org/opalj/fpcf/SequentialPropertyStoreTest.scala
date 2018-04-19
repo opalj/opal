@@ -28,7 +28,7 @@
  */
 package org.opalj.fpcf
 
-class DelayUpdatesSequentialPropertyStoreTest extends PropertyStoreTest {
+class TrueTrueTrueSequentialPropertyStoreTest extends PropertyStoreTest {
 
     def createPropertyStore(): PropertyStore = {
         val s = SequentialPropertyStore()
@@ -40,19 +40,38 @@ class DelayUpdatesSequentialPropertyStoreTest extends PropertyStoreTest {
 
 }
 
-class ForceUpdatesSequentialPropertyStoreTest extends PropertyStoreTest {
+class FalseTrueTrueSequentialPropertyStoreTest extends PropertyStoreTest {
 
     def createPropertyStore(): PropertyStore = {
         val s = SequentialPropertyStore()
         s.delayHandlingOfFinalDependeeUpdates = false
+        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.delayHandlingOfDependerNotification = true
+        s
+    }
+}
+class TrueFalseTrueSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = true
         s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.delayHandlingOfDependerNotification = true
+        s
+    }
+}
+class TrueTrueFalseSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = true
+        s.delayHandlingOfNonFinalDependeeUpdates = true
         s.delayHandlingOfDependerNotification = false
         s
     }
-
 }
 
-class DefaultSequentialPropertyStoreTest extends PropertyStoreTest {
+class FalseFalseTrueSequentialPropertyStoreTest extends PropertyStoreTest {
 
     def createPropertyStore(): PropertyStore = {
         val s = SequentialPropertyStore()
@@ -61,5 +80,37 @@ class DefaultSequentialPropertyStoreTest extends PropertyStoreTest {
         s.delayHandlingOfDependerNotification = true
         s
     }
+}
 
+class FalseTrueFalseSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = false
+        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.delayHandlingOfDependerNotification = false
+        s
+    }
+}
+
+class TrueFalseFalseSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = true
+        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.delayHandlingOfDependerNotification = false
+        s
+    }
+}
+
+class FalseFalseFalseSequentialPropertyStoreTest extends PropertyStoreTest {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.delayHandlingOfFinalDependeeUpdates = false
+        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.delayHandlingOfDependerNotification = false
+        s
+    }
 }
