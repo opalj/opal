@@ -112,7 +112,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             nativeMethod ← calledNativeMethods //<= ParIterable
             // - The last argument to the method is the top-most stack value.
             // - For this analysis, we don't care whether we call a native instance
-            //   or native static method
+            //   or native static method.
             parametersCount = nativeMethod.parameterTypes.size
             parameterIndexes = nativeMethod.parameterTypes.zipWithIndex.collect {
                 case (IntegerType /*| _: ReferenceType*/ , index) ⇒ index
