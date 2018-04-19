@@ -38,7 +38,7 @@ package cg
  *
  * A class is considered instantiable if it is possible that at some point in time an
  * instance of the respective class is created (via a direct constructor call, a factory method
- * call, an indirect instance creation by means of creating an instance of a subtype.)
+ * call, an indirect instance creation by means of creating an instance of a subtype).
  *
  * An example of a class which is not instaniable is a class which defines a private constructor
  * which is not called by other (factory) methods and which is also not serializable. A class
