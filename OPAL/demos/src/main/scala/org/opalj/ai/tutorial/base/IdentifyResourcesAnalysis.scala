@@ -71,7 +71,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
         // Step 2
         // Perform a simple abstract interpretation to check if there is some
-        // method that pass a constant string to a method
+        // method that passes a constant string to a method.
         class AnalysisDomain(
                 override val project: Project[URL],
                 val method:           Method
