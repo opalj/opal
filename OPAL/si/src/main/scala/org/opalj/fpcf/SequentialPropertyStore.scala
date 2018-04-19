@@ -530,6 +530,8 @@ class SequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
+        assert(tasks.isEmpty)
+
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
     }
@@ -568,7 +570,7 @@ class SequentialPropertyStore private (
                     }
                 }
 
-                // 2. let's search for cSCCs that only consists of properties which will not be
+                // 2. let's search for cSCCs that only consist of properties which will not be
                 //    updated later on
                 if (!continueComputation) {
                     val epks: Traversable[SomeEOptionP] =

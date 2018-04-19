@@ -561,6 +561,36 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         c
                     )
             }
+
+            def reachableNodesCountViaReachableNodesAnalysis(ps: PropertyStore)(
+                n: Node
+            ): PropertyComputationResult = {
+
+                def c(eps: SomeEOptionP): PropertyComputationResult = {
+                    eps match {
+                        case eps @ IntermediateEP(_, _, ReachableNodes(reachableNodes)) ⇒
+                            IntermediateResult(
+                                n, TooManyNodesReachable, ReachableNodesCount(reachableNodes.size),
+                                List(eps),
+                                c
+                            )
+
+                        case FinalEP(_, ReachableNodes(reachableNodes)) ⇒
+                            Result(n, ReachableNodesCount(reachableNodes.size))
+                    }
+                }
+
+                ps(n, ReachableNodes.Key) match {
+                    case epk: EPK[_, _] ⇒
+                        IntermediateResult(
+                            n, TooManyNodesReachable, ReachableNodesCount(0),
+                            List(epk),
+                            c
+                        )
+                    case eps: SomeEOptionP ⇒ c(eps)
+
+                }
+            }
             // the graph:
             // a -> f -> h
             // a -> f -> j
@@ -639,6 +669,60 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                 )
             }
+
+            it("should be possible using lazy scheduled mutually dependent computations") {
+
+                val ps = createPropertyStore()
+                ps.setupPhase(Set(ReachableNodes.Key, ReachableNodesCount.Key), Set.empty)
+                ps.registerLazyPropertyComputation(
+                    ReachableNodes.Key, reachableNodesAnalysis(ps)
+                )
+                ps.registerLazyPropertyComputation(
+                    ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                )
+                nodeEntities.foreach { node ⇒ ps(node, ReachableNodesCount.Key) }
+                ps.waitOnPhaseCompletion()
+
+                ps(nodeA, ReachableNodes.Key) should be(
+                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                )
+                ps(nodeB, ReachableNodes.Key) should be(
+                    FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                ps(nodeC, ReachableNodes.Key) should be(
+                    FinalEP(nodeC, ReachableNodes(Set()))
+                )
+                ps(nodeD, ReachableNodes.Key) should be(
+                    FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                ps(nodeE, ReachableNodes.Key) should be(
+                    FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                ps(nodeR, ReachableNodes.Key) should be(
+                    FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                )
+                // now let's check if we have the correct notification of the
+                // of the lazily dependent computations
+                ps(nodeA, ReachableNodesCount.Key) should be(
+                    FinalEP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
+                )
+                ps(nodeB, ReachableNodesCount.Key) should be(
+                    FinalEP(nodeB, ReachableNodesCount(5))
+                )
+                ps(nodeC, ReachableNodesCount.Key) should be(
+                    FinalEP(nodeC, ReachableNodesCount(0))
+                )
+                ps(nodeD, ReachableNodesCount.Key) should be(
+                    FinalEP(nodeD, ReachableNodesCount(5))
+                )
+                ps(nodeE, ReachableNodesCount.Key) should be(
+                    FinalEP(nodeE, ReachableNodesCount(5))
+                )
+                ps(nodeR, ReachableNodesCount.Key) should be(
+                    FinalEP(nodeR, ReachableNodesCount(5))
+                )
+            }
+
         }
 
         it("should be possible to execute an analysis incrementally") {
