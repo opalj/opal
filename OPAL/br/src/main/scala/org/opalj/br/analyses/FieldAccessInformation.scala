@@ -34,7 +34,7 @@ import scala.collection.Map
 
 /**
  * Stores the information where each field is read and written. If the project
- * is incomplete the results are also necessary incomplete. Reflective and comparable
+ * is incomplete the results are also necessarily incomplete. Reflective and comparable
  * accesses are not considered.
  *
  * @author Michael Eichberg
