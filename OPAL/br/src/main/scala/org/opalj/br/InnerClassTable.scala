@@ -33,7 +33,7 @@ import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
 /**
- * Attribute in a class' attribute table the encodes information about inner classes.
+ * Attribute in a class' attribute table that encodes information about inner classes.
  *
  * @author Michael Eichberg
  */
