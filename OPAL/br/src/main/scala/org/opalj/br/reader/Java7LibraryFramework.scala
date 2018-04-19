@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ trait Java7LibraryFramework
     with MethodsBinding
     with ClassFileBinding
     with AttributesReader
-    /* If you want unknown attributes to be represented uncomment the following: */
+    /* If you want unknown attributes to be represented, uncomment the following: */
     // with Unknown_attributeBinding
     /* and comment out the following line: */
     with SkipUnknown_attributeReader
