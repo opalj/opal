@@ -45,7 +45,7 @@ trait LogMessage {
     def level: Level
 
     /**
-     * The category to which this method belongs. E.g. "project configuration" to
+     * The category to which this method belongs. E.g., "project configuration" to
      * signal that the message is related to the project configuration and it is – hence -
      * an issue that probably needs to be fixed by the developer. Another category
      * might be "internal (error)" to signal that an error occurred that might need
