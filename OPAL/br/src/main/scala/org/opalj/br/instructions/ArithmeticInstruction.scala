@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ trait ArithmeticInstruction extends Instruction with NoLabels {
      * A string representation of the operator as
      * used by the Java programming language (if possible).
      * (In case of the comparison operators for long, float and double values the
-     * strings `cmp(g|l)?` are used.
+     * strings `cmp(g|l)?` are used.)
      */
     def operator: String
 
