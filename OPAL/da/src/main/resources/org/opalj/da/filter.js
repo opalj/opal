@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -173,7 +173,7 @@ function totalOffset(elem) {
 
 /**
  * Removes (too) long exception names. This is a callback function that is called when
- * a details.method_body is set to open, i.e. the methods instructions can be seen.
+ * a details.method_body is set to open, i.e., the methods instructions can be seen.
  */
 function executeOnMethodBodyOpen() {
 	removeLongExceptionNames();
