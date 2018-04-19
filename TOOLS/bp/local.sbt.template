@@ -15,5 +15,5 @@ javaOptions in ThisBuild ++= Seq(
 // If you want to disable assertions, uncomment the following line.
 // Assertions are heavily used throughout OPAL and have a 
 // signifcant performance impact. However, at development time it is
-// still HIGHLY recommend to turn on assertions!
+// still HIGHLY recommended to turn on assertions!
 //scalacOptions in ThisBuild += "-Xdisable-assertions"
