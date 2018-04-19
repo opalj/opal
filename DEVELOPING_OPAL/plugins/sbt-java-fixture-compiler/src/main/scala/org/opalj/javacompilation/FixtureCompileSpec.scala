@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ object FixtureCompileSpec {
     }
 
     /**
-     * Represents the result of packaing a test fixture.
+     * Represents the result of packaging a test fixture.
      * The [[generatedFiles]] method returns a sequence of generated class files and
      * the JAR file.
      */
