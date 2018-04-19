@@ -37,7 +37,7 @@ import org.opalj.br.ObjectType
 import org.opalj.ai.analyses.cg.CallGraphFactory
 
 /**
- * Determines which methods of a library are the entry points of
+ * Determines which methods of a library are the entry points.
  *
  * @author Michael Reif
  */
