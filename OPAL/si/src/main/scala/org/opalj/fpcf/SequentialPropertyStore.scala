@@ -323,11 +323,14 @@ class SequentialPropertyStore private (
 
                     // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                     //    and then update dependees
+                    //    Note, that we do not create the support data-structures eagerly,
+                    //    when an apply is called; hence, we have to check if the respective
+                    //    data-structures are available.
                     val epk = EPK(e, ub /*or lb*/ )
                     for {
                         EOptionP(oldDependeeE, oldDependeePk) ← pValue.dependees
+                        dependeePValue ← ps(oldDependeeE).get(oldDependeePk.id.toLong)
                     } {
-                        val dependeePValue = ps(oldDependeeE)(oldDependeePk.id.toLong)
                         val dependersOfDependee = dependeePValue.dependers
                         dependeePValue.dependers = dependersOfDependee - epk
                     }
