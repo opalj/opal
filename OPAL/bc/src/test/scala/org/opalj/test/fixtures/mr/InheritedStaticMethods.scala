@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ import org.opalj.da.Code_attribute
 import org.opalj.da.Code
 
 /**
- * Generates an main class which invokes a static method defined
+ * Generates a main class which invokes a static method defined
  * by a superclass using the declared type of the subclass.
  *
  * @see For further details see: `Readme.md`.
