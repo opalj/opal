@@ -44,14 +44,14 @@ import org.opalj.br.instructions.NEW
  *
  * A class is not instantiable if it only defines private constructors and these constructors
  * are not called by any static method and the class is also not Serializable. However,
- * if the static initializer creates an instance of the respective class then it is possible that
+ * if the static initializer creates an instance of the respective class, then it is possible that
  * this a class is rated as not client instantiable though it is possible that an instance
  * exists and may even be used.
  *
  *
  * @note This analysis does not consider protected and/or package visible constructors as
  *      it assumes that classes may be added to the respective package later on (open-packages
- *      assumption.)
+ *      assumption).
  *
  * @note If this class is queried (after performing the analysis) about a class that
  *      was not analyzed, the result will be that the class is considered to be
@@ -107,7 +107,7 @@ object InstantiableClassesAnalysis {
                         {
 
                             method.isNative
-                            // If the method is static method we don't know what the method may do,
+                            // If the method is a static method, we don't know what the method may do,
                             // hence, we assume that it may act as a factory method.
                         } || {
                             method.body.isEmpty
