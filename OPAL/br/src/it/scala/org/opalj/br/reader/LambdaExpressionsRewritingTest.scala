@@ -85,7 +85,7 @@ abstract class LambdaExpressionsRewritingTest extends FunSuite {
     }
 
     /**
-     * Loads the library and check if at least one call to a proxy factory method is found.
+     * Loads the library and checks if at least one call to a proxy factory method is found.
      */
     protected def project(libraryPath: java.io.File): (SomeProject, Iterable[INVOKESTATIC]) = {
         val baseConfig: Config = ConfigFactory.load()
