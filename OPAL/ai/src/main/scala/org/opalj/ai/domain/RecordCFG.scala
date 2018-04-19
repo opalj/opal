@@ -968,7 +968,7 @@ trait RecordCFG
             additionalExitNodes foreachPair { (exitPC1, exitPC2) ⇒
                 if (dominatorTree.strictlyDominates(exitPC1, exitPC2))
                     additionalExitNodes -= exitPC1
-                else (dominatorTree.strictlyDominates(exitPC2, exitPC1))
+                else if (dominatorTree.strictlyDominates(exitPC2, exitPC1))
                     additionalExitNodes -= exitPC2
             }
             PostDominatorTree(
