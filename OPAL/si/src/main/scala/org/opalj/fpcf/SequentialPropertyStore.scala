@@ -55,12 +55,13 @@ class SequentialPropertyStore private (
         val logContext: LogContext
 ) extends PropertyStore { store ⇒
 
-    /**
-     * This variable can always be changed.
+    /*
+     * Controls in which order updates are processed/scheduled.
      */
-    var delayHandlingOfNonFinalDependeeUpdates: Boolean = true
-    var delayHandlingOfFinalDependeeUpdates: Boolean = false
-    var delayHandlingOfDependerNotification: Boolean = true
+    @volatile var delayHandlingOfNonFinalDependeeUpdates: Boolean = true
+    @volatile var delayHandlingOfFinalDependeeUpdates: Boolean = false
+
+    @volatile var delayHandlingOfDependerNotification: Boolean = true
 
     final type PKId = Long
 
@@ -229,7 +230,7 @@ class SequentialPropertyStore private (
                     // queried before or there is no computation whatsoever..
                     lazyComputations.get(pkId) match {
                         case Some(lc) ⇒
-                            // create PropertyState to ensure that we do not schedule
+                            // create PropertyValue to ensure that we do not schedule
                             // multiple (lazy) computations => the entity is now known
                             pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
                             scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
@@ -260,7 +261,7 @@ class SequentialPropertyStore private (
                         // dependee which is listed in the set of dependees
                         // of an IntermediateResult must have been queried
                         /*internal*/ assert(
-                            !lazyComputations.contains(pkId) || ub == PropertyIsLazilyComputed
+                            ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
                         )
                         // before.
                         epk
@@ -582,8 +583,12 @@ class SequentialPropertyStore private (
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
-                // 1. let's search all EPKs for which we have no analyses scheduled and
-                //    use the fall back for them
+                // 1. let's search all EPKs for which we have no analyses scheduled in the
+                //    future and use the fall back for them
+                //    (Recall that we return fallback properties eagerly if no analysis is
+                //     scheduled or will be scheduled; but it is still possible that we will
+                //     not have a property for a specific entity, if the underlying analysis
+                //     doesn't compute one; in that case we need to put in fallback values.)
                 for {
                     (e, pkIdPV) ← ps
                     (pkLongId, pValue) ← pkIdPV
@@ -598,7 +603,8 @@ class SequentialPropertyStore private (
                         val fallbackResult = Result(e, fallbackProperty)
                         info(
                             "analysis progress",
-                            s"using fallback property $fallbackProperty for $e (though an analysis was supposedly scheduled)"
+                            s"used fallback $fallbackProperty for $e "+
+                                "(though an analysis was supposedly scheduled)"
                         )
                         handleResult(fallbackResult)
 
