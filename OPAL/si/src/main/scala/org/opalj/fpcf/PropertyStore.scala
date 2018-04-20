@@ -249,7 +249,7 @@ abstract class PropertyStore {
      *
      * @note   In general, the returned value may change over time but only such that it
      *         is strictly more precise.
-     * @note   Querying a property may trigger the computation of the property.
+     * @note   Querying a property may trigger the (lazy) computation of the property.
      * @param  epk An entity/property key pair.
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
      *         `Final|IntermediateEP(e,Property)` otherwise.
