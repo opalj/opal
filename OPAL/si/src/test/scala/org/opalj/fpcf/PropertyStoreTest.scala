@@ -646,6 +646,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     )
                 }
             }
+
             it("should be possible using lazy scheduled computations") {
 
                 val ps = createPropertyStore()
