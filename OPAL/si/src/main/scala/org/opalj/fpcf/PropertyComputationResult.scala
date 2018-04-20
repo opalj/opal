@@ -99,17 +99,21 @@ object NoResult extends PropertyComputationResult {
  *
  * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
  *      `entity`/`property kind` pair must occur at most once in the list, the current
- *      entity/propertykind (`ep`) must not occur; i.e., self-reference are forbidden!
+ *      entity/property kind (`ep`) must not occur; i.e., self-reference are forbidden!
+ *      A dependee must have been queried using `PropertyStore.apply(...)`; directly
+ *      returning a dependee without a prior querying of the property store can lead to
+ *      unexpected results. A dependee must NEVER be less precise than the value returned by
+ *      the query.
+ *
  *      In general, the set of dependees is expected to shrink over time and the result should
  *      capture the effect of all properties. However, it is possible to first wait on specific
  *      properties of specific entities, if these properties ultimately determine the overall
- *      result. ... optimal implementation...
- *
- *      A dependee must have been queried; directly returning a dependee without a prior querying
- *      of the property store can lead to unexpected results.
+ *      result. Hence, it is possible to partition the set of entity / properties and to query
+ *      each group one after another.
  *
  *      An `IntermediateResult` returned by an `OnUpdateContinuation` must contain the EPS given
- *      to the continuation function or a newer EPS.
+ *      to the continuation function or a newer EPS (i.e., an onUpdateContinuation is allowed
+ *      to query the store again).
  *
  * @param c
  *      The function which is called if a property of any of the dependees is updated.
