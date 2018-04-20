@@ -78,7 +78,7 @@ class SequentialPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    // TODO Rotate data structure.... Array[AnyRefMap[Entity,PropertyValue]] // the index is determined by the PropertyKey ID
+    // TODO Rotate data structure.... Array[AnyRefMap[Entity,PropertyValue]] // the PropertyKey ID is the index into the array
     // map from
     // entity =>
     //        (long) map from
