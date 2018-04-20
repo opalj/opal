@@ -34,7 +34,7 @@ import java.io.IOException
 
 /**
  * A `java.io.ByteArrayOutputStream` that throws an `IOException` after writing
- * some bytes, if the given boundary (`failAfter`) is surpased.
+ * some bytes, if the given boundary (`failAfter`) is surpassed.
  *
  * @param  failAfter Sets the boundary after which a `write` will throw an
  *         exception.
