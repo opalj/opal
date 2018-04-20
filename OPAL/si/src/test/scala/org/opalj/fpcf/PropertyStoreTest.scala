@@ -370,9 +370,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         }
 
         describe("handling of computations with multiple updates") {
-
-            import scala.collection.mutable
-
             // DESCRIPTION OF A GRAPH (WITH CYCLES)
             val nodeA = Node("a")
             val nodeB = Node("b")
@@ -443,10 +440,9 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
 
-                var allDependees: mutable.Set[Node] =
-                    nTargets.clone - n // self-dependencies are ignored!
+                var allDependees: Set[Node] = nTargets.toSet // may include self-dependency
                 var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
-                    ps(allDependees, ReachableNodes.Key).toSet
+                    ps(allDependees - n /* ignore self-dependencies */ , ReachableNodes.Key).toSet
 
                 // incremental computation
                 def c(dependee: SomeEPS): PropertyComputationResult = {
@@ -454,7 +450,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     val eps @ EPS(_, _ /*lb*/ , ReachableNodes(depeendeeReachableNodes)) = dependee
 
                     // Compute the new set of reachable nodes:
-                    allDependees = allDependees ++ depeendeeReachableNodes
+                    allDependees ++= depeendeeReachableNodes
                     val newUB = ReachableNodes(allDependees)
 
                     // Adapt the set of dependeePs to ensure termination
@@ -463,28 +459,23 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         dependeePs ++=
                             Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
                     }
-                    if (dependeePs.nonEmpty)
-                        IntermediateResult(n, AllNodes, newUB, dependeePs, c)
-                    else
-                        Result(n, newUB)
+                    val r = {
+                        if (dependeePs.nonEmpty)
+                            IntermediateResult(n, AllNodes, newUB, dependeePs, c)
+                        else
+                            Result(n, newUB)
+                    }
+                    r
                 }
 
                 // initial computation
-                val reachableNodes =
-                    dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
-                        if (dependee.hasProperty) {
-                            if (dependee.isFinal) { dependeePs -= dependee }
-                            reachableNodes ++ dependee.ub.nodes
-                        } else {
-                            reachableNodes
-                        }
+                dependeePs foreach { dependee ⇒
+                    if (dependee.hasProperty) {
+                        if (dependee.isFinal) { dependeePs -= dependee }
+                        allDependees ++= dependee.ub.nodes
                     }
-                val currentReachableNodes = ReachableNodes(
-                    if (n.targets contains n)
-                        reachableNodes + n
-                    else
-                        reachableNodes
-                )
+                }
+                val currentReachableNodes = ReachableNodes(allDependees)
                 if (dependeePs.isEmpty)
                     Result(n, currentReachableNodes)
                 else
