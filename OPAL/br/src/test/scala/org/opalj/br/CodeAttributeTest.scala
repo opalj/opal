@@ -146,9 +146,9 @@ class CodeAttributeTest extends FlatSpec with Matchers {
         val instructions: Seq[PCAndInstruction] = for { i ← codeOfGet } yield i
         instructions should be(
             Seq(
-                (0, ALOAD_0),
-                (1, GETFIELD(immutbleListClass, "e", ObjectType.Object)),
-                (4, ARETURN)
+                PCAndInstruction(0, ALOAD_0),
+                PCAndInstruction(1, GETFIELD(immutbleListClass, "e", ObjectType.Object)),
+                PCAndInstruction(4, ARETURN)
             )
         )
     }

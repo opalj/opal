@@ -456,7 +456,6 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
-                println(pc)
                 if (isReached.contains(pc))
                     cfJoins += pc
                 else

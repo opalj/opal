@@ -352,15 +352,12 @@ class SequentialPropertyStore private (
                     val newPValueIsFinal = pValue.isFinal
 
                     // 2. Clear old dependees (remove onUpdateContinuation from dependees)
-                    //    and then update dependees
-                    //    Note, that we do not create the support data-structures eagerly,
-                    //    when an apply is called; hence, we have to check if the respective
-                    //    data-structures are available.
+                    //    and then update dependees.
                     val epk = EPK(e, ub /*or lb*/ )
                     for {
                         EOptionP(oldDependeeE, oldDependeePk) ← pValue.dependees
-                        dependeePValue ← ps(oldDependeeE).get(oldDependeePk.id.toLong)
                     } {
+                        val dependeePValue = ps(oldDependeeE)(oldDependeePk.id.toLong)
                         val dependersOfDependee = dependeePValue.dependers
                         dependeePValue.dependers = dependersOfDependee - epk
                     }
@@ -521,11 +518,10 @@ class SequentialPropertyStore private (
                     }
                 }
 
-                // 2.1. update the value (trigger dependers/clear old dependees)
-                update(e, lb, ub, newDependees)
-
                 // println(s"update: $e => $p (isFinal=false;notifyDependers=true)")
                 if (noUpdates) {
+                    // 2.1. update the value (trigger dependers/clear old dependees)
+                    update(e, lb, ub, newDependees)
 
                     // 2.2 The most current value of every dependee was taken into account
                     //     register with new (!) dependees.
@@ -555,6 +551,10 @@ class SequentialPropertyStore private (
                                 }
                         }
                     }
+                } else {
+                    // There was an update and we already scheduled the computation... hence,
+                    // we have no live dependees any more.
+                    update(e, lb, ub, Nil)
                 }
         }
     }
