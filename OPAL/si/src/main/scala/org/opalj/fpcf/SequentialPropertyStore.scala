@@ -263,9 +263,15 @@ class SequentialPropertyStore private (
                         // of an IntermediateResult must have been queried;
                         // however the sequential store does not create the
                         // data-structure eagerly!
-                        /*internal*/ assert(
+                        if (debug && !(
                             ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
-                        )
+                        )) {
+                            throw new IllegalStateException(
+                                "registered lazy computations was not triggerd, "+
+                                    "this happens, e.g., if the list of dependees contains EPKs "+
+                                    "which are directly instantiated without being queried before"
+                            )
+                        }
                         // before.
                         epk
                     }
