@@ -478,9 +478,7 @@ class SequentialPropertyStore private (
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
-                results foreach { ep ⇒
-                    update(ep.e, ep.p, ep.p, newDependees = Nil)
-                }
+                results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
             //
             // Methods which actually store results...
