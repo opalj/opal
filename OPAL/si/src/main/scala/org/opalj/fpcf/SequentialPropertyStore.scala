@@ -340,10 +340,6 @@ class SequentialPropertyStore private (
                     val oldIsFinal = pValue.isFinal
                     val oldLB = pValue.lb
                     val oldUB = pValue.ub
-                    pValue.lb = lb
-                    pValue.ub = ub
-                    // Updating lb und ub MAY CHANGE THE PValue.isFinal property!
-                    val newPValueIsFinal = pValue.isFinal
 
                     // 1. Check and update property:
                     if (debug) {
@@ -373,17 +369,29 @@ class SequentialPropertyStore private (
                             }
                         }
                     }
+                    pValue.lb = lb
+                    pValue.ub = ub
+                    // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
+                    val newPValueIsFinal = pValue.isFinal
 
                     // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                     //    and then update dependees.
                     val epk = EPK(e, ub /*or lb*/ )
                     for {
-                        EOptionP(oldDependeeE, oldDependeePk) ← pValue.dependees // <= the old ones
+                        eOptP @ EOptionP(oldDependeeE, oldDependeePK) ← pValue.dependees // <= the old ones
                     } {
-                        val oldDependeePKId = oldDependeePk.id.toLong
-                        val dependeePValue = ps(oldDependeeE)(oldDependeePKId).asIntermediate
-                        val dependersOfDependee = dependeePValue.dependers
-                        dependeePValue.dependers = dependersOfDependee - epk
+                        val oldDependeePKId = oldDependeePK.id.toLong
+                        // Please recall, that we don't create support data-structures
+                        // (i.e., PropertyValue) eagerly... but they should have been
+                        // created by now or the dependees should be empty!
+                        assert(
+                            ps(oldDependeeE).contains(oldDependeePKId),
+                            s"$e(${ub.key}): dependee without support data structure: $eOptP"
+                        )
+                        val dependeePValue = ps(oldDependeeE)(oldDependeePKId)
+                        val dependeeIntermediatePValue = dependeePValue.asIntermediate
+                        val dependersOfDependee = dependeeIntermediatePValue.dependers
+                        dependeeIntermediatePValue.dependers = dependersOfDependee - epk
                     }
                     if (newPValueIsFinal)
                         ps(e)(pkId) = new FinalPropertyValue(ub)
