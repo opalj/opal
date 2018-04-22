@@ -39,6 +39,7 @@ import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 
 /**
@@ -259,7 +260,9 @@ class SequentialPropertyStore private (
                         // computation is already scheduled (if available).
                         // Recall that it is a strict requirement that a
                         // dependee which is listed in the set of dependees
-                        // of an IntermediateResult must have been queried
+                        // of an IntermediateResult must have been queried;
+                        // however the sequential store does not create the
+                        // data-structure eagerly!
                         /*internal*/ assert(
                             ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
                         )
@@ -328,28 +331,42 @@ class SequentialPropertyStore private (
                 case Some(pValue: IntermediatePropertyValue) ⇒
                     // The entity is known and we have a property value for the respective
                     // kind; i.e., we may have (old) dependees and/or also dependers.
-
-                    // 1. Check and update property:
-                    if (debug) {
-                        if (pValue.isFinal) {
-                            throw new IllegalStateException(
-                                s"already final: $e@${identityHashCode(e).toHexString}/$ub"
-                            )
-                        }
-                        if (lb.isOrderedProperty) {
-                            val lbAsOP = lb.asOrderedProperty
-                            lbAsOP.checkIsEqualOrBetterThan(pValue.lb.asInstanceOf[lbAsOP.Self])
-                            val pValueUBAsOP = pValue.ub.asOrderedProperty
-                            pValueUBAsOP.checkIsEqualOrBetterThan(ub.asInstanceOf[pValueUBAsOP.Self])
-                        }
-                    }
-
+                    val oldIsFinal = pValue.isFinal
                     val oldLB = pValue.lb
                     val oldUB = pValue.ub
                     pValue.lb = lb
                     pValue.ub = ub
                     // Updating lb und ub MAY CHANGE THE PValue.isFinal property!
                     val newPValueIsFinal = pValue.isFinal
+
+                    // 1. Check and update property:
+                    if (debug) {
+                        if (oldIsFinal) {
+                            throw new IllegalStateException(
+                                s"already final: $e@${identityHashCode(e).toHexString}/$ub"
+                            )
+                        }
+                        if (lb.isOrderedProperty) {
+                            try {
+                                val lbAsOP = lb.asOrderedProperty
+                                if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
+                                    val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
+                                    lbAsOP.checkIsEqualOrBetterThan(oldLBWithUBType)
+                                    val pValueUBAsOP = oldUB.asOrderedProperty
+                                    val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
+                                    pValueUBAsOP.checkIsEqualOrBetterThan(ubWithOldUBType)
+                                }
+                            } catch {
+                                case t: Throwable ⇒
+                                    throw new IllegalStateException(
+                                        s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
+                                            newDependees.mkString("newDependees={", ", ", "}")+
+                                            "; cause="+t.getMessage,
+                                        t
+                                    )
+                            }
+                        }
+                    }
 
                     // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                     //    and then update dependees.
@@ -409,7 +426,6 @@ class SequentialPropertyStore private (
                             dependerPValue.dependees = Nil
                         }
                         pValue.dependers = Map.empty
-
                     }
 
                     oldLB == null /*AND/OR oldUB == null*/
@@ -481,9 +497,11 @@ class SequentialPropertyStore private (
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val noUpdates = newDependees forall { newDependee ⇒
-                    /*user level*/ assert(
-                        !newDependee.isFinal, s"dependency to final property: $newDependee"
-                    )
+                    if (debug && newDependee.isFinal) {
+                        throw new IllegalStateException(
+                            s"entity=$e (lb=$lb, ub=$ub) dependency to final property: $newDependee"
+                        )
+                    }
                     val dependeeE = newDependee.e
                     val dependeePKId = newDependee.pk.id.toLong
                     val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
@@ -535,7 +553,6 @@ class SequentialPropertyStore private (
                     }
                 }
 
-                // println(s"update: $e => $p (isFinal=false;notifyDependers=true)")
                 if (noUpdates) {
                     // 2.1. update the value (trigger dependers/clear old dependees)
                     update(e, lb, ub, newDependees)
@@ -578,6 +595,7 @@ class SequentialPropertyStore private (
                         }
                     }
                 } else {
+                    // 2.1. update the value (trigger dependers/clear old dependees)
                     // There was an update and we already scheduled the computation... hence,
                     // we have no live dependees any more.
                     update(e, lb, ub, Nil)
@@ -597,15 +615,18 @@ class SequentialPropertyStore private (
 
     override def waitOnPhaseCompletion(): Unit = {
         var continueComputation: Boolean = false
+        // We need a consistent interrupt state for fallback and cycle resolution:
+        var isInterrupted: Boolean = false
         do {
             continueComputation = false
 
-            while (tasks.nonEmpty && !isInterrupted()) {
+            while (tasks.nonEmpty && !isInterrupted) {
                 tasks.take().apply()
+                isInterrupted = this.isInterrupted()
             }
             if (tasks.isEmpty) quiescenceCounter += 1
 
-            if (!isInterrupted()) {
+            if (!isInterrupted) {
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
@@ -707,6 +728,22 @@ class SequentialPropertyStore private (
                 }
             }
         } while (continueComputation)
+
+        if (debug && !isInterrupted) {
+            // let's search for "unsatisfied computations"
+            for {
+                // entity =>
+                //        (long) map from
+                //           property kind id =>
+                //                PropertyValue
+                // private[this] val ps: AnyRefMap[Entity, LongMap[PropertyValue]] = AnyRefMap.empty
+                (e, pkIdPValue) ← ps
+                (pkId, pValue) ← pkIdPValue
+                if !pValue.isFinal
+            } {
+                error("analysis progress", s"unexpected intermediate property state: $e ⇒ $pValue")
+            }
+        }
     }
 
 }
@@ -776,7 +813,10 @@ private[fpcf] final class IntermediatePropertyValue(
         this(null, null, Map(epk -> c), Nil)
     }
 
-    final override def isFinal: Boolean = ub != null && ub != PropertyIsLazilyComputed && ub == lb
+    final override def isFinal: Boolean = {
+        val ub = this.ub
+        ub != null && ub != PropertyIsLazilyComputed && ub == lb
+    }
 
     final override def asIntermediate: IntermediatePropertyValue = this
 }

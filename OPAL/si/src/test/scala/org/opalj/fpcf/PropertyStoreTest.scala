@@ -98,6 +98,29 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
         }
 
+        it("should not crash when e1 has two dependencies e2 and e3 and e2 is set while e1 was not yet executed but had a EPK for e2 in its dependencies (test for a lost updated)") {
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
+            ps.scheduleForEntity("a") { e ⇒
+                val initialDependees = Seq(EPK("d", Palindromes.PalindromeKey), EPK("e", Palindromes.PalindromeKey))
+                val dependees = initialDependees.map(ps(_))
+
+                ps.set("d", Palindrome) // <= this could happen concurrently in real schedules
+
+                IntermediateResult(
+                    "a",
+                    NoPalindrome, Palindrome,
+                    dependees,
+                    (eps) ⇒ { Result("a", Palindrome) }
+                )
+            }
+            ps.waitOnPhaseCompletion()
+
+            ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
+            ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
+            ps("e", Palindromes.PalindromeKey) should be(EPK("e", Palindromes.PalindromeKey))
+        }
+
         it("should be able to perform queries w.r.t. unknown entities / property keys") {
             val pk = Palindromes.PalindromeKey
             val ps = createPropertyStore()
@@ -370,9 +393,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
         }
 
         describe("handling of computations with multiple updates") {
-
-            import scala.collection.mutable
-
             // DESCRIPTION OF A GRAPH (WITH CYCLES)
             val nodeA = Node("a")
             val nodeB = Node("b")
@@ -443,10 +463,9 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 if (nTargets.isEmpty)
                     return Result(n, NoReachableNodes);
 
-                var allDependees: mutable.Set[Node] =
-                    nTargets.clone - n // self-dependencies are ignored!
+                var allDependees: Set[Node] = nTargets.toSet // may include self-dependency
                 var dependeePs: Set[EOptionP[Entity, _ <: ReachableNodes]] =
-                    ps(allDependees, ReachableNodes.Key).toSet
+                    ps(allDependees - n /* ignore self-dependencies */ , ReachableNodes.Key).toSet
 
                 // incremental computation
                 def c(dependee: SomeEPS): PropertyComputationResult = {
@@ -454,7 +473,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     val eps @ EPS(_, _ /*lb*/ , ReachableNodes(depeendeeReachableNodes)) = dependee
 
                     // Compute the new set of reachable nodes:
-                    allDependees = allDependees ++ depeendeeReachableNodes
+                    allDependees ++= depeendeeReachableNodes
                     val newUB = ReachableNodes(allDependees)
 
                     // Adapt the set of dependeePs to ensure termination
@@ -463,28 +482,23 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                         dependeePs ++=
                             Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
                     }
-                    if (dependeePs.nonEmpty)
-                        IntermediateResult(n, AllNodes, newUB, dependeePs, c)
-                    else
-                        Result(n, newUB)
+                    val r = {
+                        if (dependeePs.nonEmpty)
+                            IntermediateResult(n, AllNodes, newUB, dependeePs, c)
+                        else
+                            Result(n, newUB)
+                    }
+                    r
                 }
 
                 // initial computation
-                val reachableNodes =
-                    dependeePs.foldLeft(allDependees.clone) { (reachableNodes, dependee) ⇒
-                        if (dependee.hasProperty) {
-                            if (dependee.isFinal) { dependeePs -= dependee }
-                            reachableNodes ++ dependee.ub.nodes
-                        } else {
-                            reachableNodes
-                        }
+                dependeePs foreach { dependee ⇒
+                    if (dependee.hasProperty) {
+                        if (dependee.isFinal) { dependeePs -= dependee }
+                        allDependees ++= dependee.ub.nodes
                     }
-                val currentReachableNodes = ReachableNodes(
-                    if (n.targets contains n)
-                        reachableNodes + n
-                    else
-                        reachableNodes
-                )
+                }
+                val currentReachableNodes = ReachableNodes(allDependees)
                 if (dependeePs.isEmpty)
                     Result(n, currentReachableNodes)
                 else
@@ -646,6 +660,7 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     )
                 }
             }
+
             it("should be possible using lazy scheduled computations") {
 
                 val ps = createPropertyStore()
