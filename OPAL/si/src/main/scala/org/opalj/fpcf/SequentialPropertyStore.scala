@@ -567,11 +567,13 @@ class SequentialPropertyStore private (
 
                     // 2.2 The most current value of every dependee was taken into account
                     //     register with new (!) dependees.
+                    val dependerEPK = EPK(e, ub)
+                    val dependency = (dependerEPK, c)
+
                     newDependees foreach { dependee ⇒
                         val dependeeE = dependee.e
                         val dependeePKId = dependee.pk.id.toLong
-                        val dependerEPK = EPK(e, ub)
-                        val dependency = (dependerEPK, c)
+
                         ps.get(dependeeE) match {
                             case None ⇒
                                 // the dependee is not known
