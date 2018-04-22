@@ -421,11 +421,13 @@ class SequentialPropertyStore private (
                             // onUpdateContinuation is triggered multiple times!
                             val dependerPKId = dependerEPK.pk.id.toLong
                             val dependerPValue = ps(dependerEPK.e)(dependerPKId).asIntermediate
-                            dependerPValue.dependees foreach { epkOfDepeendeeOfDepender ⇒
-                                val depeendeePKIdOfDepender = epkOfDepeendeeOfDepender.pk.id.toLong
-                                val pValueOfDependeeOfDepender =
-                                    ps(epkOfDepeendeeOfDepender.e)(depeendeePKIdOfDepender)
-                                if (!pValueOfDependeeOfDepender.isFinal) {
+                            dependerPValue.dependees foreach { epkOfDependeeOfDepender ⇒
+                                if (epkOfDependeeOfDepender.toEPK != epk) {
+                                    // We have to avoid checking against the "current" dependee
+                                    // because it is already final!
+                                    val dependeePKIdOfDepender = epkOfDependeeOfDepender.pk.id.toLong
+                                    val pValueOfDependeeOfDepender =
+                                        ps(epkOfDependeeOfDepender.e)(dependeePKIdOfDepender)
                                     pValueOfDependeeOfDepender.asIntermediate.dependers -= dependerEPK
                                 }
                             }
