@@ -98,11 +98,15 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
         }
 
-        it("should not crash when e1 has two dependencies e2 and e3 and e2 is set while e1 was not yet executed but had a EPK for e2 in its dependencies (test for a lost updated)") {
+        it("should not crash when e1 has two dependencies e2 and e3 "+
+            "and e2 is set while e1 was not yet executed but had a EPK for e2 in its dependencies "+
+            "(test for a lost updated)") {
             val ps = createPropertyStore()
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
             ps.scheduleForEntity("a") { e ⇒
-                val initialDependees = Seq(EPK("d", Palindromes.PalindromeKey), EPK("e", Palindromes.PalindromeKey))
+                val initialDependees = Seq(
+                    EPK("d", Palindromes.PalindromeKey), EPK("e", Palindromes.PalindromeKey)
+                )
                 val dependees = initialDependees.map(ps(_))
 
                 ps.set("d", Palindrome) // <= this could happen concurrently in real schedules
