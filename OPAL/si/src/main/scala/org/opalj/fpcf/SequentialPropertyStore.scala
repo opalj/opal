@@ -104,6 +104,7 @@ final class SequentialPropertyStore private (
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
+        require(e ne null)
         ps.contains(e) && {
             val pkPValue = ps(e)
             val pkId = pk.id.toLong
@@ -308,6 +309,9 @@ final class SequentialPropertyStore private (
         ub:           Property,
         newDependees: Traversable[SomeEOptionP]
     ): Boolean = {
+        if (debug && e == null) {
+            throw new IllegalArgumentException("the entity must not be null")
+        }
         val pkId = ub.key.id.toLong
         /*user level*/ assert(ub.key == lb.key)
         /*user level*/ assert(
@@ -866,7 +870,7 @@ private[fpcf] final class IntermediatePropertyValue(
     assert(ub != lb || ub == PropertyIsLazilyComputed || ub == null)
 
     def this(epk: SomeEPK, c: OnUpdateContinuation) {
-        this(null, null, Map(epk -> c), Nil)
+        this(null, null, Map(epk → c), Nil)
     }
 
     final override def isFinal: Boolean = {
