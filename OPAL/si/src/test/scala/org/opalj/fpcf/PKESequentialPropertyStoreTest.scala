@@ -28,14 +28,10 @@
  */
 package org.opalj.fpcf
 
-abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
-    val debug: Boolean = true
-}
-
-class TrueTrueTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class TrueTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -50,10 +46,10 @@ class TrueTrueTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebug
 
 }
 
-class FalseTrueTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -65,10 +61,11 @@ class FalseTrueTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebu
         s
     }
 }
-class TrueFalseTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+class TrueFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -80,10 +77,11 @@ class TrueFalseTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebu
         s
     }
 }
-class TrueTrueFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+class TrueTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -96,10 +94,10 @@ class TrueTrueFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebu
     }
 }
 
-class FalseFalseTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -112,10 +110,10 @@ class FalseFalseTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDeb
     }
 }
 
-class FalseTrueFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -128,10 +126,10 @@ class FalseTrueFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDeb
     }
 }
 
-class TrueFalseFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class TrueFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -144,10 +142,10 @@ class TrueFalseFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDeb
     }
 }
 
-class FalseFalseFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
 
         s.debug = debug
 
@@ -160,10 +158,10 @@ class FalseFalseFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDe
     }
 }
 
-class EagerFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class EagerFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
         s.debug = debug
         s.dependeeUpdateHandling = EagerDependeeUpdateHandling
         s.delayHandlingOfDependerNotification = false
@@ -171,10 +169,10 @@ class EagerFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebuggi
     }
 }
 
-class EagerTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class EagerTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = SequentialPropertyStore()
+        val s = PKESequentialPropertyStore()
         s.debug = debug
         s.dependeeUpdateHandling = EagerDependeeUpdateHandling
         s.delayHandlingOfDependerNotification = true

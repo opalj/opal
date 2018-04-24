@@ -966,6 +966,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
     }
 }
 
+abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
+    val debug: Boolean = true
+}
+
 // Test fixture related to a simple marker property
 object Marker {
     final val MarkerKey = {

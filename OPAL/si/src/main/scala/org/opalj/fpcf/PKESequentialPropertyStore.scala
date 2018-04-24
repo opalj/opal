@@ -26,14 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf
 
 import scala.reflect.runtime.universe.Type
 import java.lang.System.identityHashCode
 
+import org.opalj.graphs
+
 import scala.collection.mutable.AnyRefMap
-import scala.collection.mutable.LongMap
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
@@ -48,7 +48,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - a computation is already scheduled that will compute the property OR
  *  - we have a `depender`.
  */
-final class SequentialPropertyStore private (
+final class PKESequentialPropertyStore private (
         val ctx: Map[Type, AnyRef]
 )(
         implicit
@@ -81,16 +81,14 @@ final class SequentialPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    // TODO Rotate data structure.... Array[AnyRefMap[Entity,PropertyValue]] // the PropertyKey ID is the index into the array
-    // map from
-    // entity =>
-    //        (long) map from
-    //           property kind id =>
-    //                PropertyValue
-    private[this] val ps: AnyRefMap[Entity, LongMap[PropertyValue]] = AnyRefMap.empty
+    private[this] val ps: Array[AnyRefMap[Entity, PropertyValue]] = {
+        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
+    }
 
     // Those computations that will only be scheduled if the result is required
-    private[this] var lazyComputations: LongMap[SomePropertyComputation] = LongMap.empty
+    private[this] var lazyComputations: Array[SomePropertyComputation] = {
+        new Array(SupportedPropertyKinds)
+    }
 
     // The list of scheduled computations
 
@@ -105,21 +103,20 @@ final class SequentialPropertyStore private (
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
         require(e ne null)
-        ps.contains(e) && {
-            val pkPValue = ps(e)
-            val pkId = pk.id.toLong
-            pkPValue.contains(pkId) && {
-                val ub = pkPValue(pkId).ub
+        ps(pk.id).get(e) match {
+            case Some(pValue) ⇒
+                val ub = pValue.ub
                 ub != null && ub != PropertyIsLazilyComputed
-            }
+            case None ⇒
+                false
         }
     }
 
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = {
         require(e ne null)
         for {
-            epkpss ← ps.get(e).toIterator // the entities are lazily initialized!
-            pValue ← epkpss.valuesIterator
+            ePValue ← ps.iterator
+            pValue ← ePValue.get(e)
             eps ← pValue.toEPS(e)
         } yield {
             eps
@@ -128,8 +125,8 @@ final class SequentialPropertyStore private (
 
     override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = {
         for {
-            (e, pkIdPValue) ← ps.iterator
-            pValue ← pkIdPValue.values
+            ePValue ← ps.iterator
+            (e, pValue) ← ePValue
             eps ← pValue.toEPS(e)
             if propertyFilter(eps)
         } yield {
@@ -149,9 +146,7 @@ final class SequentialPropertyStore private (
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         for {
-            (e, pkIdPValue) ← ps.iterator
-            (pkId, pValue) ← pkIdPValue
-            if pkId == pk.id
+            (e, pValue) ← ps(pk.id).iterator
             eps ← pValue.toEPS[Entity](e)
         } yield {
             eps.asInstanceOf[EPS[Entity, P]]
@@ -161,11 +156,11 @@ final class SequentialPropertyStore private (
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
             val properties = for {
-                (e, pkIdPStates) ← ps
-                (pkId, pState) ← pkIdPStates
+                (ePValue, pkId) ← ps.zipWithIndex
+                (e, pValue) ← ePValue
             } yield {
-                val propertyKindName = PropertyKey.name(pkId.toInt)
-                s"$e -> $propertyKindName[$pkId] = $pState"
+                val propertyKindName = PropertyKey.name(pkId)
+                s"$e -> $propertyKindName[$pkId] = $pValue"
             }
             properties.mkString("PropertyStore(\n\t", "\n\t", "\n")
         } else {
@@ -181,7 +176,7 @@ final class SequentialPropertyStore private (
             tasks.isEmpty,
             "lazy computations should only be registered while no analysis are scheduled"
         )
-        lazyComputations += ((pk.id.toLong, pc))
+        lazyComputations(pk.id) = pc
     }
 
     override def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
@@ -198,101 +193,70 @@ final class SequentialPropertyStore private (
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
         val e = epk.e
         val pk = epk.pk
-        val pkIdInt = pk.id
-        val pkId = pkIdInt.toLong
+        val pkId = pk.id
 
-        ps.get(e) match {
+        ps(pkId).get(e) match {
             case None ⇒
-                // the entity is unknown
-                lazyComputations.get(pkId) match {
-                    case Some(lc) ⇒
-                        // create PropertyValue to ensure that we do not schedule
-                        // multiple (lazy) computations => the entity is now known
-                        ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
-                        scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
-                        // return the "current" result
-                        epk
-
-                    case None ⇒
+                // the entity is unknown ...
+                lazyComputations(pkId) match {
+                    case null ⇒
                         assert(
                             computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
                             "setup phase was not called"
                         )
-                        if (computedPropertyKinds.contains(pkIdInt) ||
-                            delayedPropertyKinds.contains(pkIdInt)) {
+                        if (computedPropertyKinds.contains(pkId) ||
+                            delayedPropertyKinds.contains(pkId)) {
                             epk
                         } else {
                             FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
                         }
+
+                    case lc: PropertyComputation[E] @unchecked ⇒
+                        // create PropertyValue to ensure that we do not schedule
+                        // multiple (lazy) computations => the entity is now known
+                        ps(pkId) += ((e, PropertyValue.lazilyComputed))
+                        scheduleForEntity(e)(lc)
+                        // return the "current" result
+                        epk
+
                 }
 
-            case Some(pkIdPValue) ⇒ pkIdPValue.get(pkId) match {
-
-                case None ⇒
-                    // the entity is known, but the property kind was never
-                    // queried before or there is no computation whatsoever..
-                    lazyComputations.get(pkId) match {
-                        case Some(lc) ⇒
-                            // create PropertyValue to ensure that we do not schedule
-                            // multiple (lazy) computations => the entity is now known
-                            pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
-                            scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
-                            epk
-
-                        case None ⇒
-                            assert(
-                                computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
-                                "setup phase was not called"
-                            )
-                            if (computedPropertyKinds.contains(pkIdInt) ||
-                                delayedPropertyKinds.contains(pkIdInt)) {
-                                epk
-                            } else {
-                                FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
-                            }
+            case Some(pValue) ⇒
+                val ub = pValue.ub // or lb... doesn't matter
+                if (ub != null && ub != PropertyIsLazilyComputed)
+                    // we have a property
+                    EPS(e, pValue.lb.asInstanceOf[P], pValue.ub.asInstanceOf[P])
+                else {
+                    // We do not (yet) have a value, but a lazy property
+                    // computation is already scheduled (if available).
+                    // Recall that it is a strict requirement that a
+                    // dependee which is listed in the set of dependees
+                    // of an IntermediateResult must have been queried;
+                    // however the sequential store does not create the
+                    // data-structure eagerly!
+                    if (debug && !(
+                        ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
+                    )) {
+                        throw new IllegalStateException(
+                            "registered lazy computations was not triggerd, "+
+                                "this happens, e.g., if the list of dependees contains EPKs "+
+                                "that are instantiated by the client but never queried"
+                        )
                     }
-
-                case Some(pValue) ⇒
-                    val ub = pValue.ub // or lb... doesn't matter
-                    if (ub != null && ub != PropertyIsLazilyComputed)
-                        // we have a property
-                        EPS(e, pValue.lb.asInstanceOf[P], pValue.ub.asInstanceOf[P])
-                    else {
-                        // We do not (yet) have a value, but a lazy property
-                        // computation is already scheduled (if available).
-                        // Recall that it is a strict requirement that a
-                        // dependee which is listed in the set of dependees
-                        // of an IntermediateResult must have been queried;
-                        // however the sequential store does not create the
-                        // data-structure eagerly!
-                        if (debug && !(
-                            ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
-                        )) {
-                            throw new IllegalStateException(
-                                "registered lazy computations was not triggerd, "+
-                                    "this happens, e.g., if the list of dependees contains EPKs "+
-                                    "which are directly instantiated without being queried before"
-                            )
-                        }
-                        // before.
-                        epk
-                    }
-            }
+                    // before.
+                    epk
+                }
         }
     }
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
      */
-    private[fpcf] def getPropertyValue(e: Entity, pkId: PKId): PropertyValue = {
-        if (!ps.contains(e))
-            return null;
-        val pkPValue = ps(e)
-
-        if (!pkPValue.contains(pkId))
-            return null;
-
-        pkPValue(pkId)
+    private[fpcf] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = {
+        ps(pkId).get(e) match {
+            case None         ⇒ null
+            case Some(pValue) ⇒ pValue
+        }
     }
 
     /**
@@ -312,7 +276,7 @@ final class SequentialPropertyStore private (
         if (debug && e == null) {
             throw new IllegalArgumentException("the entity must not be null")
         }
-        val pkId = ub.key.id.toLong
+        val pkId = ub.key.id
         /*user level*/ assert(ub.key == lb.key)
         /*user level*/ assert(
             !lb.isOrderedProperty || {
@@ -320,150 +284,136 @@ final class SequentialPropertyStore private (
                 ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
             }
         )
-        ps.get(e) match {
+        ps(pkId).get(e) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
-                ps += ((
-                    e,
-                    LongMap((pkId, PropertyValue(lb, ub, newDependees)))
-                ))
+                ps(pkId) += ((e, PropertyValue(lb, ub, newDependees)))
                 // registration with the new dependees is done when processing IntermediateResult
                 true
 
-            case Some(pkIdPValue) ⇒ /* The entity is known: */ pkIdPValue.get(pkId) match {
+            case Some(pValue: IntermediatePropertyValue) ⇒
+                // The entity is known and we have a property value for the respective
+                // kind; i.e., we may have (old) dependees and/or also dependers.
+                val oldIsFinal = pValue.isFinal
+                val oldLB = pValue.lb
+                val oldUB = pValue.ub
 
-                case None ⇒
-                    // A property of the respective kind was not yet stored/requested.
-                    // (=> there are no dependers/dependees):
-                    pkIdPValue += ((pkId, PropertyValue(lb, ub, newDependees)))
-                    // registration with the new dependees is done when processing IntermediateResult
-                    true
-
-                case Some(pValue: IntermediatePropertyValue) ⇒
-                    // The entity is known and we have a property value for the respective
-                    // kind; i.e., we may have (old) dependees and/or also dependers.
-                    val oldIsFinal = pValue.isFinal
-                    val oldLB = pValue.lb
-                    val oldUB = pValue.ub
-
-                    // 1. Check and update property:
-                    if (debug) {
-                        if (oldIsFinal) {
-                            throw new IllegalStateException(
-                                s"already final: $e@${identityHashCode(e).toHexString}/$ub"
-                            )
-                        }
-                        if (lb.isOrderedProperty) {
-                            try {
-                                val lbAsOP = lb.asOrderedProperty
-                                if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
-                                    val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
-                                    lbAsOP.checkIsEqualOrBetterThan(oldLBWithUBType)
-                                    val pValueUBAsOP = oldUB.asOrderedProperty
-                                    val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
-                                    pValueUBAsOP.checkIsEqualOrBetterThan(ubWithOldUBType)
-                                }
-                            } catch {
-                                case t: Throwable ⇒
-                                    throw new IllegalStateException(
-                                        s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
-                                            newDependees.mkString("newDependees={", ", ", "}")+
-                                            "; cause="+t.getMessage,
-                                        t
-                                    )
-                            }
-                        }
-                    }
-                    pValue.lb = lb
-                    pValue.ub = ub
-                    // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
-                    val newPValueIsFinal = pValue.isFinal
-
-                    // 2. Clear old dependees (remove onUpdateContinuation from dependees)
-                    //    and then update dependees.
-                    val epk = EPK(e, ub /*or lb*/ )
-                    for {
-                        eOptP @ EOptionP(oldDependeeE, oldDependeePK) ← pValue.dependees // <= the old ones
-                    } {
-                        val oldDependeePKId = oldDependeePK.id.toLong
-                        // Please recall, that we don't create support data-structures
-                        // (i.e., PropertyValue) eagerly... but they should have been
-                        // created by now or the dependees should be empty!
-                        assert(
-                            ps(oldDependeeE).contains(oldDependeePKId),
-                            s"$e(${ub.key}): dependee without support data structure: $eOptP"
+                // 1. Check and update property:
+                if (debug) {
+                    if (oldIsFinal) {
+                        throw new IllegalStateException(
+                            s"already final: $e@${identityHashCode(e).toHexString}/$ub"
                         )
-                        val dependeePValue = ps(oldDependeeE)(oldDependeePKId)
-                        val dependeeIntermediatePValue = dependeePValue.asIntermediate
-                        val dependersOfDependee = dependeeIntermediatePValue.dependers
-                        dependeeIntermediatePValue.dependers = dependersOfDependee - epk
                     }
-                    if (newPValueIsFinal)
-                        ps(e)(pkId) = new FinalPropertyValue(ub)
-                    else
-                        pValue.dependees = newDependees
-
-                    // 3. Notify dependers if necessary
-                    if (lb != oldLB || ub != oldUB || newPValueIsFinal) {
-
-                        pValue.dependers foreach { depender ⇒
-                            val (dependerEPK, onUpdateContinuation) = depender
-                            val t =
-                                if (newPValueIsFinal) {
-                                    () ⇒ handleResult(onUpdateContinuation(FinalEP(e, ub)))
-                                } else {
-                                    () ⇒
-                                        {
-                                            // get the most current pValue when the depender
-                                            // is eventually evaluated; the effectiveness
-                                            // of this check depends on the scheduling strategy(!)
-                                            val pValue = ps(e)(pkId)
-                                            val eps = EPS(e, pValue.lb, pValue.ub)
-                                            handleResult(onUpdateContinuation(eps))
-                                        }
-                                }
-                            scheduledOnUpdateComputationsCounter += 1
-                            if (delayHandlingOfDependerNotification)
-                                tasks.append(t)
-                            else
-                                tasks.prepend(t)
-                            // Clear depender => dependee lists.
-                            // Given that we have triggered the depender, we now have
-                            // to remove the respective onUpdateContinuation from all
-                            // dependees of the respective depender to avoid that the
-                            // onUpdateContinuation is triggered multiple times!
-                            val dependerPKId = dependerEPK.pk.id.toLong
-                            val dependerPValue = ps(dependerEPK.e)(dependerPKId).asIntermediate
-                            dependerPValue.dependees foreach { epkOfDependeeOfDepender ⇒
-                                if (epkOfDependeeOfDepender.toEPK != epk) {
-                                    // We have to avoid checking against the "current" dependee
-                                    // because it is already final!
-                                    val dependeePKIdOfDepender = epkOfDependeeOfDepender.pk.id.toLong
-                                    val pValueOfDependeeOfDepender =
-                                        ps(epkOfDependeeOfDepender.e)(dependeePKIdOfDepender)
-                                    pValueOfDependeeOfDepender.asIntermediate.dependers -= dependerEPK
-                                }
+                    if (lb.isOrderedProperty) {
+                        try {
+                            val lbAsOP = lb.asOrderedProperty
+                            if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
+                                val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
+                                lbAsOP.checkIsEqualOrBetterThan(oldLBWithUBType)
+                                val pValueUBAsOP = oldUB.asOrderedProperty
+                                val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
+                                pValueUBAsOP.checkIsEqualOrBetterThan(ubWithOldUBType)
                             }
-                            dependerPValue.dependees = Nil
+                        } catch {
+                            case t: Throwable ⇒
+                                throw new IllegalStateException(
+                                    s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
+                                        newDependees.mkString("newDependees={", ", ", "}")+
+                                        "; cause="+t.getMessage,
+                                    t
+                                )
                         }
-                        pValue.dependers = Map.empty
                     }
+                }
+                pValue.lb = lb
+                pValue.ub = ub
+                // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
+                val newPValueIsFinal = pValue.isFinal
 
-                    oldLB == null /*AND/OR oldUB == null*/
+                // 2. Clear old dependees (remove onUpdateContinuation from dependees)
+                //    and then update dependees.
+                val epk = EPK(e, ub /*or lb*/ )
+                for {
+                    eOptP @ EOptionP(oldDependeeE, oldDependeePK) ← pValue.dependees // <= the old ones
+                } {
+                    val oldDependeePKId = oldDependeePK.id
+                    // Please recall, that we don't create support data-structures
+                    // (i.e., PropertyValue) eagerly... but they should have been
+                    // created by now or the dependees should be empty!
 
-                case Some(finalPValue) ⇒
-                    throw new IllegalStateException(s"$e: update of $finalPValue")
-            }
+                    val dependeePValue = ps(oldDependeePKId)(oldDependeeE)
+                    val dependeeIntermediatePValue = dependeePValue.asIntermediate
+                    val dependersOfDependee = dependeeIntermediatePValue.dependers
+                    dependeeIntermediatePValue.dependers = dependersOfDependee - epk
+                }
+                if (newPValueIsFinal)
+                    ps(pkId) += ((e, new FinalPropertyValue(ub)))
+                else
+                    pValue.dependees = newDependees
+
+                // 3. Notify dependers if necessary
+                if (lb != oldLB || ub != oldUB || newPValueIsFinal) {
+
+                    pValue.dependers foreach { depender ⇒
+                        val (dependerEPK, onUpdateContinuation) = depender
+                        val t =
+                            if (newPValueIsFinal) {
+                                () ⇒ handleResult(onUpdateContinuation(FinalEP(e, ub)))
+                            } else {
+                                () ⇒
+                                    {
+                                        // get the most current pValue when the depender
+                                        // is eventually evaluated; the effectiveness
+                                        // of this check depends on the scheduling strategy(!)
+                                        val pValue = ps(pkId)(e)
+                                        val eps = EPS(e, pValue.lb, pValue.ub)
+                                        handleResult(onUpdateContinuation(eps))
+                                    }
+                            }
+                        scheduledOnUpdateComputationsCounter += 1
+                        if (delayHandlingOfDependerNotification)
+                            tasks.append(t)
+                        else
+                            tasks.prepend(t)
+                        // Clear depender => dependee lists.
+                        // Given that we have triggered the depender, we now have
+                        // to remove the respective onUpdateContinuation from all
+                        // dependees of the respective depender to avoid that the
+                        // onUpdateContinuation is triggered multiple times!
+                        val dependerPKId = dependerEPK.pk.id
+                        val dependerPValue = ps(dependerPKId)(dependerEPK.e).asIntermediate
+                        dependerPValue.dependees foreach { epkOfDependeeOfDepender ⇒
+                            if (epkOfDependeeOfDepender.toEPK != epk) {
+                                // We have to avoid checking against the "current" dependee
+                                // because it is already final!
+                                val dependeePKIdOfDepender = epkOfDependeeOfDepender.pk.id
+                                val pValueOfDependeeOfDepender =
+                                    ps(dependeePKIdOfDepender)(epkOfDependeeOfDepender.e)
+                                pValueOfDependeeOfDepender.asIntermediate.dependers -= dependerEPK
+                            }
+                        }
+                        dependerPValue.dependees = Nil
+                    }
+                    pValue.dependers = Map.empty
+                }
+
+                oldLB == null /*AND/OR oldUB == null*/
+
+            case Some(finalPValue) ⇒
+                throw new IllegalStateException(s"$e: update of $finalPValue")
+
         }
     }
 
     override def set(e: Entity, p: Property): Unit = {
-        val pkId = p.key.id.toLong
+        val key = p.key
+        val pkId = key.id
 
-        if (debug && lazyComputations.get(pkId).nonEmpty) {
+        if (debug && lazyComputations(pkId) != null) {
             throw new IllegalArgumentException(
                 s"$e: setting $p is not supported; "+
-                    s"lazy computation scheduled for property kind ${p.key}"
+                    s"lazy computation scheduled for property kind $key"
             )
         }
 
@@ -550,7 +500,7 @@ final class SequentialPropertyStore private (
                             if (debug) checkNonFinal(newDependee)
 
                             val dependeeE = newDependee.e
-                            val dependeePKId = newDependee.pk.id.toLong
+                            val dependeePKId = newDependee.pk.id
                             val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
 
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
@@ -573,7 +523,7 @@ final class SequentialPropertyStore private (
                         newDependees forall { newDependee ⇒
                             if (debug) checkNonFinal(newDependee)
                             val dependeeE = newDependee.e
-                            val dependeePKId = newDependee.pk.id.toLong
+                            val dependeePKId = newDependee.pk.id
                             val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
                                 // There were updates... hence, we will update the value for other analyses
@@ -595,7 +545,7 @@ final class SequentialPropertyStore private (
                                 } else {
                                     val t = () ⇒ {
                                         handleResult({
-                                            val newestPValue = ps(dependeeE)(dependeePKId)
+                                            val newestPValue = ps(dependeePKId)(dependeeE)
                                             c(EPS(dependeeE, newestPValue.lb, newestPValue.ub))
                                         })
                                     }
@@ -622,36 +572,25 @@ final class SequentialPropertyStore private (
 
                     newDependees foreach { dependee ⇒
                         val dependeeE = dependee.e
-                        val dependeePKId = dependee.pk.id.toLong
+                        val dependeePKId = dependee.pk.id
 
-                        ps.get(dependeeE) match {
+                        ps(dependeePKId).get(dependeeE) match {
                             case None ⇒
                                 // the dependee is not known
-                                ps += ((
+                                ps(dependeePKId) += ((
                                     dependeeE,
-                                    LongMap((
-                                        dependeePKId,
-                                        new IntermediatePropertyValue(dependerEPK, c)
-                                    ))
+                                    new IntermediatePropertyValue(dependerEPK, c)
                                 ))
 
-                            case Some(dependeePKIdPValue) ⇒
-                                dependeePKIdPValue.get(dependeePKId) match {
+                            case Some(dependeePValue: IntermediatePropertyValue) ⇒
+                                val dependeeDependers = dependeePValue.dependers
+                                dependeePValue.dependers = dependeeDependers + dependency
 
-                                    case None ⇒
-                                        val pValue = new IntermediatePropertyValue(dependerEPK, c)
-                                        dependeePKIdPValue += (dependeePKId, pValue)
-
-                                    case Some(dependeePValue: IntermediatePropertyValue) ⇒
-                                        val dependeeDependers = dependeePValue.dependers
-                                        dependeePValue.dependers = dependeeDependers + dependency
-
-                                    case Some(dependeePValue) ⇒
-                                        throw new UnknownError(
-                                            "fatal internal error; "+
-                                                "can't update dependees of final property"
-                                        )
-                                }
+                            case Some(dependeePValue) ⇒
+                                throw new UnknownError(
+                                    "fatal internal error; "+
+                                        "can't update dependees of final property"
+                                )
                         }
                     }
                 } else {
@@ -696,11 +635,11 @@ final class SequentialPropertyStore private (
                 //     scheduled or will be scheduled; but it is still possible that we will
                 //     not have a property for a specific entity, if the underlying analysis
                 //     doesn't compute one; in that case we need to put in fallback values.)
+                // IMPROVE: parForeachArrayElement(ps,isInterrupted = () => false){                    ???                }
                 for {
-                    (e, pkIdPV) ← ps
-                    (pkLongId, pValue) ← pkIdPV
+                    (ePValue, pkId) ← ps.zipWithIndex
+                    (e, pValue) ← ePValue
                 } {
-                    val pkId = pkLongId.toInt
                     // Check that we have no running computations and that the
                     // property will not be computed later on.
                     if (pValue.ub == null && !delayedPropertyKinds.contains(pkId)) {
@@ -724,9 +663,8 @@ final class SequentialPropertyStore private (
                 if (!continueComputation) {
                     val epks: Traversable[SomeEOptionP] =
                         for {
-                            (e, pkIdPValue) ← ps
-                            (pkLongId, pValue) ← pkIdPValue
-                            pkId = pkLongId.toInt
+                            (ePValue, pkId) ← ps.zipWithIndex
+                            (e, pValue) ← ePValue
                             ub = pValue.ub
                             if ub != null // analyses must always commit some value; hence,
                             // Both of the following tests are necessary because we may have
@@ -741,15 +679,16 @@ final class SequentialPropertyStore private (
 
                     val cSCCs = graphs.closedSCCs(
                         epks,
-                        (epk: SomeEOptionP) ⇒ ps(epk.e)(epk.pk.id.toLong).dependees
+                        (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
                     )
                     for {
                         cSCC ← cSCCs
                     } {
                         val headEPK = cSCC.head
                         val e = headEPK.e
-                        val lb = ps(e)(headEPK.pk.id.toLong).lb
-                        val ub = ps(e)(headEPK.pk.id.toLong).ub
+                        val pkId = headEPK.pk.id
+                        val lb = ps(pkId)(e).lb
+                        val ub = ps(pkId)(e).ub
                         val headEPS = IntermediateEP(e, lb, ub)
                         val newEP = PropertyKey.resolveCycle(this, headEPS)
                         val cycleAsText =
@@ -771,10 +710,9 @@ final class SequentialPropertyStore private (
                     // (collaboratively computed) properties (e.g. CallGraph) which are
                     // not yet final; let's finalize them!
                     for {
-                        (e, pkIdPV) ← ps
-                        (pkLongId, pValue) ← pkIdPV
+                        (ePValue, pkId) ← ps.zipWithIndex
+                        (e, pValue) ← ePValue
                     } {
-                        val pkId = pkLongId.toInt
                         val lb = pValue.lb
                         val ub = pValue.ub
                         val isFinal = pValue.isFinal
@@ -792,151 +730,28 @@ final class SequentialPropertyStore private (
         if (debug && !isInterrupted) {
             // let's search for "unsatisfied computations"
             for {
-                // entity =>
-                //        (long) map from
-                //           property kind id =>
-                //                PropertyValue
-                // private[this] val ps: AnyRefMap[Entity, LongMap[PropertyValue]] = AnyRefMap.empty
-                (e, pkIdPValue) ← ps
-                (pkId, pValue) ← pkIdPValue
+                ePValue ← ps
+                (e, pValue) ← ePValue
                 if !pValue.isFinal
             } {
                 error("analysis progress", s"unexpected intermediate property state: $e ⇒ $pValue")
             }
         }
     }
-
-}
-
-// NOTE
-// For collaboratively computed properties isFinal maybe false, but we do not have dependees!
-private[fpcf] abstract class PropertyValue {
-    // lb/ub are :
-    //   - null if some analyses depend on it, but no lazy computation is scheduled
-    //   - PropertyIsLazilyComputed if the computation is scheduled (to avoid rescheduling)
-    //   - a concrete Property.
-    def lb: Property
-    def ub: Property
-
-    //
-    // Both of the following collections are maintained eagerly in the
-    // the sense that, if an update happens, the on update
-    // continuation will directly be scheduled and the corresponding
-    // collections will be cleared respectively.
-    //
-    // Those who are interested in this property;
-    // the keys are those EPKs with a dependency on this one:
-    def dependers: Map[SomeEPK, OnUpdateContinuation]
-
-    // The properties on which this property depends;
-    // required to remove the onUpdateContinuation for this
-    // property from the dependers maps of the dependees.
-    // Note, dependees can even be empty for non-final properties
-    // in case of collaboratively computed properties OR if a task
-    // which computes the next value is already scheduled!
-    def dependees: Traversable[SomeEOptionP]
-
-    def isFinal: Boolean
-
-    def asIntermediate: IntermediatePropertyValue = {
-        throw new ClassCastException(s"$this is not an IntermediatePropertyValue")
-    }
-
-    def toEPS[E <: Entity](e: E): Option[EPS[E, Property]] = {
-        if (ub == null || ub == PropertyIsLazilyComputed)
-            None
-        else
-            Some(EPS(e, lb, ub))
-    }
-
-    override def toString: String = {
-        (if (isFinal) "Final" else "Intermediate")+
-            "PropertyValue("+
-            "\n\tlb="+lb+
-            "\n\tub="+ub+
-            "\n\t#dependers="+dependers.size + dependers.keys.mkString(";dependers={", ", ", "}")+
-            "\n\t#dependees="+dependees.size + dependees.mkString(";dependees={", ", ", "}")+
-            "\n)"
-    }
-}
-
-private[fpcf] final class IntermediatePropertyValue(
-        var lb:        Property,
-        var ub:        Property,
-        var dependers: Map[SomeEPK, OnUpdateContinuation],
-        var dependees: Traversable[SomeEOptionP]
-) extends PropertyValue {
-
-    assert(ub != lb || ub == PropertyIsLazilyComputed || ub == null)
-
-    def this(epk: SomeEPK, c: OnUpdateContinuation) {
-        this(null, null, Map(epk → c), Nil)
-    }
-
-    final override def isFinal: Boolean = {
-        val ub = this.ub
-        ub != null && ub != PropertyIsLazilyComputed && ub == lb
-    }
-
-    final override def asIntermediate: IntermediatePropertyValue = this
-}
-
-private[fpcf] final class FinalPropertyValue(val ub: Property) extends PropertyValue {
-    assert(ub != PropertyIsLazilyComputed)
-    assert(ub != null)
-    final override def lb: Property = ub
-    final override def dependers: Map[SomeEPK, OnUpdateContinuation] = Map.empty
-    final override def dependees: Traversable[SomeEOptionP] = Nil
-    final override def isFinal: Boolean = true
-}
-
-private[fpcf] object PropertyValue {
-
-    def lazilyComputed: PropertyValue = {
-        new IntermediatePropertyValue(
-            PropertyIsLazilyComputed,
-            PropertyIsLazilyComputed,
-            Map.empty,
-            Nil
-        )
-    }
-
-    def apply(
-        lb:        Property,
-        ub:        Property,
-        dependees: Traversable[SomeEOptionP]
-    ): PropertyValue = {
-        if (lb == ub && ub != PropertyIsLazilyComputed) {
-            assert(dependees.isEmpty)
-            new FinalPropertyValue(ub)
-        } else {
-            new IntermediatePropertyValue(lb, ub, Map.empty, dependees)
-        }
-    }
-
 }
 
 /**
- * Factory for creating `SequentialPropertyStore`s.
+ * Factory for creating `EPKSequentialPropertyStore`s.
  */
-object SequentialPropertyStore extends PropertyStoreFactory {
+object PKESequentialPropertyStore extends PropertyStoreFactory {
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
         logContext: LogContext
-    ): SequentialPropertyStore = {
+    ): PKESequentialPropertyStore = {
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
-        new SequentialPropertyStore(contextMap)
+        new PKESequentialPropertyStore(contextMap)
     }
 }
-
-sealed abstract class DependeeUpdateHandling
-
-final case object EagerDependeeUpdateHandling extends DependeeUpdateHandling
-
-final case class LazyDependeeUpdateHandling(
-        delayHandlingOfNonFinalDependeeUpdates: Boolean = true,
-        delayHandlingOfFinalDependeeUpdates:    Boolean = false
-) extends DependeeUpdateHandling

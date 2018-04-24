@@ -68,6 +68,6 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         val context: List[PropertyStoreContext[AnyRef]] = List(
             PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
         )
-        SequentialPropertyStore(context: _*)
+        EPKSequentialPropertyStore(context: _*)
     }
 }
