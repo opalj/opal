@@ -251,7 +251,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             upperTypeBound.size match {
                 case 0 ⇒ None /* only null has an empty upper type bound */
                 case 1 ⇒ Some(upperTypeBound.head)
-                case 2 ⇒ Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
+                case _ ⇒ Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound
+                (upperTypeBound))
             }
         }
 
