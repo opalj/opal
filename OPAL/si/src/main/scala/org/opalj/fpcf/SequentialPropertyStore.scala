@@ -30,11 +30,10 @@ package org.opalj
 package fpcf
 
 import scala.reflect.runtime.universe.Type
-
 import java.lang.System.identityHashCode
+
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.LongMap
-
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
@@ -49,7 +48,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - a computation is already scheduled that will compute the property OR
  *  - we have a `depender`.
  */
-class SequentialPropertyStore private (
+final class SequentialPropertyStore private (
         val ctx: Map[Type, AnyRef]
 )(
         implicit
@@ -59,8 +58,7 @@ class SequentialPropertyStore private (
     /*
      * Controls in which order updates are processed/scheduled.
      */
-    @volatile var delayHandlingOfNonFinalDependeeUpdates: Boolean = true
-    @volatile var delayHandlingOfFinalDependeeUpdates: Boolean = false
+    @volatile var dependeeUpdateHandling: DependeeUpdateHandling = EagerDependeeUpdateHandling
 
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
@@ -71,6 +69,9 @@ class SequentialPropertyStore private (
 
     protected[this] var scheduledOnUpdateComputationsCounter: Int = 0
     final def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+
+    protected[this] var eagerOnUpdateComputationsCounter: Int = 0
+    final def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
 
     private[this] var quiescenceCounter = 0
 
@@ -508,63 +509,102 @@ class SequentialPropertyStore private (
                 // IMPROVE Process all dependee updates
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
 
-                // 1. let's check if a new dependee is already updated...
-                //    If so, we directly schedule a task again to compute the property.
-                val noUpdates = newDependees forall { newDependee ⇒
-                    if (debug && newDependee.isFinal) {
+                def checkNonFinal(dependee: SomeEOptionP): Unit = {
+                    if (dependee.isFinal) {
                         throw new IllegalStateException(
-                            s"entity=$e (lb=$lb, ub=$ub) dependency to final property: $newDependee"
+                            s"$e (lb=$lb, ub=$ub): dependency to final property: $dependee"
                         )
                     }
-                    val dependeeE = newDependee.e
-                    val dependeePKId = newDependee.pk.id.toLong
-                    val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
-                    val isDependeeUpdated =
-                        dependeePValue != null && dependeePValue.ub != null &&
-                            dependeePValue.ub != PropertyIsLazilyComputed && (
-                                // ... we have some property
-                                // 1) check that (implicitly)  the state of
-                                // the current value must have been changed
-                                dependeePValue.isFinal ||
-                                // 2) check if the given dependee did not yet have a property
-                                newDependee.hasNoProperty ||
-                                // 3) the properties are different
-                                newDependee.ub != dependeePValue.ub ||
-                                newDependee.lb != dependeePValue.lb
-                            )
+                }
 
-                    if (isDependeeUpdated) {
-                        // There were updates... hence, we will update the value for other analyses
-                        // which want to get the most current value in the meantime, but we postpone
-                        // notification of other analyses which are depending on it until we have
-                        // the updated value (minimize the overall number of notifications.)
-                        // println(s"update: $e => $p (isFinal=false;notifyDependers=false)")
+                def isDependeeUpdated(
+                    dependeePValue: PropertyValue, // may contains newer info than "newDependee"
+                    newDependee:    SomeEOptionP
+                ): Boolean = {
+                    dependeePValue != null && dependeePValue.ub != null &&
+                        dependeePValue.ub != PropertyIsLazilyComputed && (
+                            // ... we have some property
+                            // 1) check that (implicitly)  the state of
+                            // the current value must have been changed
+                            dependeePValue.isFinal ||
+                            // 2) check if the given dependee did not yet have a property
+                            newDependee.hasNoProperty ||
+                            // 3) the properties are different
+                            newDependee.ub != dependeePValue.ub ||
+                            newDependee.lb != dependeePValue.lb
+                        )
+                }
 
-                        scheduledOnUpdateComputationsCounter += 1
-                        if (dependeePValue.isFinal) {
-                            val t = () ⇒ {
-                                handleResult(c(FinalEP(dependeeE, dependeePValue.ub)))
+                // 1. let's check if a new dependee is already updated...
+                //    If so, we directly schedule a task again to compute the property.
+                val noUpdates = dependeeUpdateHandling match {
+
+                    case EagerDependeeUpdateHandling ⇒
+                        val theDependeesIterator = newDependees.toIterator
+                        while (theDependeesIterator.hasNext) {
+                            val newDependee = theDependeesIterator.next()
+                            if (debug) checkNonFinal(newDependee)
+
+                            val dependeeE = newDependee.e
+                            val dependeePKId = newDependee.pk.id.toLong
+                            val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
+
+                            if (isDependeeUpdated(dependeePValue, newDependee)) {
+                                eagerOnUpdateComputationsCounter += 1
+                                if (dependeePValue.isFinal) {
+                                    handleResult(c(FinalEP(dependeeE, dependeePValue.ub)))
+                                } else {
+                                    val newEP = EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
+                                    handleResult(c(newEP))
+                                }
+                                return ;
                             }
-                            if (delayHandlingOfFinalDependeeUpdates)
-                                tasks.append(t)
-                            else
-                                tasks.prepend(t)
-                        } else {
-                            val t = () ⇒ {
-                                handleResult({
-                                    val newestPValue = ps(dependeeE)(dependeePKId)
-                                    c(EPS(dependeeE, newestPValue.lb, newestPValue.ub))
-                                })
-                            }
-                            if (delayHandlingOfNonFinalDependeeUpdates)
-                                tasks.append(t)
-                            else
-                                tasks.prepend(t)
                         }
-                        false
-                    } else {
-                        true // <= no update
-                    }
+                        true // all updates are handled; otherwise we have an early return
+
+                    case LazyDependeeUpdateHandling(
+                        delayHandlingOfFinalDependeeUpdates,
+                        delayHandlingOfNonFinalDependeeUpdates
+                        ) ⇒
+                        newDependees forall { newDependee ⇒
+                            if (debug) checkNonFinal(newDependee)
+                            val dependeeE = newDependee.e
+                            val dependeePKId = newDependee.pk.id.toLong
+                            val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
+                            if (isDependeeUpdated(dependeePValue, newDependee)) {
+                                // There were updates... hence, we will update the value for other analyses
+                                // which want to get the most current value in the meantime, but we postpone
+                                // notification of other analyses which are depending on it until we have
+                                // the updated value (minimize the overall number of notifications.)
+                                // println(s"update: $e => $p (isFinal=false;notifyDependers=false)")
+
+                                scheduledOnUpdateComputationsCounter += 1
+                                if (dependeePValue.isFinal) {
+                                    def t(): Unit = {
+                                        val newEP = FinalEP(dependeeE, dependeePValue.ub)
+                                        handleResult(c(newEP))
+                                    }
+                                    if (delayHandlingOfFinalDependeeUpdates)
+                                        tasks.append(() ⇒ t())
+                                    else
+                                        tasks.prepend(() ⇒ t())
+                                } else {
+                                    val t = () ⇒ {
+                                        handleResult({
+                                            val newestPValue = ps(dependeeE)(dependeePKId)
+                                            c(EPS(dependeeE, newestPValue.lb, newestPValue.ub))
+                                        })
+                                    }
+                                    if (delayHandlingOfNonFinalDependeeUpdates)
+                                        tasks.append(t)
+                                    else
+                                        tasks.prepend(t)
+                                }
+                                false
+                            } else {
+                                true // <= no update
+                            }
+                        }
                 }
 
                 if (noUpdates) {
@@ -887,3 +927,12 @@ object SequentialPropertyStore extends PropertyStoreFactory {
         new SequentialPropertyStore(contextMap)
     }
 }
+
+sealed abstract class DependeeUpdateHandling
+
+final case object EagerDependeeUpdateHandling extends DependeeUpdateHandling
+
+final case class LazyDependeeUpdateHandling(
+        delayHandlingOfNonFinalDependeeUpdates: Boolean = true,
+        delayHandlingOfFinalDependeeUpdates:    Boolean = false
+) extends DependeeUpdateHandling

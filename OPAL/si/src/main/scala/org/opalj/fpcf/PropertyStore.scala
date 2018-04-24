@@ -167,6 +167,8 @@ abstract class PropertyStore {
      */
     def scheduledOnUpdateComputations: Int
 
+    def eagerOnUpdateComputations: Int
+
     //
     //
     // CORE FUNCTIONALITY

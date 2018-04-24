@@ -660,7 +660,8 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 
                     info(
                         s"(id of first permutation = ${dropCount + 1}) number of executed tasks:"+ps.scheduledTasks+
-                            "; number of executed onUpdateContinuations:"+ps.scheduledOnUpdateComputations
+                            "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputations+
+                            "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputations
                     )
                 }
             }
@@ -915,8 +916,8 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                 prevNode.targets += firstNode
 
                 // 2. we create the store
-                val store = createPropertyStore()
-                store.setupPhase(Set(Purity.Key), Set.empty)
+                val ps = createPropertyStore()
+                ps.setupPhase(Set(Purity.Key), Set.empty)
 
                 def purityAnalysis(node: Node): PropertyComputationResult = {
                     def c(successorNode: SomeEOptionP): PropertyComputationResult = {
@@ -940,21 +941,26 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
                     }: PropertyComputationResult
 
                     val nextNode = node.targets.head // HERE: we always have only one successor
-                    c(store(nextNode, Purity.Key))
+                    c(ps(nextNode, Purity.Key))
                 }
                 // 4. execute analysis
-                store.scheduleForEntities(allNodes)(purityAnalysis)
-                store.waitOnPhaseCompletion()
+                ps.scheduleForEntities(allNodes)(purityAnalysis)
+                ps.waitOnPhaseCompletion()
 
                 // 5. let's evaluate the result
-                store.entities(Purity.Key) foreach { eps ⇒
+                ps.entities(Purity.Key) foreach { eps ⇒
                     if (eps.lb != Pure) {
-                        info(store.toString(true))
+                        info(ps.toString(true))
                         fail(s"Node(${eps.e}) is not Pure (${eps.lb})")
                     }
                 }
 
                 info(s"test succeeded with $testSize node(s) in a circle")
+                info(
+                    s"number of executed tasks:"+ps.scheduledTasks+
+                        "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputations+
+                        "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputations
+                )
             }
         }
     }

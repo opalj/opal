@@ -39,8 +39,10 @@ class TrueTrueTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebug
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = true
-        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = true,
+            delayHandlingOfNonFinalDependeeUpdates = true
+        )
         s.delayHandlingOfDependerNotification = true
 
         s
@@ -55,8 +57,10 @@ class FalseTrueTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebu
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = false
-        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = false,
+            delayHandlingOfNonFinalDependeeUpdates = true
+        )
         s.delayHandlingOfDependerNotification = true
         s
     }
@@ -68,8 +72,10 @@ class TrueFalseTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebu
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = true
-        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = true,
+            delayHandlingOfNonFinalDependeeUpdates = false
+        )
         s.delayHandlingOfDependerNotification = true
         s
     }
@@ -81,8 +87,10 @@ class TrueTrueFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebu
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = true
-        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = true,
+            delayHandlingOfNonFinalDependeeUpdates = true
+        )
         s.delayHandlingOfDependerNotification = false
         s
     }
@@ -95,8 +103,10 @@ class FalseFalseTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDeb
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = false
-        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = false,
+            delayHandlingOfNonFinalDependeeUpdates = false
+        )
         s.delayHandlingOfDependerNotification = true
         s
     }
@@ -109,8 +119,10 @@ class FalseTrueFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDeb
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = false
-        s.delayHandlingOfNonFinalDependeeUpdates = true
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = false,
+            delayHandlingOfNonFinalDependeeUpdates = true
+        )
         s.delayHandlingOfDependerNotification = false
         s
     }
@@ -123,8 +135,10 @@ class TrueFalseFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDeb
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = true
-        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = true,
+            delayHandlingOfNonFinalDependeeUpdates = false
+        )
         s.delayHandlingOfDependerNotification = false
         s
     }
@@ -137,9 +151,33 @@ class FalseFalseFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDe
 
         s.debug = debug
 
-        s.delayHandlingOfFinalDependeeUpdates = false
-        s.delayHandlingOfNonFinalDependeeUpdates = false
+        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+            delayHandlingOfFinalDependeeUpdates = false,
+            delayHandlingOfNonFinalDependeeUpdates = false
+        )
         s.delayHandlingOfDependerNotification = false
+        s
+    }
+}
+
+class EagerFalseSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.debug = debug
+        s.dependeeUpdateHandling = EagerDependeeUpdateHandling
+        s.delayHandlingOfDependerNotification = false
+        s
+    }
+}
+
+class EagerTrueSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PropertyStore = {
+        val s = SequentialPropertyStore()
+        s.debug = debug
+        s.dependeeUpdateHandling = EagerDependeeUpdateHandling
+        s.delayHandlingOfDependerNotification = true
         s
     }
 }
