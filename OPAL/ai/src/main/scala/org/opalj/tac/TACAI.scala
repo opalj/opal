@@ -218,7 +218,7 @@ object TACAI {
         // have to clear the usages.
         val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntTrieSet /*DefSites*/ )] = Queue.empty
 
-        def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
+        def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
             // we now have to kill the usages to avoid "wrong" links.
             // E.g.,
@@ -228,19 +228,19 @@ object TACAI {
             // site is removed and - therefore - this link from x to x+1 has to
             // be removed.
             if (valuesCount > 0) {
-                var origins = normalizeParameterOrigins(domain.operandOrigin(useSite, 0))
+                var origins = normalizeParameterOrigins(domain.operandOrigin(useSitePC, 0))
                 var i = 1
                 while (i < valuesCount) {
-                    origins ++= normalizeParameterOrigins(domain.operandOrigin(useSite, i))
+                    origins ++= normalizeParameterOrigins(domain.operandOrigin(useSitePC, i))
                     i += 1
                 }
-                obsoleteUseSites enqueue ((useSite, origins))
+                obsoleteUseSites enqueue ((useSitePC, origins))
             }
         }
 
-        def killRegisterBasedUsages(useSite: br.PC, index: Int): Unit = {
-            val origins = normalizeParameterOrigins(domain.localOrigin(useSite, index))
-            obsoleteUseSites enqueue ((useSite, origins))
+        def killRegisterBasedUsages(useSitePC: Int, index: Int): Unit = {
+            val origins = normalizeParameterOrigins(domain.localOrigin(useSitePC, index))
+            obsoleteUseSites enqueue ((useSitePC, origins))
         }
 
         // The catch handler statements which were added to the code that do not take up
@@ -248,7 +248,7 @@ object TACAI {
         var addedHandlerStmts: IntTrieSet = IntTrieSet.empty
         val handlerPCs = (new IntArraySetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
 
-        var pc: PC = 0
+        var pc: Int = 0
         var index: Int = 0
         do {
             val nextPC = pcOfNextInstruction(pc)
@@ -327,7 +327,7 @@ object TACAI {
              * an expression statement or a nop statement is added.
              */
             def addInitLocalValStmt(
-                pc:   PC,
+                pc:   Int,
                 v:    aiResult.domain.DomainValue,
                 expr: Expr[DUVar[aiResult.domain.DomainValue]]
             ): Unit = {
@@ -959,19 +959,30 @@ object TACAI {
         }
 
         val tacStmts: Array[Stmt[DUVar[aiResult.domain.DomainValue]]] = {
+            def isIndexOfCaughtExceptionStmt(index: Int): Boolean = {
+                // if (statements(index) == null) {
+                // println(s"$index is null:"+statements.zipWithIndex.map(_.swap).mkString("\n", "\n", "\n"))
+                // println(pcToIndex.zipWithIndex.map(_.swap).mkString("pcs to indexes: \n", "\n", "\n"))
+                // println(instructions.zipWithIndex.map(_.swap).mkString("instructions: \n", "\n", "\n"))
+                // }
+                statements(index).astID == CaughtException.ASTID
+            }
             if (index == maxStatements) {
                 // Examples:
                 // It can be a single goto, a return or a throw (of an exception passed to
                 // the method via a parameter).
                 var s = 0
-                while (s < maxStatements) { statements(s).remapIndexes(pcToIndex); s += 1 }
+                while (s < maxStatements) {
+                    statements(s).remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+                    s += 1
+                }
                 statements
             } else {
                 val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
                 var s = 0
                 while (s < index) {
                     val stmt = statements(s)
-                    stmt.remapIndexes(pcToIndex)
+                    stmt.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
                     tacStmts(s) = stmt
                     s += 1
                 }

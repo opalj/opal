@@ -154,14 +154,22 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
      * DVars additionally remap self-uses (which don't make sense, but can be a result
      * of the transformation of exception handlers) to uses of the next statement.
      */
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
         assert(
             origin >= 0,
             s"DVars are not intended to be used to model parameters/exceptions (origin=$origin)"
         )
-        val newOrigin = pcToIndex(origin)
+        val initialNewOrigin = pcToIndex(origin)
+        val newOrigin =
+            if (isIndexOfCaughtExceptionStmt(initialNewOrigin))
+                initialNewOrigin + 1
+            else
+                initialNewOrigin
         origin = newOrigin
-        useSites = useSites.map { useSite ⇒
+        useSites = useSites map { useSite ⇒
             // a use site is always positive...
             val newUseSite = pcToIndex(useSite)
             if (newUseSite == newOrigin)
@@ -229,11 +237,18 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     final def isSideEffectFree: Boolean = true
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        defSites = defSites.map { defSite ⇒
-            if (defSite >= 0)
-                pcToIndex(defSite)
-            else if (ai.isVMLevelValue(defSite))
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        defSites = defSites map { defSite ⇒
+            if (defSite >= 0) {
+                val defSiteIndex = pcToIndex(defSite)
+                if (isIndexOfCaughtExceptionStmt(defSiteIndex))
+                    defSiteIndex + 1 // we have to skip the "CaughtExceptionStatement" - it can't be a definition site!
+                else
+                    defSiteIndex
+            } else if (ai.isVMLevelValue(defSite))
                 ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(defSite)))
             else
                 defSite /* <= it is referencing a parameter */
