@@ -32,6 +32,7 @@ package ai
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Defines the interface between the abstract interpreter and a module for tracing and
@@ -69,8 +70,8 @@ trait AITracer {
         code:   Code,
         domain: Domain
     )(
-        initialWorkList:                  List[PC],
-        alreadyEvaluated:                 List[PC],
+        initialWorkList:                  List[Int /*PC*/ ],
+        alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
         memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
@@ -89,7 +90,7 @@ trait AITracer {
     def instructionEvalution(
         domain: Domain
     )(
-        pc:          PC,
+        pc:          Int,
         instruction: Instruction,
         operands:    domain.Operands,
         locals:      domain.Locals
@@ -117,8 +118,8 @@ trait AITracer {
     def flow(
         domain: Domain
     )(
-        currentPC:                PC,
-        targetPC:                 PC,
+        currentPC:                Int,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean
     ): Unit
 
@@ -127,7 +128,7 @@ trait AITracer {
      * was set to a new value and, therefore, the reference stored in the local variable
      * previously was useless/dead.
      */
-    def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit
+    def deadLocalVariable(domain: Domain)(pc: Int, lvIndex: Int): Unit
 
     /**
      * Called by the interpreter if a successor instruction is NOT scheduled, because
@@ -136,8 +137,8 @@ trait AITracer {
     def noFlow(
         domain: Domain
     )(
-        currentPC: PC,
-        targetPC:  PC
+        currentPC: Int,
+        targetPC:  Int
     ): Unit
 
     /**
@@ -154,10 +155,10 @@ trait AITracer {
     def rescheduled(
         domain: Domain
     )(
-        sourcePC:                 PC,
-        targetPC:                 PC,
+        sourcePC:                 Int,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
-        worklist:                 List[PC]
+        worklist:                 List[Int /*PC*/ ]
     ): Unit
 
     /**
@@ -176,7 +177,7 @@ trait AITracer {
     def join(
         domain: Domain
     )(
-        pc:            PC,
+        pc:            Int,
         thisOperands:  domain.Operands,
         thisLocals:    domain.Locals,
         otherOperands: domain.Operands,
@@ -187,7 +188,7 @@ trait AITracer {
     /**
      * Called before a jump to a subroutine.
      */
-    def jumpToSubroutine(domain: Domain)(pc: PC, target: PC, nestingLevel: Int): Unit
+    def jumpToSubroutine(domain: Domain)(pc: Int, target: Int, nestingLevel: Int): Unit
 
     /**
      * Called when a `RET` instruction is encountered. (That does not necessary imply
@@ -197,10 +198,10 @@ trait AITracer {
     def ret(
         domain: Domain
     )(
-        pc:            PC,
-        returnAddress: PC,
-        oldWorklist:   List[PC],
-        newWorklist:   List[PC]
+        pc:              Int,
+        returnAddressPC: Int,
+        oldWorklist:     List[Int /*PC*/ ],
+        newWorklist:     List[Int /*PC*/ ]
     ): Unit
 
     /**
@@ -210,9 +211,9 @@ trait AITracer {
     def returnFromSubroutine(
         domain: Domain
     )(
-        pc:                     PC,
-        returnAddress:          PC,
-        subroutineInstructions: List[PC]
+        pc:                     Int,
+        returnAddressPC:        Int,
+        subroutineInstructions: List[Int /*PC*/ ]
     ): Unit
 
     /**
@@ -228,12 +229,12 @@ trait AITracer {
         domain: Domain
     )(
         details:  String,
-        sourcePC: PC, targetPC: PC,
+        sourcePC: Int, targetPC: Int,
         jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
-        oldWorklist:                List[PC],
-        newWorklist:                List[PC]
+        oldWorklist:                List[Int /*PC*/ ],
+        newWorklist:                List[Int /*PC*/ ]
     ): Unit
 
     /**
@@ -244,7 +245,7 @@ trait AITracer {
     def abruptMethodExecution(
         domain: Domain
     )(
-        pc:        PC,
+        pc:        Int,
         exception: domain.ExceptionValue
     ): Unit
 
@@ -264,8 +265,8 @@ trait AITracer {
     def establishedConstraint(
         domain: Domain
     )(
-        pc:          PC,
-        effectivePC: PC,
+        pc:          Int,
+        effectivePC: Int,
         operands:    domain.Operands,
         locals:      domain.Locals,
         newOperands: domain.Operands,
@@ -284,7 +285,7 @@ trait AITracer {
     def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[PC], message: ⇒ String
+        pc: Option[Int /*PC*/ ], message: ⇒ String // IMPROVE Use IntOption
     ): Unit
 
 }

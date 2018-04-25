@@ -3632,7 +3632,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers {
                 // when we perform a depth-first evaluation we do not want to
                 // evaluate the same instruction with the same abstract state
                 // multiple times
-                result.evaluated.size should be(43)
+                result.evaluatedPCs.size should be(43)
             }
 
             it("it should handle casts correctly") {
