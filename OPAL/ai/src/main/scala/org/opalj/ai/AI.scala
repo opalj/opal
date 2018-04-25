@@ -31,7 +31,6 @@ package ai
 
 import scala.language.existentials
 import scala.util.control.ControlThrowable
-
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -50,6 +49,9 @@ import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
 import org.opalj.br._
 import org.opalj.br.instructions._
+import org.opalj.collection.mutable.IntArrayStack
+
+import scala.annotation.switch
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -361,18 +363,19 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         localsArray(0) = initialLocals
 
         val wl = AI.initialWorkList
-        val ae: List[PC] /*alreadyEvaluated*/ = Nil
-        continueInterpretation(code, theDomain)(wl, ae, operandsArray, localsArray)
+        //val aePCs: List[Int/*PC*/] /*alreadyEvaluated*/ = Nil //
+        val aePCs: IntArrayStack = new IntArrayStack(codeLength * 2) // size is just an initial guess...
+        continueInterpretation(code, theDomain)(wl, aePCs, operandsArray, localsArray)
     }
 
     def continueInterpretation(
         code:      Code,
         theDomain: D
     )(
-        initialWorkList:  List[PC],
-        alreadyEvaluated: List[PC],
-        theOperandsArray: theDomain.OperandsArray,
-        theLocalsArray:   theDomain.LocalsArray
+        initialWorkList:     List[Int /*PC*/ ],
+        alreadyEvaluatedPCs: IntArrayStack,
+        theOperandsArray:    theDomain.OperandsArray,
+        theLocalsArray:      theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
         val classHierarchy: ClassHierarchy =
             theDomain match {
@@ -387,7 +390,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             code, cfJoins, liveVariables,
             theDomain
         )(
-            initialWorkList, alreadyEvaluated,
+            initialWorkList, alreadyEvaluatedPCs,
             theOperandsArray, theLocalsArray,
             Nil, null, null
         )
@@ -466,7 +469,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *         evaluation started. This is needed to completely process the subroutine
      *         (to explore all paths) before we finally return to the main method.'''
      *
-     * @param alreadyEvaluated The list of the program counters (PC) of the instructions
+     * @param alreadyEvaluatedPCs The list of the program counters (PC) of the instructions
      *      that were already evaluated. Initially (i.e., if the given code is analyzed
      *      the first time) this list is empty.
      *      This list is primarily needed to correctly resolve jumps to sub routines
@@ -502,8 +505,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
         theDomain: D
     )(
-        initialWorkList:                     List[PC],
-        alreadyEvaluated:                    List[PC],
+        initialWorkList:                     List[Int /*PC*/ ],
+        alreadyEvaluatedPCs:                 IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -527,7 +530,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(code, theDomain)(
-                initialWorkList, alreadyEvaluated,
+                initialWorkList, alreadyEvaluatedPCs,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
 
@@ -548,8 +551,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         import theDomain.{intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0}
         import theDomain.{IntIsLessThanOrEqualTo, IntIsLessThanOrEqualTo0}
 
-        type SingleValueDomainTest = (PC, DomainValue) ⇒ Answer
-        type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer
+        type SingleValueDomainTest = (PC, DomainValue) ⇒ Answer // IMPROVE Use specialized class to avoid (Un)Boxing
+        type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer // IMPROVE Use specialized class to avoid (Un)Boxing
 
         val instructions: Array[Instruction] = code.instructions
 
@@ -571,18 +574,18 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         /* 1 */ var operandsArray = theOperandsArray
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
-        /* 4 */ var evaluated = alreadyEvaluated
+        /* 4 */ val evaluatedPCs = alreadyEvaluatedPCs
         /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts =
             theMemoryLayoutBeforeSubroutineCall
         /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
         /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
 
-        def throwInterpretationFailedException(cause: Throwable, pc: PC): Nothing = {
+        def throwInterpretationFailedException(cause: Throwable, pc: Int): Nothing = {
             throw InterpretationFailedException(
                 cause, theDomain
             )(
                 this,
-                pc, cfJoins, worklist, evaluated,
+                pc, cfJoins, worklist, evaluatedPCs,
                 operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
             )
         }
@@ -615,7 +618,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 AIResultBuilder.completed(
                     code, cfJoins, liveVariables, theDomain
                 )(
-                    evaluated, operandsArray, localsArray
+                    evaluatedPCs, operandsArray, localsArray
                 )
             try {
                 theDomain.abstractInterpretationEnded(result)
@@ -654,11 +657,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          * array of the catching method are also updated.
          */
         def gotoTarget(
-            sourcePC:                 PC,
+            sourcePC:                 Int,
             sourceInstruction:        Instruction,
             sourceOperands:           Operands,
             sourceLocals:             Locals,
-            targetPC:                 PC,
+            targetPC:                 Int,
             isExceptionalControlFlow: Boolean,
             newOperands:              Operands,
             newLocals:                Locals
@@ -737,8 +740,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
                 // and re-add the child subroutines.
-                var header: List[PC] = Nil
-                var remainingWorklist: List[PC] = worklist
+                var header: List[Int /*PC*/ ] = Nil
+                var remainingWorklist: List[Int /*PC*/ ] = worklist
                 while (subroutinesToTerminate > 0) {
                     val pc = remainingWorklist.head
                     header = pc :&: header
@@ -1027,7 +1030,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     AIResultBuilder.aborted(
                         code, cfJoins, liveVariables, theDomain
                     )(
-                        worklist, evaluated,
+                        worklist, evaluatedPCs,
                         operandsArray, localsArray,
                         memoryLayoutBeforeSubroutineCall,
                         subroutinesOperandsArray, subroutinesLocalsArray
@@ -1044,13 +1047,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             // - here
             // - by the JSR / RET instructions
             // - by the "gotoTarget" method
-            val pc: PC = {
+            val pc: Int = {
                 // Check if we we have a return from the evaluation of a subroutine.
                 // I.e., all paths in a subroutine are explored and we know all
                 // exit points; we will now schedule the jump to the return
                 // address and reset the subroutine's computation context
                 while (worklist.head < 0) { // while we may return from multiple nested subroutines
-                    evaluated :&:= SUBROUTINE_END
+                    evaluatedPCs += SUBROUTINE_END
                     // the structure is:
                     //      SUBROUTINE_START :&:
                     //          (
@@ -1061,7 +1064,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //      SUBROUTINE :&:
                     //      remaining worklist
                     worklist = worklist.tail // remove SUBROUTINE_START
-                    var retPCs = Set.empty[PC]
+                    var retPCs = IntTrieSet.empty
                     while (worklist.head >= SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND) {
                         // In case that a subroutine always throws a (non-caught) exception,
                         // we will not have encountered a single ret instruction.
@@ -1091,8 +1094,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // all subroutine calls; we have to make sure that we extract the information
                     // belonging to the correct subroutine (if we have nested subroutine calls)
                     var subroutineLevel = 0
+                    var subroutine: List[Int /*PC*/ ] = Nil
+                    /* OLD USING Chain
                     var trace = evaluated.tail
-                    var subroutine: List[PC] = Nil
                     while (trace.head != SUBROUTINE_START || subroutineLevel != 0) {
                         trace.head match {
                             case SUBROUTINE_START ⇒ subroutineLevel -= 1
@@ -1101,6 +1105,17 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         }
                         trace = trace.tail
                     }
+                     */
+                    val traceIterator = evaluatedPCs.intIterator
+                    traceIterator.next()
+                    traceIterator.foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
+                        (pc: @switch) match {
+                            case SUBROUTINE_START ⇒ subroutineLevel -= 1
+                            case SUBROUTINE_END   ⇒ subroutineLevel += 1
+                            case pc               ⇒ if (subroutineLevel == 0) subroutine :&:= pc
+                        }
+                    }
+
                     if (subroutinesOperandsArray eq null) {
                         // ... we finished the analysis of a subroutine for the first time.
                         subroutinesOperandsArray = new Array(instructions.length)
@@ -1141,7 +1156,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         }
                     }
 
-                    val targets = retPCs.map { retPC ⇒
+                    val targets = retPCs mapToAny { retPC ⇒
                         if (tracer.isDefined) {
                             tracer.get.returnFromSubroutine(theDomain)(
                                 retPC,
@@ -1164,7 +1179,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     operandsArray = oldOperandsArray
                     localsArray = oldLocalsArray
                     memoryLayoutBeforeSubroutineCall = memoryLayoutBeforeSubroutineCall.tail
-                    targets.foreach { target ⇒
+                    targets foreach { target ⇒
                         val (retPC, operands, updatedLocals) = target
                         gotoTarget(
                             retPC, instructions(retPC),
@@ -1189,7 +1204,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
             try {
                 worklist = worklist.tail
-                evaluated :&:= pc
+                evaluatedPCs += pc
                 val instruction = instructions(pc)
                 // the memory layout before executing the instruction with the given pc
                 val operands = operandsArray(pc)
@@ -1201,7 +1216,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
-                def checkDefinitivePath(nextPC: PC, altPC: PC, qualifier: String): Unit = {
+                def checkDefinitivePath(nextPC: Int, altPC: Int, qualifier: String): Unit = {
                     /*    if (worklist.isEmpty &&
                         liveVariables(nextPC) != liveVariables(altPC) &&
                         evaluated.exists(cfJoins.contains) // if it works out we should use something more efficient than the evaluated set (e.g. evaluatedCFJoins)
@@ -1395,8 +1410,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     var targetPCs = IntTrieSet.empty
                     def gotoExceptionHandler(
-                        pc:             PC,
-                        branchTargetPC: PC,
+                        pc:             Int,
+                        branchTargetPC: Int,
                         upperBound:     Option[ObjectType]
                     ): Unit = {
                         val newOperands = Chain.singleton(exceptionValue)
@@ -1567,7 +1582,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 def fallThrough(
                     newOperands: Operands = operands,
                     newLocals:   Locals   = locals
-                ): PC = {
+                ): Int /*PC*/ = {
                     val nextPC = pcOfNextInstruction
                     gotoTarget(
                         pc, instruction, operands, locals,
@@ -1701,7 +1716,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     case 168 /*jsr*/ | 201 /*jsr_w*/ ⇒
                         val returnTarget = pcOfNextInstruction
                         val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
-                        evaluated :&:= SUBROUTINE_START
+                        evaluatedPCs += SUBROUTINE_START
                         memoryLayoutBeforeSubroutineCall :&:= (
                             (branchTarget, operandsArray.clone, localsArray.clone)
                         )
@@ -1738,10 +1753,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val lvIndex = as[RET](instruction).lvIndex
                         // we now know the local variable that is used and
                         // (one of) the ret instruction(s), we store this for later usage
-                        val oldWorklist: List[PC] = worklist
+                        val oldWorklist: List[Int /*PC*/ ] = worklist
 
                         // IMPROVE Use ChainBuilder to enable efficient creation of the chain.
-                        var subroutineWorklist = List.empty[PC] // after the next steps...
+                        var subroutineWorklist = List.empty[Int /*PC*/ ] // after the next steps...
                         var tail = worklist
                         while (tail.head >= 0) {
                             subroutineWorklist :&:= tail.head
@@ -1750,7 +1765,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         subroutineWorklist = subroutineWorklist.reverse // reestablish the correct order
                         tail = tail.tail // remove SUBROUTINE_START marker
 
-                        var dynamicSubroutineInformation = List.empty[PC]
+                        var dynamicSubroutineInformation = List.empty[Int /*PC*/ ]
                         while (tail.head != SUBROUTINE_RETURN_TO_TARGET) {
                             dynamicSubroutineInformation :&:= tail.head
                             tail = tail.tail
@@ -2732,7 +2747,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 }
 
                 theDomain.evaluationCompleted(
-                    pc, worklist, evaluated, operandsArray, localsArray, tracer
+                    pc, worklist, evaluatedPCs, operandsArray, localsArray, tracer
                 )
 
             } catch {
@@ -2756,7 +2771,7 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    final val initialWorkList: List[PC] = Chain.singleton(0)
+    final val initialWorkList: List[Int /*PC*/ ] = Chain.singleton(0)
 
 }
 

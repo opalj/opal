@@ -114,7 +114,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
                         theCode,
                         Some(
                             XHTML.instructionsToXHTML("PCs where paths join", r.cfJoins) +
-                                XHTML.evaluatedInstructionsToXHTML(r.evaluated)
+                                XHTML.evaluatedInstructionsToXHTML(r.evaluatedPCs)
                         ),
                         r.domain
                     )(r.cfJoins, r.operandsArray, r.localsArray),

@@ -33,6 +33,7 @@ import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Defines the core functionality that is shared across all [[Domain]]s that implement
@@ -84,11 +85,11 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * refined) operands and locals to the `super` method (`stackable traits`).
      */
     def afterEvaluation(
-        pc:                       PC,
+        pc:                       Int,
         instruction:              Instruction,
         oldOperands:              Operands,
         oldLocals:                Locals,
-        targetPC:                 PC,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
         newOperands:              Operands,
         newLocals:                Locals
@@ -144,7 +145,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      *          which identifies the value as being dead.
      */
     def join(
-        pc:            PC,
+        pc:            Int,
         thisOperands:  Operands,
         thisLocals:    Locals,
         otherOperands: Operands,
@@ -209,10 +210,10 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * @note This method is intended to be overwritten by clients to perform custom
      *      operations.
      */
-    protected[this] def beforeBaseJoin(pc: PC): Unit = { /*empty*/ }
+    protected[this] def beforeBaseJoin(pc: Int): Unit = { /*empty*/ }
 
     protected[this] def joinValues(
-        pc:   PC,
+        pc:   Int,
         left: DomainValue, right: DomainValue
     ): Update[DomainValue] = {
         left.join(pc, right)
@@ -223,7 +224,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * `joinPostProcessing` will be called.
      * @param pc
      */
-    protected[this] def afterBaseJoin(pc: PC): Unit = { /*empty*/ }
+    protected[this] def afterBaseJoin(pc: Int): Unit = { /*empty*/ }
 
     /**
      * Enables the customization of the behavior of the base [[join]] method.
@@ -242,7 +243,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      */
     protected[this] def joinPostProcessing(
         updateType:  UpdateType,
-        pc:          PC,
+        pc:          Int,
         oldOperands: Operands,
         oldLocals:   Locals,
         newOperands: Operands,
@@ -388,19 +389,19 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      *         to ensure that every domain that uses this hook gets informed about a flow.'''
      */
     def flow(
-        currentPC:                        PC,
+        currentPC:                        Int,
         currentOperands:                  Operands,
         currentLocals:                    Locals,
-        successorPC:                      PC,
+        successorPC:                      Int,
         isSuccessorScheduled:             Answer,
         isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed:                 Boolean,
-        worklist:                         List[PC],
+        worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
         tracer:                           Option[AITracer]
-    ): List[PC] = worklist
+    ): List[Int /*PC*/ ] = worklist
 
     /**
      * Called by the framework after evaluating the instruction with the given pc. I.e.,
@@ -410,9 +411,9 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * By default this method does nothing.
      */
     def evaluationCompleted(
-        pc:            PC,
-        worklist:      List[PC],
-        evaluated:     List[PC],
+        pc:            Int,
+        worklist:      List[Int /*PC*/ ],
+        evaluatedPCs:  IntArrayStack,
         operandsArray: OperandsArray,
         localsArray:   LocalsArray,
         tracer:        Option[AITracer]
@@ -439,12 +440,12 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * is scheduled in the correct (subroutine-)context.
      */
     protected[this] def schedule(
-        successorPC:                      PC,
+        successorPC:                      Int,
         abruptSubroutineTerminationCount: Int,
-        worklist:                         List[PC]
-    ): List[PC] = {
+        worklist:                         List[Int /*PC*/ ]
+    ): List[Int /*PC*/ ] = {
         if (abruptSubroutineTerminationCount > 0) {
-            var header: List[PC] = Nil
+            var header: List[Int /*PC*/ ] = Nil
             val relevantWorklist = {
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
                 worklist.dropWhile { pc ⇒

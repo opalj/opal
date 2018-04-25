@@ -30,9 +30,9 @@ package org.opalj
 package collection
 
 import java.util.function.IntConsumer
+import java.util.function.IntFunction
 
 import scala.collection.mutable.Builder
-
 import org.opalj.collection.immutable.Chain
 
 /**
@@ -58,6 +58,11 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
     def foreach(f: IntConsumer): Unit
     def withFilter(p: (Int) ⇒ Boolean): T
     def map(f: Int ⇒ Int): T
+    def mapToAny[A](f: IntFunction[A]): Set[A] = {
+        var r = Set.empty[A]
+        foreach { v ⇒ r += f(v) }
+        r
+    }
     def flatMap(f: Int ⇒ T): T
 
     def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B

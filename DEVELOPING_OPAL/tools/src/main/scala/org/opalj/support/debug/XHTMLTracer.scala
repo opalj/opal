@@ -29,10 +29,8 @@
 package org.opalj.support.debug
 
 import scala.xml.Node
-
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.writeAndOpen
-
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.FieldAccess
@@ -49,6 +47,7 @@ import org.opalj.ai.Locals
 import org.opalj.ai.Operands
 import org.opalj.ai.common.XHTML.dumpLocals
 import org.opalj.ai.common.XHTML.dumpStack
+import org.opalj.collection.mutable.IntArrayStack
 
 case class FlowEntity(
         pc:          PC,
@@ -287,8 +286,8 @@ trait XHTMLTracer extends AITracer {
         code:   Code,
         domain: Domain
     )(
-        initialWorkList:                  List[PC],
-        alreadyEvaluated:                 List[PC],
+        initialWorkList:                  List[Int /*PC*/ ],
+        alreadyEvaluated:                 IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
         memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
@@ -322,7 +321,7 @@ trait XHTMLTracer extends AITracer {
         sourcePC:                 PC,
         targetPC:                 PC,
         isExceptionalControlFlow: Boolean,
-        worklist:                 List[PC]
+        worklist:                 List[Int /*PC*/ ]
     ): Unit = {
         /*ignored for now*/
     }
@@ -394,8 +393,8 @@ trait XHTMLTracer extends AITracer {
         sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
-        oldWorklist:                List[PC],
-        newWorklist:                List[PC]
+        oldWorklist:                List[Int /*PC*/ ],
+        newWorklist:                List[Int /*PC*/ ]
     ): Unit = { /*ignored*/ }
 
     /**
@@ -406,14 +405,14 @@ trait XHTMLTracer extends AITracer {
     )(
         pc:            PC,
         returnAddress: PC,
-        oldWorklist:   List[PC],
-        newWorklist:   List[PC]
+        oldWorklist:   List[Int /*PC*/ ],
+        newWorklist:   List[Int /*PC*/ ]
     ): Unit = { /*ignored*/ }
 
     override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[PC], message: ⇒ String
+        pc: Option[Int], message: ⇒ String
     ): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {

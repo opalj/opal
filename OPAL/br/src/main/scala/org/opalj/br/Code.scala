@@ -1171,7 +1171,7 @@ final class Code private (
      *         defined combined with the index (program counter) of the instruction in the
      *         code array.
      */
-    def collect[B](f: PartialFunction[Instruction, B]): Seq[(PC, B)] = { // IMPROVE Just specialized data-structure PCAndValue
+    def collect[B](f: PartialFunction[Instruction, B]): Seq[(PC, B)] = { // IMPROVE Use specialized data-structure PCAndValue
         val max_pc = instructions.length
         var pc = 0
         var result: List[(PC, B)] = List.empty
@@ -1194,7 +1194,7 @@ final class Code private (
      *         not defined along with the list of previous results. '''The results are sorted in
      *         descending order w.r.t. the PC'''.
      */
-    def collectUntil[B](f: PartialFunction[PCAndInstruction, B]): (PC, Seq[B]) = { // IMPROVE Just specialized data-structure PCAndValue
+    def collectUntil[B](f: PartialFunction[PCAndInstruction, B]): (PC, Seq[B]) = { // IMPROVE Use specialized data-structure PCAndValue
         val max_pc = instructions.length
         var pc = 0
         var result: List[B] = List.empty

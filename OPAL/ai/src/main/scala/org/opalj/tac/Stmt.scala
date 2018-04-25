@@ -61,7 +61,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
      * The bytecode instruction:  `5: goto 10` (where 5 is the original `pc` and `10` is
      * the branchoffset) is re-mapped to a `goto pcToIndex(5+10)` quadruples statement.
      */
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit
+    private[tac] def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit
 
     // TYPE CONVERSION METHODS
 
@@ -123,9 +126,12 @@ case class If[+V <: Var[V]](
      */
     def targetStmt: Int = target
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        left.remapIndexes(pcToIndex)
-        right.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        left.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        right.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
         target = pcToIndex(target)
     }
 
@@ -152,7 +158,12 @@ case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
     final override def astID: Int = Goto.ASTID
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = target = pcToIndex(target)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        target = pcToIndex(target)
+    }
 
     final override def isSideEffectFree: Boolean = true
 
@@ -185,7 +196,10 @@ case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
     final override def astID: Int = Ret.ASTID
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
         returnAddresses = returnAddresses map { pcToIndex }
     }
 
@@ -216,7 +230,10 @@ case class JSR(pc: PC, private[tac] var target: Int) extends Stmt[Nothing] {
     final override def astID: Int = JSR.ASTID
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
         target = pcToIndex(target)
     }
 
@@ -250,10 +267,13 @@ case class Switch[+V <: Var[V]](
         p(index)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
         npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
         defaultTarget = pcToIndex(defaultTarget)
-        index.remapIndexes(pcToIndex)
+        index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     final override def isSideEffectFree: Boolean = {
@@ -278,7 +298,7 @@ object Switch {
     final val ASTID = 4
 }
 
-case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends Stmt[V] {
+case class Assignment[+V <: Var[V]](pc: Int, targetVar: V, expr: Expr[V]) extends Stmt[V] {
 
     final override def asAssignment: this.type = this
     final override def astID: Int = Assignment.ASTID
@@ -286,9 +306,12 @@ case class Assignment[+V <: Var[V]](pc: PC, targetVar: V, expr: Expr[V]) extends
         p(expr)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        targetVar.remapIndexes(pcToIndex)
-        expr.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        targetVar.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     final override def isSideEffectFree: Boolean = expr.isSideEffectFree
@@ -300,7 +323,7 @@ object Assignment {
     final val ASTID = 5
 }
 
-case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
+case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
     final override def asReturnValue: this.type = this
     final override def astID: Int = ReturnValue.ASTID
@@ -308,7 +331,12 @@ case class ReturnValue[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
         p(expr)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
 
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Check if the method does call synchronization statements; if so we may get an exception when we return from the method; otherwise the method is side-effect free
@@ -326,11 +354,14 @@ sealed abstract class SimpleStmt extends Stmt[Nothing] {
     /**
      * Nothing to do.
      */
-    final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {}
 
 }
 
-case class Return(pc: PC) extends SimpleStmt {
+case class Return(pc: Int) extends SimpleStmt {
 
     final override def asReturn: this.type = this
     final override def astID: Int = Return.ASTID
@@ -347,7 +378,7 @@ object Return {
     final val ASTID = 7
 }
 
-case class Nop(pc: PC) extends SimpleStmt {
+case class Nop(pc: Int) extends SimpleStmt {
 
     final override def asNop: this.type = this
     final override def astID: Int = Nop.ASTID
@@ -367,8 +398,11 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
     def objRef: Expr[V]
 
-    final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        objRef.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        objRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 }
 
@@ -412,7 +446,7 @@ object MonitorExit {
 }
 
 case class ArrayStore[+V <: Var[V]](
-        pc:       PC,
+        pc:       Int,
         arrayRef: Expr[V],
         index:    Expr[V],
         value:    Expr[V]
@@ -429,10 +463,13 @@ case class ArrayStore[+V <: Var[V]](
         false
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        arrayRef.remapIndexes(pcToIndex)
-        index.remapIndexes(pcToIndex)
-        value.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        arrayRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"ArrayStore(pc=$pc,$arrayRef,$index,$value)"
@@ -441,7 +478,7 @@ object ArrayStore {
     final val ASTID = 11
 }
 
-case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
+case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
 
     final override def asThrow: this.type = this
     final override def astID: Int = Throw.ASTID
@@ -449,7 +486,12 @@ case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
         p(exception)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = exception.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        exception.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
 
     final override def isSideEffectFree: Boolean = false
 
@@ -479,7 +521,12 @@ case class PutStatic[+V <: Var[V]](
         p(value)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
 
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Is it a redundant write?
@@ -495,7 +542,7 @@ object PutStatic {
 }
 
 case class PutField[+V <: Var[V]](
-        pc:                PC,
+        pc:                Int,
         declaringClass:    ObjectType,
         name:              String,
         declaredFieldType: FieldType,
@@ -509,9 +556,12 @@ case class PutField[+V <: Var[V]](
         p(objRef) && p(value)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        objRef.remapIndexes(pcToIndex)
-        value.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        objRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     final override def isSideEffectFree: Boolean = {
@@ -543,9 +593,12 @@ sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
         p(receiver) && params.forall(param ⇒ p(param))
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        receiver.remapIndexes(pcToIndex)
-        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        params foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
 }
@@ -554,7 +607,7 @@ object InstanceMethodCall {
 
     def unapply[V <: Var[V]](
         call: InstanceMethodCall[V]
-    ): Some[(PC, ReferenceType, Boolean, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
+    ): Some[(Int, ReferenceType, Boolean, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
         import call._
         Some((pc, declaringClass, isInterface, name, descriptor, receiver, params))
     }
@@ -565,7 +618,7 @@ object InstanceMethodCall {
  * I.e., it is either a super-call, a private instance method call or a constructor call.
  */
 case class NonVirtualMethodCall[+V <: Var[V]](
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
@@ -598,7 +651,7 @@ object NonVirtualMethodCall {
 }
 
 case class VirtualMethodCall[+V <: Var[V]](
-        pc:             PC,
+        pc:             Int,
         declaringClass: ReferenceType,
         isInterface:    Boolean,
         name:           String,
@@ -623,7 +676,7 @@ object VirtualMethodCall {
 }
 
 case class StaticMethodCall[+V <: Var[V]](
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
@@ -646,8 +699,11 @@ case class StaticMethodCall[+V <: Var[V]](
         p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
     override def toString: String = {
@@ -662,7 +718,7 @@ object StaticMethodCall {
 }
 
 /** An expression where the value is not further used. */
-case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
+case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
     final override def asExprStmt: this.type = this
     final override def astID: Int = ExprStmt.ASTID
@@ -670,7 +726,12 @@ case class ExprStmt[+V <: Var[V]](pc: PC, expr: Expr[V]) extends Stmt[V] {
         p(expr)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = expr.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
 
     final override def isSideEffectFree: Boolean = {
         assert(
@@ -733,13 +794,13 @@ object StaticFunctionCallStatement {
 }
 
 /**
- * A caught exception is essential to ensure that the throw is never optimized away, even if
+ * A caught exception is essential to ensure that the "throw" is never optimized away, even if
  * the exception object as such is not used.
  *
  * @note `CaughtException` expression are only created by [[TACAI]]!
  */
 case class CaughtException[+V <: Var[V]](
-        pc:                        PC,
+        pc:                        Int,
         exceptionType:             Option[ObjectType],
         private var throwingStmts: IntTrieSet
 ) extends Stmt[V] { // TODO Why isn't it "Nothing"?
@@ -750,7 +811,10 @@ case class CaughtException[+V <: Var[V]](
 
     final override def isSideEffectFree: Boolean = false
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
         throwingStmts = throwingStmts map { stmt ⇒
             if (ai.isVMLevelValue(stmt))
                 ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
@@ -819,7 +883,12 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
         p(value)
     }
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = value.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
 
     final override def isSideEffectFree: Boolean = {
         // IMPROVE identify (from the JVM verifiers point-of-view) truly useless checkcasts

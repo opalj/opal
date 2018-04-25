@@ -308,7 +308,7 @@ object CodeAttributeBuilder {
                     val body =
                         s"; pc $pc is dead; unable to compute stack map table:"+
                             instructionsAsString
-                    val evaluationDetails = r.evaluated.mkString("evaluated: ", ", ", body)
+                    val evaluationDetails = r.evaluatedPCs.mkString("evaluated: ", ", ", body)
                     val ehs = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")
                     val message = m.toJava(evaluationDetails + ehs)
                     throw new BytecodeProcessingFailedException(message);

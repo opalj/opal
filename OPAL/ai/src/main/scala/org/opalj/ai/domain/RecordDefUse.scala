@@ -134,7 +134,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val defLocals = new Array[Registers[ValueOrigins]](codeSize)
         var parameterIndex = 0
         defLocals(0) =
-            locals.map { v ⇒
+            locals map { v ⇒
                 // we always decrement parameterIndex to get the same offsets as
                 // used by the AI for parameters
                 parameterIndex -= 1
@@ -239,8 +239,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         unused
     }
 
-    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: /*PC*/ Int): Unit = {
-        usedValues.foreach { usedValue ⇒
+    private[this] def updateUsageInformation(
+        usedValues: ValueOrigins,
+        useSite: /*PC*/ Int
+    ): Unit = {
+        usedValues foreach { usedValue ⇒
             if (usedValue > VMLevelValuesOriginOffset) {
                 val usedIndex = usedValue + parametersOffset
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
@@ -413,7 +416,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             forceScheduling
         } else {
-            newDefOps.foreach(vo ⇒ require(vo != null, s"$newDefOps contains null"))
+            newDefOps foreach { vo ⇒ require(vo != null, s"$newDefOps contains null") }
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
@@ -440,9 +443,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     protected[this] def newDefOpsForExceptionalControlFlow(
-        currentPC: /*PC*/   Int,
+        currentPC:          Int,
         currentInstruction: Instruction,
-        successorPC: /*PC*/ Int
+        successorPC:        Int
     )(
         implicit
         operandsArray: OperandsArray
@@ -478,9 +481,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * exceptional control flow.
      */
     protected[this] def stackOperation(
-        currentPC: /*PC*/         Int,
+        currentPC:                Int,
         currentInstruction:       Instruction,
-        successorPC: /*PC*/       Int,
+        successorPC:              Int,
         isExceptionalControlFlow: Boolean,
         usedValues:               Int,
         pushesValue:              Boolean
@@ -508,8 +511,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     }
 
     protected[this] def registerReadWrite(
-        currentPC: /*PC*/ Int,
-        successorPC: /*PC*/ Int,
+        currentPC:   Int,
+        successorPC: Int,
         index:       Int
     )(
         implicit
@@ -529,8 +532,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
      */
     private[this] def handleFlow(
-        currentPC:                Int /*PC*/ ,
-        successorPC:              Int /*PC*/ ,
+        currentPC:                Int,
+        successorPC:              Int,
         isExceptionalControlFlow: Boolean
     )(
         implicit
@@ -892,7 +895,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val localsArray = aiResult.localsArray
         val subroutineInstructions = aiResult.subroutineInstructions
         implicit val isSubroutineInstruction: Int /*PC*/ ⇒ Boolean = subroutineInstructions.contains
-        implicit val cfJoins = aiResult.cfJoins
+        implicit val cfJoins: IntTrieSet = aiResult.cfJoins
 
         // General idea related to JSR/RET:
         // Follow JSRs eagerly; RET only to ACTIVE callers. (Recall the underlying CFG already knows
@@ -903,7 +906,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         // Given that some JSRs have no RET (only athrow/returns instead!); the values are the
         // pcs of the JSRs unless a ret was found that actually ends the subroutine -
         // then the value is -1.
-        val retTargetPCs = new Int2IntLinkedOpenHashMap(4)
+        val retTargetPCs: Int2IntLinkedOpenHashMap = new Int2IntLinkedOpenHashMap(4)
         val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
         nextPCs.add(0)
 
@@ -962,7 +965,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
             val currPC = nextPCs.removeLastInt() // in case of JSRs we need to decent eagerly...
 
-            def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: PC): Unit = {
+            def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: Int): Unit = {
                 val scheduleNextPC = try {
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow
