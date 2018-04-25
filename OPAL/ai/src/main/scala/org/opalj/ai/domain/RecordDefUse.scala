@@ -895,7 +895,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val localsArray = aiResult.localsArray
         val subroutineInstructions = aiResult.subroutineInstructions
         implicit val isSubroutineInstruction: Int /*PC*/ ⇒ Boolean = subroutineInstructions.contains
-        implicit val cfJoins = aiResult.cfJoins
+        implicit val cfJoins: IntTrieSet = aiResult.cfJoins
 
         // General idea related to JSR/RET:
         // Follow JSRs eagerly; RET only to ACTIVE callers. (Recall the underlying CFG already knows
@@ -906,7 +906,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         // Given that some JSRs have no RET (only athrow/returns instead!); the values are the
         // pcs of the JSRs unless a ret was found that actually ends the subroutine -
         // then the value is -1.
-        val retTargetPCs = new Int2IntLinkedOpenHashMap(4)
+        val retTargetPCs: Int2IntLinkedOpenHashMap = new Int2IntLinkedOpenHashMap(4)
         val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
         nextPCs.add(0)
 
