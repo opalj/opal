@@ -960,11 +960,6 @@ object TACAI {
 
         val tacStmts: Array[Stmt[DUVar[aiResult.domain.DomainValue]]] = {
             def isIndexOfCaughtExceptionStmt(index: Int): Boolean = {
-                // if (statements(index) == null) {
-                // println(s"$index is null:"+statements.zipWithIndex.map(_.swap).mkString("\n", "\n", "\n"))
-                // println(pcToIndex.zipWithIndex.map(_.swap).mkString("pcs to indexes: \n", "\n", "\n"))
-                // println(instructions.zipWithIndex.map(_.swap).mkString("instructions: \n", "\n", "\n"))
-                // }
                 statements(index).astID == CaughtException.ASTID
             }
             if (index == maxStatements) {
