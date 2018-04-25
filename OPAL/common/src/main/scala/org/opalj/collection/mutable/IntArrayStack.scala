@@ -30,6 +30,8 @@ package org.opalj
 package collection
 package mutable
 
+import java.util.function.IntConsumer
+
 import scala.collection.mutable
 import scala.collection.generic
 import scala.collection.AbstractIterator
@@ -163,12 +165,22 @@ final class IntArrayStack private (
         this.data(0)
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int ⇒ U): Unit = { // TODO Use Java8 IntConsumer interface
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
             f(data(i))
             i -= 1
+        }
+    }
+
+    def foreachReverse(f: IntConsumer): Unit = {
+        val data = this.data
+        val max = this.size0 - 1
+        var i = 0
+        while (i <= max) {
+            f.accept(data(i))
+            i += 1
         }
     }
 
