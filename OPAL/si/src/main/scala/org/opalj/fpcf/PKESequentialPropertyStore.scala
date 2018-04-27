@@ -38,6 +38,7 @@ import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.debug
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 
@@ -57,12 +58,12 @@ final class PKESequentialPropertyStore private (
 
     /*
      * Controls in which order updates are processed/scheduled.
+     *
+     * May be changed at any time.
      */
     @volatile var dependeeUpdateHandling: DependeeUpdateHandling = EagerDependeeUpdateHandling
 
     @volatile var delayHandlingOfDependerNotification: Boolean = true
-
-    final type PKId = Long
 
     protected[this] var scheduledTasksCounter: Int = 0
     final def scheduledTasks: Int = scheduledTasksCounter
@@ -72,6 +73,13 @@ final class PKESequentialPropertyStore private (
 
     protected[this] var eagerOnUpdateComputationsCounter: Int = 0
     final def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+
+    protected[this] var fallbacksUsedForComputedPropertiesCounter : Int = 0
+    final def fallbacksUsedForComputedProperties : Int = fallbacksUsedForComputedPropertiesCounter
+
+    protected[this] var resolvedCyclesCounter : Int = 0
+    final def resolvedCycles : Int = resolvedCyclesCounter
+
 
     private[this] var quiescenceCounter = 0
 
@@ -635,7 +643,7 @@ final class PKESequentialPropertyStore private (
                 //     scheduled or will be scheduled; but it is still possible that we will
                 //     not have a property for a specific entity, if the underlying analysis
                 //     doesn't compute one; in that case we need to put in fallback values.)
-                // IMPROVE: parForeachArrayElement(ps,isInterrupted = () => false){                    ???                }
+                // IMPROVE parForeachArrayElement(ps,isInterrupted = () => false){ ... }
                 for {
                     (ePValue, pkId) ← ps.zipWithIndex
                     (e, pValue) ← ePValue
@@ -646,13 +654,13 @@ final class PKESequentialPropertyStore private (
                         // assert(pv.dependers.isEmpty)
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                        val fallbackResult = Result(e, fallbackProperty)
-                        info(
+                        debug(
                             "analysis progress",
                             s"used fallback $fallbackProperty for $e "+
                                 "(though an analysis was supposedly scheduled)"
                         )
-                        handleResult(fallbackResult)
+                        fallbacksUsedForComputedPropertiesCounter += 1
+                        update(e, fallbackProperty,fallbackProperty, Nil)
 
                         continueComputation = true
                     }
@@ -681,9 +689,7 @@ final class PKESequentialPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
                     )
-                    for {
-                        cSCC ← cSCCs
-                    } {
+                    for {                        cSCC ← cSCCs                    } {
                         val headEPK = cSCC.head
                         val e = headEPK.e
                         val pkId = headEPK.pk.id
@@ -700,6 +706,7 @@ final class PKESequentialPropertyStore private (
                             "analysis progress",
                             s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
                         )
+                        resolvedCyclesCounter += 1
                         update(newEP.e, newEP.p, newEP.p, Nil)
                         continueComputation = true
                     }
