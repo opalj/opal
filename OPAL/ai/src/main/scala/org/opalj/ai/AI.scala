@@ -528,11 +528,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             "the regular operands and the subroutines operands contain conflicting information"
         )
 
-        if (tracer.isDefined)
+        if (tracer.isDefined) {
             tracer.get.continuingInterpretation(code, theDomain)(
                 initialWorkList, alreadyEvaluatedPCs,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
+        }
 
         import theDomain.{DomainValue, ExceptionValue, ExceptionValues, Operands, Locals}
         import theDomain.{SingleValueConstraint, TwoValuesConstraint}
