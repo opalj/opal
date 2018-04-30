@@ -38,8 +38,8 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.util.PerformanceEvaluation.time
@@ -70,7 +70,7 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
         // reactive async approach developed by P. Haller and Simon Gries.
         val ps = time { get(PropertyStoreKey) } { r ⇒ t = r.toSeconds }
         time {
-            L0FieldMutabilityAnalysis.start(project, ps)
+            EagerL0FieldMutabilityAnalysis.start(project, ps)
             EagerClassImmutabilityAnalysis.start(project, ps)
             EagerTypeImmutabilityAnalysis.start(project, ps)
             ps.waitOnPhaseCompletion()

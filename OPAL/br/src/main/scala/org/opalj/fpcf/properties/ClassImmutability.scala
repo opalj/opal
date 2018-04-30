@@ -150,10 +150,7 @@ case object ImmutableObject extends ClassImmutability {
 
     final val correspondingTypeImmutability = ImmutableType
 
-    override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
-        if (other != ImmutableObject) {
-            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
-        }
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
     }
 
     final def isMutable: Boolean = false
@@ -168,7 +165,7 @@ case object ImmutableContainer extends ClassImmutability {
 
     final val correspondingTypeImmutability = ImmutableContainerType
 
-    override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
         if (other == ImmutableObject) {
             throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
         }
@@ -182,7 +179,7 @@ sealed trait MutableObject extends ClassImmutability {
     def reason: String
     final val correspondingTypeImmutability = MutableType
 
-    override def checkIsMoreOrEquallyPreciseThan(other: Property): Unit = {
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
         if (other == ImmutableObject || other == ImmutableContainer) {
             throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this")
         }

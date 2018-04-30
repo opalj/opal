@@ -127,7 +127,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at
  * most [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
- * [[org.opalj.br.AllocationSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are
+ * [[org.opalj.ai.DefinitionSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are
  * generally used as [[Entity]] in combination with this property.
  *
  * [[VirtualMethodEscapeProperty]] provides a wrapper of this property addressing aggregated escape
@@ -151,9 +151,10 @@ sealed abstract class EscapeProperty
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    override def checkIsMoreOrEquallyPreciseThan(old: Property): Unit = {
-        old match {
-            case AtMost(oldP) if this lessOrEqualRestrictive oldP ⇒
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+        other match {
+            case AtMost(_)                                                  ⇒ //TODO this is not correct -> fix me!
+            case other: EscapeProperty if other lessOrEqualRestrictive this ⇒
             case p ⇒
                 throw new RuntimeException(s"illegal refinement of property $p to $this")
         }
@@ -773,6 +774,8 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
         case that: FinalEscapeProperty ⇒ AtMost(property meet that)
         case _: GlobalEscape           ⇒ that
     }
+    //TODO REMOVE ME
+    override def checkIsEqualOrBetterThan(other: EscapeProperty): Unit = {}
 }
 
 /**

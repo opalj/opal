@@ -43,6 +43,7 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -139,6 +140,7 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
     private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    private[this] val isOverridableMethod: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     def determineFreshness(e: Entity): PropertyComputationResult = e match {
         case dm: DefinedMethod ⇒ doDetermineFreshness(dm)
@@ -186,7 +188,7 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
                  * if the def-site came from a field and the field is local except for the existence
                  * of a getter, we can report this method as being a getter.
                  */
-                case Assignment(pc, tgt, GetField(_, declaringClass, name, fieldType, objRef)) ⇒
+                case Assignment(pc, _, GetField(_, declaringClass, name, fieldType, objRef)) ⇒
                     if (objRef.asVar.definedBy != IntTrieSet(tac.OriginOfThis))
                         return Result(dm, NoFreshReturnValue)
 
@@ -203,21 +205,21 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
                 // const values are handled as fresh
                 case Assignment(_, _, _: Const) ⇒
 
-                case Assignment(pc, tgt, call: StaticFunctionCall[V]) ⇒
+                case Assignment(pc, _, call: StaticFunctionCall[V]) ⇒
                     val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
                     handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
                     val callee = call.resolveCallTarget
                     handleConcreteCall(callee).foreach(return _)
 
-                case Assignment(pc, tgt, call: NonVirtualFunctionCall[V]) ⇒
+                case Assignment(pc, _, call: NonVirtualFunctionCall[V]) ⇒
                     val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
                     handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
                     val callee = call.resolveCallTarget
                     handleConcreteCall(callee).foreach(return _)
 
-                case Assignment(pc, tgt, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
+                case Assignment(pc, _, VirtualFunctionCall(_, dc, _, name, desc, receiver, _)) ⇒
                     val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
                     handleEscapeProperty(escape).foreach(x ⇒ return Result(dm, x))
 
@@ -264,7 +266,7 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
                             }
 
                             // unkown method
-                            if (callee.isEmpty)
+                            if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
                                 return Result(dm, NoFreshReturnValue)
 
                             val dmCallee = declaredMethods(callee.value)

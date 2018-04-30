@@ -45,6 +45,7 @@ import org.opalj.ai.DefinitionSites
 import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
@@ -98,6 +99,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
     private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
     private[this] val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
     private[this] val aiResult = project.get(SimpleAIKey)
+    private[this] val isOverridableMethod: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     def determineLocality(field: Field): PropertyComputationResult = {
         implicit val state = new FieldLocalityState(field)
@@ -282,11 +284,11 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
                     if (receiverType.isArrayType) {
                         val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                        return handleConcreteCall(callee)
+                        return handleConcreteCall(callee);
                     } else if (value.isPrecise) {
                         val preciseType = value.valueType.get
                         val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
-                        return handleConcreteCall(callee)
+                        return handleConcreteCall(callee);
                     } else {
                         var callee = project.instanceCall(method.classFile.thisType, receiverType, name, desc)
 
@@ -302,16 +304,17 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                                         project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
                                     }
                                 case None ⇒
-                                    return Some(Result(state.field, NoLocalField))
+                                    return Some(Result(state.field, NoLocalField));
                             }
                         }
 
-                        if (callee.isEmpty)
+                        if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
                             return Some(Result(state.field, NoLocalField))
 
                         val dm = declaredMethods(callee.value)
                         val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
-                        handleReturnValueFreshness(rvf)
+                        val rvff = handleReturnValueFreshness(rvf)
+                        if (rvff.isDefined) return rvff;
                     }
                 }
             case Assignment(_, _, _: Const) ⇒
@@ -428,7 +431,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         for (defSite1 ← value.asVar.definedBy) {
             //TODO what about exceptions
             if (defSite1 < 0)
-                return Some(Result(state.field, NoLocalField))
+                return Some(Result(state.field, NoLocalField));
             val stmt = stmts(defSite1)
 
             // is the def-site fresh?

@@ -32,19 +32,26 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.ExtensibleGetter
+import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
+import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
+import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
  * A small demo determining the return value freshness for all methods in the current project.
@@ -58,25 +65,51 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         val ps = project.get(PropertyStoreKey)
+        ps.debug = true
+
+        ps.setupPhase(Set(
+            EscapeProperty.key,
+            FieldLocality.key,
+            VirtualMethodEscapeProperty.key,
+            VirtualMethodReturnValueFreshness.key,
+            ReturnValueFreshness.key
+        ))
 
         LazyInterProceduralEscapeAnalysis.startLazily(project, ps)
         LazyFieldLocalityAnalysis.startLazily(project, ps)
         LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
         LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
 
-        EagerReturnValueFreshnessAnalysis.start(project, ps)
+        LazyReturnValueFreshnessAnalysis.startLazily(project, ps)
+
+        for (dm ← project.get(DeclaredMethodsKey).declaredMethods) {
+            ps(dm, ReturnValueFreshness.key)
+        }
+
         ps.waitOnPhaseCompletion()
 
-        val fresh = ps.finalEntities(FreshReturnValue)
-        val notFresh = ps.finalEntities(NoFreshReturnValue)
-        val prim = ps.finalEntities(PrimitiveReturnValue)
-        val getter = ps.finalEntities(Getter)
-        val extGetter = ps.finalEntities(VExtensibleGetter)
-        val vfresh = ps.finalEntities(VFreshReturnValue)
-        val vnotFresh = ps.finalEntities(VNoFreshReturnValue)
-        val vprim = ps.finalEntities(VPrimitiveReturnValue)
-        val vgetter = ps.finalEntities(VGetter)
-        val vextGetter = ps.finalEntities(VExtensibleGetter)
+        val fresh = ps.finalEntities(FreshReturnValue).toSeq
+        val notFresh = ps.finalEntities(NoFreshReturnValue).toSeq
+        val prim = ps.finalEntities(PrimitiveReturnValue).toSeq
+        val getter = ps.finalEntities(Getter).toSeq
+        val extGetter = ps.finalEntities(ExtensibleGetter).toSeq
+        val vfresh = ps.finalEntities(VFreshReturnValue).toSeq
+        val vnotFresh = ps.finalEntities(VNoFreshReturnValue).toSeq
+        val vprim = ps.finalEntities(VPrimitiveReturnValue).toSeq
+        val vgetter = ps.finalEntities(VGetter).toSeq
+        val vextGetter = ps.finalEntities(VExtensibleGetter).toSeq
+
+        for (ep ← notFresh) {
+            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> No Fresh")
+        }
+
+        for (ep ← getter) {
+            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> Getter")
+        }
+
+        for (ep ← extGetter) {
+            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> Ext. Getter")
+        }
 
         val message =
             s"""|# of methods with fresh return value: ${fresh.size}

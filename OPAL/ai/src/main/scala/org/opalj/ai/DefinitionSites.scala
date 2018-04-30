@@ -46,17 +46,17 @@ class DefinitionSites(val project: SomeProject) {
     val definitionSites = new ConcurrentHashMap[DefinitionSite, DefinitionSite]()
     private[this] val aiResult = project.get(SimpleAIKey)
 
-    def apply(m: Method, pc: PC): DefinitionSite = {
+    def apply(m: Method, pc: Int): DefinitionSite = {
         val uses = aiResult(m).domain.safeUsedBy(pc)
         val defSite = new DefinitionSite(m, pc, uses)
         val prev = definitionSites.putIfAbsent(defSite, defSite)
-        if (prev == null) defSite else defSite
+        if (prev == null) defSite else prev
     }
 
-    def apply(m: Method, pc: PC, uses: PCs): DefinitionSiteWithFilteredUses = {
+    def apply(m: Method, pc: Int, uses: PCs): DefinitionSiteWithFilteredUses = {
         val defSite = new DefinitionSiteWithFilteredUses(m, pc, uses)
         val prev = definitionSites.putIfAbsent(defSite, defSite).asInstanceOf[DefinitionSiteWithFilteredUses]
-        if (prev == null) defSite else defSite
+        if (prev == null) defSite else prev
     }
 
     def getAllocationSites: Seq[DefinitionSite] = {
@@ -64,14 +64,19 @@ class DefinitionSites(val project: SomeProject) {
 
         project.parForeachMethodWithBody() { methodInfo ⇒
             val m = methodInfo.method
-            val code = m.body.get
-            for ((pc, instr) ← code) {
-                instr.opcode match {
-                    case NEW.opcode | NEWARRAY.opcode | ANEWARRAY.opcode | MULTIANEWARRAY.opcode ⇒
-                        val defSite: DefinitionSite = apply(m, pc)
-                        allocationSites.add(defSite)
-                    case _ ⇒
+            val code = m.body.get.instructions
+            var pc = 0
+            while (pc < code.length) {
+                val instr = code(pc)
+                if (instr != null) {
+                    instr.opcode match {
+                        case NEW.opcode | NEWARRAY.opcode | ANEWARRAY.opcode | MULTIANEWARRAY.opcode ⇒
+                            val defSite: DefinitionSite = apply(m, pc)
+                            allocationSites.add(defSite)
+                        case _ ⇒
+                    }
                 }
+                pc += 1
             }
         }
         allocationSites.asScala.toSeq

@@ -44,14 +44,12 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBPure
-import org.opalj.fpcf.properties.PureWithoutAllocations
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.LBSideEffectFree
-import org.opalj.fpcf.properties.LBSideEffectFreeWithoutAllocations
+import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.VirtualMethodPurity.VLBPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VPureWithoutAllocations
 import org.opalj.fpcf.properties.VirtualMethodPurity.VLBSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBSideEffectFreeWithoutAllocations
+import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.StaticFunctionCall
@@ -110,9 +108,7 @@ object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
             case ExprStmt(_, call @ StaticFunctionCall(_, declClass, isInterface, name, descr, _)) ⇒
                 val callee = project.staticCall(declClass, isInterface, name, descr)
                 if (callee.hasValue) propertyStore(declaredMethods(callee.value), Purity.key) match {
-                    case FinalEP(_, PureWithoutAllocations | LBPure |
-                        LBSideEffectFreeWithoutAllocations |
-                        LBSideEffectFree) ⇒
+                    case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
                         createIssue(method, callee.value, call.pc)
                     case _ ⇒ None
                 }
@@ -120,8 +116,7 @@ object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
             case ExprStmt(_, call @ NonVirtualFunctionCall(_, declClass, isInterface, name, descr, _, _)) ⇒
                 val callee = project.specialCall(declClass, isInterface, name, descr)
                 if (callee.hasValue) propertyStore(declaredMethods(callee.value), Purity.key) match {
-                    case FinalEP(_, PureWithoutAllocations | LBPure | LBSideEffectFreeWithoutAllocations |
-                        LBSideEffectFree) ⇒
+                    case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
                         createIssue(method, callee.value, call.pc)
                     case _ ⇒ None
                 }
@@ -138,8 +133,7 @@ object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
                 val methodO = project.instanceCall(declClass.asObjectType, receiverType, name, descr)
                 if (methodO.hasValue) {
                     propertyStore(declaredMethods(DefinedMethod(receiverType, methodO.value)), VirtualMethodPurity.key) match {
-                        case FinalEP(_, VPureWithoutAllocations | VLBPure |
-                            VLBSideEffectFreeWithoutAllocations | VLBSideEffectFree) ⇒
+                        case FinalEP(_, VCompileTimePure | VLBPure | VLBSideEffectFree) ⇒
                             createIssue(method, methodO.value, call.pc)
                         case _ ⇒ None
                     }

@@ -26,12 +26,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf.properties.purity;
+
+import org.opalj.fpcf.FPCFAnalysis;
+import org.opalj.fpcf.analyses.L2PurityAnalysis;
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Factory for analyses that can be executed eagerly and lazily. In general, lazily is
- * preferred. However, for debugging purposes (i.e., if we don't have a client) eager
- * execution might be necessary.
+ * Annotation to state that the annotated method is domain specific contextually side effect free.
+ *
+ * @author Dominik Helm
  */
-trait FPCFAnalysisScheduler extends FPCFEagerAnalysisScheduler
+@PropertyValidator(key = "Purity",
+        validator = DomainSpecificContextuallySideEffectFreeMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface DomainSpecificContextuallySideEffectFree {
+
+    /**
+     * A short reasoning of this property.
+     */
+    String value(); // default = "N/A";
+
+    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
+
+    EP[] eps() default {};
+
+    boolean negate() default false;
+}

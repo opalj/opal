@@ -29,15 +29,12 @@
 package org.opalj
 package fpcf
 
-import java.net.URL
-
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.Project
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitRunner
 
 /**
  * @author Michael Eichberg
