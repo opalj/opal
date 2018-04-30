@@ -30,7 +30,9 @@ package org.opalj
 package ai
 
 import scala.language.existentials
+import scala.annotation.switch
 import scala.util.control.ControlThrowable
+
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -50,8 +52,6 @@ import org.opalj.ai.util.insertBeforeIfNew
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.collection.mutable.IntArrayStack
-
-import scala.annotation.switch
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
