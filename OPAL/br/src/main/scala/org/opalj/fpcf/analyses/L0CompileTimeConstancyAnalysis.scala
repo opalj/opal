@@ -61,6 +61,9 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
         if (!field.isStatic || field.constantFieldValue.isEmpty)
             return Result(field, CompileTimeVaryingField);
 
+        if (field.isFinal)
+            return Result(field, CompileTimeConstantField);
+
         var dependee: EOptionP[Entity, Property] = propertyStore(field, FieldMutability.key) match {
             case FinalEP(_, LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
             case FinalEP(_, _: FinalField)        ⇒ return Result(field, CompileTimeConstantField);

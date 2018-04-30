@@ -31,8 +31,22 @@ package fpcf
 package properties
 
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.instructions.NEWARRAY
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.ANEWARRAY
+import org.opalj.br.instructions.MULTIANEWARRAY
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.ASTORE_0
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.ALOAD_0
 import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFreeMethod
 import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
+
+import scala.annotation.switch
 
 sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -65,7 +79,42 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, AllocationFreeness](
         "AllocationFreeness",
-        MethodWithAllocations
+        (ps, dm) ⇒ {
+            if (dm.hasDefinition && dm.methodDefinition.body.isDefined) {
+                val method = dm.methodDefinition
+                val body = method.body.get
+                val instructions = body.instructions
+                val maxPC = instructions.length
+
+                var overwritesSelf = false
+                var hasAllocation = false
+
+                var currentPC = 0
+                while (currentPC < maxPC && !hasAllocation) {
+                    val instruction = instructions(currentPC)
+                    (instruction.opcode: @switch) match {
+                        case NEW.opcode | NEWARRAY.opcode |
+                            ANEWARRAY.opcode | MULTIANEWARRAY.opcode ⇒
+                            hasAllocation = true
+                        case INVOKESTATIC.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode |
+                            INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode ⇒
+                            hasAllocation = true
+                        case ASTORE_0.opcode if !method.isStatic ⇒
+                            overwritesSelf = true
+                        case PUTFIELD.opcode ⇒
+                            if (method.isStatic || overwritesSelf)
+                                hasAllocation = true // PUTFIELD on non-receiver may allocate NPE
+                            else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
+                                ALOAD_0.opcode)
+                                hasAllocation = true // PUTFIELD on non-receiver may allocate NPE
+                        case _ ⇒ hasAllocation = instruction.jvmExceptions.nonEmpty
+                    }
+                    currentPC = body.pcOfNextInstruction(currentPC)
+                }
+                if (hasAllocation) MethodWithAllocations else AllocationFreeMethod
+            } else MethodWithAllocations
+        },
+        (_: PropertyStore, eps: EPS[DeclaredMethod, AllocationFreeness]) ⇒ eps.toUBEP
     )
 }
 

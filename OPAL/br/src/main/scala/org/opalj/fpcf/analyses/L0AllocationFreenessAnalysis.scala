@@ -60,7 +60,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
 
-        if (!declaredMethod.hasDefinition)
+        if (!declaredMethod.hasDefinition || declaredMethod.methodDefinition.body.isEmpty)
             return Result(declaredMethod, MethodWithAllocations);
 
         val method = declaredMethod.methodDefinition
@@ -72,6 +72,8 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         val maxPC = instructions.length
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
+
+        var overwritesSelf = false
 
         var currentPC = 0
         while (currentPC < maxPC) {
@@ -114,6 +116,16 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
                         }
                 }
+
+                case ASTORE_0.opcode if !method.isStatic ⇒
+                    overwritesSelf = true
+
+                case PUTFIELD.opcode ⇒ // PUTFIELD on non-receiver may allocate NPE
+                    if (method.isStatic || overwritesSelf)
+                        return Result(declaredMethod, MethodWithAllocations);
+                    else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
+                        ALOAD_0.opcode)
+                        return Result(declaredMethod, MethodWithAllocations);
 
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     // We don't handle these calls here, just treat them as having allocations

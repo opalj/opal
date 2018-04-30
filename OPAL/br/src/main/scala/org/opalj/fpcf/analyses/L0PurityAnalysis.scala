@@ -170,11 +170,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         }
                 }
 
-                //TODO Should we still treat new/newarray as impure?
-                case NEW.opcode |
-                    GETFIELD.opcode |
+                case GETFIELD.opcode |
                     PUTFIELD.opcode | PUTSTATIC.opcode |
-                    NEWARRAY.opcode | MULTIANEWARRAY.opcode | ANEWARRAY.opcode |
                     AALOAD.opcode | AASTORE.opcode |
                     BALOAD.opcode | BASTORE.opcode |
                     CALOAD.opcode | CASTORE.opcode |
@@ -197,6 +194,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
                     // as long as no implicit exceptions are raised.
+                    // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
                     if (instruction.jvmExceptions.nonEmpty) {
                         // JVM Exceptions reify the stack and, hence, make the method impure as
                         // the calling context is now an explicit part of the method's result.
