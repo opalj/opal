@@ -1755,14 +1755,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // (one of) the ret instruction(s), we store this for later usage
                         val oldWorklist: List[Int /*PC*/ ] = worklist
 
-                        // IMPROVE Use ChainBuilder to enable efficient creation of the chain.
-                        var subroutineWorklist = List.empty[Int /*PC*/ ] // after the next steps...
+                        val subroutineWorkListBuilder = new Chain.ChainBuilder[Int]
                         var tail = worklist
                         while (tail.head >= 0) {
-                            subroutineWorklist :&:= tail.head
+                            subroutineWorkListBuilder += tail.head
                             tail = tail.tail
                         }
-                        subroutineWorklist = subroutineWorklist.reverse // reestablish the correct order
+                        val subroutineWorkList = subroutineWorkListBuilder.result // reestablish the correct order
                         tail = tail.tail // remove SUBROUTINE_START marker
 
                         var dynamicSubroutineInformation = List.empty[Int /*PC*/ ]
@@ -1774,14 +1773,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         if (dynamicSubroutineInformation.isEmpty) {
                             // let's store the local variable
                             worklist =
-                                subroutineWorklist :&::
+                                subroutineWorkList :&::
                                     (SUBROUTINE_START :&: pc :&:
                                         SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :&: lvIndex :&:
                                         tail)
                         } else {
                             // just let's store this ret instruction
                             worklist =
-                                subroutineWorklist :&::
+                                subroutineWorkList :&::
                                     (SUBROUTINE_START :&: pc :&: dynamicSubroutineInformation.reverse) :&::
                                     tail
                         }
