@@ -2786,6 +2786,11 @@ private object AI {
  */
 object CTC1 {
     def unapply(value: Domain#DomainValue): Boolean = value.computationalType.categoryId == 1
+    /*
+    def unapply(value: d.DomainValue forSome { val d : Domain}): Boolean = {
+        value.computationalType.categoryId == 1
+    }
+    */
 }
 
 /**
