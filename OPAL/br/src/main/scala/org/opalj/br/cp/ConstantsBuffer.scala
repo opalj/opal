@@ -293,6 +293,7 @@ object ConstantsBuffer {
      */
     @throws[ConstantPoolException]("if it is impossible to create a valid constant pool")
     def apply(ldcs: Set[LDC[_]]): ConstantsBuffer = {
+        // IMPROVE Use Object2IntMap..
         val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
         //the first item is null because the constant_pool starts with the index 1
         buffer(null) = 0
