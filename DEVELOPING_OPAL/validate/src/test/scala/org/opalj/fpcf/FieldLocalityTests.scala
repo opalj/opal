@@ -42,7 +42,7 @@ class FieldLocalityTests extends PropertiesTest {
         LazyReturnValueFreshnessAnalysis
     )
 
-    describe("return value freshness analysis is executed") {
+    describe("field locality analysis is executed") {
         val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
         validateProperties(
             as,
