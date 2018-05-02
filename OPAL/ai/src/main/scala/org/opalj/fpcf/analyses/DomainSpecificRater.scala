@@ -36,6 +36,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.LBDPure
 import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.LBPure
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
@@ -113,7 +114,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
     abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
         val GetStatic(_, declaringClass, name, _) = expr
         if (declaringClass == ObjectType.System && (name == "out" || name == "err"))
-            Some(LBDPure)
+            Some(LBPure)
         else super.handleGetStatic(expr)
     }
 

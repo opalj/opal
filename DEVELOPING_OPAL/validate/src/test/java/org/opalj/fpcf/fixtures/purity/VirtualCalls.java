@@ -133,7 +133,8 @@ public class VirtualCalls {
         return ai.interfaceMethod(5);
     }
 
-    @Pure("Calls pure method on object with precise type")
+    @Pure(value = "Calls pure method on object with precise type",
+            analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
     @Impure(value = "Analysis doesn't handle virtual calls", analyses = L0PurityAnalysis.class)
     public int pureInterfaceCall(int i) {
         AnInterface ai = new SubClassA();

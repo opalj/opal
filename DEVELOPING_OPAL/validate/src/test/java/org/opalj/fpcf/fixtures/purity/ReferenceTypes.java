@@ -137,7 +137,8 @@ public class ReferenceTypes {
     // Objects returned from methods are local if they are fresh and therefore the method can be
     // pure even if the object returned is mutable
 
-    @Pure("Returns a new object")
+    @Pure(value = "Returns a new object",
+            analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
     @Impure(value = "Allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObject() {
         return new Object();

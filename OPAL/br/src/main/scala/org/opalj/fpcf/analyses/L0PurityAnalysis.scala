@@ -297,6 +297,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def determinePurity(definedMethod: DeclaredMethod): PropertyComputationResult = {
         val DefinedMethod(_, method) = definedMethod
 
+        if (method.body.isEmpty)
+            return Result(definedMethod, LBImpure);
+
         if (method.isSynchronized)
             return Result(definedMethod, LBImpure);
 
