@@ -71,6 +71,11 @@ import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.StaticDataUsage
+import org.opalj.fpcf.properties.UsesNoStaticData
+import org.opalj.fpcf.properties.UsesConstantDataOnly
+import org.opalj.fpcf.properties.UsesVaryingData
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -142,6 +147,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         var virtualRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
 
+        var staticDataUsage: Option[EOptionP[DeclaredMethod, StaticDataUsage]] = None
+
         def dependees: Traversable[EOptionP[Entity, Property]] =
             (fieldLocalityDependees.valuesIterator.map(_._1) ++
                 fieldMutabilityDependees.valuesIterator.map(_._1) ++
@@ -150,13 +157,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 purityDependees.valuesIterator.map(_._1) ++
                 virtualPurityDependees.valuesIterator.map(_._1) ++
                 rvfDependees.valuesIterator.map(_._1) ++
-                virtualRVFDependees.valuesIterator.map(_._1)).toTraversable
+                virtualRVFDependees.valuesIterator.map(_._1) ++
+                staticDataUsage).toTraversable
 
         def addFieldLocalityDependee(
             f:    Field,
             eop:  EOptionP[Field, FieldLocality],
             data: (Expr[V], Purity)
-        ) = {
+        ): Unit = {
             if (fieldLocalityDependees.contains(f)) {
                 val (_, oldValues) = fieldLocalityDependees(f)
                 fieldLocalityDependees += ((f, (eop, oldValues + data)))
@@ -169,7 +177,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             f:     Field,
             eop:   EOptionP[Field, FieldMutability],
             owner: Option[Expr[V]]
-        ) = {
+        ): Unit = {
             if (fieldMutabilityDependees.contains(f)) {
                 val (_, oldOwners) = fieldMutabilityDependees(f)
                 fieldMutabilityDependees += ((f, (eop, oldOwners ++ owner.toSet)))
@@ -182,7 +190,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             t:     ObjectType,
             eop:   EOptionP[ObjectType, ClassImmutability],
             value: Expr[V]
-        ) = {
+        ): Unit = {
             if (classImmutabilityDependees.contains(t)) {
                 val (_, oldValues) = classImmutabilityDependees(t)
                 classImmutabilityDependees += ((t, (eop, oldValues + value)))
@@ -195,7 +203,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             t:     ObjectType,
             eop:   EOptionP[ObjectType, TypeImmutability],
             value: Expr[V]
-        ) = {
+        ): Unit = {
             if (typeImmutabilityDependees.contains(t)) {
                 val (_, oldValues) = typeImmutabilityDependees(t)
                 typeImmutabilityDependees += ((t, (eop, oldValues + value)))
@@ -208,7 +216,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             dm:     DeclaredMethod,
             eop:    EOptionP[DeclaredMethod, Purity],
             params: (Option[Expr[V]], Seq[Expr[V]])
-        ) = {
+        ): Unit = {
             if (purityDependees.contains(dm)) {
                 val (_, oldParams) = purityDependees(dm)
                 purityDependees += ((dm, (eop, oldParams + params)))
@@ -221,7 +229,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             dm:     DeclaredMethod,
             eop:    EOptionP[DeclaredMethod, VirtualMethodPurity],
             params: (Option[Expr[V]], Seq[Expr[V]])
-        ) = {
+        ): Unit = {
             if (virtualPurityDependees.contains(dm)) {
                 val (_, oldParams) = virtualPurityDependees(dm)
                 virtualPurityDependees += ((dm, (eop, oldParams + params)))
@@ -234,7 +242,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             dm:   DeclaredMethod,
             eop:  EOptionP[DeclaredMethod, ReturnValueFreshness],
             data: (Option[Expr[V]], Purity)
-        ) = {
+        ): Unit = {
             if (rvfDependees.contains(dm)) {
                 val (_, oldValues) = rvfDependees(dm)
                 rvfDependees += ((dm, (eop, oldValues + data)))
@@ -247,7 +255,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             dm:   DeclaredMethod,
             eop:  EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness],
             data: (Option[Expr[V]], Purity)
-        ) = {
+        ): Unit = {
             if (virtualRVFDependees.contains(dm)) {
                 val (_, oldValues) = virtualRVFDependees(dm)
                 virtualRVFDependees += ((dm, (eop, oldValues + data)))
@@ -256,20 +264,22 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        def removeFieldLocalityDependee(f: Field) = fieldLocalityDependees -= f
-        def removeFieldMutabilityDependee(f: Field) = fieldMutabilityDependees -= f
-        def removeClassImmutabilityDependee(t: ObjectType) = classImmutabilityDependees -= t
-        def removeTypeImmutabilityDependee(t: ObjectType) = typeImmutabilityDependees -= t
-        def removePurityDependee(dm: DeclaredMethod) = purityDependees -= dm
-        def removeVirtualPurityDependee(dm: DeclaredMethod) = virtualPurityDependees -= dm
-        def removeRVFDependee(dm: DeclaredMethod) = rvfDependees -= dm
-        def removeVirtualRVFDependee(dm: DeclaredMethod) = virtualRVFDependees -= dm
+        def removeFieldLocalityDependee(f: Field): Unit = fieldLocalityDependees -= f
+        def removeFieldMutabilityDependee(f: Field): Unit = fieldMutabilityDependees -= f
+        def removeClassImmutabilityDependee(t: ObjectType): Unit = classImmutabilityDependees -= t
+        def removeTypeImmutabilityDependee(t: ObjectType): Unit = typeImmutabilityDependees -= t
+        def removePurityDependee(dm: DeclaredMethod): Unit = purityDependees -= dm
+        def removeVirtualPurityDependee(dm: DeclaredMethod): Unit = virtualPurityDependees -= dm
+        def removeRVFDependee(dm: DeclaredMethod): Unit = rvfDependees -= dm
+        def removeVirtualRVFDependee(dm: DeclaredMethod): Unit = virtualRVFDependees -= dm
 
+        def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit =
+            staticDataUsage = eps
     }
 
     type StateType = State
 
-    val raterFqn = project.config.as[String](
+    val raterFqn: String = project.config.as[String](
         "org.opalj.fpcf.analyses.L2PurityAnalysis.domainSpecificRater"
     )
 
@@ -295,7 +305,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             LBPure,
             LBPure,
             state.method.isConstructor,
-            false
+            treatParamsAsFresh = false
         )
     }
 
@@ -419,12 +429,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case VirtualFunctionCall.ASTID ⇒
                 val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = rhs
                 onVirtualMethod(declClass, interface, name, rcvr, params, descr,
-                    (callee) ⇒ if (callee.hasValue) {
+                    callee ⇒ if (callee.hasValue) {
                         val dm = declaredMethods(callee.value)
                         val rvf = propertyStore(dm, ReturnValueFreshness.key)
                         checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
                     } else false,
-                    (dm) ⇒ {
+                    dm ⇒ {
                         val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
                         checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
                     },
@@ -551,7 +561,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
      *
-     * @note Adds dependendies when necessary.
+     * @note Adds dependendees when necessary.
      */
     def checkMethodPurity(
         ep:     EOptionP[DeclaredMethod, Property],
@@ -637,6 +647,22 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     }
 
     /**
+     * Handles the effect of static data usage on the purity level.
+     *
+     * @note Modifies dependees as necessary.
+     */
+    def checkStaticDataUsage(ep: EOptionP[DeclaredMethod, StaticDataUsage])(implicit state: State): Unit =
+        ep match {
+            case FinalEP(_, UsesNoStaticData | UsesConstantDataOnly) =>
+                state.updateStaticDataUsage(None)
+            case EPS(_, _, UsesVaryingData)=>
+                state.updateStaticDataUsage(None)
+                atMost(LBPure)
+            case _ =>
+                state.updateStaticDataUsage(Some(ep))
+        }
+
+    /**
      * Adds the dependee necessary if a field mutability is not known yet.
      */
     override def handleUnknownFieldMutability(
@@ -668,6 +694,34 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     }
 
     /**
+     * Removes dependees that are known to not be needed anymore as they can not reduce the max
+     * purity level further.
+     */
+    def cleanupDependees()(implicit state: State): Unit = {
+        if(!state.maxPurity.isDeterministic){
+            state.fieldMutabilityDependees = Map.empty
+            state.classImmutabilityDependees = Map.empty
+            state.typeImmutabilityDependees = Map.empty
+            state.updateStaticDataUsage(None)
+        }
+
+        for((_, (_, s)) <- state.fieldLocalityDependees){
+            s.filter(data => data._2.meet(state.maxPurity) eq data._2)
+        }
+        state.fieldLocalityDependees.filter(dependee => !dependee._2._2.isEmpty)
+
+        for((_, (_, s)) <- state.rvfDependees){
+            s.filter(data => data._2.meet(state.maxPurity) eq data._2)
+        }
+        state.rvfDependees.filter(dependee => !dependee._2._2.isEmpty)
+
+        for((_, (_, s)) <- state.virtualRVFDependees){
+            s.filter(data => data._2.meet(state.maxPurity) eq data._2)
+        }
+        state.virtualRVFDependees.filter(dependee => !dependee._2._2.isEmpty)
+    }
+
+    /**
      * Continuation to handle updates to properties of dependees.
      * Dependees may be
      *     - methods / virtual methods called (for their purity)
@@ -675,6 +729,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - classes files for class types returned (for their mutability)
      */
     def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+        val oldPurity = state.maxPurity
         eps.ub match {
             case _: Purity ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
@@ -744,7 +799,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 dependees._2.foreach { e ⇒
                     checkLocalityOfField(eps.asInstanceOf[EOptionP[Field, FieldLocality]], e)
                 }
+            case _: StaticDataUsage ⇒
+                checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
         }
+
+        if(state.maxPurity ne oldPurity)
+            cleanupDependees() // Remove dependees that we don't need anymore.
 
         if (state.dependees.isEmpty || state.maxPurity.isInstanceOf[ClassifiedImpure]) {
             Result(state.definedMethod, state.maxPurity)
@@ -763,7 +823,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
-        implicit val state = new State(LBPure, method, definedMethod, declClass, code)
+        //TODO: This is not sound currently, as we still have to check whether the return value is NOT fresh for CompileTimePure methods.
+        implicit val state = new State(CompileTimePure, method, definedMethod, declClass, code)
+
+        checkStaticDataUsage(propertyStore(definedMethod, StaticDataUsage.key))
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
@@ -814,6 +877,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
             s += 1
         }
+
+        // Remove dependees we already know we won't need
+        if(state.maxPurity ne CompileTimePure)
+            cleanupDependees()
 
         if (state.dependees.isEmpty) {
             Result(definedMethod, state.maxPurity)
