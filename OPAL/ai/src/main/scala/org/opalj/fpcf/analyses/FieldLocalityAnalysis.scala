@@ -107,8 +107,6 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         val fieldName = field.name
         val fieldType = field.fieldType
 
-        earlyExit(field).foreach(return _)
-
         val methodsOfThisType = field.classFile.methodsWithBody.map(_._1)
 
         // if there is no clone method, the class must not be extensible to be non local
@@ -145,9 +143,11 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 case put @ PutField(_, declaredFieldType, `fieldName`, `fieldType`, objRef, value) ⇒
                     project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
                         case Some(`field`) ⇒
-                            checkFreshnessAndEscapeOfValue(
+                            if (checkFreshnessAndEscapeOfValue(
                                 value, put, stmts, method, isClone = false
-                            ).foreach(return _)
+                            )) {
+                                return Result(field, NoLocalField);
+                            }
                         case None ⇒ throw new RuntimeException("unexpected case")
                         case _    ⇒
                     }
@@ -156,7 +156,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 case stmt @ Assignment(_, _, GetField(_, declaredType, `fieldName`, `fieldType`, _)) ⇒
                     project.resolveFieldReference(declaredType, fieldName, fieldType) match {
                         case Some(`field`) ⇒
-                            handleGetField(stmt, stmts, method).foreach(return _)
+                            if (handleGetField(stmt, stmts, method)) {
+                                return Result(field, NoLocalField);
+                            }
                         case None ⇒ throw new RuntimeException("unexpected case")
                         case _    ⇒
                     }
@@ -164,7 +166,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 // always if there is a call to super.clone the field has to be override
                 case Assignment(_, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
                     if (descr.parametersCount == 0 && field.classFile.superclassType.get == dc) {
-                        handleSuperCloneCall(index, method, left.usedBy, tacai).foreach(return _)
+                        if (handleSuperCloneCall(index, method, left.usedBy, tacai)){
+                            return Result(field, NoLocalField);
+                        }
                     }
 
                 case _ ⇒
@@ -176,7 +180,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
     def handleGetField(
         definingStmt: Assignment[V], stmts: Array[Stmt[V]], method: Method
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
+    )(implicit state: FieldLocalityState): Boolean = {
         val escape = propertyStore(definitionSites(method, definingStmt.pc), EscapeProperty.key)
         handleEscapeOfGetField(escape)
 
@@ -187,7 +191,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         method: Method,
         uses:   IntTrieSet,
         tacai:  TACode[TACMethodParameter, V]
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
+    )(implicit state: FieldLocalityState): Boolean = {
         val field = state.field
         val thisType = field.classFile.thisType
         val fieldName = field.name
@@ -208,9 +212,11 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                         tacai.stmts(index) match {
                             case putStmt @ PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) ⇒
                                 if (uses.contains(index)) {
-                                    checkFreshnessAndEscapeOfValue(
+                                    if (checkFreshnessAndEscapeOfValue(
                                         objRef, putStmt, tacai.stmts, method, isClone = true
-                                    ).foreach(x ⇒ return Some(x))
+                                    )) {
+                                        return true;
+                                    }
                                     // we are done
                                     foundPut = true
                                 }
@@ -219,7 +225,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                     }
                 case exit: ExitNode ⇒
                     if (exit.isNormalReturnExitNode) {
-                        return Some(Result(state.field, NoLocalField))
+                        return true;
                     }
                 case _ ⇒
             }
@@ -231,7 +237,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 enqueuedBBs ++= successors
             }
         }
-        None
+        false
     }
 
     /**
@@ -240,13 +246,14 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
      */
     private[this] def handleConcreteCall(
         callee: org.opalj.Result[Method]
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
+    )(implicit state: FieldLocalityState): Boolean = {
         // unkown method
         if (callee.isEmpty)
-            return Some(Result(state.field, NoLocalField))
-
-        val dm = declaredMethods(callee.value)
-        handleReturnValueFreshness(propertyStore(dm, ReturnValueFreshness.key))
+            false
+        else {
+            val dm = declaredMethods(callee.value)
+            handleReturnValueFreshness(propertyStore(dm, ReturnValueFreshness.key))
+        }
     }
 
     /**
@@ -255,23 +262,24 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
      */
     private[this] def checkFreshnessOfDef(
         stmt: Stmt[V], method: Method, isClone: Boolean
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
+    )(implicit state: FieldLocalityState): Boolean = {
         // the object stored in the field is fresh
 
         val superType = state.field.classFile.superclassType.get
         stmt match {
-            case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒ // fresh by definition
+            case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
+                false // fresh by definition
 
             case Assignment(_, _, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
                 val callee = project.staticCall(dc, isI, name, desc)
-                return handleConcreteCall(callee)
+                handleConcreteCall(callee)
 
             case Assignment(_, _, NonVirtualFunctionCall(_, `superType`, _, "clone", descr, _, _)) if isClone && descr.parametersCount == 0 ⇒
-                None
+                false
 
             case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
                 val callee = project.specialCall(dc, isI, name, desc)
-                return handleConcreteCall(callee)
+                handleConcreteCall(callee)
 
             case Assignment(_, _, VirtualFunctionCall(_, _, _, name, desc, receiver, _)) ⇒
 
@@ -284,11 +292,13 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
                     if (receiverType.isArrayType) {
                         val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                        return handleConcreteCall(callee);
+                        handleConcreteCall(callee)
+
                     } else if (value.isPrecise) {
                         val preciseType = value.valueType.get
                         val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
-                        return handleConcreteCall(callee);
+                        handleConcreteCall(callee)
+
                     } else {
                         var callee = project.instanceCall(method.classFile.thisType, receiverType, name, desc)
 
@@ -304,113 +314,114 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                                         project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
                                     }
                                 case None ⇒
-                                    return Some(Result(state.field, NoLocalField));
+                                    return true;
                             }
                         }
 
                         if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
-                            return Some(Result(state.field, NoLocalField))
-
-                        val dm = declaredMethods(callee.value)
-                        val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
-                        val rvff = handleReturnValueFreshness(rvf)
-                        if (rvff.isDefined) return rvff;
+                            true
+                        else {
+                            val dm = declaredMethods(callee.value)
+                            val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
+                            handleReturnValueFreshness(rvf)
+                        }
                     }
+                } else {
+                    false
                 }
             case Assignment(_, _, _: Const) ⇒
+                false
 
             case _ ⇒
-                return Some(Result(state.field, NoLocalField))
+                true
 
         }
-        None
     }
 
     private[this] def handleReturnValueFreshness(
         eOptionP: EOptionP[DeclaredMethod, Property]
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
+    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
         case FinalEP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒
-            Some(Result(state.field, NoLocalField))
+            true
 
         case FinalEP(_, Getter | VGetter) ⇒
-            Some(Result(state.field, NoLocalField))
+            true
 
         case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
-            Some(Result(state.field, NoLocalField))
+            true
 
         case IntermediateEP(_, _, Getter | VGetter) ⇒
-            Some(Result(state.field, NoLocalField))
+            true
 
         case IntermediateEP(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
-            Some(Result(state.field, NoLocalField))
+            true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue)         ⇒ None
+        case FinalEP(_, FreshReturnValue | VFreshReturnValue)         ⇒ false
 
-        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒ None
+        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒ false
 
         case epkOrCnd ⇒
             state.addMethodDependee(epkOrCnd)
-            None
+            false
     }
 
     private[this] def handleEscapeState(
         eOptionP: EOptionP[DefinitionSiteWithFilteredUses, EscapeProperty], isClone: Boolean
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ None
+    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
+        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
             if (isClone)
                 state.addClonedDefinitionSiteDependee(eOptionP)
             else
                 state.addDefinitionSiteDependee(eOptionP)
-            None
+            false
 
-        case FinalEP(_, EscapeViaReturn) if isClone ⇒ None
+        case FinalEP(_, EscapeViaReturn) if isClone ⇒ false
 
         case IntermediateEP(_, _, EscapeViaReturn) if isClone ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
-            None
+            false
 
-        case EPS(_, _, _) ⇒ Some(Result(state.field, NoLocalField))
+        case EPS(_, _, _) ⇒ true
 
         case _ if isClone ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
-            None
+            false
         case _ ⇒
             state.addDefinitionSiteDependee(eOptionP)
-            None
+            false
     }
 
     private[this] def handleEscapeOfGetField(
         eOptionP: EOptionP[DefinitionSite, EscapeProperty]
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = eOptionP match {
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ None
+    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
+        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
         case FinalEP(e, EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver(e)) {
                 state.updateWithMeet(LocalFieldWithGetter)
-                None
+                false
             } else
-                Some(Result(state.field, NoLocalField))
+                true
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addDefinitionSiteDependee(eOptionP)
-            None
+            false
 
         case IntermediateEP(e, _, EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver(e)) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 state.addDefinitionSiteDependee(eOptionP)
-                None
+                false
             } else
-                Some(Result(state.field, NoLocalField))
-            None
+                true
 
         case EPS(_, _, _) ⇒
-            Some(Result(state.field, NoLocalField))
+            true
 
         case _ ⇒
             state.addDefinitionSiteDependee(eOptionP)
-            None
+            false
 
     }
 
@@ -427,49 +438,51 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
     private[this] def checkFreshnessAndEscapeOfValue(
         value: Expr[V], putField: PutField[V], stmts: Array[Stmt[V]], method: Method, isClone: Boolean
-    )(implicit state: FieldLocalityState): Option[PropertyComputationResult] = {
-        for (defSite1 ← value.asVar.definedBy) {
-            //TODO what about exceptions
+    )(implicit state: FieldLocalityState): Boolean = {
+        value.asVar.definedBy.exists { defSite1 ⇒
             if (defSite1 < 0)
-                return Some(Result(state.field, NoLocalField));
-            val stmt = stmts(defSite1)
+                true
+            else {
+                val stmt = stmts(defSite1)
 
-            // is the def-site fresh?
-            checkFreshnessOfDef(stmt, method, isClone).foreach(r ⇒ return Some(r))
-
-            val filteredUses = aiResult(method).domain.usedBy(stmt.pc).filter(_ != putField.pc)
-            val defSiteEntity = definitionSites(method, stmt.pc, filteredUses)
-            val escape = propertyStore(defSiteEntity, EscapeProperty.key)
-            handleEscapeState(escape, isClone).foreach(r ⇒ return Some(r))
+                // is the def-site fresh?
+                if (checkFreshnessOfDef(stmt, method, isClone)) {
+                    true
+                } else {
+                    val filteredUses = aiResult(method).domain.usedBy(stmt.pc).filter(_ != putField.pc)
+                    val defSiteEntity = definitionSites(method, stmt.pc, filteredUses)
+                    val escape = propertyStore(defSiteEntity, EscapeProperty.key)
+                    handleEscapeState(escape, isClone)
+                }
+            }
         }
-        None
     }
 
-    def earlyExit(field: Field): Option[PropertyComputationResult] = {
+    def step1(field: Field): PropertyComputationResult = {
         val fieldType = field.fieldType
         val thisType = field.classFile.thisType
         // base types can be considered to be local
         if (fieldType.isBaseType)
-            return Some(Result(field, LocalField))
+            return Result(field, LocalField);
 
         if (field.isStatic)
-            return Some(Result(field, NoLocalField))
+            return Result(field, NoLocalField);
 
         // this analysis can not track public fields
         if (field.isPublic)
-            return Some(Result(field, NoLocalField))
+            return Result(field, NoLocalField);
 
         if (field.isProtected && typeExtensiblity(thisType).isYesOrUnknown) {
-            return Some(Result(field, NoLocalField))
+            return Result(field, NoLocalField);
         }
 
         if (field.isPackagePrivate || field.isProtected) {
             val closedPackages = project.get(ClosedPackagesKey)
             if (!closedPackages.isClosed(thisType.packageName)) {
-                return Some(Result(field, NoLocalField))
+                return Result(field, NoLocalField);
             }
         }
-        None
+        determineLocality(field)
     }
 
     def allMethodsHavingAccess(field: Field): Set[Method] = {
@@ -488,24 +501,27 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         someEPS: SomeEPS
     )(implicit state: FieldLocalityState): PropertyComputationResult = {
 
-        someEPS.e match {
+        val isNotLocal = someEPS.e match {
             case _: DeclaredMethod ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Property]]
                 state.removeMethodDependee(newEP)
-                handleReturnValueFreshness(newEP).foreach(return _)
+                handleReturnValueFreshness(newEP)
 
             case e: DefinitionSiteWithFilteredUses ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSiteWithFilteredUses, EscapeProperty]]
                 state.removeDefinitionSiteDependee(newEP)
-                handleEscapeState(newEP, state.isDefinitionSiteOfClone(e)).foreach(return _)
+                handleEscapeState(newEP, state.isDefinitionSiteOfClone(e))
 
             // order matters: normal allocation sites must not escape via return
             case e: DefinitionSite ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.removeDefinitionSiteDependee(newEP)
-                handleEscapeOfGetField(newEP).foreach(return _)
+                handleEscapeOfGetField(newEP)
         }
-        returnResult
+        if (isNotLocal)
+            Result(state.field, NoLocalField)
+        else
+            returnResult
     }
 
     private[this] def returnResult(implicit state: FieldLocalityState): PropertyComputationResult = {
@@ -534,7 +550,7 @@ object EagerFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FP
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val allFields = project.allFields
         val analysis = new FieldLocalityAnalysis(project)
-        propertyStore.scheduleForEntities(allFields)(analysis.determineLocality)
+        propertyStore.scheduleForEntities(allFields)(analysis.step1)
         analysis
     }
 }
@@ -548,7 +564,7 @@ object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPC
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(project)
         propertyStore.registerLazyPropertyComputation(
-            FieldLocality.key, analysis.determineLocality
+            FieldLocality.key, analysis.step1
         )
         analysis
     }
