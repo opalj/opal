@@ -30,29 +30,31 @@ package org.opalj
 package br
 
 /**
- * An efficient (i.e., no (un)boxing...) representation of an instruction (identified)
- * by its pc in a method.
- *
- * @param pc The program counter of an instruction.
- * @param method The declaring method.
+ * An efficient (i.e., no (un)boxing...) representation of an instruction and a value.
  *
  * @author Michael Eichberg
  */
-/*no case class!*/ final class PCInMethod(val method: Method, val pc: Int /* PC */ ) {
+/* no case class */ final class PCAndAnyRef[T <: AnyRef](val pc: Int /* PC */ , val value: T) {
 
-    override def hashCode(): Opcode = method.hashCode() * 113 + pc
+    override def hashCode(): Opcode = value.hashCode() * 117 + pc
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: PCInMethod ⇒ that.pc == this.pc && that.method == this.method
-            case _                ⇒ false
+            case that: PCAndAnyRef[_] ⇒ this.pc == that.pc && this.value == that.value
+            case _                    ⇒ false
         }
-
     }
 
-    override def toString: String = s"PCInMethod(method=${method.toJava},pc=$pc)"
+    override def toString: String = s"PCAndAnyRef(pc=$pc,$value)"
 }
 
-object PCInMethod {
-    def apply(method: Method, pc: Int): PCInMethod = new PCInMethod(method, pc)
+object PCAndAnyRef {
+    def apply[T <: AnyRef](pc: Int /* PC */ , value: T): PCAndAnyRef[T] = {
+        new PCAndAnyRef(pc, value)
+    }
+
+    // TODO Figure out if the (un)boxing related to the matcher is relevant or optimized away by the JVM
+    def unapply[T <: AnyRef](pcAndValue: PCAndAnyRef[T]): Some[(Int /* PC */ , T)] = {
+        Some((pcAndValue.pc, pcAndValue.value))
+    }
 }
