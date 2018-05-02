@@ -81,7 +81,7 @@ class L1ThrownExceptionsAnalysis private (
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        var exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
         var result: ThrownExceptions = null
 
@@ -126,11 +126,17 @@ class L1ThrownExceptionsAnalysis private (
                                                 EPS(_, _, ThrownExceptions.AnalysisLimitation) |
                                                 EPS(_, _, ThrownExceptions.UnresolvedInvokeDynamicInstruction) ⇒
                                                 result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
-                                            case EPS(_, _, ub: ThrownExceptions) ⇒
-                                                exceptions ++= ub.types.concreteTypes
-                                            case epk ⇒ dependees += epk
+                                                false
+                                            case eps: EPS[Entity, Property] ⇒
+                                                exceptions ++= eps.ub.types.concreteTypes
+                                                if (eps.isRefinable) {
+                                                    dependees += eps
+                                                }
+                                                true
+                                            case epk ⇒
+                                                dependees += epk
+                                                true
                                         }
-                                        true
                                     case _ ⇒
                                         result = ThrownExceptions.UnknownExceptionIsThrown
                                         false
@@ -159,13 +165,15 @@ class L1ThrownExceptionsAnalysis private (
                                 result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
                                 result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
-                            case EPS(_, _, ub: ThrownExceptionsByOverridingMethods) ⇒
-                                exceptions ++= ub.exceptions.concreteTypes
+                            case eps: EPS[Entity, Property] ⇒
+                                exceptions ++= eps.ub.exceptions.concreteTypes
+                                if (eps.isRefinable) {
+                                    dependees += eps
+                                }
                             case epk ⇒ dependees += epk
                         }
-                        dependees += EPK(callee, ThrownExceptionsByOverridingMethods.Key)
                     }
-                    callees.nonEmpty
+                    result == null
 
                 // let's determine if the register 0 is updated (i.e., if the register which
                 // stores the this reference in case of instance methods is updated)
@@ -265,7 +273,7 @@ class L1ThrownExceptionsAnalysis private (
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
 
         if (!areAllExceptionsCollected) {
-            assert(result ne null)
+            assert(result ne null, "!areAllExceptionsCollected without result")
             return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
@@ -277,11 +285,11 @@ class L1ThrownExceptionsAnalysis private (
         }
 
         def c(eps: SomeEPS): PropertyComputationResult = {
-            dependees = dependees.filter {
-                _.e ne eps.e
+            dependees = dependees.filter { d ⇒
+                d.e != eps.e || d.pk != eps.pk
             }
             // If the property is not final we want to keep updated of new values
-            if (!eps.isFinal) {
+            if (eps.isRefinable) {
                 dependees = dependees + eps
             }
             eps.ub match {
@@ -298,18 +306,14 @@ class L1ThrownExceptionsAnalysis private (
                     ThrownExceptions.UnresolvedInvokeDynamicInstruction ⇒
                     return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
                 case te: ThrownExceptions ⇒
-                    exceptions ++= te.types.concreteTypes
+                    exceptions = te.types.concreteTypes ++: exceptions
 
                 // Properties from ThrownExceptionsByOverridingMethods
                 case ThrownExceptionsByOverridingMethods.SomeException |
                     ThrownExceptionsByOverridingMethods.MethodIsOverridable ⇒
                     return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
                 case tebom: ThrownExceptionsByOverridingMethods ⇒
-                    exceptions ++= tebom.exceptions.concreteTypes
-            }
-            // If we got some exception, add Throwable as upper type
-            if (exceptions.nonEmpty) {
-                exceptions +<:= ObjectType.Throwable
+                    exceptions = tebom.exceptions.concreteTypes ++: exceptions
             }
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptions(exceptions))
@@ -318,10 +322,6 @@ class L1ThrownExceptionsAnalysis private (
             }
         }
 
-        // If we got some exception, add Throwable as upper type
-        if (exceptions.nonEmpty) {
-            exceptions +<:= ObjectType.Throwable
-        }
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptions(exceptions))
         } else {

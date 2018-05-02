@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
@@ -70,33 +69,39 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
             return Result(m, ThrownExceptionsByOverridingMethods.MethodIsOverridable);
         }
 
-        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        var exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
         var dependees = Set.empty[EOptionP[Entity, Property]]
 
         // Get all subtypes, inclusive the current method as well
         project.classHierarchy.allSubtypes(m.classFile.thisType, reflexive = true) foreach { subType ⇒
-            val subtypeMethod = project.classFile(subType).get.findMethod(m.name, m.descriptor)
-            ps(subtypeMethod, ThrownExceptions.Key) match {
-                case EPS(_, _, ThrownExceptions.MethodIsAbstract) |
-                    EPS(_, _, ThrownExceptions.MethodBodyIsNotAvailable) |
-                    EPS(_, _, ThrownExceptions.MethodIsNative) |
-                    EPS(_, _, ThrownExceptions.UnknownExceptionIsThrown) |
-                    EPS(_, _, ThrownExceptions.AnalysisLimitation) |
-                    EPS(_, _, ThrownExceptions.UnresolvedInvokeDynamicInstruction) ⇒
-                    return Result(m, ThrownExceptionsByOverridingMethods.SomeException)
-                case EPS(_, _, ub: ThrownExceptions) ⇒
-                    exceptions ++= ub.types.concreteTypes
-                case epk ⇒ dependees += epk
-            }
+            project.classFile(subType).foreach(_.findMethod(m.name, m.descriptor) match {
+                case Some(subtypeMethod) ⇒
+                    ps(subtypeMethod, ThrownExceptions.Key) match {
+                        case EPS(_, _, ThrownExceptions.MethodIsAbstract) |
+                            EPS(_, _, ThrownExceptions.MethodBodyIsNotAvailable) |
+                            EPS(_, _, ThrownExceptions.MethodIsNative) |
+                            EPS(_, _, ThrownExceptions.UnknownExceptionIsThrown) |
+                            EPS(_, _, ThrownExceptions.AnalysisLimitation) |
+                            EPS(_, _, ThrownExceptions.UnresolvedInvokeDynamicInstruction) ⇒
+                            return Result(m, ThrownExceptionsByOverridingMethods.SomeException)
+                        case eps: EPS[Entity, Property] ⇒
+                            exceptions = eps.ub.types.concreteTypes ++: exceptions
+                            if (eps.isRefinable) {
+                                dependees += eps
+                            }
+                        case epk ⇒ dependees += epk
+                    }
+                case None ⇒
+            })
         }
 
         def c(eps: SomeEPS): PropertyComputationResult = {
-            dependees = dependees.filter {
-                _.e ne eps.e
+            dependees = dependees.filter { d ⇒
+                d.e != eps.e || d.pk != eps.pk
             }
             // If the property is not final we want to keep updated of new values
-            if (!eps.isFinal) {
+            if (eps.isRefinable) {
                 dependees = dependees + eps
             }
             eps.ub match {
@@ -111,12 +116,9 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
                     ThrownExceptions.UnknownExceptionIsThrown |
                     ThrownExceptions.AnalysisLimitation |
                     ThrownExceptions.UnresolvedInvokeDynamicInstruction ⇒
-                    return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+                    return Result(m, ThrownExceptionsByOverridingMethods.SomeException)
                 case te: ThrownExceptions ⇒
-                    exceptions ++= te.types.concreteTypes
-            }
-            if (exceptions.nonEmpty) {
-                exceptions +<:= ObjectType.Throwable
+                    exceptions = te.types.concreteTypes ++: exceptions
             }
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
@@ -125,9 +127,6 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
             }
         }
 
-        if (exceptions.nonEmpty) {
-            exceptions +<:= ObjectType.Throwable
-        }
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
         } else {
