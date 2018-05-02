@@ -31,9 +31,8 @@ package org.opalj.fpcf
 import java.util.concurrent.atomic.AtomicLong
 
 import com.phaller.rasync._
-import com.phaller.rasync.lattice.{Key, Updater}
-import net.ceedubs.ficus.Ficus._
-import org.opalj.BaseConfig
+import com.phaller.rasync.lattice.Key
+import com.phaller.rasync.lattice.Updater
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.LogContext
 
@@ -114,7 +113,6 @@ class ReactiveAsyncPropertyStore private (
             }.mkString
 
         val entities = s"\tEntities\n"+
-            f"\t\tNumber of Entities: ${ps.size}\n"+
             f"\t\tTotal number of cells: ${ps.map(_.size).sum}"
 
         "ReactiveAsyncPropertyStore(\n"+
@@ -678,9 +676,6 @@ class ReactiveAsyncPropertyStore private (
 }
 
 object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
-    final val ConfigKey = "org.opalj.debug.fpcf.LockBasedPropertyStore.consistency"
-    final val ValidateConsistency = BaseConfig.as[Option[Boolean]](ConfigKey).getOrElse(false)
-
     override def apply(
         parallelism: Int,
         context:     PropertyStoreContext[_ <: AnyRef]*

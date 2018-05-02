@@ -439,6 +439,7 @@ object PropertyStorePerformanceEvaluation {
             val timings = localParallelismRuns.map { threads ⇒
                 println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})")
                 var project: Project[URL] = null
+                var run = 0
 
                 val result = PerformanceEvaluation.time(10, 15, 3, {
                     // *** Setup - NOT TIMED ***
@@ -519,8 +520,10 @@ object PropertyStorePerformanceEvaluation {
                     propertyStore.waitOnPhaseCompletion()
                     propertyStore
                 }, true) {
-                    case (_, s) ⇒
+                    case (c, s) ⇒
                         nanos = Nanoseconds(s.map(_.timeSpan).sum / s.size)
+                        run += 1
+                        println(f"Run ${run}%2s: ${c.toSeconds} (${nanos.toSeconds} avg) - Times considered: [${s.map(_.toSeconds).mkString(", ")}]")
                 }
 
                 if (exportHistogram) {

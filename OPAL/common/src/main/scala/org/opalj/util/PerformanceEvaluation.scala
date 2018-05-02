@@ -317,8 +317,8 @@ object PerformanceEvaluation {
         if (runGC) gc()
         time { f } { t ⇒
             times = t :: times
+            r(t, times)
             if (t.timeSpan <= 199999) { // < 2 milliseconds
-                r(t, times)
                 OPALLogger.warn(
                     "common",
                     s"the time required by the function (${t.toString}) "+
