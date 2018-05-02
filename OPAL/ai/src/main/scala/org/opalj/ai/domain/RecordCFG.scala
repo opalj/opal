@@ -33,8 +33,11 @@ package domain
 import java.lang.ref.{SoftReference ⇒ SRef}
 import java.util.function.IntConsumer
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
 import scala.collection.BitSet
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
@@ -801,7 +804,8 @@ trait RecordCFG
         // that was actually executed!
         val bbs = new Array[BasicBlock](codeSize)
 
-        val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
+        // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
+        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode]
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
         } {
@@ -812,8 +816,13 @@ trait RecordCFG
                 //         that jumps to the handler.
                 handlesException(exceptionHandler)) {
                 val handlerPC = exceptionHandler.handlerPC
-                val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-                val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                // OLD val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                var catchNode = exceptionHandlers.get(handlerPC)
+                if (catchNode == null) {
+                    catchNode = new CatchNode(exceptionHandler, index)
+                    exceptionHandlers.put(handlerPC, catchNode)
+                }
                 var handlerBB = bbs(handlerPC)
                 if (handlerBB eq null) {
                     handlerBB = new BasicBlock(handlerPC)
@@ -923,7 +932,8 @@ trait RecordCFG
         }
 
         // 3. create CFG class
-        CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
+        val exBBs = exceptionHandlers.values.iterator().asScala.toList
+        CFG(code, normalReturnNode, abnormalReturnNode, exBBs, bbs)
     }
 
     /**
