@@ -26,41 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package collection
+package org.opalj.collection.immutable
 
 /**
- * Can be mixed in if the iteration order of the underlying data-structure is independent
- * of the insertion order. This is generally the case if the values are (pseudo-) sorted and
- * is never the case for, e.g., linked lists.
+ * An immutable pair of int values.
  *
  * @author Michael Eichberg
  */
-trait IntCollectionWithStableOrdering[T <: IntSet[T]] { intSet: T ⇒
+final class IntPair(val _1: Int, val _2: Int) {
 
-    def subsetOf(other: T): Boolean = {
-        var thisSize = this.size
-        var otherSize = other.size
-        if (thisSize > otherSize)
-            return false;
+    def first: Int = _1
+    def second: Int = _1
 
-        val thisIt = this.intIterator
-        val otherIt = other.intIterator
-        while (thisIt.hasNext && otherIt.hasNext) {
-            val thisV = thisIt.next()
-            thisSize -= 1
-            var otherV = otherIt.next()
-            otherSize -= 1
-            while (thisSize <= otherSize && otherIt.hasNext && otherV != thisV) {
-                otherV = otherIt.next()
-                otherSize -= 1
-            }
-            if (thisSize > otherSize)
-                return false; // there are definitively not enough remaining elements
-            if (thisV != otherV)
-                return false; // ... we reach this point when we did not find a match for the last element
+    def foreach(f: Int ⇒ Unit): Unit = { f(_1); f(_2) }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntPair ⇒ this._1 == that._1 && this._2 == that._2
+            case _             ⇒ false
         }
-        !thisIt.hasNext
     }
+
+    override def hashCode: Int = _1 * 17 + _2
+}
+
+object IntPair {
+
+    def apply(_1: Int, _2: Int): IntPair = new IntPair(_1, _2)
 
 }

@@ -30,7 +30,9 @@ package org.opalj
 package ai
 
 import scala.language.existentials
+import scala.annotation.switch
 import scala.util.control.ControlThrowable
+
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
@@ -50,8 +52,6 @@ import org.opalj.ai.util.insertBeforeIfNew
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.collection.mutable.IntArrayStack
-
-import scala.annotation.switch
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -528,11 +528,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             "the regular operands and the subroutines operands contain conflicting information"
         )
 
-        if (tracer.isDefined)
+        if (tracer.isDefined) {
             tracer.get.continuingInterpretation(code, theDomain)(
                 initialWorkList, alreadyEvaluatedPCs,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
+        }
 
         import theDomain.{DomainValue, ExceptionValue, ExceptionValues, Operands, Locals}
         import theDomain.{SingleValueConstraint, TwoValuesConstraint}
@@ -1755,14 +1756,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // (one of) the ret instruction(s), we store this for later usage
                         val oldWorklist: List[Int /*PC*/ ] = worklist
 
-                        // IMPROVE Use ChainBuilder to enable efficient creation of the chain.
-                        var subroutineWorklist = List.empty[Int /*PC*/ ] // after the next steps...
+                        val subroutineWorkListBuilder = new Chain.ChainBuilder[Int]
                         var tail = worklist
                         while (tail.head >= 0) {
-                            subroutineWorklist :&:= tail.head
+                            subroutineWorkListBuilder += tail.head
                             tail = tail.tail
                         }
-                        subroutineWorklist = subroutineWorklist.reverse // reestablish the correct order
+                        val subroutineWorkList = subroutineWorkListBuilder.result // reestablish the correct order
                         tail = tail.tail // remove SUBROUTINE_START marker
 
                         var dynamicSubroutineInformation = List.empty[Int /*PC*/ ]
@@ -1774,14 +1774,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         if (dynamicSubroutineInformation.isEmpty) {
                             // let's store the local variable
                             worklist =
-                                subroutineWorklist :&::
+                                subroutineWorkList :&::
                                     (SUBROUTINE_START :&: pc :&:
                                         SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :&: lvIndex :&:
                                         tail)
                         } else {
                             // just let's store this ret instruction
                             worklist =
-                                subroutineWorklist :&::
+                                subroutineWorkList :&::
                                     (SUBROUTINE_START :&: pc :&: dynamicSubroutineInformation.reverse) :&::
                                     tail
                         }
@@ -2787,6 +2787,11 @@ private object AI {
  */
 object CTC1 {
     def unapply(value: Domain#DomainValue): Boolean = value.computationalType.categoryId == 1
+    /*
+    def unapply(value: d.DomainValue forSome { val d : Domain}): Boolean = {
+        value.computationalType.categoryId == 1
+    }
+    */
 }
 
 /**

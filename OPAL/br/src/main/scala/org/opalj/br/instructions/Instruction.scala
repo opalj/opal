@@ -84,6 +84,7 @@ trait Instruction extends InstructionLike {
     // ---------------------------------------------------------------------------------------------
 
     def isSimpleBranchInstruction: Boolean = false
+    def isSimpleConditionalBranchInstruction: Boolean = false
     def isCompoundConditionalBranchInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
     def isStackManagementInstruction: Boolean = false

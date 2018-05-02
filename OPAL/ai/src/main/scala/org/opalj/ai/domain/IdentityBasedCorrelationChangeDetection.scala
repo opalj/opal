@@ -115,7 +115,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                     if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
                         return StructuralUpdate((newOperands, newLocals));
                 }
-                opi -= 1;
+                opi -= 1
             }
 
             var li = 0;
@@ -141,7 +141,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                         }
                     }
                 }
-                li += 1;
+                li += 1
             }
         }
 

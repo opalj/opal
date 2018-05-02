@@ -888,7 +888,9 @@ object TACNaive {
         // instructions will never cause any exceptions.
         val tacCFG = cfg.mapPCsToIndexes(pcToIndex, (i) ⇒ i, lastIndex = index - 1)
 
-        finalStatements.foreach(_.remapIndexes(pcToIndex))
+        finalStatements foreach { stmt ⇒
+            stmt.remapIndexes(pcToIndex, (_) ⇒ false /*CaughtException is not used by TACNaive*/ )
+        }
         val tacCode = finalStatements.toArray
 
         def getStartAndEndIndex(
