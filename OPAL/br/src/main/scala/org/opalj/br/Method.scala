@@ -470,6 +470,10 @@ final class Method private[br] (
     final override def isMethod: Boolean = true
 
     final override def asMethod: this.type = this
+
+    override def toString(): String = {
+        s"${super.toString()} (class ${classFile.thisType.toJava})"
+    }
 }
 
 /**

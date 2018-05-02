@@ -26,39 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf
 
-import scala.reflect.runtime.universe.TypeTag
+class ReactiveAsyncPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
-import org.opalj.log.LogContext
+    def createPropertyStore(): PropertyStore = {
+        val s = ReactiveAsyncPropertyStore()
 
-/**
- * Common interface of all [[PropertyStore]] factories.
- */
-trait PropertyStoreFactory {
-
-    final def apply[T <: AnyRef: TypeTag](
-        context: T
-    )(
-        implicit
-        logContext: LogContext
-    ): PropertyStore = {
-        apply(PropertyStoreContext[T](context))
+        s.debug = debug
+        s
     }
 
-    def apply(
-        parallelism: Int,
-        context:     PropertyStoreContext[_ <: AnyRef]*
-    )(
-        implicit
-        logContext: LogContext
-    ): PropertyStore = apply(context: _*)
-
-    def apply(
-        context: PropertyStoreContext[_ <: AnyRef]*
-    )(
-        implicit
-        logContext: LogContext
-    ): PropertyStore
 }

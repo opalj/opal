@@ -269,6 +269,8 @@ object PerformanceEvaluation {
      *          the last run is only considered if it is at most `consideredRunsEpsilon%`
      *          slower than the average. Hence, it is even possible that the average may rise
      *          during the evaluation of `f`.
+     * @param   setupF A function that is called back before `f` is called. Use it to setup `f` that
+     *                 should not be timed
      * @param   f The side-effect free function that will be measured.
      * @param   r A function that is called back whenever `f` was successfully evaluated.
      *          The signature is:
@@ -291,8 +293,9 @@ object PerformanceEvaluation {
         epsilon:                     Int,
         consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
+        setupF:                      ⇒ Unit,
         f:                           ⇒ T,
-        runGC:                       Boolean = false
+        runGC:                       Boolean
     )(
         r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
     ): T = {
@@ -310,6 +313,7 @@ object PerformanceEvaluation {
 
         var runsSinceLastUpdate = 0
         var times = List.empty[Nanoseconds]
+        setupF
         if (runGC) gc()
         time { f } { t ⇒
             times = t :: times
@@ -326,6 +330,7 @@ object PerformanceEvaluation {
         }
         var avg: Double = times.head.timeSpan.toDouble
         do {
+            setupF
             if (runGC) gc()
             time {
                 result = f
@@ -351,6 +356,25 @@ object PerformanceEvaluation {
             Math.abs(avg - times.head.timeSpan) > avg * e)
 
         result
+    }
+
+    def time[T](
+        epsilon:                     Int,
+        consideredRunsEpsilon:       Int,
+        minimalNumberOfRelevantRuns: Int,
+        f:                           ⇒ T,
+        runGC:                       Boolean = false
+    )(
+        r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
+    ): T = {
+        time(
+            epsilon,
+            consideredRunsEpsilon,
+            minimalNumberOfRelevantRuns,
+            {},
+            f,
+            runGC
+        )(r)
     }
 
     /**

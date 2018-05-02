@@ -29,9 +29,10 @@
 package org.opalj
 package fpcf
 
+import net.ceedubs.ficus.Ficus._
+import org.opalj.br.analyses.{ProjectInformationKey, SomeProject}
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.log.{LogContext, OPALLogger}
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -42,6 +43,9 @@ import org.opalj.br.analyses.ProjectInformationKey
  * @author Michael Eichberg
  */
 object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
+
+    final val ConfigKeyPrefix = "org.opalj.fpcf."
+    final val DefaultPropertyStoreImplementation = "org.opalj.fpcf.LockBasedPropertyStore"
 
     /**
      * Used to specify the number of threads the property store should use. This
@@ -63,11 +67,28 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
     override protected def compute(project: SomeProject): PropertyStore = {
-        implicit val logContext = project.logContext
-
         val context: List[PropertyStoreContext[AnyRef]] = List(
             PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
         )
-        EPKSequentialPropertyStore(context: _*)
+
+        val key = ConfigKeyPrefix+"PropertyStoreImplementation"
+        val configuredPropertyStore = project.config.as[Option[String]](key)
+        val propertyStoreCompanion = configuredPropertyStore.getOrElse(DefaultPropertyStoreImplementation)+"$"
+
+        OPALLogger.info("PropertyStoreKey", s"Using PropertyStore $propertyStoreCompanion")(project.logContext)
+
+        val propertyStoreCompanionClass = Class.forName(propertyStoreCompanion)
+        val apply = propertyStoreCompanionClass.getMethod(
+            "apply",
+            classOf[Int],
+            classOf[Seq[PropertyStoreContext[AnyRef]]],
+            classOf[LogContext]
+        )
+        apply.invoke(
+            propertyStoreCompanionClass.getField("MODULE$").get(null),
+            new Integer(parallelismLevel),
+            context,
+            project.logContext
+        ).asInstanceOf[PropertyStore]
     }
 }
