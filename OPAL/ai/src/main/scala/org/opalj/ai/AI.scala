@@ -412,7 +412,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     )(
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): Unit = {
@@ -432,7 +432,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 d.setMemoryLayout(
                     theOperandsArray.asInstanceOf[d.OperandsArray],
                     theLocalsArray.asInstanceOf[d.LocalsArray],
-                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]],
+                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(Int, d.OperandsArray, d.LocalsArray)]],
                     theSubroutinesOperandsArray.asInstanceOf[d.OperandsArray],
                     theSubroutinesLocalsArray.asInstanceOf[d.LocalsArray]
                 )
@@ -509,7 +509,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         alreadyEvaluatedPCs:                 IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
@@ -536,24 +536,24 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         }
 
         import theDomain.{DomainValue, ExceptionValue, ExceptionValues, Operands, Locals}
-        import theDomain.{SingleValueConstraint, TwoValuesConstraint}
 
         // import reference values related functionality
-        import theDomain.{refAreEqual, refAreNotEqual, RefAreEqual, RefAreNotEqual}
-        import theDomain.{refIsNonNull, refIsNull, RefIsNonNull, RefIsNull}
+        import theDomain.{refAreEqual, refAreNotEqual}
+        import theDomain.{refIsNonNull, refIsNull}
+        import theDomain.{refEstablishAreEqual, refEstablishAreNotEqual}
+        import theDomain.{refEstablishIsNonNull, refEstablishIsNull}
 
         // import int values related functionality
-        import theDomain.{intAreEqual, intAreNotEqual, IntAreEqual, IntAreNotEqual}
-        import theDomain.{intIs0, intIsNot0, IntIs0, IntIsNot0}
-        import theDomain.{intIsGreaterThan, intIsGreaterThan0, IntIsGreaterThan, IntIsGreaterThan0}
-        import theDomain.{intIsLessThan, intIsLessThan0, IntIsLessThan, IntIsLessThan0}
-        import theDomain.{intIsGreaterThanOrEqualTo, intIsGreaterThanOrEqualTo0}
-        import theDomain.{IntIsGreaterThanOrEqualTo, IntIsGreaterThanOrEqualTo0}
+        import theDomain.{intAreEqual, intAreNotEqual}
+        import theDomain.{intIs0, intIsNot0}
+        import theDomain.{intIsLessThan, intIsLessThan0}
         import theDomain.{intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0}
-        import theDomain.{IntIsLessThanOrEqualTo, IntIsLessThanOrEqualTo0}
+        import theDomain.{intIsGreaterThan, intIsGreaterThan0}
+        import theDomain.{intIsGreaterThanOrEqualTo, intIsGreaterThanOrEqualTo0}
 
-        type SingleValueDomainTest = (PC, DomainValue) ⇒ Answer // IMPROVE Use specialized class to avoid (Un)Boxing
-        type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer // IMPROVE Use specialized class to avoid (Un)Boxing
+        import theDomain.IntegerConstant0
+        import theDomain.{intEstablishAreEqual, intEstablishAreNotEqual}
+        import theDomain.{intEstablishIsLessThanOrEqualTo, intEstablishIsLessThan}
 
         val instructions: Array[Instruction] = code.instructions
 
@@ -569,7 +569,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          * The first PC of each element of the list is the pc of the first instruction of
          * the subroutine <=> the subroutine id
          */
-        type SubroutineMemoryLayouts = List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+        type SubroutineMemoryLayouts = List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
         /* 1 */ var operandsArray = theOperandsArray
@@ -1109,7 +1109,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                      */
                     val traceIterator = evaluatedPCs.intIterator
                     traceIterator.next()
-                    traceIterator.foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
+                    import traceIterator.foreachWhile
+                    foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
                         (pc: @switch) match {
                             case SUBROUTINE_START ⇒ subroutineLevel -= 1
                             case SUBROUTINE_END   ⇒ subroutineLevel += 1
@@ -1226,14 +1227,68 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         */
                 }
 
+                def singleDomainValueTest(
+                    testId: Int,
+                    pc:     Int,
+                    value:  DomainValue
+                ): Answer = {
+                    (testId: @switch) match {
+                        case AI.RefIsNullTestId               ⇒ refIsNull(pc, value)
+                        case AI.RefIsNonNullTestId            ⇒ refIsNonNull(pc, value)
+
+                        case AI.IntIs0TestId                  ⇒ intIs0(pc, value)
+                        case AI.IntIsNot0TestId               ⇒ intIsNot0(pc, value)
+                        case AI.IntIsLessThan0TestId          ⇒ intIsLessThan0(pc, value)
+                        case AI.IntIsLessThanOrEqualTo0TestId ⇒ intIsLessThanOrEqualTo0(pc, value)
+                        case AI.IntIsGreaterThan0TestId ⇒
+                            intIsGreaterThan0(pc, value)
+                        case AI.IntIsGreaterThanOrEqualTo0TestId ⇒
+                            intIsGreaterThanOrEqualTo0(pc, value)
+                    }
+                }
+
+                def singleDomainValueConstraint(
+                    constraintId: Int,
+                    pc:           Int,
+                    value:        DomainValue,
+                    operands:     Operands,
+                    locals:       Locals
+                ): (Operands, Locals) = {
+                    (constraintId: @switch) match {
+                        case AI.RefIsNullConstraintId ⇒
+                            refEstablishIsNull(pc, value, operands, locals)
+                        case AI.RefIsNonNullConstraintId ⇒
+                            refEstablishIsNonNull(pc, value, operands, locals)
+
+                        case AI.IntIs0ConstraintId ⇒
+                            intEstablishAreEqual(pc, value, IntegerConstant0, operands, locals)
+                        case AI.IntIsNot0ConstraintId ⇒
+                            intEstablishAreNotEqual(pc, value, IntegerConstant0, operands, locals)
+                        case AI.IntIsLessThan0ConstraintId ⇒
+                            intEstablishIsLessThan(pc, value, IntegerConstant0, operands, locals)
+                        case AI.IntIsLessThanOrEqualTo0ConstraintId ⇒
+                            intEstablishIsLessThanOrEqualTo(
+                                pc, value, IntegerConstant0, operands, locals
+                            )
+                        case AI.IntIsGreaterThan0ConstraintId ⇒
+                            intEstablishIsLessThan(
+                                pc, IntegerConstant0, value, operands, locals
+                            )
+                        case AI.IntIsGreaterThanOrEqualTo0ConstraintId ⇒
+                            intEstablishIsLessThanOrEqualTo(
+                                pc, IntegerConstant0, value, operands, locals
+                            )
+                    }
+                }
+
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
                  * value.
                  */
                 def ifXX(
-                    domainTest:    SingleValueDomainTest,
-                    yesConstraint: SingleValueConstraint,
-                    noConstraint:  SingleValueConstraint
+                    domainValueTestId: Int,
+                    yesConstraintId:   Int,
+                    noConstraintId:    Int
                 ): Unit = {
 
                     val branchInstruction = instruction.asSimpleConditionalBranchInstruction
@@ -1242,7 +1297,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val nextPC = pcOfNextInstruction
                     val branchTargetPC = pc + branchInstruction.branchoffset
 
-                    domainTest(pc, operand) match {
+                    singleDomainValueTest(domainValueTestId, pc, operand) match {
                         case Yes ⇒
                             checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
@@ -1260,7 +1315,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         case Unknown ⇒
                             // BT = Branch Target
                             val (newBTOperands, newBTLocals) =
-                                yesConstraint(branchTargetPC, operand, rest, locals)
+                                singleDomainValueConstraint(
+                                    yesConstraintId, branchTargetPC, operand, rest, locals
+                                )
                             if (tracer.isDefined &&
                                 ((rest ne newBTOperands) || (locals ne newBTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
@@ -1269,7 +1326,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             }
                             // FT = Fall Through
                             val (newFTOperands, newFTLocals) =
-                                noConstraint(nextPC, operand, rest, locals)
+                                singleDomainValueConstraint(
+                                    noConstraintId, nextPC, operand, rest, locals
+                                )
                             if (tracer.isDefined &&
                                 ((rest ne newFTOperands) || (locals ne newFTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
@@ -1309,14 +1368,69 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     }
                 }
 
+                def twoDomainValuesTest(
+                    testId: Int,
+                    pc:     Int,
+                    value1: DomainValue,
+                    value2: DomainValue
+                ): Answer = {
+                    (testId: @switch) match {
+                        case AI.RefAreEqualTestId    ⇒ refAreEqual(pc, value1, value2)
+                        case AI.RefAreNotEqualTestId ⇒ refAreNotEqual(pc, value1, value2)
+
+                        case AI.IntAreEqualTestId    ⇒ intAreEqual(pc, value1, value2)
+                        case AI.IntAreNotEqualTestId ⇒ intAreNotEqual(pc, value1, value2)
+                        case AI.IntIsLessThanTestId ⇒
+                            intIsLessThan(pc, value1, value2)
+                        case AI.IntIsLessThanOrEqualToTestId ⇒
+                            intIsLessThanOrEqualTo(pc, value1, value2)
+                        case AI.IntIsGreaterThanTestId ⇒
+                            intIsGreaterThan(pc, value1, value2)
+                        case AI.IntIsGreaterThanOrEqualToTestId ⇒
+                            intIsGreaterThanOrEqualTo(pc, value1, value2)
+                    }
+                }
+
+                def twoDomainValuesConstraint(
+                    constraintId: Int,
+                    pc:           Int,
+                    value1:       DomainValue,
+                    value2:       DomainValue,
+                    operands:     Operands,
+                    locals:       Locals
+                ): (Operands, Locals) = {
+                    (constraintId: @switch) match {
+                        case AI.RefAreEqualConstraintId ⇒
+                            refEstablishAreEqual(pc, value1, value2, operands, locals)
+                        case AI.RefAreNotEqualConstraintId ⇒
+                            refEstablishAreNotEqual(pc, value1, value2, operands, locals)
+
+                        case AI.IntAreEqualConstraintId ⇒
+                            intEstablishAreEqual(pc, value1, value2, operands, locals)
+                        case AI.IntAreNotEqualConstraintId ⇒
+                            intEstablishAreNotEqual(pc, value1, value2, operands, locals)
+
+                        case AI.IntIsLessThanConstraintId ⇒
+                            intEstablishIsLessThan(pc, value1, value2, operands, locals)
+                        case AI.IntIsLessThanOrEqualToConstraintId ⇒
+                            intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
+
+                        case AI.IntIsGreaterThanConstraintId ⇒
+                            intEstablishIsLessThan(pc, value2, value1, operands, locals)
+                        case AI.IntIsGreaterThanOrEqualToConstraintId ⇒
+                            intEstablishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
+
+                    }
+                }
+
                 /*
                  * Handles all '''if''' instructions that perform a comparison of two
                  * stack based values.
                  */
                 def ifTcmpXX(
-                    domainTest:    TwoValuesDomainTest,
-                    yesConstraint: TwoValuesConstraint,
-                    noConstraint:  TwoValuesConstraint
+                    domainValuesTestId: Int,
+                    yesConstraintId:    Int,
+                    noConstraintId:     Int
                 ): Unit = {
 
                     val branchInstruction = instruction.asSimpleConditionalBranchInstruction
@@ -1326,7 +1440,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val rest = remainingOperands.tail
                     val branchTargetPC = pc + branchInstruction.branchoffset
                     val nextPC = code.pcOfNextInstruction(pc)
-                    val testResult = domainTest(pc, left, right)
+                    val testResult = twoDomainValuesTest(domainValuesTestId, pc, left, right)
                     testResult match {
                         case Yes ⇒
                             checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
@@ -1348,7 +1462,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             // See ifXX for details regarding the heuristic for selecting the next
                             // instruction to evaluate.
                             val (newBTOperands, newBTLocals) =
-                                yesConstraint(branchTargetPC, left, right, rest, locals)
+                                twoDomainValuesConstraint(
+                                    yesConstraintId, branchTargetPC, left, right, rest, locals
+                                )
                             if (tracer.isDefined &&
                                 ((rest ne newBTOperands) || (locals ne newBTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
@@ -1356,7 +1472,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 )
                             }
                             val (newFTOperands, newFTLocals) =
-                                noConstraint(nextPC, left, right, rest, locals)
+                                twoDomainValuesConstraint(
+                                    noConstraintId, nextPC, left, right, rest, locals
+                                )
                             if (tracer.isDefined &&
                                 ((rest ne newFTOperands) || (locals ne newFTLocals))) {
                                 tracer.get.establishedConstraint(theDomain)(
@@ -1802,38 +1920,80 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     //
 
                     case 165 /*if_acmpeq*/ ⇒
-                        ifTcmpXX(refAreEqual _, RefAreEqual, RefAreNotEqual)
+                        ifTcmpXX(
+                            AI.RefAreEqualTestId,
+                            AI.RefAreEqualConstraintId, AI.RefAreNotEqualConstraintId
+                        )
                     case 166 /*if_acmpne*/ ⇒
-                        ifTcmpXX(refAreNotEqual _, RefAreNotEqual, RefAreEqual)
+                        ifTcmpXX(
+                            AI.RefAreNotEqualTestId,
+                            AI.RefAreNotEqualConstraintId, AI.RefAreEqualConstraintId
+                        )
                     case 198 /*ifnull*/ ⇒
-                        ifXX(refIsNull _, RefIsNull, RefIsNonNull)
+                        ifXX(
+                            AI.RefIsNullTestId,
+                            AI.RefIsNullConstraintId, AI.RefIsNonNullConstraintId
+                        )
                     case 199 /*ifnonnull*/ ⇒
-                        ifXX(refIsNonNull _, RefIsNonNull, RefIsNull)
+                        ifXX(
+                            AI.RefIsNonNullTestId,
+                            AI.RefIsNonNullConstraintId, AI.RefIsNullConstraintId
+                        )
 
                     case 159 /*if_icmpeq*/ ⇒
-                        ifTcmpXX(intAreEqual _, IntAreEqual, IntAreNotEqual)
+                        ifTcmpXX(
+                            AI.IntAreEqualTestId,
+                            AI.IntAreEqualConstraintId, AI.IntAreNotEqualConstraintId
+                        )
                     case 160 /*if_icmpne*/ ⇒
-                        ifTcmpXX(intAreNotEqual _, IntAreNotEqual, IntAreEqual)
+                        ifTcmpXX(
+                            AI.IntAreNotEqualTestId,
+                            AI.IntAreNotEqualConstraintId, AI.IntAreEqualConstraintId
+                        )
                     case 161 /*if_icmplt*/ ⇒
-                        ifTcmpXX(intIsLessThan _, IntIsLessThan, IntIsGreaterThanOrEqualTo)
+                        ifTcmpXX(
+                            AI.IntIsLessThanTestId,
+                            AI.IntIsLessThanConstraintId, AI.IntIsGreaterThanOrEqualToConstraintId
+                        )
                     case 162 /*if_icmpge*/ ⇒
-                        ifTcmpXX(intIsGreaterThanOrEqualTo _, IntIsGreaterThanOrEqualTo, IntIsLessThan)
+                        ifTcmpXX(
+                            AI.IntIsGreaterThanOrEqualToTestId,
+                            AI.IntIsGreaterThanOrEqualToConstraintId, AI.IntIsLessThanConstraintId
+                        )
                     case 163 /*if_icmpgt*/ ⇒
-                        ifTcmpXX(intIsGreaterThan _, IntIsGreaterThan, IntIsLessThanOrEqualTo)
+                        ifTcmpXX(
+                            AI.IntIsGreaterThanTestId,
+                            AI.IntIsGreaterThanConstraintId, AI.IntIsLessThanOrEqualToConstraintId
+                        )
                     case 164 /*if_icmple*/ ⇒
-                        ifTcmpXX(intIsLessThanOrEqualTo _, IntIsLessThanOrEqualTo, IntIsGreaterThan)
+                        ifTcmpXX(
+                            AI.IntIsLessThanOrEqualToTestId,
+                            AI.IntIsLessThanOrEqualToConstraintId, AI.IntIsGreaterThanConstraintId
+                        )
                     case 153 /*ifeq*/ ⇒
-                        ifXX(intIs0 _, IntIs0, IntIsNot0)
+                        ifXX(AI.IntIs0TestId, AI.IntIs0ConstraintId, AI.IntIsNot0ConstraintId)
                     case 154 /*ifne*/ ⇒
-                        ifXX(intIsNot0 _, IntIsNot0, IntIs0)
+                        ifXX(AI.IntIsNot0TestId, AI.IntIsNot0ConstraintId, AI.IntIs0ConstraintId)
                     case 155 /*iflt*/ ⇒
-                        ifXX(intIsLessThan0 _, IntIsLessThan0, IntIsGreaterThanOrEqualTo0)
+                        ifXX(
+                            AI.IntIsLessThan0TestId,
+                            AI.IntIsLessThan0ConstraintId, AI.IntIsGreaterThanOrEqualTo0ConstraintId
+                        )
                     case 156 /*ifge*/ ⇒
-                        ifXX(intIsGreaterThanOrEqualTo0 _, IntIsGreaterThanOrEqualTo0, IntIsLessThan0)
+                        ifXX(
+                            AI.IntIsGreaterThanOrEqualTo0TestId,
+                            AI.IntIsGreaterThanOrEqualTo0ConstraintId, AI.IntIsLessThan0ConstraintId
+                        )
                     case 157 /*ifgt*/ ⇒
-                        ifXX(intIsGreaterThan0 _, IntIsGreaterThan0, IntIsLessThanOrEqualTo0)
+                        ifXX(
+                            AI.IntIsGreaterThan0TestId,
+                            AI.IntIsGreaterThan0ConstraintId, AI.IntIsLessThanOrEqualTo0ConstraintId
+                        )
                     case 158 /*ifle */ ⇒
-                        ifXX(intIsLessThanOrEqualTo0 _, IntIsLessThanOrEqualTo0, IntIsGreaterThan0)
+                        ifXX(
+                            AI.IntIsLessThanOrEqualTo0TestId,
+                            AI.IntIsLessThanOrEqualTo0ConstraintId, AI.IntIsGreaterThan0ConstraintId
+                        )
 
                     case 171 /*lookupswitch*/ ⇒
                         val switch = as[LOOKUPSWITCH](instruction)
@@ -2773,6 +2933,39 @@ private object AI {
      */
     final val initialWorkList: List[Int /*PC*/ ] = Chain.singleton(0)
 
+    final val RefIsNullTestId = 10001
+    final val RefIsNonNullTestId = 10002
+    final val RefAreEqualTestId = 10003
+    final val RefAreNotEqualTestId = 10004
+    final val IntAreEqualTestId = 10005
+    final val IntAreNotEqualTestId = 10006
+    final val IntIsLessThanTestId = 10007
+    final val IntIsLessThanOrEqualToTestId = 10008
+    final val IntIsGreaterThanTestId = 10009
+    final val IntIsGreaterThanOrEqualToTestId = 10010
+    final val IntIs0TestId = 10011
+    final val IntIsNot0TestId = 10012
+    final val IntIsLessThan0TestId = 10013
+    final val IntIsLessThanOrEqualTo0TestId = 10014
+    final val IntIsGreaterThan0TestId = 10015
+    final val IntIsGreaterThanOrEqualTo0TestId = 10016
+
+    final val RefIsNullConstraintId = 11001
+    final val RefIsNonNullConstraintId = 11002
+    final val RefAreEqualConstraintId = 11003
+    final val RefAreNotEqualConstraintId = 11004
+    final val IntAreEqualConstraintId = 11005
+    final val IntAreNotEqualConstraintId = 11006
+    final val IntIsLessThanConstraintId = 11007
+    final val IntIsLessThanOrEqualToConstraintId = 11008
+    final val IntIsGreaterThanConstraintId = 11009
+    final val IntIsGreaterThanOrEqualToConstraintId = 11010
+    final val IntIs0ConstraintId = 11011
+    final val IntIsNot0ConstraintId = 11012
+    final val IntIsLessThan0ConstraintId = 11013
+    final val IntIsLessThanOrEqualTo0ConstraintId = 11014
+    final val IntIsGreaterThan0ConstraintId = 11015
+    final val IntIsGreaterThanOrEqualTo0ConstraintId = 11016
 }
 
 /**

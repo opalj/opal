@@ -75,10 +75,7 @@ object FirstInstrumentation extends App {
                     val lCode = LabeledCode(code)
                     var modified = false
                     for {
-                        PCAndInstruction(
-                            pc,
-                            INVOKEVIRTUAL(_, "toString", JustReturnsString)
-                            ) ← code
+                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code
                     } {
                         modified = true
                         lCode.insert(

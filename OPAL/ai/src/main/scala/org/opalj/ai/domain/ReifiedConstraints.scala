@@ -63,7 +63,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         /**
          * The pc associated with the constraint.
          */
-        def pc: PC
+        def pc: Int
 
         /**
          * A textual description of the constraint.
@@ -76,7 +76,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to a single value.
      */
     case class ReifiedSingleValueConstraint(
-            pc:         PC,
+            pc:         Int,
             value:      DomainValue,
             constraint: String
     ) extends ReifiedConstraint
@@ -85,13 +85,13 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
-            pc:     PC,
+            pc:     Int,
             value1: DomainValue, value2: DomainValue,
             constraint: String
     ) extends ReifiedConstraint
 
     abstract override def refEstablishIsNull(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         operands: Operands,
         locals:   Locals
@@ -102,7 +102,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def refEstablishIsNonNull(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         operands: Operands,
         locals:   Locals
@@ -113,7 +113,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def refEstablishAreEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -125,7 +125,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def refEstablishAreNotEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -137,7 +137,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def refSetUpperTypeBoundOfTopOperand(
-        pc:       PC,
+        pc:       Int,
         bound:    ReferenceType,
         operands: Operands,
         locals:   Locals
@@ -150,7 +150,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def refTopOperandIsNull(
-        pc:       PC,
+        pc:       Int,
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
@@ -164,7 +164,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     // W.r.t. Integer values
 
     abstract override def intEstablishValue(
-        pc:       PC,
+        pc:       Int,
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
@@ -176,7 +176,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def intEstablishAreEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -188,7 +188,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def intEstablishAreNotEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -200,7 +200,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def intEstablishIsLessThan(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -212,7 +212,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     }
 
     abstract override def intEstablishIsLessThanOrEqualTo(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,

@@ -49,7 +49,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     class AnIntegerValue extends super.AnIntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // - we are not joining the "same" value
             // - the join stabilization trait takes care of handling potential aliases
             MetaInformationUpdate(AnIntegerValue())
@@ -59,9 +59,9 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             other.isInstanceOf[IsIntegerValue[_]]
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.IntegerValue(pc)
         }
 
@@ -78,7 +78,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         assert(values.size > 0)
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
                 case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
 
@@ -126,9 +126,9 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             )
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             if (target.isInstanceOf[IntegerSetValues]) {
                 val thatDomain = target.asInstanceOf[IntegerSetValues]
                 thatDomain.IntegerSet(this.values).asInstanceOf[target.DomainValue]
@@ -159,7 +159,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         def name: String
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
 
@@ -202,7 +202,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             )
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
         override def hashCode = ub
 
@@ -224,7 +224,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue ⇒
         def name = "Unsigned7BitValue"
         def newInstance = new U7BitSet
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   ⇒ isv.U7BitSet()
                 case irv: IntegerRangeValues ⇒ irv.IntegerRange(lb, ub)
@@ -239,7 +239,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue ⇒
         def name = "Unsigned15BitValue"
         def newInstance = new U15BitSet
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   ⇒ isv.U15BitSet()
                 case irv: IntegerRangeValues ⇒ irv.IntegerRange(lb, ub)
@@ -253,7 +253,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     class ByteSet extends super.ByteSet with BaseTypesBasedSet {
         def name = "ByteValue"
         def newInstance = new ByteSet
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.ByteValue(pc)
         }
     }
@@ -261,7 +261,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     class ShortSet extends super.ShortSet with BaseTypesBasedSet {
         def name = "ShortValue"
         def newInstance = new ShortSet
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.ShortValue(pc)
         }
     }
@@ -269,34 +269,34 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     class CharSet extends super.CharSet with BaseTypesBasedSet {
         def name = "CharCalue"
         def newInstance = new CharSet
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.CharValue(pc)
         }
     }
 
     override def IntegerSet(values: SortedSet[Int]): IntegerSet = new IntegerSet(values)
 
-    override def BooleanValue(pc: PC): IntegerLikeValue = {
+    override def BooleanValue(pc: Int): IntegerLikeValue = {
         if (maxCardinalityOfIntegerSets > 1)
             IntegerSet(SortedSet(0, 1))
         else
             new ByteSet()
     }
 
-    override def BooleanValue(pc: PC, value: Boolean): DomainTypedValue[CTIntType] = {
+    override def BooleanValue(pc: Int, value: Boolean): DomainTypedValue[CTIntType] = {
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
     }
 
-    override def ByteValue(pc: PC): ByteSet = new ByteSet()
-    override def ByteValue(pc: PC, value: Byte): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
+    override def ByteValue(pc: Int): ByteSet = new ByteSet()
+    override def ByteValue(pc: Int, value: Byte): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
 
-    override def ShortValue(pc: PC): ShortSet = new ShortSet()
-    override def ShortValue(pc: PC, value: Short): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
+    override def ShortValue(pc: Int): ShortSet = new ShortSet()
+    override def ShortValue(pc: Int, value: Short): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
 
-    override def CharValue(pc: PC): CharSet = new CharSet()
-    override def CharValue(pc: PC, value: Char): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
+    override def CharValue(pc: Int): CharSet = new CharSet()
+    override def CharValue(pc: Int, value: Char): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
 
-    override def IntegerValue(pc: PC): AnIntegerValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int): DomainTypedValue[CTIntType] = IntegerSet(value)
+    override def IntegerValue(pc: Int): AnIntegerValue = AnIntegerValue()
+    override def IntegerValue(pc: Int, value: Int): DomainTypedValue[CTIntType] = IntegerSet(value)
 
 }

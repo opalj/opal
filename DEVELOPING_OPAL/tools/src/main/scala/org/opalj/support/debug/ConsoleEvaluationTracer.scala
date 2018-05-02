@@ -34,7 +34,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.ai.AITracer
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
-import org.opalj.ai.PC
 import org.opalj.ai.Update
 import org.opalj.collection.mutable.IntArrayStack
 
@@ -81,7 +80,7 @@ trait ConsoleEvaluationTracer extends AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         /*EMPTY*/
     }
@@ -137,13 +136,13 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def returnFromSubroutine(
         domain: Domain
     )(
-        pc:                     Int,
-        returnAddressPC:        Int,
-        subroutineInstructions: List[Int /*PC*/ ]
+        pc:              Int,
+        returnAddressPC: Int,
+        subroutinePCs:   List[Int /*PC*/ ]
     ): Unit = {
         indent -= 1
 
-        println(BOLD+"✓"+"(Resetting: "+subroutineInstructions.mkString(", ")+")"+RESET)
+        println(BOLD+"✓"+"(Resetting: "+subroutinePCs.mkString(", ")+")"+RESET)
         printIndent
     }
 

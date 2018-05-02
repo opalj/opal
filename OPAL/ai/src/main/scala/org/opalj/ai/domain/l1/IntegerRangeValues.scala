@@ -249,7 +249,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+    override def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = {
         if (value1 eq value2)
             // This handles the case that the two values are actually exactly the same value
             // (even if the concrete value is not known; i.e., they are both AnIntegerValue
@@ -274,7 +274,7 @@ trait IntegerRangeValues
     }
 
     override def intIsSomeValueInRange(
-        pc:         PC,
+        pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
         upperBound: Int
@@ -289,7 +289,7 @@ trait IntegerRangeValues
     }
 
     override def intIsSomeValueNotInRange(
-        pc:         PC,
+        pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
         upperBound: Int
@@ -303,7 +303,7 @@ trait IntegerRangeValues
             }
     }
 
-    override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThan(pc: Int, left: DomainValue, right: DomainValue): Answer = {
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -334,7 +334,7 @@ trait IntegerRangeValues
     }
 
     override def intIsLessThanOrEqualTo(
-        pc:    PC,
+        pc:    Int,
         left:  DomainValue,
         right: DomainValue
     ): Answer = {
@@ -375,7 +375,7 @@ trait IntegerRangeValues
     // -----------------------------------------------------------------------------------
 
     override def intEstablishValue(
-        pc:       PC,
+        pc:       Int,
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
@@ -394,7 +394,7 @@ trait IntegerRangeValues
     }
 
     override def intEstablishAreEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -429,7 +429,7 @@ trait IntegerRangeValues
     }
 
     override def intEstablishAreNotEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -468,7 +468,7 @@ trait IntegerRangeValues
     }
 
     override def intEstablishIsLessThan(
-        pc:       PC,
+        pc:       Int,
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
@@ -506,7 +506,7 @@ trait IntegerRangeValues
     }
 
     override def intEstablishIsLessThanOrEqualTo(
-        pc:       PC,
+        pc:       Int,
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
@@ -547,7 +547,7 @@ trait IntegerRangeValues
     //
     // UNARY EXPRESSIONS
     //
-    override def ineg(pc: PC, value: DomainValue) = value match {
+    override def ineg(pc: Int, value: DomainValue) = value match {
         case IntegerRange(_, Int.MinValue) /* => lb is also Int.MinValue*/ ⇒ value
         case IntegerRange(Int.MinValue, _) ⇒ IntegerValue(pc)
         case IntegerRange(lb, ub) ⇒ IntegerRange(-ub, -lb)
@@ -558,7 +558,7 @@ trait IntegerRangeValues
     // BINARY EXPRESSIONS
     //
 
-    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         value1 match {
             case IntegerRange(lb1, ub1) ⇒
                 if (lb1 == 0 && ub1 == 0)
@@ -590,7 +590,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
+    override def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue = {
         if (increment == 0)
             return value;
 
@@ -607,7 +607,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+    override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue = {
         if (left eq right) {
             return left /* or right*/ match {
                 case IntegerRange(0, 0) ⇒ left
@@ -641,7 +641,7 @@ trait IntegerRangeValues
     }
 
     override def idiv(
-        pc:          PC,
+        pc:          Int,
         numerator:   DomainValue,
         denominator: DomainValue
     ): IntegerValueOrArithmeticException = {
@@ -685,7 +685,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (_, IntegerRange(0, 0)) ⇒ value2
             case (_, IntegerRange(1, 1)) ⇒ value1
@@ -721,7 +721,7 @@ trait IntegerRangeValues
     }
 
     override def irem(
-        pc:    PC,
+        pc:    Int,
         left:  DomainValue,
         right: DomainValue
     ): IntegerValueOrArithmeticException = {
@@ -789,7 +789,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         if (value1 eq value2)
             return value1 // or value2
 
@@ -818,7 +818,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         if (value1 eq value2)
             return value1
 
@@ -862,7 +862,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+    override def ishl(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         // RECALL THAT ONLY THE FIVE LOWEST BITS OF THE SHIFT VALUE ARE CONSIDERED!
         // I.E. THE SHIFT IS ALWAYS BETWEEN 0 AND 31 BITS
         (value, shift) match {
@@ -910,7 +910,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+    override def ishr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
             case (_, IntegerRange(0, 0))   ⇒ value
             case (IntegerRange(0, 0), _)   ⇒ value
@@ -952,7 +952,7 @@ trait IntegerRangeValues
 
     }
 
-    override def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+    override def iushr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
             case (IntegerRange(0, 0), _) ⇒ value
             case (_, IntegerRange(0, 0)) ⇒ value
@@ -999,7 +999,7 @@ trait IntegerRangeValues
         }
     }
 
-    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         if (value1 eq value2)
             return IntegerValue(pc, 0);
 
@@ -1167,7 +1167,7 @@ trait IntegerRangeValues
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    override def i2b(pc: PC, value: DomainValue): DomainValue =
+    override def i2b(pc: Int, value: DomainValue): DomainValue =
         value match {
             case IntegerRange(lb, ub) if lb >= Byte.MinValue && ub <= Byte.MaxValue ⇒
                 value
@@ -1175,7 +1175,7 @@ trait IntegerRangeValues
                 IntegerRange(Byte.MinValue, Byte.MaxValue)
         }
 
-    override def i2c(pc: PC, value: DomainValue): DomainValue =
+    override def i2c(pc: Int, value: DomainValue): DomainValue =
         value match {
             case IntegerRange(lb, ub) if lb >= 0 && ub <= Char.MaxValue ⇒
                 value
@@ -1183,7 +1183,7 @@ trait IntegerRangeValues
                 IntegerRange(0, 65535)
         }
 
-    override def i2s(pc: PC, value: DomainValue): DomainValue =
+    override def i2s(pc: Int, value: DomainValue): DomainValue =
         value match {
             case IntegerRange(lb, ub) if lb >= Short.MinValue && ub <= Short.MaxValue ⇒
                 value

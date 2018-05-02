@@ -50,12 +50,12 @@ sealed trait InterpretationFailedException {
     val domain: Domain
     val ai: AI[_ >: domain.type]
     val pc: Int
-    val worklist: List[PC]
+    val worklist: List[Int /*PC*/ ]
     val evaluatedPCs: IntArrayStack
     val cfJoins: IntTrieSet
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
-    val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
 }
 
 /**
@@ -76,7 +76,7 @@ object InterpretationFailedException {
         theEvaluatedPCs:                     IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
     ): AIException with InterpretationFailedException = {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
@@ -91,7 +91,7 @@ object InterpretationFailedException {
 
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
         }
 
     }

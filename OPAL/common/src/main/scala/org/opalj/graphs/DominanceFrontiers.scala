@@ -190,7 +190,7 @@ object DominanceFrontiers {
      *          for this algorithm.
      */
     def apply(dt: AbstractDominatorTree, isValidNode: Int ⇒ Boolean): DominanceFrontiers = {
-        val startNode = dt.startNode
+        val startNode: Int = dt.startNode
         val foreachSuccessorOf = dt.foreachSuccessorOf
         val max = dt.maxNode + 1
 
@@ -226,7 +226,7 @@ object DominanceFrontiers {
         }
 
         val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
-        var nodes: Chain[Int] = Chain.singleton(startNode)
+        var nodes: Chain[Int] = Chain.singleton[Int](startNode)
         while (nodes.nonEmpty) {
             val n = nodes.head
             nodes = nodes.tail
@@ -240,7 +240,7 @@ object DominanceFrontiers {
             }
         }
 
-        inDFSOrder.foreach { n ⇒
+        inDFSOrder foreach { n ⇒
             val s = children(n).foldLeft(dfLocal(n)) { (s, c) ⇒
                 dfs(c).foldLeft(s) { (s, w) ⇒
                     if (!dt.strictlyDominates(n, w)) {

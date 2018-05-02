@@ -32,7 +32,6 @@ import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.Domain
-import org.opalj.ai.PC
 import org.opalj.ai.AITracer
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.Update
@@ -166,7 +165,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
 
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
@@ -341,14 +340,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def returnFromSubroutine(
         domain: Domain
     )(
-        pc:                     PC,
-        returnAddress:          PC,
-        subroutineInstructions: List[PC]
+        pc:            Int,
+        returnAddress: Int,
+        subroutinePCs: List[Int /*PC*/ ]
     ): Unit = {
         println(
             YELLOW_B + BOLD + pc + line(domain, pc)+
                 ":RETURN FROM SUBROUTINE: target="+returnAddress+
-                " : RESETTING : "+subroutineInstructions.mkString(", ") +
+                " : RESETTING : "+subroutinePCs.mkString(", ") +
                 RESET
         )
     }

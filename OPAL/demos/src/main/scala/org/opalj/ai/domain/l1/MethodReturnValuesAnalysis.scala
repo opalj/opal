@@ -89,7 +89,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-        protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
+        protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit = {
             if (theReturnedValue == null)
                 theReturnedValue = value.summarize(Int.MinValue)
             else

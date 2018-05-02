@@ -53,7 +53,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         tracers foreach { tracer ⇒
             tracer.continuingInterpretation(code, domain)(
@@ -159,10 +159,10 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def returnFromSubroutine(
         domain: Domain
     )(
-        pc: Int, returnAddress: Int, subroutineInstructions: List[Int]
+        pc: Int, returnAddress: Int, subroutinePCs: List[Int]
     ): Unit = {
         tracers foreach { tracer ⇒
-            tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutineInstructions)
+            tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutinePCs)
         }
     }
 

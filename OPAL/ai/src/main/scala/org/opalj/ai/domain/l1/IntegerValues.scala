@@ -126,12 +126,12 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         intValue(value1) { v1 ⇒ intValue(value2) { v2 ⇒ f(v1, v2) } { orElse } } { orElse }
     }
 
-    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+    override def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = {
         intValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
     }
 
     override def intIsSomeValueInRange(
-        pc:         PC,
+        pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
         upperBound: Int
@@ -146,7 +146,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def intIsSomeValueNotInRange(
-        pc:         PC,
+        pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
         upperBound: Int
@@ -160,11 +160,11 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThan(pc: Int, left: DomainValue, right: DomainValue): Answer = {
         intValues(left, right) { (v1, v2) ⇒ Answer(v1 < v2) } { Unknown }
     }
 
-    override def intIsLessThanOrEqualTo(pc: PC, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThanOrEqualTo(pc: Int, left: DomainValue, right: DomainValue): Answer = {
         intValues(left, right) { (v1, v2) ⇒ Answer(v1 <= v2) } { Unknown }
     }
 
@@ -177,7 +177,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     //
     // UNARY EXPRESSIONS
     //
-    override def ineg(pc: PC, value: DomainValue): DomainValue = {
+    override def ineg(pc: Int, value: DomainValue): DomainValue = {
         value match {
             case TheIntegerValue(v) ⇒ IntegerValue(pc, -v)
             case v                  ⇒ v
@@ -188,14 +188,14 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     // BINARY EXPRESSIONS
     //
 
-    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
+    override def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue = {
         value match {
             case TheIntegerValue(v) ⇒ IntegerValue(pc, v + increment)
             case v                  ⇒ v
         }
     }
 
-    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 + v2)
         } {
@@ -203,7 +203,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+    override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue = {
         intValues(left, right) { (l, r) ⇒
             IntegerValue(pc, l - r)
         } {
@@ -211,7 +211,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (_, TheIntegerValue(0))                  ⇒ value2
             case (_, TheIntegerValue(1))                  ⇒ value1
@@ -225,7 +225,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def idiv(
-        pc:          PC,
+        pc:          Int,
         numerator:   DomainValue,
         denominator: DomainValue
     ): IntegerValueOrArithmeticException = {
@@ -243,7 +243,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def irem(
-        pc:    PC,
+        pc:    Int,
         left:  DomainValue,
         right: DomainValue
     ): IntegerValueOrArithmeticException = {
@@ -260,7 +260,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         (value1, value2) match {
             case (_, TheIntegerValue(-1))                 ⇒ value1
             case (_, TheIntegerValue(0))                  ⇒ value2
@@ -272,7 +272,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case _                                        ⇒ IntegerValue(origin = pc)
         }
 
-    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         (value1, value2) match {
             case (_, TheIntegerValue(-1))                 ⇒ value2
             case (_, TheIntegerValue(0))                  ⇒ value1
@@ -284,7 +284,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case _                                        ⇒ IntegerValue(origin = pc)
         }
 
-    override def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+    override def ishl(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         intValues(value, shift) { (v1, v2) ⇒
             IntegerValue(pc, v1 << v2)
         } {
@@ -292,7 +292,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+    override def ishr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         intValues(value, shift) { (v1, v2) ⇒
             IntegerValue(pc, v1 >> v2)
         } {
@@ -300,7 +300,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+    override def iushr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         intValues(value, shift) { (v1, v2) ⇒
             IntegerValue(pc, v1 >>> v2)
         } {
@@ -308,7 +308,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 ^ v2)
         } {
@@ -320,19 +320,19 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    override def i2b(pc: PC, value: DomainValue): DomainValue =
+    override def i2b(pc: Int, value: DomainValue): DomainValue =
         value match {
             case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toByte.toInt)
             case v                  ⇒ v
         }
 
-    override def i2c(pc: PC, value: DomainValue): DomainValue =
+    override def i2c(pc: Int, value: DomainValue): DomainValue =
         value match {
             case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toChar.toInt)
             case v                  ⇒ v
         }
 
-    override def i2s(pc: PC, value: DomainValue): DomainValue =
+    override def i2s(pc: Int, value: DomainValue): DomainValue =
         value match {
             case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toShort.toInt)
             case v                  ⇒ v

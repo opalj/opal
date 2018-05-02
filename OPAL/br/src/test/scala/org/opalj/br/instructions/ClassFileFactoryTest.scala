@@ -841,12 +841,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val newValueMethod = MethodReferences.findMethod("newValue").head
                     val body = newValueMethod.body.get
                     val indy =
-                        body.collectFirstWithIndex {
-                            case PCAndInstruction(_, i: INVOKEDYNAMIC) ⇒ i
+                        body.collectFirst {
+                            case i: INVOKEDYNAMIC ⇒ i
                         } match {
                             case Some(i) ⇒ i
-                            case None ⇒
-                                fail(s"couldn't find invokedynamic instruction:\n$body")
+                            case None    ⇒ fail(s"no invokedynamic instruction:\n$body")
                         }
                     val targetMethod = indy.bootstrapMethod.arguments(1).
                         asInstanceOf[MethodCallMethodHandle]

@@ -29,7 +29,6 @@
 package org.opalj
 package hermes
 
-import org.opalj.br.PC
 import org.opalj.br.Method
 import org.opalj.br.Field
 import org.opalj.br.ClassFile
@@ -182,7 +181,7 @@ object MethodLocation {
 
 }
 
-case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: PC) extends Location[S] {
+case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: Int) extends Location[S] {
 
     override def source: Option[S] = methodLocation.source
 
@@ -202,7 +201,7 @@ case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: PC) ext
 }
 object InstructionLocation {
 
-    def apply[S](source: S, method: Method, pc: PC): InstructionLocation[S] = {
+    def apply[S](source: S, method: Method, pc: Int): InstructionLocation[S] = {
         val classFileLocation = ClassFileLocation(source, method.classFile)
         val methodLocation = MethodLocation(classFileLocation, method.name + method.descriptor)
         new InstructionLocation(methodLocation, pc)

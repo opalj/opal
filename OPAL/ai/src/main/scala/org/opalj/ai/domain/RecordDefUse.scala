@@ -40,6 +40,7 @@ import scala.collection.JavaConverters._
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
 import it.unimi.dsi.fastutil.ints.Int2IntLinkedOpenHashMap
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
@@ -276,8 +277,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         newDefLocals: Registers[ValueOrigins]
     )(
         implicit
-        cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean
+        cfJoins:       IntTrieSet,
+        subroutinePCs: IntArraySet
     ): Boolean = {
         if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
             var forceScheduling = false
@@ -376,14 +377,14 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             // information.... unless we have a JSR/RET and we are in
                             // a subroutine!
                             if (o eq null) {
-                                if ((n ne null) && isSubroutineInstruction(successorPC)) {
+                                if ((n ne null) && subroutinePCs.contains(successorPC)) {
                                     newUsage = true
                                     n
                                 } else {
                                     null
                                 }
                             } else if (n eq null) {
-                                if ((o ne null) && isSubroutineInstruction(successorPC)) {
+                                if ((o ne null) && subroutinePCs.contains(successorPC)) {
                                     newUsage = true
                                     o
                                 } else {
@@ -489,9 +490,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         pushesValue:              Boolean
     )(
         implicit
-        cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean,
-        operandsArray:           OperandsArray
+        cfJoins:       IntTrieSet,
+        subroutinePCs: IntArraySet,
+        operandsArray: OperandsArray
     ): Boolean = {
         val currentDefOps = defOps(currentPC)
         currentDefOps.forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currentPC) }
@@ -516,9 +517,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         index:       Int
     )(
         implicit
-        cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean,
-        localsArray:             LocalsArray
+        cfJoins:       IntTrieSet,
+        subroutinePCs: IntArraySet,
+        localsArray:   LocalsArray
     ): Boolean = {
         val currentDefLocals = defLocals(currentPC)
         updateUsageInformation(currentDefLocals(index), currentPC)
@@ -537,10 +538,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         isExceptionalControlFlow: Boolean
     )(
         implicit
-        cfJoins:                 IntTrieSet,
-        isSubroutineInstruction: ( /*PC*/ Int) ⇒ Boolean,
-        operandsArray:           OperandsArray,
-        localsArray:             LocalsArray
+        cfJoins:       IntTrieSet,
+        subroutinePCs: IntArraySet,
+        operandsArray: OperandsArray,
+        localsArray:   LocalsArray
     ): Boolean = {
 
         val currentInstruction = code.instructions(currentPC)
@@ -893,8 +894,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         val instructions = code.instructions
         val operandsArray = aiResult.operandsArray
         val localsArray = aiResult.localsArray
-        val subroutineInstructions = aiResult.subroutineInstructions
-        implicit val isSubroutineInstruction: Int /*PC*/ ⇒ Boolean = subroutineInstructions.contains
+        implicit val subroutinePCs: IntArraySet = aiResult.subroutinePCs
         implicit val cfJoins: IntTrieSet = aiResult.cfJoins
 
         // General idea related to JSR/RET:
@@ -970,7 +970,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     handleFlow(
                         currPC, succPC, isExceptionalControlFlow
                     )(
-                        cfJoins, subroutineInstructions.contains,
+                        cfJoins, subroutinePCs,
                         operandsArray, localsArray
                     )
                 } catch {

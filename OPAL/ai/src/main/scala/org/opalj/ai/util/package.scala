@@ -52,11 +52,11 @@ package object util {
      * a reference comparison (`eq`).
      */
     @inline final def removeFirstUnless(
-        worklist: List[PC], pc: PC
+        worklist: List[Int /*PC*/ ], pc: Int
     )(
-        test: PC ⇒ Boolean
-    ): List[PC] = {
-        var newWorklist: List[PC] = Nil
+        test: Int ⇒ Boolean
+    ): List[Int /*PC*/ ] = {
+        var newWorklist: List[Int /*PC*/ ] = Nil
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head
@@ -79,9 +79,9 @@ package object util {
      * `prefixEnd` `true` will be returned.
      */
     @inline @tailrec final def containsInPrefix(
-        worklist:  List[PC],
-        pc:        PC,
-        prefixEnd: PC
+        worklist:  List[Int /*PC*/ ],
+        pc:        Int,
+        prefixEnd: Int
     ): Boolean = {
         if (worklist.isEmpty)
             false
@@ -96,25 +96,31 @@ package object util {
         }
     }
 
-    // IMPROVE Add an unsafe insertBefore! to chain that actually mutates the list.
+    // IMPROVE[very low relevance for now] Add an unsafe insertBefore! to chain that actually mutates the list.
     /**
      * Inserts the given `pc` before `prefixEnd` in the list. If the list does not contain
      * `prefixEnd`, `pc` is appended to the list.
      */
     @inline final def insertBefore(
-        worklist:  List[PC],
-        pc:        PC,
-        prefixEnd: PC
-    ): List[PC] = {
+        worklist:  List[Int /*PC*/ ],
+        pc:        Int,
+        prefixEnd: Int
+    ): List[Int] = {
 
-        @tailrec def prepend(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+        @tailrec def prepend(
+            headWorklist: List[Int /*PC*/ ],
+            tailWorklist: List[Int /*PC*/ ]
+        ): List[Int /*PC*/ ] = {
             if (headWorklist.isEmpty)
                 tailWorklist
             else
                 prepend(headWorklist.tail, headWorklist.head :&: tailWorklist)
         }
 
-        @tailrec def add(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+        @tailrec def add(
+            headWorklist: List[Int /*PC*/ ],
+            tailWorklist: List[Int /*PC*/ ]
+        ): List[Int /*PC*/ ] = {
             if (tailWorklist.isEmpty)
                 (pc :&: headWorklist).reverse
             else {
@@ -136,19 +142,25 @@ package object util {
      * the original list is returned!
      */
     @inline final def insertBeforeIfNew(
-        worklist:  List[PC],
-        pc:        PC,
-        prefixEnd: PC
-    ): List[PC] = {
+        worklist:  List[Int /*PC*/ ],
+        pc:        Int,
+        prefixEnd: Int
+    ): List[Int /*PC*/ ] = {
 
-        @tailrec def prepend(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+        @tailrec def prepend(
+            headWorklist: List[Int /*PC*/ ],
+            tailWorklist: List[Int /*PC*/ ]
+        ): List[Int /*PC*/ ] = {
             if (headWorklist.isEmpty)
                 tailWorklist
             else
                 prepend(headWorklist.tail, headWorklist.head :&: tailWorklist)
         }
 
-        @tailrec def add(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+        @tailrec def add(
+            headWorklist: List[Int /*PC*/ ],
+            tailWorklist: List[Int /*PC*/ ]
+        ): List[Int /*PC*/ ] = {
             if (tailWorklist.isEmpty)
                 (pc :&: headWorklist).reverse
             else {
@@ -172,8 +184,8 @@ package object util {
      * possible to check whether the list is modified or not using
      * a reference comparison (`eq`).
      */
-    @inline final def removeFirst(worklist: List[PC], pc: PC): List[PC] = {
-        var newWorklist: List[PC] = List.empty
+    @inline final def removeFirst(worklist: List[Int /*PC*/ ], pc: Int): List[Int /*PC*/ ] = {
+        var newWorklist: List[Int /*PC*/ ] = List.empty
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head

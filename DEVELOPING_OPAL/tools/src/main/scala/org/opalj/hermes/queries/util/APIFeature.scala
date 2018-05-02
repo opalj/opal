@@ -86,6 +86,8 @@ sealed abstract class APIMethod extends APIFeature {
 
     def unapply(i: MethodInvocationInstruction): Boolean
 
+    final def matches(i: MethodInvocationInstruction): Boolean = this.unapply(i)
+
     final override val apiMethods = Chain(this)
 
     /**

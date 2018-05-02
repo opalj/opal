@@ -76,11 +76,11 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
     }
 
     abstract override def afterEvaluation(
-        pc:                       PC,
+        pc:                       Int,
         instruction:              Instruction,
         oldOperands:              Operands,
         oldLocals:                Locals,
-        targetPC:                 PC,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
         newOperands:              Operands,
         newLocals:                Locals

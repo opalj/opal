@@ -57,7 +57,7 @@ trait RecordVoidReturns extends ReturnInstructionsDomain {
 
     def allReturnVoidInstructions: PCs = returnVoidInstructions
 
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+    abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         returnVoidInstructions += pc
         super.returnVoid(pc)
     }

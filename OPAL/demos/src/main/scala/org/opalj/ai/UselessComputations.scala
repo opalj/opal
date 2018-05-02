@@ -135,7 +135,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
     }
 }
 
-case class UselessComputation(method: Method, pc: PC, message: String) {
+case class UselessComputation(method: Method, pc: Int, message: String) {
 
     def opcode: Int = method.body.get.instructions(pc).opcode
 

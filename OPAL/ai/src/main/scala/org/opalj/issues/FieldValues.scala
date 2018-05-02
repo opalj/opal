@@ -33,13 +33,13 @@ import scala.xml.Node
 import scala.xml.Group
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
+
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.{PCAndInstruction ⇒ BRPCAndInstruction}
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.ai.AIResult
+import org.opalj.br.PCAndAnyRef
 
 /**
  * Describes an issue related to the value of a field.
@@ -57,23 +57,31 @@ class FieldValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectReadFieldValues: Chain[(PC, String)] = { // IMPROVE Use PCAndValue datastructure
-        code.collectWithIndex {
-            case BRPCAndInstruction(pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
-                val nextPC = instr.indexOfNextInstruction(pc)
-                val operands = operandsArray(nextPC)
-                operands != null &&
-                    operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
-            } ⇒
-                (pc, s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← $instr")
+    def collectReadFieldValues: Chain[PCAndAnyRef[String]] = {
+        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) ⇒
+            instruction match {
+                case fra @ FieldReadAccess(_ /*decl.ClassType*/ , _ /* name*/ , fieldType) if {
+                    val nextPC = fra.indexOfNextInstruction(pc)
+                    val operands = operandsArray(nextPC)
+                    operands != null &&
+                        operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
+                } ⇒
+                    PCAndAnyRef(
+                        pc,
+                        s"${operandsArray(fra.indexOfNextInstruction(pc)).head} ← $fra"
+                    ) :&: readFields
+                case _ ⇒
+                    readFields
+            }
         }
     }
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
         import PCLineComprehension.{pcNode, lineNode, line}
         val readFieldValues =
-            collectReadFieldValues.map { fieldData ⇒
-                val (pc, details) = fieldData
+            collectReadFieldValues map { fieldData ⇒
+                val pc = fieldData.pc
+                val details = fieldData.value
                 <li>
                     { pcNode(classFileFQN, methodJVMSignature, pc) }
                     &nbsp;
@@ -101,7 +109,8 @@ class FieldValues(
         Json.obj(
             "type" → "FieldValues",
             "values" → collectReadFieldValues.map { fieldData ⇒
-                val (pc, details) = fieldData
+                val pc = fieldData.pc
+                val details = fieldData.value
 
                 Json.obj(
                     "classFileFQN" → classFileFQN,

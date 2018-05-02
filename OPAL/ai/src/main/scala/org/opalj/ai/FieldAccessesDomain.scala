@@ -46,7 +46,7 @@ trait FieldAccessesDomain { this: ValuesDomain ⇒
      * @return The field's value or a new `NullPointerException`.
      */
     def getfield(
-        pc:             PC,
+        pc:             Int,
         objectref:      DomainValue,
         declaringClass: ObjectType,
         name:           String,
@@ -57,7 +57,7 @@ trait FieldAccessesDomain { this: ValuesDomain ⇒
      * Returns the field's value.
      */
     def getstatic(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
@@ -68,7 +68,7 @@ trait FieldAccessesDomain { this: ValuesDomain ⇒
      * In the latter case a `NullPointerException` is thrown.
      */
     def putfield(
-        pc:             PC,
+        pc:             Int,
         objectref:      DomainValue,
         value:          DomainValue,
         declaringClass: ObjectType,
@@ -80,7 +80,7 @@ trait FieldAccessesDomain { this: ValuesDomain ⇒
      * Sets the field's value.
      */
     def putstatic(
-        pc:             PC,
+        pc:             Int,
         value:          DomainValue,
         declaringClass: ObjectType,
         name:           String,

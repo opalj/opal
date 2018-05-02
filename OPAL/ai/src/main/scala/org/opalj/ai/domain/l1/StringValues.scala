@@ -63,7 +63,7 @@ trait StringValues
         this: DomainStringValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             other:  DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue] = {
 
@@ -148,14 +148,14 @@ trait StringValues
         }
     }
 
-    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+    abstract override def toJavaObject(pc: Int, value: DomainValue): Option[Object] = {
         value match {
             case StringValue(value) ⇒ Some(value)
             case _                  ⇒ super.toJavaObject(pc, value)
         }
     }
 
-    abstract override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
+    abstract override def toDomainValue(pc: Int, value: Object): DomainReferenceValue = {
         value match {
             case s: String ⇒ StringValue(pc, s)
             case _         ⇒ super.toDomainValue(pc, value)
@@ -173,7 +173,7 @@ trait StringValues
     }
 
     abstract override def invokespecial(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
