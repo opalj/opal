@@ -43,6 +43,7 @@ import org.opalj.br.instructions.ASTORE_0
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.GETFIELD
 import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFreeMethod
 import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
 
@@ -87,6 +88,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                 val maxPC = instructions.length
 
                 var overwritesSelf = false
+                var mayOverwriteSelf = true
                 var hasAllocation = false
 
                 var currentPC = 0
@@ -100,13 +102,16 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                             INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode ⇒
                             hasAllocation = true
                         case ASTORE_0.opcode if !method.isStatic ⇒
-                            overwritesSelf = true
-                        case PUTFIELD.opcode ⇒
+                            if(mayOverwriteSelf) overwritesSelf = true
+                            else hasAllocation = true
+                        case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
                             if (method.isStatic || overwritesSelf)
-                                hasAllocation = true // PUTFIELD on non-receiver may allocate NPE
+                                hasAllocation = true
                             else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
                                 ALOAD_0.opcode)
-                                hasAllocation = true // PUTFIELD on non-receiver may allocate NPE
+                                hasAllocation = true
+                            else
+                                mayOverwriteSelf = false
                         case _ ⇒ hasAllocation = instruction.jvmExceptions.nonEmpty
                     }
                     currentPC = body.pcOfNextInstruction(currentPC)

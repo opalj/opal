@@ -74,6 +74,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
         var overwritesSelf = false
+        var mayOverwriteSelf = true
 
         var currentPC = 0
         while (currentPC < maxPC) {
@@ -118,14 +119,17 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                 }
 
                 case ASTORE_0.opcode if !method.isStatic ⇒
-                    overwritesSelf = true
+                    if(mayOverwriteSelf) overwritesSelf = true
+                    else // A PUTFIELD may result in a NPE raised (and therefore allocated)
+                        return Result(declaredMethod, MethodWithAllocations)
 
-                case PUTFIELD.opcode ⇒ // PUTFIELD on non-receiver may allocate NPE
+                case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
                     if (method.isStatic || overwritesSelf)
                         return Result(declaredMethod, MethodWithAllocations);
                     else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
                         ALOAD_0.opcode)
                         return Result(declaredMethod, MethodWithAllocations);
+                    else mayOverwriteSelf = false
 
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     // We don't handle these calls here, just treat them as having allocations
