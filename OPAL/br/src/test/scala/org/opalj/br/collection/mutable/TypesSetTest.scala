@@ -178,4 +178,221 @@ class TypesSetTest extends FlatSpec with Matchers {
         assert(ts.nonEmpty)
         ts.types should be((Set.empty, Set(Serializable)))
     }
+
+    behavior of "the add type method +"
+
+    it should "add a new element without altering the current TypesSet" in {
+        val ts = new TypesSet(jlsCH)
+        ts += Cloneable
+        val nts = Serializable +: ts
+
+        assert(ts != nts)
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        assert(nts.size === 2)
+        assert(nts.nonEmpty)
+
+        ts.types should be((Set(Cloneable), Set.empty))
+        nts.types should be((Set(Cloneable, Serializable), Set.empty))
+    }
+
+    it should "add the type if it is not stored in the set and only subtypes are added as upper type bounds" in {
+        val ts = new TypesSet(jlsCH)
+        ts +<:= Class
+        val nts = Serializable +: ts
+        assert(nts.size === 2)
+        assert(nts.nonEmpty)
+        nts.types should be((Set(Serializable), Set(Class)))
+
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        ts.types should be((Set.empty, Set(Class)))
+
+        assert(ts != nts)
+    }
+
+    it should "not add the type if the type is already added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts +<:= Cloneable
+        var nts = Serializable +: ts
+        nts = Cloneable +: nts
+        assert(nts.size === 2)
+        assert(nts.nonEmpty)
+        nts.types should be((Set(Serializable), Set(Cloneable)))
+
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        ts.types should be((Set.empty, Set(Cloneable)))
+
+        assert(ts != nts)
+    }
+
+    it should "not add a type if a super type is already added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts +<:= Object
+        var nts = Object +: ts
+        nts = Cloneable +: ts
+        assert(nts.size === 1)
+        assert(nts.nonEmpty)
+        nts.types should be((Set.empty, Set(Object)))
+
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        ts.types should be((Set.empty, Set(Object)))
+    }
+
+    behavior of "the add upper type bound method <:+"
+
+    it should "not remove unrelated concrete types if a super type of some types is added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts += Cloneable
+        ts += Class
+        val nts = Serializable +<: ts
+        assert(ts.size === 2)
+        assert(ts.nonEmpty)
+        nts.types should be((Set(Cloneable), Set(Serializable)))
+
+        ts.types should be((Set(Cloneable, Class), Set.empty))
+
+        assert(ts != nts)
+    }
+
+    it should "remove the type if the type is (later) added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts += Cloneable
+        ts += Serializable
+        val nts = Cloneable +<: ts
+
+        assert(nts.size === 2)
+        assert(nts.nonEmpty)
+        nts.types should be((Set(Serializable), Set(Cloneable)))
+
+        assert(ts.size === 2)
+        assert(ts.nonEmpty)
+        ts.types should be((Set(Serializable, Cloneable), Set.empty))
+    }
+
+    it should "remove all concrete types if a super type is added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts += Cloneable
+        ts += Serializable
+        val nts = Object +<: ts
+
+        assert(nts.size === 1)
+        assert(nts.nonEmpty)
+        nts.types should be((Set.empty, Set(Object)))
+
+        assert(ts.size === 2)
+        assert(ts.nonEmpty)
+        ts.types should be((Set(Cloneable, Serializable), Set.empty))
+    }
+
+    it should "add the type if it is not stored in the set" in {
+        val ts = new TypesSet(jlsCH)
+        val nts1 = Cloneable +<: ts
+        val nts2 = Serializable +<: nts1
+
+        assert(ts.size === 0)
+        assert(nts1.size === 1)
+        assert(nts2.size === 2)
+        assert(ts.isEmpty)
+        assert(nts1.nonEmpty)
+        assert(nts2.nonEmpty)
+
+        ts.types should be((Set.empty, Set.empty))
+        nts1.types should be((Set.empty, Set(Cloneable)))
+        nts2.types should be((Set.empty, Set(Cloneable, Serializable)))
+    }
+
+    it should "not a add the type if a super type is already in the set as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        val nts1 = Serializable +<: ts
+        val nts2 = Class +<: nts1
+        assert(ts.size === 0)
+        assert(nts1.size === 1)
+        assert(nts2.size === 1)
+        assert(ts.isEmpty)
+        assert(nts1.nonEmpty)
+        assert(nts2.nonEmpty)
+
+        ts.types should be((Set.empty, Set.empty))
+        nts1.types should be((Set.empty, Set(Serializable)))
+        nts2.types should be((Set.empty, Set(Serializable)))
+    }
+
+    it should "replace a type if a super type is added" in {
+        val ts = new TypesSet(jlsCH)
+        val nts1 = Class +<: ts
+        val nts2 = Serializable +<: nts1
+        assert(ts.size === 0)
+        assert(nts1.size === 1)
+        assert(nts2.size === 1)
+        assert(ts.isEmpty)
+        assert(nts1.nonEmpty)
+        assert(nts2.nonEmpty)
+
+        ts.types should be((Set.empty, Set.empty))
+        nts1.types should be((Set.empty, Set(Class)))
+        nts2.types should be((Set.empty, Set(Serializable)))
+    }
+
+    behavior of "the add upper type bound method ++"
+
+    it should "add new elements without altering the current TypesSet" in {
+        val ts = new TypesSet(jlsCH)
+        ts += Cloneable
+        val nts = Set(Serializable, Class) ++: ts
+
+        assert(ts != nts)
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        assert(nts.size === 3)
+        assert(nts.nonEmpty)
+
+        ts.types should be((Set(Cloneable), Set.empty))
+        nts.types should be((Set(Cloneable, Serializable, Class), Set.empty))
+    }
+
+    it should "add the types if it is not stored in the set and only subtypes are added as upper type bounds" in {
+        val ts = new TypesSet(jlsCH)
+        ts +<:= Class
+        val nts = Set(Serializable, Cloneable) ++: ts
+        assert(nts.size === 3)
+        assert(nts.nonEmpty)
+        nts.types should be((Set(Serializable, Cloneable), Set(Class)))
+
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        ts.types should be((Set.empty, Set(Class)))
+
+        assert(ts != nts)
+    }
+
+    it should "not add the type if the type is already added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts +<:= Cloneable
+        val nts = Set(Serializable, Cloneable) ++: ts
+        assert(nts.size === 2)
+        assert(nts.nonEmpty)
+        nts.types should be((Set(Serializable), Set(Cloneable)))
+
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        ts.types should be((Set.empty, Set(Cloneable)))
+
+        assert(ts != nts)
+    }
+
+    it should "not add a type if a super type is already added as an upper type bound" in {
+        val ts = new TypesSet(jlsCH)
+        ts +<:= Object
+        val nts = Set(Object, Cloneable) ++: ts
+        assert(nts.size === 1)
+        assert(nts.nonEmpty)
+        nts.types should be((Set.empty, Set(Object)))
+
+        assert(ts.size === 1)
+        assert(ts.nonEmpty)
+        ts.types should be((Set.empty, Set(Object)))
+    }
 }

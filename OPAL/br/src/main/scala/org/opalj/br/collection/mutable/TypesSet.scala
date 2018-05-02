@@ -57,11 +57,35 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
     final def concreteTypes: Set[ObjectType] = theConcreteTypes
     final def upperTypeBounds: Set[ObjectType] = theUpperTypeBounds
 
+    /**
+     * Create a new TypesSet object and adding `tpe` to it. This doesn't update `this` object.
+     *
+     * @param tpe The new concrete `ObjectType` to be included in the returned TypesSet
+     * @return A new TypesSet object containing `tpe` as well as all other concrete and upper types.
+     */
+    def +:(tpe: ObjectType): TypesSet = {
+        val nts = new TypesSet(classHierarchy)
+        nts ++= concreteTypes
+        upperTypeBounds foreach (u ⇒ nts +<:= u)
+        nts += tpe
+
+        nts
+    }
+
     def +=(tpe: ObjectType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&
             !theUpperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb).isYes)) {
             theConcreteTypes += tpe
         }
+    }
+
+    def ++:(tpes: Traversable[ObjectType]): TypesSet = {
+        val nts = new TypesSet(classHierarchy)
+        nts ++= concreteTypes
+        upperTypeBounds foreach (u ⇒ nts +<:= u)
+        nts ++= tpes
+
+        nts
     }
 
     def ++=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { += }
@@ -94,4 +118,19 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
         }
     }
 
+    /**
+     * Create a new TypesSet object and adding the upper type `tpe` to it.
+     * This doesn't update `this` object.
+     *
+     * @param tpe The new upper `ObjectType` to be included in the returned TypesSet
+     * @return A new TypesSet object containing `tpe` as well as all other concrete and upper types.
+     */
+    def +<:(tpe: ObjectType): TypesSet = {
+        val nts = new TypesSet(classHierarchy)
+        nts ++= concreteTypes
+        upperTypeBounds foreach (u ⇒ nts +<:= u)
+        nts +<:= tpe
+
+        nts
+    }
 }
