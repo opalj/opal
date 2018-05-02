@@ -54,7 +54,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     domain: ReferenceValuesDomain with ValuesFactory with Configuration ⇒
 
     protected[this] def handleInstanceBasedInvoke(
-        pc:               PC,
+        pc:               Int,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
     ): MethodCallResult = {
@@ -78,7 +78,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     }
 
     /*override*/ def invokevirtual(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -88,7 +88,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     }
 
     /*override*/ def invokeinterface(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -98,7 +98,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     }
 
     /*override*/ def invokespecial(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -109,7 +109,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     }
 
     /*override*/ def invokestatic(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -124,7 +124,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     }
 
     /*override*/ def invokedynamic(
-        pc:               PC,
+        pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,
         methodDescriptor: MethodDescriptor,

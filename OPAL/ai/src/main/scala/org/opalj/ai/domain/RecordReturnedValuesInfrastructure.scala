@@ -51,10 +51,10 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
      */
     type ReturnedValue <: AnyRef
 
-    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit
+    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit
 
     abstract override def areturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
@@ -62,7 +62,7 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def dreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
@@ -70,7 +70,7 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def freturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
@@ -78,7 +78,7 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def ireturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)
@@ -86,7 +86,7 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def lreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         doRecordReturnedValue(pc, value)

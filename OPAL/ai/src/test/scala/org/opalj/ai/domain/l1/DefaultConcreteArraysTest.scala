@@ -628,7 +628,7 @@ class DefaultConcreteArraysTestDomain(
 
     // we don't collect "precise" information w.r.t. the heap about the content of an
     // array, hence we can track the contents
-    override protected def reifyArray(pc: PC, count: Int, arrayType: ArrayType): Boolean = {
+    override protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
         super.reifyArray(pc, count, arrayType) ||
             arrayType.componentType.isObjectType && count < maxTrackedArraySize
     }

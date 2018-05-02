@@ -412,7 +412,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     )(
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): Unit = {
@@ -432,7 +432,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 d.setMemoryLayout(
                     theOperandsArray.asInstanceOf[d.OperandsArray],
                     theLocalsArray.asInstanceOf[d.LocalsArray],
-                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]],
+                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(Int, d.OperandsArray, d.LocalsArray)]],
                     theSubroutinesOperandsArray.asInstanceOf[d.OperandsArray],
                     theSubroutinesLocalsArray.asInstanceOf[d.LocalsArray]
                 )
@@ -509,7 +509,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         alreadyEvaluatedPCs:                 IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
@@ -569,7 +569,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          * The first PC of each element of the list is the pc of the first instruction of
          * the subroutine <=> the subroutine id
          */
-        type SubroutineMemoryLayouts = List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+        type SubroutineMemoryLayouts = List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
         /* 1 */ var operandsArray = theOperandsArray
@@ -1109,7 +1109,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                      */
                     val traceIterator = evaluatedPCs.intIterator
                     traceIterator.next()
-                    traceIterator.foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
+                    import traceIterator.foreachWhile
+                    foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
                         (pc: @switch) match {
                             case SUBROUTINE_START ⇒ subroutineLevel -= 1
                             case SUBROUTINE_END   ⇒ subroutineLevel += 1

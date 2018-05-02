@@ -41,25 +41,25 @@ trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
     //
     // RELATIONAL OPERATORS
     //
-    def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
     // UNARY ARITHMETIC EXPRESSIONS
     //
-    def dneg(pc: PC, value: DomainValue): DomainValue
+    def dneg(pc: Int, value: DomainValue): DomainValue
 
     //
     // BINARY ARITHMETIC EXPRESSIONS
     //
-    def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
 }

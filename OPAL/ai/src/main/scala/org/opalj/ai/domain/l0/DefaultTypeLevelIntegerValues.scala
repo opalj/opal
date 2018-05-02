@@ -66,7 +66,7 @@ trait DefaultTypeLevelIntegerValues
 
     case object ABooleanValue extends super.BooleanValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
                 case ABooleanValue ⇒ NoUpdate
                 case _             ⇒ StructuralUpdate(AnIntegerValue)
@@ -78,7 +78,7 @@ trait DefaultTypeLevelIntegerValues
 
     case object AByteValue extends super.ByteValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
                 case ABooleanValue | AByteValue ⇒ NoUpdate
                 case _                          ⇒ StructuralUpdate(AnIntegerValue)
@@ -91,7 +91,7 @@ trait DefaultTypeLevelIntegerValues
 
     case object AShortValue extends super.ShortValue {
 
-        override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: Int, that: DomainValue): Update[DomainValue] =
             that match {
                 case ABooleanValue | AByteValue | AShortValue ⇒
                     NoUpdate
@@ -105,7 +105,7 @@ trait DefaultTypeLevelIntegerValues
 
     case object ACharValue extends super.CharValue {
 
-        override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: Int, that: DomainValue): Update[DomainValue] =
             that match {
                 case ABooleanValue | ACharValue ⇒ NoUpdate
                 case _                          ⇒ StructuralUpdate(AnIntegerValue)
@@ -117,7 +117,7 @@ trait DefaultTypeLevelIntegerValues
 
     case object AnIntegerValue extends super.IntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // the other value also has computational type Int
             NoUpdate
         }

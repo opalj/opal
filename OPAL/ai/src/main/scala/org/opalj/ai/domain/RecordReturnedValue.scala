@@ -49,7 +49,7 @@ trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
 
     def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
+    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit = {
         val oldReturnedValue = theReturnedValue
         if (oldReturnedValue eq value)
             return ;

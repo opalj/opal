@@ -28,7 +28,6 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.PC
 import org.opalj.br.ObjectType
 import org.opalj.br.ExceptionHandler
 
@@ -50,9 +49,9 @@ import org.opalj.br.ExceptionHandler
  */
 class CatchNode(
         val index:     Int, // primarily used to compute a unique id
-        val startPC:   PC,
-        val endPC:     PC,
-        val handlerPC: PC,
+        val startPC:   Int,
+        val endPC:     Int,
+        val handlerPC: Int,
         val catchType: Option[ObjectType]
 ) extends CFGNode {
 
@@ -68,9 +67,9 @@ class CatchNode(
 
     def copy(
         index:     Int                = this.index,
-        startPC:   PC                 = this.startPC,
-        endPC:     PC                 = this.endPC,
-        handlerPC: PC                 = this.handlerPC,
+        startPC:   Int                = this.startPC,
+        endPC:     Int                = this.endPC,
+        handlerPC: Int                = this.handlerPC,
         catchType: Option[ObjectType] = this.catchType
     ): CatchNode = {
         new CatchNode(index, startPC, endPC, handlerPC, catchType)

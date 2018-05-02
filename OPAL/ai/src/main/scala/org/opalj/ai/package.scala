@@ -102,8 +102,8 @@ package object ai {
     type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory
 
-    final type PC = Int // <=> org.opalj.br.PC
     final type PCs = org.opalj.br.PCs
+
     final def NoPCs = org.opalj.br.NoPCs
 
     /**
@@ -118,7 +118,7 @@ package object ai {
      * But, given that
      *  - the maximum size of the method parameters array is 255 and
      *  - that the first slot is required for the `this` reference in case of instance methods and
-     *  - that `long` and `double` values* require two slots
+     *  - that `long` and `double` values require two slots
      * the smallest number used to encode that the value is an actual parameter is `-256`.
      *
      * === AI Framework ===
@@ -140,8 +140,8 @@ package object ai {
      * computational-type category 2 and needs two stack/operands values.)
      *
      * === Three-address Code ===
-     * In case of the three address code the parameters are normalized (see [[org.opalj.tac.TACAI]]
-     * for further details).
+     * In case of the three address code the parameter origins are normalized
+     * (see [[org.opalj.tac.TACAI]] for further details).
      *
      * == Subroutines JSR/RET ==
      * Some special values are used when methods have subroutines:
@@ -160,9 +160,9 @@ package object ai {
      *
      * @see [[isVMLevelValue]], [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]]
      */
+    final type ValueOrigins = IntTrieSet
+    final type ValueOriginsIterator = IntIterator
     type ValueOrigin = Int
-    type ValueOrigins = IntTrieSet
-    type ValueOriginsIterator = IntIterator
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
@@ -193,8 +193,10 @@ package object ai {
      * program counter (`pc`).
      *
      * @see [[pcOfVMLevelValue]] for further information.
+     * @return The origin id of the value that is the result of the evaluation of the instruction
+     *         with the given PC '''if the evaluation has failed'''!
      */
-    final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = { //TODO Rename valueOriginForMethodExternalValue
+    final def ValueOriginForVMLevelValue(pc: Int): Int = { //TODO Rename valueOriginForMethodExternalValue
         val origin = VMLevelValuesOriginOffset - pc
         assert(
             origin <= VMLevelValuesOriginOffset,
@@ -210,9 +212,9 @@ package object ai {
      *
      * @see [[ValueOriginForVMLevelValue]] for further information.
      */
-    final def pcOfVMLevelValue(origin: ValueOrigin): PC = { //TODO Rename pcOfMethodExternalValue
-        assert(origin <= VMLevelValuesOriginOffset)
-        -origin + VMLevelValuesOriginOffset
+    final def pcOfVMLevelValue(valueOrigin: Int): Int = { //TODO Rename pcOfMethodExternalValue
+        assert(valueOrigin <= VMLevelValuesOriginOffset)
+        -valueOrigin + VMLevelValuesOriginOffset
     }
 
     /**
@@ -232,12 +234,13 @@ package object ai {
      * @param   isStatic `true` if method is static and, hence, has no implicit
      *          parameter for `this`.
      * @see     [[mapOperandsToParameters]]
+     *     @return The origin id for the specified parameter.
      */
     def parameterIndexToValueOrigin(
         isStatic:       Boolean,
         descriptor:     MethodDescriptor,
         parameterIndex: Int
-    ): ValueOrigin = {
+    ): Int /*ValueOrigin*/ = {
         assert(descriptor.parametersCount > 0)
 
         var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
@@ -283,13 +286,13 @@ package object ai {
      */
     final val SUBROUTINE = -90000009 // some value smaller than -2^16
 
-    type Operands[T >: Null <: ValuesDomain#DomainValue] = Chain[T]
-    type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
-    type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
+    final type Operands[T >: Null <: ValuesDomain#DomainValue] = Chain[T]
+    final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
+    final type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
 
-    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
-    type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
-    type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
+    final type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
+    final type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
+    final type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.
@@ -300,6 +303,7 @@ package object ai {
         operandsArray: domain.OperandsArray,
         localsArray:   domain.LocalsArray
     ): String = {
+        // THIS METHOD IS NOT PERFORMANCE SENSITIVE!
         val operandsAndLocals =
             for {
                 ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
@@ -321,7 +325,7 @@ package object ai {
      * Recall that at the bytecode level long and double values use two register values. The
      * returned array will, however, abstract over the difference between so-called computational
      * type category I and II values. Furthermore, the explicitly specified parameters are
-     * always stored in the indexes [1..parametersCount] to enable unifor access to a method's
+     * always stored in the indexes [1..parametersCount] to enable unified access to a method's
      * parameters whether the method is static or not. Furthermore, the returned array will
      * contain the self reference (`this`) at index 0 if the method is an instance method;
      * otherwise index 0 will be `null`.
@@ -363,7 +367,7 @@ package object ai {
             localsIndex = 1
         }
         var paramIndex = 1
-        descriptor.parameterTypes.foreach { t ⇒
+        descriptor.parameterTypes foreach { t ⇒
             params(paramIndex) = locals(localsIndex)
             localsIndex += t.computationalType.operandSize
             paramIndex += 1
@@ -385,9 +389,11 @@ package object ai {
     ): Iterator[aiResult.domain.DomainValue] = {
         new AbstractIterator[aiResult.domain.DomainValue] {
 
-            private[this] var parameterIndex = 0
-            private[this] val totalParameters = descriptor.parametersCount + (if (isStatic) 0 else 1)
-            private[this] var localsIndex = 0
+            private[this] var parameterIndex: Int = 0
+            private[this] val totalParameters: Int = {
+                descriptor.parametersCount + (if (isStatic) 0 else 1)
+            }
+            private[this] var localsIndex: Int = 0
 
             override def hasNext: Boolean = parameterIndex < totalParameters
 
@@ -526,7 +532,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: PartialFunction[(PC, Instruction, domain.Operands), B]
+        f: PartialFunction[(Int /*PC*/ , Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
     ): Seq[B] = {
         val instructions = code.instructions
         val max_pc = instructions.length
@@ -552,7 +558,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: (PC, Instruction, domain.Operands) ⇒ U
+        f: (Int /*PC*/ , Instruction, domain.Operands) ⇒ U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size
@@ -567,5 +573,5 @@ package object ai {
         }
     }
 
-    type ExceptionsRaisedByCalledMethod = ExceptionsRaisedByCalledMethods.Value
+    final type ExceptionsRaisedByCalledMethod = ExceptionsRaisedByCalledMethods.Value
 }

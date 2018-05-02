@@ -43,13 +43,13 @@ trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: ValuesDomai
     //
 
     /*abstract*/ def arrayload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayRef: DomainValue
     ): ArrayLoadResult
 
     /*abstract*/ def arraystore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayRef: DomainValue
@@ -60,13 +60,13 @@ trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: ValuesDomai
     //
 
     /*base impl.*/ def aaload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def aastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
@@ -74,13 +74,13 @@ trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: ValuesDomai
         arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def baload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def bastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
@@ -88,79 +88,79 @@ trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: ValuesDomai
         arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def caload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def castore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def daload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def dastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def faload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def fastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def iaload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def iastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def laload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
     /*base impl.*/ def lastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayStoreResult = arraystore(pc, value, index, arrayref)
 
     /*base impl.*/ def saload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = arrayload(pc, index, arrayref)
 
     /*base impl.*/ def sastore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue

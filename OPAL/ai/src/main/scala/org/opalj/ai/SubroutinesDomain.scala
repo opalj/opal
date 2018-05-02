@@ -41,11 +41,11 @@ trait SubroutinesDomain {
     /**
      * @param pc The pc of the jsr(w) instruction.
      */
-    def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {}
+    def jumpToSubroutine(pc: Int, branchTarget: Int, returnTarget: Int): Unit = {}
 
     /**
      * @param pc The pc of the ret instruction.
      */
-    def returnFromSubroutine(pc: PC, lvIndex: Int): Unit = {}
+    def returnFromSubroutine(pc: Int, lvIndex: Int): Unit = {}
 
 }

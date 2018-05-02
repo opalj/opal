@@ -112,27 +112,23 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
                 // 1. Default interpretation
                 val domain1 =
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
-                ai.performInterpretation(
-                    method.body.get, domain1
-                )(
-                        ai.initialOperands(method, domain1), ai.initialLocals(method, domain1)(None)
-                    )
+                ai.performInterpretation(method.body.get, domain1)(
+                    ai.initialOperands(method, domain1), ai.initialLocals(method, domain1)(None)
+                )
 
                 // 1. Interpretation under the assumption that all values are non-null
                 val domain2 =
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(method, domain2)(None))
-                ai.performInterpretation(
-                    method.body.get, domain2
-                )(
-                        ai.initialOperands(method, domain2), nonNullLocals
-                    )
+                ai.performInterpretation(method.body.get, domain2)(
+                    ai.initialOperands(method, domain2), nonNullLocals
+                )
 
                 // Let's calculate the diff. The basic idea is to iterate over
                 // all thrown exceptions and to throw away those that are
                 // thrown in both cases, the remaining ones constitute
                 // the difference.
-                var result = Map.empty[PC, Set[_ <: AnyRef]]
+                var result = Map.empty[Int /*PC*/ , Set[_ <: AnyRef]]
                 var d2ThrownExceptions = domain2.allThrownExceptions
                 domain1.allThrownExceptions.foreach { e ⇒
                     val (pc, d1thrownException) = e

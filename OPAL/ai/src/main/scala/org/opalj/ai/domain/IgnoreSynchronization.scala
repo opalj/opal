@@ -39,7 +39,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
     this: ValuesDomain with ReferenceValuesDomain with ExceptionsFactory with Configuration ⇒
 
     protected[this] def sideEffectOnlyOrExceptions(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         refIsNull(pc, value) match {
@@ -60,7 +60,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      *      an exception if it is `null` or maybe `null`.
      */
     /*override*/ def monitorenter(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         sideEffectOnlyOrExceptions(pc, value)
@@ -73,7 +73,7 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
      *      an exception if it is `null` or maybe `null`.
      */
     /*override*/ def monitorexit(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValues] = {
         val result = sideEffectOnlyOrExceptions(pc, value)

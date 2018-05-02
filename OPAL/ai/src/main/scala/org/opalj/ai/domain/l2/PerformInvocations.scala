@@ -92,7 +92,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * identity), then the parameter is mapped back to the original operand.
      */
     protected[this] def transformResult(
-        callerPC:           PC,
+        callerPC:           Int,
         calledMethod:       Method,
         originalOperands:   callingDomain.Operands,
         calledMethodDomain: CalledMethodDomain
@@ -159,7 +159,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * Performs the invocation of the given method using the given operands.
      */
     protected[this] def doInvoke(
-        pc:       PC,
+        pc:       Int,
         method:   Method,
         operands: Operands,
         fallback: () ⇒ MethodCallResult
@@ -182,7 +182,7 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     protected[this] def testAndDoInvoke(
-        pc:       PC,
+        pc:       Int,
         method:   Method,
         operands: Operands,
         fallback: () ⇒ MethodCallResult
@@ -214,7 +214,7 @@ trait PerformInvocations extends MethodCallsHandling {
     // -----------------------------------------------------------------------------------
 
     protected[this] def doInvokeNonVirtual(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType, // ... arrays do not have any static/special methods
         isInterface:    Boolean,
         name:           String,
@@ -246,7 +246,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * resolve the target.
      */
     def doInvokeVirtual(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ReferenceType,
         isInterface:    Boolean,
         name:           String,
@@ -286,7 +286,7 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     abstract override def invokevirtual(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ReferenceType,
         name:           String,
         descriptor:     MethodDescriptor,
@@ -299,7 +299,7 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     abstract override def invokeinterface(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         name:           String,
         descriptor:     MethodDescriptor,
@@ -312,7 +312,7 @@ trait PerformInvocations extends MethodCallsHandling {
     }
 
     abstract override def invokespecial(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,
@@ -331,7 +331,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * if we have a recursive invocation, the super implementation is called.
      */
     abstract override def invokestatic(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         isInterface:    Boolean,
         name:           String,

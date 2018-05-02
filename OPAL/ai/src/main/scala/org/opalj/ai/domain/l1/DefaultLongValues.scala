@@ -49,7 +49,7 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
      */
     case object ALongValue extends super.ALongValue {
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = NoUpdate
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = NoUpdate
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other.computationalType == ComputationalTypeLong
@@ -68,7 +68,7 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
      */
     class TheLongValue(override val value: Long) extends super.TheLongValue {
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case ConcreteLongValue(thatValue) ⇒
                     if (this.value == thatValue) {

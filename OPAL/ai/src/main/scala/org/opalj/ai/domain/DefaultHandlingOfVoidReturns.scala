@@ -38,7 +38,7 @@ package domain
 trait DefaultHandlingOfVoidReturns extends ReturnInstructionsDomain {
     domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
 
-    /*base impl.*/ def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+    /*base impl.*/ def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)
     }
 

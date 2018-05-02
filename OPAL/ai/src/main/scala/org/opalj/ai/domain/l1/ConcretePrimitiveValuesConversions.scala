@@ -40,27 +40,27 @@ package l1
 trait ConcretePrimitiveValuesConversions extends l0.TypeLevelPrimitiveValuesConversions {
     domain: PrimitiveValuesFactory with Configuration with ConcreteLongValues with ConcreteIntegerValues ⇒
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue = {
+    override def i2d(pc: Int, value: DomainValue): DomainValue = {
         intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
     }
 
-    override def i2f(pc: PC, value: DomainValue): DomainValue = {
+    override def i2f(pc: Int, value: DomainValue): DomainValue = {
         intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
     }
 
-    override def i2l(pc: PC, value: DomainValue): DomainValue = {
+    override def i2l(pc: Int, value: DomainValue): DomainValue = {
         intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
     }
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue = {
+    override def l2d(pc: Int, value: DomainValue): DomainValue = {
         longValue(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
     }
 
-    override def l2f(pc: PC, value: DomainValue): DomainValue = {
+    override def l2f(pc: Int, value: DomainValue): DomainValue = {
         longValue(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
     }
 
-    override def l2i(pc: PC, value: DomainValue): DomainValue = {
+    override def l2i(pc: Int, value: DomainValue): DomainValue = {
         longValue(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
     }
 }

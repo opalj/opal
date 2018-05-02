@@ -59,7 +59,7 @@ trait DefaultTypeLevelReferenceValues
 
     protected[this] class NullValue extends super.NullValue { this: DomainNullValue ⇒
 
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case _: NullValue ⇒ NoUpdate
                 case _: ReferenceValue ⇒
@@ -163,7 +163,7 @@ trait DefaultTypeLevelReferenceValues
         }
 
         override protected def doLoad(
-            pc:                  PC,
+            pc:                  Int,
             index:               DomainValue,
             potentialExceptions: ExceptionValues
         ): ArrayLoadResult = {
@@ -172,7 +172,7 @@ trait DefaultTypeLevelReferenceValues
         }
 
         override protected def doStore(
-            pc:               PC,
+            pc:               Int,
             value:            DomainValue,
             index:            DomainValue,
             thrownExceptions: ExceptionValues
@@ -249,7 +249,7 @@ trait DefaultTypeLevelReferenceValues
         override def baseValues: Traversable[DomainObjectValue] = Traversable.empty
 
         protected def asStructuralUpdate(
-            pc:                PC,
+            pc:                Int,
             newUpperTypeBound: UIDSet[ObjectType]
         ): Update[DomainValue] = {
             if (newUpperTypeBound.isSingletonSet)
@@ -258,16 +258,16 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
 
-        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+        final override def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
             throw DomainException("arraylength not possible; this is not an array value: "+this)
         }
 
-        final override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
+        final override def load(pc: Int, index: DomainValue): ArrayLoadResult = {
             throw DomainException("arrayload not possible; this is not an array value: "+this)
         }
 
         final override def store(
-            pc:    PC,
+            pc:    Int,
             value: DomainValue,
             index: DomainValue
         ): ArrayStoreResult = {
@@ -322,7 +322,7 @@ trait DefaultTypeLevelReferenceValues
         }
 
         // WIDENING OPERATION
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
 
@@ -447,7 +447,7 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val thisUTB = this.upperTypeBound
             other match {
 

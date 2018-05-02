@@ -90,7 +90,7 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
                             domain.allReturnedValues.forall { kv ⇒
                                 val (_ /*pc*/ , returnedValue) = kv
 
-                                def checkOrigin(pc: PC): Boolean = {
+                                def checkOrigin(pc: Int): Boolean = {
                                     if (pc < 0 || pc >= method.body.get.instructions.length)
                                         return true;
 

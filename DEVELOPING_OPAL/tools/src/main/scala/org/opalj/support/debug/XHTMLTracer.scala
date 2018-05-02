@@ -29,6 +29,7 @@
 package org.opalj.support.debug
 
 import scala.xml.Node
+
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
@@ -38,7 +39,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.ai.PC
 import org.opalj.ai.Domain
 import org.opalj.ai.Update
 import org.opalj.ai.AIResult
@@ -50,7 +50,7 @@ import org.opalj.ai.common.XHTML.dumpStack
 import org.opalj.collection.mutable.IntArrayStack
 
 case class FlowEntity(
-        pc:          PC,
+        pc:          Int,
         instruction: Instruction,
         operands:    Operands[_ >: Null <: Domain#DomainValue],
         locals:      Locals[_ >: Null <: Domain#DomainValue],
@@ -86,7 +86,7 @@ trait XHTMLTracer extends AITracer {
 
     private def instructionToNode(
         flowId:      Int,
-        pc:          PC,
+        pc:          Int,
         instruction: Instruction
     ): xml.Node = {
         val openDialog = "$( \"#dialog"+flowId+"\" ).dialog(\"open\");"
@@ -120,7 +120,7 @@ trait XHTMLTracer extends AITracer {
 
         val inOrderFlow = flow.map(_.reverse).reverse
         var pathsCount = 0
-        var pcs = SortedSet.empty[PC]
+        var pcs = SortedSet.empty[Int /*PC*/ ]
         for (path ← flow) {
             pathsCount += 1
             for (entity ← path) {
@@ -159,7 +159,7 @@ trait XHTMLTracer extends AITracer {
                     { dumpLocals(flowEntity.locals)(Some(idsLookup)) }
                 </div>
             }).toIterable
-        def row(pc: PC) =
+        def row(pc: Int) =
             (for (path ← inOrderFlow) yield {
                 val flowEntity = path.find(_.pc == pc)
                 <td>
@@ -290,7 +290,7 @@ trait XHTMLTracer extends AITracer {
         alreadyEvaluated:                 IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         if ((this.code eq code) || (this.code == null))
             this.code = code
@@ -304,22 +304,22 @@ trait XHTMLTracer extends AITracer {
     override def flow(
         domain: Domain
     )(
-        currentPC:                PC,
-        successorPC:              PC,
+        currentPC:                Int,
+        successorPC:              Int,
         isExceptionalControlFlow: Boolean
     ): Unit = {
         continuingWithBranch = currentPC < successorPC
     }
 
-    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = { /*EMPTY*/ }
+    override def deadLocalVariable(domain: Domain)(pc: Int, lvIndex: Int): Unit = { /*EMPTY*/ }
 
-    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+    override def noFlow(domain: Domain)(currentPC: Int, targetPC: Int): Unit = { /*EMPTY*/ }
 
     override def rescheduled(
         domain: Domain
     )(
-        sourcePC:                 PC,
-        targetPC:                 PC,
+        sourcePC:                 Int,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
         worklist:                 List[Int /*PC*/ ]
     ): Unit = {
@@ -329,7 +329,7 @@ trait XHTMLTracer extends AITracer {
     override def instructionEvalution(
         domain: Domain
     )(
-        pc:          PC,
+        pc:          Int,
         instruction: Instruction,
         operands:    domain.Operands,
         locals:      domain.Locals
@@ -346,7 +346,7 @@ trait XHTMLTracer extends AITracer {
     override def join(
         domain: Domain
     )(
-        pc:            PC,
+        pc:            Int,
         thisOperands:  domain.Operands,
         thisLocals:    domain.Locals,
         otherOperands: domain.Operands,
@@ -357,8 +357,8 @@ trait XHTMLTracer extends AITracer {
     override def establishedConstraint(
         domain: Domain
     )(
-        pc:          PC,
-        effectivePC: PC,
+        pc:          Int,
+        effectivePC: Int,
         operands:    domain.Operands,
         locals:      domain.Locals,
         newOperands: domain.Operands,
@@ -375,22 +375,22 @@ trait XHTMLTracer extends AITracer {
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: PC, target: PC, nestingLevel: Int
+        pc: Int, target: Int, nestingLevel: Int
     ): Unit = { /* ignored */ }
 
     override def returnFromSubroutine(
         domain: Domain
     )(
-        pc:                     PC,
-        returnAddress:          PC,
-        subroutineInstructions: List[PC]
+        pc:            Int,
+        returnAddress: Int,
+        subroutinePCs: List[Int /*PC*/ ]
     ): Unit = { /*ignored*/ }
 
     override def abruptSubroutineTermination(
         domain: Domain
     )(
         details:  String,
-        sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+        sourcePC: Int, targetPC: Int, jumpToSubroutineId: Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
         oldWorklist:                List[Int /*PC*/ ],
@@ -403,8 +403,8 @@ trait XHTMLTracer extends AITracer {
     override def ret(
         domain: Domain
     )(
-        pc:            PC,
-        returnAddress: PC,
+        pc:            Int,
+        returnAddress: Int,
         oldWorklist:   List[Int /*PC*/ ],
         newWorklist:   List[Int /*PC*/ ]
     ): Unit = { /*ignored*/ }

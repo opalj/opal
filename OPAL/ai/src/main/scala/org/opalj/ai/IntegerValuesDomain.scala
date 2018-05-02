@@ -58,7 +58,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param upperBound The range's upper bound (inclusive).
      */
     /*ABSTRACT*/ def intIsSomeValueInRange(
-        pc:         PC,
+        pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
         upperBound: Int
@@ -83,7 +83,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param upperBound The range's upper bound (inclusive).
      */
     /*ABSTRACT*/ def intIsSomeValueNotInRange(
-        pc:         PC,
+        pc:         Int,
         value:      DomainValue,
         lowerBound: Int,
         upperBound: Int
@@ -95,7 +95,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    /*ABSTRACT*/ def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/ def intAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer
 
     /**
      * Tests if the two given integer values are not equal.
@@ -103,7 +103,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    def intAreNotEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+    def intAreNotEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = {
         intAreEqual(pc, value1, value2).negate
     }
 
@@ -114,7 +114,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param largerValue A value with computational type integer.
      */
     /*ABSTRACT*/ def intIsLessThan(
-        pc:           PC,
+        pc:           Int,
         smallerValue: DomainValue,
         largerValue:  DomainValue
     ): Answer
@@ -126,7 +126,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param equalOrLargerValue A value with computational type integer.
      */
     /*ABSTRACT*/ def intIsLessThanOrEqualTo(
-        pc:                  PC,
+        pc:                  Int,
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue:  DomainValue
     ): Answer
@@ -138,11 +138,12 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param smallerValue A value with computational type integer.
      */
     def intIsGreaterThan(
-        pc:           PC,
+        pc:           Int,
         largerValue:  DomainValue,
         smallerValue: DomainValue
-    ): Answer =
+    ): Answer = {
         intIsLessThan(pc, smallerValue, largerValue)
+    }
 
     /**
      * Tests if the first integer value is larger than or equal to the second value.
@@ -151,32 +152,33 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      * @param smallerOrEqualValue A value with computational type integer.
      */
     def intIsGreaterThanOrEqualTo(
-        pc:                  PC,
+        pc:                  Int,
         largerOrEqualValue:  DomainValue,
         smallerOrEqualValue: DomainValue
-    ): Answer =
+    ): Answer = {
         intIsLessThanOrEqualTo(pc, smallerOrEqualValue, largerOrEqualValue)
+    }
 
     /**
      * Tests if the given integer value is 0 or maybe 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIs0(pc: PC, value: DomainValue): Answer = intAreEqual(pc, value, IntegerConstant0)
+    def intIs0(pc: Int, value: DomainValue): Answer = intAreEqual(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is not 0 or maybe not 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsNot0(pc: PC, value: DomainValue): Answer = intAreNotEqual(pc, value, IntegerConstant0)
+    def intIsNot0(pc: Int, value: DomainValue): Answer = intAreNotEqual(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is &lt; 0 or maybe &lt; 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThan0(pc: PC, value: DomainValue): Answer = {
+    def intIsLessThan0(pc: Int, value: DomainValue): Answer = {
         intIsLessThan(pc, value, IntegerConstant0)
     }
 
@@ -186,7 +188,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThanOrEqualTo0(pc: PC, value: DomainValue): Answer = {
+    def intIsLessThanOrEqualTo0(pc: Int, value: DomainValue): Answer = {
         intIsLessThanOrEqualTo(pc, value, IntegerConstant0)
     }
 
@@ -195,7 +197,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThan0(pc: PC, value: DomainValue): Answer = {
+    def intIsGreaterThan0(pc: Int, value: DomainValue): Answer = {
         intIsGreaterThan(pc, value, IntegerConstant0)
     }
 
@@ -205,7 +207,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThanOrEqualTo0(pc: PC, value: DomainValue): Answer = {
+    def intIsGreaterThanOrEqualTo0(pc: Int, value: DomainValue): Answer = {
         intIsGreaterThanOrEqualTo(pc, value, IntegerConstant0)
     }
 
@@ -231,7 +233,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *
      */
     def intEstablishValue(
-        pc:       PC,
+        pc:       Int,
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
@@ -247,7 +249,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *      that overlap.
      */
     def intEstablishAreEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -262,7 +264,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *      that overlap.
      */
     def intEstablishAreNotEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -277,7 +279,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *      that overlap.
      */
     def intEstablishIsLessThan(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -292,7 +294,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      *      that overlap.
      */
     def intEstablishIsLessThanOrEqualTo(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -309,15 +311,15 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
     // TYPE CONVERSION
     //
 
-    def i2b(pc: PC, value: DomainValue): DomainValue
-    def i2c(pc: PC, value: DomainValue): DomainValue
-    def i2s(pc: PC, value: DomainValue): DomainValue
+    def i2b(pc: Int, value: DomainValue): DomainValue
+    def i2c(pc: Int, value: DomainValue): DomainValue
+    def i2s(pc: Int, value: DomainValue): DomainValue
 
     //
     // UNARY ARITHMETIC EXPRESSIONS
     //
 
-    def ineg(pc: PC, value: DomainValue): DomainValue
+    def ineg(pc: Int, value: DomainValue): DomainValue
 
     //
     // BINARY ARITHMETIC EXPRESSIONS
@@ -328,17 +330,17 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
      */
     type IntegerValueOrArithmeticException = Computation[DomainValue, ExceptionValue]
 
-    def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerValueOrArithmeticException
-    def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def irem(pc: PC, value1: DomainValue, value2: DomainValue): IntegerValueOrArithmeticException
-    def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue
+    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def idiv(pc: Int, value1: DomainValue, value2: DomainValue): IntegerValueOrArithmeticException
+    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def irem(pc: Int, value1: DomainValue, value2: DomainValue): IntegerValueOrArithmeticException
+    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue
 
 }
