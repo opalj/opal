@@ -283,11 +283,27 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         // IMPROVE add content based test
     }
 
-    property("subsetOf") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Int) ⇒
+        val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
+        val its2 = s1.foldLeft(IntTrieSet.empty)(_ + _) + i
+        classify(its1.size == 0, "its1 is empty") {
+            classify(its1.size == 1, "its1.size == 1") {
+                classify(its1.size == 2, "its1.size == 2") {
+                    classify(its1.size == its2.size, "its1 == its2") {
+                        its1.subsetOf(its2) == its1.iterator.toSet.subsetOf(its2.iterator.toSet)
+                    }
+                }
+            }
+        }
+    }
+
+    property("subsetOf (always succeeding)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
         val mergedIts = its1 ++ its2
-        its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
+        classify(its1.size == mergedIts.size, "its1 and its1 merged with its2 are different") {
+            its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
+        }
     }
 
     property("filter (identity if no value is filtered)") = forAll { s: IntTrieSet ⇒
@@ -357,6 +373,166 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 @RunWith(classOf[JUnitRunner])
 class IntTrieSetTest extends FunSpec with Matchers {
 
+    describe("the subset of relation") {
+        it("should correctly work for empty set related comparisons") {
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet.empty))
+            assert((IntTrieSet(1) - 1).subsetOf(IntTrieSet.empty))
+            assert((IntTrieSet(1) - 1).subsetOf(IntTrieSet(1)))
+            assert((IntTrieSet(1, 2, 3) - 1 - 2 - 3).subsetOf(IntTrieSet(1)))
+
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1)))
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 2)))
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 3, 4, 5)))
+
+        }
+
+        it("should correctly work for set1 related comparisons") {
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet1(1)))
+            assert(!IntTrieSet(2).subsetOf(IntTrieSet.empty))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1)))
+            assert(!IntTrieSet(2).subsetOf(IntTrieSet(3)))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1, 2)))
+            assert(IntTrieSet(2).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(3).subsetOf(IntTrieSet(1, 2)))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(2).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(4).subsetOf(IntTrieSet(1, 2, 3)))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+        }
+
+        it("should correctly work for set2 related comparisons") {
+            assert(!IntTrieSet(1, 2).subsetOf(IntTrieSet.empty))
+            assert(!IntTrieSet(1, 2).subsetOf(IntTrieSet(1)))
+
+            assert(IntTrieSet(1, 2).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(2, 3).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(1, 3).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(-1, 1).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(-1, 2).subsetOf(IntTrieSet(1, 2)))
+
+            assert(IntTrieSet(1, 2).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(1, 3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(2, 3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(-1, 2).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(1, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(2, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(3, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(0, 4).subsetOf(IntTrieSet(1, 2, 3)))
+
+            assert(IntTrieSet(1, 2).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2, 3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(-1, 2).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(1, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(2, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(3, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(4, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(0, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+        }
+
+        it("should correctly work for set3 related comparisons") {
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet.empty))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(0)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(0, 5)))
+
+            assert(IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 0)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 0)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 0)))
+
+            assert(IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 2, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 0, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 0, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 0, 5)))
+        }
+
+        it("should correctly work for set4 related comparisons") {
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet.empty))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(0, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 0)))
+
+            assert(IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, -5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, -5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, -5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, -2)))
+        }
+
+        it("should correctly work for set5+ related comparisons") {
+
+            // the following are derived from failing tests...
+
+            val s8a = IntTrieSet(-132967, -114794, -91882, -87887) + (-23059) + (-16654) + (-623) + 35514
+            val s8b = IntTrieSet(-90376, -83774, -82124, -81207) + (-18991) + (-5490) + 11406 + 11506
+            assert(!s8a.subsetOf(s8b))
+            assert(!s8b.subsetOf(s8a))
+
+            val s18 = IntTrieSet.empty ++ List(-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val s18_plus_m1 = s18 + (-1)
+            assert(s18.subsetOf(s18_plus_m1), s"$s18 expected to be subset of $s18_plus_m1")
+
+            val s4 = IntTrieSet(-149916, -118018, -102540, -91539)
+            val s4_plus_0 = s4 + 0
+            assert(s4.subsetOf(s4_plus_0), s"$s4 expected to be subset of $s4_plus_0")
+        }
+    }
+
     describe("create an IntTrieSet from four values") {
 
         it("should contain all values if the values are distinct") {
@@ -423,11 +599,21 @@ class IntTrieSetTest extends FunSpec with Matchers {
     }
 
     describe("create an IntTrieSet from one value") {
-
         it("should contain the value") {
             assert(IntTrieSet(1).head == 1)
         }
+    }
 
+    describe("regression tests") {
+        it("should implement contains correctly") {
+            val s = IntTrieSet(-149916, -102540, -118018, -91539) + 0
+            assert(s.contains(-149916))
+            assert(s.contains(-102540))
+            assert(s.contains(-118018))
+            assert(s.contains(-91539))
+            assert(s.contains(0))
+
+        }
     }
 
     describe("processing an IntTrieSet which is leaning to the right") {

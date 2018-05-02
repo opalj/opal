@@ -74,6 +74,8 @@ sealed abstract class IntTrieSet
     def filter(p: Int ⇒ Boolean): IntTrieSet
     override def withFilter(p: Int ⇒ Boolean): IntTrieSet
 
+    final override def subsetOf(other: IntTrieSet): Boolean = subsetOf(other, 0)
+
     final override def toString: String = mkString("IntTrieSet(", ",", ")")
 
     //
@@ -82,9 +84,11 @@ sealed abstract class IntTrieSet
 
     private[immutable] def +(i: Int, level: Int): IntTrieSet
     private[immutable] def -(i: Int, key: Int): IntTrieSet
+    private[immutable] def contains(value: Int, key: Int): Boolean
+    private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean
+
     /** Ensures that this set is represented using its canonical representation. */
     private[immutable] def constringe(): IntTrieSet
-    private[immutable] def contains(value: Int, key: Int): Boolean
 }
 
 class FilteredIntTrieSet(
@@ -124,7 +128,6 @@ class FilteredIntTrieSet(
     override def getAndRemove: IntHeadAndRestOfSet[IntTrieSet] = filtered.getAndRemove
     override def -(i: Int): IntTrieSet = filtered - i
     override def +(i: Int): IntTrieSet = filtered + i
-    override def subsetOf(other: IntTrieSet): Boolean = filtered.subsetOf(other)
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = filtered.foldLeft(z)(f)
     override def equals(other: Any): Boolean = filtered.equals(other)
     override def hashCode: Int = filtered.hashCode()
@@ -135,6 +138,9 @@ class FilteredIntTrieSet(
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = filtered + (i, level)
     private[immutable] override def contains(value: Int, key: Int): Boolean = {
         filtered.contains(value, key)
+    }
+    private[immutable] override def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        filtered.subsetOf(other, level)
     }
 }
 
@@ -165,7 +171,6 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def -(i: Int): this.type = this
     override def +(i: Int): IntTrieSet1 = IntTrieSet1(i)
     override def intersect(other: IntTrieSet): IntTrieSet = this
-    override def subsetOf(other: IntTrieSet): Boolean = true
     override def iterator: Iterator[Int] = Iterator.empty
     override def intIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
@@ -185,6 +190,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = this.+(i)
+    private[immutable] override def subsetOf(other: IntTrieSet, level: Int): Boolean = true
 }
 
 final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
@@ -215,7 +221,6 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def intersect(other: IntTrieSet): IntTrieSet = {
         if (other.contains(this.i)) this else EmptyIntTrieSet
     }
-    override def subsetOf(other: IntTrieSet): Boolean = other.contains(i)
     override def contains(value: Int): Boolean = value == i
     override def exists(p: Int ⇒ Boolean): Boolean = p(i)
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = f(z, i)
@@ -224,7 +229,7 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntTrieSet ⇒ that.size == 1 && this.i == that.head
+            case that: IntTrieSet ⇒ that.isSingletonSet && this.i == that.head
             case _                ⇒ false
         }
     }
@@ -232,6 +237,9 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def hashCode: Int = 31 + i // compatible to Arrays.hashCode
 
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = this.+(i)
+    override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        other.contains(i, i >>> level)
+    }
 }
 
 object IntTrieSet1 {
@@ -365,14 +373,28 @@ private[immutable] final class IntTrieSet2 private[immutable] (
 
     override def toChain: Chain[Int] = i1 :&: i2 :&: Naught
 
-    override def subsetOf(other: IntTrieSet): Boolean = {
-        other.size >= 2 && other.contains(i1) && other.contains(i2)
+    override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        other.size match {
+            case 0 | 1 ⇒
+                false
+            case 2 ⇒
+                other match {
+                    case that: IntTrieSet2 ⇒
+                        that.i1 == this.i1 && that.i2 == this.i2
+                    case _ ⇒
+                        // ... this case should never occur...
+                        other.contains(i1, i1 >>> level) && other.contains(i2, i2 >>> level)
+                }
+            case _ ⇒
+                other.contains(i1, i1 >>> level) && other.contains(i2, i2 >>> level)
+        }
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntTrieSet ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
-            case _                ⇒ false
+            case that: IntTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
+            case that: IntTrieSet  ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
+            case _                 ⇒ false
         }
     }
 
@@ -469,12 +491,31 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     def forall(f: Int ⇒ Boolean): Boolean = f(i1) && f(i2) && f(i3)
     def toChain: Chain[Int] = i1 :&: i2 :&: i3 :&: Naught
 
-    override def subsetOf(other: IntTrieSet): Boolean = {
-        other.size >= 3 && other.contains(i1) && other.contains(i2) && other.contains(i3)
+    override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        other.size match {
+            case 0 | 1 | 2 ⇒
+                false
+            case 3 ⇒
+                other match {
+                    case that: IntTrieSet3 ⇒
+                        that.i1 == this.i1 && that.i2 == this.i2 && that.i3 == this.i3
+                    case _ ⇒
+                        // ... this case should never occur...
+                        other.contains(i1, i1 >>> level) &&
+                            other.contains(i2, i2 >>> level) &&
+                            other.contains(i3, i3 >>> level)
+                }
+            case _ ⇒
+                other.contains(i1, i1 >>> level) &&
+                    other.contains(i2, i2 >>> level) &&
+                    other.contains(i3, i3 >>> level)
+        }
     }
 
     override def equals(other: Any): Boolean = {
         other match {
+            case that: IntTrieSet3 ⇒
+                this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
             case that: IntTrieSet ⇒
                 that.size == 3 && that.contains(i1) && that.contains(i2) && that.contains(i3)
             case _ ⇒
@@ -506,8 +547,6 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
         cb.result()
     }
 
-    // IMPROVE implement specialized: override def subsetOf(other: IntTrieSet): Boolean
-
     final override def equals(other: Any): Boolean = {
         other match {
             case that: IntTrieSet ⇒
@@ -530,9 +569,9 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
 }
 
 private[immutable] final class IntTrieSetN private[immutable] (
-        private val left:  IntTrieSet, // can be empty, but never null!
-        private val right: IntTrieSet, // can be empty, but never null!
-        val size:          Int
+        private[immutable] val left:  IntTrieSet, // can be empty, but never null!
+        private[immutable] val right: IntTrieSet, // can be empty, but never null!
+        val size:                     Int
 ) extends IntTrieSetNN { intSet ⇒
 
     assert(left.size + right.size == size)
@@ -542,6 +581,25 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p) || right.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p) && right.forall(p)
+
+    override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        if (this.size > other.size)
+            return false;
+
+        other match {
+            case that: IntTrieSetN ⇒
+                this.right.size <= that.right.size && // check if we have a chance...
+                    this.left.subsetOf(that.left, level + 1) &&
+                    this.right.subsetOf(that.right, level + 1)
+            case that: IntTrieSetNJustLeft ⇒
+                this.right.isEmpty && this.left.subsetOf(that.left, level + 1)
+            case that: IntTrieSetNJustRight ⇒
+                this.left.isEmpty && this.right.subsetOf(that.right, level + 1)
+            case that ⇒
+                // Here, the level is actually not relevant...
+                this.left.subsetOf(that, level + 1) && this.right.subsetOf(that, level + 1)
+        }
+    }
 
     override def foreach(f: IntConsumer): Unit = {
         left.foreach(f)
@@ -760,7 +818,7 @@ private[immutable] object IntTrieSetN {
 }
 
 private[immutable] final class IntTrieSetNJustRight private[immutable] (
-        private val right: IntTrieSet // can't be empty, left is already empty
+        private[immutable] val right: IntTrieSet // can't be empty, left is already empty
 ) extends IntTrieSetNN { intSet ⇒
 
     assert(size > 0) // <= can be "one" at construction time
@@ -789,6 +847,18 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
     }
 
     override def +(i: Int): IntTrieSet = this.+(i, 0)
+
+    override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        if (this.size > other.size)
+            return false;
+
+        other match {
+            case that: IntTrieSetN          ⇒ this.right.subsetOf(that.right, level + 1)
+            case that: IntTrieSetNJustLeft  ⇒ false
+            case that: IntTrieSetNJustRight ⇒ this.right.subsetOf(that.right, level + 1)
+            case that                       ⇒ this.right.subsetOf(that, level + 1)
+        }
+    }
 
     override private[immutable] def contains(value: Int, key: Int): Boolean = {
         if ((key & 1) == 0)
@@ -866,7 +936,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 }
 
 private[immutable] final class IntTrieSetNJustLeft private[immutable] (
-        private val left: IntTrieSet // cannot be empty; right is empty
+        private[immutable] val left: IntTrieSet // cannot be empty; right is empty
 ) extends IntTrieSetNN { intSet ⇒
 
     assert(size > 0) // <= can be "one" at construction time
@@ -897,12 +967,23 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
 
     override def +(i: Int): IntTrieSet = this.+(i, 0)
 
+    override def subsetOf(other: IntTrieSet, level: Int): Boolean = {
+        if (this.size > other.size)
+            return false;
+
+        other match {
+            case that: IntTrieSetN          ⇒ this.left.subsetOf(that.left, level + 1)
+            case that: IntTrieSetNJustLeft  ⇒ this.left.subsetOf(that.left, level + 1)
+            case that: IntTrieSetNJustRight ⇒ false
+            case that                       ⇒ this.left.subsetOf(that, level + 1)
+        }
+    }
+
     override private[immutable] def contains(value: Int, key: Int): Boolean = {
         if ((key & 1) == 0)
             left.contains(value, key >>> 1)
         else
             false
-
     }
 
     override def contains(value: Int): Boolean = this.contains(value, value)
