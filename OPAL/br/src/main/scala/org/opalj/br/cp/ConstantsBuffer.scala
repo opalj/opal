@@ -250,12 +250,11 @@ object ConstantsBuffer {
 
     def collectLDCs(classFile: ClassFile): Set[LDC[_]] = {
         val allLDC = for {
-            method ← classFile.methods
+            method ← classFile.methods.iterator
             if method.body.isDefined
-            PCAndInstruction(_ /*pc*/ , instruction) ← method.body.get
-            if instruction.opcode == LDC.opcode
+            ldc ← method.body.get.iterator.collect { case ldc: LDC[_] ⇒ ldc }
         } yield {
-            instruction.asInstanceOf[LDC[_]]
+            ldc
         }
         allLDC.toSet
     }
