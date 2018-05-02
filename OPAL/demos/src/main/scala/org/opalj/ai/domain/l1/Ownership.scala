@@ -91,7 +91,7 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
                                 val (_ /*pc*/ , returnedValue) = kv
 
                                 def checkOrigin(pc: PC): Boolean = {
-                                    if (pc < 0 || pc >= method.body.get.instructions.size)
+                                    if (pc < 0 || pc >= method.body.get.instructions.length)
                                         return true;
 
                                     method.body.get.instructions(pc) match {
