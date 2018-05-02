@@ -253,7 +253,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def IntAreEqual = intEstablishAreEqual _
 
     /**
      * @note This function is ONLY defined if a corresponding test (`value1 != value2`)
@@ -269,7 +268,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def IntAreNotEqual = intEstablishAreNotEqual _
 
     /**
      * @note This function is ONLY defined if a corresponding test (`value1 < value2`)
@@ -285,7 +283,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def IntIsLessThan = intEstablishIsLessThan _
 
     /**
      * @note This function is ONLY defined if a corresponding test (`value1 <= value2`)
@@ -301,53 +298,6 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def IntIsLessThanOrEqualTo = intEstablishIsLessThanOrEqualTo _
-
-    /**
-     * A function that takes a program counter (`PC`), a value, the current operands
-     * and the register assignment and updates the operands and the register
-     * assignment w.r.t. the given value and the modeled constraint.
-     */
-    private[ai] type SingleValueConstraint = ((PC, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
-
-    /**
-     * A function that takes a program counter (`PC`), two values, the current operands
-     * and the register assignment and updates the operands and the register
-     * assignment w.r.t. the given values and the modeled constraint.
-     */
-    private[ai] type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
-
-    private[ai] final def IntIsGreaterThan: TwoValuesConstraint =
-        (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThan(pc, right, left, operands, locals)
-
-    private[ai] final def IntIsGreaterThanOrEqualTo: TwoValuesConstraint =
-        (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThanOrEqualTo(pc, right, left, operands, locals)
-
-    private[ai] final def IntIs0: SingleValueConstraint =
-        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishAreEqual(pc, value, IntegerConstant0, operands, locals)
-
-    private[ai] final def IntIsNot0: SingleValueConstraint =
-        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishAreNotEqual(pc, value, IntegerConstant0, operands, locals)
-
-    private[ai] final def IntIsLessThan0: SingleValueConstraint =
-        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThan(pc, value, IntegerConstant0, operands, locals)
-
-    private[ai] final def IntIsLessThanOrEqualTo0: SingleValueConstraint =
-        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThanOrEqualTo(pc, value, IntegerConstant0, operands, locals)
-
-    private[ai] final def IntIsGreaterThan0: SingleValueConstraint =
-        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThan(pc, IntegerConstant0, value, operands, locals)
-
-    private[ai] final def IntIsGreaterThanOrEqualTo0: SingleValueConstraint =
-        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThanOrEqualTo(pc, IntegerConstant0, value, operands, locals)
 
     // -----------------------------------------------------------------------------------
     //

@@ -168,7 +168,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def RefIsNull = refEstablishIsNull _
 
     /**
      * Called by OPAL-AI when it establishes that the value is guaranteed not to be `null`.
@@ -182,7 +181,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def RefIsNonNull = refEstablishIsNonNull _
 
     /**
      * Called by OPAL when two values were compared for reference equality and
@@ -195,7 +193,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def RefAreEqual = refEstablishAreEqual _
 
     /**
      * Called by OPAL when two values were compared for reference equality and
@@ -208,7 +205,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = (operands, locals)
-    private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
 
     // -----------------------------------------------------------------------------------
     //
