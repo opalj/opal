@@ -99,6 +99,7 @@ object PurityAnalysisEvaluation {
             "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
+            "[-packages <colon separated list of packages, e.g. java/util:javax>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
@@ -133,7 +134,8 @@ object PurityAnalysisEvaluation {
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
-        evaluationDir:         File
+        evaluationDir:         File,
+        packages:              Option[Array[String]]
     ): Unit = {
         var classFiles = JavaClassFileReader().ClassFiles(cp)
         if (!withoutJDK && (cp ne JRELibraryFolder)) {
@@ -202,13 +204,18 @@ object PurityAnalysisEvaluation {
             val declaredMethods = project.get(DeclaredMethodsKey)
             val projectMethods = project.allMethodsWithBody.par.filter { m ⇒
                 val pn = m.classFile.thisType.packageName
-                isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
-                    !pn.startsWith("javafx") && !pn.startsWith("jdk") && !pn.startsWith("sun") &&
-                    !pn.startsWith("oracle") && !pn.startsWith("com/sun") &&
-                    !pn.startsWith("com/oracle") && !pn.startsWith("netscape") &&
-                    !pn.startsWith("org/ietf/jgss") &&
-                    !pn.startsWith("org/jcp/xml/dsig/internal") && !pn.startsWith("org/omg") &&
-                    !pn.startsWith("org/w3c/dom") && !pn.startsWith("org/xml/sax")
+                packages match {
+                    case None ⇒
+                        isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
+                            !pn.startsWith("javafx") && !pn.startsWith("jdk") && !pn.startsWith("sun") &&
+                            !pn.startsWith("oracle") && !pn.startsWith("com/sun") &&
+                            !pn.startsWith("com/oracle") && !pn.startsWith("netscape") &&
+                            !pn.startsWith("org/ietf/jgss") &&
+                            !pn.startsWith("org/jcp/xml/dsig/internal") && !pn.startsWith("org/omg") &&
+                            !pn.startsWith("org/w3c/dom") && !pn.startsWith("org/xml/sax")
+                    case Some(ps) ⇒
+                        ps.exists(pn.startsWith(_))
+                }
             }.toIterator
             projectMethods.foreach { m ⇒
                 propertyStore(declaredMethods(m), Purity.key)
@@ -341,6 +348,7 @@ object PurityAnalysisEvaluation {
         var cwa = false
         var multiProjects = false
         var evalDir: Option[File] = None
+        var packages: Option[Array[String]] = None
 
         // PARSING PARAMETERS
         var i = 0
@@ -366,6 +374,7 @@ object PurityAnalysisEvaluation {
                 case "-closedWorld" ⇒ cwa = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evalDir = Some(new File(readNextArg()))
+                case "-packages"    ⇒ packages = Some(readNextArg().split(':'))
                 case unknown ⇒
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
@@ -413,10 +422,20 @@ object PurityAnalysisEvaluation {
         if (multiProjects) {
             for (subp ← cp.listFiles().filter(_.isDirectory)) {
                 println(subp.getName)
-                evaluate(subp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir)
+                evaluate(
+                    subp,
+                    analysis,
+                    d,
+                    rater,
+                    withoutJDK,
+                    individual,
+                    cwa,
+                    evaluationDir,
+                    packages
+                )
             }
         } else {
-            evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir)
+            evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir, packages)
         }
 
         val end = Calendar.getInstance()
