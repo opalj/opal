@@ -60,10 +60,10 @@ import org.opalj.log.LogContext
  *
  * ==Control Flow==
  *  1. The standard parameters are checked.
- *  2. The analysis is called to let it verify the analysis specific parameters.
- *  3. The [[Project]] is created.
- *  4. The `analyze` method of the [[Analysis]] is called with the project and the parameters.
- *  5. The results are printed.
+ *  1. The analysis is called to let it verify the analysis specific parameters.
+ *  1. The [[Project]] is created.
+ *  1. The `analyze` method of the [[Analysis]] is called with the project and the parameters.
+ *  1. The results are printed.
  *
  * @author Michael Eichberg
  * @author Arne Lottmann
