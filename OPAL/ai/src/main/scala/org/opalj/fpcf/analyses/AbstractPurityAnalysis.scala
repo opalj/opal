@@ -162,7 +162,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Reduces the maxPurity of the current method to at most the given purity level.
      */
-    def reduceMinumumPurity(newLevel: Purity)(implicit state: AnalysisState): Unit = {
+    def reducePurityLB(newLevel: Purity)(implicit state: AnalysisState): Unit = {
         state.lbPurity = state.lbPurity meet newLevel
     }
 
@@ -551,13 +551,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case FinalEP(_, _: FinalField) ⇒ // Final fields don't impede purity
+        case EPS(_, _: FinalField, _) ⇒ // Final fields don't impede purity
         case FinalEP(_, _) ⇒ // Mutable field
-            if (objRef.isDefined) isLocal(objRef.get, LBSideEffectFree)
-            else atMost(LBSideEffectFree)
+            if (objRef.isDefined) {
+                if (state.ubPurity.isDeterministic)
+                    isLocal(objRef.get, LBSideEffectFree)
+            } else atMost(LBSideEffectFree)
         case _ ⇒
-            reduceMinumumPurity(LBSideEffectFree)
-            handleUnknownFieldMutability(ep, objRef)
+            reducePurityLB(LBSideEffectFree)
+            if (state.ubPurity.isDeterministic)
+                handleUnknownFieldMutability(ep, objRef)
     }
 
     /**
@@ -635,14 +638,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         expr: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case FinalEP(_, ImmutableType | ImmutableObject) ⇒ true
+        case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
         case FinalEP(_, _) ⇒
             atMost(LBPure) // Can not be compile time pure if mutable object is returned
-            isLocal(expr, LBSideEffectFree)
+            if (state.ubPurity.isDeterministic)
+                isLocal(expr, LBSideEffectFree)
             false // Return early if we are already side-effect free
         case _ ⇒
-            reduceMinumumPurity(LBSideEffectFree)
-            handleUnknownTypeMutability(ep, expr)
+            reducePurityLB(LBSideEffectFree)
+            if (state.ubPurity.isDeterministic)
+                handleUnknownTypeMutability(ep, expr)
             true
     }
 

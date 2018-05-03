@@ -420,6 +420,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (callee.hasValue) {
                     val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
                     checkLocalityOfReturn(rvf, (None, otherwise))
+                    true
                 } else false
             case NonVirtualFunctionCall.ASTID ⇒
                 val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = rhs
@@ -427,6 +428,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (callee.hasValue) {
                     val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
                     checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
+                    true
                 } else false
             case VirtualFunctionCall.ASTID ⇒
                 val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = rhs
@@ -435,10 +437,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         val dm = declaredMethods(callee.value)
                         val rvf = propertyStore(dm, ReturnValueFreshness.key)
                         checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
+                        true
                     } else false,
                     dm ⇒ {
                         val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
                         checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
+                        true
                     },
                     () ⇒ false)
             case GetField.ASTID ⇒
@@ -478,44 +482,52 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             atMost(data._2)
             false
         case _ ⇒
-            reduceMinumumPurity(data._2)
-            state.addFieldLocalityDependee(ep.e, ep, data)
+            reducePurityLB(data._2)
+            if(data._2 meet state.ubPurity ne state.ubPurity)
+                state.addFieldLocalityDependee(ep.e, ep, data)
             true
     }
 
     def checkLocalityOfReturn(
         ep:   EOptionP[DeclaredMethod, Property],
         data: (Option[Expr[V]], Purity)
-    )(implicit state: State): Boolean = ep match {
-        case FinalEP(_, PrimitiveReturnValue | FreshReturnValue |
-            VPrimitiveReturnValue | VFreshReturnValue) ⇒
-            true
+    )(implicit state: State): Unit = ep match {
+        case EPS(_, PrimitiveReturnValue | FreshReturnValue |
+            VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
         case FinalEP(_, Getter | VGetter) ⇒
-            isLocal(data._1.get, data._2)
+            if(data._2 meet state.ubPurity ne state.ubPurity)
+                isLocal(data._1.get, data._2)
         case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
             if (data._1.get.isVar) {
                 val value = data._1.get.asVar.value.asDomainReferenceValue
-                value.isPrecise &&
-                    classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo &&
-                    isLocal(data._1.get, data._2)
-            } else false
+                if(value.isPrecise &&
+                    classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo) {
+                    if(data._2 meet state.ubPurity ne state.ubPurity)
+                        isLocal(data._1.get, data._2)
+                }else{
+                    atMost(data._2)
+                }
+            } else{
+                atMost(data._2)
+            }
         case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
             atMost(data._2)
-            false
         case EOptionP(e, pk) ⇒
-            reduceMinumumPurity(data._2)
-            if (pk == ReturnValueFreshness.key)
-                state.addRVFDependee(
-                    e,
-                    ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
-                    data
-                )
-            else
-                state.addVirtualRVFDependee(
-                    e,
-                    ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
-                    data
-                )
+            reducePurityLB(data._2)
+            if(data._2 meet state.ubPurity ne state.ubPurity) {
+                if (pk == ReturnValueFreshness.key)
+                    state.addRVFDependee(
+                        e,
+                        ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                        data
+                    )
+                else
+                    state.addVirtualRVFDependee(
+                        e,
+                        ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
+                        data
+                    )
+            }
             true
     }
 
@@ -575,13 +587,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             atMost(LBImpure)
             false
         case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
-            if (eps.isRefinable) { // On conditional, keep dependence
+            if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
+                // On conditional, keep dependence
                 state.addPurityDependee(
                     ep.e,
                     ep.asInstanceOf[EOptionP[DeclaredMethod, Purity]],
                     params
                 )
-                reduceMinumumPurity(lb)
+                reducePurityLB(lb)
             }
             // Contextual/external purity is handled below
             atMost(ub.withoutExternal)
@@ -607,13 +620,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 )
             else true
         case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
-            if (eps.isRefinable) { // On conditional, keep dependence
+            if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
+                // On conditional, keep dependence
                 state.addVirtualPurityDependee(
                     ep.e,
                     ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodPurity]],
                     params
                 )
-                reduceMinumumPurity(lb)
+                reducePurityLB(lb)
             }
             // Contextual/external purity is handled below
             atMost(ub.withoutExternal)
@@ -639,7 +653,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 )
             else true
         case EOptionP(e, pk) ⇒
-            reduceMinumumPurity(LBImpure)
+            reducePurityLB(LBImpure)
             if (pk == Purity.key)
                 state.addPurityDependee(
                     ep.e,
@@ -715,23 +729,17 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         for ((_, (_, s)) ← state.fieldLocalityDependees) {
-            s.filter { data ⇒
-                (data._2.meet(state.ubPurity) eq data._2) && (data._2 ne state.ubPurity)
-            }
+            s.filter(_._2 meet state.ubPurity ne state.ubPurity)
         }
         state.fieldLocalityDependees.filter(dependee ⇒ dependee._2._2.nonEmpty)
 
         for ((_, (_, s)) ← state.rvfDependees) {
-            s.filter { data ⇒
-                (data._2.meet(state.ubPurity) eq data._2) && (data._2 ne state.ubPurity)
-            }
+            s.filter(_._2 meet state.ubPurity ne state.ubPurity)
         }
         state.rvfDependees.filter(dependee ⇒ dependee._2._2.nonEmpty)
 
         for ((_, (_, s)) ← state.virtualRVFDependees) {
-            s.filter { data ⇒
-                (data._2.meet(state.ubPurity) eq data._2) && (data._2 ne state.ubPurity)
-            }
+            s.filter(_._2 meet state.ubPurity ne state.ubPurity)
         }
         state.virtualRVFDependees.filter(dependee ⇒ dependee._2._2.nonEmpty)
 

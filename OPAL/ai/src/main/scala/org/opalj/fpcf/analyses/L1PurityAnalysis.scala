@@ -192,9 +192,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(LBImpure)
                 false
             } else {
-                if (eps.isRefinable) {
+                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                     state.dependees += ep // On Conditional, keep dependence
-                    reduceMinumumPurity(lb)
+                    reducePurityLB(lb)
                 }
                 atMost(ub)
                 true
@@ -204,16 +204,16 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(LBImpure)
                 false
             } else {
-                if (eps.isRefinable) {
+                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                     state.dependees += ep // On Conditional, keep dependence
-                    reduceMinumumPurity(lb)
+                    reducePurityLB(lb)
                 }
                 atMost(ub)
                 true
             }
         case epk ⇒
             state.dependees += ep
-            reduceMinumumPurity(LBImpure)
+            reducePurityLB(LBImpure)
             true
     }
 
@@ -246,7 +246,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key
             }
         }
-        //IMPROVE: We could filter Purity/V~urity dependees with an lb not less than maxPurity
+        //IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
     }
 
     /**
