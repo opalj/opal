@@ -46,7 +46,7 @@ public @interface EP {
      * Supported entities are:
      * <ul>
      *  <li>Classes are specified using the fully qualified name, e.g.
-     *      <ode>java/lang/Math</code></li>
+     *      <code>java/lang/Math</code></li>
      *  <li>Fields are specified by &lt;className&gt;.&lt;fieldName&gt;, e.g.
      *      <code>java/lang/Long.value</code></li>
      *  <li>Methods are specified by &lt;className&gt;.&lt;methodName&gt;&lt;methodDescriptor&gt;,
