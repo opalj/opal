@@ -528,7 +528,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         data
                     )
             }
-            true
     }
 
     /**
