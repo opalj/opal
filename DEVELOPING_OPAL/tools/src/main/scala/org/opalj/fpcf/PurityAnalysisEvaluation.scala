@@ -41,6 +41,7 @@ import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
@@ -234,7 +235,7 @@ object PurityAnalysisEvaluation {
         }
 
         val purityEs = entitiesWithPurity.filter { ep ⇒
-            val pn = ep.e.asInstanceOf[DefinedMethod].declaringClassType.asObjectType.packageName
+            val pn = ep.e.asInstanceOf[DeclaredMethod].declaringClassType.asObjectType.packageName
             isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
                 !pn.startsWith("javafx") && !pn.startsWith("jdk") && !pn.startsWith("sun") &&
                 !pn.startsWith("oracle") && !pn.startsWith("com/sun") &&
