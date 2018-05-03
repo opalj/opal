@@ -29,8 +29,10 @@
 package org.opalj
 package collection
 
-import scala.collection.AbstractIterator
+import java.util.function.IntPredicate
+import java.util.function.IntConsumer
 
+import scala.collection.AbstractIterator
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
@@ -75,6 +77,18 @@ trait IntIterator { self ⇒
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
+    }
+
+    def foreachWhile(p: IntPredicate)(f: IntConsumer): Unit = {
+        while (this.hasNext && {
+            val c = this.next()
+            if (p.test(c)) {
+                f.accept(c)
+                true
+            } else {
+                false;
+            }
+        }) {}
     }
 
     def map(f: Int ⇒ Int): IntIterator = {
@@ -219,7 +233,7 @@ object IntIterator {
         def hasNext: Boolean = !returned
         def next(): Int = { returned = true; i }
         override def toArray: Array[Int] = { val as = new Array[Int](1); as(0) = i; as }
-        override def toSet: IntTrieSet = new IntTrieSet1(i)
+        override def toSet: IntTrieSet = IntTrieSet1(i)
     }
 
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {

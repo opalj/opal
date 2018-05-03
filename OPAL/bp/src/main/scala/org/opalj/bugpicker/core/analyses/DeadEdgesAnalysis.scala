@@ -301,6 +301,7 @@ object DeadEdgesAnalysis {
                         )(
                                 /*initialWorkList =*/ Chain(nextPC),
                                 /*alreadyEvaluated =*/ Naught,
+                                /*subroutinesWereEvaluated=*/ false,
                                 zOperandsArray,
                                 zLocalsArray,
                                 Naught, null, null // we don't care about the state of subroutines

@@ -57,7 +57,7 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
     private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
 
     override protected[this] def doInvoke(
-        pc:       PC,
+        pc:       Int,
         method:   Method,
         operands: Operands,
         fallback: () ⇒ MethodCallResult

@@ -72,6 +72,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
      */
     def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
 
+    final override def isSimpleConditionalBranchInstruction: Boolean = true
     final override def asSimpleConditionalBranchInstruction: this.type = this
 
     /**
@@ -87,7 +88,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         val nextInstruction = indexOfNextInstruction(currentPC)
         val jumpInstruction = currentPC + branchoffset

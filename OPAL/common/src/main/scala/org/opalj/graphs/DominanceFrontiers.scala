@@ -30,8 +30,8 @@ package org.opalj
 package graphs
 
 import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.{Chain, IntArraySet, IntHeadAndRestOfSet}
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -58,15 +58,15 @@ final class DominanceFrontiers private (
             df
     }
 
-    final def transitiveDF(n: Int): IntArraySet = {
-        var transitiveDF = this.df(n)
+    final def transitiveDF(n: Int): IntTrieSet = {
+        var transitiveDF = IntTrieSet.empty ++ this.df(n).intIterator
         var nodesToVisit = transitiveDF - n
         while (nodesToVisit.nonEmpty) {
-            val (nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            val IntHeadAndRestOfSet(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
             nodesToVisit = newNodesToVisit
             val nextDF = this.df(nextN)
-            transitiveDF ++= nextDF
-            nodesToVisit ++= (nextDF - nextN)
+            transitiveDF ++= nextDF.intIterator
+            nodesToVisit ++= nextDF.intIterator.filter(_ != nextN)
         }
         transitiveDF
     }
@@ -86,7 +86,7 @@ final class DominanceFrontiers private (
         do {
             val x = worklist.pop()
 
-            df(x).foreach { y ⇒
+            df(x) foreach { y ⇒
                 if (!seen.contains(y)) {
                     seen += y
                     worklist.push(y)
@@ -190,7 +190,7 @@ object DominanceFrontiers {
      *          for this algorithm.
      */
     def apply(dt: AbstractDominatorTree, isValidNode: Int ⇒ Boolean): DominanceFrontiers = {
-        val startNode = dt.startNode
+        val startNode: Int = dt.startNode
         val foreachSuccessorOf = dt.foreachSuccessorOf
         val max = dt.maxNode + 1
 
@@ -217,7 +217,7 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) accept { y ⇒ if (dt.dom(y) != n) s = s + y }
             } catch {
                 case t: Throwable ⇒
                     throw new Throwable(s"failed iterating over successors of node $n", t)
@@ -226,7 +226,7 @@ object DominanceFrontiers {
         }
 
         val inDFSOrder = new IntArrayStack(Math.max(max - 2, 2))
-        var nodes: Chain[Int] = Chain.singleton(startNode)
+        var nodes: Chain[Int] = Chain.singleton[Int](startNode)
         while (nodes.nonEmpty) {
             val n = nodes.head
             nodes = nodes.tail
@@ -240,7 +240,7 @@ object DominanceFrontiers {
             }
         }
 
-        inDFSOrder.foreach { n ⇒
+        inDFSOrder foreach { n ⇒
             val s = children(n).foldLeft(dfLocal(n)) { (s, c) ⇒
                 dfs(c).foldLeft(s) { (s, w) ⇒
                     if (!dt.strictlyDominates(n, w)) {

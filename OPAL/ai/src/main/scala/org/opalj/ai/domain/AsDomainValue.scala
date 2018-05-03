@@ -55,5 +55,5 @@ trait AsDomainValue { domain: ReferenceValuesDomain ⇒
      *
      * @return A `DomainReferenceValue`.
      */
-    def toDomainValue(pc: PC, value: Object): DomainReferenceValue
+    def toDomainValue(pc: Int, value: Object): DomainReferenceValue
 }

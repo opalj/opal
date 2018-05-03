@@ -70,7 +70,7 @@ class CLASS[T](
      */
     def toBR(
         implicit
-        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (br.ClassFile, Map[br.Method, T]) = {
 
         val accessFlags = accessModifiers.accessFlags
@@ -144,7 +144,7 @@ class CLASS[T](
      */
     def toDA(
         implicit
-        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (da.ClassFile, Map[br.Method, T]) = {
         val (brClassFile, annotations) = toBR(classHierarchy)
         (ba.toDA(brClassFile), annotations)

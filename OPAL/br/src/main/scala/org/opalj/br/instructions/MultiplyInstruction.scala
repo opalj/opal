@@ -39,6 +39,8 @@ abstract class MultiplyInstruction extends AlwaysSucceedingStackBasedBinaryArith
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def operator: String = "*"
 
     final def isShiftInstruction: Boolean = false

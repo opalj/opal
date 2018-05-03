@@ -130,7 +130,15 @@ package object concurrent {
     //
     private[concurrent] final val UncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
         def uncaughtException(t: Thread, e: Throwable): Unit = {
-            handleUncaughtException(e)
+            try {
+                handleUncaughtException(e)
+            } catch {
+                case t: Throwable ⇒
+                    // we shouldn't use the OPALLogger here to ensure that we can report
+                    // Problems related to the logger
+                    Console.err.println("Fatal internal error when reporting errors:")
+                    t.printStackTrace(Console.err)
+            }
         }
     }
 
@@ -195,7 +203,7 @@ package object concurrent {
      * @throws ConcurrentExceptions if any exception occurs;
      *         the thrown exception stores all other exceptions (`getSuppressed`)
      */
-    @throws[ConcurrentExceptions]("concurrently thrown exceptions are added as suppressed exceptions")
+    @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
     def parForeachArrayElement[T, U](
         data:                 Array[T],
         parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
@@ -230,39 +238,48 @@ package object concurrent {
         val futures = new Array[Future[Unit]](parallelizationLevel)
 
         // Start parallel execution
-        {
-            var t = 0
-            while (t < parallelizationLevel) {
-                futures(t) = Future[Unit] {
-                    var i: Int = -1
-                    while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
-                        val e = data(i)
-                        try {
-                            f(e)
-                        } catch {
-                            case ct: ControlThrowable ⇒
-                                val t = new Throwable("unsupported non-local return", ct)
-                                exceptions.addSuppressed(t)
+        try {
+            {
+                var t = 0
+                while (t < parallelizationLevel) {
+                    futures(t) = Future[Unit] {
+                        var i: Int = -1
+                        while ({
+                            i = index.getAndIncrement; i
+                        } < max && !isInterrupted()) {
+                            val e = data(i)
+                            try {
+                                f(e)
+                            } catch {
+                                case ct: ControlThrowable ⇒
+                                    val t = new Throwable("unsupported non-local return", ct)
+                                    exceptions.addSuppressed(t)
 
-                            case t: Throwable ⇒
-                                exceptions.addSuppressed(t)
+                                case t: Throwable ⇒
+                                    exceptions.addSuppressed(t)
+                            }
                         }
                     }
+                    t += 1
                 }
-                t += 1
             }
-        }
-        // Await completion
-        {
-            var t = 0
-            while (t < parallelizationLevel) {
-                val future = futures(t)
-                Await.ready(future, Duration.Inf).value.get match {
-                    case scala.util.Failure(exception) ⇒ exceptions.addSuppressed(exception)
-                    case _                             ⇒ // OK
+            // Await completion
+            {
+                var t = 0
+                while (t < parallelizationLevel) {
+                    val future = futures(t)
+                    Await.ready(future, Duration.Inf).value.get match {
+                        case scala.util.Failure(exception) ⇒ exceptions.addSuppressed(exception)
+                        case _                             ⇒ // OK
+                    }
+                    t += 1
                 }
-                t += 1
             }
+        } catch {
+            case t: Throwable ⇒
+                // actually, we should never get here...
+                t.printStackTrace(Console.err)
+                exceptions.addSuppressed(t)
         }
         if (exceptions.getSuppressed.length > 0) {
             throw exceptions;

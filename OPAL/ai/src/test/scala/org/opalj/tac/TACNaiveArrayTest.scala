@@ -97,7 +97,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         ).mkString("\n")
 
         it("should correctly reflect reference array instructions") {
-            val stmts = TACNaive(method = RefArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = RefArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -139,7 +139,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect multidimensional array instructions") {
-            val stmts = TACNaive(method = MultidimArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = MultidimArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -170,7 +170,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect double array instructions") {
-            val stmts = TACNaive(method = DoubleArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = DoubleArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -180,7 +180,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect float array instructions") {
-            val stmts = TACNaive(method = FloatArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = FloatArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -190,7 +190,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect int array instructions") {
-            val stmts = TACNaive(method = IntArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = IntArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -200,7 +200,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect long array instructions") {
-            val stmts = TACNaive(method = LongArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = LongArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -210,7 +210,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect short array instructions") {
-            val stmts = TACNaive(method = ShortArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = ShortArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -220,7 +220,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect byte array instructions") {
-            val stmts = TACNaive(method = ByteArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = ByteArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
@@ -230,7 +230,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
         }
 
         it("should correctly reflect char array instructions") {
-            val stmts = TACNaive(method = CharArrayMethod, classHierarchy = Code.BasicClassHierarchy).stmts
+            val stmts = TACNaive(method = CharArrayMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)

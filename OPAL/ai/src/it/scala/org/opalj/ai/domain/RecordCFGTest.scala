@@ -84,11 +84,11 @@ class RecordCFGTest extends FunSpec with Matchers {
     def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: ⇒ String)(f: ⇒ T): T = {
         @volatile var result: T = null
         val t = new Thread(new Runnable { def run(): Unit = { result = f } })
-        t.start
+        t.start()
         t.join(millis)
         t.interrupt()
         t.join(10)
-        if (t.isAlive()) {
+        if (t.isAlive) {
             // this way it is no longer deprecated...
             t.getClass.getMethod("stop").invoke(t)
             throw new InterruptedException(s"$msg: didn't terminate in $millis milliseconds")
@@ -103,14 +103,15 @@ class RecordCFGTest extends FunSpec with Matchers {
 
         project.parForeachMethodWithBody() { methodInfo ⇒
             val method = methodInfo.method
-
             try {
                 val domain = new RecordCFGDomain(method, project)
                 val evaluatedInstructions = dTime('AI) {
                     BaseAI(method, domain).evaluatedInstructions
                 }
 
-                val bbBRCFG = dTime('BasicBlocksBasedBRCFG) { CFGFactory(method.body.get, project.classHierarchy) }
+                val bbBRCFG = dTime('BasicBlocksBasedBRCFG) {
+                    CFGFactory(method.body.get, project.classHierarchy)
+                }
                 val bbAICFG = dTime('BasicBlocksBasedAICFG) { domain.bbCFG }
 
                 val pcs = new mutable.BitSet(method.body.size)
@@ -119,17 +120,21 @@ class RecordCFGTest extends FunSpec with Matchers {
                     assert(bbAI.startPC <= bbAI.endPC, s"${bbAI.startPC}> ${bbAI.endPC}")
 
                     if (!pcs.add(bbAI.startPC))
-                        fail(s"the (start) pc ${bbAI.startPC} was already used by some other basic block")
+                        fail(
+                            s"the (start) pc ${bbAI.startPC} "+
+                                "was already used by some other basic block"
+                        )
                     if (bbAI.endPC != bbAI.startPC) {
                         if (!pcs.add(bbAI.endPC))
-                            fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) was already used by some other basic block")
+                            fail(s"the bb's (end) pc ${bbAI.endPC} ($bbAI) "+
+                                "was already used by some other basic block")
                     }
 
                     val bbBR = bbBRCFG.bb(bbAI.startPC)
                     if (bbBR.isStartOfSubroutine != bbAI.isStartOfSubroutine) {
                         fail(
-                            s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine}) and "+
-                                s"bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
+                            s"inconsistent: bbBR.isStartOfSubroutine(${bbBR.isStartOfSubroutine})"+
+                                s" and bbAI.isStartOfSubroutine (${bbAI.isStartOfSubroutine})"
                         )
                     }
                     val allBRPredecessors = bbBR.predecessors.collect { case bb: BasicBlock ⇒ bb }
@@ -196,6 +201,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                             fail(s"getting the control dependency information for $pc failed", t)
                     }
                 }
+
             } catch {
                 case t: Throwable ⇒
                     t.printStackTrace()
@@ -218,7 +224,8 @@ class RecordCFGTest extends FunSpec with Matchers {
                     } else {
                         "<location unavailable>"
                     }
-                failure+" ["+root.getClass.getSimpleName+": "+root.getMessage+"; location: "+location+"] "
+                failure +
+                    s"[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location] "
             }
 
             val failuresHeader = s"${failures.size} exceptions occured in: \n"

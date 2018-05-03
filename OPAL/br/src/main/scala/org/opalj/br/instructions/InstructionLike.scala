@@ -55,7 +55,9 @@ trait InstructionLike {
 
     def isControlTransferInstruction: Boolean = false
     def isReturnInstruction: Boolean = false
+    def isMonitorInstruction: Boolean = false
     def isAthrow: Boolean = false
+    def isRET: Boolean = false
 
     /**
      * The exceptions that may be thrown by the JVM at runtime if the execution of
@@ -72,6 +74,15 @@ trait InstructionLike {
      * specified exceptions.
      */
     def jvmExceptions: List[ObjectType]
+
+    /**
+     * Returns `true` if the evaluation of the instruction may lead to some runtime exception.
+     * For example, in case of [[INVOKESTATIC]] `jvmExceptions` will return an empty list. However,
+     * in general the called method may throw an arbitrary exception.
+     *
+     * Errors (such as LinkageError) related to invalid projects are not considered.
+     */
+    def mayThrowExceptions: Boolean
 
     /**
      * The index of the next instruction in the (sparse) code array.

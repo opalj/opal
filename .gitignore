@@ -1,6 +1,6 @@
-# We ignore all target folder except of ../annotations/target as it contains annotations that
-# describe a target... it was probably not a wise choice to name the package "target", but this
-# is how it is.
+# We ignore all target folders except of ../annotations/target as it contains annotations that
+# describe a "target (of a method call)" ... it was probably not a wise choice to name the
+# package "target", but this is how it is.
 target
 !OPAL/bi/src/test/fixtures-java/support/annotations/target
 
@@ -25,7 +25,6 @@ bin
 Icon?
 /shippable/
 .history
-local.sbt
 .tmpBin
 .cache-*
 Test.class
@@ -41,3 +40,13 @@ temp
 /ensime.sbt
 .vscode/settings.json
 /project/eclipse.sbt
+
+# Exclude .jvmopts as this specifies custom sbt launching options
+.jvmopts
+
+# Contains the machine local settings for the scalac compiler
+scalac.options.local
+
+# Contains additional, machine-local settings which do not conflict with
+# settings from the build file
+local.sbt

@@ -287,8 +287,7 @@ package object ba { ba ⇒
         }
 
         var modifiedByWide = false
-        code foreach { e ⇒
-            val (pc, i) = e
+        code iterate { (pc, i) ⇒
             val opcode = i.opcode
             instructions.writeByte(opcode)
 

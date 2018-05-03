@@ -28,11 +28,13 @@
  */
 package org.opalj
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayStack
+import java.util.function.IntFunction
 
+import scala.collection.mutable.ArrayStack
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.collection.mutable.AnyRefArrayStack
+import org.opalj.collection.mutable.AnyRefArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 
@@ -198,13 +200,17 @@ package object graphs {
         closedSCCs(g.vertices, g.asTraversable)
     }
 
-    private type DFSNum = Int // always a positive number >= 0
-    private type CSCCId = Int // always a positive number >= 1
-
-    private[this] val Undetermined: CSCCId = -1
-
     /**
      * Identifies closed strongly connected components in directed (multi-)graphs.
+     *
+     * A closed strongly connected component (cSCC) is a non-empty set of nodes of a graph where
+     * each node belonging to the cSCC can explicitly be reached from another node and no node
+     * contains an edge to some node that does not belong to the same cSCC.
+     *
+     * @note    This implementation can handle (arbitrarily degenerated) graphs with up to
+     *          Int.MaxValue nodes (if the VM is given enough memory!)
+     *
+     * Every such set is necessarily minimal/maximal.
      *
      * @tparam N The type of the graph's nodes. The nodes have to correctly implements equals
      *         and hashCode.
@@ -212,12 +218,144 @@ package object graphs {
      * @param  es A function that, given a node, returns all successor nodes. Basically, the edges
      *         of the graph.
      */
+    def closedSCCs[N >: Null <: AnyRef](
+        ns: Traversable[N],
+        es: N ⇒ Traversable[N]
+    ): List[Iterable[N]] = {
+
+        val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
+        def setDFSNum(n: N, i: Int): Unit = nDFSNums.put(n, i)
+        def hasDFSNum(n: N): Boolean = nDFSNums.containsKey(n)
+        def dfsNum(n: N): Int = nDFSNums.getInt(n)
+
+        // Core Idea: perform depth-first search
+        val ProcessedNodeNum: Int = -1
+        val PathSegmentSeparator: Null = null
+
+        val workstack = new AnyRefArrayStack[N](8) //mutable.ArrayStack.empty[N]
+        val path = new AnyRefArrayBuffer[N](16)
+
+        var cSCCs = List.empty[Iterable[N]]
+
+        var nextDFSNum = ProcessedNodeNum + 1 // the next (not yet used) dfsNum
+
+        def dfs(initialN: N): Unit = {
+
+            var initialDFSNum: Int = nextDFSNum
+
+            path.resetSize()
+
+            workstack.resetSize()
+            workstack.push(initialN)
+
+            def markPathAsProcessed(): Unit = {
+                path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
+                path.resetSize()
+            }
+            def addToPath(n: N): Unit = {
+                if (path.isEmpty) {
+                    // This happens if we have identified a path which does not end
+                    // in a cSCC and we have killed the path.
+                    initialDFSNum = nextDFSNum
+                }
+                path += n
+                setDFSNum(n, nextDFSNum)
+                nextDFSNum += 1
+            }
+
+            while (workstack.nonEmpty) {
+                val n = workstack.pop()
+                if (n == PathSegmentSeparator) {
+                    // We have visited all child elements of the "previous element";
+                    // we can now report a path, if we have one (note that we eagerly kill
+                    // non-cSCC paths and hence every path that still exists, is a valid path...
+                    // however, we have to ensure that we have visited _all_ successors belonging
+                    // to the current candidate cSCC)
+                    val n = workstack.pop()
+                    if (path.nonEmpty) {
+                        val nDFSNum = dfsNum(n)
+                        val cSCCDFSNum = dfsNum(path.last)
+                        assert(cSCCDFSNum != ProcessedNodeNum)
+
+                        if (nDFSNum != cSCCDFSNum) {
+                            // This is the trivial case... obviously the end of the path is a
+                            // closed SCC.
+                            // ALTERNATIVE: val cSCC = path.dropWhile(n ⇒ dfsNum(n) != cSCCDFSNum)
+                            val cSCC = path.slice(startIndex = cSCCDFSNum - initialDFSNum)
+                            cSCCs ::= cSCC
+                            markPathAsProcessed()
+                        } else {
+
+                            // Test if we are done exploring all paths potentially related to
+                            // the cSCC...
+                            // ALTERNATIVE CHECK:
+                            //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
+                            val cSCCandidate = path.iterator(startIndex = cSCCDFSNum - initialDFSNum)
+                            if (workstack.isEmpty ||
+                                cSCCandidate.forall(n ⇒
+                                    es(n).forall(succN ⇒
+                                        hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/
+                                    ))) {
+                                cSCCs ::= path.slice(startIndex = cSCCDFSNum - initialDFSNum)
+                                markPathAsProcessed()
+                            }
+                        }
+                    }
+                } else if (hasDFSNum(n)) {
+                    // this node was visited before....
+
+                    val nDFSNum = dfsNum(n)
+                    if (nDFSNum < initialDFSNum) {
+                        // The current node either belongs to a (previously identified) path which
+                        // ends in a node with no outgoing edges or belongs to a (previously)
+                        // identified cSCC; hence, all nodes on the path cannot be part of
+                        // a(nother) cSCC.
+                        markPathAsProcessed()
+                    } else {
+                        // We have found a new cycle; we now use the dfs num to mark
+                        // all nodes as belonging to the cycle.
+                        val startPathIndex = nDFSNum - initialDFSNum // the (start) index of the cycle
+                        var pathIndex = path.length - 1
+                        if (dfsNum(path(pathIndex)) != nDFSNum) { // test if the node are already correctly marked
+                            while (pathIndex >= startPathIndex) {
+                                setDFSNum(path(pathIndex), nDFSNum)
+                                pathIndex -= 1
+                            }
+                        }
+                    }
+
+                } else {
+                    // The node was not visited before; we are extending our path
+                    addToPath(n)
+
+                    val succNs = es(n)
+                    if (succNs.nonEmpty) {
+                        workstack.push(n)
+                        workstack.push(PathSegmentSeparator: N)
+                        workstack ++= succNs
+                    } else {
+                        // We have a path which leads to a node with no outgoing edge;
+                        // hence, all nodes on the path cannot be part of a cSCC.
+                        markPathAsProcessed()
+                    }
+                }
+            }
+            assert(path.isEmpty)
+        }
+
+        ns.foreach(n ⇒ if (!hasDFSNum(n)) dfs(n))
+        cSCCs
+    }
+
+    /*
+    private[this] val Undetermined: Int = -1
+
     final def closedSCCs[N >: Null <: AnyRef](
         ns: Traversable[N],
         es: N ⇒ Traversable[N]
     ): List[Iterable[N]] = {
 
-        case class NInfo(dfsNum: DFSNum, var cSCCId: CSCCId = Undetermined) {
+        case class NInfo(dfsNum: Int, var cSCCId: Int = Undetermined) {
             override def toString: String = {
                 val cSCCId = this.cSCCId match {
                     case Undetermined ⇒ "Undetermined"
@@ -229,38 +367,26 @@ package object graphs {
 
         val nodeInfo: mutable.HashMap[N, NInfo] = mutable.HashMap.empty
 
-        def setDFSNum(n: N, dfsNum: DFSNum): Unit = {
-            assert(nodeInfo.get(n).isEmpty)
+        def setDFSNum(n: N, dfsNum: Int): Unit = {
             nodeInfo.put(n, NInfo(dfsNum))
         }
         val hasDFSNum: (N) ⇒ Boolean = (n: N) ⇒ nodeInfo.get(n).isDefined
-        val dfsNum: (N) ⇒ DFSNum = (n: N) ⇒ nodeInfo(n).dfsNum
-        val setCSCCId: (N, CSCCId) ⇒ Unit = (n: N, cSCCId: CSCCId) ⇒ nodeInfo(n).cSCCId = cSCCId
-        val cSCCId: (N) ⇒ CSCCId = (n: N) ⇒ nodeInfo(n).cSCCId
+        val dfsNum: (N) ⇒ Int = (n: N) ⇒ nodeInfo(n).dfsNum
+        val setCSCCId: (N, Int) ⇒ Unit = (n: N, cSCCId: Int) ⇒ nodeInfo(n).cSCCId = cSCCId
+        val cSCCId: (N) ⇒ Int = (n: N) ⇒ nodeInfo(n).cSCCId
 
         closedSCCs(ns, es, setDFSNum, hasDFSNum, dfsNum, setCSCCId, cSCCId)
     }
 
-    /**
-     * A closed strongly connected component (cSCC) is a set of nodes of a graph where each node
-     * belonging to the cSCC can be reached from another node and no node contains an edge to
-     * another node that does not belong to the cSCC.
-     *
-     * @note    This implementation can handle (arbitrarily degenerated) graphs with up to
-     *          Int.MaxValue nodes (if the VM is given enough memory!)
-     *
-     * Every such set is necessarily minimal/maximal.
-     */
     def closedSCCs[N >: Null <: AnyRef](
         ns:        Traversable[N],
         es:        N ⇒ Traversable[N],
-        setDFSNum: (N, DFSNum) ⇒ Unit,
+        setDFSNum: (N, Int) ⇒ Unit,
         hasDFSNum: (N) ⇒ Boolean,
-        dfsNum:    (N) ⇒ DFSNum,
-        setCSCCId: (N, CSCCId) ⇒ Unit,
-        cSCCId:    (N) ⇒ CSCCId
+        dfsNum:    (N) ⇒ Int,
+        setCSCCId: (N, Int) ⇒ Unit,
+        cSCCId:    (N) ⇒ Int
     ): List[Iterable[N]] = {
-
         /* The following is not a strict requirement, more an expectation (however, (c)sccs
          * not reachable from a node in ns will not be detected!
         assert(
@@ -268,8 +394,6 @@ package object graphs {
             "the graph references nodes which are not in the set of all nodes"
         )
         */
-
-        // IMPROVE Instead of associating every node with its cSCCID it is also conceivable to just store the respective boundary nodes where a new cSCC candidate starts!
 
         // The algorithm used to compute the closed scc is loosely inspired by:
         // Information Processing Letters 74 (2000) 107–114
@@ -293,7 +417,7 @@ package object graphs {
          * node that does not belong to the SCC and try to determine if it is connected to some
          * previous SCC. If so, we merge all nodes as they belong to the same SCC.
          */
-        def dfs(initialDFSNum: DFSNum, n: N): DFSNum = {
+        def dfs(initialDFSNum: Int, n: N): Int = {
             if (hasDFSNum(n))
                 return initialDFSNum;
 
@@ -302,10 +426,10 @@ package object graphs {
             var nextDFSNum = thisPathFirstDFSNum
             var nextCSCCId = 1
             val path = mutable.ArrayBuffer.empty[N]
-            val worklist = mutable.Stack.empty[N] // IMPROVE replace by AnyRefArrayStack
+            val worklist = mutable.ArrayStack.empty[N]
 
             // HELPER METHODS
-            def addToPath(n: N): DFSNum = {
+            def addToPath(n: N): Int = {
                 assert(!hasDFSNum(n))
                 val dfsNum = nextDFSNum
                 setDFSNum(n, dfsNum)
@@ -313,13 +437,15 @@ package object graphs {
                 nextDFSNum += 1
                 dfsNum
             }
-            def pathLength = nextDFSNum - initialDFSNum // <=> path.length
+            def pathLength = path.length
             def killPath(): Unit = { path.clear(); thisPathFirstDFSNum = nextDFSNum }
             def reportPath(p: Iterable[N]): Unit = { cSCCs ::= p }
 
             // INITIALIZATION
             addToPath(n)
-            worklist.push(n).push(PathElementSeparator).pushAll(es(n))
+            worklist.push(n)
+            worklist.push(PathElementSeparator)
+            worklist ++= es(n)
 
             // PROCESSING
             while (worklist.nonEmpty) {
@@ -417,8 +543,8 @@ package object graphs {
         ns.foldLeft(0)((initialDFSNum, n) ⇒ dfs(initialDFSNum, n))
 
         cSCCs
-
     }
+    */
 
     /**
      * Implementation of Tarjan's algorithm for finding strongly connected components. Compared
@@ -454,8 +580,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               Int ⇒ IntIterator,
-        filterSingletons: Boolean           = false
+        es:               IntFunction[IntIterator], // Int ⇒ IntIterator,
+        filterSingletons: Boolean                  = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION

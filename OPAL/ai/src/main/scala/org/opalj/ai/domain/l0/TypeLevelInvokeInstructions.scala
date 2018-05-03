@@ -48,7 +48,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
 
     /*override*/ def invokevirtual(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ReferenceType,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -58,7 +58,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     }
 
     /*override*/ def invokeinterface(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -68,7 +68,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     }
 
     /*override*/ def invokespecial(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -79,7 +79,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     }
 
     /*override*/ def invokestatic(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -90,7 +90,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     }
 
     /*override*/ def invokedynamic(
-        pc:               PC,
+        pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,
         methodDescriptor: MethodDescriptor,

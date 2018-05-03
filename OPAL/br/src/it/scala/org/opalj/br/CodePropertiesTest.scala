@@ -91,7 +91,7 @@ class CodePropertiesTest extends FunSuite {
             )
 
             for {
-                (pc, instruction) ← code
+                PCAndInstruction(pc, instruction) ← code
                 if instruction.isReturnInstruction
                 // The bytecode of the scala...typechecker.Typers$Typer.$deserializeLambda$ method
                 // is invalid. The "primary" code is duplicated in an exception handler and the
@@ -113,7 +113,7 @@ class CodePropertiesTest extends FunSuite {
                 }
             }
 
-            for { (pc, LocalVariableAccess(i, isRead)) ← code } {
+            for { PCAndInstruction(pc, LocalVariableAccess(i, isRead)) ← code } {
                 val isLive = liveVariables(pc).contains(i)
                 if (isRead)
                     assert(isLive, s"$i is not live at $pc in ${method.toJava}")

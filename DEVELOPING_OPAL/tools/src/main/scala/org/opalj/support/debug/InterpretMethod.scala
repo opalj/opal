@@ -261,14 +261,14 @@ object InterpretMethod {
                             ) +
                                 XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
                                 (
-                                    if (result.subroutineInstructions.nonEmpty) {
+                                    if (result.subroutinePCs.nonEmpty) {
                                         XHTML.instructionsToXHTML(
-                                            "Subroutine instructions", result.subroutineInstructions
+                                            "Subroutine instructions", result.subroutinePCs
                                         )
                                     } else {
                                         ""
                                     }
-                                ) + XHTML.evaluatedInstructionsToXHTML(result.evaluated)
+                                ) + XHTML.evaluatedInstructionsToXHTML(result.evaluatedPCs)
                     ),
                     result.domain
                 )(result.cfJoins, result.operandsArray, result.localsArray),
@@ -297,7 +297,7 @@ object InterpretMethod {
                         s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>"+
                             parameters+
                             "Current instruction: "+ife.pc+"<br>"+
-                            XHTML.evaluatedInstructionsToXHTML(ife.evaluated) + {
+                            XHTML.evaluatedInstructionsToXHTML(ife.evaluatedPCs) + {
                                 if (ife.worklist.nonEmpty)
                                     ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                                 else

@@ -60,6 +60,8 @@ case class GETFIELD(
 
     final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = -1 + fieldType.computationalType.operandSize
@@ -70,7 +72,7 @@ case class GETFIELD(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

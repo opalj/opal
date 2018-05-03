@@ -76,8 +76,10 @@ class OPALThreadPoolExecutor(
             try {
                 r.asInstanceOf[JFuture[_]].get()
             } catch {
-                case ce: CancellationException ⇒ e = ce
-                case ee: ExecutionException    ⇒ e = ee.getCause();
+                case ce: CancellationException ⇒
+                    e = ce
+                case ee: ExecutionException ⇒
+                    e = ee.getCause()
                 case ie: InterruptedException ⇒
                     e = ie
                     Thread.currentThread().interrupt(); // ignore/reset

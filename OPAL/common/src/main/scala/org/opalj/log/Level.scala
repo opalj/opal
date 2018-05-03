@@ -57,7 +57,7 @@ case object Info extends Level {
     def apply(info: String): LogMessage = BasicLogMessage(message = info)
 
     def apply(category: String, info: String): LogMessage = {
-        StandardLogMessage(category = Some(category), message = info)
+        new StandardLogMessage(Info, Some(category), info)
     }
 
     def ansiColorEscape: String = ""
@@ -73,10 +73,10 @@ case object Info extends Level {
  */
 case object Warn extends Level {
 
-    def apply(info: String): LogMessage = BasicLogMessage(level = Warn, message = info)
+    def apply(info: String): LogMessage = BasicLogMessage(Warn, info)
 
     def apply(category: String, info: String): LogMessage = {
-        StandardLogMessage(level = Warn, category = Some(category), message = info)
+        new StandardLogMessage(Warn, Some(category), info)
     }
 
     def ansiColorEscape: String = Console.BLUE
@@ -93,19 +93,43 @@ case object Warn extends Level {
  */
 case object Error extends Level {
 
-    def apply(info: String): LogMessage = BasicLogMessage(level = Error, message = info)
+    def apply(info: String): LogMessage = BasicLogMessage(Error, info)
 
     def apply(category: String, info: String): LogMessage = {
-        StandardLogMessage(level = Error, category = Some(category), message = info)
+        new StandardLogMessage(Error, Some(category), info)
     }
 
     def apply(category: String, info: String, t: Throwable): LogMessage = {
-        ExceptionLogMessage(level = Error, category = Some(category), info, t)
+        try {
+            new ExceptionLogMessage(Error, Some(category), info, t)
+        } catch {
+            case it: Throwable ⇒
+                Console.err.println(
+                    s"[fatal][OPAL] logging [error][$category] $info: ${t.getMessage} failed:"
+                )
+                it.printStackTrace(Console.err)
+                BasicLogMessage(Fatal, it.getMessage)
+        }
     }
 
     def ansiColorEscape: String = Console.RED
 
     def id: String = "error"
+
+    def value: Int = Int.MaxValue - 1000
+}
+
+case object Fatal extends Level {
+
+    def apply(info: String): LogMessage = new BasicLogMessage(Fatal, info)
+
+    def apply(category: String, info: String): LogMessage = {
+        new StandardLogMessage(Fatal, Some(category), info)
+    }
+
+    def ansiColorEscape: String = Console.RED + Console.YELLOW_B
+
+    def id: String = "fatal"
 
     def value: Int = Int.MaxValue
 }

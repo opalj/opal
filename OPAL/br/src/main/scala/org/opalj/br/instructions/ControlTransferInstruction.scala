@@ -39,6 +39,8 @@ trait ControlTransferInstructionLike extends InstructionLike {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def expressionResult: NoExpression.type = NoExpression
 
     final override def isControlTransferInstruction: Boolean = true
@@ -64,7 +66,7 @@ trait ControlTransferInstruction extends Instruction with ControlTransferInstruc
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC]
 
     final override def asControlTransferInstruction: ControlTransferInstruction = this

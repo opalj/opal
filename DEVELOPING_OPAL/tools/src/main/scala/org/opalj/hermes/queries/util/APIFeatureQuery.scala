@@ -140,22 +140,21 @@ trait APIFeatureQuery extends FeatureQuery {
             if !isInterrupted()
             source ← project.source(cf)
             m @ MethodWithBody(code) ← cf.methods
-            (pc, mii @ MethodInvocationInstruction(declClass, _, name, methodDescriptor)) ← code
+            pcAndInvocation ← code collect { case mii: MethodInvocationInstruction ⇒ mii }
+            pc = pcAndInvocation.pc
+            mii = pcAndInvocation.value
+            declClass = mii.declaringClass
             if declClass.isObjectType
             if apiTypes.contains(declClass.asObjectType)
             apiFeature ← apiFeatures
             featureID = apiFeature.featureID
             APIMethod ← apiFeature.apiMethods
+            if APIMethod.matches(mii)
         } {
-            mii match {
-                case APIMethod() ⇒
-                    val l = InstructionLocation(source, m, pc)
-                    locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
-                    val count = occurrencesCount(featureID) + 1
-                    occurrencesCount = occurrencesCount + ((featureID, count))
-
-                case _ ⇒ /* irrelevant method */
-            }
+            val l = InstructionLocation(source, m, pc)
+            locations += ((featureID, l :&: locations.getOrElse(featureID, Naught)))
+            val count = occurrencesCount(featureID) + 1
+            occurrencesCount = occurrencesCount + ((featureID, count))
         }
 
         apiFeatures.map { apiFeature ⇒

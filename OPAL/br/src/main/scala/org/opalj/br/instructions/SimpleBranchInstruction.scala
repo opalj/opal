@@ -47,7 +47,7 @@ trait SimpleBranchInstruction extends ControlTransferInstruction with SimpleBran
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC] = {
         Iterator(branchoffset + currentPC)
     }

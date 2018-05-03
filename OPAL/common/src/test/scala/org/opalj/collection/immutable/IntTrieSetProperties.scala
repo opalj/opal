@@ -56,7 +56,11 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
         Gen.sized { l ⇒
-            (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100000) - 50000 }
+            val s = (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒
+                val nextValue = r.nextInt(75000) - 25000
+                c + (if (n % 2 == 0) nextValue else -nextValue - 100000)
+            }
+            s
         }
     }
 
@@ -67,16 +71,21 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     // NOT TO BE USED BY TESTS THAT TEST THE CORRECT CONSTRUCTION!
     implicit val arbIntTrieSet: Arbitrary[IntTrieSet] = Arbitrary {
         Gen.sized { l ⇒
-            (0 until l).foldLeft(IntTrieSet.empty) { (c, n) ⇒ c + r.nextInt(100000) - 50000 }
+            (0 until l).foldLeft(IntTrieSet.empty) { (c, n) ⇒
+                val nextValue = r.nextInt(75000) - 25000
+                c + (if (n % 2 == 0) nextValue else -nextValue - 100000)
+            }
         }
     }
 
     implicit val arbPairOfIntArraySet: Arbitrary[(IntArraySet, IntArraySet)] = Arbitrary {
         Gen.sized { l ⇒
-            (
-                (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 },
-                (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 }
-            )
+            Gen.sized { j ⇒
+                (
+                    (0 until l).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 },
+                    (0 until j).foldLeft(IntArraySet.empty) { (c, n) ⇒ c + r.nextInt(100) - 50 }
+                )
+            }
         }
     }
 
@@ -85,20 +94,38 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("create singleton IntTrieSet") = forAll { v: Int ⇒
         val factoryITS = IntTrieSet1(v)
-        val directITS = new IntTrieSet1(v)
         val viaEmptyITS = EmptyIntTrieSet + v
         factoryITS.size == 1 &&
             factoryITS.isSingletonSet &&
             !factoryITS.isEmpty &&
             !factoryITS.hasMultipleElements &&
             factoryITS.head == v &&
-            factoryITS == directITS &&
-            directITS == viaEmptyITS &&
-            directITS.hashCode == viaEmptyITS.hashCode
+            viaEmptyITS.hashCode == factoryITS.hashCode &&
+            viaEmptyITS == factoryITS
     }
 
-    property("create IntTrieSet from Set (i.e., no duplicates)") = forAll { s: IntArraySet ⇒
+    property("create IntTrieSet from Set step by step") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        (its.size == s.size) :| "matching size" &&
+            (its.isEmpty == s.isEmpty) &&
+            (its.nonEmpty == s.nonEmpty) &&
+            (its.hasMultipleElements == (s.size > 1)) &&
+            (its.isSingletonSet == (s.size == 1)) &&
+            (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
+    }
+
+    property("create IntTrieSet from IntSet using ++") = forAll { s: IntTrieSet ⇒
+        val its = EmptyIntTrieSet ++ s
+        (its.size == s.size) :| "matching size" &&
+            (its.isEmpty == s.isEmpty) &&
+            (its.nonEmpty == s.nonEmpty) &&
+            (its.hasMultipleElements == (s.size > 1)) &&
+            (its.isSingletonSet == (s.size == 1)) &&
+            (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
+    }
+
+    property("create IntTrieSet from Set[Int] using ++") = forAll { s: Set[Int] ⇒
+        val its = EmptyIntTrieSet ++ s
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
             (its.nonEmpty == s.nonEmpty) &&
@@ -121,7 +148,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("mkString") = forAll { (s: Set[Int], pre: String, in: String, post: String) ⇒
+    property("mkString(String,String,String)") = forAll { (s: Set[Int], pre: String, in: String, post: String) ⇒
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val itsString = its.mkString(pre, in, post)
         val sString = its.iterator.mkString(pre, in, post)
@@ -129,6 +156,15 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         ((itsString.length == sString.length) :| "length of generated string (its vs s)") &&
             ((itsString.length == lString.length) :| "length of generated string (its vs l)") &&
             itsString.startsWith(pre) && itsString.endsWith(post)
+    }
+
+    property("mkString(String)") = forAll { (s: Set[Int], in: String) ⇒
+        val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        val itsString = its.mkString(in)
+        val sString = its.iterator.mkString(in)
+        val lString = s.mkString(in)
+        ((itsString.length == sString.length) :| "length of generated string (its vs s)") &&
+            ((itsString.length == lString.length) :| "length of generated string (its vs l)")
     }
 
     property("contains") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
@@ -140,8 +176,22 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     property("foreach") = forAll { s: IntArraySet ⇒
         val its = EmptyIntTrieSet ++ s.iterator
         var newS = IntArraySet.empty
-        its.foreach { newS += _ } // use foreach to compute a new set
+        its foreach { newS += _ } // use foreach to compute a new set
         s == newS
+    }
+
+    property("foreachPair") = forAll { s: IntArraySet ⇒
+        val its = EmptyIntTrieSet ++ s.iterator
+        var itsPairs = Set.empty[(Int, Int)]
+        its foreachPair { (p1: Int, p2: Int) ⇒
+            if (p1 < p2)
+                itsPairs += ((p1, p2))
+            else
+                itsPairs += ((p2, p1))
+        }
+        var sPairs = Set.empty[(Int, Int)]
+        s foreachPair { (p1: Int, p2: Int) ⇒ sPairs += ((p1, p2)) }
+        (sPairs == itsPairs) :| s"$sPairs vs. $itsPairs"
     }
 
     property("map") = forAll { s: IntArraySet ⇒
@@ -154,10 +204,17 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
+    property("transform") = forAll { s: IntTrieSet ⇒
+        val its = s.transform(_ * 2, Chain.newBuilder[Int]).toIterator.toList.sorted
+        its == s.map(_ * 2).iterator.toList.sorted
+    }
+
     property("exists") = forAll { s: IntArraySet ⇒
         val its = EmptyIntTrieSet ++ s.iterator
-        s.forall(v ⇒ its.exists(_ == v)) &&
-            s.forall(v ⇒ its.exists(_ != v) == s.exists(_ != v))
+        classify(its.isEmpty, "the set is empty") {
+            s.forall(v ⇒ its.exists(_ == v)) &&
+                s.forall(v ⇒ its.exists(_ != v) == s.exists(_ != v))
+        }
     }
 
     property("forall") = forAll { s: IntArraySet ⇒
@@ -180,7 +237,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = Chain.empty[Int]
         while (its.nonEmpty) {
-            val (v, newIts) = its.getAndRemove
+            val IntHeadAndRestOfSet(v, newIts) = its.getAndRemove
             removed :&:= v
             its = newIts
         }
@@ -194,8 +251,10 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             val arrayOfITSets = arrayOfSets.map(s ⇒ IntTrieSet.empty ++ s.iterator)
             val l = arrayOfSets.length
 
-            val flatMappedITSet = arrayOfITSets(0).flatMap(v ⇒ arrayOfITSets(v % l))
-            val flatMappedSSet = arrayOfSets(0).flatMap(v ⇒ arrayOfSets(v % l))
+            val flatMappedITSet = arrayOfITSets(0).flatMap(v ⇒
+                arrayOfITSets(Math.abs(v) % l))
+            val flatMappedSSet = arrayOfSets(0).flatMap(v ⇒
+                arrayOfSets(Math.abs(v) % l))
 
             classify(flatMappedSSet.size > 50, "set with more than 50 elements") {
                 classify(flatMappedSSet.size < listOfSets.map(_.size).sum, "flat map is not the join of all sets") {
@@ -224,11 +283,27 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         // IMPROVE add content based test
     }
 
-    property("subsetOf") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Int) ⇒
+        val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
+        val its2 = s1.foldLeft(IntTrieSet.empty)(_ + _) + i
+        classify(its1.size == 0, "its1 is empty") {
+            classify(its1.size == 1, "its1.size == 1") {
+                classify(its1.size == 2, "its1.size == 2") {
+                    classify(its1.size == its2.size, "its1 == its2") {
+                        its1.subsetOf(its2) == its1.iterator.toSet.subsetOf(its2.iterator.toSet)
+                    }
+                }
+            }
+        }
+    }
+
+    property("subsetOf (always succeeding)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
         val mergedIts = its1 ++ its2
-        its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
+        classify(its1.size == mergedIts.size, "its1 and its1 merged with its2 are different") {
+            its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
+        }
     }
 
     property("filter (identity if no value is filtered)") = forAll { s: IntTrieSet ⇒
@@ -261,7 +336,9 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val (ias1, ias2) = ps
         val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
         val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
-        (s1 intersect s2) == s1.foldLeft(IntTrieSet.empty)((c, n) ⇒ if (s2.contains(n)) c + n else c)
+        val expected = s1.foldLeft(IntTrieSet.empty)((c, n) ⇒ if (s2.contains(n)) c + n else c)
+        (s1 intersect s2) == expected &&
+            (s2 intersect s1) == expected
     }
 
     property("- (all elements)") = forAll { s: IntArraySet ⇒
@@ -295,6 +372,166 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
 @RunWith(classOf[JUnitRunner])
 class IntTrieSetTest extends FunSpec with Matchers {
+
+    describe("the subset of relation") {
+        it("should correctly work for empty set related comparisons") {
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet.empty))
+            assert((IntTrieSet(1) - 1).subsetOf(IntTrieSet.empty))
+            assert((IntTrieSet(1) - 1).subsetOf(IntTrieSet(1)))
+            assert((IntTrieSet(1, 2, 3) - 1 - 2 - 3).subsetOf(IntTrieSet(1)))
+
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1)))
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 2)))
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 3, 4, 5)))
+
+        }
+
+        it("should correctly work for set1 related comparisons") {
+            assert(IntTrieSet.empty.subsetOf(IntTrieSet1(1)))
+            assert(!IntTrieSet(2).subsetOf(IntTrieSet.empty))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1)))
+            assert(!IntTrieSet(2).subsetOf(IntTrieSet(3)))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1, 2)))
+            assert(IntTrieSet(2).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(3).subsetOf(IntTrieSet(1, 2)))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(2).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(4).subsetOf(IntTrieSet(1, 2, 3)))
+
+            assert(IntTrieSet(1).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+        }
+
+        it("should correctly work for set2 related comparisons") {
+            assert(!IntTrieSet(1, 2).subsetOf(IntTrieSet.empty))
+            assert(!IntTrieSet(1, 2).subsetOf(IntTrieSet(1)))
+
+            assert(IntTrieSet(1, 2).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(2, 3).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(1, 3).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(-1, 1).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(-1, 2).subsetOf(IntTrieSet(1, 2)))
+
+            assert(IntTrieSet(1, 2).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(1, 3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(IntTrieSet(2, 3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(-1, 2).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(1, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(2, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(3, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(0, 4).subsetOf(IntTrieSet(1, 2, 3)))
+
+            assert(IntTrieSet(1, 2).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2, 3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(-1, 2).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(1, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(2, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(3, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(4, 5).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(0, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+        }
+
+        it("should correctly work for set3 related comparisons") {
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet.empty))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(0)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(0, 5)))
+
+            assert(IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 0)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 0)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 0)))
+
+            assert(IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 2, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(1, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(IntTrieSet(2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 2, 0, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(2, 3, 0, 5)))
+            assert(!IntTrieSet(1, 2, 3).subsetOf(IntTrieSet(1, 3, 0, 5)))
+        }
+
+        it("should correctly work for set4 related comparisons") {
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet.empty))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(0, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 0)))
+
+            assert(IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 4)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, 5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, 0)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, -5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, -5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, -5)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 4, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 3, 4, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(1, 2, 3, -2)))
+            assert(!IntTrieSet(1, 2, 3, 4).subsetOf(IntTrieSet(2, 3, 4, -2)))
+        }
+
+        it("should correctly work for set5+ related comparisons") {
+
+            // the following are derived from failing tests...
+
+            val s8a = IntTrieSet(-132967, -114794, -91882, -87887) + (-23059) + (-16654) + (-623) + 35514
+            val s8b = IntTrieSet(-90376, -83774, -82124, -81207) + (-18991) + (-5490) + 11406 + 11506
+            assert(!s8a.subsetOf(s8b))
+            assert(!s8b.subsetOf(s8a))
+
+            val s18 = IntTrieSet.empty ++ List(-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val s18_plus_m1 = s18 + (-1)
+            assert(s18.subsetOf(s18_plus_m1), s"$s18 expected to be subset of $s18_plus_m1")
+
+            val s4 = IntTrieSet(-149916, -118018, -102540, -91539)
+            val s4_plus_0 = s4 + 0
+            assert(s4.subsetOf(s4_plus_0), s"$s4 expected to be subset of $s4_plus_0")
+        }
+    }
 
     describe("create an IntTrieSet from four values") {
 
@@ -362,11 +599,77 @@ class IntTrieSetTest extends FunSpec with Matchers {
     }
 
     describe("create an IntTrieSet from one value") {
-
         it("should contain the value") {
             assert(IntTrieSet(1).head == 1)
         }
+    }
 
+    describe("regression tests") {
+        it("should implement contains correctly") {
+            val s = IntTrieSet(-149916, -102540, -118018, -91539) + 0
+            assert(s.contains(-149916))
+            assert(s.contains(-102540))
+            assert(s.contains(-118018))
+            assert(s.contains(-91539))
+            assert(s.contains(0))
+
+        }
+    }
+
+    describe("processing an IntTrieSet which is leaning to the right") {
+
+        val s = IntTrieSet(8192) + 16384 + 32768 + 65536 + 131072
+
+        it("it should contain the given values") {
+            assert(s.contains(8192))
+            assert(s.contains(16384))
+            assert(s.contains(32768))
+            assert(s.contains(65536))
+            assert(s.contains(131072))
+        }
+
+        it("it should be able to eagerly filter the values") {
+            val s1 = s.filter(_ != 8192)
+            assert(!s1.contains(8192))
+            assert(s1.contains(16384))
+            assert(s1.contains(32768))
+            assert(s1.contains(65536))
+            assert(s1.contains(131072))
+
+            val s2 = s1.filter(_ != 32768)
+            assert(s2.contains(16384))
+            assert(!s2.contains(32768))
+            assert(s2.contains(65536))
+            assert(s2.contains(131072))
+
+            val s3 = s2.filter(_ != 131072)
+            assert(s3.contains(16384))
+            assert(s3.contains(65536))
+            assert(!s3.contains(131072))
+        }
+
+        it("it should be possible to lazily filter the values step by step") {
+            val s1 = s.withFilter(_ != 8192)
+            assert(!s1.contains(8192))
+            assert(s1.contains(16384))
+            assert(s1.contains(32768))
+            assert(s1.contains(65536))
+            assert(s1.contains(131072))
+
+            val s2 = s1.withFilter(_ != 32768)
+            assert(!s2.contains(8192))
+            assert(s2.contains(16384))
+            assert(!s2.contains(32768))
+            assert(s2.contains(65536))
+            assert(s2.contains(131072))
+
+            val s3 = s2.withFilter(_ != 131072)
+            assert(!s3.contains(8192))
+            assert(s3.contains(16384))
+            assert(!s3.contains(32768))
+            assert(s3.contains(65536))
+            assert(!s3.contains(131072))
+        }
     }
 
     describe("filtering an IntTrieSet where the values share a very long prefix path") {

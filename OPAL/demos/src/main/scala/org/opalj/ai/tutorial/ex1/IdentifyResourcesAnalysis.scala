@@ -29,12 +29,14 @@
 package org.opalj.ai.tutorial.ex1
 
 import java.net.URL
+
 import org.opalj.collection.immutable.:&:
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 import org.opalj.ai._
+import org.opalj.collection.immutable.Chain
 
 /**
  * @author Michael Eichberg
@@ -81,16 +83,18 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
                 (m, body) ← cf.methodsWithBody
             } yield {
                 val pcs =
-                    body.collectWithIndex {
-                        case (
-                            pc,
-                            INVOKESPECIAL(
+                    body.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) ⇒
+                        instruction match {
+                            case INVOKESPECIAL(
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,
                                 "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                            ) ⇒ pc
+                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                ) ⇒
+                                pc :&: pcs
+                            case _ ⇒
+                                pcs
+                        }
                     }
-
                 (m, pcs)
             }).filter(_._2.size > 0)
         } { ns ⇒ println(s"Finding candidates took: ${ns.toSeconds}") }
@@ -108,7 +112,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
             } yield (m, pc, value)
         } { ns ⇒ println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-        def callSiteToString(callSite: (Method, PC, String)): String = {
+        def callSiteToString(callSite: (Method, Int /* PC*/ , String)): String = {
             val (m, pc, v) = callSite
             m.toJava(s"$pc: $v")
         }

@@ -38,7 +38,6 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.Code
 import org.opalj.br.Type
 import org.opalj.br.ComputationalTypeReturnAddress
 
@@ -336,7 +335,7 @@ object ToTxt {
      */
     def apply(
         method:         Method,
-        classHierarchy: ClassHierarchy                                            = Code.BasicClassHierarchy,
+        classHierarchy: ClassHierarchy                                            = ClassHierarchy.PreInitializedClassHierarchy,
         aiResult:       Option[AIResult { val domain: Domain with RecordDefUse }] = None
     ): String = {
         (

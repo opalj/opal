@@ -88,7 +88,7 @@ object CFGFactory {
     def apply(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): CFG = {
 
         /*

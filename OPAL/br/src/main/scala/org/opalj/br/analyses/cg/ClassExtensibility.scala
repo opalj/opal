@@ -151,7 +151,7 @@ class DefaultClassExtensibility(val project: SomeProject) extends AbstractClassE
  *
  * Additional configuration has to be done using OPAL's configuration file. To specify
  * extensible classes/interfaces the following key has to be used:
- *      `[[ClassExtensibilityKey.ConfigKeyPrefix]] + extensibleClasses`
+ * `[[ClassExtensibilityKey.ConfigKeyPrefix]] + extensibleClasses`
  *
  * @example The following example configuration would consider `java/util/Math` and
  *          `com/example/Type` as ''extensible''.
@@ -173,12 +173,12 @@ class ConfiguredExtensibleClasses(val project: SomeProject) extends AbstractClas
 /**
  * Determines whether a type is directly extensible by a (yet unknown)
  * client application/library using the base analysis [[ClassExtensibility]]
- * and an explicitly configured list of final (not extensible) types; the list overrides the
- * findings of the analysis. This enables domain specific configurations.
+ * and an explicitly configured list of final (not extensible) types; the configuration
+ * is always considered first. This enables domain specific configurations.
  *
  * Additional configuration has to be done using OPAL's configuration file. To specify
  * classes/interfaces that are not extensible/that are final the following key has to be used:
- *      `[[ClassExtensibilityKey.ConfigKeyPrefix]] + finalClasses`
+ * `[[ClassExtensibilityKey.ConfigKeyPrefix]] + finalClasses`
  *
  * @example The following example configuration would consider `java/util/Math` and
  *          `com/exmaple/Type` as ''not extensible''.
@@ -196,3 +196,9 @@ class ConfiguredFinalClasses(val project: SomeProject) extends AbstractClassExte
         parseSpecifiedClassesList("finalClasses").iterator.map(t ⇒ (t, No))
     }
 }
+
+class ClassHierarchyIsNotExtensible(val project: SomeProject) extends ClassExtensibility {
+
+    def isClassExtensible(t: ObjectType): Answer = No
+}
+

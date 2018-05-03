@@ -29,8 +29,11 @@
 package org.opalj
 package graphs
 
-import scala.annotation.tailrec
+import java.util.function.IntFunction
+import java.util.function.IntConsumer
+import java.util.function.Consumer
 
+import scala.annotation.tailrec
 import org.opalj.collection.immutable.Chain
 
 /**
@@ -55,7 +58,7 @@ abstract class AbstractDominatorTree {
      *
      * Defined w.r.t. the (implicitly) augmented CFG.
      */
-    val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+    val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] //Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
 
     // PROPERTIES OF THE TREE
     //

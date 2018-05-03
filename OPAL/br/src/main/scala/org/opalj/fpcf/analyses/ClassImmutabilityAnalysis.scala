@@ -386,8 +386,7 @@ object ClassImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
         val classHierarchy = project.classHierarchy
         import propertyStore.handleResult
         import classHierarchy.allSubtypes
-        import classHierarchy.rootTypes
-        import classHierarchy.isInterface
+        import classHierarchy.rootClassTypes
         implicit val logContext: LogContext = project.logContext
 
         val analysis = new ClassImmutabilityAnalysis(project)
@@ -405,19 +404,18 @@ object ClassImmutabilityAnalysis extends FPCFEagerAnalysisScheduler {
         // 2.
         // All classes that do not have complete superclass information are mutable
         // due to the lack of knowledge.
-        val typesForWhichItMayBePossibleToComputeTheMutability =
-            allSubtypes(ObjectType.Object, reflexive = true)
-        val unexpectedRootTypes =
-            rootTypes.filter(rt ⇒ (rt ne ObjectType.Object) && isInterface(rt).isNo)
+        // But, for classes that directly inherit from Object, but which also
+        // implement unknown interface types it is possible to compute the class
+        // immutability
+        val unexpectedRootClassTypes = rootClassTypes.filter(rt ⇒ rt ne ObjectType.Object)
 
-        unexpectedRootTypes.flatMap(rt ⇒ allSubtypes(rt, reflexive = true)).view.
-            // For classes that directly inherit from Object, but which also
-            // implement unknown interface types it is possible to compute the class
-            // immutability
-            filter(ot ⇒ !typesForWhichItMayBePossibleToComputeTheMutability.contains(ot)).
-            foreach(ot ⇒ project.classFile(ot) foreach { cf ⇒
-                handleResult(Result(cf, MutableObjectDueToUnknownSupertypes))
-            })
+        unexpectedRootClassTypes foreach { rt ⇒
+            allSubtypes(rt, reflexive = true) foreach { ot ⇒
+                project.classFile(ot) foreach { cf ⇒
+                    handleResult(Result(cf, MutableObjectDueToUnknownSupertypes))
+                }
+            }
+        }
 
         // 3.
         // Compute the initial set of classes for which we want to determine the mutability.

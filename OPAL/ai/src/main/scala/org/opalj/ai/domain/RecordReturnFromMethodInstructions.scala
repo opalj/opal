@@ -56,7 +56,7 @@ trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     def allReturnFromMethodInstructions: PCs = returnFromMethodInstructions
 
     abstract override def areturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions += pc
@@ -64,7 +64,7 @@ trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def dreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions += pc
@@ -72,7 +72,7 @@ trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def freturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions += pc
@@ -80,7 +80,7 @@ trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def ireturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions += pc
@@ -88,20 +88,20 @@ trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     }
 
     abstract override def lreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions += pc
         super.lreturn(pc, value)
     }
 
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+    abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         returnFromMethodInstructions += pc
         super.returnVoid(pc)
     }
 
     // handles all kinds of abrupt method returns
-    abstract override def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit = {
+    abstract override def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
         returnFromMethodInstructions += pc
         super.abruptMethodExecution(pc, exception)
     }

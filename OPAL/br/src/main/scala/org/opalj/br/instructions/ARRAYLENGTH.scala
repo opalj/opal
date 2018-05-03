@@ -45,6 +45,8 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
 
     final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
+    final def mayThrowExceptions: Boolean = true
+
     final val length = 1
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
@@ -71,7 +73,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

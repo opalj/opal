@@ -145,6 +145,33 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
             isExtensible(pEfClassOt) should be(No)
         }
 
+        it("a non-final package visible class must be transitively extensible even if only one subtype"+
+            "is extensible") {
+
+            val rootOt = ObjectType(s"${testPackage}case5/TransitivelyExtensible")
+
+            val pClassOt = ObjectType(s"${testPackage}case5/PublicClass")
+            val pfClassOt = ObjectType(s"${testPackage}case5/PublicFinalClass")
+
+            isExtensible(pClassOt) should be(Yes)
+            isExtensible(pfClassOt) should be(No)
+
+            isExtensible(rootOt) should be(Yes)
+        }
+
+        it("a non-final package visible class must be transitively extensible even if only one subtype"+
+            "is extensible and the type hierarchy is large") {
+
+            val rootOt = ObjectType(s"${testPackage}case6/TransitivelyExtensible")
+
+            val directSt1 = ObjectType(s"${testPackage}case6/HiddenSubclass")
+            val directSt2 = ObjectType(s"${testPackage}case6/PublicFinalClass")
+
+            isExtensible(directSt1) should be(Yes)
+            isExtensible(directSt2) should be(No)
+
+            isExtensible(rootOt) should be(Yes)
+        }
     }
 
     describe("when a type belongs to an open package") {

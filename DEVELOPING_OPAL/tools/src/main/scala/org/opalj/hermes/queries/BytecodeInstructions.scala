@@ -73,9 +73,11 @@ object BytecodeInstructions extends FeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            (pc, i) ← body
+            pcAndInstruction ← body
         } {
-            instructionsLocations(i.opcode) += InstructionLocation(methodLocation, pc)
+            val instruction = pcAndInstruction.instruction
+            val pc = pcAndInstruction.pc
+            instructionsLocations(instruction.opcode) += InstructionLocation(methodLocation, pc)
         }
 
         for { (locations, opcode) ← instructionsLocations.iterator.zipWithIndex } yield {

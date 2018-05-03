@@ -67,7 +67,7 @@ trait CompoundConditionalBranchInstruction
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC] = {
         jumpOffsets.iterator.map(_ + currentPC) ++ Iterator(defaultOffset + currentPC)
     }

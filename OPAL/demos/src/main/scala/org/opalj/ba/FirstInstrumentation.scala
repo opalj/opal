@@ -45,6 +45,7 @@ import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.SWAP
 import org.opalj.br.reader.Java8Framework
 import org.opalj.util.InMemoryClassLoader
+import org.opalj.br.PCAndInstruction
 
 /**
  * Demonstrates how to perform a simple instrumentation; here, we just search for toString calls
@@ -73,7 +74,9 @@ object FirstInstrumentation extends App {
                     // let's search all "toString" calls
                     val lCode = LabeledCode(code)
                     var modified = false
-                    for ((pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code) {
+                    for {
+                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code
+                    } {
                         modified = true
                         lCode.insert(
                             pc, InsertionPosition.After,

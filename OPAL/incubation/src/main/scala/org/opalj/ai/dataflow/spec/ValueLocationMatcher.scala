@@ -31,6 +31,8 @@ package ai
 package dataflow
 package spec
 
+import org.opalj.collection.immutable.Chain
+
 import scala.collection.{Map, Set}
 
 //import bi.AccessFlagsMatcher
@@ -85,9 +87,17 @@ case class Calls(
             classFile ← project.allProjectClassFiles
             method ← classFile.methods
             body ← method.body
-            pc ← body collectWithIndex {
-                case (pc, MethodInvocationInstruction(receiver, _ /*isInterface*/ , name, descriptor)) if properties.isDefinedAt((receiver, name, descriptor)) &&
-                    properties((receiver, name, descriptor)) ⇒ pc
+            pc ← body.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) ⇒
+                instruction match {
+                    case MethodInvocationInstruction(
+                        receiver,
+                        _ /*isInterface*/ ,
+                        name,
+                        descriptor
+                        ) if properties.isDefinedAt((receiver, name, descriptor)) &&
+                        properties((receiver, name, descriptor)) ⇒ pc :&: pcs
+                    case _ ⇒ pcs
+                }
             }
         } {
             result.getOrElseUpdate(method, mutable.HashSet.empty) += pc

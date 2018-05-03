@@ -32,6 +32,7 @@ package domain
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Provides the generic infrastructure to register a function that updates the operands
@@ -53,19 +54,19 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     private[this] var onRegularControlFlow: List[DomainValueUpdater] = Nil
 
     abstract override def flow(
-        currentPC:                        PC,
+        currentPC:                        Int,
         currentOperands:                  Operands,
         currentLocals:                    Locals,
-        successorPC:                      PC,
+        successorPC:                      Int,
         isSuccessorScheduled:             Answer,
         isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed:                 Boolean,
-        worklist:                         List[PC],
+        worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
         tracer:                           Option[AITracer]
-    ): List[PC] = {
+    ): List[Int /*PC*/ ] = {
 
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
             val oldOperands = operandsArray(successorPC)
@@ -130,9 +131,9 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
     }
 
     override def evaluationCompleted(
-        pc:            PC,
-        worklist:      List[PC],
-        evaluated:     List[PC],
+        pc:            Int,
+        worklist:      List[Int /*PC*/ ],
+        evaluatedPCs:  IntArrayStack,
         operandsArray: OperandsArray,
         localsArray:   LocalsArray,
         tracer:        Option[AITracer]
@@ -142,7 +143,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         onRegularControlFlow = l
 
         super.evaluationCompleted(
-            pc, worklist, evaluated,
+            pc, worklist, evaluatedPCs,
             operandsArray, localsArray,
             tracer
         )

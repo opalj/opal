@@ -30,9 +30,9 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.function.IntFunction
 
 import scala.io.BufferedSource
 import scala.collection.AbstractIterator
@@ -41,8 +41,8 @@ import scala.collection.generic.Growable
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-
 import org.opalj.control.foreachNonNullValue
+import org.opalj.io.process
 import org.opalj.io.processSource
 import org.opalj.graphs.Node
 import org.opalj.log.Warn
@@ -103,8 +103,8 @@ import org.opalj.br.ObjectType.Object
  *          They only ''class type'' that is allowed to have a non-empty set of subinterfaces
  *          is `java.lang.Object`.
  *
- * @param   rootTypes  The set of ''all types'' which have no supertypes or for which we have no
- *          further supertype information because of an incomplete project.
+ * @param   rootTypes  The set of ''all types'' which have no supertypes or for which we have
+ *          no further supertype information because of an incomplete project.
  *          If the class hierarchy is complete then this set contains exactly one element and
  *          that element must identify `java.lang.Object`.
  *
@@ -184,13 +184,23 @@ class ClassHierarchy private (
      * If the class hierarchy is complete then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
+     * @note    `rootClassTypes` is not necessarily a subset of `rootTypes`. A class which
+     *          has an unknown super class, but implements a known interface is considered
+     *          to belong to `rootClassTypes` but is not a member of `rootTypes` because
+     *          some supertype information exists!
+     *
      * @note    If we load an application and all the jars used to implement it or a library
      *          and all the library it depends on then the class hierarchy '''should not'''
      *          contain multiple root types. However, the (complete) JDK contains some references
      *          to Eclipse classes which are not part of the JDK.
      */
     def rootClassTypes: Iterator[ObjectType] = {
-        rootTypes.iterator filter { objectType ⇒ !interfaceTypesMap(objectType.id) }
+        knownTypesMap.iterator filter { objectType ⇒
+            (objectType ne null) && {
+                val oid = objectType.id
+                (superclassTypeMap(oid) eq null) && !interfaceTypesMap(oid)
+            }
+        }
     }
 
     /**
@@ -2494,8 +2504,8 @@ object ClassHierarchy {
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    def preInitializedClassHierarchy: ClassHierarchy = scala.concurrent.blocking {
-        apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
+    lazy val PreInitializedClassHierarchy: ClassHierarchy = {
+        apply(classFiles = Traversable.empty, defaultTypeHierarchyDefinitions)(GlobalLogContext)
     }
 
     def noDefaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List.empty
@@ -2505,6 +2515,60 @@ object ClassHierarchy {
         () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
         () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
     )
+
+    def parseTypeHierarchyDefinition(
+        createInputStream: () ⇒ InputStream
+    )(
+        implicit
+        logContext: LogContext
+    ): Seq[TypeDeclaration] = {
+        process(createInputStream()) { in ⇒
+            if (in eq null) {
+                OPALLogger.error(
+                    "internal - class hierarchy",
+                    "loading the predefined class hierarchy failed; "+
+                        "make sure that all resources are found in the correct folders and "+
+                        "try to rebuild the project using \"sbt copyResources\""
+                )
+                Seq.empty;
+            } else {
+                val typeRegExp =
+                    """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
+                processSource(new BufferedSource(in)) { source ⇒
+                    source.getLines.
+                        map(_.trim).
+                        filterNot { l ⇒ l.startsWith("#") || l.length == 0 }.
+                        map { l ⇒
+                            val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l
+                            TypeDeclaration(
+                                ObjectType(theType),
+                                typeKind == "interface",
+                                Option(superclassType).map(ObjectType(_)),
+                                Option(superinterfaceTypes).map { superinterfaceTypes ⇒
+                                    superinterfaceTypes.
+                                        split(',').
+                                        map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
+                                }.getOrElse(UIDSet.empty)
+                            )
+                        }.
+                        toList
+                }
+            }
+        }
+    }
+
+    def apply(
+        classFiles:               Traversable[ClassFile],
+        typeHierarchyDefinitions: Seq[() ⇒ InputStream]  = defaultTypeHierarchyDefinitions
+    )(
+        implicit
+        logContext: LogContext
+    ): ClassHierarchy = {
+
+        // We have to make sure that we have seen all types before we can generate
+        // the arrays to store the information about the types!
+        create(classFiles, typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition))
+    }
 
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined
@@ -2530,9 +2594,9 @@ object ClassHierarchy {
      * and `List` will be a boundary class unless we also analyze the class file that
      * defines `java.util.List`.
      */
-    def apply(
-        classFiles:               Traversable[ClassFile],
-        typeHierarchyDefinitions: Seq[() ⇒ java.io.InputStream] = defaultTypeHierarchyDefinitions()
+    def create(
+        classFiles:       Traversable[ClassFile],
+        typeDeclarations: Traversable[TypeDeclaration]
     )(
         implicit
         logContext: LogContext
@@ -2540,44 +2604,6 @@ object ClassHierarchy {
 
         import Duration.Inf
         import Await.{result ⇒ await}
-
-        def parseTypeHierarchyDefinition(
-            createInputStream: () ⇒ InputStream
-        ): Iterator[TypeDeclaration] = {
-            val in = createInputStream()
-            val typeRegExp =
-                """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
-            val typeDefs = processSource(new BufferedSource(in)) { source ⇒
-                if (source eq null) {
-                    OPALLogger.error(
-                        "internal - class hierarchy",
-                        "loading the predefined class hierarchy failed; "+
-                            "make sure that all resources are found in the correct folders and "+
-                            "try to rebuild the project using \"sbt copyResources\""
-                    )
-                    return Iterator.empty;
-                }
-                source.getLines.map(_.trim).filterNot { l ⇒ l.startsWith("#") || l.length == 0 }
-            }
-            for {
-                typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) ← typeDefs
-            } yield {
-                TypeDeclaration(
-                    ObjectType(theType),
-                    typeKind == "interface",
-                    Option(superclassType).map(ObjectType(_)),
-                    Option(superinterfaceTypes).map { superinterfaceTypes ⇒
-                        superinterfaceTypes.
-                            split(',').
-                            map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
-                    }.getOrElse(UIDSet.empty)
-                )
-            }
-
-        }
-        // We have to make sure that we have seen all types before we can generate
-        // the arrays to store the information about the types!
-        val typeDeclarations = typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition)
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
@@ -2832,7 +2858,7 @@ object ClassHierarchy {
                         // 1. Do we have a cycle in the extracted type information ?
                         {
                             val ns = knownTypesMap.size
-                            val es = (oid: Int) ⇒ {
+                            val es: IntFunction[IntIterator] = (oid: Int) ⇒ {
                                 if (knownTypesMap(oid) ne null) {
                                     val it =
                                         subinterfaceTypesMap(oid).map(_.id).iterator ++

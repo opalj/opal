@@ -32,9 +32,9 @@ package domain
 package l1
 
 import scala.language.existentials
-
-import scala.reflect.ClassTag
+import scala.annotation.switch
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 
 import java.util.IdentityHashMap
 
@@ -50,6 +50,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.
@@ -146,7 +147,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * Using this domain, it is in general not possible to determine that two
      * values are definitively not reference equal unless they are type incompatible.
      */
-    override def refAreEqual(pc: PC, v1: DomainValue, v2: DomainValue): Answer = {
+    override def refAreEqual(pc: Int, v1: DomainValue, v2: DomainValue): Answer = {
         assert(v1.isInstanceOf[ReferenceValue] && v2.isInstanceOf[ReferenceValue])
         if (v1 eq v2)
             return Yes;
@@ -287,7 +288,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * @return The updated operand stack and register values.
          */
         def refineIsNull(
-            pc:       PC,
+            pc:       Int,
             isNull:   Answer,
             operands: Operands,
             locals:   Locals
@@ -306,7 +307,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * @return The updated operand stack and register values.
          */
         def refineUpperTypeBound(
-            pc:        PC,
+            pc:        Int,
             supertype: ReferenceType,
             operands:  Operands,
             locals:    Locals
@@ -435,7 +436,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         protected def refineIf(refinements: Refinements): Boolean = false
 
         final def refineIsNull(
-            pc:       PC,
+            pc:       Int,
             isNull:   Answer,
             operands: Operands,
             locals:   Locals
@@ -450,7 +451,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def doRefineIsNull(isNull: Answer): DomainSingleOriginReferenceValue
 
         final def refineUpperTypeBound(
-            pc:        PC,
+            pc:        Int,
             supertype: ReferenceType,
             operands:  Operands,
             locals:    Locals
@@ -476,12 +477,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         /*ABSTRACT*/ protected def doJoinWithNonNullValueWithSameOrigin(
-            pc:   PC,
+            pc:   Int,
             that: DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue]
 
         protected def doJoinWithMultipleReferenceValues(
-            pc:    PC,
+            pc:    Int,
             other: DomainMultipleReferenceValues
         ): StructuralUpdate[DomainMultipleReferenceValues] = {
 
@@ -524,7 +525,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         final protected def doJoinWithNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             that:   DomainNullValue
         ): Update[DomainSingleOriginReferenceValue] = {
             this.isNull match {
@@ -534,7 +535,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override protected def doJoin(
-            joinPC: PC,
+            joinPC: Int,
             other:  DomainValue
         ): Update[DomainValue] = {
 
@@ -590,7 +591,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         protected override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             that:   DomainSingleOriginReferenceValue
         ): StructuralUpdate[DomainSingleOriginReferenceValue] = {
             StructuralUpdate(
@@ -642,7 +643,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ): DomainSingleOriginReferenceValue
 
         override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             that:   DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue] = {
 
@@ -896,7 +897,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val adaptedValue = target match {
                 case thatDomain: l1.ReferenceValues ⇒
                     val thatT = thatDomain.nextRefId()
@@ -1215,11 +1216,29 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 MultipleReferenceValues(newValues, newIsNull, newIsPrecise, newUTB, newRefId)
         }
 
-        override def origins: IntIterator = {
+        override def originsIterator: IntIterator = {
             val it = values.iterator
             new IntIterator {
                 def hasNext: Boolean = it.hasNext
                 def next(): Int = it.next().origin
+            }
+        }
+
+        override def origins: ValueOrigins = {
+            // In the following we exploit the knowledge that all origins are definitively
+            // different!
+            val it = values.iterator
+            (values.size: @switch) match {
+                case 2 ⇒
+                    IntTrieSet.from(it.next().origin, it.next().origin)
+                case 3 ⇒
+                    IntTrieSet.from(it.next().origin, it.next().origin, it.next().origin)
+                case _ ⇒
+                    var s = IntTrieSet.from(
+                        it.next().origin, it.next().origin, it.next().origin, it.next().origin
+                    )
+                    while (it.hasNext) { s += it.next().origin }
+                    s
             }
         }
 
@@ -1231,7 +1250,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          *
          * The given `pc` is used as the program counter of the newly created value.
          */
-        override def summarize(pc: PC): DomainReferenceValue = {
+        override def summarize(pc: Int): DomainReferenceValue = {
             upperTypeBound /*<= basically creates the summary*/ match {
                 case EmptyUpperTypeBound ⇒ NullValue(pc)
                 case UIDSet1(referenceType) ⇒
@@ -1243,7 +1262,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             summarize(pc).adapt(target, pc)
         }
 
@@ -1447,7 +1466,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def refineIsNull(
-            pc:       PC,
+            pc:       Int,
             isNull:   Answer,
             operands: Operands, locals: Locals
         ): (Operands, Locals) = {
@@ -1495,7 +1514,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def refineUpperTypeBound(
-            pc:        PC,
+            pc:        Int,
             supertype: ReferenceType,
             operands:  Operands,
             locals:    Locals
@@ -1572,7 +1591,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * Join of a value (`thatValue`)  with a value (`thisValue`) referenced by this value.
          */
         protected[this] def doRejoinSingleOriginReferenceValue(
-            joinPC:    PC,
+            joinPC:    Int,
             thisValue: DomainSingleOriginReferenceValue,
             thatValue: DomainSingleOriginReferenceValue
         ): Update[DomainValue] = {
@@ -1628,7 +1647,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override protected def doJoin(joinPC: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             assert(this ne other)
 
             other match {
@@ -1727,7 +1746,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         // ((String[])o)[0]
         //
 
-        override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
+        override def load(pc: Int, index: DomainValue): ArrayLoadResult = {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
@@ -1748,7 +1767,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult = {
+        override def store(pc: Int, value: DomainValue, index: DomainValue): ArrayStoreResult = {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
@@ -1772,7 +1791,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+        override def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
             if (isNull.isYes)
                 return throws(VMNullPointerException(pc)); // <====== early return
 
@@ -1834,7 +1853,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     // -----------------------------------------------------------------------------------
 
     override def refSetUpperTypeBoundOfTopOperand(
-        pc:       PC,
+        pc:       Int,
         bound:    ReferenceType,
         operands: Operands,
         locals:   Locals
@@ -1843,7 +1862,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     protected[this] def refineIsNull(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         isNull:   Answer,
         operands: Operands,
@@ -1853,7 +1872,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     override def refTopOperandIsNull(
-        pc:       PC,
+        pc:       Int,
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
@@ -1870,7 +1889,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * @param value A `ReferenceValue` that does not represent the value `null`.
      */
     override def refEstablishIsNonNull(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         operands: Operands,
         locals:   Locals
@@ -1887,7 +1906,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * @param value A `ReferenceValue`.
      */
     override def refEstablishIsNull(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         operands: Operands,
         locals:   Locals
@@ -1901,7 +1920,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     //
     // -----------------------------------------------------------------------------------
 
-    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+    abstract override def toJavaObject(pc: Int, value: DomainValue): Option[Object] = {
         value match {
             case sov: SObjectValue if sov.isPrecise && sov.isNull.isNo &&
                 (sov.upperTypeBound.head eq ObjectType.Object) ⇒
@@ -1915,11 +1934,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     // REFINEMENT OF EXISTING DOMAIN VALUE FACTORY METHODS
     //
 
-    override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def NonNullObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, No, false, objectType, nextRefId())
     }
 
-    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, No, true, objectType, nextRefId())
     }
 
@@ -1927,35 +1946,35 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         ObjectValue(-1, No, false, objectType, nextRefId())
     }
 
-    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, No, true, objectType, nextRefId())
     }
 
-    override def StringValue(pc: PC, value: String): DomainObjectValue = {
+    override def StringValue(pc: Int, value: String): DomainObjectValue = {
         ObjectValue(pc, No, true, ObjectType.String, nextRefId())
     }
 
-    override def ClassValue(pc: PC, t: Type): DomainObjectValue = {
+    override def ClassValue(pc: Int, t: Type): DomainObjectValue = {
         ObjectValue(pc, No, true, ObjectType.Class, nextRefId())
     }
 
-    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def ObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, Unknown, false, objectType, nextRefId())
     }
 
-    override def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
+    override def ObjectValue(pc: Int, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
         ObjectValue(pc, Unknown, upperTypeBound, nextRefId())
     }
 
-    override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
+    override def NewArray(pc: Int, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, No, true, arrayType, nextRefId())
     }
 
-    override def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
+    override def NewArray(pc: Int, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, No, true, arrayType, nextRefId())
     }
 
-    override def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue = {
+    override def ArrayValue(pc: Int, arrayType: ArrayType): DomainArrayValue = {
         if (arrayType.elementType.isBaseType)
             ArrayValue(pc, Unknown, true, arrayType, nextRefId())
         else
@@ -2022,7 +2041,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     //
 
     protected[domain] def ObjectValue( // for SObjectValue
-        pc:                PC,
+        pc:                Int,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ObjectType,
@@ -2030,14 +2049,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     ): DomainObjectValue
 
     protected[domain] def ObjectValue( // for MObjectValue
-        pc:             PC,
+        pc:             Int,
         isNull:         Answer,
         upperTypeBound: UIDSet[ObjectType],
         refId:          Int
     ): DomainObjectValue
 
     protected[domain] def ArrayValue( // for ArrayValue
-        pc:                PC,
+        pc:                Int,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: ArrayType,

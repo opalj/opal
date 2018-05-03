@@ -86,10 +86,10 @@ class ExceptionHandlerGenerator {
     def result(): br.ExceptionHandlers = {
         map.toIndexedSeq.sortWith((left, right) ⇒ sortByLastNumber(left._1, right._1)).map { e ⇒
             val (id, ehBuilder) = e
-            val errorMsg = s"no %s defined for the exception handler $id"
-            require(ehBuilder.startPC >= 0, errorMsg.format("starting point"))
-            require(ehBuilder.endPC >= 0, errorMsg.format("end point"))
-            require(ehBuilder.handlerPC >= 0, errorMsg.format("handler point"))
+            val errorMsg = s"invalid exception handler ($id): %s"
+            require(ehBuilder.startPC >= 0, errorMsg.format(s"startPC = ${ehBuilder.startPC}"))
+            require(ehBuilder.endPC >= 0, errorMsg.format(s"endPC = ${ehBuilder.endPC}"))
+            require(ehBuilder.handlerPC >= 0, errorMsg.format(s"handlerPC = ${ehBuilder.handlerPC}"))
             require(ehBuilder.startPC < ehBuilder.endPC, errorMsg.format("empty sequence"))
             br.ExceptionHandler(
                 ehBuilder.startPC, ehBuilder.endPC, ehBuilder.handlerPC,

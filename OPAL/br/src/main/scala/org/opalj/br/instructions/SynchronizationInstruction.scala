@@ -31,7 +31,7 @@ package br
 package instructions
 
 /**
- * A synchronization related instruction.
+ * A synchronization related instruction (MonitorEnter|MonitorExit).
  *
  * @author Michael Eichberg
  */
@@ -40,26 +40,30 @@ abstract class SynchronizationInstruction
     with ConstantLengthInstruction
     with NoLabels {
 
-    final def length: Int = 1
+    final override def length: Int = 1
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final override def isMonitorInstruction: Boolean = true
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def mayThrowExceptions: Boolean = true
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final override def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
 
-    final def readsLocal: Boolean = false
+    final override def readsLocal: Boolean = false
 
-    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final def writesLocal: Boolean = false
+    final override def writesLocal: Boolean = false
 
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def expressionResult: NoExpression.type = NoExpression
+    final override def expressionResult: NoExpression.type = NoExpression
 
     final override def toString(currentPC: Int): String = toString()
 }

@@ -79,7 +79,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         this: DomainClassValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             other:  DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue] = {
 
@@ -138,7 +138,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     // Needs to be implemented since the default implementation does not make sense here
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
-    protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
+    protected[l1] def simpleClassForNameCall(pc: Int, className: String): MethodCallResult = {
         if (className.length() == 0)
             return justThrows(ClassNotFoundException(pc));
 
@@ -175,7 +175,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     }
 
     abstract override def invokestatic(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -211,7 +211,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     }
 
     abstract override def getstatic(
-        pc:             PC,
+        pc:             Int,
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType

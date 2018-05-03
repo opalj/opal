@@ -59,6 +59,15 @@ final class ConstArray[T <: AnyRef] private (
 
     final override def length: Int = data.length
     final override def size: Int = data.length
+    final override def foreach[U](f: T ⇒ U): Unit = {
+        val data = this.data
+        var i = 0
+        val max = data.length
+        while (i < max) {
+            f(data(i))
+            i += 1
+        }
+    }
 
     override def equals(other: Any): Boolean = {
         other match {

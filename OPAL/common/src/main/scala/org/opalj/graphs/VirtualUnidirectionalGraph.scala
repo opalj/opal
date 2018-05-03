@@ -29,6 +29,8 @@
 package org.opalj
 package graphs
 
+import java.util.function.IntFunction
+
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.IntIterator
 
@@ -57,7 +59,7 @@ import org.opalj.collection.IntIterator
  */
 class VirtualUnidirectionalGraph(
         val verticesCount: Int,
-        val successors:    (Int ⇒ IntIterator)
+        val successors:    IntFunction[IntIterator] // (Int ⇒ IntIterator)
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = (0 until this.verticesCount)

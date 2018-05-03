@@ -68,6 +68,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
     ): ArrayMap[Answer] = {
         val objectType = typesToProcess.dequeue
         val oid = objectType.id
+
         val thisSubtypeExtensibility = {
             val thisSubtypeExtensibility = subtypeExtensibility(oid)
             if (thisSubtypeExtensibility eq null) No else thisSubtypeExtensibility
@@ -78,15 +79,23 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ObjectType �
             case No      ⇒ thisSubtypeExtensibility
         }
         typeExtensibility(oid) = thisTypeExtensbility
+        var update = false
         foreachDirectSupertype(objectType) { st ⇒
             val soid = st.id
             subtypeExtensibility(soid) match {
-                case null | No ⇒ subtypeExtensibility(soid) = thisTypeExtensbility
-                case Yes       ⇒ // nothing to do
-                case Unknown   ⇒ if (thisTypeExtensbility.isYes) subtypeExtensibility(soid) = Yes
+                case null | No ⇒ {
+                    update = subtypeExtensibility(soid) ne thisTypeExtensbility
+                    subtypeExtensibility(soid) = thisTypeExtensbility
+                }
+                case Yes ⇒ // do nothing
+                case Unknown ⇒ {
+                    update = subtypeExtensibility(soid) ne thisTypeExtensbility
+                    if (thisTypeExtensbility.isYes) subtypeExtensibility(soid) = Yes
+                }
             }
+
             // schedule supertypes
-            if (!isEnqueued(soid)) {
+            if (!isEnqueued(soid) || update) {
                 typesToProcess.enqueue(st)
                 isEnqueued(soid) = true
             }

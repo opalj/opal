@@ -35,7 +35,6 @@ import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
 import scala.language.existentials
-
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
@@ -85,11 +84,14 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                 }
                 classType = classFile.thisType
                 name = method.name
-                pcs = body.collectWithIndex {
-                    case (pc, INVOKEVIRTUAL(`classType`, `name`, `descriptor`))    ⇒ pc
-                    case (pc, INVOKESTATIC(`classType`, _, `name`, `descriptor`))  ⇒ pc
-                    case (pc, INVOKESPECIAL(`classType`, _, `name`, `descriptor`)) ⇒ pc
-                    case (pc, INVOKEINTERFACE(`classType`, `name`, `descriptor`))  ⇒ pc
+                pcs = body.foldLeft(Chain.empty[Int /*PC*/ ]) { (invokes, pc, instruction) ⇒
+                    instruction match {
+                        case INVOKEVIRTUAL(`classType`, `name`, `descriptor`)    ⇒ pc :&: invokes
+                        case INVOKESTATIC(`classType`, _, `name`, `descriptor`)  ⇒ pc :&: invokes
+                        case INVOKESPECIAL(`classType`, _, `name`, `descriptor`) ⇒ pc :&: invokes
+                        case INVOKEINTERFACE(`classType`, `name`, `descriptor`)  ⇒ pc :&: invokes
+                        case _                                                   ⇒ invokes
+                    }
                 }
                 if pcs.nonEmpty
                 result ← inifiniteRecursions(maxRecursionDepth, project, method, pcs)
@@ -109,7 +111,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
         maxRecursionDepth: Int,
         project:           SomeProject,
         method:            Method,
-        pcs:               Chain[PC]
+        pcs:               Chain[Int /*PC*/ ]
     ): Option[InfiniteRecursion] = {
 
         assert(maxRecursionDepth > 1)

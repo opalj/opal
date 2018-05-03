@@ -57,7 +57,7 @@ trait MethodCallResults { domain: ValuesDomain ⇒
      * @note This method may only be called after the abstract interpretation of a
      *       method has completed.
      */
-    def returnedValue(target: TargetDomain, callerPC: PC): Option[target.DomainValue]
+    def returnedValue(target: TargetDomain, callerPC: Int): Option[target.DomainValue]
 
     /**
      * Maps the returned value back to the original operand value if possible.
@@ -71,7 +71,7 @@ trait MethodCallResults { domain: ValuesDomain ⇒
      */
     def returnedValueRemapped(
         callerDomain: TargetDomain,
-        callerPC:     PC
+        callerPC:     Int
     )(
         originalOperands: callerDomain.Operands,
         passedParameters: Locals
@@ -86,7 +86,7 @@ trait MethodCallResults { domain: ValuesDomain ⇒
      * @note This method may only be called after the abstract interpretation of a
      *       method has completed.
      */
-    def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues
+    def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues
 
 }
 

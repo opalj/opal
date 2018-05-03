@@ -68,6 +68,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -1054,7 +1055,7 @@ object Project {
                         }) + ot.toJava
                     }.getOrElse("<None>")
 
-                m.body.get.iterate { (pc, instruction) ⇒
+                m.body.get.iterate { (pc: Int, instruction: Instruction) ⇒
                     (instruction.opcode: @switch) match {
 
                         case NEW.opcode ⇒
@@ -1542,7 +1543,7 @@ object Project {
      * project and uses the (new) configuration. The old project
      * configuration is — by default – used as a fallback, so not all values have to be updated.
      *
-     * If you just want to clear the derived data using `Project.copy` is more efficient.
+     * If you just want to clear the derived data using `Project.recreate` is more efficient.
      */
     def recreate[Source](
         project:                Project[Source],

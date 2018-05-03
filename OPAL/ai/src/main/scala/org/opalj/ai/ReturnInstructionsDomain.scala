@@ -43,37 +43,37 @@ trait ReturnInstructionsDomain { domain: ValuesDomain ⇒
      * Called when a return instruction with the given `pc` is reached.
      * In other words, when the method returns normally.
      */
-    def returnVoid(pc: PC): Computation[Nothing, ExceptionValue]
+    def returnVoid(pc: Int): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type integer'', is returned
      * by the return instruction with the given `pc`.
      */
-    def ireturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+    def ireturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type long'', is returned
      * by the return instruction with the given `pc`.
      */
-    def lreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+    def lreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type float'', is returned
      * by the return instruction with the given `pc`.
      */
-    def freturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+    def freturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type double'', is returned
      * by the return instruction with the given `pc`.
      */
-    def dreturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+    def dreturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * The given `value`, which is a value with ''computational type reference'', is returned
      * by the return instruction with the given `pc`.
      */
-    def areturn(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+    def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * Called by the abstract interpreter when an exception is thrown that is not
@@ -84,6 +84,6 @@ trait ReturnInstructionsDomain { domain: ValuesDomain ⇒
      *      situation is, however, completely handled by OPAL and the exception value
      *      is hence never `null`.
      */
-    def abruptMethodExecution(pc: PC, exceptionValue: ExceptionValue): Unit
+    def abruptMethodExecution(pc: Int, exceptionValue: ExceptionValue): Unit
 
 }

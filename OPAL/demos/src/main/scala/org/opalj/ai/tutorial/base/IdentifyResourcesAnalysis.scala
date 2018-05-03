@@ -58,7 +58,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
             } yield {
                 val pcs =
                     body.collectWithIndex {
-                        case (
+                        case PCAndInstruction(
                             pc,
                             INVOKESPECIAL(
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,

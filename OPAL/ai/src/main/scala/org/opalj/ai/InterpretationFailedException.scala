@@ -31,6 +31,7 @@ package ai
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Exception that is thrown by the abstract interpreter when the abstract
@@ -48,13 +49,13 @@ sealed trait InterpretationFailedException {
     def cause: Throwable
     val domain: Domain
     val ai: AI[_ >: domain.type]
-    val pc: PC
-    val worklist: List[PC]
-    val evaluated: List[PC]
+    val pc: Int
+    val worklist: List[Int /*PC*/ ]
+    val evaluatedPCs: IntArrayStack
     val cfJoins: IntTrieSet
     val operandsArray: domain.OperandsArray
     val localsArray: domain.LocalsArray
-    val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
 }
 
 /**
@@ -69,28 +70,28 @@ object InterpretationFailedException {
         theDomain: Domain
     )(
         theAI:                               AI[_ >: theDomain.type],
-        thePc:                               PC,
+        thePc:                               Int,
         theCFJoins:                          IntTrieSet,
-        theWorklist:                         List[PC],
-        theEvaluated:                        List[PC],
+        theWorklist:                         List[Int /*PC*/ ],
+        theEvaluatedPCs:                     IntArrayStack,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
     ): AIException with InterpretationFailedException = {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
             def cause = super.getCause
             val ai: AI[_ >: theDomain.type] = theAI
             val domain: theDomain.type = theDomain
-            val pc: PC = thePc
+            val pc: Int = thePc
             val cfJoins: IntTrieSet = theCFJoins
 
-            val worklist: List[PC] = theWorklist
-            val evaluated: List[PC] = theEvaluated
+            val worklist: List[Int /*PC*/ ] = theWorklist
+            val evaluatedPCs: IntArrayStack = theEvaluatedPCs
 
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
         }
 
     }

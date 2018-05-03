@@ -50,6 +50,8 @@ case class NEW(
 
     final override def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
 
+    final override def mayThrowExceptions: Boolean = true
+
     final override def length: Int = 3
 
     final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
@@ -76,7 +78,7 @@ case class NEW(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

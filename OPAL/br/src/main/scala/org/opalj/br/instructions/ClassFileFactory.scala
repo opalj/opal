@@ -1337,6 +1337,10 @@ object ClassFileFactory {
                 typeOnStack.asObjectType.unboxValue
             } else if (typeOnStack.isBooleanType && toBeReturnedType.isObjectType) {
                 typeOnStack.asBooleanType.boxValue
+            } else if (typeOnStack.isArrayType && (typeOnStack.asArrayType.elementType eq ObjectType.Object)
+                && toBeReturnedType.isArrayType &&
+                typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions) {
+                Array(CHECKCAST(toBeReturnedType.asReferenceType), null, null)
             } else {
                 throw new IllegalArgumentException(
                     s"incompatible types: ${toBeReturnedType.toJava} and ${typeOnStack.toJava}"

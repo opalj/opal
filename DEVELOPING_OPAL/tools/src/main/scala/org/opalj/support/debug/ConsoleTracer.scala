@@ -29,11 +29,9 @@
 package org.opalj.support.debug
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
-
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.Domain
-import org.opalj.ai.PC
 import org.opalj.ai.AITracer
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.Update
@@ -42,6 +40,7 @@ import org.opalj.ai.SomeUpdate
 import org.opalj.ai.IsReferenceValue
 import org.opalj.ai.domain
 import org.opalj.ai.domain.TheCode
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * A tracer that prints out a trace's results on the console.
@@ -111,7 +110,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         }
     }
 
-    private def line(domain: Domain, pc: PC): String = {
+    private def line(domain: Domain, pc: Int): String = {
         domain match {
             case d: TheCode ⇒ d.code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
             case _          ⇒ ""
@@ -121,7 +120,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def instructionEvalution(
         domain: Domain
     )(
-        pc:          PC,
+        pc:          Int,
         instruction: Instruction,
         operands:    domain.Operands,
         locals:      domain.Locals
@@ -162,11 +161,11 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         code:   Code,
         domain: Domain
     )(
-        initialWorkList:                  List[PC],
-        alreadyEvaluated:                 List[PC],
+        initialWorkList:                  List[Int /*PC*/ ],
+        alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
 
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
@@ -179,10 +178,10 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def rescheduled(
         domain: Domain
     )(
-        sourcePC:                 PC,
-        targetPC:                 PC,
+        sourcePC:                 Int,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
-        worklist:                 List[PC]
+        worklist:                 List[Int /*PC*/ ]
     ): Unit = {
         println(
             CYAN_B + RED + sourcePC + line(domain, sourcePC)+
@@ -195,19 +194,19 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def flow(
         domain: Domain
     )(
-        currentPC:                PC,
-        targetPC:                 PC,
+        currentPC:                Int,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean
     ): Unit = { /* ignored */ }
 
-    override def deadLocalVariable(domain: Domain)(pc: PC, lvIndex: Int): Unit = {
+    override def deadLocalVariable(domain: Domain)(pc: Int, lvIndex: Int): Unit = {
         println(
             pc.toString + line(domain, pc).toString+":"+
                 Console.BLACK_B + Console.WHITE + s"local variable $lvIndex is dead"
         )
     }
 
-    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = {
+    override def noFlow(domain: Domain)(currentPC: Int, targetPC: Int): Unit = {
         println(Console.RED_B + Console.YELLOW+
             "did not schedule the interpretation of instruction "+
             targetPC + line(domain, targetPC)+
@@ -217,7 +216,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def join(
         domain: Domain
     )(
-        pc:            PC,
+        pc:            Int,
         thisOperands:  domain.Operands,
         thisLocals:    domain.Locals,
         otherOperands: domain.Operands,
@@ -280,8 +279,8 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def establishedConstraint(
         domain: Domain
     )(
-        pc:          PC,
-        effectivePC: PC,
+        pc:          Int,
+        effectivePC: Int,
         operands:    domain.Operands,
         locals:      domain.Locals,
         newOperands: domain.Operands,
@@ -328,7 +327,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: PC, target: PC, nestingLevel: Int
+        pc: Int, target: Int, nestingLevel: Int
     ): Unit = {
         import Console._
         println(
@@ -341,14 +340,14 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def returnFromSubroutine(
         domain: Domain
     )(
-        pc:                     PC,
-        returnAddress:          PC,
-        subroutineInstructions: List[PC]
+        pc:            Int,
+        returnAddress: Int,
+        subroutinePCs: List[Int /*PC*/ ]
     ): Unit = {
         println(
             YELLOW_B + BOLD + pc + line(domain, pc)+
                 ":RETURN FROM SUBROUTINE: target="+returnAddress+
-                " : RESETTING : "+subroutineInstructions.mkString(", ") +
+                " : RESETTING : "+subroutinePCs.mkString(", ") +
                 RESET
         )
     }
@@ -357,12 +356,12 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         domain: Domain
     )(
         details:  String,
-        sourcePC: PC, targetPC: PC,
+        sourcePC: Int, targetPC: Int,
         jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
-        oldWorklist:                List[PC],
-        newWorklist:                List[PC]
+        oldWorklist:                List[Int /*PC*/ ],
+        newWorklist:                List[Int /*PC*/ ]
     ): Unit = {
         println(
             RED_B + WHITE + sourcePC + line(domain, sourcePC)+
@@ -382,10 +381,10 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def ret(
         domain: Domain
     )(
-        pc:            PC,
-        returnAddress: PC,
-        oldWorklist:   List[PC],
-        newWorklist:   List[PC]
+        pc:            Int,
+        returnAddress: Int,
+        oldWorklist:   List[Int /*PC*/ ],
+        newWorklist:   List[Int /*PC*/ ]
     ): Unit = {
         println(
             GREEN_B + BOLD + pc + line(domain, pc)+
@@ -401,7 +400,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
     override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[PC], message: ⇒ String
+        pc: Option[Int], message: ⇒ String
     ): Unit = {
         val loc = pc.map(pc ⇒ s"$pc:").getOrElse("<NO PC>")
         println(

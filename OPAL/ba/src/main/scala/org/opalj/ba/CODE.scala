@@ -37,7 +37,6 @@ import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.control.rerun
 import org.opalj.control.iterateUntil
 import org.opalj.br.instructions.Instruction
@@ -46,6 +45,7 @@ import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.br.instructions.LabeledJSR
 import org.opalj.br.instructions.LabeledJSR_W
@@ -92,52 +92,56 @@ object CODE {
     setBaseConfig(ConfigFactory.load(this.getClass.getClassLoader()))
 
     /**
-     * Removes (compile-time) dead code from the given code; never removes "PCLabels" to
-     * ensure the completeness of pc mappings.
+     * Removes (compile-time) dead (pseudo) instructions from the given code by
+     * performing a most conservative control-flow analysis. The goal is to remove
+     * just those instructions which would hinder the computation of a stack-map
+     * table.
+     * Data-flow information (in particular the potential types of concrete exceptions)
+     * are not tracked; i.e., if we have a try block with some instructions the related
+     * catch block is considered to be live, even if the declared exception is never thrown).
+     * TODO If we have a try block with instructions that NEVER throw any exception, we should remove it; requires (control-flow dependent!) tests when we set a TRY to live ...)
+     * We never remove "PCLabels" to ensure the completeness of pc mappings.
+     *
+     * @note The code element has to be valid bytecode; i.e., a verification of the code using
+     *       the old, pre Java 7 (type-inference based) bytecode verified would succeed!
      */
     def removeDeadCode[T](codeElements: IndexedSeq[CodeElement[T]]): IndexedSeq[CodeElement[T]] = {
         val codeElementsSize = codeElements.size
         if (codeElementsSize == 0)
             return codeElements;
 
-        // Basic idea - mark all code elements as live that are potentially executed and throw away
+        // Basic idea - mark all code elements as live that are potentially executed. Throw away
         // the rest!
-        // 1 - We first go linearly over all code elements to find all catch handlers and add them
-        //     to the set of all code elements that should be marked as live. (Actually, we add
-        //     to the set the pseudo instructions directly following the preceding
-        //     instruction.) Additionally, we compute the "label => index" relation.
-        // 2 - we follow the cfg to mark the reachable code elements as live
-        // 3 - we remove the dead code
-        //
-        // Note:
-        // We will later test if we have broken exception handlers; hence, we just assume they
-        // are valid w.r.t. the given code!
+        // 1 -  We collect all labels of all jump targets and try/catch elements
+        //      (We eagerly check the uniqueness of the labels and that a TRYEND always
+        //      has a corresponding TRY; we do not perform any other checks eagerly.)
+        // 2 -  we follow the cfg to mark the reachable code elements as live; as soon as
+        //      we mark a TRY as live, we will mark the corresponding CATCH as live; i.e.,
+        //      schedule the marking of the first instruction of the catch block as live.
+        // 3 -  we remove the dead code
+        // 4 -  if we have found dead code rerun the algorithm to detect further dead code;
+        //      otherwise return the given codeElements as is
 
+        // The core data-structure of the worklist algorithm which stores the elements
+        // that need to be processed.
         var markedAsLive: IntTrieSet = IntTrieSet1(0)
+
+        // The special handling is required due to the tracking of this information by the
+        // TypeLevelDomain which is used to compute the stack map table.
+        var monitorInstructionIsUsed = false
+
+        // A boolean array containing the information which elements are live.
         val isLive = new Array[Boolean](codeElementsSize)
         var isLiveCount = 0
-        val labelsToIndexes = new Object2IntOpenHashMap[InstructionLabel]()
-        val catchLabelsToIndexes = new Object2IntOpenHashMap[Symbol]()
-        val tryLabelsToIndexes = new Object2IntOpenHashMap[Symbol]()
-        labelsToIndexes.defaultReturnValue(Int.MinValue)
 
-        // Helper function:
-        // Marks the code element with the given index or – if pseudo instructions are
-        // preceding it the earliest directly preceding pseudo instruction - as live.
-        def markAsLive(index: Int): Unit = {
-            var currentIndex = index
-            while (currentIndex > 0) {
-                if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
-                    return ; // nothing to do
-                }
-                currentIndex -= 1
-                if (!codeElements(currentIndex).isPseudoInstruction) {
-                    markedAsLive += (currentIndex + 1)
-                    return ;
-                }
-            }
-            // the code element "0" is already marked as live..
-        }
+        val labelsToIndexes = new Object2IntOpenHashMap[InstructionLabel]()
+        labelsToIndexes.defaultReturnValue(Int.MinValue)
+        val tryLabelsToIndexes = new Object2IntOpenHashMap[Symbol]()
+        tryLabelsToIndexes.defaultReturnValue(Int.MinValue)
+        val tryEndLabelsToIndexes = new Object2IntOpenHashMap[Symbol]()
+        tryEndLabelsToIndexes.defaultReturnValue(Int.MinValue)
+        val catchLabelsToIndexes = new Object2IntOpenHashMap[Symbol]()
+        catchLabelsToIndexes.defaultReturnValue(Int.MinValue)
 
         // Step 1
         iterateUntil(0, codeElementsSize) { index ⇒
@@ -154,6 +158,17 @@ object CODE {
                         throw new IllegalArgumentException(s"try '${label.name} is already used")
                     }
                     tryLabelsToIndexes.put(label, index)
+                case TRYEND(label) ⇒
+                    if (tryEndLabelsToIndexes.containsKey(label)) {
+                        throw new IllegalArgumentException(s"tryend '${label.name} is already used")
+                    }
+                    if (!tryLabelsToIndexes.containsKey(label)) {
+                        throw new IllegalArgumentException(
+                            s"tryend '${label.name} without or before try"
+                        )
+                    }
+                    tryEndLabelsToIndexes.put(label, index)
+
                 case CATCH(label, _) ⇒
                     if (catchLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"catch '${label.name} is already used")
@@ -163,66 +178,146 @@ object CODE {
                 case _ ⇒ // nothing to do
             }
         }
-        // we do not want to mark "dead" catch blocks as live
-        tryLabelsToIndexes.keySet().iterator().forEachRemaining { label ⇒
-            if (!catchLabelsToIndexes.containsKey(label)) {
-                throw new IllegalArgumentException(s"'try block $label without catch")
-            }
-            markAsLive(catchLabelsToIndexes.getInt(label))
-        }
 
         // Step 2.1
+        // Helper function:
+
+        // Marks the CATCH/handler corresponding to the given try as live and schedules
+        // the first (real) instruction.
+        def markHandlerAsLive(liveTryStart: TRY): Unit = {
+            // We have to check the CATCH
+            val TRY(label) = liveTryStart
+            val catchIndex = catchLabelsToIndexes.getInt(label)
+            if (catchIndex == Int.MinValue) {
+                throw new IllegalArgumentException(s"try '${label.name} without catch")
+            }
+
+            if (!isLive(catchIndex)) {
+                // DEBUG: println(s"[markHandlerAsLive] setting catch $label ($catchIndex) to live")
+                isLive(catchIndex) = true
+                isLiveCount += 1
+
+                var indexOfFirstInstruction = (catchIndex + 1)
+                while (!codeElements(indexOfFirstInstruction).isInstructionLikeElement) {
+                    indexOfFirstInstruction += 1
+                }
+                markedAsLive += indexOfFirstInstruction // we schedule the instruction following the catch
+            } else {
+                // DEBUG: println(s"[markHandlerAsLive] catch $label ($catchIndex) is already live")
+            }
+        }
+
+        // Marks the meta-information related to the (pseudo) instruction with the given index
+        // as live.
+        // A try is only marked live when we do the liveness propagation; this is necessary
+        // to detect completely useless try blocks consisting only of instructions which
+        // never throw an exception.
+        def markMetaInformationAsLive(index: Int): Unit = {
+            var currentIndex = index
+            // the code element "0" is already marked as live..
+            while (currentIndex > 0) {
+                if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
+                    return ; // nothing to do
+                }
+
+                val currentInstruction = codeElements(currentIndex)
+                if (currentInstruction.isInstructionLikeElement) {
+                    // We basically only want to mark TRYs and Jump Labels belonging to
+                    // the code element with the given `index` as live.
+                    return ;
+                } else if (!currentInstruction.isExceptionHandlerElement) {
+                    // DEBUG: println(s"[markMetaInformationAsLive] scheduling $index")
+                    markedAsLive += currentIndex
+                }
+                currentIndex -= 1
+            }
+        }
+
         def handleBranchTarget(branchTarget: InstructionLabel): Unit = {
             val targetIndex = labelsToIndexes.getInt(branchTarget)
             if (targetIndex == Int.MinValue) {
                 val message = s"the $branchTarget label could not be resolved"
                 throw new NoSuchElementException(message)
             }
-            markAsLive(targetIndex)
-        }
-        while (markedAsLive.nonEmpty) {
-            // mark all code elements which can be executed subsequently as live
-            val (nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
-            var currentIndex = nextIndex
-            markedAsLive = newMarkedAsLive
-            if (!isLive(currentIndex)) {
-                do {
-                    isLive(currentIndex) = true
-                    isLiveCount += 1
-                    currentIndex += 1
-                } while (currentIndex < codeElementsSize && !isLive(currentIndex) && {
-                    // Currently, we make the assumption that the instruction following the
-                    // JSR is live... i.e., a RET exists (which should always be the case for
-                    // proper code!)
-                    codeElements(currentIndex - 1) match {
-                        case _: PseudoInstruction ⇒ true
-                        case InstructionLikeElement(li) ⇒
-                            if (li.isControlTransferInstruction) {
-                                li.branchTargets.foreach(handleBranchTarget)
-                                // let's check if we have a "fall-through"
-                                li match {
-                                    case LabeledJSR(_) | LabeledJSR_W(_) |
-                                        _: LabeledSimpleConditionalBranchInstruction ⇒
-                                        // let's continue...
-                                        true
-                                    case _ ⇒
-                                        // ... we have a goto(_w) instruction, hence
-                                        // the next instruction like element is only live if we have
-                                        // an explicit jump to it, or if it is the start
-                                        // of an exception handler...
-                                        false
-                                }
-                            } else if (li.isReturnInstruction || li.isAthrow) {
-                                false
-                            } else {
-                                true
-                            }
-                    }
-                })
-            }
+            markMetaInformationAsLive(targetIndex)
         }
 
-        if (isLiveCount < codeElementsSize) {
+        /* Returns `true` if any instruction was actually marked as live. */
+        def processMarkedAsLive(): Boolean = {
+            var markedInstructionAsLive = false
+            while (markedAsLive.nonEmpty) {
+                // mark all code elements which can be executed subsequently as live
+                val IntHeadAndRestOfSet(nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
+                markedAsLive = newMarkedAsLive
+
+                var currentIndex = nextIndex
+                if (!isLive(currentIndex)) {
+                    markedInstructionAsLive = true
+
+                    var currentInstruction: CodeElement[T] = codeElements(currentIndex)
+                    var continueIteration = true
+                    do {
+                        if (!isLive(currentIndex) && !currentInstruction.isExceptionHandlerElement) {
+                            // This check is primarily required due to the eager marking
+                            // of PCLabels as live.
+                            isLive(currentIndex) = true
+                            isLiveCount += 1
+                        }
+
+                        // Currently, we make the assumption that the instruction following the
+                        // JSR is live... i.e., a RET exists (which should always be the case for
+                        // proper code!)
+                        continueIteration = currentInstruction match {
+                            case pi: PseudoInstruction ⇒
+                                true
+
+                            case InstructionLikeElement(li) ⇒
+                                if (li.isControlTransferInstruction) {
+                                    li.branchTargets.foreach(handleBranchTarget)
+                                    // let's check if we have a "fall-through"
+                                    li match {
+                                        case LabeledJSR(_) | LabeledJSR_W(_) |
+                                            _: LabeledSimpleConditionalBranchInstruction ⇒
+                                            // let's continue...
+                                            true
+                                        case _ ⇒
+                                            // ... we have a goto(_w) instruction, hence
+                                            // the next instruction like element is only live
+                                            // if we have an explicit jump to it, or if it is
+                                            // the start of an exception handler...
+                                            false
+                                    }
+                                } else if (li.isReturnInstruction || li.isAthrow) {
+                                    false
+                                } else {
+                                    if (li.isMonitorInstruction) {
+                                        monitorInstructionIsUsed = true
+                                    }
+                                    true
+                                }
+                        }
+                        // DEBUG: println(s"[processMarkedAsLive] did set $currentIndex to live")
+
+                        currentIndex += 1
+                    } while (continueIteration
+                        && currentIndex < codeElementsSize
+                        && {
+                            currentInstruction = codeElements(currentIndex)
+                            // In the following we ignore pseudo instructions
+                            // (in particular PCLabels)
+                            // because they may have been set to live already!
+                            currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                        })
+                }
+            }
+            markedInstructionAsLive
+        }
+
+        /**
+         * Propagates liveness information in particular w.r.t. LINENUMBER and
+         * TRY(END) pseudo instructions; updates isLiveCount if necessary.
+         */
+        def propagateLiveInformation(): Unit = {
             // Step 2.2 We now have to test for still required TRY-Block and LINENUMBER markers..
             //          (Basically, we just set them to "isLive".)
             //          A TRY/TRYEND marker is to be live if we have one or more live instructions
@@ -248,25 +343,38 @@ object CODE {
                                     case _: InstructionLikeElement[T] if isLive(nextIndex) ⇒
                                         isLive(index) = true
                                         isLiveCount += 1
-                                        nextIndex = codeElementsSize // <=> abort loop
+                                        nextIndex = Int.MaxValue // <=> abort loop
 
                                     case _: LINENUMBER ⇒
-                                        nextIndex = codeElementsSize // <=> abort loop
+                                        nextIndex = Int.MaxValue // <=> abort loop
 
                                     case _ ⇒
                                         nextIndex += 1
                                 }
                             }
 
-                        case TRY(label) ⇒
+                        case tryStart @ TRY(label) ⇒
+                            // We have to check if some relevant instruction belonging to the
+                            // try block is live.
                             var nextIndex = index + 1
                             while (nextIndex < codeElementsSize) {
                                 codeElements(nextIndex) match {
 
-                                    case _: InstructionLikeElement[T] if isLive(nextIndex) ⇒
-                                        isLive(index) = true
-                                        isLiveCount += 1
-                                        nextIndex = Int.MaxValue // <=> abort loop (successful)
+                                    case i: InstructionLikeElement[T] ⇒
+                                        val instruction = i.instruction
+                                        if (isLive(nextIndex) &&
+                                            instruction.mayThrowExceptions &&
+                                            (
+                                                monitorInstructionIsUsed
+                                                || !instruction.isReturnInstruction
+                                            )) {
+                                            isLive(index) = true
+                                            isLiveCount += 1
+                                            markHandlerAsLive(tryStart)
+                                            nextIndex = Int.MaxValue // <=> abort loop (successful)
+                                        } else {
+                                            nextIndex += 1
+                                        }
 
                                     case TRYEND(`label`) ⇒
                                         nextIndex = Int.MaxValue // <=> abort loop (successful)
@@ -283,9 +391,6 @@ object CODE {
                             // We have found a "still dead" try end; if the TRY is (now) live,
                             // we simply set TRYEND to live... otherwise it remains dead;
                             // we check the intermediate range when we see the TRY (if required).
-                            if (!tryLabelsToIndexes.containsKey(label)) {
-                                throw new IllegalArgumentException(s"'try end $label without try")
-                            }
                             if (isLive(tryLabelsToIndexes(label))) {
                                 isLiveCount += 1
                                 isLive(index) = true
@@ -295,38 +400,51 @@ object CODE {
                     }
                 }
             }
-            if (isLiveCount == codeElementsSize) {
-                // eventually nothing is dead...
-                return codeElements;
-            }
+        }
 
+        // The main loop processing the worklist data-structure.
+        var continueProcessingCode = false
+        do {
+            continueProcessingCode = false
+            processMarkedAsLive()
+            val oldIsLiveCount = isLiveCount
+            if (oldIsLiveCount < codeElementsSize) {
+                propagateLiveInformation()
+                if (oldIsLiveCount != isLiveCount && markedAsLive.nonEmpty) {
+                    continueProcessingCode = true
+                }
+            }
+        } while (continueProcessingCode)
+
+        // Post-processing
+        if (isLiveCount < codeElementsSize) {
             // Step 3 - create new code elements
             val deadCodeElementsCount = codeElementsSize - isLiveCount
             if (logDeadCodeRemoval) {
-                info("code generation", s"found $deadCodeElementsCount dead code elements")
+                info("code generation", s"found $deadCodeElementsCount dead (pseudo)instructions")
             }
             if (logDeadCode) {
-                val deadCode = new Array[String](deadCodeElementsCount)
-                var deadCodeIndex = 0
+                val deadCode = new ArrayBuffer[String](deadCodeElementsCount)
                 iterateUntil(0, codeElements.size) { index ⇒
                     if (!isLive(index)) {
-                        deadCode(deadCodeIndex) = s"$index: ${codeElements(index)}"
-                        deadCodeIndex += 1
+                        deadCode += s"$index: ${codeElements(index)}"
                     }
                 }
                 info(
                     "code generation",
-                    deadCode.mkString("compile-time dead code elements:\n\t", "\n\t", "\n")
+                    deadCode.mkString("compile-time dead (pseudo)instructions:\n\t", "\n\t", "\n")
                 )
             }
 
             val newCodeElements = new ArrayBuffer[CodeElement[T]](isLiveCount)
             iterateUntil(0, codeElementsSize) { index ⇒
-                if (isLive(index)) newCodeElements += codeElements(index)
+                if (isLive(index)) {
+                    newCodeElements += codeElements(index)
+                }
             }
             // if we have removed a try block we now have to remove the handler's code...
-            // [debug] println(codeElements.mkString("old\n\t", "\n\t", "\n"))
-            // [debug] println(newCodeElements.mkString("new:\n\t", "\n\t", "\n\n"))
+            // DEBUG: println(codeElements.zipWithIndex.map(_.swap).mkString("old\n\t", "\n\t", "\n"))
+            // DEBUG: println(newCodeElements.zipWithIndex.map(_.swap).mkString("new:\n\t", "\n\t", "\n\n"))
             removeDeadCode(newCodeElements) // tail-recursive call...
         } else {
             codeElements
@@ -406,7 +524,7 @@ object CODE {
             if (labeledInstruction != null) {
                 // We implicitly (there will be an exception) check if we have to adapt ifs,
                 // gotos and switches. (In general, this should happen, very, very, very
-                // infrequently and hence will hardly every be a performance problem!)
+                // infrequently and hence will hardly ever be a performance problem!)
                 try {
                     instructions(pc) = labeledInstruction.resolveJumpTargets(pc, labels)
                 } catch {

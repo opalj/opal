@@ -44,7 +44,7 @@ import org.opalj.br.Method
 trait MethodCallsHandling extends MethodCallsDomain {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
 
-    protected[this] def getPotentialExceptions(pc: PC): List[ExceptionValue] = {
+    protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
         var exceptionTypes: Set[ObjectType] = Set.empty
         var exceptionValues: List[ExceptionValue] = List.empty
 
@@ -102,7 +102,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def handleInvoke(
-        pc:               PC,
+        pc:               Int,
         methodDescriptor: MethodDescriptor
     ): MethodCallResult = {
         val returnType = methodDescriptor.returnType
@@ -115,7 +115,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def handleInstanceBasedInvoke(
-        pc:               PC,
+        pc:               Int,
         methodDescriptor: MethodDescriptor,
         receiverIsNull:   Answer
     ): MethodCallResult = {
@@ -139,7 +139,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     protected[this] def handleInstanceBasedInvoke(
-        pc:               PC,
+        pc:               Int,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
     ): MethodCallResult = {
@@ -157,7 +157,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
      *      particular regarding the return type.
      */
     protected[this] def handleInstanceBasedInvoke(
-        pc:               PC,
+        pc:               Int,
         methodDescriptor: MethodDescriptor,
         targetMethods:    Set[Method],
         receiverIsNull:   Answer,

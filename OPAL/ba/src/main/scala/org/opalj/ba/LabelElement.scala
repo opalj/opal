@@ -40,4 +40,8 @@ case class LabelElement(label: InstructionLabel) extends PseudoInstruction {
 
     final override def isExceptionHandlerElement: Boolean = false
 
+    final override def isTry: Boolean = false
+
+    final override def isCatch: Boolean = false
+
 }

@@ -65,7 +65,7 @@ object CountClassForNameCalls extends DefaultOneStepAnalysis {
                 method @ MethodWithBody(code) ← classFile.methods
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>
-                (pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code
+                PCAndInstruction(pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) ← code
             } yield {
                 method.toJava(s"pc=$pc")
             }

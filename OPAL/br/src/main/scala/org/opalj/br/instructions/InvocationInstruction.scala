@@ -47,6 +47,8 @@ abstract class InvocationInstruction
 
     final override def isInvocationInstruction: Boolean = true
 
+    final def mayThrowExceptions: Boolean = true
+
     /**
      * The simple name of the called method.
      *
@@ -112,7 +114,7 @@ abstract class InvocationInstruction
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

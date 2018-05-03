@@ -31,20 +31,24 @@ package ai
 package domain
 
 import java.lang.ref.{SoftReference ⇒ SRef}
+import java.util.function.IntConsumer
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 import scala.collection.BitSet
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
-import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.ATHROW
@@ -165,19 +169,19 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def flow(
-        currentPC:                        PC,
+        currentPC:                        Int,
         currentOperands:                  Operands,
         currentLocals:                    Locals,
-        successorPC:                      PC,
+        successorPC:                      Int,
         isSuccessorScheduled:             Answer,
         isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed:                 Boolean,
-        worklist:                         List[PC],
+        worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
         tracer:                           Option[AITracer]
-    ): List[PC] = {
+    ): List[Int /*PC*/ ] = {
 
         if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
             theJumpBackTargetPCs += successorPC
@@ -191,7 +195,7 @@ trait RecordCFG
 
         val successorsOfPC = successors(currentPC)
         if (successorsOfPC eq null)
-            successors(currentPC) = new IntTrieSet1(successorPC)
+            successors(currentPC) = IntTrieSet1(successorPC)
         else {
             val newSuccessorsOfPC = successorsOfPC + successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
@@ -214,9 +218,13 @@ trait RecordCFG
      * @note If another domain always overrides this method the invocation of this one has to be
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
-    abstract override def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {
-        theSubroutineStartPCs += branchTarget
-        super.jumpToSubroutine(pc, branchTarget, returnTarget)
+    abstract override def jumpToSubroutine(
+        pc:             Int,
+        branchTargetPC: Int,
+        returnTargetPC: Int
+    ): Unit = {
+        theSubroutineStartPCs += branchTargetPC
+        super.jumpToSubroutine(pc, branchTargetPC, returnTargetPC)
     }
 
     /**
@@ -225,7 +233,7 @@ trait RecordCFG
      * @note If another domain always overrides this method the invocation of this one has to be
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+    abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
         super.returnVoid(pc)
     }
@@ -237,7 +245,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def ireturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -251,7 +259,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def lreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -265,7 +273,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def freturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -279,7 +287,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def dreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -293,7 +301,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def areturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -307,7 +315,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def abruptMethodExecution(
-        pc:             PC,
+        pc:             Int,
         exceptionValue: ExceptionValue
     ): Unit = {
         theExitPCs += pc
@@ -358,7 +366,7 @@ trait RecordCFG
      * Returns `true` if the instruction with the given `pc` was executed.
      * The `pc` has to identify a valid instruction.
      */
-    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
+    private[this] final def unsafeWasExecuted(pc: Int): Boolean = {
         (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
             theExitPCs.contains(pc)
     }
@@ -366,7 +374,7 @@ trait RecordCFG
     /**
      * Returns `true` if the instruction with the given `pc` was executed.
      */
-    final def wasExecuted(pc: PC): Boolean = pc < code.instructions.length && unsafeWasExecuted(pc)
+    final def wasExecuted(pc: Int): Boolean = pc < code.instructions.length && unsafeWasExecuted(pc)
 
     /**
      * Computes the set of all executed instructions.
@@ -391,18 +399,18 @@ trait RecordCFG
      * @note The [[org.opalj.br.instructions.ATHROW]] instruction will never have a
      *      `regularSuccessor`. The `return` instructions will never have any successors.
      */
-    def regularSuccessorsOf(pc: PC): PCs = {
+    def regularSuccessorsOf(pc: Int): PCs = {
         val s = regularSuccessors(pc)
         if (s ne null) s else NoPCs
     }
 
-    final def hasMultipleSuccessors(pc: PC): Boolean = {
+    final def hasMultipleSuccessors(pc: Int): Boolean = {
         val regularSuccessorsCount = regularSuccessorsOf(pc).size
         regularSuccessorsCount > 1 ||
             (regularSuccessorsCount + exceptionHandlerSuccessorsOf(pc).size) > 1
     }
 
-    def isDirectRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+    def isDirectRegularPredecessorOf(pc: Int, successorPC: Int): Boolean = {
         regularSuccessorsOf(pc).contains(successorPC)
     }
 
@@ -414,18 +422,18 @@ trait RecordCFG
      *
      * @note The set is recalculated on demand.
      */
-    def allSuccessorsOf(pc: PC): PCs = {
+    def allSuccessorsOf(pc: Int): PCs = {
         regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
     }
 
-    final def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs = {
+    final def successorsOf(pc: Int, regularSuccessorOnly: Boolean): PCs = {
         if (regularSuccessorOnly)
             regularSuccessorsOf(pc)
         else
             allSuccessorsOf(pc)
     }
 
-    def hasNoSuccessor(pc: PC): Boolean = {
+    def hasNoSuccessor(pc: Int): Boolean = {
         (regularSuccessors(pc) eq null) && (exceptionHandlerSuccessors eq null)
     }
 
@@ -433,17 +441,17 @@ trait RecordCFG
      * Returns `true` if the execution of the given instruction – identified by its pc –
      * ex-/implicitly throws an exception that is (potentially) handled by the method.
      */
-    def throwsException(pc: PC): Boolean = exceptionHandlerSuccessors(pc) ne null
+    def throwsException(pc: Int): Boolean = exceptionHandlerSuccessors(pc) ne null
 
     /**
      * Returns `true` if the execution of the given instruction – identified by its pc –
      * '''always just''' throws an exception that is (potentially) handled by the method.
      */
-    def justThrowsException(pc: PC): Boolean = {
+    def justThrowsException(pc: Int): Boolean = {
         (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
     }
 
-    def foreachSuccessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+    def foreachSuccessorOf(pc: Int)(f: IntConsumer /*PC => Unit*/ ): Unit = {
         regularSuccessorsOf(pc).foreach { f }
         exceptionHandlerSuccessorsOf(pc).foreach { f }
     }
@@ -453,11 +461,11 @@ trait RecordCFG
      * a `pc'` that satisfies the given predicate `p`.
      */
     def hasSuccessor(
-        pc:                    PC,
+        pc:                    Int,
         regularSuccessorsOnly: Boolean,
-        p:                     PC ⇒ Boolean
+        p:                     Int /*PC*/ ⇒ Boolean
     ): Boolean = {
-        var visitedSuccessors: IntTrieSet = new IntTrieSet1(pc)
+        var visitedSuccessors: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
@@ -466,11 +474,11 @@ trait RecordCFG
             visitedSuccessors ++= successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
-                    l ++ (
-                        successorsOf(r, regularSuccessorsOnly) withFilter { pc ⇒
-                            !visitedSuccessors.contains(pc)
-                        }
-                    )
+                    var newL = l
+                    successorsOf(r, regularSuccessorsOnly) foreach { pc ⇒
+                        if (!visitedSuccessors.contains(pc)) newL += pc
+                    }
+                    newL
                 }
         }
         false
@@ -485,13 +493,13 @@ trait RecordCFG
      * @note This method will traverse the entire graph if `successorPC` is '''not''' a regular
      *       predecessor of `pc`. Hence, consider using the `(Post)DominatorTree`.
      */
-    def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+    def isRegularPredecessorOf(pc: Int, successorPC: Int): Boolean = {
         if (pc == successorPC)
             return true;
 
         // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         var visitedSuccessors = Set(pc)
-        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator)
+        val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator) // REFACTOR fromSeq(Iterator...)
         while (successorsToVisit.nonEmpty) {
             val nextPC = successorsToVisit.pop()
             if (nextPC == successorPC)
@@ -517,7 +525,7 @@ trait RecordCFG
      *          thrown exception is directly handled inside this code block.
      * @note    The successor instructions are necessarily the handlers of catch blocks.
      */
-    def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
+    def exceptionHandlerSuccessorsOf(pc: Int): PCs = {
         val s = exceptionHandlerSuccessors(pc)
         if (s ne null) s else NoPCs
     }
@@ -550,11 +558,11 @@ trait RecordCFG
     /**
      * Computes the transitive hull of all instructions reachable from the given instruction.
      */
-    def allReachable(pc: PC): IntTrieSet = {
-        var allReachable: IntTrieSet = new IntTrieSet1(pc)
+    def allReachable(pc: Int): IntTrieSet = {
+        var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val (succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
                 allReachable += succPC
@@ -623,7 +631,7 @@ trait RecordCFG
                     val oldPredecessorsOfSuccessor = predecessors(successorPC)
                     predecessors(successorPC) =
                         if (oldPredecessorsOfSuccessor eq null) {
-                            new IntTrieSet1(pc)
+                            IntTrieSet1(pc)
                         } else {
                             oldPredecessorsOfSuccessor + pc
                         }
@@ -641,7 +649,7 @@ trait RecordCFG
      *
      * @param pc A valid program counter.
      */
-    def predecessorsOf(pc: PC): PCs = {
+    def predecessorsOf(pc: Int): PCs = {
         val s = predecessors(pc)
         if (s ne null) s else NoPCs
     }
@@ -650,13 +658,15 @@ trait RecordCFG
      * Returns `true` if the instruction with the given pc has multiple direct
      * predecessors (more than one).
      */
-    final def hasMultiplePredecessors(pc: PC): Boolean = predecessorsOf(pc).size > 1
+    final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).size > 1
 
-    final def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = predecessorsOf(pc).foreach(f)
+    final def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
+        predecessorsOf(pc).foreach(f)
+    }
 
     /**
      * Returns the dominator tree; see
-     * [[[[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]]]
+     * [[org.opalj.graphs.DominatorTree$.apply[D<:org\.opalj\.graphs\.AbstractDominatorTree]*]]
      * for details regarding the properties of the dominator tree.
      *
      * @note   To get the list of all evaluated instructions and their dominators.
@@ -673,7 +683,7 @@ trait RecordCFG
         ) {
                 // We want to keep a non-soft reference and avoid any further useless synchronization.
                 val predecessors = this.predecessors
-                def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+                def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC => Unit*/ ): Unit = {
                     val s = predecessors(pc)
                     if (s ne null)
                         s.foreach(f)
@@ -797,28 +807,35 @@ trait RecordCFG
         // that was actually executed!
         val bbs = new Array[BasicBlock](codeSize)
 
-        val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
+        // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
+        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode]
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
-            // 1.1.    Let's check if the handler was executed at all.
-            if unsafeWasExecuted(exceptionHandler.handlerPC)
-            // 1.2.    The handler may be shared by multiple try blocks, hence, we have
-            //         to ensure the we have at least one instruction in the try block
-            //         that jumps to the handler.
-            if handlesException(exceptionHandler)
         } {
-            val handlerPC = exceptionHandler.handlerPC
-            val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-            val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
-            var handlerBB = bbs(handlerPC)
-            if (handlerBB eq null) {
-                handlerBB = new BasicBlock(handlerPC)
-                handlerBB.addPredecessor(catchNode)
-                bbs(handlerPC) = handlerBB
-            } else {
-                handlerBB.addPredecessor(catchNode)
+            if ( // 1.1.    Let's check if the handler was executed at all.
+            unsafeWasExecuted(exceptionHandler.handlerPC) &&
+                // 1.2.    The handler may be shared by multiple try blocks, hence, we have
+                //         to ensure the we have at least one instruction in the try block
+                //         that jumps to the handler.
+                handlesException(exceptionHandler)) {
+                val handlerPC = exceptionHandler.handlerPC
+                // OLD val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                var catchNode = exceptionHandlers.get(handlerPC)
+                if (catchNode == null) {
+                    catchNode = new CatchNode(exceptionHandler, index)
+                    exceptionHandlers.put(handlerPC, catchNode)
+                }
+                var handlerBB = bbs(handlerPC)
+                if (handlerBB eq null) {
+                    handlerBB = new BasicBlock(handlerPC)
+                    handlerBB.addPredecessor(catchNode)
+                    bbs(handlerPC) = handlerBB
+                } else {
+                    handlerBB.addPredecessor(catchNode)
+                }
+                catchNode.addSuccessor(handlerBB)
             }
-            catchNode.addSuccessor(handlerBB)
         }
 
         // 2. iterate over the code to determine the basic block boundaries
@@ -861,7 +878,7 @@ trait RecordCFG
 
                 // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
                 // INCOMING AND OUTGOING DEPENDENCIES!
-                def connect(sourceBB: BasicBlock, targetBBStartPC: PC): Unit = {
+                def connect(sourceBB: BasicBlock, targetBBStartPC: Int): Unit = {
                     var targetBB = bbs(targetBBStartPC)
                     if (targetBB eq null) {
                         targetBB = new BasicBlock(targetBBStartPC)
@@ -918,7 +935,8 @@ trait RecordCFG
         }
 
         // 3. create CFG class
-        CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
+        val exBBs = exceptionHandlers.values.iterator().asScala.toList
+        CFG(code, normalReturnNode, abnormalReturnNode, exBBs, bbs)
     }
 
     /**
@@ -942,7 +960,7 @@ trait RecordCFG
                 None
         // We want to keep a non-soft reference and avoid any further useless synchronization.
         val predecessors = this.predecessors
-        def foreachPredecessorOf(pc: PC)(f: PC ⇒ Unit): Unit = {
+        def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
             val s = predecessors(pc)
             if (s ne null)
                 s.foreach(f)
@@ -951,7 +969,7 @@ trait RecordCFG
         val infiniteLoopHeaders = this.infiniteLoopHeaders
         if (infiniteLoopHeaders.nonEmpty) {
             val dominatorTree = this.dominatorTree
-            var additionalExitNodes = infiniteLoopHeaders.flatMap { loopHeaderPC ⇒
+            var additionalExitNodes = infiniteLoopHeaders flatMap { loopHeaderPC ⇒
                 predecessors(loopHeaderPC).withFilter { predecessorPC ⇒
                     // 1. let's ensure that the predecessor actually belongs to the loop...
                     loopHeaderPC == predecessorPC ||
@@ -960,9 +978,11 @@ trait RecordCFG
             }
             // Now we have to ensure to select the outer most exit pcs which are dominated by
             // other additional exit nodes...
-            additionalExitNodes.foreachPair { (exitPC1, exitPC2) ⇒
+            additionalExitNodes foreachPair { (exitPC1, exitPC2) ⇒
                 if (dominatorTree.strictlyDominates(exitPC1, exitPC2))
                     additionalExitNodes -= exitPC1
+                else if (dominatorTree.strictlyDominates(exitPC2, exitPC1))
+                    additionalExitNodes -= exitPC2
             }
             PostDominatorTree(
                 uniqueExitNode,
@@ -1009,14 +1029,14 @@ trait RecordCFG
      * @note The returned graph is recomputed whenever this method is called.
      * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
-    def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
+    def cfgAsGraph(): DefaultMutableNode[List[Int /*PC*/ ]] = {
         import scala.collection.immutable.{List ⇒ ScalaList}
         val instructions = code.instructions
         val codeSize = instructions.length
-        val nodes = new Array[DefaultMutableNode[List[PC]]](codeSize)
+        val nodes = new Array[DefaultMutableNode[List[Int /*PC*/ ]]](codeSize)
         val nodePredecessorsCount = new Array[Int](codeSize)
         // 1. create nodes
-        val exitNode = new DefaultMutableNode[List[PC]](
+        val exitNode = new DefaultMutableNode[List[Int /*PC*/ ]](
             Nil,
             (n) ⇒ "Exit",
             Map(
@@ -1025,7 +1045,7 @@ trait RecordCFG
                 "color" → "white",
                 "labelloc" → "l"
             ),
-            ScalaList.empty[DefaultMutableNode[List[PC]]]
+            ScalaList.empty[DefaultMutableNode[List[Int /*PC*/ ]]]
         )
         for (pc ← code.programCounters) {
             nodes(pc) = {
@@ -1056,8 +1076,8 @@ trait RecordCFG
                     visualProperties += "peripheries" → "2"
                 }
 
-                def pcsToString(pcs: List[PC]): String = {
-                    def pcToString(pc: PC): String = {
+                def pcsToString(pcs: List[Int /*PC*/ ]): String = {
+                    def pcToString(pc: Int): String = {
                         val ln = code.lineNumber(pc).map(ln ⇒ s"[ln=$ln]").getOrElse("")
                         pc + ln+": "+cfgDomain.code.instructions(pc).toString(pc)
                     }
@@ -1068,7 +1088,7 @@ trait RecordCFG
                     List(pc),
                     pcsToString,
                     visualProperties,
-                    ScalaList.empty[DefaultMutableNode[List[PC]]]
+                    ScalaList.empty[DefaultMutableNode[List[Int /*PC*/ ]]]
                 )
             }
         }

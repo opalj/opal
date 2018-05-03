@@ -50,14 +50,21 @@ trait ExceptionHandlerElement extends PseudoInstruction {
  *
  * @see [[ExceptionHandlerElement]]
  */
-case class TRY(id: Symbol) extends ExceptionHandlerElement
+case class TRY(id: Symbol) extends ExceptionHandlerElement {
+    final override def isTry: Boolean = true
+    final override def isCatch: Boolean = false
+    final override def asTry: TRY = this
+}
 
 /**
  * Pseudo instruction marking the end of a [[org.opalj.br.ExceptionHandler]].
  *
  * @see [[ExceptionHandlerElement]]
  */
-case class TRYEND(id: Symbol) extends ExceptionHandlerElement
+case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
+    final override def isTry: Boolean = false
+    final override def isCatch: Boolean = false
+}
 
 /**
  * Pseudo instruction marking the handler of a [[org.opalj.br.ExceptionHandler]].
@@ -67,7 +74,10 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement
 case class CATCH private (
         id:          Symbol,
         handlerType: Option[br.ObjectType]
-) extends ExceptionHandlerElement
+) extends ExceptionHandlerElement {
+    final override def isTry: Boolean = false
+    final override def isCatch: Boolean = true
+}
 
 /**
  * Factory methods to create an [[CATCH]] pseudo instruction.

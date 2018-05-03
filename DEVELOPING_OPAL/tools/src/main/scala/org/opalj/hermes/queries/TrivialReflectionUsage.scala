@@ -68,15 +68,17 @@ object TrivialReflectionUsage extends FeatureQuery {
 
         project.parForeachMethodWithBody(isInterrupted = this.isInterrupted _) { mi ⇒
             val MethodInfo(source, m @ MethodWithBody(code)) = mi
-            val classForNameCalls = code.collect {
+            val classForNameCalls = code collect {
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) ⇒ i
             }
             if (classForNameCalls.nonEmpty) {
                 val aiResult = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
                 val methodLocation = MethodLocation(source, m)
                 for {
-                    (pc, i) ← classForNameCalls
-                    classNameParameterIndex = i.parametersCount - 1
+                    pcAndInstruction ← classForNameCalls
+                    instruction = pcAndInstruction.value
+                    pc = pcAndInstruction.pc
+                    classNameParameterIndex = instruction.parametersCount - 1
                     operands = aiResult.operandsArray(pc) // if i is dead... opeands is null
                     if operands ne null
                     classNameParameter = operands(classNameParameterIndex)

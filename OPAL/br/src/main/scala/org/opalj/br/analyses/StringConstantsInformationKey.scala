@@ -63,31 +63,34 @@ object StringConstantsInformationKey
      * @note  This analysis is internally parallelized. I.e., it is advantageous to run this
      *        analysis in isolation.
      */
-    override protected def compute(project: SomeProject): Map[String, ConstArray[(Method, PC)]] = {
+    override protected def compute(project: SomeProject): Map[String, ConstArray[PCInMethod]] = {
 
         val estimatedSize = project.methodsCount
-        val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[(Method, PC)]](estimatedSize)
+        val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[PCInMethod]](estimatedSize)
 
         project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
             val method = methodInfo.method
 
-            method.body.get.withFilter { i ⇒
-                val (_, instruction) = i
-                instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode
-            }.foreach {
-                case (pc, LDCString(value)) ⇒
-                    var list: ConcurrentLinkedQueue[(Method, PC)] = map.get(value)
-                    if (list eq null) {
-                        list = new ConcurrentLinkedQueue[(Method, PC)]()
-                        val previousList = map.putIfAbsent(value, list)
-                        if (previousList != null) list = previousList
+            method.body.get foreach { i: PCAndInstruction ⇒
+                val pc = i.pc
+                val instruction = i.instruction
+                if (instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode) {
+                    instruction match {
+                        case LDCString(value) ⇒
+                            var list: ConcurrentLinkedQueue[PCInMethod] = map.get(value)
+                            if (list eq null) {
+                                list = new ConcurrentLinkedQueue[PCInMethod]()
+                                val previousList = map.putIfAbsent(value, list)
+                                if (previousList != null) list = previousList
+                            }
+                            list.add(PCInMethod(method, pc))
+                        case _ ⇒ /*other type of constant*/
                     }
-                    list.add((method, pc))
-                case _ ⇒ /*other type of constant*/
+                }
             }
         }
 
-        var result: Map[String, ConstArray[(Method, PC)]] = Map.empty
+        var result: Map[String, ConstArray[PCInMethod]] = Map.empty
         map.asScala foreach { kv ⇒
             val (name, locations) = kv
             result += ((name, ConstArray.from(locations.asScala.toArray)))

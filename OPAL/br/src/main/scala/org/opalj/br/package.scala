@@ -105,9 +105,9 @@ package object br {
 
     type Instructions = Array[instructions.Instruction]
 
-    type SourceElementID = Int
+    final type SourceElementID = Int
 
-    type Opcode = Int
+    final type Opcode = Int
 
     /**
      * A program counter identifies an instruction in a code array.
@@ -116,7 +116,7 @@ package object br {
      *
      * @note This type alias serves comprehension purposes.
      */
-    type PC = UShort
+    final type PC = UShort
 
     /**
      * A collection of program counters using an IntArraySet as its backing collection.
@@ -125,7 +125,7 @@ package object br {
      *
      * @note This type alias serves comprehension purposes.
      */
-    type PCs = IntTrieSet
+    final type PCs = IntTrieSet
 
     final val NoPCs: IntTrieSet = IntTrieSet.empty
 

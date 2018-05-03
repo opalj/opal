@@ -41,13 +41,15 @@ abstract class IntegerDivideInstruction extends DivideInstruction {
 
     final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

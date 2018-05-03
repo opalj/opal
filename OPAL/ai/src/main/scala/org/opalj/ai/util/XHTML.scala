@@ -31,13 +31,11 @@ package ai
 package util
 
 import scala.language.reflectiveCalls
-
 import scala.xml.Node
 import scala.xml.NodeSeq
-
-import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.io.process
 import org.opalj.br._
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -144,14 +142,14 @@ object XHTML {
         </p>
     }
 
-    def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        val header = "Evaluated instructions: "+evaluated.count(_ >= 0)+"<br>"
+    def evaluatedInstructionsToXHTML(evaluatedPCs: IntArrayStack) = {
+        val header = "Evaluated instructions: "+evaluatedPCs.count(_ >= 0)+"<br>"
         val footer = ""
         val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
         val subroutineEnd = "</div></details>"
 
         var openSubroutines = 0
-        val asStrings = evaluated.reverse.map {
+        val asStrings = evaluatedPCs.reverse.map {
             case SUBROUTINE_START ⇒
                 openSubroutines += 1
                 subroutineStart

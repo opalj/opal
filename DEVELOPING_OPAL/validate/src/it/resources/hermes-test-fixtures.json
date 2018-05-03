@@ -112,7 +112,7 @@
                     },
                     {
                         "id": "pureness",
-                        "cp": "OPAL/bi/target/scala-2.12/resource_managed/test/pureness-1.8-g-parameters-genericsignature.jar"
+                        "cp": "OPAL/bi/target/scala-2.12/resource_managed/test/pureness.jar"
                     },
                     {
                         "id": "signatures",

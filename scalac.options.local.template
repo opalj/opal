@@ -1,0 +1,25 @@
+# To change your local scalac configuration - e.g., to turn off assertions -
+# rename this file by removing the ".template" suffix. The scalac options in
+# this file will take precedence over the ones defined in the file "scalac.options"
+#
+# This file takes exactly one scalac flag per line; empty lines and whitespace at
+# the beginning and end are trimmed and "#" and "//" mark comment lines.
+
+-target:jvm-1.8
+-deprecation
+-feature
+-unchecked
+-Xlint
+-Xfuture
+-Xfatal-warnings
+-Ywarn-numeric-widen
+-Ywarn-nullary-unit
+-Ywarn-nullary-override
+-Ywarn-unused:imports,privates,locals,implicits
+// Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
+-Ywarn-infer-any
+-Ywarn-dead-code
+-Ywarn-inaccessible
+-Ywarn-adapted-args
+-Ybackend-parallelism 8
+// (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions

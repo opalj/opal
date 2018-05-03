@@ -49,6 +49,8 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def computationalType: ComputationalType = ComputationalTypeInt
 
     final def operator: String = "+ "+constValue
@@ -88,7 +90,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }

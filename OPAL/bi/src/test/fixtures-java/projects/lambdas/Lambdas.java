@@ -228,4 +228,6 @@ public class Lambdas {
     interface DoubleFloatInterface {
 	    double apply(double d, float f);
     }
+
+    // TODO Add examples related to Java 9 and Strings.
 }

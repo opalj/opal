@@ -1,0 +1,24 @@
+# This file specifies the default (standard) scalac options in the global context.
+# It may be overridden by the presence of a "local.scalac.options" file.
+# In sbt lingo, the assertion is "scalacOptions in ThisBuild := Seq(<lines of this file>)"
+# This file takes exactly one scalac flag per line; empty lines and whitespace at the
+# beginning and end are trimmed and "#" and "//" mark comment lines.
+
+-target:jvm-1.8
+-deprecation
+-feature
+-unchecked
+-Xlint
+-Xfuture
+-Xfatal-warnings
+-Ywarn-numeric-widen
+-Ywarn-nullary-unit
+-Ywarn-nullary-override
+-Ywarn-unused:imports,privates,locals,implicits
+// Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
+-Ywarn-infer-any
+-Ywarn-dead-code
+-Ywarn-inaccessible
+-Ywarn-adapted-args
+-Xdisable-assertions
+-Ybackend-parallelism 8

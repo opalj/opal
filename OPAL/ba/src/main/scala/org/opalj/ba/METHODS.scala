@@ -49,7 +49,7 @@ class METHODS[T](private[this] var methods: Seq[METHOD[T]]) {
         declaringClassType: ObjectType
     )(
         implicit
-        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): IndexedSeq[(br.MethodTemplate, Option[T])] = {
         IndexedSeq.empty ++ methods.iterator.map(m ⇒ m.result(classFileVersion, declaringClassType))
     }

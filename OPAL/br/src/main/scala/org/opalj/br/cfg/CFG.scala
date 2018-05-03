@@ -181,7 +181,7 @@ case class CFG(
      * @return The basic block associated with the given `pc`. If the `pc` is not valid
      *         `null` is returned or an index out of bounds exception is thrown.
      */
-    def bb(pc: PC): BasicBlock = basicBlocks(pc)
+    def bb(pc: Int): BasicBlock = basicBlocks(pc)
 
     /**
      * Returns the set of all reachable [[CFGNode]]s of the control flow graph.
@@ -230,7 +230,7 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): IntTrieSet = {
+    def successors(pc: Int): IntTrieSet = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
@@ -253,7 +253,7 @@ case class CFG(
      * instruction. (E.g., relevant in case of a switch where multiple cases are handled in the
      * same way.)
      */
-    def foreachSuccessor(pc: PC)(f: PC ⇒ Unit): Unit = {
+    def foreachSuccessor(pc: Int)(f: Int ⇒ Unit): Unit = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
@@ -275,7 +275,7 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC): IntTrieSet = {
+    def predecessors(pc: Int): IntTrieSet = {
         if (pc == 0)
             return IntTrieSet.empty;
 
@@ -292,11 +292,11 @@ case class CFG(
             }
             predecessorPCs
         } else {
-            new IntTrieSet1(code.pcOfPreviousInstruction(pc))
+            IntTrieSet1(code.pcOfPreviousInstruction(pc))
         }
     }
 
-    def foreachPredecessor(pc: PC)(f: PC ⇒ Unit): Unit = {
+    def foreachPredecessor(pc: Int)(f: Int ⇒ Unit): Unit = {
         if (pc == 0)
             return ;
 
@@ -336,15 +336,16 @@ case class CFG(
      *         instructions/statements, but which all belong to the same basic block.
      *         ''This situation cannot be handled using pcToIndex.''
      *         This information is used to ensure that - if a basic block which currently just
-     *         encompasses a single instruction will encompass the new and the old instruction afterwards.
+     *         encompasses a single instruction, it will encompass the new and the old instruction
+     *         afterwards.
      *         The returned value will be used as the `endIndex.`
      *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
      *         Hence, the function is given the mapped index has to return that value if the index
      *         does not belong to the expanded instruction.
      */
     def mapPCsToIndexes(
-        pcToIndex:            Array[PC],
-        singletonBBsExpander: PC ⇒ Int,
+        pcToIndex:            Array[Int /*PC*/ ],
+        singletonBBsExpander: Int /*PC*/ ⇒ Int,
         lastIndex:            Int
     ): CFG = {
 

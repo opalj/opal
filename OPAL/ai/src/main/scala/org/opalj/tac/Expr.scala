@@ -48,7 +48,9 @@ import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodHandle
+import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.analyses.ProjectLike
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -92,7 +94,10 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
      */
     def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean
 
-    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+    private[tac] def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {}
 
     // TYPE CAST (RELATED) EXPRESSIONS
 
@@ -153,8 +158,11 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
     final override def subExpr(index: Int): Expr[V] = value
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(value)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        value.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"InstanceOf(pc=$pc,$value,${cmpTpe.toJava})"
@@ -182,9 +190,12 @@ case class Compare[+V <: Var[V]](
     final override def subExpr(index: Int): Expr[V] = if (index == 0) left else right
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(left) && p(right)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        left.remapIndexes(pcToIndex)
-        right.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        left.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        right.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"Compare(pc=$pc,$left,$condition,$right)"
@@ -343,9 +354,12 @@ case class BinaryExpr[+V <: Var[V]](
             (right.isIntConst && right.asIntConst.value != 0)
     }
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        left.remapIndexes(pcToIndex)
-        right.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        left.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        right.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"BinaryExpr(pc=$pc,$cTpe,$left,$op,$right)"
@@ -371,8 +385,11 @@ case class PrefixExpr[+V <: Var[V]](
     final override def subExpr(index: Int): Expr[V] = operand
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(operand)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        operand.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        operand.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"PrefixExpr(pc=$pc,$cTpe,$op,$operand)"
@@ -395,8 +412,11 @@ case class PrimitiveTypecastExpr[+V <: Var[V]](
     final override def subExpr(index: Int): Expr[V] = operand
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(operand)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        operand.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        operand.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"PrimitiveTypecastExpr(pc=$pc,$targetTpe,$operand)"
@@ -455,8 +475,11 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
      */
     final override def isSideEffectFree: Boolean = false
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        counts.foreach { c ⇒ c.remapIndexes(pcToIndex) }
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        counts.foreach { c ⇒ c.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
     override def toString: String = {
@@ -475,9 +498,12 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
     final override def subExpr(index: Int): Expr[V] = if (index == 0) this.index else arrayRef
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(index) && p(arrayRef)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        index.remapIndexes(pcToIndex)
-        arrayRef.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        arrayRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"ArrayLoad(pc=$pc,$index,$arrayRef)"
@@ -494,8 +520,11 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends ArrayExp
     final override def subExpr(index: Int): Expr[V] = arrayRef
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(arrayRef)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        arrayRef.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        arrayRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     override def toString: String = s"ArrayLength(pc=$pc,$arrayRef)"
@@ -526,8 +555,11 @@ case class GetField[+V <: Var[V]](
     final override def subExpr(index: Int): Expr[V] = objRef
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = p(objRef)
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        objRef.remapIndexes(pcToIndex)
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        objRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
     final def isSideEffectFree: Boolean = {
@@ -583,8 +615,11 @@ case class Invokedynamic[+V <: Var[V]](
         params.forall(param ⇒ p(param))
     }
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
     override def toString: String = {
@@ -644,9 +679,21 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
     final override def astID: Int = NonVirtualFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        receiver.remapIndexes(pcToIndex)
-        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    /**
+     * Identifies the potential call target if it can be found.
+     *
+     * @see [ProjectLike#specialCall] for further details.
+     */
+    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(declaringClass, isInterface, name, descriptor)
+    }
+
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        params foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
     override def toString: String = {
@@ -666,15 +713,19 @@ case class VirtualFunctionCall[+V <: Var[V]](
         descriptor:     MethodDescriptor,
         receiver:       Expr[V],
         params:         Seq[Expr[V]]
-) extends InstanceFunctionCall[V] {
+) extends InstanceFunctionCall[V]
+    with VirtualCall[V] {
 
     final override def asVirtualFunctionCall: this.type = this
     final override def astID: Int = VirtualFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        receiver.remapIndexes(pcToIndex)
-        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
     override def toString: String = {
@@ -704,8 +755,20 @@ case class StaticFunctionCall[+V <: Var[V]](
         params.forall(param ⇒ p(param))
     }
 
-    private[tac] override def remapIndexes(pcToIndex: Array[Int]): Unit = {
-        params.foreach { p ⇒ p.remapIndexes(pcToIndex) }
+    /**
+     * Identifies the potential call target if it can be found.
+     *
+     * @see [ProjectLike#staticCall] for further details.
+     */
+    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
+        p.staticCall(declaringClass, isInterface, name, descriptor)
+    }
+
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
     override def toString: String = {

@@ -55,7 +55,7 @@ class METHOD[T](
         declaringClassType: ObjectType
     )(
         implicit
-        classHierarchy: ClassHierarchy = br.Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (br.MethodTemplate, Option[T]) = {
         val descriptor = br.MethodDescriptor(this.descriptor)
         val accessFlags = accessModifiers.accessFlags

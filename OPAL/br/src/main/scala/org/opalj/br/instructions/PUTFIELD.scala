@@ -52,6 +52,8 @@ case class PUTFIELD(
 
     final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
     final def stackSlotsChange: Int = -fieldType.computationalType.operandSize - 1
@@ -62,7 +64,7 @@ case class PUTFIELD(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Chain.singleton(indexOfNextInstruction(currentPC))

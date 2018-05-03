@@ -43,6 +43,10 @@ class InMemoryClassLoader(
         parent:                       ClassLoader              = ClassLoader.getSystemClassLoader
 ) extends ClassLoader(parent) {
 
+    /**
+     * @note Clients should call `loadClass`! Please, consult the documentation of
+     *       `java.lang.ClassLoader` for further details!
+     */
     @throws[ClassNotFoundException]
     override def findClass(name: String): Class[_] = {
         rawClasses.get(name) match {

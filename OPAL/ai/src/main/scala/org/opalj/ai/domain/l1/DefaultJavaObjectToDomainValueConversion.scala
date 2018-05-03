@@ -47,7 +47,7 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
      * Converts the given Java object to a corresponding `DomainValue` by creating an `DomainValue`
      * that represents an initialized (array/object) value.
      */
-    override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
+    override def toDomainValue(pc: Int, value: Object): DomainReferenceValue = {
         if (value eq null)
             return NullValue(pc);
 

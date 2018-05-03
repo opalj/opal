@@ -1,5 +1,7 @@
 //
-// Optional configuration __settings__ specific to each developers machine.
+// Additional configuration __settings__ specific to each developers machine.
+// Please note that you have to change scalac.options.local for changes to
+// the configuration of the scalac compiler.
 //
 // Copy this file to "local.sbt" and change all settings as appropriate.
 //
@@ -11,7 +13,3 @@ javaOptions in ThisBuild ++= Seq(
 	"-Dorg.opalj.threads.CPUBoundTasks=4", // Number of physical (not hyperthreaded) cores/CPUs
 	"-Dorg.opalj.threads.IOBoundTasks=12" // Number of (hyperthreaded) cores * 1,5
 )
-
-// Reenable assertions!
-// HIGHLY recommend to turn on assertions!
-scalacOptions in ThisBuild -= "-Xdisable-assertions"

@@ -58,7 +58,7 @@ trait Instruction extends InstructionLike {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC]
 
     /**
@@ -84,6 +84,7 @@ trait Instruction extends InstructionLike {
     // ---------------------------------------------------------------------------------------------
 
     def isSimpleBranchInstruction: Boolean = false
+    def isSimpleConditionalBranchInstruction: Boolean = false
     def isCompoundConditionalBranchInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
     def isStackManagementInstruction: Boolean = false
@@ -171,7 +172,7 @@ object Instruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
         exceptions foreach { exception ⇒
@@ -187,7 +188,7 @@ object Instruction {
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
         nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))

@@ -46,34 +46,41 @@ case class RET(
         lvIndex: Int
 ) extends ControlTransferInstruction with ConstantLengthInstruction with NoLabels {
 
-    final def opcode: Opcode = RET.opcode
+    final override def opcode: Opcode = RET.opcode
 
-    final def mnemonic: String = "ret"
+    final override def mnemonic: String = "ret"
 
-    final def length: Int = 2
+    final override def isRET: Boolean = true
 
-    final def nextInstructions(
+    final override def length: Int = 2
+
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
     }
 
-    def jumpTargets(
+    override def jumpTargets(
         currentPC: PC
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Iterator[PC] = {
         nextInstructions(currentPC, false /*irrelevant*/ ).toIterator
     }
 
-    final def nextInstructions(currentPC: PC, cfg: () ⇒ CFG)(implicit code: Code): Chain[PC] = {
+    final def nextInstructions(
+        currentPC: PC, cfg: () ⇒ CFG
+    )(
+        implicit
+        code: Code
+    ): Chain[PC] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
@@ -97,23 +104,23 @@ case class RET(
         jumpTargets
     }
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def stackSlotsChange: Int = 0
+    final override def stackSlotsChange: Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
     }
 
-    final def readsLocal: Boolean = true
+    final override def readsLocal: Boolean = true
 
-    final def indexOfReadLocal: Int = lvIndex
+    final override def indexOfReadLocal: Int = lvIndex
 
-    final def writesLocal: Boolean = false
+    final override def writesLocal: Boolean = false
 
-    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
     final override def toString(currentPC: Int): String = toString()
 }

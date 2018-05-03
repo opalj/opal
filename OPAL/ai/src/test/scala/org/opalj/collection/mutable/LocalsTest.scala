@@ -71,13 +71,25 @@ class LocalsTest extends FlatSpec with Matchers {
         }
     }
 
-    it should ("be able to return the value stored at an index") in {
+    it should ("be able to return the value stored (upated(index,value)) at an index") in {
         for {
             i ← 1 to 100
             v = Locals[Integer](i)
             j ← 0 until i
         } {
             v.updated(j, j).apply(j) should equal(j)
+        }
+    }
+
+    it should ("be able to return the values stored (upated(index,value1,value2)) at an index") in {
+        for {
+            i ← 2 to 100
+            v = Locals[Integer](i)
+            j ← 0 until i - 1
+        } {
+            val newV = v.updated(j, j, -3)
+            newV.apply(j) should equal(j)
+            newV.apply(j + 1) should equal(-3)
         }
     }
 

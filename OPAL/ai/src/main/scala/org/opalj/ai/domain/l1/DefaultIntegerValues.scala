@@ -51,15 +51,15 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
      */
     object AnIntegerValue extends super.AnIntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other.computationalType == ComputationalTypeInt
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.IntegerValue(origin = pc)
         }
 
@@ -85,7 +85,7 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
      */
     class TheIntegerValue(val value: Int) extends super.TheIntegerValue {
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue)
                 case that: TheIntegerValue ⇒
@@ -105,9 +105,9 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
             )
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.IntegerValue(pc, value)
         }
 

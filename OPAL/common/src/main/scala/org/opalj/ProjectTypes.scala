@@ -38,12 +38,12 @@ object ProjectTypes extends Enumeration {
 
     final val Library = Value("library")
 
+    final val CommandLineApplication = Value("command-line application")
+
     /**
      * This mode shall be used if a standard Java GUI application is analyzed which is started by
      * the JVM by calling the application's main method.
      */
-    final val CommandLineApplication = Value("command-line application")
-
     final val GUIApplication = Value("gui application")
 
     final val JEE6WebApplication = Value("jee6+ web application")

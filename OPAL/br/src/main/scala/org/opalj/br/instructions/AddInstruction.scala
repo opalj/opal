@@ -43,6 +43,8 @@ abstract class AddInstruction extends AlwaysSucceedingStackBasedBinaryArithmetic
 
     final def jvmExceptions: List[ObjectType] = Nil
 
+    final def mayThrowExceptions: Boolean = false
+
     final def stackSlotsChange: Int = -computationalType.operandSize
 
 }

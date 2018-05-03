@@ -33,9 +33,9 @@ import scala.annotation.switch
 import scala.collection.mutable.Queue
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
@@ -130,7 +130,7 @@ object TACAI {
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
     ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
 
-        def allDead(fromPC: PC, untilPC: PC): Boolean = {
+        def allDead(fromPC: Int, untilPC: Int): Boolean = {
             val a = aiResult.operandsArray
             var i = fromPC
             while (i < untilPC) {
@@ -152,7 +152,7 @@ object TACAI {
         val instructions: Array[Instruction] = code.instructions
         val codeSize: Int = instructions.length
         val cfg: CFG = domain.bbCFG
-        def wasExecuted(pc: PC) = cfg.bb(pc) != null
+        def wasExecuted(pc: Int) = cfg.bb(pc) != null
         val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
         val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
 
@@ -191,10 +191,8 @@ object TACAI {
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
-                    {
-                        aiVOs.map { aiVO ⇒
-                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
-                        }
+                    aiVOs.map { aiVO ⇒
+                        if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
@@ -216,9 +214,10 @@ object TACAI {
 
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
-        val obsoleteUseSites: Queue[(Int /*UseSite*/ , IntTrieSet /*DefSites*/ )] = Queue.empty
+        // basically a mapping from a UseSite(PC) to a DefSite
+        val obsoleteUseSites: Queue[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = Queue.empty
 
-        def killOperandBasedUsages(useSite: br.PC, valuesCount: Int): Unit = {
+        def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
             // we now have to kill the usages to avoid "wrong" links.
             // E.g.,
@@ -228,27 +227,33 @@ object TACAI {
             // site is removed and - therefore - this link from x to x+1 has to
             // be removed.
             if (valuesCount > 0) {
-                var origins = normalizeParameterOrigins(domain.operandOrigin(useSite, 0))
+                var origins = normalizeParameterOrigins(domain.operandOrigin(useSitePC, 0))
                 var i = 1
                 while (i < valuesCount) {
-                    origins ++= normalizeParameterOrigins(domain.operandOrigin(useSite, i))
+                    origins ++= normalizeParameterOrigins(domain.operandOrigin(useSitePC, i))
                     i += 1
                 }
-                obsoleteUseSites enqueue ((useSite, origins))
+                obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
             }
         }
 
-        def killRegisterBasedUsages(useSite: br.PC, index: Int): Unit = {
-            val origins = normalizeParameterOrigins(domain.localOrigin(useSite, index))
-            obsoleteUseSites enqueue ((useSite, origins))
+        def killRegisterBasedUsages(useSitePC: Int, index: Int): Unit = {
+            val origins = normalizeParameterOrigins(domain.localOrigin(useSitePC, index))
+            obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
         }
 
         // The catch handler statements which were added to the code that do not take up
         // the slot of an empty load/store statement.
         var addedHandlerStmts: IntTrieSet = IntTrieSet.empty
-        val handlerPCs = (new IntArraySetBuilder() ++= code.exceptionHandlers.map(_.handlerPC)).result
 
-        var pc: PC = 0
+        val handlerPCs: IntArraySet = {
+            val ehs = code.exceptionHandlers
+            val handlerPCs = new IntArraySetBuilder(ehs.length)
+            ehs.foreach(eh ⇒ handlerPCs += eh.handlerPC)
+            handlerPCs.result
+        }
+
+        var pc: Int = 0
         var index: Int = 0
         do {
             val nextPC = pcOfNextInstruction(pc)
@@ -327,7 +332,7 @@ object TACAI {
              * an expression statement or a nop statement is added.
              */
             def addInitLocalValStmt(
-                pc:   PC,
+                pc:   Int,
                 v:    aiResult.domain.DomainValue,
                 expr: Expr[DUVar[aiResult.domain.DomainValue]]
             ): Unit = {
@@ -910,7 +915,9 @@ object TACAI {
         //  - every pc appears at most once in `obsoleteUseSites`
         //  - we do not have deeply nested expressions
         while (obsoleteUseSites.nonEmpty) {
-            val /*original - bytecode based...:*/ (useSite, defSites) = obsoleteUseSites.dequeue()
+            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.dequeue()
+            val useSite = useDefMapping.pc
+            val defSites = useDefMapping.value
             // Now... we need to go the def site - which has to be an assignment - and kill
             // the respective use unless it is an exception...; if no use remains...
             //      and the expression is side effect free ... add it to obsoleteDefSites and
@@ -959,19 +966,25 @@ object TACAI {
         }
 
         val tacStmts: Array[Stmt[DUVar[aiResult.domain.DomainValue]]] = {
+            def isIndexOfCaughtExceptionStmt(index: Int): Boolean = {
+                statements(index).astID == CaughtException.ASTID
+            }
             if (index == maxStatements) {
                 // Examples:
                 // It can be a single goto, a return or a throw (of an exception passed to
                 // the method via a parameter).
                 var s = 0
-                while (s < maxStatements) { statements(s).remapIndexes(pcToIndex); s += 1 }
+                while (s < maxStatements) {
+                    statements(s).remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+                    s += 1
+                }
                 statements
             } else {
                 val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
                 var s = 0
                 while (s < index) {
                     val stmt = statements(s)
-                    stmt.remapIndexes(pcToIndex)
+                    stmt.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
                     tacStmts(s) = stmt
                     s += 1
                 }

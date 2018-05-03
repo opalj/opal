@@ -100,7 +100,7 @@ case class TABLESWITCH(
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)

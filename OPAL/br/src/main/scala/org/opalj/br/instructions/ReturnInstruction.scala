@@ -51,6 +51,8 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
      */
     final def jvmExceptions: List[ObjectType] = ReturnInstruction.jvmExceptions
 
+    final def mayThrowExceptions: Boolean = true
+
     final def length: Int = 1
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
@@ -73,7 +75,7 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
     )(
         implicit
         code:           Code,
-        classHierarchy: ClassHierarchy = Code.BasicClassHierarchy
+        classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[PC] = {
         if (regularSuccessorsOnly)
             Naught

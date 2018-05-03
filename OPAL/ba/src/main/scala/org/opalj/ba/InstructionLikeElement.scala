@@ -40,17 +40,23 @@ sealed abstract class InstructionLikeElement[+T] extends CodeElement[T] {
 
     final override def isInstructionLikeElement: Boolean = true
 
+    final override def isPseudoInstruction: Boolean = false
+
     final override def isExceptionHandlerElement: Boolean = false
 
-    final override def isPseudoInstruction: Boolean = false
+    final override def isTry: Boolean = false
+
+    final override def isCatch: Boolean = false
+
+    final override def isControlTransferInstruction: Boolean = {
+        instruction.isControlTransferInstruction
+    }
 
     def isAnnotated: Boolean
 
     def annotation: T
 
     def instruction: LabeledInstruction
-
-    def isControlTransferInstruction: Boolean = instruction.isControlTransferInstruction
 }
 
 object InstructionLikeElement {

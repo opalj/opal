@@ -28,7 +28,6 @@
  */
 package org.opalj.br.cfg
 
-import org.opalj.br.PC
 import org.opalj.br.Code
 
 /**
@@ -42,11 +41,11 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 class BasicBlock(
-        val startPC:             PC, // <= determines this basic blocks' hash value!
-        private[cfg] var _endPC: PC = Int.MinValue
+        val startPC:             Int, // <= determines this basic blocks' hash value!
+        private[cfg] var _endPC: Int = Int.MinValue
 ) extends CFGNode {
 
-    def this(startPC: PC, successors: Set[CFGNode]) {
+    def this(startPC: Int, successors: Set[CFGNode]) {
         this(startPC, Int.MinValue)
         this.setSuccessors(successors)
     }
@@ -72,13 +71,13 @@ class BasicBlock(
     final override def isBasicBlock: Boolean = true
     final override def asBasicBlock: this.type = this
 
-    def endPC_=(pc: PC): Unit = {
+    def endPC_=(pc: Int): Unit = {
         _endPC = pc
     }
     /**
      * The pc of the last instruction belonging to this basic block.
      */
-    def endPC: PC = _endPC
+    def endPC: Int = _endPC
 
     private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
     def setIsStartOfSubroutine(): Unit = {
@@ -101,7 +100,7 @@ class BasicBlock(
      *     `pc` has to satisfy: `startPC <= pc <= endPC`.
      * @param code The code to which this basic block belongs.
      */
-    def index(pc: PC)(implicit code: Code): Int = {
+    def index(pc: Int)(implicit code: Code): Int = {
         assert(pc >= startPC && pc <= endPC)
 
         var index = 0
@@ -121,7 +120,7 @@ class BasicBlock(
      * @param     code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
      *             belongs.
      */
-    def foreach[U](f: PC ⇒ U)(implicit code: Code): Unit = {
+    def foreach[U](f: Int ⇒ U)(implicit code: Code): Unit = {
         val instructions = code.instructions
 
         var pc = this.startPC

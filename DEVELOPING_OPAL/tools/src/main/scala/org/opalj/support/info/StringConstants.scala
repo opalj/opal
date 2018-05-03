@@ -63,8 +63,9 @@ object StringConstants extends DefaultOneStepAnalysis {
                 replace("\n", "\\n").
                 replace("\t", "\\t").
                 replace("\"", "\\\"")
-            locations.map { methodPc ⇒
-                val (method, pc) = methodPc
+            locations.map { pcInMethod ⇒
+                val pc = pcInMethod.pc
+                val method = pcInMethod.method
                 method.toJava(s"pc=$pc")
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }
