@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap
  *      log messages related to OPAL, such as the number of threads used for
  *      computations.
  *
- *  2. The log context associated with [[org.opalj.br.analyses.Project]]s to log
+ *  1. The log context associated with [[org.opalj.br.analyses.Project]]s to log
  *      project related information (e.g., such as project related results or
  *      configuration issues.)
  *
