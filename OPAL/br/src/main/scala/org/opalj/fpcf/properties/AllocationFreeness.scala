@@ -102,7 +102,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                             INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode ⇒
                             hasAllocation = true
                         case ASTORE_0.opcode if !method.isStatic ⇒
-                            if(mayOverwriteSelf) overwritesSelf = true
+                            if (mayOverwriteSelf) overwritesSelf = true
                             else hasAllocation = true
                         case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
                             if (method.isStatic || overwritesSelf)
