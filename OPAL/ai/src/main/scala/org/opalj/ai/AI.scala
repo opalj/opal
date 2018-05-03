@@ -365,17 +365,18 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         val wl = AI.initialWorkList
         //val aePCs: List[Int/*PC*/] /*alreadyEvaluated*/ = Nil //
         val aePCs: IntArrayStack = new IntArrayStack(codeLength * 2) // size is just an initial guess...
-        continueInterpretation(code, theDomain)(wl, aePCs, operandsArray, localsArray)
+        continueInterpretation(code, theDomain)(wl, aePCs, false, operandsArray, localsArray)
     }
 
     def continueInterpretation(
         code:      Code,
         theDomain: D
     )(
-        initialWorkList:     List[Int /*PC*/ ],
-        alreadyEvaluatedPCs: IntArrayStack,
-        theOperandsArray:    theDomain.OperandsArray,
-        theLocalsArray:      theDomain.LocalsArray
+        initialWorkList:          List[Int /*PC*/ ],
+        alreadyEvaluatedPCs:      IntArrayStack,
+        subroutinesWereEvaluated: Boolean,
+        theOperandsArray:         theDomain.OperandsArray,
+        theLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
         val classHierarchy: ClassHierarchy =
             theDomain match {
@@ -390,7 +391,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             code, cfJoins, liveVariables,
             theDomain
         )(
-            initialWorkList, alreadyEvaluatedPCs,
+            initialWorkList, alreadyEvaluatedPCs, subroutinesWereEvaluated,
             theOperandsArray, theLocalsArray,
             Nil, null, null
         )
@@ -476,6 +477,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
      *      (`JSR(_W)` and `RET` instructions.) For each instruction that was evaluated,
      *      the operands array and the locals array must be non-empty (not `null`).
      *
+     * @param subroutinesWereEvaluated True if a subroutine was already evaluated. I.e.,
+     *      at least one JSR instruction can be found in the list of already evaluated pcs.
+     *
      * @param theOperandsArray The array that contains the operand stacks. Each value
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
@@ -507,6 +511,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
     )(
         initialWorkList:                     List[Int /*PC*/ ],
         alreadyEvaluatedPCs:                 IntArrayStack,
+        subroutinesWereEvaluated:            Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
         theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)],
@@ -576,10 +581,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ val evaluatedPCs = alreadyEvaluatedPCs
-        /* 5 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts =
+        /* 5 */ var evaluatedSubroutine = subroutinesWereEvaluated
+        /* 6 */ var memoryLayoutBeforeSubroutineCall: SubroutineMemoryLayouts =
             theMemoryLayoutBeforeSubroutineCall
-        /* 6 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
-        /* 7 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
+        /* 7 */ var subroutinesOperandsArray = theSubroutinesOperandsArray
+        /* 8 */ var subroutinesLocalsArray = theSubroutinesLocalsArray
 
         def throwInterpretationFailedException(cause: Throwable, pc: Int): Nothing = {
             throw InterpretationFailedException(
@@ -619,7 +625,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 AIResultBuilder.completed(
                     code, cfJoins, liveVariables, theDomain
                 )(
-                    evaluatedPCs, operandsArray, localsArray
+                    evaluatedPCs, evaluatedSubroutine, operandsArray, localsArray
                 )
             try {
                 theDomain.abstractInterpretationEnded(result)
@@ -1031,7 +1037,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     AIResultBuilder.aborted(
                         code, cfJoins, liveVariables, theDomain
                     )(
-                        worklist, evaluatedPCs,
+                        worklist, evaluatedPCs, evaluatedSubroutine,
                         operandsArray, localsArray,
                         memoryLayoutBeforeSubroutineCall,
                         subroutinesOperandsArray, subroutinesLocalsArray
@@ -1833,6 +1839,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // - Each instance of type return address can be returned to at most
                     //      once.
                     case 168 /*jsr*/ | 201 /*jsr_w*/ ⇒
+                        evaluatedSubroutine = true
                         val returnTarget = pcOfNextInstruction
                         val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
                         evaluatedPCs += SUBROUTINE_START
