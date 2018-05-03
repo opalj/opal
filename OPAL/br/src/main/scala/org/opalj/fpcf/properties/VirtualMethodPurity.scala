@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.PropertyKey.SomeEPKs
+import org.opalj.br.DeclaredMethod
 
 sealed trait VirtualMethodPurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -44,90 +44,47 @@ sealed trait VirtualMethodPurityPropertyMetaInformation extends PropertyMetaInfo
  * @author Dominik Helm
  */
 sealed case class VirtualMethodPurity(
-        purity: Purity
-) extends Property with VirtualMethodPurityPropertyMetaInformation {
+        val individualProperty: Purity
+) extends AggregatedProperty[Purity, VirtualMethodPurity]
+    with VirtualMethodPurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[VirtualMethodPurity]] property.
      */
     final def key: PropertyKey[VirtualMethodPurity] = VirtualMethodPurity.key
 
-    final val isRefinable = purity.isRefinable
-
-    def meet(other: VirtualMethodPurity): VirtualMethodPurity =
-        VirtualMethodPurity(purity combine other.purity)
-
-    override def toString: String = s"VirtualMethodPurity($purity)"
+    override def toString: String = s"VirtualMethodPurity($individualProperty)"
 }
 
 object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
 
-    def baseCycleResolutionStrategy(
-        propertyStore: PropertyStore,
-        epks:          SomeEPKs
-    ): Iterable[Result] = {
-        // When we have a cycle we can leverage the "purity" - conceptually (unless we
-        // we have a programming bug) all properties (also those belonging to other
-        // lattice) model conditional properties under the assumption that we have
-        // at least the current properties.
-        val e = epks.head.e
-        val p = propertyStore(e, key).p
-        assert(p.purity.isConditional) // a cycle must not contain a non-conditional property
-        // NOTE
-        // We DO NOT increase the purity of all methods as this will happen automatically as a
-        // sideeffect of setting the purity of one method!
-        Iterable(Result(e, VirtualMethodPurity(propertyStore(e, key).p.purity.unconditional)))
-    }
+    def apply(name: String): Option[VirtualMethodPurity] =
+        if (name.charAt(0) == 'V') Purity(name.substring(1)).map(_.aggregatedProperty) else None
 
-    def apply(purity: Purity): VirtualMethodPurity = purity match {
-        case PureWithoutAllocations              ⇒ VPureWithoutAllocations
-        case CPureWithoutAllocations             ⇒ VCPureWithoutAllocations
-        case LBSideEffectFreeWithoutAllocations  ⇒ VLBSideEffectFreeWithoutAllocations
-        case CLBSideEffectFreeWithoutAllocations ⇒ VCLBSideEffectFreeWithoutAllocations
-        case LBPure                              ⇒ VLBPure
-        case CLBPure                             ⇒ VCLBPure
-        case LBSideEffectFree                    ⇒ VLBSideEffectFree
-        case CLBSideEffectFree                   ⇒ VCLBSideEffectFree
-        case LBExternallyPure                    ⇒ VLBExternallyPure
-        case CLBExternallyPure                   ⇒ VCLBExternallyPure
-        case LBExternallySideEffectFree          ⇒ VLBExternallySideEffectFree
-        case CLBExternallySideEffectFree         ⇒ VCLBExternallySideEffectFree
-        case LBDPure                             ⇒ VLBDPure
-        case CLBDPure                            ⇒ VCLBDPure
-        case LBDSideEffectFree                   ⇒ VLBDSideEffectFree
-        case CLBDSideEffectFree                  ⇒ VCLBDSideEffectFree
-        case LBDExternallyPure                   ⇒ VLBDExternallyPure
-        case CLBDExternallyPure                  ⇒ VCLBDExternallyPure
-        case LBDExternallySideEffectFree         ⇒ VLBDExternallySideEffectFree
-        case CLBDExternallySideEffectFree        ⇒ VCLBDExternallySideEffectFree
-        case MaybePure                           ⇒ VMaybePure
-        case LBImpure                            ⇒ VLBImpure
-        case Impure                              ⇒ VImpure
-    }
-
-    final val VPureWithoutAllocations = new VirtualMethodPurity(PureWithoutAllocations)
-    final val VCPureWithoutAllocations = new VirtualMethodPurity(CPureWithoutAllocations)
-    final val VLBSideEffectFreeWithoutAllocations =
-        new VirtualMethodPurity(LBSideEffectFreeWithoutAllocations)
-    final val VCLBSideEffectFreeWithoutAllocations =
-        new VirtualMethodPurity(CLBSideEffectFreeWithoutAllocations)
+    final val VCompileTimePure =
+        new VirtualMethodPurity(CompileTimePure)
     final val VLBPure = new VirtualMethodPurity(LBPure)
-    final val VCLBPure = new VirtualMethodPurity(CLBPure)
-    final val VLBSideEffectFree = new VirtualMethodPurity(LBSideEffectFree)
-    final val VCLBSideEffectFree = new VirtualMethodPurity(CLBSideEffectFree)
-    final val VLBExternallyPure = new VirtualMethodPurity(LBExternallyPure)
-    final val VCLBExternallyPure = new VirtualMethodPurity(CLBExternallyPure)
-    final val VLBExternallySideEffectFree = new VirtualMethodPurity(LBExternallySideEffectFree)
-    final val VCLBExternallySideEffectFree = new VirtualMethodPurity(CLBExternallySideEffectFree)
+    final val VLBSideEffectFree =
+        new VirtualMethodPurity(LBSideEffectFree)
+    final val VLBExternallyPure =
+        new VirtualMethodPurity(LBExternallyPure)
+    final val VLBExternallySideEffectFree =
+        new VirtualMethodPurity(LBExternallySideEffectFree)
+    final val VLBContextuallyPure =
+        new VirtualMethodPurity(LBContextuallyPure)
+    final val VLBContextuallySideEffectFree =
+        new VirtualMethodPurity(LBContextuallySideEffectFree)
     final val VLBDPure = new VirtualMethodPurity(LBDPure)
-    final val VCLBDPure = new VirtualMethodPurity(CLBDPure)
-    final val VLBDSideEffectFree = new VirtualMethodPurity(LBDSideEffectFree)
-    final val VCLBDSideEffectFree = new VirtualMethodPurity(CLBDSideEffectFree)
-    final val VLBDExternallyPure = new VirtualMethodPurity(LBDExternallyPure)
-    final val VCLBDExternallyPure = new VirtualMethodPurity(CLBDExternallyPure)
-    final val VLBDExternallySideEffectFree = new VirtualMethodPurity(LBDExternallySideEffectFree)
-    final val VCLBDExternallySideEffectFree = new VirtualMethodPurity(CLBDExternallySideEffectFree)
-    final val VMaybePure = new VirtualMethodPurity(MaybePure)
+    final val VLBDSideEffectFree =
+        new VirtualMethodPurity(LBDSideEffectFree)
+    final val VLBDExternallyPure =
+        new VirtualMethodPurity(LBDExternallyPure)
+    final val VLBDExternallySideEffectFree =
+        new VirtualMethodPurity(LBDExternallySideEffectFree)
+    final val VLBDContextuallyPure =
+        new VirtualMethodPurity(LBDContextuallyPure)
+    final val VLBDContextuallySideEffectFree =
+        new VirtualMethodPurity(LBDContextuallySideEffectFree)
     final val VLBImpure = new VirtualMethodPurity(LBImpure)
     final val VImpure = new VirtualMethodPurity(Impure)
 
@@ -135,9 +92,8 @@ object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "VirtualMethodPurity";
      * the fallback is "VImpure".
      */
-    final val key = PropertyKey.create[VirtualMethodPurity](
+    final val key = PropertyKey.create[DeclaredMethod, VirtualMethodPurity](
         "VirtualMethodPurity",
-        VImpure,
-        baseCycleResolutionStrategy _
+        VImpure
     )
 }

@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.ObjectType
+
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = ClassImmutability
@@ -114,7 +116,8 @@ sealed trait ClassImmutability
 
     def correspondingTypeImmutability: TypeImmutability
 
-    def isMutable: Answer
+    /** `true` if instances of the class are mutable */
+    def isMutable: Boolean
 }
 /**
  * Common constants use by all [[ClassImmutability]] properties associated with methods.
@@ -131,107 +134,74 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
         MutableObjectDueToUnresolvableDependency,
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable (type and object wise) hence, we can leverage the "immutability"
-        ImmutableObject
+        (_: PropertyStore, eps: EPS[ObjectType, ClassImmutability]) ⇒ eps.toUBEP
     )
-}
-
-case object UnknownClassImmutability extends ClassImmutability {
-    final val isRefinable = true
-    final val correspondingTypeImmutability = UnknownTypeImmutability
-
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other == UnknownClassImmutability)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
-    }
-
-    def isMutable: Answer = Unknown
 }
 
 /**
  * An instance of the respective class is effectively immutable
- * and also all reference objects. I.e., after creation it is not
+ * and also all (transitively) referenced objects. I.e., after creation it is not
  * possible for a client to set a field or to call a method that updates the internal state
- * of the instance or an object
- * referred to by the instance in such a way that the client can observe the state change.
+ * of the instance or an object referred to by the instance in such a way that the client
+ * can observe the state change.
  *
  */
 case object ImmutableObject extends ClassImmutability {
-    final val isRefinable = false
+
     final val correspondingTypeImmutability = ImmutableType
 
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
     }
 
-    final def isMutable: Answer = No
+    final def isMutable: Boolean = false
 }
 
 /**
- * An instance of the respective class is effectively immutable. I.e., after creation it is not
- * possible for a client to set a field or to call a method that updates the internal state
- *
+ * An instance of the respective class is (at least) effectively immutable. I.e., after creation
+ * it is not possible for a client to set a field or to call a method that updates the direct
+ * internal state; changing the transitive state may be possible.
  */
-case object ConditionallyImmutableObject extends ClassImmutability {
-    final val isRefinable = false
-    final val correspondingTypeImmutability = ConditionallyImmutableType
+case object ImmutableContainer extends ClassImmutability {
 
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
+    final val correspondingTypeImmutability = ImmutableContainerType
+
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+        if (other == ImmutableObject) {
+            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
+        }
     }
 
-    final def isMutable: Answer = No
-}
-
-/**
- * Models the (intermediate) state when the analysis has determined that the class is at least
- * conditionally immutable, but has not yet analyzed all dependencies and - therefore - cannot
- * make a final decision whether the class is immutable.
- */
-case object AtLeastConditionallyImmutableObject extends ClassImmutability {
-    final val isRefinable = true
-    final val correspondingTypeImmutability = AtLeastConditionallyImmutableType
-
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
-    }
-
-    final def isMutable: Answer = No
+    final def isMutable: Boolean = false
 }
 
 sealed trait MutableObject extends ClassImmutability {
-    final val isRefinable = false
-    val reason: String
+
+    def reason: String
     final val correspondingTypeImmutability = MutableType
 
-    def isValidSuccessorOf(other: OrderedProperty): Option[String] = {
-        if (other.isRefinable)
-            None
-        else
-            Some(s"impossible refinement of $other to $this")
+    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+        if (other == ImmutableObject || other == ImmutableContainer) {
+            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this")
+        }
     }
 
-    final def isMutable: Answer = Yes
+    final def isMutable: Boolean = true
+
+    final override def toString: String = s"MutableObject(reason=$reason)"
+}
+
+case object MutableObjectDueToIncompleteAnalysis extends MutableObject {
+    final def reason = "analysis has not yet completed"
 }
 
 case object MutableObjectByAnalysis extends MutableObject {
-    final val reason = "determined by analysis"
+    final def reason = "determined by analysis"
 }
 
 case object MutableObjectDueToUnknownSupertypes extends MutableObject {
-    final val reason = "the type hierarchy is upwards incomplete"
+    final def reason = "the type hierarchy is upwards incomplete"
 }
 
 case object MutableObjectDueToUnresolvableDependency extends MutableObject {
-    final val reason = "a dependency cannot be resolved"
+    final def reason = "a dependency cannot be resolved"
 }

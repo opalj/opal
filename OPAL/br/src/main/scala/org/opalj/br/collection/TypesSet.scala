@@ -30,8 +30,6 @@ package org.opalj
 package br
 package collection
 
-import org.opalj.br.ObjectType
-
 /**
  * An efficient representation of a set of types if some types are actually upper type bounds
  * and hence already represent sets of types.
@@ -40,8 +38,8 @@ import org.opalj.br.ObjectType
  */
 abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
-    def concreteTypes: Set[ObjectType]
-    def upperTypeBounds: Set[ObjectType]
+    def concreteTypes: Set[ObjectType] // IMPROVE [L2] Use UIDSet
+    def upperTypeBounds: Set[ObjectType] // IMPROVE [L2] Use UIDSet
 
     /**
      * Returns `true` if this set is empty.
@@ -107,6 +105,8 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 object TypesSet {
 
     def empty: EmptyTypesSet.type = EmptyTypesSet
+
+    final val SomeException: TypesSet = UpperTypeBounds(Set(ObjectType.Throwable))
 }
 
 case object EmptyTypesSet extends TypesSet {

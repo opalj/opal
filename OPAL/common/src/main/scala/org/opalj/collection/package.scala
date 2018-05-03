@@ -39,7 +39,7 @@ import scala.collection.JavaConverters._
  */
 package object collection {
 
-    type SomeIntSet = IntSet[_]
+    type AnIntSet = IntSet[_]
 
     //
     // Helpers related to Lists

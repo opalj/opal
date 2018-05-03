@@ -60,10 +60,10 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         analysisRunner: FPCFEagerAnalysisScheduler
     ): Unit = derivedProperties.synchronized {
         assert(
-            !analysisRunner.derivedProperties.exists { pKind ⇒ derivedProperties.contains(pKind.id) },
-            s"FPCFAnalysisManager: a property has already been derived ${analysisRunner.derivedProperties}"
+            !analysisRunner.derives.exists { pKind ⇒ derivedProperties.contains(pKind.id) },
+            s"FPCFAnalysisManager: a property has already been derived ${analysisRunner.derives}"
         )
-        derivedProperties ++= analysisRunner.derivedProperties.map(_.id)
+        derivedProperties ++= analysisRunner.derives.map(_.id)
     }
 
     final def runAll(analyses: FPCFEagerAnalysisScheduler*): Unit = runAll(analyses, true)
@@ -74,10 +74,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     ): Unit = {
         analyses.foreach { run(_, false) }
         if (waitOnCompletion) {
-            propertyStore.waitOnPropertyComputationCompletion(
-                resolveCycles = true,
-                useFallbacksForIncomputableProperties = true
-            )
+            propertyStore.waitOnPhaseCompletion()
         }
     }
 
@@ -85,7 +82,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         analysisRunner:   FPCFEagerAnalysisScheduler,
         waitOnCompletion: Boolean                    = true
     ): Unit = this.synchronized {
-        if (!isDerived(analysisRunner.derivedProperties)) {
+        if (!isDerived(analysisRunner.derives)) {
             if (doDebug) {
                 debug("analysis configuration", s"scheduling the analysis ${analysisRunner.name}")
             }
@@ -93,10 +90,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
             registerProperties(analysisRunner)
             analysisRunner.start(project, propertyStore)
             if (waitOnCompletion) {
-                propertyStore.waitOnPropertyComputationCompletion(
-                    resolveCycles = true,
-                    useFallbacksForIncomputableProperties = true
-                )
+                propertyStore.waitOnPhaseCompletion()
             }
         } else {
             val runner = analysisRunner.name

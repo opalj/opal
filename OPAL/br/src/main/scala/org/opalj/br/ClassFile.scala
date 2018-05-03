@@ -104,7 +104,7 @@ final class ClassFile private (
         val accessFlags:    Int,
         val thisType:       ObjectType,
         val superclassType: Option[ObjectType],
-        val interfaceTypes: Seq[ObjectType], // IMPROVE Use a UIDSet over here and in the class hierarchy!
+        val interfaceTypes: Seq[ObjectType], // IMPROVE [L4] Use a UIDSet over here and in the class hierarchy!
         val fields:         Fields,
         val methods:        Methods,
         val attributes:     Attributes

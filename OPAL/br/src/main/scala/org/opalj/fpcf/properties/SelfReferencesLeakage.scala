@@ -30,9 +30,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
-
 /**
  * This property determines if an object leaks it's self reference (`this`) by passing
  * it to methods or assigning it to fields.
@@ -51,8 +48,12 @@ object SelfReferenceLeakage {
     )
 }
 
-case object LeaksSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
+/**
+ * Models the top of the self-references leakage lattice.
+ */
+case object DoesNotLeakSelfReference extends SelfReferenceLeakage
 
-case object DoesNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = false }
-
-case object MayNotLeakSelfReference extends SelfReferenceLeakage { final val isRefinable = true }
+/**
+ * Models the bottom of the lattice.
+ */
+case object LeaksSelfReference extends SelfReferenceLeakage

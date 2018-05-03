@@ -103,7 +103,7 @@ final case class VirtualDeclaredMethod(
 }
 
 /**
- * Represents a declared method; i.e., a method which belongs to the (public and privage) API of a
+ * Represents a declared method; i.e., a method which belongs to the (public and private) API of a
  * class along with a reference to the original declaration.
  */
 final case class DefinedMethod(

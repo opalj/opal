@@ -36,12 +36,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import net.ceedubs.ficus.Ficus._
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.instructions._
@@ -75,18 +75,38 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val performLambdaExpressionsRewriting: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
-        val rewrite: Boolean = config.as[Option[Boolean]](Key).get
+        val rewrite: Boolean =
+            try {
+                config.getBoolean(Key)
+            } catch {
+                case t: Throwable ⇒
+                    error("class file reader", s"couldn't read: $Key", t)
+                    false
+            }
         if (rewrite) {
-            info("class file reader", "invokedynamics using LambdaMetaFactory are rewritten")
+            info(
+                "class file reader",
+                "invokedynamics using LambdaMetaFactory are rewritten"
+            )
         } else {
-            info("class file reader", "invokedynamics using LambdaMetaFactory are not rewritten")
+            info(
+                "class file reader",
+                "invokedynamics using LambdaMetaFactory are not rewritten"
+            )
         }
         rewrite
     }
 
     val logLambdaExpressionsRewrites: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
-        val logRewrites: Boolean = config.as[Option[Boolean]](Key).get
+        val logRewrites: Boolean =
+            try {
+                config.getBoolean(Key)
+            } catch {
+                case t: Throwable ⇒
+                    error("class file reader", s"couldn't read: $Key", t)
+                    false
+            }
         if (logRewrites) {
             info(
                 "class file reader",
@@ -103,7 +123,14 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
     val logUnknownInvokeDynamics: Boolean = {
         import LambdaExpressionsRewriting.{LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
-        val logUnknownInvokeDynamics: Boolean = config.as[Option[Boolean]](Key).get
+        val logUnknownInvokeDynamics: Boolean =
+            try {
+                config.getBoolean(Key)
+            } catch {
+                case t: Throwable ⇒
+                    error("class file reader", s"couldn't read: $Key", t)
+                    false
+            }
         if (logUnknownInvokeDynamics) {
             info("class file reader", "unknown invokedynamics are logged")
         } else {

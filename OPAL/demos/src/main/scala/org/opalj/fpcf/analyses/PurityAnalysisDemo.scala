@@ -112,26 +112,26 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         } { r ⇒ setupTime = r }
 
         time {
-            L0FieldMutabilityAnalysis.start(project, propertyStore)
-            L0PurityAnalysis.start(project, propertyStore)
-            propertyStore.waitOnPropertyComputationCompletion(true)
+            LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore)
+            EagerL0PurityAnalysis.start(project, propertyStore)
+            propertyStore.waitOnPhaseCompletion()
         } { r ⇒ analysisTime = r }
 
         println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
 
         () ⇒ {
-            val effectivelyFinalEntities: Traversable[EP[Entity, FieldMutability]] =
+            val effectivelyFinalEntities: Iterator[EPS[Entity, FieldMutability]] =
                 propertyStore.entities(FieldMutability.key)
 
-            val effectivelyFinalFields: Traversable[(Field, Property)] =
-                effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.p))
+            val effectivelyFinalFields: Iterator[(Field, Property)] =
+                effectivelyFinalEntities.map(ep ⇒ (ep.e.asInstanceOf[Field], ep.ub))
 
             val effectivelyFinalFieldsAsStrings =
                 effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava)
 
-            val pureEntities: Traversable[EP[Entity, Purity]] = propertyStore.entities(Purity.key)
-            val pureMethods: Traversable[(Method, Property)] =
-                pureEntities.map(e ⇒ (e._1.asInstanceOf[Method], e._2))
+            val pureEntities: Iterator[EPS[Entity, Purity]] = propertyStore.entities(Purity.key)
+            val pureMethods: Iterator[(Method, Property)] =
+                pureEntities.map(eps ⇒ (eps.e.asInstanceOf[Method], eps.ub))
             val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
 
             val fieldInfo =

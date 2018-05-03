@@ -31,7 +31,9 @@ package fpcf
 package analyses
 
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.fpcf.properties._
 
@@ -62,98 +64,74 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
      * Aggregates the exceptions thrown by a method and all overriding methods.
      */
     def aggregateExceptionsThrownByOverridingMethods(m: Method): PropertyComputationResult = {
+        // If an unknown subclass can override this method we cannot gather information about
+        // the thrown exceptions. Return the analysis immediately.
+        if (project.get(IsOverridableMethodKey)(m).isYesOrUnknown) {
+            return Result(m, ThrownExceptionsByOverridingMethods.MethodIsOverridable);
+        }
+
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
-        var methodIsRefinable = false
-        var hasUnknownExceptions = false
 
-        var dependees = Set.empty[EOptionP[Method, Property]]
+        var dependees = Set.empty[EOptionP[Entity, Property]]
 
-        val concreteMethod = ps(m, ThrownExceptions.Key)
-        concreteMethod match {
-            case EP(_, a: AllThrownExceptions) ⇒
-                methodIsRefinable = a.isRefinable
-                exceptions ++= a.types.concreteTypes
-            case EP(_, ThrownExceptionsAreUnknown(_)) ⇒
-                hasUnknownExceptions = true
-            case epk ⇒ // Not yet computed
-                methodIsRefinable = true
-                dependees += epk
-        }
-
-        val subClasses = project.classHierarchy.directSubtypesOf(m.classFile.thisType)
-
-        if (subClasses.isEmpty && !methodIsRefinable) {
-            // If we don't have subclasses and the method result is final, return directly
-            if (hasUnknownExceptions)
-                return Result(m, UnknownThrownExceptionsByOverridingMethods);
-            else
-                return Result(m, AllThrownExceptionsByOverridingMethods());
-        }
-
-        // Complex case: the current method depends on the method of all subclasses
-        // First we query the propertystore for all results of the direct subtype methods
-        subClasses
-            .flatMap(x ⇒ project.classFile(x).get.findMethod(m.name, m.descriptor))
-            .map { subMethod ⇒
-                ps(
-                    subMethod,
-                    properties.ThrownExceptionsByOverridingMethods.Key
-                )
-            }
-            .filter(_.is(AllThrownExceptionsByOverridingMethods))
-            .foreach {
-                case EP(_, c: AllThrownExceptionsByOverridingMethods) ⇒
-                    exceptions ++= c.exceptions.concreteTypes
-                    methodIsRefinable |= c.isRefinable
-                case EP(_, UnknownThrownExceptionsByOverridingMethods) ⇒
-                    hasUnknownExceptions = true
+        // Get all subtypes, inclusive the current method as well
+        project.classHierarchy.allSubtypes(m.classFile.thisType, reflexive = true) foreach { subType ⇒
+            val subtypeMethod = project.classFile(subType).get.findMethod(m.name, m.descriptor)
+            ps(subtypeMethod, ThrownExceptions.Key) match {
+                case EPS(_, _, ThrownExceptions.MethodIsAbstract) |
+                    EPS(_, _, ThrownExceptions.MethodBodyIsNotAvailable) |
+                    EPS(_, _, ThrownExceptions.MethodIsNative) |
+                    EPS(_, _, ThrownExceptions.UnknownExceptionIsThrown) |
+                    EPS(_, _, ThrownExceptions.AnalysisLimitation) |
+                    EPS(_, _, ThrownExceptions.UnresolvedInvokeDynamicInstruction) ⇒
+                    return Result(m, ThrownExceptionsByOverridingMethods.SomeException)
+                case EPS(_, _, ub: ThrownExceptions) ⇒
+                    exceptions ++= ub.types.concreteTypes
                 case epk ⇒ dependees += epk
             }
+        }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            methodIsRefinable = false
-            p match {
-                case c: AllThrownExceptionsByOverridingMethods ⇒
-                    exceptions ++= c.exceptions.concreteTypes
-                    if (ut == FinalUpdate) {
-                        dependees = dependees.filter { _.e ne e }
-                    } else {
-                        dependees = dependees.filter(_.e ne e) + EP(e.asInstanceOf[Method], p)
-                    }
-                case UnknownThrownExceptionsByOverridingMethods ⇒
-                    hasUnknownExceptions = true
-                    dependees = Set.empty[EOptionP[Method, Property]]
-                case a: AllThrownExceptions ⇒
-                    if (ut == FinalUpdate) {
-                        dependees = dependees.filter { _.e ne e }
-                    } else {
-                        dependees = dependees.filter(_.e ne e) + EP(e.asInstanceOf[Method], p)
-                    }
-                    exceptions ++= a.types.concreteTypes
-                case ThrownExceptionsAreUnknown(_) ⇒
-                    hasUnknownExceptions = true
-                    dependees = dependees.filter { _.e ne e }
+        def c(eps: SomeEPS): PropertyComputationResult = {
+            dependees = dependees.filter {
+                _.e ne eps.e
             }
-            val r = if (hasUnknownExceptions)
-                UnknownThrownExceptionsByOverridingMethods
-            else
-                AllThrownExceptionsByOverridingMethods(exceptions, isRefinable = dependees.nonEmpty)
+            // If the property is not final we want to keep updated of new values
+            if (!eps.isFinal) {
+                dependees = dependees + eps
+            }
+            eps.ub match {
+                // Properties from ThrownExceptions.Key
+                // They are queried if we got a static or special invokation instruction
+
+                // Check if we got some unknown exceptions. We can terminate the analysis if
+                // that's the case as we cannot compute a more precise result.
+                case ThrownExceptions.MethodIsAbstract |
+                    ThrownExceptions.MethodBodyIsNotAvailable |
+                    ThrownExceptions.MethodIsNative |
+                    ThrownExceptions.UnknownExceptionIsThrown |
+                    ThrownExceptions.AnalysisLimitation |
+                    ThrownExceptions.UnresolvedInvokeDynamicInstruction ⇒
+                    return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+                case te: ThrownExceptions ⇒
+                    exceptions ++= te.types.concreteTypes
+            }
+            if (exceptions.nonEmpty) {
+                exceptions +<:= ObjectType.Throwable
+            }
             if (dependees.isEmpty) {
-                Result(m, r)
+                Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
             } else {
-                IntermediateResult(m, r, dependees, c)
+                IntermediateResult(m, ThrownExceptionsByOverridingMethods.SomeException, new ThrownExceptionsByOverridingMethods(exceptions), dependees, c)
             }
         }
 
-        val r = if (hasUnknownExceptions)
-            UnknownThrownExceptionsByOverridingMethods
-        else
-            AllThrownExceptionsByOverridingMethods(exceptions, isRefinable = dependees.nonEmpty)
-
+        if (exceptions.nonEmpty) {
+            exceptions +<:= ObjectType.Throwable
+        }
         if (dependees.isEmpty) {
-            Result(m, r)
+            Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
         } else {
-            IntermediateResult(m, r, dependees, c)
+            IntermediateResult(m, ThrownExceptionsByOverridingMethods.SomeException, new ThrownExceptionsByOverridingMethods(exceptions), dependees, c)
         }
     }
 }
@@ -166,15 +144,15 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
  */
 object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisScheduler {
 
-    override def usedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
+    override def uses: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
-    override def derivedProperties: Set[PropertyKind] = {
+    override def derives: Set[PropertyKind] = {
         Set(properties.ThrownExceptionsByOverridingMethods.Key)
     }
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
-        val allMethods = project.allMethodsWithBody
+        val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
         ps.scheduleForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
         analysis
     }
@@ -182,7 +160,7 @@ object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisScheduler
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
     def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
-        ps.scheduleLazyPropertyComputation[ThrownExceptionsByOverridingMethods](
+        ps.registerLazyPropertyComputation[ThrownExceptionsByOverridingMethods](
             ThrownExceptionsByOverridingMethods.Key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods
         )

@@ -31,11 +31,13 @@ package org.opalj.fpcf
 import scala.reflect.runtime.universe.Type
 
 /**
- * Thrown if a context object is requested, but could not be found. Context objects
- * are generally totally unrelated to entities and properties. They just store
- * information that may be required by analysis using the property store. An analysis
+ * Thrown if a context object is requested, but could not be found.
+ *
+ * Context objects are generally totally unrelated to entities and properties. They just store
+ * information that may be required by analyses using the property store. In general, an analysis
  * should always be able to compute the properties if the context object is not
- * available; e.g., by using a fall back value.
+ * available; e.g., by using a fall back value. However, in case of `Project` based analyses
+ * the context will always contain the project.
  *
  * @author Michael Eichberg
  */

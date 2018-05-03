@@ -277,6 +277,9 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
         }
     }
 }
+
+// IMPROVE [L8] Add support for UIDSet3 and UIDSet4
+
 // ------------------------------------------------------------------------------------------------
 //
 //

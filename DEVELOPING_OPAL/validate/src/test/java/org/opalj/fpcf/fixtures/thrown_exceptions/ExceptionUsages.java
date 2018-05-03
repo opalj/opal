@@ -31,7 +31,8 @@ package org.opalj.fpcf.fixtures.thrown_exceptions;
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
-import org.opalj.fpcf.properties.thrown_exceptions.ThrownExceptionsAreUnknown;
+import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptionsByOverridingMethods;
+import org.opalj.fpcf.properties.thrown_exceptions.Types;
 
 /**
  * Test methods for the thrown exceptions analysis.
@@ -75,18 +76,16 @@ public class ExceptionUsages {
         return 2;
     }
 
-    @ThrownExceptionsAreUnknown(
-            reason = "callee does not throw exception, but method may be overridden",
-            requires = {}
+    @ExpectedExceptionsByOverridingMethods(
+            reason = "callee does not throw exception, but method may be overridden"
     )
     public int callDoesNotThrowException() {
         return doesNotThrowException();
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptionsByOverridingMethods(
             reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)," +
-                    " may be overridden",
-            requires = {}
+                    " may be overridden"
     )
     public int selfRecursiveMethod(boolean b) {
         if (b) {
@@ -96,10 +95,9 @@ public class ExceptionUsages {
         }
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptionsByOverridingMethods(
             reason = "mutual recursive method calls which throw no exception, call may be " +
-                    "overridden",
-            requires = {}
+                    "overridden"
     )
     public int cycleA(boolean b) {
         if (b) {
@@ -108,10 +106,9 @@ public class ExceptionUsages {
         return 42;
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptionsByOverridingMethods(
             reason = "mutual recursive method calls which throw no exception, call may be " +
-                    "overridden",
-            requires = {}
+                    "overridden"
     )
     public int cycleB() {
         cycleA(false);
@@ -127,6 +124,12 @@ public class ExceptionUsages {
         throw new NullPointerException();
     }
 
+    @ExpectedExceptions(
+            @Types(concrete = {ArithmeticException.class})
+    )
+    public static int divByZero() {
+        return 2/0;
+    }
 
     @ExpectedExceptions()
     public static int staticCallThrowsException() {
@@ -153,9 +156,8 @@ public class ExceptionUsages {
     }
 
 
-    @ThrownExceptionsAreUnknown(
-            reason="method call, may be overridden by unknown class",
-            requires={}
+    @ExpectedExceptionsByOverridingMethods(
+            reason="method call, may be overridden by unknown class"
     )
     public int callThrowException() {
         return throwException();
@@ -218,9 +220,8 @@ public class ExceptionUsages {
 
     public static class PublicFooBar extends Foo {
         @Override
-        @ThrownExceptionsAreUnknown(
-            reason = "just returns constant, is not final, class is public and not final",
-            requires = {}
+        @ExpectedExceptionsByOverridingMethods(
+            reason = "just returns constant, is not final, class is public and not final"
         )
         public int baz() {
             return 42;
@@ -258,7 +259,7 @@ public class ExceptionUsages {
         }
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptions(
         reason="just calls empty default constructor and \"empty\" method of final class",
         requires={L1ThrownExceptionsAnalysis.class}
     )

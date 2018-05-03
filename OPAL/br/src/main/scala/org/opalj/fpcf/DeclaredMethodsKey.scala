@@ -28,9 +28,14 @@
  */
 package org.opalj.fpcf
 
+import java.util.concurrent.ConcurrentHashMap
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 
@@ -39,24 +44,42 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author DominikHelm
  */
-class DeclaredMethods(val data: Map[DeclaredMethod, DeclaredMethod]) {
+class DeclaredMethods(
+        val p:    SomeProject,
+        var data: ConcurrentHashMap[DeclaredMethod, DeclaredMethod]
+) {
 
     /**
-     * Returns the canonical object representing a specific `Some([[org.opalj.br.DeclaredMethod]])` or
-     * `None` if the specified declared method is unknown.
+     * Returns the canonical object representing a specific [[org.opalj.br.DeclaredMethod]].
      */
-    def apply(vm: DeclaredMethod): Option[DeclaredMethod] = {
-        data.get(vm)
+    def apply(dm: DeclaredMethod): DeclaredMethod = {
+        val prev = data.putIfAbsent(dm, dm)
+        if (prev == null) dm else prev
+    }
+
+    def apply(
+        declaringClassType: ObjectType,
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): DeclaredMethod = {
+        val cfo = p.classFile(declaringClassType)
+        val mo = cfo.flatMap(_.findMethod(name, descriptor))
+
+        mo match {
+            case Some(method) ⇒ apply(method)
+            case None         ⇒ apply(VirtualDeclaredMethod(declaringClassType, name, descriptor))
+        }
     }
 
     def apply(method: Method): DefinedMethod = {
-        data(
+        data.get(
             DefinedMethod(method.classFile.thisType, method)
         ).asInstanceOf[DefinedMethod]
     }
 
-    def declaredMethods: Iterable[DeclaredMethod] = {
-        data.keys
+    def declaredMethods: Iterator[DeclaredMethod] = {
+        import scala.collection.JavaConverters.enumerationAsScalaIterator
+        enumerationAsScalaIterator(data.keys)
     }
 }
 
@@ -85,7 +108,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
     override protected def compute(p: SomeProject): DeclaredMethods = {
         // Note that this analysis is not parallelized; the synchronization etc. overhead
         // outweighs the benefits even on systems with 4 or so cores..
-        var declaredMethods = Map.empty[DeclaredMethod, DeclaredMethod]
+        val declaredMethods: ConcurrentHashMap[DeclaredMethod, DeclaredMethod] =
+            new ConcurrentHashMap
+
         p.allClassFiles.foreach { cf ⇒
             val classType = cf.thisType
             for {
@@ -95,7 +120,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
             } {
                 val vm = DefinedMethod(classType, m)
-                declaredMethods += (vm → vm)
+                declaredMethods.put(vm, vm)
             }
             for {
                 // all non-private, non-abstract instance methods present in the current class file,
@@ -103,22 +128,11 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 mc ← p.instanceMethods(classType)
             } {
                 val vm = DefinedMethod(classType, mc.method)
-                declaredMethods += (vm → vm)
+                declaredMethods.put(vm, vm)
             }
         }
 
-        new DeclaredMethods(declaredMethods)
+        new DeclaredMethods(p, declaredMethods)
     }
 
-    //
-    // HELPER FUNCTION TO MAKE IT EASILY POSSIBLE TO ADD DECLARED METHODS TO A
-    // PROPERTYSTORE!
-    //
-    final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], DeclaredMethods) = {
-        (p: SomeProject) ⇒
-            {
-                val declaredMethods = p.get(DeclaredMethodsKey)
-                (declaredMethods.declaredMethods, declaredMethods)
-            }
-    }
 }

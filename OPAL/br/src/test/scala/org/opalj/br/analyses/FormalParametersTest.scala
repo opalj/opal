@@ -34,8 +34,8 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import org.opalj.br.TestSupport.biProject
+import org.opalj.fpcf.DeclaredMethodsKey
 
 /**
  * Tests the `FormalParameters`.
@@ -55,11 +55,13 @@ class FormalParametersTest extends FlatSpec with Matchers {
 
     it should ("add for each method parameter a formal parameter") in {
         val methodsProject = biProject("methods.jar")
+        val declaredMethods = methodsProject.get(DeclaredMethodsKey)
 
-        val fps = methodsProject.get(FormalParametersKey)
+        val fps = methodsProject.get(VirtualFormalParametersKey)
         methodsProject.allMethods foreach { m ⇒
-            assert(m.isStatic || fps(m)(0) != null)
-            assert(fps(m).size >= m.descriptor.parametersCount + (if (m.isStatic) 0 else 1))
+            val dm = declaredMethods(m)
+            assert(m.isStatic || fps(dm)(0) != null)
+            assert(fps(dm).size >= m.descriptor.parametersCount + (if (m.isStatic) 0 else 1))
         }
     }
 }

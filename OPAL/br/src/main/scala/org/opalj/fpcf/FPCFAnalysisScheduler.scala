@@ -34,4 +34,4 @@ package fpcf
  * preferred. However, for debugging purposes (i.e., if we don't have a client) eager
  * execution might be necessary.
  */
-trait FPCFAnalysisScheduler extends FPCFEagerAnalysisScheduler with FPCFLazyAnalysisScheduler
+trait FPCFAnalysisScheduler extends FPCFEagerAnalysisScheduler

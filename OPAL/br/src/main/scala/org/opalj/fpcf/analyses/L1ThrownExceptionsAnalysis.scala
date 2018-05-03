@@ -36,7 +36,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties._
 
@@ -67,18 +66,12 @@ class L1ThrownExceptionsAnalysis private (
      */
     def determineThrownExceptions(m: Method): PropertyComputationResult = {
         if (m.isNative)
-            return Result(m, ThrownExceptionsAreUnknown.MethodIsNative);
+            return Result(m, ThrownExceptions.MethodIsNative);
         if (m.isAbstract)
-            return Result(m, NoExceptionsAreThrown.MethodIsAbstract);
+            return Result(m, ThrownExceptions.MethodIsAbstract);
         val body = m.body
         if (body.isEmpty)
-            return Result(m, ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable);
-
-        // If an unknown subclass can override this method we cannot gather information about
-        // the thrown exceptions. Return the analysis immediately.
-        if (project.get(IsOverridableMethodKey)(m).isYesOrUnknown) {
-            return Result(m, ThrownExceptionsAreUnknown.MethodIsOverrideable);
-        }
+            return Result(m, ThrownExceptions.MethodBodyIsNotAvailable);
 
         //
         //... when we reach this point the method is non-empty
@@ -98,7 +91,7 @@ class L1ThrownExceptionsAnalysis private (
         var fieldAccessMayThrowNullPointerException = false
         var isFieldAccessed = false
 
-        var dependees = Set.empty[EOptionP[Method, Property]]
+        var dependees = Set.empty[EOptionP[Entity, Property]]
 
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
@@ -108,7 +101,7 @@ class L1ThrownExceptionsAnalysis private (
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
+                    result = ThrownExceptions.UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
                     val MethodInvocationInstruction(declaringClass, _, name, descriptor) = instruction
@@ -124,31 +117,32 @@ class L1ThrownExceptionsAnalysis private (
                             case mii: NonVirtualMethodInvocationInstruction ⇒
                                 project.nonVirtualCall(mii) match {
                                     case Success(callee) ⇒
-                                        val thrownExceptions = ps(callee, ThrownExceptions.Key)
-
-                                        thrownExceptions match {
-                                            case EP(_, NoExceptionsAreThrown.NoInstructionThrowsExceptions) ⇒
-                                                true
-                                            case EP(_, e: ThrownExceptionsAreUnknown) ⇒
-                                                result = e
-                                                false
-                                            // Handling cyclic computations
-                                            case epk ⇒
-                                                dependees += epk
-                                                true
+                                        // Query the store for information about the callee
+                                        ps(callee, ThrownExceptions.Key) match {
+                                            case EPS(_, _, ThrownExceptions.MethodIsAbstract) |
+                                                EPS(_, _, ThrownExceptions.MethodBodyIsNotAvailable) |
+                                                EPS(_, _, ThrownExceptions.MethodIsNative) |
+                                                EPS(_, _, ThrownExceptions.UnknownExceptionIsThrown) |
+                                                EPS(_, _, ThrownExceptions.AnalysisLimitation) |
+                                                EPS(_, _, ThrownExceptions.UnresolvedInvokeDynamicInstruction) ⇒
+                                                result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
+                                            case EPS(_, _, ub: ThrownExceptions) ⇒
+                                                exceptions ++= ub.types.concreteTypes
+                                            case epk ⇒ dependees += epk
                                         }
+                                        true
                                     case _ ⇒
-                                        result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
+                                        result = ThrownExceptions.UnknownExceptionIsThrown
                                         false
                                 }
                             case _ ⇒
-                                result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
+                                result = ThrownExceptions.UnknownExceptionIsThrown
                                 false
                         }
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.UnresolvedInvokeDynamic
+                    result = ThrownExceptions.UnresolvedInvokeDynamicInstruction
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
@@ -158,20 +152,18 @@ class L1ThrownExceptionsAnalysis private (
                         case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
                         case _                   ⇒ Set.empty[Method]
                     }
-                    result = NoExceptionsAreThrown.NoInstructionThrowsExceptions
                     callees.foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
-                        val classHierarchy = ps(callee, properties.ThrownExceptionsByOverridingMethods.Key)
-                        classHierarchy match {
-                            case EP(_, AllThrownExceptionsByOverridingMethods(e, r)) ⇒
-                                exceptions ++= e.concreteTypes
-                                if (r)
-                                    dependees += classHierarchy
-                            case EP(_, UnknownThrownExceptionsByOverridingMethods) ⇒
-                                result = ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions
-                            case epk ⇒ // Not yet computed
-                                dependees += epk
+                        ps(callee, ThrownExceptionsByOverridingMethods.Key) match {
+                            case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
+                                result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
+                            case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
+                                result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
+                            case EPS(_, _, ub: ThrownExceptionsByOverridingMethods) ⇒
+                                exceptions ++= ub.exceptions.concreteTypes
+                            case epk ⇒ dependees += epk
                         }
+                        dependees += EPK(callee, ThrownExceptionsByOverridingMethods.Key)
                     }
                     callees.nonEmpty
 
@@ -235,7 +227,7 @@ class L1ThrownExceptionsAnalysis private (
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Int] @unchecked) if i.value != 0 ⇒
+                            case LDCInt(value) if value != 0 ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -252,7 +244,7 @@ class L1ThrownExceptionsAnalysis private (
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Long] @unchecked) if i.value != 0L ⇒
+                            case LoadLong(value) if value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -284,57 +276,56 @@ class L1ThrownExceptionsAnalysis private (
             exceptions += ObjectType.IllegalMonitorStateException
         }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            p match {
-                case e: NoExceptionsAreThrown ⇒
-                    if (exceptions.isEmpty)
-                        Result(m, e)
-                    else {
-                        Result(m, new AllThrownExceptions(exceptions, false))
-                    }
+        def c(eps: SomeEPS): PropertyComputationResult = {
+            dependees = dependees.filter {
+                _.e ne eps.e
+            }
+            // If the property is not final we want to keep updated of new values
+            if (!eps.isFinal) {
+                dependees = dependees + eps
+            }
+            eps.ub match {
+                // Properties from ThrownExceptions.Key
+                // They are queried if we got a static or special invokation instruction
 
-                case thrownExceptions: AllThrownExceptions ⇒
-                    dependees = dependees.filter {
-                        _.e ne e
-                    }
-                    exceptions ++= thrownExceptions.types.concreteTypes
-                    if (dependees.isEmpty)
-                        if (exceptions.isEmpty) {
-                            Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
-                        } else {
-                            Result(m, new AllThrownExceptions(exceptions, false))
-                        }
-                    else
-                        IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
+                // Check if we got some unknown exceptions. We can terminate the analysis if
+                // that's the case as we cannot compute a more precise result.
+                case ThrownExceptions.MethodIsAbstract |
+                    ThrownExceptions.MethodBodyIsNotAvailable |
+                    ThrownExceptions.MethodIsNative |
+                    ThrownExceptions.UnknownExceptionIsThrown |
+                    ThrownExceptions.AnalysisLimitation |
+                    ThrownExceptions.UnresolvedInvokeDynamicInstruction ⇒
+                    return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+                case te: ThrownExceptions ⇒
+                    exceptions ++= te.types.concreteTypes
 
-                case u: ThrownExceptionsAreUnknown ⇒
-                    Result(m, u)
-
-                case AllThrownExceptionsByOverridingMethods(ex, r) ⇒
-                    exceptions ++= ex.concreteTypes
-                    if (!r) {
-                        dependees = dependees.filter { _.e ne e }
-                        if (dependees.isEmpty && exceptions.isEmpty) {
-                            Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
-                        } else {
-                            Result(m, new AllThrownExceptions(exceptions, false))
-                        }
-                    } else {
-                        IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
-                    }
-
-                case UnknownThrownExceptionsByOverridingMethods ⇒
-                    Result(m, ThrownExceptionsAreUnknown.SubclassesHaveUnknownExceptions)
+                // Properties from ThrownExceptionsByOverridingMethods
+                case ThrownExceptionsByOverridingMethods.SomeException |
+                    ThrownExceptionsByOverridingMethods.MethodIsOverridable ⇒
+                    return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+                case tebom: ThrownExceptionsByOverridingMethods ⇒
+                    exceptions ++= tebom.exceptions.concreteTypes
+            }
+            // If we got some exception, add Throwable as upper type
+            if (exceptions.nonEmpty) {
+                exceptions +<:= ObjectType.Throwable
+            }
+            if (dependees.isEmpty) {
+                Result(m, new ThrownExceptions(exceptions))
+            } else {
+                IntermediateResult(m, ThrownExceptions.SomeException, new ThrownExceptions(exceptions), dependees, c)
             }
         }
 
+        // If we got some exception, add Throwable as upper type
+        if (exceptions.nonEmpty) {
+            exceptions +<:= ObjectType.Throwable
+        }
         if (dependees.isEmpty) {
-            if (exceptions.isEmpty)
-                Result(m, NoExceptionsAreThrown.NoInstructionThrowsExceptions)
-            else
-                Result(m, new AllThrownExceptions(exceptions, false))
+            Result(m, new ThrownExceptions(exceptions))
         } else {
-            IntermediateResult(m, new AllThrownExceptions(exceptions, true), dependees, c)
+            IntermediateResult(m, ThrownExceptions.SomeException, new ThrownExceptions(exceptions), dependees, c)
         }
     }
 }
@@ -347,11 +338,11 @@ class L1ThrownExceptionsAnalysis private (
  */
 object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
 
-    override def usedProperties: Set[PropertyKind] = {
+    override def uses: Set[PropertyKind] = {
         Set(properties.ThrownExceptionsByOverridingMethods.Key)
     }
 
-    override def derivedProperties: Set[PropertyKind] = Set(ThrownExceptions.Key)
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions.Key)
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
@@ -367,7 +358,7 @@ object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
     /** Registers an analysis to compute the thrown exceptions lazily. */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.scheduleLazyPropertyComputation[ThrownExceptions](
+        propertyStore.registerLazyPropertyComputation[ThrownExceptions](
             ThrownExceptions.Key,
             analysis.lazilyDetermineThrownExceptions
         )

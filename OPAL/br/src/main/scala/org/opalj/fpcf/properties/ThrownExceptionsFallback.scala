@@ -66,12 +66,12 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
 
     def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
         if (m.isNative)
-            return ThrownExceptionsAreUnknown.MethodIsNative;
+            return ThrownExceptions.MethodIsNative;
         if (m.isAbstract)
-            return NoExceptionsAreThrown.MethodIsAbstract;
+            return ThrownExceptions.NoExceptions; // Method is abstract...
         val body = m.body
         if (body.isEmpty)
-            return ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable;
+            return ThrownExceptions.MethodBodyIsNotAvailable;
 
         //
         //... when we reach this point the method is non-empty
@@ -83,7 +83,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
 
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
-        var result: ThrownExceptionsAreUnknown = null
+        var result: ThrownExceptions = null
 
         var isSynchronizationUsed = false
 
@@ -99,7 +99,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
+                    result = ThrownExceptions.UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode ⇒
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
@@ -111,16 +111,17 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
                     )) {
                         true
                     } else {
-                        result = ThrownExceptionsAreUnknown.AnalysisLimitation
+                        result = ThrownExceptions.AnalysisLimitation
                         false
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.UnresolvedInvokeDynamic
-                    false
+                    // if the bytecode is valid, the creation of the call site object should
+                    // succeed...
+                    true
 
                 case INVOKESTATIC.opcode | INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.AnalysisLimitation
+                    result = ThrownExceptions.AnalysisLimitation
                     false
 
                 // let's determine if the register 0 is updated (i.e., if the register which
@@ -182,7 +183,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Int] @unchecked) if i.value != 0 ⇒
+                            case LDCInt(value) if value != 0 ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -199,7 +200,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Long] @unchecked) if i.value != 0L ⇒
+                            case LoadLong(value) if value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -230,9 +231,9 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
         }
 
         if (exceptions.isEmpty)
-            NoExceptionsAreThrown.NoInstructionThrowsExceptions
+            ThrownExceptions.NoExceptions
         else
-            new AllThrownExceptions(exceptions, false)
+            ThrownExceptions(exceptions)
     }
 
 }

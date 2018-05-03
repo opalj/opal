@@ -32,11 +32,14 @@ import scala.collection.AbstractIterator
 import scala.collection.mutable
 
 /**
- * An array based implementation of a mutable buffer. This implementation is not a general
- * purpose data-structure which offers highly optimized, but very unsafe methods. In general,
- * this buffer should only be used to reference objects which outlive the life time of the
- * buffer AND where the buffer is only used locally. To foster a local usage only, we do
+ * An array based implementation of a mutable buffer. This implementation offers highly
+ * optimized, but very unsafe methods and is therefore __not__ a general
+ * purpose data-structure which .
+ * In general, this buffer should only be used to reference objects which outlive the life time
+ * of the buffer AND where the buffer is only used locally. To foster a local usage only, we do
  * not inherit from any standard collection classes.
+ *
+ * @note This data structure is not thread safe.
  *
  * @param data The array containing the values.
  * @param size0 The number of stored values.
@@ -53,7 +56,7 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      * Resets the size of the buffer, but does not clear the underlying array; hence,
      * the stack may prevent the garbage collection of the still referenced values.
      * This is generally not a problem, if the stack is only used locally and the
-     * referenced objects outlive the lifetime of the stack!
+     * referenced (dead) objects outlive the lifetime of the buffer!
      */
     def resetSize(): Unit = size0 = 0
 
