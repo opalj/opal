@@ -46,11 +46,11 @@ class ConfiguredPurity(
         declaredMethods: DeclaredMethods
 ) {
     private case class PurityValue(
-        cf:    String,
-        m:     String,
-        desc:  String,
-        p:     String,
-        conds: Option[Seq[String]]
+            cf:    String,
+            m:     String,
+            desc:  String,
+            p:     String,
+            conds: Option[Seq[String]]
     )
 
     private val classExtensibility = project.get(ClassExtensibilityKey)

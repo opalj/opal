@@ -30,8 +30,10 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.ObjectType
+
 /**
- * This property determines if an object leaks it's self reference (`this`) by passing
+ * Determines if an object potentially leaks its self reference (`this`) by passing
  * it to methods or assigning it to fields.
  */
 sealed trait SelfReferenceLeakage extends Property {
@@ -39,13 +41,6 @@ sealed trait SelfReferenceLeakage extends Property {
     final type Self = SelfReferenceLeakage
 
     final def key = SelfReferenceLeakage.Key
-}
-
-object SelfReferenceLeakage {
-    final val Key = PropertyKey.create[SelfReferenceLeakage](
-        "SelfReferenceLeakage",
-        LeaksSelfReference
-    )
 }
 
 /**
@@ -57,3 +52,12 @@ case object DoesNotLeakSelfReference extends SelfReferenceLeakage
  * Models the bottom of the lattice.
  */
 case object LeaksSelfReference extends SelfReferenceLeakage
+
+object SelfReferenceLeakage {
+
+    final val Key = PropertyKey.create[ObjectType, SelfReferenceLeakage](
+        name = "org.opalj.SelfReferenceLeakage",
+        fallbackProperty = LeaksSelfReference
+    )
+
+}
