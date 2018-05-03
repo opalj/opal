@@ -30,6 +30,7 @@ package org.opalj.support.debug
 
 import java.io.File
 import java.net.URL
+import java.util.Locale
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -393,6 +394,9 @@ object PropertyStorePerformanceEvaluation {
     }
 
     def main(args: Array[String]): Unit = {
+        // Make sure decimals are separated by a point
+        Locale.setDefault(new Locale("en", "US"))
+
         var cp: String = RTJar.getAbsolutePath
         var threads: Int = 0
         var analysis: String = "L1ThrownExceptionsAnalysis"
