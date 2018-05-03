@@ -103,7 +103,7 @@ class JumpLabelsTest extends FlatSpec {
         val classes = Map("TestJumpJava5" → rawJava5ClassFile, "TestJumpJava8" → rawJava8ClassFile)
         val loader = new InMemoryClassLoader(classes, this.getClass.getClassLoader)
         def testClass(clazz: Class[_]): Unit = {
-            val testJumpInstance = clazz.newInstance()
+            val testJumpInstance = clazz.getDeclaredConstructor().newInstance()
 
             val mirror = runtimeMirror(loader).reflect(testJumpInstance)
             val method = mirror.symbol.typeSignature.member(TermName("returnInt")).asMethod

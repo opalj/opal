@@ -112,7 +112,7 @@ class ClassFileBuilderTest extends FlatSpec {
     }
 
     it should "be possible to create an instance" in {
-        assert(loader.loadClass("ConcreteClass").newInstance() != null)
+        assert(loader.loadClass("ConcreteClass").getDeclaredConstructor().newInstance() != null)
     }
 
     it should "extend org/opalj/bc/AbstractClass" in {

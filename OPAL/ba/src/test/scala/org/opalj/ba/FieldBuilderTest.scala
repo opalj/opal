@@ -62,7 +62,7 @@ class FieldBuilderTest extends FlatSpec {
     val (daClassFile, _) =
         CLASS(
             accessModifiers = SUPER PUBLIC,
-            thisType = "org/example/FieldClass",
+            thisType = "test/FieldClass",
             fields = FIELDS(
                 FIELD(FINAL PUBLIC, "publicField", "I"),
                 FIELD(PRIVATE, "privateField", "Z")
@@ -74,23 +74,23 @@ class FieldBuilderTest extends FlatSpec {
                         INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
                         ALOAD_0,
                         ICONST_3,
-                        PUTFIELD("org/example/FieldClass", "publicField", "I"),
+                        PUTFIELD("test/FieldClass", "publicField", "I"),
                         ALOAD_0,
                         ICONST_1,
-                        PUTFIELD("org/example/FieldClass", "privateField", "Z"),
+                        PUTFIELD("test/FieldClass", "privateField", "Z"),
                         RETURN
                     )),
                 METHOD(PUBLIC, "packageField", "()Z",
                     CODE(
                         ALOAD_0,
-                        GETFIELD("org/example/FieldClass", "privateField", "Z"),
+                        GETFIELD("test/FieldClass", "privateField", "Z"),
                         IRETURN
                     )),
                 METHOD(
                     PUBLIC, "publicField", "()I",
                     CODE(
                         ALOAD_0,
-                        GETFIELD("org/example/FieldClass", "publicField", "I"),
+                        GETFIELD("test/FieldClass", "publicField", "I"),
                         IRETURN
                     )
                 )
@@ -104,7 +104,7 @@ class FieldBuilderTest extends FlatSpec {
         this.getClass.getClassLoader
     )
 
-    val fieldInstance = loader.loadClass("org.example.FieldClass").newInstance()
+    val fieldInstance = loader.loadClass("test.FieldClass").getDeclaredConstructor().newInstance()
     val mirror = runtimeMirror(loader).reflect(fieldInstance)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head

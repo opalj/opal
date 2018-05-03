@@ -88,7 +88,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
                 case i: IntegerRange if i.lowerBound == i.upperBound ⇒
-                    Some(new java.lang.Integer(i.lowerBound))
+                    Some(Integer.valueOf(i.lowerBound))
                 case r: ReferenceValue if r.upperTypeBound.includes(StringBuilderType) ⇒
                     Some(new java.lang.StringBuilder())
                 case _ ⇒
@@ -289,7 +289,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
     it should ("convert to the correct target type") in {
         val domain = createDomain()
-        val result = domain.toDomainValue(1, new Integer(42))
+        val result = domain.toDomainValue(1, Integer.valueOf(42))
         result.computationalType should be(ComputationalTypeReference)
     }
 

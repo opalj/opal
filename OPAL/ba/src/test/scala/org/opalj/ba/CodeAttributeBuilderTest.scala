@@ -218,7 +218,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         )
         val clazz = loader.loadClass("TheClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
-            val clazzInstance = clazz.newInstance()
+            val clazzInstance = clazz.getDeclaredConstructor().newInstance()
             val clazzMethod = clazz.getMethod("tryCatchFinallyTest", classOf[String])
             clazzMethod.invoke(clazzInstance, "test")
         }
@@ -353,7 +353,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         )
         val clazz = loader.loadClass("TheClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
-            val clazzInstance = clazz.newInstance()
+            val clazzInstance = clazz.getDeclaredConstructor().newInstance()
             val clazzMethod = clazz.getMethod("takeLong", classOf[Long])
             clazzMethod.invoke(clazzInstance, java.lang.Long.valueOf(1L))
         }

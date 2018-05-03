@@ -131,7 +131,7 @@ object SecondInstrumentation extends App {
     // instrumented method)
     val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
     val newClass = cl.findClass(TheType.toJava)
-    val instance = newClass.newInstance()
+    val instance = newClass.getDeclaredConstructor().newInstance()
     println("1. Example")
     newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, new ArrayList[AnyRef]())
     println("2. Example")

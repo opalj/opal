@@ -975,7 +975,9 @@ class Project[Source] private (
         OPALLogger.debug("project", "finalized ("+logContext+")")
         if (logContext != GlobalLogContext) { OPALLogger.unregister(logContext) }
 
-        super.finalize()
+        // DEPRECATED: super.finalize()
+        // The "correct" solution requires Java 9 (Cleaner) - we want to remain compatible
+        // Java 8 for the time being; hence, we will keep it as it is for the time being.
     }
 }
 
