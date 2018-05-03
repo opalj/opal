@@ -336,7 +336,8 @@ case class CFG(
      *         instructions/statements, but which all belong to the same basic block.
      *         ''This situation cannot be handled using pcToIndex.''
      *         This information is used to ensure that - if a basic block which currently just
-     *         encompasses a single instruction will encompass the new and the old instruction afterwards.
+     *         encompasses a single instruction, it will encompass the new and the old instruction
+     *         afterwards.
      *         The returned value will be used as the `endIndex.`
      *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
      *         Hence, the function is given the mapped index has to return that value if the index

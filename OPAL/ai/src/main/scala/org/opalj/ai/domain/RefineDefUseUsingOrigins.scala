@@ -47,7 +47,7 @@ trait RefineDefUseUsingOrigins extends RecordDefUse {
         defaultOrigins: ValueOrigins
     ): ValueOrigins = {
         domainValue match {
-            case vo: ValueWithOriginInformation ⇒ vo.origins.toSet
+            case vo: ValueWithOriginInformation ⇒ vo.origins
             case _                              ⇒ defaultOrigins
         }
     }

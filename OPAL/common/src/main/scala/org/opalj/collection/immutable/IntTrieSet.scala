@@ -1081,7 +1081,7 @@ object IntTrieSet {
     }
 
     /** Constructs a new IntTrie from the two distinct(!) values. */
-    private[immutable] def from(i1: Int, i2: Int): IntTrieSet = {
+    def from(i1: Int, i2: Int): IntTrieSet = {
         assert(i1 != i2)
         // we have to ensure the same ordering as used when the values are
         // stored in the trie
@@ -1103,8 +1103,8 @@ object IntTrieSet {
         }
     }
 
-    /** Constructs a new IntTrie from the two distinct(!) values! */
-    private[immutable] def from(i1: Int, i2: Int, i3: Int): IntTrieSet = {
+    /** Constructs a new IntTrie from the three distinct(!) values! */
+    def from(i1: Int, i2: Int, i3: Int): IntTrieSet = {
         // We have to ensure the same ordering as used when the values are stored in the trie...
         var v1, v2, v3 = 0
         if ((Integer.lowestOneBit(i1 ^ i2) & i1) == 0) {
@@ -1133,14 +1133,79 @@ object IntTrieSet {
     }
 
     def apply(i1: Int, i2: Int, i3: Int, i4: Int): IntTrieSet = {
-        if (i1 == i2)
+        if (i1 == i2) {
             IntTrieSet(i2, i3, i4)
-        else if (i1 == i3 || i2 == i3 || i3 == i4) { // we have i1 =!= i2
+        } else if (i1 == i3 || i2 == i3 || i3 == i4) { // we have i1 =!= i2
             IntTrieSet(i1, i2, i4)
         } else if (i1 == i4 || i2 == i4) {
             IntTrieSet(i1, i2, i3)
+        } else {
+            IntTrieSet.from(i1, i2, i3, i4, 0)
         }
-        IntTrieSet.from(i1, i2, i3, i4, 0)
+    }
+
+    def from(i1: Int, i2: Int, i3: Int, i4: Int): IntTrieSet = {
+        if ((i1 & 1) == 0) {
+            if ((i2 & 1) == 0) {
+                if ((i3 & 1) == 0) {
+                    if ((i4 & 1) == 0) { // first bit of all "0"
+                        new IntTrieSetNJustLeft(from(i1, i2, i3, i4, 1))
+                    } else { // first bit of i4 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i1, i2, i3), IntTrieSet1(i4), 4)
+                    }
+                } else {
+                    if ((i4 & 1) == 0) { // first bit of i3 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i1, i2, i4), IntTrieSet1(i3), 4)
+                    } else { // first bit of i3, i4 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i1, i2), IntTrieSet.from(i3, i4), 4)
+                    }
+                }
+            } else {
+                if ((i3 & 1) == 0) {
+                    if ((i4 & 1) == 0) { // first bit of i2 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i1, i3, i4), IntTrieSet1(i2), 4)
+                    } else { // first bit of i2 and i4 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i1, i3), IntTrieSet.from(i2, i4), 4)
+                    }
+                } else {
+                    if ((i4 & 1) == 0) { // first bit of i2, i3 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i1, i4), IntTrieSet.from(i2, i3), 4)
+                    } else { // first bit of i2, i3, i4 is "1"
+                        new IntTrieSetN(IntTrieSet1(i1), IntTrieSet.from(i2, i3, i4), 4)
+                    }
+                }
+            }
+        } else {
+            if ((i2 & 1) == 0) {
+                if ((i3 & 1) == 0) {
+                    if ((i4 & 1) == 0) { // first bit of i1 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i2, i3, i4), IntTrieSet1(i1), 4)
+                    } else { // first bit of i1, i4 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i2, i3), IntTrieSet.from(i1, i4), 4)
+                    }
+                } else {
+                    if ((i4 & 1) == 0) { // first bit of i1, i3 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i2, i4), IntTrieSet.from(i1, i3), 4)
+                    } else { // first bit of i1, i3, i4 is "1"
+                        new IntTrieSetN(IntTrieSet1(i2), IntTrieSet.from(i1, i3, i4), 4)
+                    }
+                }
+            } else {
+                if ((i3 & 1) == 0) {
+                    if ((i4 & 1) == 0) { // first bit of i1, i2 is "1"
+                        new IntTrieSetN(IntTrieSet.from(i3, i4), IntTrieSet.from(i1, i2), 4)
+                    } else { // first bit of i1, i2 and i4 is "1"
+                        new IntTrieSetN(IntTrieSet1(i3), IntTrieSet.from(i1, i2, i4), 4)
+                    }
+                } else {
+                    if ((i4 & 1) == 0) { // first bit of i1, i2, i3 is "1"
+                        new IntTrieSetN(IntTrieSet1(i4), IntTrieSet.from(i1, i2, i3), 4)
+                    } else { // first bit of i1, i2, i3, i4 is "1"
+                        new IntTrieSetNJustRight(from(i1, i2, i3, i4, 1))
+                    }
+                }
+            }
+        }
     }
 
     /**
