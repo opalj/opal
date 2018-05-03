@@ -388,7 +388,7 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
             false
 
         case EPS(_, _, _) ⇒
-            throw new RuntimeException("unexpected property")
+            throw new RuntimeException(s"unexpected property $ep for entity ${state.dm}")
 
         case _ ⇒
             state.addMethodDependee(ep)
