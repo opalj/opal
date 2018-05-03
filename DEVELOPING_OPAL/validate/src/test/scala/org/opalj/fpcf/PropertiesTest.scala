@@ -66,7 +66,7 @@ import org.opalj.fpcf.properties.PropertyMatcher
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
-    val withRT = false
+    val withRT = true
 
     /**
      * The representation of the fixture project.
@@ -240,7 +240,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
-            Some(dm) = declaredMethods(DefinedMethod(m.classFile.thisType, m))
+            dm = declaredMethods(DefinedMethod(m.classFile.thisType, m))
         } yield {
             val fp = formalParameters(dm)(i + 1)
             (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)

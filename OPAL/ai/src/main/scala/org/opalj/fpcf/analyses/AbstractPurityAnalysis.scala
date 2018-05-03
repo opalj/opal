@@ -59,6 +59,7 @@ import org.opalj.fpcf.properties.LBSideEffectFree
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.fpcf.properties.LBPure
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.tac.ArrayLength
@@ -132,13 +133,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * The state of the analysis.
      * Analyses are expected to extend this trait with the information they need.
      *
-     * maxPurity - The current purity level for the method
+     * lbPurity - The current minimum possible purity level for the method
+     * ubPurity - The current maximum purity level for the method
      * method - The currently analyzed method
      * declClass - The declaring class of the currently analyzed method
      * code - The code of the currently analyzed method
      */
     trait AnalysisState {
-        var maxPurity: Purity
+        var lbPurity: Purity
+        var ubPurity: Purity
         val method: Method
         val declClass: ObjectType
         val code: Array[Stmt[V]]
@@ -159,8 +162,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Reduces the maxPurity of the current method to at most the given purity level.
      */
+    def reduceMinumumPurity(newLevel: Purity)(implicit state: AnalysisState): Unit = {
+        state.lbPurity = state.lbPurity meet newLevel
+    }
+
+    /**
+     * Reduces the minPurity and maxPurity of the current method to at most the given purity level.
+     */
     def atMost(newLevel: Purity)(implicit state: AnalysisState): Unit = {
-        state.maxPurity = state.maxPurity meet newLevel
+        state.lbPurity = state.lbPurity meet newLevel
+        state.ubPurity = state.ubPurity meet newLevel
     }
 
     /**
@@ -365,7 +376,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 checkPurityOfFieldRef(declClass, name, fieldType, Some(objRef))
                 true
             case ArrayLoad.ASTID ⇒
-                if (state.maxPurity.isDeterministic)
+                if (state.ubPurity.isDeterministic)
                     isLocal(expr.asArrayLoad.arrayRef, LBSideEffectFree)
                 true
 
@@ -465,11 +476,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             } else {
                 // Get the DefinedMethod for this call site
                 val dm = declaredMethods(DefinedMethod(receiverType, calleeR.value))
-                if (dm.isDefined) {
-                    onMultiple(dm.get)
-                } else {
-                    onUnknown() // Target methods unknown (not in scope of current project)
-                }
+                onMultiple(dm)
             }
         }
     }
@@ -525,7 +532,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         objRef:    Option[Expr[V]]
     )(implicit state: StateType): Unit = {
         // Don't do dependee checks if already non-deterministic
-        if (state.maxPurity.isDeterministic) {
+        if (state.ubPurity.isDeterministic) {
             project.resolveFieldReference(declClass, name, fieldType) match {
                 case Some(field) if field.isFinal ⇒ // constants do not impede purity!
                 case Some(field) if field.isPrivate /*&& field.isNonFinal*/ ⇒
@@ -548,7 +555,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case FinalEP(_, _) ⇒ // Mutable field
             if (objRef.isDefined) isLocal(objRef.get, LBSideEffectFree)
             else atMost(LBSideEffectFree)
-        case _ ⇒ handleUnknownFieldMutability(ep, objRef)
+        case _ ⇒
+            reduceMinumumPurity(LBSideEffectFree)
+            handleUnknownFieldMutability(ep, objRef)
     }
 
     /**
@@ -571,7 +580,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         if (returnValue.cTpe != ComputationalTypeReference)
             return ; // Only non-primitive return values influence purity.
 
-        if (!state.maxPurity.isDeterministic)
+        if (!state.ubPurity.isDeterministic)
             return ; // If the method can't be pure, the return value is not important.
 
         if (!returnValue.isVar) {
@@ -628,9 +637,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         // Returning immutable object is pure
         case FinalEP(_, ImmutableType | ImmutableObject) ⇒ true
         case FinalEP(_, _) ⇒
+            atMost(LBPure) // Can not be compile time pure if mutable object is returned
             isLocal(expr, LBSideEffectFree)
             false // Return early if we are already side-effect free
         case _ ⇒
+            reduceMinumumPurity(LBSideEffectFree)
             handleUnknownTypeMutability(ep, expr)
             true
     }
