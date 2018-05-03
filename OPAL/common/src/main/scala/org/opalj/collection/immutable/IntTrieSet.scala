@@ -1133,12 +1133,16 @@ object IntTrieSet {
     }
 
     def apply(i1: Int, i2: Int, i3: Int, i4: Int): IntTrieSet = {
-        if (i1 == i2)
+        if (i1 == i2) {
             IntTrieSet(i2, i3, i4)
-        else if (i1 == i3 || i2 == i3 || i3 == i4) { // we have i1 =!= i2
+        } else if (i1 == i3 || i2 == i3 || i3 == i4) { // we have i1 =!= i2
             IntTrieSet(i1, i2, i4)
         } else if (i1 == i4 || i2 == i4) {
             IntTrieSet(i1, i2, i3)
+        } else {
+            IntTrieSet.from(i1, i2, i3, i4, 0)
+        }
+    }
         }
         IntTrieSet.from(i1, i2, i3, i4, 0)
     }
