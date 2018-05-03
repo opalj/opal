@@ -45,7 +45,7 @@ import org.opalj.log.{LogContext, OPALLogger}
 object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.fpcf."
-    final val DefaultPropertyStoreImplementation = "org.opalj.fpcf.LockBasedPropertyStore"
+    final val DefaultPropertyStoreImplementation = "org.opalj.fpcf.ReactiveAsyncPropertyStore"
 
     /**
      * Used to specify the number of threads the property store should use. This

@@ -468,7 +468,7 @@ class ReactiveAsyncPropertyStore private (
 
                 removedDependees foreach { someEOptionP ⇒
                     val psE = ps(someEOptionP.pk.id)
-                    // When querying the properties, the cell already exists. At somepoint it was
+                    // When querying the properties, the cell already exists. At some point it was
                     // added and in step 3 the cell was generated
                     val dependeeCell = psE(someEOptionP.e).cell
                     cc.cell.removeNextCallbacks(dependeeCell)

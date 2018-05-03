@@ -66,7 +66,7 @@ import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.log.{Error => ErrorLogLevel}
+import org.opalj.log.{Error ⇒ ErrorLogLevel}
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
@@ -89,11 +89,11 @@ object PropertyStorePerformanceEvaluation {
         // *** Default Sequential Schedulings ***
         new PropertyStoreEvaluation(
             "org.opalj.fpcf.PKESequentialPropertyStore",
-            false,
+            false
         ),
         new PropertyStoreEvaluation(
             "org.opalj.fpcf.EPKSequentialPropertyStore",
-            false,
+            false
         ),
 
         // *** PKESequentialPropertyStore ***
@@ -403,15 +403,15 @@ object PropertyStorePerformanceEvaluation {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-a"            ⇒ { i += 1; analysis = args(i) }
-                case "-cp"           ⇒ { i += 1; cp = args(i) }
-                case "-t"            ⇒ { i += 1; threads = args(i).toInt }
-                case "-minThreads"   ⇒ { i += 1; minThreads = args(i).toInt }
-                case "-allSchedulings" => { allSchedulings = true }
-                case "-exportHistogram" => { exportHistogram = true }
-                case "-ps" => { i += 1; specificPropertyStore = Some(args(i)) }
-                case "-h" | "--help" ⇒ { showUsage(error = None); System.exit(0) }
-                case arg             ⇒ { showUsage(Some(s"Unsupported: $arg")); System.exit(2) }
+                case "-a"               ⇒ { i += 1; analysis = args(i) }
+                case "-cp"              ⇒ { i += 1; cp = args(i) }
+                case "-t"               ⇒ { i += 1; threads = args(i).toInt }
+                case "-minThreads"      ⇒ { i += 1; minThreads = args(i).toInt }
+                case "-allSchedulings"  ⇒ { allSchedulings = true }
+                case "-exportHistogram" ⇒ { exportHistogram = true }
+                case "-ps"              ⇒ { i += 1; specificPropertyStore = Some(args(i)) }
+                case "-h" | "--help"    ⇒ { showUsage(error = None); System.exit(0) }
+                case arg                ⇒ { showUsage(Some(s"Unsupported: $arg")); System.exit(2) }
             }
             i += 1
         }
@@ -426,130 +426,130 @@ object PropertyStorePerformanceEvaluation {
         val propertyStoreImplementation = ConfigKeyPrefix+"PropertyStoreImplementation"
 
         val psResults = propertyStoreImplementationList
-            .filter(psI => allSchedulings || psI.configurationDescription == defaultConfigurationDescription)
-            .filter(psI => specificPropertyStore.isEmpty || psI.className == specificPropertyStore.get)
+            .filter(psI ⇒ allSchedulings || psI.configurationDescription == defaultConfigurationDescription)
+            .filter(psI ⇒ specificPropertyStore.isEmpty || psI.className == specificPropertyStore.get)
             .map { psI ⇒
-            var nanos: Nanoseconds = Nanoseconds.None
+                var nanos: Nanoseconds = Nanoseconds.None
 
-            val localParallelismRuns = if (psI.isParallel)
-                parallelismRuns
-            else
-                List(1)
+                val localParallelismRuns = if (psI.isParallel)
+                    parallelismRuns
+                else
+                    List(1)
 
-            val timings = localParallelismRuns.map { threads ⇒
-                println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})")
-                var project: Project[URL] = null
-                var run = 0
+                val timings = localParallelismRuns.map { threads ⇒
+                    println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})")
+                    var project: Project[URL] = null
+                    var run = 0
 
-                val result = PerformanceEvaluation.time(10, 15, 3, {
-                    // *** Setup - NOT TIMED ***
-                    val testConfig = baseConfig.
-                        withValue(propertyStoreImplementation, ConfigValueFactory.fromAnyRef(psI.className))
-                    project = buildProject(cp, testConfig)
+                    val result = PerformanceEvaluation.time(10, 15, 3, {
+                        // *** Setup - NOT TIMED ***
+                        val testConfig = baseConfig.
+                            withValue(propertyStoreImplementation, ConfigValueFactory.fromAnyRef(psI.className))
+                        project = buildProject(cp, testConfig)
 
-                    project.getOrCreateProjectInformationKeyInitializationData(
-                        SimpleAIKey,
-                        (m: Method) ⇒ {
-                            new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
+                        project.getOrCreateProjectInformationKeyInitializationData(
+                            SimpleAIKey,
+                            (m: Method) ⇒ {
+                                new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
+                            }
+                        )
+
+                        // Pre analysis computations
+                        analysis match {
+                            case "InterProceduralEscapeAnalysis" ⇒
+                                val tac = project.get(DefaultTACAIKey)
+                                project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
+                            case _ ⇒
                         }
-                    )
+                    }, {
+                        // *** Analysis - TIMED ***
 
-                    // Pre analysis computations
-                    analysis match {
-                        case "InterProceduralEscapeAnalysis" ⇒
-                            val tac = project.get(DefaultTACAIKey)
-                            project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
-                        case _ =>
+                        // Set the number of threads
+                        PropertyStoreKey.parallelismLevel = threads
+                        val propertyStore = project.get(PropertyStoreKey)
+                        psI.setup(propertyStore)
+
+                        // Run the setup phase and make all PropertyKeys used in this evaluation known
+                        propertyStore.setupPhase(Set(
+                            ClassImmutability.key,
+                            TypeImmutability.key,
+                            FieldMutability.key,
+                            VirtualMethodPurity.key,
+                            ReturnValueFreshness.key,
+                            VirtualMethodReturnValueFreshness.key,
+                            EscapeProperty.key,
+                            VirtualMethodEscapeProperty.key,
+                            FieldLocality.key,
+                            Purity.key,
+                            ThrownExceptions.Key,
+                            ThrownExceptionsByOverridingMethods.Key
+                        ))
+
+                        analysis match {
+                            case "TypeImmutabilityAnalysis" ⇒
+                                EagerTypeImmutabilityAnalysis.start(project, propertyStore)
+                            case "L0FieldMutabilityAnalysis" ⇒
+                                EagerL0FieldMutabilityAnalysis.start(project, propertyStore)
+                            case "L1FieldMutabilityAnalysis" ⇒
+                                EagerL1FieldMutabilityAnalysis.start(project, propertyStore)
+                            case "L0PurityAnalysis" ⇒
+                                LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore)
+                                EagerL0PurityAnalysis.start(project, propertyStore)
+                            case "L1PurityAnalysis" ⇒
+                                LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
+                                LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
+                                EagerL1PurityAnalysis.start(project, propertyStore)
+                            case "L2PurityAnalysis" ⇒
+                                LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
+                                LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
+                                LazyReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
+                                LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
+                                LazyInterProceduralEscapeAnalysis.startLazily(project, propertyStore)
+                                LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
+                                LazyFieldLocalityAnalysis.startLazily(project, propertyStore)
+                                EagerL2PurityAnalysis.start(project, propertyStore)
+                            case "InterProceduralEscapeAnalysis" ⇒
+
+                            //InterProceduralEscapeAnalysis.start(project, propertyStore)
+                            //VirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
+                            case "L1ThrownExceptionsAnalysis" ⇒
+                                ThrownExceptionsByOverridingMethodsAnalysis.startLazily(project, propertyStore)
+                                L1ThrownExceptionsAnalysis.start(project, propertyStore)
+                        }
+
+                        propertyStore.waitOnPhaseCompletion()
+                        propertyStore
+                    }, true) {
+                        case (c, s) ⇒
+                            nanos = Nanoseconds(s.map(_.timeSpan).sum / s.size)
+                            run += 1
+                            println(f"Run ${run}%2s: ${c.toSeconds} (${nanos.toSeconds} avg) - Times considered: [${s.map(_.toSeconds).mkString(", ")}]")
                     }
-                }, {
-                    // *** Analysis - TIMED ***
 
-                    // Set the number of threads
-                    PropertyStoreKey.parallelismLevel = threads
-                    val propertyStore = project.get(PropertyStoreKey)
-                    psI.setup(propertyStore)
-
-                    // Run the setup phase and make all PropertyKeys used in this evaluation known
-                    propertyStore.setupPhase(Set(
-                        ClassImmutability.key,
-                        TypeImmutability.key,
-                        FieldMutability.key,
-                        VirtualMethodPurity.key,
-                        ReturnValueFreshness.key,
-                        VirtualMethodReturnValueFreshness.key,
-                        EscapeProperty.key,
-                        VirtualMethodEscapeProperty.key,
-                        FieldLocality.key,
-                        Purity.key,
-                        ThrownExceptions.Key,
-                        ThrownExceptionsByOverridingMethods.Key
-                    ))
-
-                    analysis match {
-                        case "TypeImmutabilityAnalysis" ⇒
-                            EagerTypeImmutabilityAnalysis.start(project, propertyStore)
-                        case "L0FieldMutabilityAnalysis" ⇒
-                            EagerL0FieldMutabilityAnalysis.start(project, propertyStore)
-                        case "L1FieldMutabilityAnalysis" ⇒
-                            EagerL1FieldMutabilityAnalysis.start(project, propertyStore)
-                        case "L0PurityAnalysis" ⇒
-                            LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore)
-                            EagerL0PurityAnalysis.start(project, propertyStore)
-                        case "L1PurityAnalysis" ⇒
-                            LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
-                            LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
-                            EagerL1PurityAnalysis.start(project, propertyStore)
-                        case "L2PurityAnalysis" ⇒
-                            LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
-                            LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
-                            LazyReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
-                            LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
-                            LazyInterProceduralEscapeAnalysis.startLazily(project, propertyStore)
-                            LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
-                            LazyFieldLocalityAnalysis.startLazily(project, propertyStore)
-                            EagerL2PurityAnalysis.start(project, propertyStore)
-                        case "InterProceduralEscapeAnalysis" ⇒
-
-                        //InterProceduralEscapeAnalysis.start(project, propertyStore)
-                        //VirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
-                        case "L1ThrownExceptionsAnalysis" ⇒
-                            ThrownExceptionsByOverridingMethodsAnalysis.startLazily(project, propertyStore)
-                            L1ThrownExceptionsAnalysis.start(project, propertyStore)
+                    if (exportHistogram) {
+                        result match {
+                            case raPs: ReactiveAsyncPropertyStore ⇒
+                                val p = org.opalj.io.write(
+                                    "numberDependencies,total\n"+
+                                        raPs.dependencyCounter.map {
+                                            case (k, v) ⇒ s"$k,${v.get}"
+                                        }.mkString("\n"),
+                                    s"hist_t$threads",
+                                    ".csv"
+                                )
+                                println(s"Histogram written to: ${p.toFile.getAbsolutePath}")
+                            case _ ⇒
+                        }
                     }
 
-                    propertyStore.waitOnPhaseCompletion()
-                    propertyStore
-                }, true) {
-                    case (c, s) ⇒
-                        nanos = Nanoseconds(s.map(_.timeSpan).sum / s.size)
-                        run += 1
-                        println(f"Run ${run}%2s: ${c.toSeconds} (${nanos.toSeconds} avg) - Times considered: [${s.map(_.toSeconds).mkString(", ")}]")
+                    println(result)
+
+                    println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})...done. Took average ${nanos.toSeconds.toString}")
+                    threads -> nanos
                 }
 
-                if (exportHistogram) {
-                    result match {
-                        case raPs: ReactiveAsyncPropertyStore =>
-                            val p = org.opalj.io.write(
-                                "numberDependencies,total\n" +
-                                    raPs.dependencyCounter.map {
-                                        case (k, v) => s"$k,${v.get}"
-                                    }.mkString("\n"),
-                                s"hist_t$threads",
-                                ".csv"
-                            )
-                            println(s"Histogram written to: ${p.toFile.getAbsolutePath}")
-                        case _ =>
-                    }
-                }
-
-                println(result)
-
-                println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})...done. Took average ${nanos.toSeconds.toString}")
-                threads -> nanos
+                psI -> timings
             }
-
-            psI -> timings
-        }
 
         psResults.foreach { r ⇒
             println(s"Using ${r._1.className} (${r._1.configurationDescription})")
@@ -557,6 +557,19 @@ object PropertyStorePerformanceEvaluation {
                 println(f"\t\tThreads: ${timings._1}%-3s ${timings._2.toString}%20s ${timings._2.toSeconds.toString}%20s")
             }
         }
+
+        val p = org.opalj.io.write(
+            "PropertyStore;Config;Threads;avgTimeInNanos;avgTimeInSeconds\n"+
+                psResults.flatMap { r ⇒
+                    println(s"Using ${r._1.className} (${r._1.configurationDescription})")
+                    r._2.map { timings ⇒
+                        s"${r._1.className};${r._1.configurationDescription};${timings._1};${timings._2.toString(false)};${timings._2.toSeconds.toString(false)}"
+                    }
+                }.mkString("\n"),
+            s"PropertyStoreEvaluationResults_${analysis}_",
+            ".csv"
+        )
+        println(s"Results written to: ${p.toFile.getAbsolutePath}")
 
     }
 }
