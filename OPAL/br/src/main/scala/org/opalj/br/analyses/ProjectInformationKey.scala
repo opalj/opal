@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Making project wide information available on demand is done as follows.
  *
  *  1. Implement the base analysis that computes the information given some project.
- *  2. Implement your `ProjectInformationKey` class that inherits from this trait and
+ *  1. Implement your `ProjectInformationKey` class that inherits from this trait and
  *    which calls the base analysis. It is recommended that the factory method ([[compute]])
  *    is side-effect free.
  *
