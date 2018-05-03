@@ -44,11 +44,11 @@ import br.analyses._
  * Overall initialization is done in multiple steps.
  *
  *  1. The parameters are checked.
- *  2. The parameters of the analysis are set.
- *  3. The project is initialized by the framework and also set.
- *  4. Initialize [[sourceValues]] and [[sinkInstructions]] (These methods needs to be
+ *  1. The parameters of the analysis are set.
+ *  1. The project is initialized by the framework and also set.
+ *  1. Initialize [[sourceValues]] and [[sinkInstructions]] (These methods needs to be
  *     overridden by your subclass.)
- *  5. Call [[solve]]. After you have called [[solve]] you are no longer allowed
+ *  1. Call [[solve]]. After you have called [[solve]] you are no longer allowed
  *      to change the project or the sources and sinks.
  *
  * @author Michael Eichberg and Ben Hermann
