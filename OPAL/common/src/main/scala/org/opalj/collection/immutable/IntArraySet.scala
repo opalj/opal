@@ -674,6 +674,10 @@ class IntArraySetBuilder private[immutable] (
         this(new Array[Int](4), 0)
     }
 
+    def this(initialSize : Int) {
+        this(new Array[Int](Math.max(initialSize,4)), 0)
+    }
+
     override def +=(elem: Int): this.type = {
         import System.arraycopy
         val index = Arrays.binarySearch(is, 0, size, elem)
