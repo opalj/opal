@@ -82,8 +82,8 @@ import org.opalj.concurrent.ConcurrentExceptions
  * This class has several purposes:
  *
  *  1. It is a container for `ClassFile`s.
- *  2. It directly gives access to the project's class hierarchy.
- *  3. It serves as a container for project-wide information (e.g., a call graph,
+ *  1. It directly gives access to the project's class hierarchy.
+ *  1. It serves as a container for project-wide information (e.g., a call graph,
  *     information about the mutability of classes, constant values,...) that can
  *     be queried using [[org.opalj.br.analyses.ProjectInformationKey]]s.
  *     The list of project wide information that can be made available is equivalent
