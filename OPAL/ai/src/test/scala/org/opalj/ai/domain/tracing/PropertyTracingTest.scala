@@ -91,7 +91,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
 
             // let's check if the first parameter (_ == -2) passed to a method is
             // passed to a method called sanitize...
-            if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
+            if (name == "sanitize" && originsIterator(operands.head).exists(_ == -2)) {
                 updateProperty(pc, true)
             }
             super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)

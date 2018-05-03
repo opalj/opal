@@ -32,9 +32,9 @@ package domain
 package l1
 
 import scala.language.existentials
-
-import scala.reflect.ClassTag
+import scala.annotation.switch
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 
 import java.util.IdentityHashMap
 
@@ -50,6 +50,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.
@@ -1215,11 +1216,29 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 MultipleReferenceValues(newValues, newIsNull, newIsPrecise, newUTB, newRefId)
         }
 
-        override def origins: IntIterator = {
+        override def originsIterator: IntIterator = {
             val it = values.iterator
             new IntIterator {
                 def hasNext: Boolean = it.hasNext
                 def next(): Int = it.next().origin
+            }
+        }
+
+        override def origins: ValueOrigins = {
+            // In the following we exploit the knowledge that all origins are definitively
+            // different!
+            val it = values.iterator
+            (values.size: @switch) match {
+                case 2 ⇒
+                    IntTrieSet.from(it.next().origin, it.next().origin)
+                case 3 ⇒
+                    IntTrieSet.from(it.next().origin, it.next().origin, it.next().origin)
+                case _ ⇒
+                    var s = IntTrieSet.from(
+                        it.next().origin, it.next().origin, it.next().origin, it.next().origin
+                    )
+                    while (it.hasNext) { s += it.next().origin }
+                    s
             }
         }
 

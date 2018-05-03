@@ -32,6 +32,8 @@ package domain
 
 import org.opalj.br.ComputationalType
 import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.immutable.EmptyIntTrieSet
 
 /**
  * Provides information about the origin (that is, def-site) of a value iff the underlying domain
@@ -73,7 +75,8 @@ trait Origin { domain: ValuesDomain ⇒
      *  Common supertrait of all domain values which provide comprehensive origin information.
      */
     trait ValueWithOriginInformation {
-        def origins: ValueOriginsIterator
+        def originsIterator: ValueOriginsIterator
+        def origins: ValueOrigins
     }
 
     /**
@@ -81,7 +84,8 @@ trait Origin { domain: ValuesDomain ⇒
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
-        final def origins: ValueOriginsIterator = IntIterator(origin)
+        final def originsIterator: ValueOriginsIterator = IntIterator(origin)
+        final def origins: ValueOrigins = IntTrieSet1(origin)
     }
 
     /**
@@ -100,9 +104,9 @@ trait Origin { domain: ValuesDomain ⇒
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    def origin(value: DomainValue): ValueOriginsIterator = {
+    def originsIterator(value: DomainValue): ValueOriginsIterator = {
         value match {
-            case vo: ValueWithOriginInformation ⇒ vo.origins
+            case vo: ValueWithOriginInformation ⇒ vo.originsIterator
             case _                              ⇒ IntIterator.empty
         }
     }
@@ -110,8 +114,15 @@ trait Origin { domain: ValuesDomain ⇒
     def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
         value match {
             case sov: SingleOriginValue    ⇒ f(sov.origin)
-            case mov: MultipleOriginsValue ⇒ mov.origins.foreach(f)
+            case mov: MultipleOriginsValue ⇒ mov.originsIterator.foreach(f)
             case _                         ⇒ /* nothing to do */
+        }
+    }
+
+    def origins(value: DomainValue): ValueOrigins = {
+        value match {
+            case vo: ValueWithOriginInformation ⇒ vo.origins
+            case _                              ⇒ EmptyIntTrieSet
         }
     }
 
@@ -119,11 +130,17 @@ trait Origin { domain: ValuesDomain ⇒
 
 @deprecated("introduces unnecessary (un)boxing; use the domain's (foreach)origin", "OPAL 1.1.0")
 object Origin {
-    def unapply(value: Origin#SingleOriginValue): Option[Int] = Some(value.origin)
+    def unapply(value: Origin#SingleOriginValue): Some[Int] = Some(value.origin)
+}
+
+object OriginsIterator {
+    def unapply(value: Origin#ValueWithOriginInformation): Some[ValueOriginsIterator] = {
+        Some(value.originsIterator)
+    }
 }
 
 object Origins {
-    def unapply(value: Origin#ValueWithOriginInformation): Option[ValueOriginsIterator] = {
+    def unapply(value: Origin#ValueWithOriginInformation): Some[ValueOrigins] = {
         Some(value.origins)
     }
 }

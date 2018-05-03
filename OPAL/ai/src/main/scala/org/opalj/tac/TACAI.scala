@@ -190,10 +190,9 @@ object TACAI {
                 (aiVOs: IntTrieSet) ⇒ aiVOs
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
-                (aiVOs: IntTrieSet) ⇒                    {
-                        aiVOs.map { aiVO ⇒
-                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
-                        }
+                (aiVOs: IntTrieSet) ⇒
+                    aiVOs.map { aiVO ⇒
+                        if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
