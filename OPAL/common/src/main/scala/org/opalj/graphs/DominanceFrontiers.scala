@@ -86,7 +86,7 @@ final class DominanceFrontiers private (
         do {
             val x = worklist.pop()
 
-            df(x).foreach { y ⇒
+            df(x) foreach { y ⇒
                 if (!seen.contains(y)) {
                     seen += y
                     worklist.push(y)
