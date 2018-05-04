@@ -154,12 +154,12 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
         val methodsOfThisType = field.classFile.methodsWithBody.map(_._1)
 
-        // If the class does not override clone, it can be leaked by [[java.lang.Object.clone]] that
+        // If the class does not override clone, it can be leaked by `java.lang.Object.clone` that
         // creates a shallow copy.
         if (!methodsOfThisType.exists(m ⇒
             m.name == "clone" && m.descriptor.parametersCount == 0 && !m.isSynthetic)) {
             // If the class is not [[java.lang.Cloneable]] it can't be cloned directly
-            // ([[java.lang.Object.clone]] with throw a [[java.lang.CloneNotSupportedException]]).
+            // (`java.lang.Object.clone` with throw a [[java.lang.CloneNotSupportedException]]).
             // Otherwise, the field may be leaked!
             if (project.classHierarchy.isSubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
                 return Result(field, NoLocalField)
@@ -185,7 +185,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
      * Ensures that all field accesses keep the field local (i.e., no non-local value is written to
      * the field and the field's value never escapes). Also, if super.clone is called, the field
      * has to overwritten to prevent it from being leaked by the shallow copy created through
-     * [[java.lang.Object.clone]].
+     * `java.lang.Object.clone`.
      */
     private[this] def step3(field: Field)(implicit state: FieldLocalityState): PropertyComputationResult = {
         val fieldName = field.name

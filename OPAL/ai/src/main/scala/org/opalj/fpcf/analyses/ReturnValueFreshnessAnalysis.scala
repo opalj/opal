@@ -32,7 +32,6 @@ package analyses
 
 import org.opalj
 import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSites
 import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -76,8 +75,6 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 
 import scala.annotation.switch
@@ -139,10 +136,10 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
  */
 class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
-    private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
-    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
-    private[this] val isOverridableMethod: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] val tacaiProvider = project.get(DefaultTACAIKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val definitionSites = project.get(DefinitionSitesKey)
+    private[this] val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
      * Ensures that we invoke [[doDetermineFreshness]] for [[org.opalj.br.DefinedMethod]]s only.

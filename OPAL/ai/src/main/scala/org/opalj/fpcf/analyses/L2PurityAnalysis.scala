@@ -651,7 +651,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     treatParamsAsFresh = false
                 )
             else true
-        case EOptionP(e, pk) ⇒
+        case EOptionP(_, pk) ⇒
             reducePurityLB(LBImpure)
             if (pk == Purity.key)
                 state.addPurityDependee(
@@ -854,7 +854,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
-        implicit val state =
+        implicit val state: State =
             new State(CompileTimePure, CompileTimePure, method, definedMethod, declClass, code)
 
         checkStaticDataUsage(propertyStore(definedMethod, StaticDataUsage.key))

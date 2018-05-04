@@ -114,7 +114,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
     override type StateType = State
 
-    val raterFqn = project.config.as[String](
+    val raterFqn: String = project.config.as[String](
         "org.opalj.fpcf.analyses.L1PurityAnalysis.domainSpecificRater"
     )
 
@@ -212,7 +212,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(ub)
                 true
             }
-        case epk ⇒
+        case _ ⇒
             state.dependees += ep
             reducePurityLB(LBImpure)
             true
@@ -310,7 +310,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
-        implicit val state =
+        implicit val state: State =
             new State(LBPure, LBPure, Set.empty, method, definedMethod, declClass, code)
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors

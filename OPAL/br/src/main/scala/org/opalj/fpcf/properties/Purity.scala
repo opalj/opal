@@ -229,11 +229,11 @@ object Purity extends PurityPropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", Impure)
 
-    final val NotCompileTimePure = 0x1;
-    final val IsNonDeterministic = 0x2;
-    final val ModifiesReceiver = 0x4;
-    final val PerformsDomainSpecificOperations = 0x8;
-    final val ModifiesParameters = 0x10;
+    final val NotCompileTimePure = 0x1
+    final val IsNonDeterministic = 0x2
+    final val ModifiesReceiver = 0x4
+    final val PerformsDomainSpecificOperations = 0x8
+    final val ModifiesParameters = 0x10
 
     final val PureFlags = NotCompileTimePure
     final val ExternallyPureFlags = PureFlags | ModifiesReceiver
@@ -253,7 +253,7 @@ object Purity extends PurityPropertyMetaInformation {
         case CompileTimePure.flags ⇒ CompileTimePure
         case LBPure.flags          ⇒ LBPure
         // For non-pure levels, we don't have compile-time purity anymore
-        case _ ⇒ ((flags | NotCompileTimePure): @switch) match {
+        case _ ⇒ (flags | NotCompileTimePure: @switch) match {
             case LBSideEffectFree.flags            ⇒ LBSideEffectFree
             case LBExternallyPure.flags            ⇒ LBExternallyPure
             case LBExternallySideEffectFree.flags  ⇒ LBExternallySideEffectFree
@@ -262,7 +262,7 @@ object Purity extends PurityPropertyMetaInformation {
             case LBDExternallyPure.flags           ⇒ LBDExternallyPure
             case LBDExternallySideEffectFree.flags ⇒ LBDExternallySideEffectFree
             // `ModifiesParameters` includes `ModifiesReceiver`
-            case _ ⇒ ((flags | NotCompileTimePure | ModifiesReceiver): @switch) match {
+            case _ ⇒ (flags | NotCompileTimePure | ModifiesReceiver: @switch) match {
                 case LBContextuallyPure.flags            ⇒ LBContextuallyPure
                 case LBContextuallySideEffectFree.flags  ⇒ LBContextuallySideEffectFree
                 case LBDContextuallyPure.flags           ⇒ LBDContextuallyPure
@@ -465,8 +465,8 @@ case object LBDContextuallySideEffectFree extends Purity {
  */
 sealed abstract class ClassifiedImpure extends Purity {
     final val flags = ImpureFlags
-    override val withoutExternal = this
-    override val withoutContextual = this
+    override val withoutExternal: ClassifiedImpure = this
+    override val withoutContextual: ClassifiedImpure = this
 }
 
 /**

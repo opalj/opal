@@ -56,7 +56,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Determines the allocation freeness of the method.

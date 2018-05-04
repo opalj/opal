@@ -45,7 +45,7 @@ import org.opalj.fpcf.properties.VirtualMethodPurity.VLBImpure
  * @author Dominik Helm
  */
 class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determinePurity(dm: DefinedMethod): PropertyComputationResult = {
         val m = dm.definedMethod
@@ -96,7 +96,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
             case m: DefinedMethod ⇒ determinePurity(m)
-            case e ⇒ throw new UnknownError(
+            case _ ⇒ throw new UnknownError(
                 "virtual method purity is only defined for defined methods"
             )
         }

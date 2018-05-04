@@ -59,7 +59,7 @@ sealed abstract class FieldLocality extends Property with FieldLocalityMetaInfor
 object FieldLocality extends FieldLocalityMetaInformation {
     final lazy val key: PropertyKey[FieldLocality] = PropertyKey.create(
         "FieldLocality",
-        (ps: PropertyStore, f: Field) ⇒ if (f.fieldType.isBaseType) LocalField else NoLocalField,
+        (_: PropertyStore, f: Field) ⇒ if (f.fieldType.isBaseType) LocalField else NoLocalField,
         (_: PropertyStore, eps: EPS[Field, FieldLocality]) ⇒ eps.toUBEP
     )
 }
@@ -77,7 +77,7 @@ case object LocalField extends FieldLocality {
 /**
  * The field is a [[LocalField]] only if the owning instance's (dynamic) type does not implement
  * [[java.lang.Cloneable]]. Otherwise, the field's value may escape through a shallow copy created
- * through [[java.lang.Object.clone]].
+ * through `java.lang.Object.clone`.
  */
 case object ExtensibleLocalField extends FieldLocality {
 

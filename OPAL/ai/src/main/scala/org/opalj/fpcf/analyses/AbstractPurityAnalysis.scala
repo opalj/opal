@@ -203,7 +203,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
                     val rcvr = expr.asInstanceFunctionCall.receiver
-                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isYesOrUnknown
 
                 case StaticFunctionCall.ASTID ⇒ false
 
@@ -240,7 +240,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         call:     Call[V],
         receiver: Option[Expr[V]]
     )(implicit state: AnalysisState): Boolean = {
-        implicit val code = state.code
+        implicit val code: Array[Stmt[V]] = state.code
         val ratedResult = rater.handleCall(call, receiver)
         if (ratedResult.isDefined)
             atMost(ratedResult.get)
@@ -360,8 +360,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // Field/array loads are pure if the field is (effectively) final or the object/array is
             // local and non-escaping
             case GetStatic.ASTID ⇒
-                implicit val p = project
-                implicit val code = state.code
+                implicit val code: Array[Stmt[V]] = state.code
                 val ratedResult = rater.handleGetStatic(expr.asGetStatic)
                 if (ratedResult.isDefined) atMost(ratedResult.get)
                 else {
@@ -412,8 +411,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         descr:     MethodDescriptor
     )(implicit state: StateType): Boolean = {
         onVirtualMethod(rcvrType, interface, name, receiver, params, descr,
-            (callee) ⇒ checkPurityOfCall(rcvrType, name, descr, Some(receiver), params, callee),
-            (dm) ⇒ checkMethodPurity(
+            callee ⇒ checkPurityOfCall(rcvrType, name, descr, Some(receiver), params, callee),
+            dm ⇒ checkMethodPurity(
                 propertyStore(dm, VirtualMethodPurity.key), (Some(receiver), params)
             ),
             () ⇒ { atMost(LBImpure); false })
@@ -426,8 +425,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         receiver:   Expr[V],
         params:     Seq[Expr[V]],
         descr:      MethodDescriptor,
-        onPrecise:  (org.opalj.Result[Method]) ⇒ Boolean,
-        onMultiple: (DeclaredMethod) ⇒ Boolean,
+        onPrecise:  org.opalj.Result[Method] ⇒ Boolean,
+        onMultiple: DeclaredMethod ⇒ Boolean,
         onUnknown:  () ⇒ Boolean
     )(implicit state: StateType): Boolean = {
         if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes)
@@ -455,8 +454,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     org.opalj.Result(
                         project.resolveInterfaceMethodReference(receiverType, name, descr)
                     )
-                case Some(cf) ⇒ project.resolveClassMethodReference(receiverType, name, descr)
-                case _        ⇒ Failure
+                case Some(_) ⇒ project.resolveClassMethodReference(receiverType, name, descr)
+                case _       ⇒ Failure
             }
 
         if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise ||
@@ -667,8 +666,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case dm: DefinedMethod if dm.definedMethod.body.isDefined ⇒
                 determinePurity(dm)
             case dm: DefinedMethod ⇒ Result(dm, Impure)
-            case e ⇒
-                println(e)
+            case _ ⇒
                 throw new UnknownError("purity is only defined for definedmethods")
         }
     }
