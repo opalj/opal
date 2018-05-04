@@ -69,8 +69,8 @@ import org.opalj.graphs.Node
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-case class CFG(
-        code:                    Code,
+case class CFG[I <: AnyRef](
+        code:                    CodeSequence[I],
         normalReturnNode:        ExitNode,
         abnormalReturnNode:      ExitNode,
         catchNodes:              Seq[CatchNode],
@@ -343,11 +343,12 @@ case class CFG(
      *         Hence, the function is given the mapped index has to return that value if the index
      *         does not belong to the expanded instruction.
      */
-    def mapPCsToIndexes(
+    def mapPCsToIndexes[NewI <: AnyRef](
+        newCode:              CodeSequence[NewI],
         pcToIndex:            Array[Int /*PC*/ ],
         singletonBBsExpander: Int /*PC*/ ⇒ Int,
         lastIndex:            Int
-    ): CFG = {
+    ): CFG[NewI] = {
 
         /*
         // [USED FOR DEBUGGING PURPOSES] *********************************************************
@@ -472,7 +473,7 @@ case class CFG(
             Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
-        CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
+        CFG(newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
     }
 
     // ---------------------------------------------------------------------------------------------

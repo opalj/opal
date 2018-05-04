@@ -51,6 +51,7 @@ import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
@@ -782,8 +783,8 @@ trait RecordCFG
         remainingPotentialInfiniteLoopHeaders
     }
 
-    def bbCFG: CFG = {
-        getOrInitField[CFG](() ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors) {
+    def bbCFG: CFG[Instruction] = {
+        getOrInitField[CFG[Instruction]](() ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors) {
             computeBBCFG
         }
     }
@@ -794,7 +795,7 @@ trait RecordCFG
      * (a) to detect dead paths or (b) to identify that a method call may never throw an exception
      * (in the given situation).
      */
-    private[this] def computeBBCFG: CFG = {
+    private[this] def computeBBCFG: CFG[Instruction] = {
 
         val instructions = code.instructions
         val codeSize = instructions.length
