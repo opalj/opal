@@ -416,19 +416,18 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         (rhs.astID: @switch) match {
             case New.ASTID | NewArray.ASTID ⇒ true
             case StaticFunctionCall.ASTID ⇒
-                val StaticFunctionCall(_, declClass, interface, name, descr, params) = rhs
-                val callee = project.staticCall(declClass, interface, name, descr)
+                val callee = rhs.asStaticFunctionCall.resolveCallTarget(p)
                 if (callee.hasValue) {
                     val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
                     checkLocalityOfReturn(rvf, (None, otherwise))
                     true
                 } else false
             case NonVirtualFunctionCall.ASTID ⇒
-                val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = rhs
-                val callee = project.specialCall(declClass, interface, name, descr)
+                val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(p)
                 if (callee.hasValue) {
                     val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
-                    checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
+                    val receiver = rhs.asNonVirtualFunctionCall.receiver
+                    checkLocalityOfReturn(rvf, (Some(receiver), otherwise))
                     true
                 } else false
             case VirtualFunctionCall.ASTID ⇒
@@ -484,7 +483,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             false
         case _ ⇒
             reducePurityLB(data._2)
-            if(data._2 meet state.ubPurity ne state.ubPurity)
+            if (data._2 meet state.ubPurity ne state.ubPurity)
                 state.addFieldLocalityDependee(ep.e, ep, data)
             true
     }
@@ -496,26 +495,26 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         case EPS(_, PrimitiveReturnValue | FreshReturnValue |
             VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
         case FinalEP(_, Getter | VGetter) ⇒
-            if(data._2 meet state.ubPurity ne state.ubPurity)
+            if (data._2 meet state.ubPurity ne state.ubPurity)
                 isLocal(data._1.get, data._2)
         case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
             if (data._1.get.isVar) {
                 val value = data._1.get.asVar.value.asDomainReferenceValue
-                if(value.isPrecise &&
+                if (value.isPrecise &&
                     classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo) {
-                    if(data._2 meet state.ubPurity ne state.ubPurity)
+                    if (data._2 meet state.ubPurity ne state.ubPurity)
                         isLocal(data._1.get, data._2)
-                }else{
+                } else {
                     atMost(data._2)
                 }
-            } else{
+            } else {
                 atMost(data._2)
             }
         case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
             atMost(data._2)
         case EOptionP(e, pk) ⇒
             reducePurityLB(data._2)
-            if(data._2 meet state.ubPurity ne state.ubPurity) {
+            if (data._2 meet state.ubPurity ne state.ubPurity) {
                 if (pk == ReturnValueFreshness.key)
                     state.addRVFDependee(
                         e,

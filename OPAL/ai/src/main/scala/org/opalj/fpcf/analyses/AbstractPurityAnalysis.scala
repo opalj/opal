@@ -256,16 +256,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // For method calls, purity depends on purity of the called method
             case StaticMethodCall.ASTID ⇒
                 if (!isDomainSpecificCall(stmt.asStaticMethodCall, None)) {
-                    val StaticMethodCall(_, declClass, isInterface, name, descr, params) = stmt
-                    val callee = project.staticCall(declClass, isInterface, name, descr)
+                    val StaticMethodCall(_, declClass, _, name, descr, params) = stmt
+                    val callee = stmt.asStaticMethodCall.resolveCallTarget
                     checkPurityOfCall(declClass, name, descr, None, params, callee)
                 } else true
             case NonVirtualMethodCall.ASTID ⇒
                 val call = stmt.asNonVirtualMethodCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val NonVirtualMethodCall(_, declClass, isInterface, name, descr, rcvr, params) =
-                        stmt
-                    val callee = project.specialCall(declClass, isInterface, name, descr)
+                    val NonVirtualMethodCall(_, declClass, _, name, descr, rcvr, params) = stmt
+                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget
                     checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
                 } else true
             case VirtualMethodCall.ASTID ⇒
@@ -339,16 +338,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // For function calls, purity depends on purity of the method called
             case StaticFunctionCall.ASTID ⇒
                 if (!isDomainSpecificCall(expr.asStaticFunctionCall, None)) {
-                    val StaticFunctionCall(_, declClass, interface, name, descr, params) = expr
-                    val callee = project.staticCall(declClass, interface, name, descr)
+                    val StaticFunctionCall(_, declClass, _, name, descr, params) = expr
+                    val callee = expr.asStaticFunctionCall.resolveCallTarget
                     checkPurityOfCall(declClass, name, descr, None, params, callee)
                 } else true
             case NonVirtualFunctionCall.ASTID ⇒
                 val call = expr.asNonVirtualFunctionCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
-                        expr
-                    val callee = project.specialCall(declClass, interface, name, descr)
+                    val NonVirtualFunctionCall(_, declClass, _, name, descr, rcvr, params) = expr
+                    val callee = expr.asNonVirtualFunctionCall.resolveCallTarget
                     checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
                 } else true
             case VirtualFunctionCall.ASTID ⇒
