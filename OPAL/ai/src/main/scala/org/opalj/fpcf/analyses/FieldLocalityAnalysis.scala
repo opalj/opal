@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.SimpleAIKey
@@ -37,11 +38,9 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSiteWithFilteredUses
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.ai.DefinitionSites
 import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
@@ -89,17 +88,21 @@ import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 
 /**
- * TODO
+ * Determines whether the lifetime of a reference type field is the same as that of its owning
+ * instance. Base type fields are treated as local for convenience, but this should never be
+ * required anyway.
+ *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
-    private[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
-    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val tacaiProvider = project.get(DefaultTACAIKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
-    private[this] val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    private[this] val definitionSites = project.get(DefinitionSitesKey)
     private[this] val aiResult = project.get(SimpleAIKey)
-    private[this] val isOverridableMethod: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
      * Checks if the field locality can be determined trivially.
@@ -119,12 +122,14 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         if (field.isPublic)
             return Result(field, NoLocalField);
 
+        // There may be methods in unknown subtypes that leak the field
         if (field.isProtected && typeExtensiblity(thisType).isYesOrUnknown) {
             return Result(field, NoLocalField);
         }
 
         if (field.isPackagePrivate || field.isProtected) {
             val closedPackages = project.get(ClosedPackagesKey)
+            // There may be methods in unknown classes in this package that leak the field
             if (!closedPackages.isClosed(thisType.packageName)) {
                 return Result(field, NoLocalField);
             }
@@ -135,28 +140,28 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
     /**
      * Checks if the class declaring the field overrides clone.
-     * If this is not the case and the class implements [[java.lang.Cloneable]],
-     * the field is not local.
-     * In case it is not cloneable, there might be still a subtype doing so.
-     * If there exists such a subtype or if the type can be extended, the state is
-     * lifted to [[ExtensibleLocalField]].
+     * If this is not the case and the class implements [[java.lang.Cloneable]], the field is not
+     * local.
+     * In case it is not cloneable, there might be still a cloneable subtype.
+     * In this case, the field is at most an [[ExtensibleLocalField]].
      *
      * Afterwards it calls [[step3]].
      */
     private[this] def step2(field: Field): PropertyComputationResult = {
         implicit val state: FieldLocalityState = new FieldLocalityState(field)
+
         val thisType = field.classFile.thisType
 
         val methodsOfThisType = field.classFile.methodsWithBody.map(_._1)
 
-        // if there is no clone method, the class must not be extensible to be non local
-        // extensible classes can still be extensible local if they dont implement cloneable
-        if (!methodsOfThisType.exists(
-            m ⇒ m.name == "clone" &&
-                m.descriptor.parametersCount == 0 &&
-                !m.isSynthetic
-        )) {
-            if (project.classHierarchy.isSubtypeOf(field.classFile.thisType, ObjectType.Cloneable).isYesOrUnknown)
+        // If the class does not override clone, it can be leaked by [[java.lang.Object.clone]] that
+        // creates a shallow copy.
+        if (!methodsOfThisType.exists(m ⇒
+            m.name == "clone" && m.descriptor.parametersCount == 0 && !m.isSynthetic)) {
+            // If the class is not [[java.lang.Cloneable]] it can't be cloned directly
+            // ([[java.lang.Object.clone]] with throw a [[java.lang.CloneNotSupportedException]]).
+            // Otherwise, the field may be leaked!
+            if (project.classHierarchy.isSubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
                 return Result(field, NoLocalField)
 
             val subtypes = classHierarchy.allSubtypes(thisType, reflexive = false)
@@ -164,6 +169,10 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 project.classHierarchy.isSubtypeOf(subtype, ObjectType.Cloneable).isYesOrUnknown
             }
 
+            // If there may be a Cloneable subtype, the field could be leaked through this subtype,
+            // but if the client knows that the precise type of the reference is never cloneable,
+            // it may treat the field as local (i.e. it is an
+            // [[org.opalj.fpcf.properties.ExtensibleLocalField]].
             if (typeExtensiblity(thisType).isYesOrUnknown || existsCloneableSubtype) {
                 state.updateWithMeet(ExtensibleLocalField)
             }
@@ -172,6 +181,12 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         step3(field)
     }
 
+    /**
+     * Ensures that all field accesses keep the field local (i.e., no non-local value is written to
+     * the field and the field's value never escapes). Also, if super.clone is called, the field
+     * has to overwritten to prevent it from being leaked by the shallow copy created through
+     * [[java.lang.Object.clone]].
+     */
     private[this] def step3(field: Field)(implicit state: FieldLocalityState): PropertyComputationResult = {
         val fieldName = field.name
         val fieldType = field.fieldType
@@ -182,7 +197,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
             (stmt, index) ← stmts.zipWithIndex
         } {
             stmt match {
-                // no read from field escapes, if it is returned, we have a getter
+                // Values read from the field may not escape, except for
+                // [[org.opalj.fpcf.properties.EscapeViaReturn]] in which case we have a
+                // [[org.opalj.fpcf.properties.LocalFieldWithGetter]].
                 case _@ Assignment(pc, _, GetField(_, declaredType, `fieldName`, `fieldType`, _)) ⇒
                     project.resolveFieldReference(declaredType, fieldName, fieldType) match {
                         case Some(`field`) ⇒
@@ -194,7 +211,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                         case _    ⇒
                     }
 
-                // all assignments to the field have to be fresh and are not escaped.
+                // Values assigned to the field must be fresh and non-escaping.
                 case PutField(pc, declaredFieldType, `fieldName`, `fieldType`, _, value) ⇒
                     project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
                         case Some(`field`) ⇒
@@ -207,7 +224,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                         case _    ⇒
                     }
 
-                // always if there is a call to super.clone the field has to be override
+                // When super.clone is called, the field must always be overwritten.
                 case Assignment(pc, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
                     if (descr.parametersCount == 0 && field.classFile.superclassType.get == dc) {
                         if (handleSuperCloneCall(index, pc, method, left.usedBy, tacai)) {
@@ -222,6 +239,11 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         returnResult
     }
 
+    /**
+     * Returns the set of all methods that could access a (non-public) field, i.e. all methods of
+     * the declaring class, those of classes in the same package for package-private and protected
+     * fields as well as those of subclasses for protected fields.
+     */
     def allMethodsHavingAccess(field: Field): Set[Method] = {
         val thisType = field.classFile.thisType
         var classes: Set[ClassFile] = Set(field.classFile)
@@ -229,15 +251,26 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
             classes ++= project.allClassFiles.filter(_.thisType.packageName == thisType.packageName)
         }
         if (field.isProtected) {
-            classes ++= project.classHierarchy.allSubclassTypes(thisType, reflexive = false).map(project.classFile(_).get)
+            classes ++= project.classHierarchy.allSubclassTypes(thisType, reflexive = false).map(
+                project.classFile(_).get
+            )
         }
         classes.flatMap(_.methodsWithBody.map(_._1))
     }
 
+    /**
+     * Handles the effect an escape property has on the field locality.
+     * @return false if the field may still be local, true otherwise
+     * @note (Re-)Adds dependees as necessary.
+     */
     private[this] def handleEscape(
         eOptionP: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
+
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
+
+        // The field may be leaked by a getter, but only if the field's owning instance is the
+        // receiver of the getter method.
         case FinalEP(e, EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver(e)) {
                 state.updateWithMeet(LocalFieldWithGetter)
@@ -257,6 +290,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
             } else
                 true
 
+        // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]].
         case EPS(_, _, _) ⇒
             true
 
@@ -265,23 +299,29 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
             false
     }
 
+    /**
+     * Returns, whether the definition site is a GetField on the method's receiver.
+     */
     private[this] def isGetFieldOfReceiver(defSite: DefinitionSite): Boolean = {
         val stmt = tacaiProvider(defSite.method).stmts.find(_.pc == defSite.pc)
         stmt match {
             case Some(Assignment(_, _, getField: GetField[V])) ⇒
                 getField.objRef.asVar.definedBy == tac.SelfReferenceParameter
-            case Some(_) | None ⇒
-                // this method is also called for put fields
+            case Some(_) | None ⇒ // this method is also called for put fields
                 false
         }
     }
 
+    /**
+     * Checks whether the value is fresh and non-escaping (except for the PutField statement given).
+     * @return false if the value may be fresh and non-escaping, true otherwise
+     */
     private[this] def checkFreshnessAndEscapeOfValue(
         value: Expr[V], putField: Int, stmts: Array[Stmt[V]], method: Method
     )(implicit state: FieldLocalityState): Boolean = {
         value.asVar.definedBy.exists { defSite ⇒
             if (defSite < 0)
-                true
+                true // Parameters are not fresh
             else {
                 val stmt = stmts(defSite)
 
@@ -302,6 +342,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
     /**
      * We consider a defSite (represented by the stmt) as fresh iff it was allocated in this method,
      * is a constant or is the result of call to a method with fresh return value.
+     * @return false if the value may be fresh, true otherwise
      */
     private[this] def checkFreshnessOfDef(
         stmt: Stmt[V], method: Method
@@ -376,48 +417,55 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
     }
 
     /**
-     * Checks whether a call to a concrete method (no virtual call with imprecise type) has a fresh
-     * return value.
+     * Handles the influence of a monomorphic call on the field locality.
+     * @return false if the field may still be local, true otherwise.
+     * @note Adds dependees as necessary.
      */
-    private[this] def handleConcreteCall(
-        callee: org.opalj.Result[Method]
-    )(implicit state: FieldLocalityState): Boolean = {
-        // unkown method
-        if (callee.isEmpty)
-            false
-        else {
+    def handleConcreteCall(callee: opalj.Result[Method])(implicit state: FieldLocalityState): Boolean = {
+        if (callee.isEmpty) { // Unknown method, not found in the scope of the current project
+            true
+        } else {
             val dm = declaredMethods(callee.value)
             handleReturnValueFreshness(propertyStore(dm, ReturnValueFreshness.key))
         }
     }
 
+    /**
+     * Handles the influence of a return value freshness property on the field locality.
+     * @return false if the field may still be local, true otherwise.
+     * @note Adds dependees as necessary.
+     */
     private[this] def handleReturnValueFreshness(
         eOptionP: EOptionP[DeclaredMethod, Property]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case FinalEP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒
+        case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
             true
 
-        case FinalEP(_, Getter | VGetter) ⇒
+        //IMPROVE - we might treat values returned from a getter as fresh in some cases
+        // e.g. if the method's receiver is the same as the analyzed field's owning instance.
+        case EPS(_, _, Getter | VGetter) ⇒
             true
 
-        case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
+        case EPS(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
             true
 
-        case IntermediateEP(_, _, Getter | VGetter) ⇒
-            true
+        case FinalEP(_, FreshReturnValue | VFreshReturnValue) ⇒ false
 
-        case IntermediateEP(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
-            true
-
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue)         ⇒ false
-
-        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒ false
+        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
+            throw new RuntimeException(s"unexpected property $eOptionP for entity ${state.field}")
 
         case epkOrCnd ⇒
             state.addMethodDependee(epkOrCnd)
             false
     }
 
+    /**
+     * Checks if the analyzed field is overwritten on each path from a call to super.clone (that
+     * might create a shallow copy) to the method's exit node. This ensures that the field is not
+     * leaked through a shallow copy.
+     * @note If the field is overwritten, whether it is overwritten with a fresh and non-escaping
+     *       value is checked by the general checks for PutField statements.
+     */
     private[this] def handleSuperCloneCall(
         defSite: ValueOrigin,
         pc:      Int,
@@ -430,11 +478,14 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         val fieldName = field.name
         val fieldType = field.fieldType
 
+        // The cloned object may not escape except for being returned, because we only check
+        // that the field is overwritten before the method's exit, not before a potential escape
+        // of the object.
         val escape = propertyStore(definitionSites(method, pc), EscapeProperty.key)
         handleEscapeStateOfResultOfSuperClone(escape)
 
-        var enqueuedBBs: Set[CFGNode] = Set(tacai.cfg.bb(defSite))
-        var worklist: List[CFGNode] = List(tacai.cfg.bb(defSite))
+        var enqueuedBBs: Set[CFGNode] = Set(tacai.cfg.bb(defSite)) // All scheduled BBs
+        var worklist: List[CFGNode] = List(tacai.cfg.bb(defSite)) // BBs we still have to visit
 
         while (worklist.nonEmpty) {
             val currentBB = worklist.head
@@ -445,22 +496,21 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 case currentBB: BasicBlock ⇒
                     for (index ← currentBB.startPC to currentBB.endPC) {
                         tacai.stmts(index) match {
-                            case _@ PutField(_, `thisType`, `fieldName`, `fieldType`, _, _) ⇒
+                            case PutField(_, `thisType`, `fieldName`, `fieldType`, _, _) ⇒
                                 if (uses.contains(index)) {
-                                    // we are done
-                                    foundPut = true
+                                    foundPut = true // There is a matching PutField in this BB
                                 }
                             case _ ⇒
                         }
                     }
                 case exit: ExitNode ⇒
                     if (exit.isNormalReturnExitNode) {
-                        return true;
+                        return true; // Found the exit node, but no PutField, so the field may leak
                     }
                 case _ ⇒
             }
 
-            // exit nodes should have empty successors
+            // If there is not PutField in this basic block, we have to inspect all successors
             if (!foundPut) {
                 val successors = currentBB.successors.filter(!enqueuedBBs.contains(_))
                 worklist ++= successors
@@ -470,6 +520,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
         false
     }
 
+    /**
+     * Checks, whether the result of a super.clone call does not escape except for being returned.
+     */
     private[this] def handleEscapeStateOfResultOfSuperClone(
         eOptionP: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
@@ -485,6 +538,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
+        // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]]
         case EPS(_, _, _) ⇒ true
 
         case _ ⇒
@@ -502,12 +556,6 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 state.removeMethodDependee(newEP)
                 handleReturnValueFreshness(newEP)
 
-            case e: DefinitionSiteWithFilteredUses ⇒
-                val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSiteWithFilteredUses, EscapeProperty]]
-                state.removeDefinitionSiteDependee(newEP)
-                handleEscape(newEP)
-
-            // order matters: normal allocation sites must not escape via return
             case e: DefinitionSite ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.removeDefinitionSiteDependee(newEP)
