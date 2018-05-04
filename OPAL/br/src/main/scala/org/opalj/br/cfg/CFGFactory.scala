@@ -35,6 +35,7 @@ import scala.annotation.switch
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.JSRInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
@@ -59,7 +60,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  */
 object CFGFactory {
 
-    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG] = {
+    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction]] = {
         method.body.map(code ⇒ apply(code, classHierarchy))
     }
 
@@ -89,7 +90,7 @@ object CFGFactory {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG = {
+    ): CFG[Instruction] = {
 
         /*
          * The basic idea of the algorithm is to create the cfg using a single sweep over

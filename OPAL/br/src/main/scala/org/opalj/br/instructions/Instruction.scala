@@ -53,13 +53,13 @@ trait Instruction extends InstructionLike {
      *          at runtime.
      */
     def nextInstructions(
-        currentPC:             PC,
+        currentPC:             Int,
         regularSuccessorsOnly: Boolean = false
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC]
+    ): Chain[Int /*PC*/ ]
 
     /**
      * Checks for structural equality of two instructions.
@@ -75,7 +75,7 @@ trait Instruction extends InstructionLike {
      *
      * @param currentPC The pc of the current instruction.
      */
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction
+    def toLabeledInstruction(currentPC: Int): LabeledInstruction
 
     // ---------------------------------------------------------------------------------------------
     //
@@ -159,7 +159,7 @@ object Instruction {
      *
      * @see [[Instruction.isIsomorphic]] for further details.
      */
-    def areIsomorphic(aPC: PC, bPC: PC)(implicit code: Code): Boolean = {
+    def areIsomorphic(aPC: Int, bPC: Int)(implicit code: Code): Boolean = {
         assert(aPC != bPC)
 
         code.instructions(aPC).isIsomorphic(aPC, bPC)
@@ -167,13 +167,13 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
-        currentPC:   PC,
+        currentPC:   Int,
         exceptions:  List[ObjectType]
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): Chain[Int /*PC*/ ] = {
         var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
         exceptions foreach { exception ⇒
             pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++!: pcs
@@ -183,13 +183,13 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandler(
         instruction: Instruction,
-        currentPC:   PC,
+        currentPC:   Int,
         exception:   ObjectType
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): Chain[Int /*PC*/ ] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
         nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }
