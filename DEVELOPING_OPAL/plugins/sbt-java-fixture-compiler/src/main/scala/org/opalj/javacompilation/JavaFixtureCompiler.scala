@@ -41,7 +41,7 @@ import org.opalj.javacompilation.FixtureCompileSpec._
  * Plug-in to compile java fixtures against the Eclipse JDT Java compiler.
  *
  * =Core tasks/keys=
- *  - `javaFixtureCompile` (compile a )
+ *  - `javaFixtureCompile` (compile a test fixture project)
  *  - `javaFixturePackage` (compile with JAR packaging)
  *  - `javaFixtureDiscovery` (discover fixture compilation tasks)
  *
@@ -56,8 +56,6 @@ import org.opalj.javacompilation.FixtureCompileSpec._
  */
 object JavaFixtureCompiler extends AutoPlugin {
 
-    //override def trigger = allRequirements
-
     object autoImport {
         // tasks of the plugin
         val javaFixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]]("Compilation of Java fixture projects against Eclipse 4.6.1 JDT compiler.")
@@ -65,10 +63,10 @@ object JavaFixtureCompiler extends AutoPlugin {
         val javaFixtureDiscovery = taskKey[Seq[JavaFixtureCompilationTask]]("Discovery of Java fixture projects.")
 
         // will be scoped to the compilation task.
-        val javaFixtureTaskDefs = settingKey[Seq[JavaFixtureCompilationTask]]("Java fixture compilation task definitions for the plugin")
+        val javaFixtureTaskDefs = settingKey[Seq[JavaFixtureCompilationTask]]("Java fixture compilation task definitions for the plugin.")
 
         // will be scoped to the discovery task
-        val javaFixtureProjectsDir = settingKey[File]("Folder containing Java fixture projects")
+        val javaFixtureProjectsDir = settingKey[File]("Folder containing Java fixture projects.")
         val javaFixtureSupportDir = settingKey[File]("Folder containing shared support libraries used by the Java fixture projects.")
         val javaFixtureTargetDir = settingKey[File]("Folder in which the compiled and packaged Java fixture projects will be stored.")
     }
