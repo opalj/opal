@@ -258,7 +258,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (!isDomainSpecificCall(stmt.asStaticMethodCall, None)) {
                     val StaticMethodCall(_, declClass, isInterface, name, descr, params) = stmt
                     val callee = project.staticCall(declClass, isInterface, name, descr)
-                    checkPurityOfCall(declClass, name, None, params, callee)
+                    checkPurityOfCall(declClass, name, descr, None, params, callee)
                 } else true
             case NonVirtualMethodCall.ASTID ⇒
                 val call = stmt.asNonVirtualMethodCall
@@ -266,7 +266,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     val NonVirtualMethodCall(_, declClass, isInterface, name, descr, rcvr, params) =
                         stmt
                     val callee = project.specialCall(declClass, isInterface, name, descr)
-                    checkPurityOfCall(declClass, name, Some(rcvr), params, callee)
+                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
                 } else true
             case VirtualMethodCall.ASTID ⇒
                 val call = stmt.asVirtualMethodCall
@@ -341,7 +341,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (!isDomainSpecificCall(expr.asStaticFunctionCall, None)) {
                     val StaticFunctionCall(_, declClass, interface, name, descr, params) = expr
                     val callee = project.staticCall(declClass, interface, name, descr)
-                    checkPurityOfCall(declClass, name, None, params, callee)
+                    checkPurityOfCall(declClass, name, descr, None, params, callee)
                 } else true
             case NonVirtualFunctionCall.ASTID ⇒
                 val call = expr.asNonVirtualFunctionCall
@@ -349,7 +349,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
                         expr
                     val callee = project.specialCall(declClass, interface, name, descr)
-                    checkPurityOfCall(declClass, name, Some(rcvr), params, callee)
+                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
                 } else true
             case VirtualFunctionCall.ASTID ⇒
                 val call = expr.asVirtualFunctionCall
@@ -414,7 +414,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         descr:     MethodDescriptor
     )(implicit state: StateType): Boolean = {
         onVirtualMethod(rcvrType, interface, name, receiver, params, descr,
-            (callee) ⇒ checkPurityOfCall(rcvrType, name, Some(receiver), params, callee),
+            (callee) ⇒ checkPurityOfCall(rcvrType, name, descr, Some(receiver), params, callee),
             (dm) ⇒ checkMethodPurity(
                 propertyStore(dm, VirtualMethodPurity.key), (Some(receiver), params)
             ),
@@ -488,26 +488,22 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkPurityOfCall(
         receiverClass: ReferenceType,
         name:          String,
+        descriptor:    MethodDescriptor,
         receiver:      Option[Expr[V]],
         params:        Seq[Expr[V]],
         methodResult:  org.opalj.Result[Method]
     )(implicit state: StateType): Boolean = {
+        val receiverType =
+            if (receiverClass.isArrayType) ObjectType.Object else receiverClass.asObjectType
 
-        if (receiverClass == ObjectType.Object && name == "<init>") {
-            true // The java.lang.Object constructor is pure
-        } else {
-            methodResult match {
-                case Success(callee) ⇒
-                    if (callee eq state.method) true // Self-recursive don't need to be checked
-                    else {
-                        val calleePurity = propertyStore(declaredMethods(callee), Purity.key)
-                        checkMethodPurity(calleePurity, (receiver, params))
-                    }
-                case _ ⇒ // Target method unknown (not in scope of current project)
-                    atMost(LBImpure)
-                    false
-            }
+        val dm = methodResult match {
+            case Success(callee) if callee eq state.method ⇒
+                return true; // Self-recursive calls don't need to be checked
+            case Success(callee) ⇒ declaredMethods(callee)
+            case _               ⇒ declaredMethods(receiverType, name, descriptor)
         }
+        val calleePurity = propertyStore(dm, Purity.key)
+        checkMethodPurity(calleePurity, (receiver, params))
     }
 
     /**

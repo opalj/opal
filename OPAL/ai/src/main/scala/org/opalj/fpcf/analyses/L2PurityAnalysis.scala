@@ -39,6 +39,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
@@ -868,6 +869,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     val impureFillInStackTrace = !checkPurityOfCall(
                         declClass,
                         "fillInStackTrace",
+                        MethodDescriptor("()Ljava/lang/Throwable;"),
                         None,
                         List.empty,
                         Success(mdc.method)
