@@ -141,6 +141,10 @@ abstract class PropertyStore {
     //
     //
 
+    /**
+     * If "debug" is set to `true` and we have an update related to an ordered property,
+     * we will then check if the update is correct!
+     */
     @volatile var debug: Boolean = false
 
     /**
