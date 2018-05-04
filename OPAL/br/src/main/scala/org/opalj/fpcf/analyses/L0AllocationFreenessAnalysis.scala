@@ -197,7 +197,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case e ⇒
+            case _ ⇒
                 throw new UnknownError("allocation freeness is only defined for methods")
         }
     }

@@ -40,6 +40,16 @@ import org.opalj.collection.immutable.Chain
 trait Instruction extends InstructionLike {
 
     /**
+     * The index of the next instruction in the (sparse) code array.
+     *
+     * @note    This is primarily a convenience method that delegates to the method
+     *          `indexOfNextInstrution(PC,Boolean)`. However, given that this is also the
+     *          standard method called by clients, it is often meaningful to directly implement
+     *          this. In particular since most instructions cannot be modified by wide.
+     */
+    def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int
+
+    /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it is handled locally and

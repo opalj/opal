@@ -69,8 +69,8 @@ import org.opalj.graphs.Node
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-case class CFG[I <: AnyRef](
-        code:                    CodeSequence[I],
+case class CFG[I <: AnyRef, C <: CodeSequence[I]](
+        code:                    C,
         normalReturnNode:        ExitNode,
         abnormalReturnNode:      ExitNode,
         catchNodes:              Seq[CatchNode],
@@ -234,7 +234,7 @@ case class CFG[I <: AnyRef](
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            IntTrieSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntTrieSet1(code.pcOfNextInstruction(pc))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var successorPCs = IntTrieSet.empty
@@ -257,7 +257,7 @@ case class CFG[I <: AnyRef](
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            f(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            f(code.pcOfNextInstruction(pc))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var visited = IntTrieSet.empty
@@ -343,12 +343,12 @@ case class CFG[I <: AnyRef](
      *         Hence, the function is given the mapped index has to return that value if the index
      *         does not belong to the expanded instruction.
      */
-    def mapPCsToIndexes[NewI <: AnyRef](
-        newCode:              CodeSequence[NewI],
+    def mapPCsToIndexes[NewI <: AnyRef, NewC <: CodeSequence[NewI]](
+        newCode:              NewC,
         pcToIndex:            Array[Int /*PC*/ ],
         singletonBBsExpander: Int /*PC*/ ⇒ Int,
         lastIndex:            Int
-    ): CFG[NewI] = {
+    ): CFG[NewI, NewC] = {
 
         /*
         // [USED FOR DEBUGGING PURPOSES] *********************************************************

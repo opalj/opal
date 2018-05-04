@@ -76,11 +76,11 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
         def c(eps: SomeEPS): PropertyComputationResult = {
             eps match {
                 case FinalEP(_, LazyInitializedField) ⇒
-                    return Result(field, CompileTimeVaryingField);
+                    Result(field, CompileTimeVaryingField);
                 case FinalEP(_, _: FinalField) ⇒
-                    return Result(field, CompileTimeConstantField);
+                    Result(field, CompileTimeConstantField);
                 case FinalEP(_, _: NonFinalField) ⇒
-                    return Result(field, CompileTimeVaryingField);
+                    Result(field, CompileTimeVaryingField);
 
                 case IntermediateEP(_, _, _) ⇒
                     dependee = eps
@@ -107,7 +107,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     def doDetermineConstancy(e: Entity): PropertyComputationResult = {
         e match {
             case f: Field ⇒ determineConstancy(f)
-            case e ⇒
+            case _ ⇒
                 throw new UnknownError("compile-time constancy is only defined for fields")
         }
     }

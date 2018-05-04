@@ -27,35 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+package tac
+
+import org.opalj.br.CodeSequence
 
 /**
- *  Tests if the return value freshness properties specified in the test project (the classes in the
- *  (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching is
- *  delegated to PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Wrapper class to warp an array of statements.
  *
- * @author Florian Kuebler
+ * @author Michael Eichberg
  */
-class FreshReturnValueAnalysisTests extends PropertiesTest {
+case class TACStmts[V <: Var[V]](
+        instructions: Array[Stmt[V]]
+) extends CodeSequence[Stmt[V]] {
 
-    val lazyAnalysisScheduler = Set(
-        LazyInterProceduralEscapeAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis,
-        LazyVirtualReturnValueFreshnessAnalysis,
-        LazyFieldLocalityAnalysis
-    )
-
-    describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisScheduler)
-        validateProperties(
-            as,
-            declaredMethodsWithAnnotations,
-            Set("ReturnValueFreshness")
-        )
+    final override def pcOfPreviousInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc - 1
     }
+
+    final override def pcOfNextInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc + 1
+    }
+
 }

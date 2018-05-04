@@ -60,7 +60,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  */
 object CFGFactory {
 
-    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction]] = {
+    def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction, Code]] = {
         method.body.map(code ⇒ apply(code, classHierarchy))
     }
 
@@ -90,7 +90,7 @@ object CFGFactory {
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG[Instruction] = {
+    ): CFG[Instruction, Code] = {
 
         /*
          * The basic idea of the algorithm is to create the cfg using a single sweep over

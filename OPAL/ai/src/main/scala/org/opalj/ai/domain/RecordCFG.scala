@@ -130,7 +130,7 @@ trait RecordCFG
      *          bb based cfg; the monitor associated with exceptionHandlerSuccessors is not (to be)
      *          used otherwise!
      */
-    private[this] var theBBCFG: SRef[CFG] = _
+    private[this] var theBBCFG: SRef[CFG[Instruction, Code]] = _
 
     //
     // METHODS WHICH RECORD THE AI TIME CFG AND WHICH ARE CALLED BY THE FRAMEWORK
@@ -783,10 +783,12 @@ trait RecordCFG
         remainingPotentialInfiniteLoopHeaders
     }
 
-    def bbCFG: CFG[Instruction] = {
-        getOrInitField[CFG[Instruction]](() ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors) {
-            computeBBCFG
-        }
+    def bbCFG: CFG[Instruction, Code] = {
+        getOrInitField[CFG[Instruction, Code]](
+            () ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
+        ) {
+                computeBBCFG
+            }
     }
 
     /**
@@ -795,7 +797,7 @@ trait RecordCFG
      * (a) to detect dead paths or (b) to identify that a method call may never throw an exception
      * (in the given situation).
      */
-    private[this] def computeBBCFG: CFG[Instruction] = {
+    private[this] def computeBBCFG: CFG[Instruction, Code] = {
 
         val instructions = code.instructions
         val codeSize = instructions.length

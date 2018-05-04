@@ -27,33 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
-
-import scala.xml.Node
-import scala.xml.NodeSeq
-
-import org.opalj.bi.ConstantPoolTag
+package fpcf
+import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
+ *  Tests if the return value freshness properties specified in the test project (the classes in the
+ *  (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching is
+ *  delegated to PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
- * @author Michael Eichberg
+ * @author Florian Kuebler
  */
-case class CONSTANT_Double_info(value: Double) extends Constant_Pool_Entry {
+class ReturnValueFreshnessTests extends PropertiesTest {
 
-    final override def size: Int = { 1 + 4 + 4 }
+    val lazyAnalysisScheduler = Set(
+        LazyInterProceduralEscapeAnalysis,
+        LazyVirtualCallAggregatingEscapeAnalysis,
+        LazyVirtualReturnValueFreshnessAnalysis,
+        LazyFieldLocalityAnalysis
+    )
 
-    override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Double
-
-    override def asCPNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_entry">
-            CONSTANT_Double_info(
-            <span class="constant_value">{ value }d</span>
-            )
-        </span>
-
-    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq =
-        <span class="contant_value">{ value.toString + 'd' }</span>
-
-    override def toString(implicit cp: Constant_Pool): String = value.toString
-
+    describe("return value freshness analysis is executed") {
+        val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisScheduler)
+        validateProperties(
+            as,
+            declaredMethodsWithAnnotations,
+            Set("ReturnValueFreshness")
+        )
+    }
 }

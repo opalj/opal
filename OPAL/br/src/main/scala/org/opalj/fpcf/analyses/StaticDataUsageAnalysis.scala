@@ -56,7 +56,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Determines the allocation freeness of the method.
@@ -94,7 +94,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 
                         // ... we have no support for arrays at the moment
                         case Some(field) ⇒
-                            propertyStore(fieldType, CompileTimeConstancy.key) match {
+                            propertyStore(field, CompileTimeConstancy.key) match {
                                 case FinalEP(_, CompileTimeConstantField) ⇒
                                 case FinalEP(_, _) ⇒
                                     return Result(declaredMethod, UsesVaryingData);
@@ -173,7 +173,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     else {
                         IntermediateResult(
                             declaredMethod,
-                            UsesConstantDataOnly,
+                            UsesVaryingData,
                             maxLevel,
                             dependees,
                             c
@@ -188,7 +188,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     else {
                         IntermediateResult(
                             declaredMethod,
-                            UsesConstantDataOnly,
+                            UsesVaryingData,
                             maxLevel,
                             dependees,
                             c

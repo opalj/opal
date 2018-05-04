@@ -47,7 +47,7 @@ import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
  * @author Dominik Helm
  */
 class VirtualMethodStaticDataUsageAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineUsage(dm: DeclaredMethod): PropertyComputationResult = {
         if (!dm.hasDefinition) return Result(dm, VUsesVaryingData);
@@ -122,7 +122,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] ( final val project
     def doDetermineUsage(e: Entity): PropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineUsage(m)
-            case e ⇒ throw new UnknownError(
+            case _ ⇒ throw new UnknownError(
                 "virtual method static data usage is only defined for declared methods"
             )
         }

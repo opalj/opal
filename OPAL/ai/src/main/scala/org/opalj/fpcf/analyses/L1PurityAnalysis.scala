@@ -39,6 +39,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
@@ -113,7 +114,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
     override type StateType = State
 
-    val raterFqn = project.config.as[String](
+    val raterFqn: String = project.config.as[String](
         "org.opalj.fpcf.analyses.L1PurityAnalysis.domainSpecificRater"
     )
 
@@ -192,9 +193,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(LBImpure)
                 false
             } else {
-                if (eps.isRefinable) {
+                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                     state.dependees += ep // On Conditional, keep dependence
-                    reduceMinumumPurity(lb)
+                    reducePurityLB(lb)
                 }
                 atMost(ub)
                 true
@@ -204,16 +205,16 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(LBImpure)
                 false
             } else {
-                if (eps.isRefinable) {
+                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                     state.dependees += ep // On Conditional, keep dependence
-                    reduceMinumumPurity(lb)
+                    reducePurityLB(lb)
                 }
                 atMost(ub)
                 true
             }
-        case epk ⇒
+        case _ ⇒
             state.dependees += ep
-            reduceMinumumPurity(LBImpure)
+            reducePurityLB(LBImpure)
             true
     }
 
@@ -246,7 +247,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key
             }
         }
-        //IMPROVE: We could filter Purity/V~urity dependees with an lb not less than maxPurity
+        //IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
     }
 
     /**
@@ -309,7 +310,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val TACode(_, code, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
-        implicit val state =
+        implicit val state: State =
             new State(LBPure, LBPure, Set.empty, method, definedMethod, declClass, code)
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
@@ -321,6 +322,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     val impureFillInStackTrace = !checkPurityOfCall(
                         declClass,
                         "fillInStackTrace",
+                        MethodDescriptor("()Ljava/lang/Throwable;"),
                         None,
                         List.empty,
                         Success(mdc.method)

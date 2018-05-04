@@ -85,16 +85,6 @@ trait InstructionLike {
     def mayThrowExceptions: Boolean
 
     /**
-     * The index of the next instruction in the (sparse) code array.
-     *
-     * @note    This is primarily a convenience method that delegates to the method
-     *          `indexOfNextInstrution(PC,Boolean)`. However, given that this is also the
-     *          standard method called by clients, it is often meaningful to directly implement
-     *          this. In particular since most instructions cannot be modified by wide.
-     */
-    def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int
-
-    /**
      * The index of the next instruction in the code array.
      */
     def indexOfNextInstruction(currentPC: Int, modifiedByWide: Boolean): Int

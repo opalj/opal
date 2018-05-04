@@ -247,7 +247,7 @@ object ToTxt {
     def apply[P <: AnyRef, V <: Var[V]](
         params:     Parameters[P],
         stmts:      Array[Stmt[V]],
-        cfg:        CFG,
+        cfg:        CFG[Stmt[V], TACStmts[V]],
         skipParams: Boolean,
         indented:   Boolean,
         includePC:  Boolean

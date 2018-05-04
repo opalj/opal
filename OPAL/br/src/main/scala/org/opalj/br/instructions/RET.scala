@@ -77,7 +77,7 @@ case class RET(
     }
 
     final def nextInstructions(
-        currentPC: Int, cfg: () ⇒ CFG[Instruction]
+        currentPC: Int, cfg: () ⇒ CFG[Instruction, Code]
     )(
         implicit
         code: Code
