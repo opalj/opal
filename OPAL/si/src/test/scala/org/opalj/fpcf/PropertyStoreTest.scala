@@ -98,6 +98,20 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
         }
 
+        it("should catch non-monotonic updates when debugging is turned on") {
+            val ps = createPropertyStore()
+            ps.debug = true
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+            ???
+        }
+
+        it("should catch updates when the upper bound is lower than the lower bound") {
+            val ps = createPropertyStore()
+            ps.debug = true
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+            ???
+        }
+
         it("should not crash when e1 has two dependencies e2 and e3 "+
             "and e2 is set while e1 was not yet executed but had a EPK for e2 in its dependencies "+
             "(test for a lost updated)") {
