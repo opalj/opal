@@ -33,6 +33,7 @@ package instructions
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.Naught
 
 /**
  * Return from subroutine.
@@ -55,18 +56,18 @@ case class RET(
     final override def length: Int = 2
 
     final override def nextInstructions(
-        currentPC:             PC,
+        currentPC:             Int /*PC*/ ,
         regularSuccessorsOnly: Boolean
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): Chain[Int /*PC*/ ] = {
         nextInstructions(currentPC, () ⇒ CFGFactory(code, classHierarchy))
     }
 
     override def jumpTargets(
-        currentPC: PC
+        currentPC: Int
     )(
         implicit
         code:           Code,
@@ -76,21 +77,21 @@ case class RET(
     }
 
     final def nextInstructions(
-        currentPC: PC, cfg: () ⇒ CFG
+        currentPC: Int, cfg: () ⇒ CFG[Instruction]
     )(
         implicit
         code: Code
-    ): Chain[PC] = {
+    ): Chain[Int /*PC*/ ] = {
 
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
-        var jumpTargets = Chain.empty[PC]
+        var jumpTargetPCs: Chain[Int] = Naught
         code.iterate { (pc, instruction) ⇒
             if (pc != currentPC) { // filter this ret!
                 instruction.opcode match {
 
                     case JSR.opcode | JSR_W.opcode ⇒
-                        jumpTargets :&:= (instruction.indexOfNextInstruction(pc))
+                        jumpTargetPCs :&:= (instruction.indexOfNextInstruction(pc))
 
                     case RET.opcode ⇒
                         // we have found another RET ... hence, we have at least two subroutines
@@ -101,7 +102,7 @@ case class RET(
                 }
             }
         }
-        jumpTargets
+        jumpTargetPCs
     }
 
     final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
@@ -110,7 +111,7 @@ case class RET(
 
     final override def stackSlotsChange: Int = 0
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    final override def isIsomorphic(thisPC: Int, otherPC: Int)(implicit code: Code): Boolean = {
         this == code.instructions(otherPC)
     }
 

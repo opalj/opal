@@ -85,6 +85,7 @@ final class Code private (
 ) extends Attribute
     with CommonAttributes
     with InstructionsContainer
+    with CodeSequence[Instruction]
     with FilterMonadic[PCAndInstruction, Nothing] {
     code ⇒
 
@@ -491,7 +492,7 @@ final class Code private (
      * @return  (1) An array which contains for each instruction the set of all predecessors,
      *          (2) the set of all instructions which have only predecessors; i.e., no successors
      *          and (3) also the set of all instructions where multiple paths join.
-     *          `(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)`
+     *          ´(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)´.
      *
      * Note, that in case of completely broken code, set 2 may contain other
      * instructions than `return` and `athrow` instructions.
@@ -1587,7 +1588,7 @@ final class Code private (
      * @return the stack depth or -1 if the instruction is invalid/dead.
      */
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
-    def stackDepthAt(atPC: Int, cfg: CFG): Int = {
+    def stackDepthAt(atPC: Int, cfg: CFG[Instruction]): Int = {
         var paths: Chain[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
@@ -1911,7 +1912,7 @@ object Code {
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
         classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG = {
+    ): CFG[Instruction] = {
         CFGFactory(
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
             classHierarchy
@@ -1947,7 +1948,7 @@ object Code {
     def computeMaxStack(
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        cfg:               CFG
+        cfg:               CFG[Instruction]
     ): Int = {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0

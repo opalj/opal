@@ -151,7 +151,7 @@ object TACAI {
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
         val codeSize: Int = instructions.length
-        val cfg: CFG = domain.bbCFG
+        val cfg: CFG[Instruction] = domain.bbCFG
         def wasExecuted(pc: Int) = cfg.bb(pc) != null
         val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
         val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
