@@ -43,7 +43,7 @@ import scala.language.implicitConversions
  */
 sealed trait InstructionLabel {
     def isPCLabel: Boolean
-    def pc: PC
+    def pc: Int
 }
 
 /**
@@ -51,7 +51,7 @@ sealed trait InstructionLabel {
  * all (labeled) instructions when we create the labeled code based on a method's bytecode.
  * (I.e., when we instrument existing code.)
  */
-case class PCLabel(pc: PC) extends InstructionLabel {
+case class PCLabel(pc: Int) extends InstructionLabel {
     def isPCLabel: Boolean = true
     override def toString: String = s"PC($pc)"
 }
@@ -62,7 +62,7 @@ case class PCLabel(pc: PC) extends InstructionLabel {
  */
 case class RewriteLabel private (id: Long) extends InstructionLabel {
     def isPCLabel: Boolean = false
-    def pc: PC = throw new UnsupportedOperationException();
+    def pc: Int = throw new UnsupportedOperationException();
     override def toString: String = s"Rewrite($id)"
 }
 
@@ -79,7 +79,7 @@ object RewriteLabel {
 
 case class NamedLabel(name: String) extends InstructionLabel {
     def isPCLabel: Boolean = false
-    def pc: PC = throw new UnsupportedOperationException();
+    def pc: Int = throw new UnsupportedOperationException();
     override def toString: String = s"'$name"
 }
 
@@ -92,6 +92,6 @@ trait InstructionLabelFactory {
 object InstructionLabel extends InstructionLabelFactory {
     def apply(s: Symbol): NamedLabel = new NamedLabel(s.name)
     def apply(name: String): NamedLabel = new NamedLabel(name)
-    def apply(pc: PC): PCLabel = new PCLabel(pc)
+    def apply(pc: Int): PCLabel = new PCLabel(pc)
 }
 

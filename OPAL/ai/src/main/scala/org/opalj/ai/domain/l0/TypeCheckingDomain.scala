@@ -105,7 +105,7 @@ final class TypeCheckingDomain(
         }
 
         // WIDENING OPERATION
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case _: UninitializedObjectValue ⇒ MetaInformationUpdateIllegalValue
                 case that                        ⇒ super.doJoin(pc, that)
@@ -135,7 +135,7 @@ final class TypeCheckingDomain(
         }
 
         // WIDENING OPERATION
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case UninitializedObjectValue(`theType`, `vo`) ⇒ NoUpdate
                 // this value is not completely useable...
@@ -167,7 +167,7 @@ final class TypeCheckingDomain(
     }
 
     override def invokespecial(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -192,7 +192,7 @@ final class TypeCheckingDomain(
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
-    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
         new UninitializedObjectValue(objectType, pc)
     }
 
@@ -200,7 +200,7 @@ final class TypeCheckingDomain(
         new UninitializedObjectValue(objectType, -1)
     }
 
-    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
         new InitializedObjectValue(objectType)
     }
 

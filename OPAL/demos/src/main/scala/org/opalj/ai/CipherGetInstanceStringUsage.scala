@@ -32,10 +32,10 @@ import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
-
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.{ObjectType, PCAndInstruction}
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project

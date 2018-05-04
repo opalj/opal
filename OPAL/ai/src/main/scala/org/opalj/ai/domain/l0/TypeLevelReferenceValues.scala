@@ -71,7 +71,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * given `pc` is used.
      */
     def mergeMultipleExceptionValues(
-        pc:  PC,
+        pc:  Int,
         v1s: ExceptionValues,
         v2s: ExceptionValues
     ): ExceptionValues = {
@@ -97,7 +97,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * specified `pc`.
      */
     protected[this] def mergeDEsComputations(
-        pc: PC,
+        pc: Int,
         c1: Computation[DomainValue, ExceptionValues],
         c2: Computation[DomainValue, ExceptionValues]
     ): Computation[DomainValue, ExceptionValues] = {
@@ -144,7 +144,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * If values are merged the merged value will use the specified `pc`.
      */
     protected[this] def mergeEsComputations(
-        pc: PC,
+        pc: Int,
         c1: Computation[Nothing, ExceptionValues],
         c2: Computation[Nothing, ExceptionValues]
     ): Computation[Nothing, ExceptionValues] = {
@@ -168,7 +168,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * If values are merged the merged value will use the specified `pc`.
      */
     protected[this] def mergeDEComputations(
-        pc: PC,
+        pc: Int,
         c1: Computation[DomainValue, ExceptionValue],
         c2: Computation[DomainValue, ExceptionValue]
     ): Computation[DomainValue, ExceptionValue] = {
@@ -233,11 +233,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
     trait ArrayAbstraction {
 
-        def load(pc: PC, index: DomainValue): ArrayLoadResult
+        def load(pc: Int, index: DomainValue): ArrayLoadResult
 
-        def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult
+        def store(pc: Int, value: DomainValue, index: DomainValue): ArrayStoreResult
 
-        def length(pc: PC): Computation[DomainValue, ExceptionValue]
+        def length(pc: Int): Computation[DomainValue, ExceptionValue]
     }
 
     /**
@@ -288,7 +288,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
 
-        final override def summarize(pc: PC): this.type = this
+        final override def summarize(pc: Int): this.type = this
 
         override def toString: String = theUpperTypeBound.toJava
 
@@ -320,18 +320,18 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
         //
 
-        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+        final override def load(pc: Int, index: DomainValue): ArrayLoadResult =
             justThrows(VMNullPointerException(pc))
 
         final override def store(
-            pc:    PC,
+            pc:    Int,
             value: DomainValue,
             index: DomainValue
         ): ArrayStoreResult = {
             justThrows(VMNullPointerException(pc))
         }
 
-        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+        final override def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
             throws(VMNullPointerException(pc))
         }
 
@@ -346,9 +346,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             throw DomainException("\"isValueSubtypeOf\" is not defined on \"null\" values")
         }
 
-        override def summarize(pc: PC): this.type = this
+        override def summarize(pc: Int): this.type = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = target.NullValue(pc)
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"
     }
@@ -376,12 +376,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * Called by the load method if the index is potentially valid.
          */
         /*ABSTRACT*/ protected def doLoad(
-            pc:                  PC,
+            pc:                  Int,
             index:               DomainValue,
             potentialExceptions: ExceptionValues
         ): ArrayLoadResult
 
-        def isIndexValid(pc: PC, index: DomainValue): Answer =
+        def isIndexValid(pc: Int, index: DomainValue): Answer =
             length.map { l: Int ⇒
                 intIsSomeValueNotInRange(pc, index, 0, l - 1) match {
                     case No ⇒ Yes
@@ -399,7 +399,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          *      special handling if a value is loaded from an array, override the method
          *      [[doLoad]].
          */
-        override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
+        override def load(pc: Int, index: DomainValue): ArrayLoadResult = {
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class.
             val isIndexValid = this.isIndexValid(pc, index)
@@ -419,7 +419,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          * the index is potentially valid.
          */
         /*ABSTRACT*/ protected def doStore(
-            pc:               PC,
+            pc:               Int,
             value:            DomainValue,
             index:            DomainValue,
             thrownExceptions: ExceptionValues
@@ -431,7 +431,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          *      [[doStore]].
          */
         override def store(
-            pc:    PC,
+            pc:    Int,
             value: DomainValue,
             index: DomainValue
         ): ArrayStoreResult = {
@@ -462,11 +462,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          */
         def length: Option[Int] = None // IMPROVE Define and use IntOption
 
-        final def doGetLength(pc: PC): DomainValue = {
+        final def doGetLength(pc: Int): DomainValue = {
             length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
         }
 
-        override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+        override def length(pc: Int): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerExceptionOnArrayAccess)
                 ComputedValueOrException(doGetLength(pc), VMNullPointerException(pc))
             else
@@ -516,7 +516,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * @param value1 A value of type `ReferenceValue`.
      * @param value2 A value of type `ReferenceValue`.
      */
-    override def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+    override def refAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = {
         val v1 = asReferenceValue(value1)
         val v2 = asReferenceValue(value2)
         val value1IsNull = v1.isNull
@@ -566,7 +566,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * @param value A value of type `ReferenceValue`.
      */
-    final override def refIsNull(pc: PC, value: DomainValue): Answer = {
+    final override def refIsNull(pc: Int, value: DomainValue): Answer = {
         asReferenceValue(value).isNull
     }
 
@@ -587,7 +587,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      cases in a generic manner.
      */
     override def newarray(
-        pc:            PC,
+        pc:            Int,
         count:         DomainValue,
         componentType: FieldType
     ): Computation[DomainValue, ExceptionValue] = {
@@ -610,7 +610,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      cases in a generic manner.
      */
     override def multianewarray(
-        pc:        PC,
+        pc:        Int,
         counts:    Operands,
         arrayType: ArrayType
     ): Computation[DomainArrayValue, ExceptionValue] = {
@@ -647,7 +647,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      `ArrayValue`.
      */
     override def arrayload(
-        pc:       PC,
+        pc:       Int,
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = {
@@ -664,7 +664,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      `ArrayValue`.
      */
     override def arraystore(
-        pc:       PC,
+        pc:       Int,
         value:    DomainValue,
         index:    DomainValue,
         arrayref: DomainValue
@@ -681,7 +681,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *      some special handling refine the trait `ArrayValue`.
      */
     override def arraylength(
-        pc:       PC,
+        pc:       Int,
         arrayref: DomainValue
     ): Computation[DomainValue, ExceptionValue] = {
         asArrayAbstraction(arrayref).length(pc)
@@ -717,9 +717,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     // REFINEMENT OF EXISTING DOMAIN VALUE FACTORY METHODS
     //
 
-    override def NullValue(pc: PC): DomainNullValue
+    override def NullValue(pc: Int): DomainNullValue
 
-    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, objectType)
     }
 
@@ -727,12 +727,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         ObjectValue(-1, objectType)
     }
 
-    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
         ObjectValue(pc, objectType)
     }
 
     final override def ReferenceValue(
-        pc:             PC,
+        pc:             Int,
         upperTypeBound: ReferenceType
     ): AReferenceValue = {
         if (upperTypeBound.isArrayType)
@@ -741,15 +741,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             ObjectValue(pc, upperTypeBound.asObjectType)
     }
 
-    override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def NonNullObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
         InitializedObjectValue(pc, objectType)
     }
 
-    override def StringValue(pc: PC, value: String): DomainObjectValue = {
+    override def StringValue(pc: Int, value: String): DomainObjectValue = {
         InitializedObjectValue(pc, ObjectType.String)
     }
 
-    override def ClassValue(pc: PC, t: Type): DomainObjectValue = {
+    override def ClassValue(pc: Int, t: Type): DomainObjectValue = {
         InitializedObjectValue(pc, ObjectType.Class)
     }
 
@@ -776,7 +776,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * @note Java's arrays are co-variant. I.e., `Object[] a = new Serializable[100];` is valid.
      */
-    def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
+    def ArrayValue(pc: Int, arrayType: ArrayType): DomainArrayValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either an class-/interface
@@ -795,7 +795,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue
+    def ObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either an class-/interface
@@ -815,7 +815,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
+    def ObjectValue(pc: Int, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
 
     /**
      * Factory method to create a new domain value that represents a newly created
@@ -833,7 +833,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Size: '''Count'''
      *  - Content: '''Empty''' (i.e., default values w.r.t. to the array's component type)
      */
-    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
+    def NewArray(pc: Int, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
     }
 
@@ -853,7 +853,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Size: '''Depending on the values in `counts`'''
      *  - Content: '''Empty''' (i.e., default values w.r.t. to the array's component type)
      */
-    def NewArray(pc: PC, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
+    def NewArray(pc: Int, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
     }
 
@@ -863,7 +863,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     //
     // -----------------------------------------------------------------------------------
 
-    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+    abstract override def toJavaObject(pc: Int, value: DomainValue): Option[Object] = {
         value match {
             case _: NullValue ⇒ Some(null)
             case _            ⇒ super.toJavaObject(pc, value)
@@ -877,7 +877,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     // runtime/this domain does not support the identification of aliases.
 
     def refSetUpperTypeBoundOfTopOperand(
-        pc:             PC,
+        pc:             Int,
         upperTypeBound: ReferenceType,
         operands:       Operands,
         locals:         Locals
@@ -886,7 +886,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     override def refTopOperandIsNull(
-        pc:       PC,
+        pc:       Int,
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {

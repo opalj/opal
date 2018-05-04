@@ -80,7 +80,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
             // collect the origin information
             val origins =
                 result.domain.allReturnedValues.values.
-                    map(result.domain.origin(_).toChain).flatten.toSet
+                    map(result.domain.originsIterator(_).toChain).flatten.toSet
 
             method.toJava + (
                 if (origins.nonEmpty)

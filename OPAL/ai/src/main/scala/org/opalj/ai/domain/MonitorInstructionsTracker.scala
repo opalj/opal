@@ -59,7 +59,7 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
     }
 
     abstract override def monitorenter(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         usesMonitorInstruction = true
@@ -68,7 +68,7 @@ trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomIn
     }
 
     abstract override def monitorexit(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValues] = {
         usesMonitorInstruction = true

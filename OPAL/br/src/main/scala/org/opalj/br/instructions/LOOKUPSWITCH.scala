@@ -51,10 +51,6 @@ trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
 
     final def mnemonic: String = "lookupswitch"
 
-    def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
-        indexOfNextInstruction(currentPC, false)
-    }
-
     def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + tableSize * 8
     }
@@ -74,6 +70,10 @@ case class LOOKUPSWITCH(
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
     final override def asLOOKUPSWITCH: this.type = this
+
+    final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+        indexOfNextInstruction(currentPC, false)
+    }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
         LabeledLOOKUPSWITCH(

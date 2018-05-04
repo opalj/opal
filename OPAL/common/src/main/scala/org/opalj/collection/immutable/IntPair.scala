@@ -26,35 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.collection.immutable
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of `float` values.
+ * An immutable pair of int values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * @author Michael Eichberg
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+final class IntPair(val _1: Int, val _2: Int) {
 
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def first: Int = _1
+    def second: Int = _1
 
-    //
-    // UNARY ARITHMETIC EXPRESSIONS
-    //
-    def fneg(pc: Int, value: DomainValue): DomainValue
+    def foreach(f: Int ⇒ Unit): Unit = { f(_1); f(_2) }
 
-    //
-    // BINARY ARITHMETIC EXPRESSIONS
-    //
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntPair ⇒ this._1 == that._1 && this._2 == that._2
+            case _             ⇒ false
+        }
+    }
+
+    override def hashCode: Int = _1 * 17 + _2
+}
+
+object IntPair {
+
+    def apply(_1: Int, _2: Int): IntPair = new IntPair(_1, _2)
+
 }

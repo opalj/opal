@@ -44,7 +44,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     type MethodCallResult = Computation[DomainValue, ExceptionValues]
 
     def invokevirtual(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ReferenceType, // e.g., Array[] x = ...; x.clone()
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -52,7 +52,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     ): MethodCallResult
 
     def invokeinterface(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -60,7 +60,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     ): MethodCallResult
 
     def invokespecial(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -69,7 +69,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     ): MethodCallResult
 
     def invokestatic(
-        pc:               PC,
+        pc:               Int,
         declaringClass:   ObjectType,
         isInterface:      Boolean,
         name:             String,
@@ -78,7 +78,7 @@ trait MethodCallsDomain { this: ValuesDomain ⇒
     ): MethodCallResult
 
     def invokedynamic(
-        pc:               PC,
+        pc:               Int,
         bootstrapMethod:  BootstrapMethod,
         name:             String,
         methodDescriptor: MethodDescriptor,

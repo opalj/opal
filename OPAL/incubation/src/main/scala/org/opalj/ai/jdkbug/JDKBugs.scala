@@ -324,7 +324,7 @@ trait TaintAnalysisDomain[Source]
     def isRelevantValueReturned(): Boolean = {
         relevantValuesOrigins.exists { relevantValueOrigin ⇒
             returnedValues.exists { returnedValue ⇒
-                origin(returnedValue._2).exists { returnedValueOrigin ⇒
+                originsIterator(returnedValue._2).exists { returnedValueOrigin ⇒
                     returnedValueOrigin == relevantValueOrigin._1
                 }
             }
@@ -346,7 +346,7 @@ trait TaintAnalysisDomain[Source]
     def postAnalysis(): Boolean = {
         relevantValuesOrigins.foreach { relevantValueOrigin ⇒
             returnedValues.foreach { returnedValue ⇒
-                if (origin(returnedValue._2).exists { returnedValueOrigin ⇒
+                if (originsIterator(returnedValue._2).exists { returnedValueOrigin ⇒
                     returnedValueOrigin == relevantValueOrigin._1
                 }) {
                     // adds a return path to every relevant value that is returned to the caller
@@ -387,7 +387,7 @@ trait TaintAnalysisDomain[Source]
         operands:   Operands
     ): Boolean = {
         operands.exists { op ⇒
-            origin(op).exists(pc ⇒ contextNode.identifier._1.union(taintedPCs).contains(pc))
+            originsIterator(op).exists(contextNode.identifier._1.union(taintedPCs).contains)
         } && (
             descriptor.returnType == Object ||
             descriptor.returnType == Class
@@ -396,8 +396,11 @@ trait TaintAnalysisDomain[Source]
 
     override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         // in case a relevant parameter is returned by the method
-        if (origin(value).exists(orig ⇒ contextNode.identifier._1.union(taintedPCs).contains(orig))) {
-            relevantValuesOrigins = (-1, new CallerNode("return of a relevant Parameter")) :: relevantValuesOrigins
+        if (originsIterator(value).exists(contextNode.identifier._1.union(taintedPCs).contains)) {
+            relevantValuesOrigins = (
+                -1,
+                new CallerNode("return of a relevant Parameter")
+            ) :: relevantValuesOrigins
         }
         returnedValues = (pc, value) :: returnedValues
         super.areturn(pc, value)
@@ -643,7 +646,9 @@ trait TaintAnalysisDomain[Source]
         // skip if we already check for fields so we don't run into a loop
         if (!checkForFields) {
             // check if the field is set with a relevant value
-            if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toChain.toSeq).nonEmpty) {
+            if (contextNode.identifier._1.union(taintedPCs).intersect(
+                originsIterator(value).toChain.toSeq
+            ).nonEmpty) {
 
                 taintedFields = name :: taintedFields
 
@@ -688,7 +693,9 @@ trait TaintAnalysisDomain[Source]
     ) = {
 
         // check if a tainted value is put in the field
-        if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toChain.toSeq).nonEmpty) {
+        if (contextNode.identifier._1.union(taintedPCs).intersect(
+            originsIterator(value).toChain.toSeq
+        ).nonEmpty) {
             taintedFields = name :: taintedFields
             // else if it doesn't get a tainted value:
             // check if it was marked as tainted and remove it from the list
@@ -737,7 +744,7 @@ trait TaintAnalysisDomain[Source]
     def computeRelevantOperands(operands: Operands) = {
         operands.zipWithIndex.filter { operand_index ⇒
             val (operand, _ /*index*/ ) = operand_index
-            origin(operand).exists { operandOrigin ⇒
+            originsIterator(operand).exists { operandOrigin ⇒
                 contextNode.identifier._1.union(taintedPCs).exists(_ == operandOrigin)
             }
         }
@@ -788,7 +795,9 @@ trait TaintAnalysisDomain[Source]
             var relevantParameters: List[Int] = List.empty
             for (opWithIndex ← operands.reverse.zipWithIndex) {
                 val (operand, index) = opWithIndex
-                if ((origin(operand)).exists(orig ⇒ contextNode.identifier._1.union(taintedPCs).contains(orig))) {
+                if (originsIterator(operand).exists(
+                    contextNode.identifier._1.union(taintedPCs).contains
+                )) {
                     relevantParameters = -(index + 1) :: relevantParameters
                 }
             }

@@ -27,34 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package br
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of `float` values.
+ * A sequence of instructions; common super trait of (...TACode) and (...br.Code)
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * @tparam I The type of instructions.
+ *
+ * @author Michael Eichberg
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+trait CodeSequence[Instruction <: AnyRef] {
 
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def pcOfPreviousInstruction(pc: Int): Int /*PC*/
 
-    //
-    // UNARY ARITHMETIC EXPRESSIONS
-    //
-    def fneg(pc: Int, value: DomainValue): DomainValue
+    def pcOfNextInstruction(pc: Int): Int /*PC*/
 
-    //
-    // BINARY ARITHMETIC EXPRESSIONS
-    //
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def instructions: Array[Instruction]
+
 }

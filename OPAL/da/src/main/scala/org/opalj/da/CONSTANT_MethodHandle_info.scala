@@ -43,7 +43,7 @@ case class CONSTANT_MethodHandle_info(
         reference_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
-    override final def size: Int = 1 + 1 + 2
+    final override def size: Int = 1 + 1 + 2
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_MethodHandle
 

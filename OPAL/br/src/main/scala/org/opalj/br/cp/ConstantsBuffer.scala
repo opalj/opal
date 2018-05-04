@@ -250,12 +250,11 @@ object ConstantsBuffer {
 
     def collectLDCs(classFile: ClassFile): Set[LDC[_]] = {
         val allLDC = for {
-            method ← classFile.methods
+            method ← classFile.methods.iterator
             if method.body.isDefined
-            PCAndInstruction(_ /*pc*/ , instruction) ← method.body.get
-            if instruction.opcode == LDC.opcode
+            ldc ← method.body.get.iterator.collect { case ldc: LDC[_] ⇒ ldc }
         } yield {
-            instruction.asInstanceOf[LDC[_]]
+            ldc
         }
         allLDC.toSet
     }
@@ -293,6 +292,7 @@ object ConstantsBuffer {
      */
     @throws[ConstantPoolException]("if it is impossible to create a valid constant pool")
     def apply(ldcs: Set[LDC[_]]): ConstantsBuffer = {
+        // IMPROVE Use Object2IntMap..
         val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
         //the first item is null because the constant_pool starts with the index 1
         buffer(null) = 0

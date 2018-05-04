@@ -33,14 +33,13 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.Naught
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
-
 import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.collection.immutable.Naught
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -67,19 +66,19 @@ class CodeAttributeTest extends FlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect { case DUP ⇒ DUP } should equal(Seq((31, DUP)))
+        codeOfPut collect { case DUP ⇒ DUP } should equal(Seq(PCAndAnyRef(31, DUP)))
 
         codeOfPut collect {
             case ICONST_1 ⇒ ICONST_1
-        } should equal(Seq((20, ICONST_1), (35, ICONST_1)))
+        } should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
         codeOfPut collect {
             case GETFIELD(declaringClass, "last", _) ⇒ declaringClass
-        } should equal(Seq((17, boundedBufferClass), (45, boundedBufferClass)))
+        } should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
         codeOfPut collect {
             case RETURN ⇒ "The very last instruction."
-        } should equal(Seq((54, "The very last instruction.")))
+        } should equal(Seq(PCAndAnyRef(54, "The very last instruction.")))
 
     }
 
@@ -87,56 +86,59 @@ class CodeAttributeTest extends FlatSpec with Matchers {
         codeOfPut collect { case DUP2_X2 ⇒ DUP2_X2 } should equal(Seq())
     }
 
+    import org.opalj.br.CodeAttributeTest._
+
     behavior of "the \"Code\" attribute's collectWithIndex method"
 
     it should "be able to collect all jump targets" in {
         codeOfPut.collectWithIndex({
-            case PCAndInstruction(pc, cbi: SimpleConditionalBranchInstruction[_]) ⇒
-                Seq(cbi.indexOfNextInstruction(pc)(codeOfPut), pc + cbi.branchoffset)
+            case i: PCAndInstruction if i.instruction.isSimpleConditionalBranchInstruction ⇒
+                val cbi = i.instruction.asSimpleConditionalBranchInstruction
+                Seq(cbi.indexOfNextInstruction(i.pc)(codeOfPut), i.pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
     }
 
     it should "be able to handle the case where no instruction is found" in {
-        codeOfPut.collectWithIndex({
-            case PCAndInstruction(pc, IMUL) ⇒ (pc, IMUL)
-        }) should equal(Naught)
+        codeOfPut collectWithIndex {
+            case i: PCAndInstruction if i.instruction == IMUL ⇒ i.pc
+        } should equal(Naught)
     }
 
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
 
     it should "be able to correctly identify the first matching instruction" in {
         codeOfPut collectFirstWithIndex {
-            case PCAndInstruction(pc, ICONST_1) ⇒ (pc, ICONST_1)
+            case i: PCAndInstruction if i.instruction == ICONST_1 ⇒ (i.pc, ICONST_1)
         } should equal(Some((20, ICONST_1)))
     }
 
     it should "be able to handle the case where no instruction is found" in {
-        codeOfPut.collectFirstWithIndex({
-            case PCAndInstruction(pc, IMUL) ⇒ (pc, IMUL)
-        }) should be(None)
+        codeOfPut collectFirstWithIndex {
+            case i: PCAndInstruction if i.instruction == IMUL ⇒ (i.pc, IMUL)
+        } should be(None)
     }
 
     behavior of "the \"Code\" attribute's slidingCollect method"
 
     it should "be able to handle the case where the sliding window is too large compared to the number of instructions" in {
-        codeOfPut.slidingCollect(500)({ case (pc, instrs) ⇒ (pc, instrs) }) should be(Seq())
+        codeOfPut.slidingCollect(500) { case pcAndInstr ⇒ pcAndInstr } should be(Seq())
     }
 
     it should "be able to find some consecutive instructions" in {
         codeOfPut.slidingCollect(2)({
-            case (pc, Seq(ALOAD_0, ALOAD_0)) ⇒ (pc)
+            case PCAndAnyRef(pc, Seq(ALOAD_0, ALOAD_0)) ⇒ Integer.valueOf(pc)
         }) should be(Seq(15))
     }
 
     it should "be able to find the last instructions" in {
         codeOfPut.slidingCollect(2)({
-            case (pc, Seq(INVOKEVIRTUAL(_, _, _), RETURN)) ⇒ (pc)
+            case PCAndAnyRef(pc, Seq(INVOKEVIRTUAL(_, _, _), RETURN)) ⇒ Integer.valueOf(pc)
         }) should be(Seq(51))
     }
 
     it should "be able to find multiple sequences of matching instructions" in {
         codeOfPut.slidingCollect(2)({
-            case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
+            case PCAndAnyRef(pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ Integer.valueOf(pc)
         }) should be(Seq(27, 37))
     }
 

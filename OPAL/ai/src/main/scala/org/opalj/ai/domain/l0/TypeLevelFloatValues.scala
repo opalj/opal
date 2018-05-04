@@ -76,39 +76,39 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     //
     // UNARY EXPRESSIONS
     //
-    override def fneg(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def fneg(pc: Int, value: DomainValue): DomainValue = FloatValue(pc)
 
     //
     // RELATIONAL OPERATORS
     //
-    override def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         IntegerValue(pc)
     }
 
-    override def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         IntegerValue(pc)
     }
 
     //
     // BINARY EXPRESSIONS
     //
-    override def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         FloatValue(pc)
     }
 
-    override def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         FloatValue(pc)
     }
 
-    override def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         FloatValue(pc)
     }
 
-    override def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         FloatValue(pc)
     }
 
-    override def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    override def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
         FloatValue(pc)
     }
 

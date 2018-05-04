@@ -27,34 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package br
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of `float` values.
+ * An efficient (i.e., no (un)boxing...) representation of an instruction and a value.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * @author Michael Eichberg
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+/* no case class */ final class PCAndAnyRef[T <: AnyRef](val pc: Int /* PC */ , val value: T) {
 
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    override def hashCode(): Opcode = value.hashCode() * 117 + pc
 
-    //
-    // UNARY ARITHMETIC EXPRESSIONS
-    //
-    def fneg(pc: Int, value: DomainValue): DomainValue
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: PCAndAnyRef[_] ⇒ this.pc == that.pc && this.value == that.value
+            case _                    ⇒ false
+        }
+    }
 
-    //
-    // BINARY ARITHMETIC EXPRESSIONS
-    //
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    override def toString: String = s"PCAndAnyRef(pc=$pc,$value)"
+}
+
+object PCAndAnyRef {
+    def apply[T <: AnyRef](pc: Int /* PC */ , value: T): PCAndAnyRef[T] = {
+        new PCAndAnyRef(pc, value)
+    }
+
+    // TODO Figure out if the (un)boxing related to the matcher is relevant or optimized away by the JVM
+    def unapply[T <: AnyRef](pcAndValue: PCAndAnyRef[T]): Some[(Int /* PC */ , T)] = {
+        Some((pcAndValue.pc, pcAndValue.value))
+    }
 }

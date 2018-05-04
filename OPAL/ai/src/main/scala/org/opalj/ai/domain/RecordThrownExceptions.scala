@@ -67,7 +67,7 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
     protected[this] def recordThrownException(
-        pc:    PC,
+        pc:    Int,
         value: ExceptionValue
     ): ThrownException
 
@@ -82,17 +82,17 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
     protected[this] def joinThrownExceptions(
-        pc:                        PC,
+        pc:                        Int,
         previouslyThrownException: ThrownException,
         value:                     ExceptionValue
     ): ThrownException
 
-    @volatile private[this] var thrownExceptions: Map[PC, ThrownException] = Map.empty
+    @volatile private[this] var thrownExceptions: Map[Int /*PC*/ , ThrownException] = Map.empty // IMPROVE use LongMap or Int2AnyRefMap...
 
-    def allThrownExceptions: Map[PC, ThrownException] = thrownExceptions
+    def allThrownExceptions: Map[Int /*PC*/ , ThrownException] = thrownExceptions // IMPROVE use LongMap  or Int2AnyRefMap...
 
     abstract override def abruptMethodExecution(
-        pc:        PC,
+        pc:        Int /*PC*/ ,
         exception: ExceptionValue
     ): Unit = {
         thrownExceptions =

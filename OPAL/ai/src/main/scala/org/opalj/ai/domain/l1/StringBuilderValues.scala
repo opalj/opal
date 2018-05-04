@@ -80,7 +80,7 @@ trait StringBuilderValues extends StringValues {
         assert((builderType eq JavaStringBuffer) || (builderType eq JavaStringBuilder))
 
         override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             other:  DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue] = {
 

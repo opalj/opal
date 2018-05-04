@@ -56,13 +56,15 @@ object LoadMethodHandleOrMethodType extends DefaultOneStepAnalysis {
             for {
                 classFile ← project.allProjectClassFiles.par
                 (method, code) ← classFile.methodsWithBody
-                (pc, instruction) ← code collect {
+                pcAndInstruction ← code collect {
                     case LoadMethodHandle(mh)   ⇒ mh
                     case LoadMethodHandle_W(mh) ⇒ mh
                     case LoadMethodType(md)     ⇒ md
                     case LoadMethodType_W(md)   ⇒ md
                 }
             } yield {
+                val pc = pcAndInstruction.pc
+                val instruction = pcAndInstruction.value
                 method.toJava(s"pc=$pc;load constant=${instruction.valueToString}") +
                     s"<${project.source(classFile.thisType).map(_.toString()).getOrElse("N/A")}>"
             }

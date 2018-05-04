@@ -42,7 +42,7 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
 
     override def operandCount: Int = 1
 
-    override final def stackSlotsChange: Int = -1
+    final override def stackSlotsChange: Int = -1
 
     /**
      * Returns all case values that are '''not related to the default branch'''.

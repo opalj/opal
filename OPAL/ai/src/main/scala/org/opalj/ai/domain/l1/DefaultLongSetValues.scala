@@ -49,7 +49,7 @@ trait DefaultLongSetValues
 
     class ALongValue() extends super.ALongValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // we are not joining the "same" value; the join stabilization trait
             // takes care of handling potential aliases
             MetaInformationUpdate(new ALongValue())
@@ -59,9 +59,9 @@ trait DefaultLongSetValues
             other.computationalType == ComputationalTypeLong
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.LongValue(pc)
         }
 
@@ -76,7 +76,7 @@ trait DefaultLongSetValues
 
         assert(values.nonEmpty)
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
                 case _: ALongValue ⇒ StructuralUpdate(LongValue(pc))
                 case LongSet(thatValues) ⇒
@@ -108,9 +108,9 @@ trait DefaultLongSetValues
             })
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue =
             if (target.isInstanceOf[LongSetValues]) {
                 val thatDomain = target.asInstanceOf[DefaultLongSetValues]
                 thatDomain.LongSet(this.values).asInstanceOf[target.DomainValue]

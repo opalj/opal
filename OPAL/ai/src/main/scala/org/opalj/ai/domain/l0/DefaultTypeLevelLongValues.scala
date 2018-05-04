@@ -45,13 +45,13 @@ trait DefaultTypeLevelLongValues
 
     case object ALongValue extends super.LongValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def abstractsOver(other: DomainValue): Boolean = other eq this
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.LongValue(pc)
         }
     }

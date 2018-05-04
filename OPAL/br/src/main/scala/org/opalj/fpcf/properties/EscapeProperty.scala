@@ -249,11 +249,12 @@ case object NoEscape extends FinalEscapeProperty {
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = that
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
+    final override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
 
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = true
+
 }
 
 /**

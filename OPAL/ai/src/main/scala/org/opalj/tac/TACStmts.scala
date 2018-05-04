@@ -27,34 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package tac
+
+import org.opalj.br.CodeSequence
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of `float` values.
+ * Wrapper class to warp an array of statements.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * @author Michael Eichberg
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+case class TACStmts[V <: Var[V]](
+        instructions: Array[Stmt[V]]
+) extends CodeSequence[Stmt[V]] {
 
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    final override def pcOfPreviousInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc - 1
+    }
 
-    //
-    // UNARY ARITHMETIC EXPRESSIONS
-    //
-    def fneg(pc: Int, value: DomainValue): DomainValue
+    final override def pcOfNextInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc + 1
+    }
 
-    //
-    // BINARY ARITHMETIC EXPRESSIONS
-    //
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 }

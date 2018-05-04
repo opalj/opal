@@ -261,9 +261,9 @@ object InterpretMethod {
                             ) +
                                 XHTML.instructionsToXHTML("PCs where paths join", result.cfJoins) +
                                 (
-                                    if (result.subroutineInstructions.nonEmpty) {
+                                    if (result.subroutinePCs.nonEmpty) {
                                         XHTML.instructionsToXHTML(
-                                            "Subroutine instructions", result.subroutineInstructions
+                                            "Subroutine instructions", result.subroutinePCs
                                         )
                                     } else {
                                         ""

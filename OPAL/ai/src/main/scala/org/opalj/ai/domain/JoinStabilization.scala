@@ -123,7 +123,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
 
     /** Classes overriding this method generally have to call it! */
     override protected[this] def joinValues(
-        pc:   PC,
+        pc:   Int,
         left: DomainValue, right: DomainValue
     ): Update[DomainValue] = {
         val key = new IdentityPair(left, right)
@@ -131,7 +131,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
     }
 
     /** Classes overriding this method generally have to call it! */
-    override protected[this] def afterBaseJoin(pc: PC): Unit = {
+    override protected[this] def afterBaseJoin(pc: Int): Unit = {
         super.afterBaseJoin(pc)
         joinedValues.clear()
     }

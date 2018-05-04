@@ -56,7 +56,7 @@ import org.opalj.br.cfg.CFG
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
         stmts:             Array[Stmt[V]], // CONST
-        cfg:               CFG,
+        cfg:               CFG[Stmt[V], TACStmts[V]],
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]
 // TODO Support the rewriting of TypeAnnotations etc.

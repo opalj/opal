@@ -74,7 +74,7 @@ trait AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
     ): Unit
 
     /**
@@ -211,9 +211,9 @@ trait AITracer {
     def returnFromSubroutine(
         domain: Domain
     )(
-        pc:                     Int,
-        returnAddressPC:        Int,
-        subroutineInstructions: List[Int /*PC*/ ]
+        pc:              Int,
+        returnAddressPC: Int,
+        subroutinePCs:   List[Int /*PC*/ ]
     ): Unit
 
     /**

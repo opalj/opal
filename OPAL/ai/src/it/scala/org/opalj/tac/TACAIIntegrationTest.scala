@@ -37,8 +37,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.TestSupport
 import org.opalj.ai.Domain
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.RecordDefUse
@@ -141,7 +140,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
 
     describe(s"creating the 3-address code") {
 
-        allBIProjects().foreach { biProject ⇒
+        TestSupport.allBIProjects().foreach { biProject ⇒
             val (name, projectFactory) = biProject
 
             it(s"for $name") {
@@ -157,7 +156,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
         }
 
         it(s"for the (current) JDK") {
-            var p = createJREProject()
+            var p = TestSupport.createJREProject()
             domainFactories foreach { domainInformation ⇒
                 val (domainName, domainFactory) = domainInformation
                 time {

@@ -56,7 +56,7 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
      */
     class AnIntegerValue extends super.AnIntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // ...this method is only called if we are not joining the "same" value...
             MetaInformationUpdate(AnIntegerValue())
         }
@@ -65,9 +65,9 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
             other.computationalType == ComputationalTypeInt
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.IntegerValue(origin = pc)
         }
 
@@ -111,7 +111,7 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
             new IntegerRange(newLowerBound, newUpperBound)
         }
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
 
                 case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
@@ -192,9 +192,9 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
             )
         }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target match {
                 case irv: IntegerRangeValues ⇒
                     irv.IntegerRange(lowerBound, upperBound).asInstanceOf[target.DomainValue]

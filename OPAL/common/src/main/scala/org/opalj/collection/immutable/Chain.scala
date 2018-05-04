@@ -627,11 +627,11 @@ object Chain /* extends ChainLowPriorityImplicits */ {
      * @tparam T The type of the list's element.
      */
     class ChainBuilder[@specialized(Int) T] extends Builder[T, Chain[T]] {
-        private var list: Chain[T] = Naught
-        private var last: :&:[T] = null
+        private[this] var list: Chain[T] = null
+        private[this] var last: :&:[T] = null
         def +=(elem: T): this.type = {
             val newLast = new :&:[T](elem, Naught)
-            if (list.isEmpty) {
+            if (list == null) {
                 list = newLast
             } else {
                 last.rest = newLast
@@ -639,10 +639,10 @@ object Chain /* extends ChainLowPriorityImplicits */ {
             last = newLast
             this
         }
-        def clear(): Unit = list = Naught
+        def clear(): Unit = list = null
 
         /** Returns the constructed list. The builder must not be used afterwards. */
-        def result(): Chain[T] = list
+        def result(): Chain[T] = { val list = this.list; if (list == null) Naught else list }
     }
 
     private[this] val baseCanBuildFrom = new CanBuildFrom[Chain[_], AnyRef, Chain[AnyRef]] {

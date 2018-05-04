@@ -62,14 +62,14 @@ trait RecordMethodCallResults
 
     private[this] var hasReturnedNormally: Boolean = false
 
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+    abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         hasReturnedNormally = true
         super.returnVoid(pc)
     }
 
     def returnedNormally: Boolean = hasReturnedNormally || allReturnedValues.nonEmpty
 
-    def returnedValue(target: TargetDomain, callerPC: PC): Option[target.DomainValue] = {
+    def returnedValue(target: TargetDomain, callerPC: Int): Option[target.DomainValue] = {
         if (allReturnedValues.isEmpty)
             None
         else {
@@ -79,7 +79,7 @@ trait RecordMethodCallResults
 
     def returnedValueRemapped(
         callerDomain: TargetDomain,
-        callerPC:     PC
+        callerPC:     Int
     )(
         originalOperands: callerDomain.Operands,
         passedParameters: Locals
@@ -107,7 +107,7 @@ trait RecordMethodCallResults
     }
 
     // IMPROVE Remap returned exceptions
-    def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues = {
+    def thrownExceptions(target: TargetDomain, callerPC: Int): target.ExceptionValues = {
 
         val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException]
         if (allThrownExceptions.isEmpty) {
