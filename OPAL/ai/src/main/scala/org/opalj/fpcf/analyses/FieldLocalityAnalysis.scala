@@ -496,8 +496,9 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 case currentBB: BasicBlock ⇒
                     for (index ← currentBB.startPC to currentBB.endPC) {
                         tacai.stmts(index) match {
-                            case PutField(_, `thisType`, `fieldName`, `fieldType`, _, _) ⇒
-                                if (uses.contains(index)) {
+                            case PutField(_, `thisType`, `fieldName`, `fieldType`, objRef, _) ⇒
+                                if (objRef.asVar.definedBy == IntTrieSet(defSite)) {
+                                    // The field's owning instance must be the result of super.clone
                                     foundPut = true // There is a matching PutField in this BB
                                 }
                             case _ ⇒
