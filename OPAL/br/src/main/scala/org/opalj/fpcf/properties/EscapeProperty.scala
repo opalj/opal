@@ -197,7 +197,7 @@ case object NoEscape extends EscapeProperty(3) {
 
     override def meet(that: EscapeProperty): EscapeProperty = that
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = if (this eq that) true else false
+    final override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = if (this eq that) true else false
 }
 
 /**

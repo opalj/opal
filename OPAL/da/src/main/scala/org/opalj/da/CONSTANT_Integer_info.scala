@@ -41,7 +41,7 @@ import scala.xml.NodeSeq
  */
 case class CONSTANT_Integer_info(value: Int) extends Constant_Pool_Entry {
 
-    override final def size: Int = 1 + 4
+    final override def size: Int = 1 + 4
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Integer
 

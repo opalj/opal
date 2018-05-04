@@ -40,7 +40,7 @@ import scala.xml.NodeSeq
  */
 case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_Pool_Entry {
 
-    override final def size: Int = {
+    final override def size: Int = {
         // The length of the string in bytes is not equivalent to `value.length` due to the
         // usage of the modified UTF8 enconding.
         1 /* tag */ + 2 /* the length */ + raw.length /* the bytes of the string */

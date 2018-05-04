@@ -40,15 +40,15 @@ import org.opalj.collection.immutable.Chain
  */
 trait UnconditionalBranchInstructionLike extends SimpleBranchInstructionLike {
 
-    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    override final def readsLocal: Boolean = false
+    final override def readsLocal: Boolean = false
 
-    override final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    override final def writesLocal: Boolean = false
+    final override def writesLocal: Boolean = false
 
-    override final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+    final override def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
 
@@ -56,7 +56,7 @@ trait UnconditionalBranchInstruction
     extends SimpleBranchInstruction
     with UnconditionalBranchInstructionLike {
 
-    override final def nextInstructions(
+    final override def nextInstructions(
         currentPC:             PC,
         regularSuccessorsOnly: Boolean
     )(

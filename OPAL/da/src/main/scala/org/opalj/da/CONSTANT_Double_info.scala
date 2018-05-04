@@ -40,7 +40,7 @@ import org.opalj.bi.ConstantPoolTag
  */
 case class CONSTANT_Double_info(value: Double) extends Constant_Pool_Entry {
 
-    override final def size: Int = { 1 + 4 + 4 }
+    final override def size: Int = { 1 + 4 + 4 }
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Double
 
