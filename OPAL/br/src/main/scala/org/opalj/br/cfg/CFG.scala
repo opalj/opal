@@ -234,7 +234,7 @@ case class CFG[I <: AnyRef](
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            IntTrieSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntTrieSet1(code.pcOfNextInstruction(pc))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var successorPCs = IntTrieSet.empty
@@ -257,7 +257,7 @@ case class CFG[I <: AnyRef](
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            f(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            f(code.pcOfNextInstruction(pc))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var visited = IntTrieSet.empty
