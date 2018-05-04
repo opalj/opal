@@ -35,11 +35,13 @@ sealed trait VirtualMethodReturnValueFreshnessMetaInformation extends PropertyMe
 }
 
 /**
- * TODO
+ * Aggregate property for [[ReturnValueFreshness]]. Describes whether all methods that can be the
+ * target of a virtual method call will return fresh values.
+ *
  * @author Florian Kuebler
  */
 sealed abstract class VirtualMethodReturnValueFreshness extends Property
-    with VirtualMethodReturnValueFreshnessMetaInformation {
+        with VirtualMethodReturnValueFreshnessMetaInformation {
 
     final def key: PropertyKey[VirtualMethodReturnValueFreshness] =
         VirtualMethodReturnValueFreshness.key

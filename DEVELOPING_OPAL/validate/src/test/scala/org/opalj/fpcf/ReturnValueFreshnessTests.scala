@@ -41,7 +41,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  *
  * @author Florian Kuebler
  */
-class FreshReturnValueAnalysisTests extends PropertiesTest {
+class ReturnValueFreshnessTests extends PropertiesTest {
 
     val lazyAnalysisScheduler = Set(
         LazyInterProceduralEscapeAnalysis,

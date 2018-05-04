@@ -44,7 +44,7 @@ sealed trait VirtualMethodStaticDataUsagePropertyMetaInformation extends Propert
  * @author Dominik Helm
  */
 sealed case class VirtualMethodStaticDataUsage(
-        val individualProperty: StaticDataUsage
+        individualProperty: StaticDataUsage
 ) extends AggregatedProperty[StaticDataUsage, VirtualMethodStaticDataUsage]
     with VirtualMethodStaticDataUsagePropertyMetaInformation {
 

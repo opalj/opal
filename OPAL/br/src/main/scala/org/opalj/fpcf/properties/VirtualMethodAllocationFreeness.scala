@@ -44,7 +44,7 @@ sealed trait VirtualMethodAllocationFreenessPropertyMetaInformation extends Prop
  * @author Dominik Helm
  */
 sealed case class VirtualMethodAllocationFreeness(
-        val individualProperty: AllocationFreeness
+        individualProperty: AllocationFreeness
 ) extends AggregatedProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
     with VirtualMethodAllocationFreenessPropertyMetaInformation {
 

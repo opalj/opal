@@ -119,7 +119,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                 }
 
                 case ASTORE_0.opcode if !method.isStatic ⇒
-                    if(mayOverwriteSelf) overwritesSelf = true
+                    if (mayOverwriteSelf) overwritesSelf = true
                     else // A PUTFIELD may result in a NPE raised (and therefore allocated)
                         return Result(declaredMethod, MethodWithAllocations)
 
@@ -197,7 +197,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case e ⇒
+            case _ ⇒
                 throw new UnknownError("allocation freeness is only defined for methods")
         }
     }

@@ -162,7 +162,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Reduces the maxPurity of the current method to at most the given purity level.
      */
-    def reduceMinumumPurity(newLevel: Purity)(implicit state: AnalysisState): Unit = {
+    def reducePurityLB(newLevel: Purity)(implicit state: AnalysisState): Unit = {
         state.lbPurity = state.lbPurity meet newLevel
     }
 
@@ -203,7 +203,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
                     val rcvr = expr.asInstanceFunctionCall.receiver
-                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isYesOrUnknown
 
                 case StaticFunctionCall.ASTID ⇒ false
 
@@ -240,7 +240,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         call:     Call[V],
         receiver: Option[Expr[V]]
     )(implicit state: AnalysisState): Boolean = {
-        implicit val code = state.code
+        implicit val code: Array[Stmt[V]] = state.code
         val ratedResult = rater.handleCall(call, receiver)
         if (ratedResult.isDefined)
             atMost(ratedResult.get)
@@ -256,17 +256,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // For method calls, purity depends on purity of the called method
             case StaticMethodCall.ASTID ⇒
                 if (!isDomainSpecificCall(stmt.asStaticMethodCall, None)) {
-                    val StaticMethodCall(_, declClass, isInterface, name, descr, params) = stmt
-                    val callee = project.staticCall(declClass, isInterface, name, descr)
-                    checkPurityOfCall(declClass, name, None, params, callee)
+                    val StaticMethodCall(_, declClass, _, name, descr, params) = stmt
+                    val callee = stmt.asStaticMethodCall.resolveCallTarget
+                    checkPurityOfCall(declClass, name, descr, None, params, callee)
                 } else true
             case NonVirtualMethodCall.ASTID ⇒
                 val call = stmt.asNonVirtualMethodCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val NonVirtualMethodCall(_, declClass, isInterface, name, descr, rcvr, params) =
-                        stmt
-                    val callee = project.specialCall(declClass, isInterface, name, descr)
-                    checkPurityOfCall(declClass, name, Some(rcvr), params, callee)
+                    val NonVirtualMethodCall(_, declClass, _, name, descr, rcvr, params) = stmt
+                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget
+                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
                 } else true
             case VirtualMethodCall.ASTID ⇒
                 val call = stmt.asVirtualMethodCall
@@ -339,17 +338,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // For function calls, purity depends on purity of the method called
             case StaticFunctionCall.ASTID ⇒
                 if (!isDomainSpecificCall(expr.asStaticFunctionCall, None)) {
-                    val StaticFunctionCall(_, declClass, interface, name, descr, params) = expr
-                    val callee = project.staticCall(declClass, interface, name, descr)
-                    checkPurityOfCall(declClass, name, None, params, callee)
+                    val StaticFunctionCall(_, declClass, _, name, descr, params) = expr
+                    val callee = expr.asStaticFunctionCall.resolveCallTarget
+                    checkPurityOfCall(declClass, name, descr, None, params, callee)
                 } else true
             case NonVirtualFunctionCall.ASTID ⇒
                 val call = expr.asNonVirtualFunctionCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val NonVirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
-                        expr
-                    val callee = project.specialCall(declClass, interface, name, descr)
-                    checkPurityOfCall(declClass, name, Some(rcvr), params, callee)
+                    val NonVirtualFunctionCall(_, declClass, _, name, descr, rcvr, params) = expr
+                    val callee = expr.asNonVirtualFunctionCall.resolveCallTarget
+                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
                 } else true
             case VirtualFunctionCall.ASTID ⇒
                 val call = expr.asVirtualFunctionCall
@@ -362,8 +360,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // Field/array loads are pure if the field is (effectively) final or the object/array is
             // local and non-escaping
             case GetStatic.ASTID ⇒
-                implicit val p = project
-                implicit val code = state.code
+                implicit val code: Array[Stmt[V]] = state.code
                 val ratedResult = rater.handleGetStatic(expr.asGetStatic)
                 if (ratedResult.isDefined) atMost(ratedResult.get)
                 else {
@@ -414,8 +411,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         descr:     MethodDescriptor
     )(implicit state: StateType): Boolean = {
         onVirtualMethod(rcvrType, interface, name, receiver, params, descr,
-            (callee) ⇒ checkPurityOfCall(rcvrType, name, Some(receiver), params, callee),
-            (dm) ⇒ checkMethodPurity(
+            callee ⇒ checkPurityOfCall(rcvrType, name, descr, Some(receiver), params, callee),
+            dm ⇒ checkMethodPurity(
                 propertyStore(dm, VirtualMethodPurity.key), (Some(receiver), params)
             ),
             () ⇒ { atMost(LBImpure); false })
@@ -428,8 +425,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         receiver:   Expr[V],
         params:     Seq[Expr[V]],
         descr:      MethodDescriptor,
-        onPrecise:  (org.opalj.Result[Method]) ⇒ Boolean,
-        onMultiple: (DeclaredMethod) ⇒ Boolean,
+        onPrecise:  org.opalj.Result[Method] ⇒ Boolean,
+        onMultiple: DeclaredMethod ⇒ Boolean,
         onUnknown:  () ⇒ Boolean
     )(implicit state: StateType): Boolean = {
         if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes)
@@ -457,8 +454,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     org.opalj.Result(
                         project.resolveInterfaceMethodReference(receiverType, name, descr)
                     )
-                case Some(cf) ⇒ project.resolveClassMethodReference(receiverType, name, descr)
-                case _        ⇒ Failure
+                case Some(_) ⇒ project.resolveClassMethodReference(receiverType, name, descr)
+                case _       ⇒ Failure
             }
 
         if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise ||
@@ -488,26 +485,22 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkPurityOfCall(
         receiverClass: ReferenceType,
         name:          String,
+        descriptor:    MethodDescriptor,
         receiver:      Option[Expr[V]],
         params:        Seq[Expr[V]],
         methodResult:  org.opalj.Result[Method]
     )(implicit state: StateType): Boolean = {
+        val receiverType =
+            if (receiverClass.isArrayType) ObjectType.Object else receiverClass.asObjectType
 
-        if (receiverClass == ObjectType.Object && name == "<init>") {
-            true // The java.lang.Object constructor is pure
-        } else {
-            methodResult match {
-                case Success(callee) ⇒
-                    if (callee eq state.method) true // Self-recursive don't need to be checked
-                    else {
-                        val calleePurity = propertyStore(declaredMethods(callee), Purity.key)
-                        checkMethodPurity(calleePurity, (receiver, params))
-                    }
-                case _ ⇒ // Target method unknown (not in scope of current project)
-                    atMost(LBImpure)
-                    false
-            }
+        val dm = methodResult match {
+            case Success(callee) if callee eq state.method ⇒
+                return true; // Self-recursive calls don't need to be checked
+            case Success(callee) ⇒ declaredMethods(callee)
+            case _               ⇒ declaredMethods(receiverType, name, descriptor)
         }
+        val calleePurity = propertyStore(dm, Purity.key)
+        checkMethodPurity(calleePurity, (receiver, params))
     }
 
     /**
@@ -551,13 +544,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case FinalEP(_, _: FinalField) ⇒ // Final fields don't impede purity
+        case EPS(_, _: FinalField, _) ⇒ // Final fields don't impede purity
         case FinalEP(_, _) ⇒ // Mutable field
-            if (objRef.isDefined) isLocal(objRef.get, LBSideEffectFree)
-            else atMost(LBSideEffectFree)
+            if (objRef.isDefined) {
+                if (state.ubPurity.isDeterministic)
+                    isLocal(objRef.get, LBSideEffectFree)
+            } else atMost(LBSideEffectFree)
         case _ ⇒
-            reduceMinumumPurity(LBSideEffectFree)
-            handleUnknownFieldMutability(ep, objRef)
+            reducePurityLB(LBSideEffectFree)
+            if (state.ubPurity.isDeterministic)
+                handleUnknownFieldMutability(ep, objRef)
     }
 
     /**
@@ -635,14 +631,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         expr: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case FinalEP(_, ImmutableType | ImmutableObject) ⇒ true
+        case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
         case FinalEP(_, _) ⇒
             atMost(LBPure) // Can not be compile time pure if mutable object is returned
-            isLocal(expr, LBSideEffectFree)
+            if (state.ubPurity.isDeterministic)
+                isLocal(expr, LBSideEffectFree)
             false // Return early if we are already side-effect free
         case _ ⇒
-            reduceMinumumPurity(LBSideEffectFree)
-            handleUnknownTypeMutability(ep, expr)
+            reducePurityLB(LBSideEffectFree)
+            if (state.ubPurity.isDeterministic)
+                handleUnknownTypeMutability(ep, expr)
             true
     }
 
@@ -668,8 +666,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case dm: DefinedMethod if dm.definedMethod.body.isDefined ⇒
                 determinePurity(dm)
             case dm: DefinedMethod ⇒ Result(dm, Impure)
-            case e ⇒
-                println(e)
+            case _ ⇒
                 throw new UnknownError("purity is only defined for definedmethods")
         }
     }
