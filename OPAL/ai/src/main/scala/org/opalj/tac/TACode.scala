@@ -33,7 +33,6 @@ import org.opalj.br.Attribute
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.LineNumberTable
 import org.opalj.br.SimilarityTestConfiguration
-import org.opalj.br.CodeSequence
 import org.opalj.br.cfg.CFG
 
 /**
@@ -57,19 +56,11 @@ import org.opalj.br.cfg.CFG
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
         stmts:             Array[Stmt[V]], // CONST
-        cfg:               CFG[Stmt[V]],
+        cfg:               CFG[Stmt[V], TACStmts[V]],
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]
 // TODO Support the rewriting of TypeAnnotations etc.
-) extends Attribute with CodeSequence[Stmt[V]] {
-
-    final override def instructions: Array[Stmt[V]] = stmts
-
-    final override def pcOfPreviousInstruction(pc: Int): Int = {
-        // The representation is compact: hence, the previous instruction/statement just
-        // has the current index/pc - 1.
-        pc - 1
-    }
+) extends Attribute {
 
     override def kindId: Int = TACode.KindId
 

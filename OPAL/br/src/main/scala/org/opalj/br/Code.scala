@@ -1588,7 +1588,7 @@ final class Code private (
      * @return the stack depth or -1 if the instruction is invalid/dead.
      */
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
-    def stackDepthAt(atPC: Int, cfg: CFG[Instruction]): Int = {
+    def stackDepthAt(atPC: Int, cfg: CFG[Instruction, Code]): Int = {
         var paths: Chain[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
@@ -1912,7 +1912,7 @@ object Code {
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
         classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG[Instruction] = {
+    ): CFG[Instruction, Code] = {
         CFGFactory(
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
             classHierarchy
@@ -1948,7 +1948,7 @@ object Code {
     def computeMaxStack(
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        cfg:               CFG[Instruction]
+        cfg:               CFG[Instruction, Code]
     ): Int = {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0

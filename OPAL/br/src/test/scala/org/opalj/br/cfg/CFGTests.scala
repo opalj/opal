@@ -33,6 +33,7 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 import org.opalj.io.writeAndOpen
+import org.opalj.br.instructions.Instruction
 
 /**
  * Helper methods to test the constructed CFGs.
@@ -41,7 +42,12 @@ import org.opalj.io.writeAndOpen
  */
 trait CFGTests extends FunSpec with Matchers {
 
-    def cfgNodesCheck(m: Method, code: Code, cfg: CFG, classHierarchy: ClassHierarchy): Unit = {
+    def cfgNodesCheck(
+        m:              Method,
+        code:           Code,
+        cfg:            CFG[Instruction, Code],
+        classHierarchy: ClassHierarchy
+    ): Unit = {
         // validate that cfPCs returns the same information as the CFG
         val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
         val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs(classHierarchy)
@@ -94,7 +100,7 @@ trait CFGTests extends FunSpec with Matchers {
     def testCFGProperties(
         method:         Method,
         code:           Code,
-        cfg:            CFG,
+        cfg:            CFG[Instruction, Code],
         classHierarchy: ClassHierarchy
     )(
         f: ⇒ Unit

@@ -31,17 +31,30 @@ package tac
 
 import scala.annotation.switch
 import scala.collection.mutable.Queue
+
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br._
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions._
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.PCAndAnyRef
+import org.opalj.br.BaseType
+import org.opalj.br.ArrayType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.FloatType
+import org.opalj.br.CharType
+import org.opalj.br.DoubleType
+import org.opalj.br.ShortType
+import org.opalj.br.ByteType
+import org.opalj.br.Code
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFG
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.VMLevelValuesOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
@@ -151,7 +164,7 @@ object TACAI {
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
         val codeSize: Int = instructions.length
-        val cfg: CFG[Instruction] = domain.bbCFG
+        val cfg: CFG[Instruction, Code] = domain.bbCFG
         def wasExecuted(pc: Int) = cfg.bb(pc) != null
         val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
         val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
@@ -964,8 +977,8 @@ object TACAI {
                 }
             }
         }
-
-        val tacStmts: Array[Stmt[DUVar[aiResult.domain.DomainValue]]] = {
+        type AIDUVar = DUVar[aiResult.domain.DomainValue]
+        val tacStmts: Array[Stmt[AIDUVar]] = {
             def isIndexOfCaughtExceptionStmt(index: Int): Boolean = {
                 statements(index).astID == CaughtException.ASTID
             }
@@ -980,7 +993,7 @@ object TACAI {
                 }
                 statements
             } else {
-                val tacStmts = new Array[Stmt[DUVar[aiResult.domain.DomainValue]]](index)
+                val tacStmts = new Array[Stmt[AIDUVar]](index)
                 var s = 0
                 while (s < index) {
                     val stmt = statements(s)
@@ -997,10 +1010,18 @@ object TACAI {
             // singleton bbs.
             if (addedHandlerStmts.contains(index)) index + 1 else index
         }
-        val taCodeCFG = cfg.mapPCsToIndexes(pcToIndex, singletonBBsExpander, lastIndex = index - 1)
+        val taCodeCFG =
+            cfg.mapPCsToIndexes[Stmt[AIDUVar], TACStmts[AIDUVar]](
+                TACStmts(tacStmts),
+                pcToIndex,
+                singletonBBsExpander,
+                lastIndex = index - 1
+            )
         val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
-        val taCode = TACode(tacParams, tacStmts, taCodeCFG, taExceptionHanders, lnt)
+        val taCode = TACode[TACMethodParameter, AIDUVar](
+            tacParams, tacStmts, taCodeCFG, taExceptionHanders, lnt
+        )
 
         if (optimizations.nonEmpty) {
             val base = TACOptimizationResult(taCode, wasTransformed = false)

@@ -27,21 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package tac
+
+import org.opalj.br.CodeSequence
 
 /**
- * A sequence of instructions; common super trait of (...TACode) and (...br.Code)
- *
- * @tparam I The type of instructions.
+ * Wrapper class to warp an array of statements.
  *
  * @author Michael Eichberg
  */
-trait CodeSequence[Instruction <: AnyRef] {
+case class TACStmts[V <: Var[V]](
+        instructions: Array[Stmt[V]]
+) extends CodeSequence[Stmt[V]] {
 
-    def pcOfPreviousInstruction(pc: Int): Int /*PC*/
+    final override def pcOfPreviousInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc - 1
+    }
 
-    def pcOfNextInstruction(pc: Int): Int /*PC*/
-
-    def instructions: Array[Instruction]
+    final override def pcOfNextInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc + 1
+    }
 
 }

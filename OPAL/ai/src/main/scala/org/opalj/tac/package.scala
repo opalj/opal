@@ -58,7 +58,10 @@ package object tac {
         List(SimplePropagation)
     }
 
-    def tacToGraph[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): Iterable[Node] = {
+    def tacToGraph[V <: Var[V]](
+        stmts: Array[Stmt[V]],
+        cfg:   CFG[Stmt[V], TACStmts[V]]
+    ): Iterable[Node] = {
         cfg.toDot { bb: BasicBlock ⇒
             val pcRange = bb.startPC to bb.endPC
             val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
@@ -70,7 +73,10 @@ package object tac {
         }
     }
 
-    def tacToDot[V <: Var[V]](stmts: Array[Stmt[V]], cfg: CFG): String = {
+    def tacToDot[V <: Var[V]](
+        stmts: Array[Stmt[V]],
+        cfg:   CFG[Stmt[V], TACStmts[V]]
+    ): String = {
         org.opalj.graphs.toDot(
             tacToGraph(stmts, cfg),
             ranksep = "0.4"
