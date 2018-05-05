@@ -79,7 +79,7 @@ class ReactiveAsyncPropertyStore private (
     val ps: Array[PropertyTrieMap] = Array.fill(SupportedPropertyKinds) { TrieMap.empty }
 
     // This map keeps track of the dependencies. Key is (Entity, PropertyKind.id)
-    val dependencyMap = TrieMap.empty[(Entity, Int), Traversable[SomeEOptionP]]
+    val dependencyMap = TrieMap.empty[(Entity, Int), Traversable[SomeEPK]]
 
     // PropertyKinds that will be computed now or at a later time
     var computedPropertyKinds: Set[PropertyKind] = Set.empty
@@ -96,7 +96,7 @@ class ReactiveAsyncPropertyStore private (
     // method to trigger computations.
     val lazyTasks = TrieMap.empty[Int, SomePropertyComputation]
 
-    // Tasks that were already scheduled. The value is if the task is still running
+    // Tasks that were already scheduled.
     val startedLazyTasks = TrieMap.empty[(Int, Entity), Boolean]
 
     /**
@@ -150,19 +150,20 @@ class ReactiveAsyncPropertyStore private (
      *  - that the store just eagerly created the data structures necessary to associate
      * properties with the entity.
      */
-    override def isKnown(e: Entity): Boolean = ps.contains(e)
+    override def isKnown(e: Entity): Boolean =
+        ps.exists(psE ⇒ psE.contains(e)) || startedLazyTasks.keySet.exists(k ⇒ k._2 == e)
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean =
         isKnown(e) && ps(pk.id).contains(e) && {
             val pv = ps(pk.id)(e).cell.getResult()
-            pv.ub != null && pv.ub != PropertyIsLazilyComputed
+            pv != null && pv.ub != null && pv.ub != PropertyIsLazilyComputed
         }
 
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
         // Here we query the internal property store. We don't work on a snapshot, on the entity
         // level, because we want to update it
         val pkId = pk.id
-        val res: EOptionP[E, P] = ps(pkId).get(e) match {
+        ps(pkId).get(e) match {
             case Some(cc) ⇒
                 incCounter("apply.hit")
                 // We have a cell, that means that someone triggered the computation already
@@ -192,8 +193,6 @@ class ReactiveAsyncPropertyStore private (
                 }
                 EPK(e, pk)
         }
-
-        res
     }
 
     /**
@@ -455,23 +454,24 @@ class ReactiveAsyncPropertyStore private (
                 // all dependencies.
                 val oldResult = cc.cell.getResult()
                 if (oldResult == null || oldResult.lb != lb || oldResult.ub != ub) {
+                    // TODO check OrderedProperty
                     cc.putNext(new PropertyValue(lb, ub))
                 }
 
                 val oldDependees = dependencyMap.getOrElse((e, lb.key.id), Traversable.empty)
-                val newDependees = dependees.filterNot(oldDependees.toSet)
-                val removedDependees = oldDependees.filterNot(dependees.toSet)
-                dependencyMap.put((e, lb.key.id), dependees)
+                val dependeesEPK = dependees.map(_.toEPK)
+                val newDependees = dependeesEPK.filterNot(oldDependees.toSet)
+                val removedDependees = oldDependees.filterNot(dependeesEPK.toSet)
+                dependencyMap.put((e, lb.key.id), dependeesEPK)
 
                 // 2. Check which dependencies the cell has. Remove dependencies that are
                 // no longer necessary.
-
                 removedDependees foreach { someEOptionP ⇒
                     val psE = ps(someEOptionP.pk.id)
                     // When querying the properties, the cell already exists. At some point it was
                     // added and in step 3 the cell was generated
                     val dependeeCell = psE(someEOptionP.e).cell
-                    cc.cell.removeNextCallbacks(dependeeCell)
+                    dependeeCell.removeCombinedCallbacks(cc.cell)
                 }
 
                 incCounter("handleResult.IntermediateResult.removedCallbacks", removedDependees.size)
@@ -506,13 +506,12 @@ class ReactiveAsyncPropertyStore private (
                         // was not scheduled
                         if (p != null && !someEOptionP.is(p)) {
                             // EPS.apply creates a FinalEP if lp == ub
-                            val newEPs = c(EPS(dependeeCell.key.e, p.lb, p.ub))
-
+                            val newEps = EPS(dependeeCell.key.e, p.lb, p.ub)
+                            val newEPs = c(newEps)
                             handleResult(newEPs)
                         }
                         NoOutcome
                     })
-
                 }
 
             case IncrementalResult.id ⇒
