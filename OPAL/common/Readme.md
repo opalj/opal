@@ -1,8 +1,7 @@
 # Overview
 ***Opal Common*** implements generally useful data-structures and algorithms when writing static
-analyses. *OPAL Common* in particular implements a framework for the concurrent execution of
-fixed-point computations (see _fpcf_ package for more information).
+analyses. It in particular implements data-structures related to Int(eger) values.
 
 ## Remarks
 This project contains (among others) macros.
-Hence, it need to be compiled/need to be available before other projects can be compiled.
+Hence, it needs to be compiled/needs to be available before other projects can be compiled.
