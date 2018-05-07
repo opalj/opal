@@ -38,7 +38,7 @@ import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.debug
+import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 
@@ -653,7 +653,7 @@ final class PKESequentialPropertyStore private (
                         // assert(pv.dependers.isEmpty)
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                        debug(
+                        trace(
                             "analysis progress",
                             s"used fallback $fallbackProperty for $e "+
                                 "(though an analysis was supposedly scheduled)"
