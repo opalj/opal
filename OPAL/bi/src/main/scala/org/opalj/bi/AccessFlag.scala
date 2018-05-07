@@ -293,6 +293,6 @@ object ACC_TRANSITIVE extends AccessFlag {
  */
 object ACC_STATIC_PHASE extends AccessFlag {
     final override val javaName = Some("static")
-    final override val mask = 0x0020
+    final override val mask = 0x0040
     override def toString: String = "STATIC_PHASE"
 }
