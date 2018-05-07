@@ -74,12 +74,11 @@ final class PKESequentialPropertyStore private (
     protected[this] var eagerOnUpdateComputationsCounter: Int = 0
     final def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
 
-    protected[this] var fallbacksUsedForComputedPropertiesCounter : Int = 0
-    final def fallbacksUsedForComputedProperties : Int = fallbacksUsedForComputedPropertiesCounter
+    protected[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
+    final def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
 
-    protected[this] var resolvedCyclesCounter : Int = 0
-    final def resolvedCycles : Int = resolvedCyclesCounter
-
+    protected[this] var resolvedCyclesCounter: Int = 0
+    final def resolvedCycles: Int = resolvedCyclesCounter
 
     private[this] var quiescenceCounter = 0
 
@@ -660,7 +659,7 @@ final class PKESequentialPropertyStore private (
                                 "(though an analysis was supposedly scheduled)"
                         )
                         fallbacksUsedForComputedPropertiesCounter += 1
-                        update(e, fallbackProperty,fallbackProperty, Nil)
+                        update(e, fallbackProperty, fallbackProperty, Nil)
 
                         continueComputation = true
                     }
@@ -689,7 +688,7 @@ final class PKESequentialPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
                     )
-                    for {                        cSCC ← cSCCs                    } {
+                    for { cSCC ← cSCCs } {
                         val headEPK = cSCC.head
                         val e = headEPK.e
                         val pkId = headEPK.pk.id
