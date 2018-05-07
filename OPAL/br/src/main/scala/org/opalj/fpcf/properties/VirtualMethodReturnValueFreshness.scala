@@ -41,7 +41,7 @@ sealed trait VirtualMethodReturnValueFreshnessMetaInformation extends PropertyMe
  * @author Florian Kuebler
  */
 sealed abstract class VirtualMethodReturnValueFreshness extends Property
-        with VirtualMethodReturnValueFreshnessMetaInformation {
+    with VirtualMethodReturnValueFreshnessMetaInformation {
 
     final def key: PropertyKey[VirtualMethodReturnValueFreshness] =
         VirtualMethodReturnValueFreshness.key
