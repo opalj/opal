@@ -114,17 +114,20 @@ public class ReferenceTypes {
         return staticEffectivelyFinalImmutableObj;
     }
 
-    @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Returns mutable object")
+    @Impure(value = "Returns mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticFinalObj() {
         return staticFinalObj;
     }
 
+    @SideEffectFree("Returns mutable object")
     @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticEffectivelyFinalObj() {
         return staticEffectivelyFinalObj;
     }
 
-    @Impure(value = "Uses non-final object", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Returns object from non-final field")
+    @Impure(value = "Returns object from non-final field", analyses = L0PurityAnalysis.class)
     public static Object getStaticNonFinalObj() {
         return staticNonFinalObj;
     }
@@ -158,7 +161,8 @@ public class ReferenceTypes {
         return getNewObject();
     }
 
-    @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Returns mutable object")
+    @Impure(value = "Returns mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticFinalObjIndirect() {
         return getStaticFinalObj();
     }
@@ -219,8 +223,8 @@ public class ReferenceTypes {
     // Reading and writing entries of fresh arrays is pure, though
     // Array access may throw IndexOutOfBounds exceptions, but this is pure
 
-    @Pure(value = "Uses array length of final array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses array length of final array")
+    @Pure(value = "Uses array length of final array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getFinalArrLength() {
         int[] arr = nonConstFinalArr;
@@ -229,10 +233,13 @@ public class ReferenceTypes {
         return arr.length;
     }
 
+    @CompileTimePure(value = "Uses array length of effectively final array",
+            eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
+                    pk = "FieldMutability", p = "EffectivelyFinalField"))
     @Pure(value = "Uses array length of effectively final array",
             eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
                     pk = "FieldMutability", p = "EffectivelyFinalField"),
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+            analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getEffectivelyFinalArrLength() {
         int[] arr = constEffectivelyFinalArr;
@@ -241,6 +248,7 @@ public class ReferenceTypes {
         return arr.length;
     }
 
+    @SideEffectFree("Uses array length")
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getNonFinalArrLength() {
         int[] arr = nonFinalArr;
@@ -249,8 +257,8 @@ public class ReferenceTypes {
         return arr.length;
     }
 
-    @Pure(value = "Uses array length from parameter array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses array length from parameter array")
+    @Pure(value = "Uses array length from parameter array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public static int getArrLengthStatic(int[] arr) {
         if (arr == null)
@@ -284,7 +292,7 @@ public class ReferenceTypes {
 
     @DomainSpecificExternallyPure(value = "Modified array is local",
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "LocalField"))
+                    p = "ExtensibleLocalField"))
     @Impure(value = "Modifies array entry/array not recognized as local", negate = true,
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
                     p = "ExtensibleLocalField", analyses = L2PurityAnalysis.class))
@@ -299,8 +307,8 @@ public class ReferenceTypes {
         arr[index] = value;
     }
 
-    @Pure(value = "Uses entries from fresh array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses entries from fresh array")
+    @Pure(value = "Uses entries from fresh array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array entries", analyses = L0PurityAnalysis.class)
     public static int getFreshArrayEntry(int index) {
         int[] arr = new int[]{1, 2, 3};
@@ -310,8 +318,8 @@ public class ReferenceTypes {
         return 0;
     }
 
-    @Pure(value = "Modifies entries on fresh array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Modifies entries on fresh array")
+    @Pure(value = "Modifies entries on fresh array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Modifies array entry", analyses = L0PurityAnalysis.class)
     public static int[] setFreshArrayEntry(int index, int value) {
         int[] arr = new int[]{1, 2, 3};
