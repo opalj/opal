@@ -140,7 +140,6 @@ package object bytecode {
      * exception is raised.
      */
     lazy val JRELibraryFolder: File = {
-
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {
             val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
