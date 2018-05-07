@@ -53,7 +53,7 @@ class AccessFlagsIterator private (
                 return potentialAccessFlags(index);
             }
         }
-        throw new BytecodeProcessingFailedException("Unknown access flag(s): "+flags.toHexString)
+        throw new BytecodeProcessingFailedException("Unknown access flag(s): 0x"+flags.toHexString)
     }
 }
 
