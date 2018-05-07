@@ -139,7 +139,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     ) extends AnalysisState {
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
-        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldMutability], Set[Expr[V]])] = Map.empty
+        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldMutability], Set[Option[Expr[V]]])] = Map.empty
 
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
@@ -183,9 +183,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ): Unit = {
             if (fieldMutabilityDependees.contains(f)) {
                 val (_, oldOwners) = fieldMutabilityDependees(f)
-                fieldMutabilityDependees += ((f, (eop, oldOwners ++ owner.toSet)))
+                fieldMutabilityDependees += ((f, (eop, oldOwners + owner)))
             } else {
-                fieldMutabilityDependees += ((f, (eop, owner.toSet)))
+                fieldMutabilityDependees += ((f, (eop, Set(owner))))
             }
         }
 
@@ -673,7 +673,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @note Modifies dependees as necessary.
      */
-    def checkStaticDataUsage(ep: EOptionP[DeclaredMethod, StaticDataUsage])(implicit state: State): Unit =
+    def checkStaticDataUsage(ep: EOptionP[DeclaredMethod, StaticDataUsage])(implicit state: State): Unit = {
         ep match {
             case FinalEP(_, UsesNoStaticData | UsesConstantDataOnly) ⇒
                 state.updateStaticDataUsage(None)
@@ -681,8 +681,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.updateStaticDataUsage(None)
                 atMost(LBPure)
             case _ ⇒
+                reducePurityLB(LBPure)
                 state.updateStaticDataUsage(Some(ep))
         }
+    }
 
     /**
      * Adds the dependee necessary if a field mutability is not known yet.
@@ -720,6 +722,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * purity level further.
      */
     def cleanupDependees()(implicit state: State): Unit = {
+        if (state.ubPurity ne CompileTimePure)
+            state.updateStaticDataUsage(None)
+
         if (!state.ubPurity.isDeterministic) {
             state.fieldMutabilityDependees = Map.empty
             state.classImmutabilityDependees = Map.empty
@@ -774,10 +779,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val dependees = state.fieldMutabilityDependees(e)
                 state.removeFieldMutabilityDependee(e)
                 dependees._2.foreach { e ⇒
-                    checkFieldMutability(
-                        eps.asInstanceOf[EOptionP[Field, FieldMutability]],
-                        Some(e)
-                    )
+                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldMutability]], e)
                 }
             case _: ClassImmutability ⇒
                 val e = eps.e.asInstanceOf[ObjectType]

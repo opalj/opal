@@ -56,26 +56,32 @@ class PrimitiveTypes {
     // Reading (effectively) final fields is pure, reading non-final fields is side-effect free,
     // writing fields is impure
 
-    @Pure(value = "Uses final field", analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
+    @CompileTimePure("Uses final field")
+    @Pure(value = "Uses final field", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
     public int getScaledFinalField() {
         return 2 * finalField;
     }
 
+    @CompileTimePure(value = "Uses effectively final field",
+            eps = @EP(cf = PrimitiveTypes.class, field = "effectivelyFinalField",
+                    pk = "FieldMutability", p = "EffectivelyFinalField"))
     @Pure(value = "Uses effectively final field",
             eps = @EP(cf = PrimitiveTypes.class, field = "effectivelyFinalField",
                     pk = "FieldMutability", p = "EffectivelyFinalField"),
-            analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
+            analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
     public int getScaledEffectivelyFinalField() {
         return effectivelyFinalField / 2;
     }
 
+    @SideEffectFree("Uses non-final field")
     @Impure(value = "Uses non-final field", analyses = L0PurityAnalysis.class)
     public int getNegatedNonFinalField() {
         return -nonFinalField;
     }
 
+    @SideEffectFree("Uses non-final static field")
     @Impure(value = "Uses non-final static field", analyses = L0PurityAnalysis.class)
     public static int getNonFinalStaticField() {
         return nonFinalStaticField;
@@ -104,11 +110,13 @@ class PrimitiveTypes {
 
     // Methods which are pure internally are side-effect free if they depend on non-final fields
 
+    @SideEffectFree("Uses non-final field")
     @Impure(value = "Uses non-final field", analyses = L0PurityAnalysis.class)
     public int sef_0_0() {
         return 2 * nonFinalField;
     }
 
+    @SideEffectFree("Uses non-final static field")
     @Impure(value = "Uses non-final static field", analyses = L0PurityAnalysis.class)
     public static int sef_0_1(int a) {
         return a + nonFinalStaticField;
@@ -147,6 +155,7 @@ class PrimitiveTypes {
     // Some methods have a known purity level even if they can not be analyzed
     // (defined in ai/reference.conf)
 
+    @SideEffectFree("Invokes known to be side-effect free native method")
     @Impure(value = "Analysis does not support preloaded purity values",
             analyses = L0PurityAnalysis.class)
     public long getCurrentTime(){

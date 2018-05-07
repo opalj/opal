@@ -68,8 +68,7 @@ public class Fields implements Cloneable {
     @Impure(value = "Allocates new objects",
             eps = @EP(cf = Object.class, pk = "ReturnValueFreshness",
                     method = "clone()Ljava/lang/Object;", p = "FreshReturnValue",
-                    analyses = L2PurityAnalysis.class), negate = true,
-            analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
+                    analyses = L2PurityAnalysis.class), negate = true)
     public Object clone() {
         Fields copy = null;
         try {

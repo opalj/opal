@@ -52,12 +52,16 @@ public class VirtualCalls {
         public abstract int abstractMethod(int i);
 
         // This (pure) method has an impure override in SubClassB
-        @Pure("Only returns immutable parameter")
+        @CompileTimePure("Only returns immutable parameter")
+        @Pure(value = "Only returns immutable parameter",
+                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public int nonAbstractMethod(int i) {
             return i;
         }
 
-        @Pure("Only returns double of immutable parameter")
+        @CompileTimePure("Only returns double of immutable parameter")
+        @Pure(value = "Only returns double of immutable parameter",
+                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public final int finalMethod(int i) {
             return i * 2;
         }
@@ -65,20 +69,23 @@ public class VirtualCalls {
 
     public class SubClassA extends BaseClass implements AnInterface {
 
-        @Pure(
-                "Only returns exception-free result of computation on immutable parameter")
+        @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
+        @Pure(value = "Only returns result of exception-free computation on immutable parameter",
+                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public int interfaceMethod(int i) {
             return i * 2;
         }
 
-        @Pure(
-                "Only returns exception-free result of computation on immutable parameter")
+        @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
+        @Pure(value = "Only returns result of cexception-free omputation on immutable parameter",
+                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public final int abstractMethod(int i) {
             return i + 2;
         }
 
-        @Pure(
-                "Only returns exception-free result of computation on immutable parameter")
+        @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
+        @Pure(value = "Only returns result of cexception-free omputation on immutable parameter",
+                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public int nonAbstractMethod(int i) {
             if (i > 0)
                 return i;
@@ -96,6 +103,7 @@ public class VirtualCalls {
             return (int) (i + System.getenv().size());
         }
 
+        @SideEffectFree("Uses value of instance field")
         @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
         public final int abstractMethod(int i) {
             return i + nonFinal;
@@ -112,7 +120,9 @@ public class VirtualCalls {
 
     public final class SubClassC extends BaseClass {
 
-        @Pure("returns constant 0")
+        @CompileTimePure("returns constant 0")
+        @Pure(value = "returns constant 0",
+                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public int abstractMethod(int i) {
             return 0;
         }
@@ -142,6 +152,7 @@ public class VirtualCalls {
             return 0;
         return ai.interfaceMethod(i);
     }
+
     @Pure(value = "Calls pure final method",
             analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
     @Impure(value = "Analysis doesn't handle virtual calls", analyses = L0PurityAnalysis.class)
@@ -152,6 +163,7 @@ public class VirtualCalls {
         return bc.abstractMethod(5);
     }
 
+    @SideEffectFree("Calls side-effect free final method")
     @Impure(value = "Calls impure final method", analyses = L0PurityAnalysis.class)
     public int abstractMethodCall2(SubClassB b) {
         BaseClass bc = b;
