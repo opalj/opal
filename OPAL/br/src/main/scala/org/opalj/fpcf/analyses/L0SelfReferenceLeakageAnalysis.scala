@@ -52,23 +52,7 @@ import org.opalj.fpcf.properties.LeaksSelfReference
 import org.opalj.fpcf.properties.SelfReferenceLeakage
 
 /**
- * A shallow analysis that determines for each new object that is created within a method
- * if it escapes the scope of the method.
- *
- * An object escapes the scope of a method if:
- *  - ... it is assigned to a field,
- *  - ... it is passed to a method,
- *  - ... it is stored in an array,
- *  - ... it is returned,
- *  - ... the object itself leaks it's self reference (`this`) by:
- *      - ... storing `this` in some static field or,
- *      - ... storing it's self reference in a data-structure (another object or array)
- *        passed to it (by assigning to a field or calling a method),
- *      - ... if a superclass leaks the self reference.
- *
- * This analysis can be used as a foundation for an analysis that determines whether
- * all instances created for a specific class never escape the creating method and,
- * hence, respective types cannot occur outside the respective contexts.
+ * A shallow analysis that computes the self reference leakage property.
  *
  * @author Michael Eichberg
  */
@@ -80,31 +64,18 @@ class L0SelfReferenceLeakageAnalysis(
     val SelfReferenceLeakage = org.opalj.fpcf.properties.SelfReferenceLeakage.Key
 
     /**
-     * Analyzes the given method to determine if it leaks the self reference.
-     *
-     * Currently, this method just returns `true`; it is intended to be overriden by
-     * subclasses.
-     */
-    def leaksSelfReference(method: Method): Boolean = {
-        // e.g., use AI()...
-        return true;
-    }
-
-    /**
      * Determines for the given class file if any method may leak the self reference (`this`).
      *
      * Hence, it only makes sense to call this method if all supertypes do not leak
      * their self reference.
      */
     private[this] def determineSelfReferenceLeakageContinuation(
-        classFile:       ClassFile,
-        immediateResult: Boolean
+        classFile: ClassFile
     ): PropertyComputationResult = {
 
-        import project.logContext
+        val classHierarchy = project.classHierarchy
 
         val classType = classFile.thisType
-        val classHierarchy = project.classHierarchy
 
         def thisIsSubtypeOf(otherType: ObjectType): Boolean = {
             classHierarchy.isSubtypeOf(classType, otherType.asObjectType).isYesOrUnknown
@@ -117,6 +88,7 @@ class L0SelfReferenceLeakageAnalysis(
             val returnType = method.returnType
             if (returnType.isObjectType && thisIsSubtypeOf(returnType.asObjectType))
                 return true;
+
             implicit val code = method.body.get
             val instructions = code.instructions
             val max = instructions.length
@@ -153,114 +125,111 @@ class L0SelfReferenceLeakageAnalysis(
 
         val doesLeakSelfReference =
             classFile.methods exists { m ⇒
-                if (m.isNative ||
-                    (
-                        m.isNotStatic && m.isNotAbstract &&
-                        potentiallyLeaksSelfReference(m) && // <= quick check
-                        leaksSelfReference(m)
-                    )) {
-                    if (debug)
+                if (m.isNative || (
+                    m.isNotStatic && m.isNotAbstract && potentiallyLeaksSelfReference(m)
+                )) {
+                    if (debug) {
                         trace("analysis result", m.toJava("leaks self reference"))
+                    }
                     true
                 } else {
-                    if (debug)
-                        trace("analysis result", m.toJava("conceales self reference"))
+                    if (debug) {
+                        trace("analysis result", m.toJava("conceals self reference"))
+                    }
                     false
                 }
-
             }
         if (doesLeakSelfReference) {
-            if (debug)
-                trace("analysis result", s"${classFile.thisType.toJava} leaks its self reference")
-            if (immediateResult)
-                Result(classFile, LeaksSelfReference)
-            else
-                Result(classFile, LeaksSelfReference)
+            if (debug) {
+                trace("analysis result", s"${classType.toJava} leaks its self reference")
+            }
+            Result(classType, LeaksSelfReference)
         } else {
-            if (debug)
+            if (debug) {
                 trace(
                     "analysis result",
-                    s"${classFile.thisType.toJava} does not leak its self reference"
+                    s"${classType.toJava} does not leak its self reference"
                 )
-            if (immediateResult)
-                Result(classFile, DoesNotLeakSelfReference)
-            else
-                Result(classFile, DoesNotLeakSelfReference)
+            }
+            Result(classType, DoesNotLeakSelfReference)
         }
     }
 
     def determineSelfReferenceLeakage(classFile: ClassFile): PropertyComputationResult = {
-
-        if (classFile.thisType eq ObjectType.Object) {
-            if (debug)
+        val classType = classFile.thisType
+        if (classType eq ObjectType.Object) {
+            if (debug) {
                 trace(
                     "analysis result",
                     "java.lang.Object does not leak its self reference [configured]"
                 )
-            return Result(ObjectType.Object, DoesNotLeakSelfReference);
+            }
+            return Result(classType /* <=> ObjectType.Object*/ , DoesNotLeakSelfReference);
         }
 
         // Let's check the direct supertypes w.r.t. their leakage property.
-        val superclassType = classFile.superclassType.get
+        val superClassType = classFile.superclassType.get
         val interfaceTypes = classFile.interfaceTypes
 
         // Given that we may have Java 8+, we may have a default method that leaks
         // the self reference.
-        val superClassFiles: Seq[ClassFile] =
-            if (superclassType ne ObjectType.Object)
-                superclassFileOption.get +: interfaceTypesOption.map(_.get)
+        val superTypes: Seq[ObjectType] =
+            if (superClassType == ObjectType.Object)
+                interfaceTypes
             else
-                Seq.empty
+                interfaceTypes :+ superClassType
 
-        if (superClassFiles.nonEmpty) {
-            if (debug)
-                trace(
-                    "analysis progress",
-                    s"${classFile.thisType.toJava} waiting on leakage information about: ${superClassFiles.map(_.thisType.toJava).mkString(", ")}"
-                )
-            var dependees = Map.empty[Entity, EOptionP[Entity, SelfReferenceLeakage]]
+        if (debug)
+            trace(
+                "analysis progress",
+                s"${classType.toJava} requiring leakage information about: ${superTypes.map(_.toJava).mkString(", ")}"
+            )
+        var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
+        propertyStore(superTypes, SelfReferenceLeakage) foreach {
+            case epk @ EPK(e, _) ⇒ dependees += ((e, epk))
 
-            propertyStore(superClassFiles, SelfReferenceLeakage) foreach {
-                case epk @ EPK(e, _) ⇒ dependees += ((e, epk))
+            case EPS(_, _ /*LeaksSelfReference*/ , LeaksSelfReference) ⇒
+                return Result(classFile, LeaksSelfReference);
 
-                case eps @ EPS(_, DoesNotLeakSelfReference, isFinal) ⇒
-                    if (isFinal)
-                        return Result(classFile, LeaksSelfReference);
-                    else
-                        dependees += ((e, eps))
+            case EPS(e, DoesNotLeakSelfReference, _ /*DoesNotLeakSelfReference*/ ) ⇒
+            // nothing to do ...
 
-                case EPS(_, LeaksSelfReference, isFinal) ⇒
-                    assert(isFinal)
-                    return Result(classFile, LeaksSelfReference);
+            case eps @ EPS(e, _, _)                                                ⇒ dependees += ((e, eps))
 
+        }
+
+        // First, let's wait for the results for the supertypes...
+        def c(eps: SomeEPS): PropertyComputationResult = {
+            val EPS(e, lb, ub) = eps
+            if (ub == LeaksSelfReference) {
+                // ... we have a final result
+                return Result(classType, LeaksSelfReference);
+            }
+            // Update dependee list...
+            if (lb == DoesNotLeakSelfReference) {
+                dependees -= e
+            } else {
+                dependees = (dependees - eps.e) + ((eps.e, eps))
             }
 
             if (dependees.isEmpty) {
-                determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
+                determineSelfReferenceLeakageContinuation(classFile)
             } else {
-                def c(eps: SomeEPS): PropertyComputationResult = {
-                    val EPS(e, p, isFinal) = eps
-                    p match {
-                        case LeaksSelfReference ⇒
-                            if (isFinal) {
-                                return Result(e, LeaksSelfReference);
-                            }
-                            dependees = dependees - e + ((e, EPS(e, LeaksSelfReference, isFinal)))
-
-                        case DoesNotLeakSelfReference ⇒
-                            dependees = dependees - e
-                    }
-                    if (dependees.isEmpty)
-                        determineSelfReferenceLeakageContinuation(classFile, immediateResult = false)
-                    else
-                        IntermediateResult(classFile, LeaksSelfReference, dependees.values, c)
-                }
-                IntermediateResult(classFile, LeaksSelfReference, dependees.values, c)
+                IntermediateResult(classType, lb, ub, dependees.values, c)
             }
-
-        } else {
-            determineSelfReferenceLeakageContinuation(classFile, immediateResult = true)
         }
+
+        if (dependees.isEmpty) {
+            determineSelfReferenceLeakageContinuation(classFile)
+        } else {
+            IntermediateResult(
+                classFile,
+                lb = LeaksSelfReference, ub = DoesNotLeakSelfReference,
+                dependees.values,
+                c
+            )
+        }
+
     }
 }
 

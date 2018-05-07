@@ -27,19 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package value
 
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.{BaseType, ReferenceType}
-import org.opalj.br.{BooleanType, ByteType, CharType, ShortType, IntegerType, LongType}
-import org.opalj.br.{FloatType, DoubleType}
+
+import org.opalj.br.Type
+import org.opalj.br.BaseType
+import org.opalj.br.ReferenceType
+import org.opalj.br.BooleanType
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
+import org.opalj.br.ShortType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.FloatType
+import org.opalj.br.DoubleType
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
  *
  * @author Michael Eichberg
  */
-sealed trait TypeInformation { // TODO Rename to ValueInformation
+sealed trait ValueInformation {
 
     /**
      * Returns `true` if no type information is available.
@@ -51,6 +60,15 @@ sealed trait TypeInformation { // TODO Rename to ValueInformation
 
     /** True in case of a value with primitive type; undefined if the type is unknown. */
     def isPrimitiveValue: Boolean
+
+}
+
+object ValueInformation{
+
+
+    def apply(t : Type) : ValueInformation = {
+        ???
+    }
 
 }
 
@@ -67,17 +85,17 @@ sealed trait TypeInformation { // TODO Rename to ValueInformation
  *
  * @author Michael Eichberg
  */
-case object UnknownType extends TypeInformation { // TODO Rename to UnknownValue
+case object UnknownValue extends ValueInformation {
 
     override def isUnknownValue: Boolean = true
 
-    override def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
+    override def isPrimitiveValue: Boolean = throw DomainException("no value information available")
 
-    override def isReferenceValue: Boolean = throw DomainException("the type is unknown")
+    override def isReferenceValue: Boolean = throw DomainException("no value information available")
 
 }
 
-trait KnownType extends TypeInformation { // TODO Rename to KnownValue
+trait KnownValue extends ValueInformation {
 
     final override def isUnknownValue: Boolean = false
 
@@ -86,7 +104,7 @@ trait KnownType extends TypeInformation { // TODO Rename to KnownValue
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue[T <: BaseType, DomainPrimitiveValue <: AnyRef] extends KnownType {
+sealed trait IsPrimitiveValue[T <: BaseType, DomainPrimitiveValue <: AnyRef] extends KnownValue {
     this: DomainPrimitiveValue ⇒
 
     final def isReferenceValue: Boolean = false
@@ -177,7 +195,7 @@ trait IsDoubleValue[DomainDoubleValue <: AnyRef]
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownType {
+trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownValue {
     this: DomainReferenceValue ⇒
 
     final override def isReferenceValue: Boolean = true
@@ -311,7 +329,6 @@ trait IsReferenceValue[DomainReferenceValue <: AnyRef] extends KnownType {
         val baseValues = this.baseValues
         if (baseValues.isEmpty) Traversable(this) else baseValues
     }
-
 }
 
 /**

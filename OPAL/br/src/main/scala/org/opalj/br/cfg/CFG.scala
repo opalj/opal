@@ -473,7 +473,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
-        CFG(newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
+        CFG[NewI, NewC](
+            newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks
+        )
     }
 
     // ---------------------------------------------------------------------------------------------

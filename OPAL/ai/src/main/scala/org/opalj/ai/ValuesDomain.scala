@@ -31,6 +31,7 @@ package ai
 
 import scala.language.higherKinds
 import scala.reflect.ClassTag
+
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.ComputationalTypeReference
@@ -40,6 +41,7 @@ import org.opalj.br.TopVariableInfo
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.NullVariableInfo
 import org.opalj.br.ObjectVariableInfo
+import org.opalj.value.ValueInformation
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -689,10 +691,10 @@ trait ValuesDomain {
      * }
      * }}}
      */
-    def typeOfValue(value: DomainValue): TypeInformation = {
+    def typeOfValue(value: DomainValue): ValueInformation = {
         value match {
-            case ta: TypeInformation ⇒ ta
-            case _                   ⇒ UnknownType
+            case ta: ValueInformation ⇒ ta
+            case _                   ⇒ UnknownValue
         }
     }
 

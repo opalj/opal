@@ -30,9 +30,14 @@ package org.opalj
 package ai
 package fpcf
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.value.ValueInformation
 
 sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInformation {
 
@@ -49,31 +54,28 @@ sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInform
  *      If the method always throws an exception, then the returnValue is `None`.
  */
 case class MethodReturnValue private (
-        returnValue: Option[Domain#Value]
+        returnValue: ValueInformation
 ) extends Property with MethodReturnValuePropertyMetaInformation {
 
-    assert(returnValue.isEmpty || (returnValue.get ne null), "returnValue must not be null")
+    assert(returnValue ne null, "returnValue must not be null")
 
-    def this(returnValue: Domain#Value) { this(Some(returnValue)) }
-
-    final def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
-
-    final def isRefinable = true
+    final override def key: PropertyKey[MethodReturnValue] = MethodReturnValue.key
 
 }
 
 object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
 
-    final val DeclaredReturnType = MethodReturnValue(None)
-
     /**
      * The key associated with every purity property.
      */
-    final val key: PropertyKey[MethodReturnValue] = PropertyKey.create(
-        "MethodReturnValue",
-        /* Default / Fallback  */ DeclaredReturnType,
-        /*  Cyclic Resolution  */ DeclaredReturnType
+    final val key = PropertyKey.create[DeclaredMethod,MethodReturnValue](
+        "org.opalj.value.MethodReturnValue",
+        (_ : PropertyStore, m : DeclaredMethod) ⇒ {
+            MethodReturnValue(ValueInformation(m.descriptor.returnType))
+        },
+        (_ : PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ {
+            FinalEP(eps.e, eps.ub)
+        }
     )
 
 }
-

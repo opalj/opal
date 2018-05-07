@@ -34,7 +34,19 @@ import org.opalj.br.ObjectType
 
 /**
  * Determines if an object potentially leaks its self reference (`this`) by passing
- * it to methods or assigning it to fields.
+ * assigning it to fields or passing it to methods which assign it to fields.
+ * Hence, it computes a special escape information.
+ *
+ * Here, the self-reference escapes the scope of a class if:
+ *  - ... it is assigned to a (static) field,
+ *  - ... it is passed to a method that assigns it to a field,
+ *  - ... it is stored in an array,
+ *  - ... it is returned (recall that constructors have a void return type),
+ *  - ... if a superclass leaks the self reference.
+ *
+ * This property can be used as a foundation for an analysis that determines whether
+ * all instances created for a specific class never escape their creating methods and,
+ * hence, respective types cannot occur outside the respective contexts.
  */
 sealed trait SelfReferenceLeakage extends Property {
 

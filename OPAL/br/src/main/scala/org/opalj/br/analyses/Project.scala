@@ -539,7 +539,7 @@ class Project[Source] private (
                 } else {
                     val newLength = Math.max(projectInformation.length * 2, pikUId * 2)
                     val newProjectInformation = new AtomicReferenceArray[AnyRef](newLength)
-                    for (i ← 0 until projectInformation.length()) {
+                    org.opalj.control.iterateUntil(0, projectInformation.length()) { i ⇒
                         newProjectInformation.set(i, projectInformation.get(i))
                     }
                     this.projectInformation = newProjectInformation
