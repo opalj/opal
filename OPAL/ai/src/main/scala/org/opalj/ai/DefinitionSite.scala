@@ -31,45 +31,38 @@ package ai
 
 import org.opalj.br.Method
 
-sealed class DefinitionSite(val method: Method, val pc: PC, val uses: PCs) {
+// TODO @Florian/@Dominik Please, document (in parituclar the special case "...FilteredUses" and that equal is not defined w.r.t. "uses"
+sealed class DefinitionSite(val method: Method, val pc: Int, val uses: PCs) {
 
     def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSite]
 
     override def equals(other: Any): Boolean = other match {
-        case that: DefinitionSite ⇒
-            (that canEqual this) &&
-                method == that.method &&
-                pc == that.pc
-        case _ ⇒ false
+        case that: DefinitionSite ⇒ (that canEqual this) && method == that.method && pc == that.pc
+        case _                    ⇒ false
     }
 
-    override def hashCode(): Int = {
-        val state: Seq[Any] = Seq(method, pc)
-        state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
-    }
+    override def hashCode(): Int = ((method.hashCode() * 31) + pc)
 
-    override def toString = s"DefinitionSite($method, $pc)"
+    override def toString = s"DefinitionSite($method,pc=$pc,uses=$uses)"
 }
 
 object DefinitionSite {
-    def unapply(ds: DefinitionSite): Option[(Method, PC, PCs)] = Some((ds.method, ds.pc, ds.uses))
+    def unapply(ds: DefinitionSite): Option[(Method, Int, PCs)] = Some((ds.method, ds.pc, ds.uses))
 }
-final class DefinitionSiteWithFilteredUses(method: Method, pc: PC, uses: PCs)
+
+final class DefinitionSiteWithFilteredUses(method: Method, pc: Int, uses: PCs)
     extends DefinitionSite(method, pc, uses) {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSiteWithFilteredUses]
 
     override def equals(other: Any): Boolean = other match {
-        case that: DefinitionSiteWithFilteredUses ⇒
-            super.equals(that) &&
-                uses == that.uses
-        case _ ⇒ false
+        case that: DefinitionSiteWithFilteredUses ⇒ super.equals(that) && uses == that.uses
+        case _                                    ⇒ false
     }
 
-    override def hashCode(): Int = {
-        val state: Seq[Any] = Seq(super.hashCode(), uses)
-        state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
-    }
+    override def hashCode(): Int = super.hashCode() * 31 + uses.hashCode()
 
-    override def toString = s"DefinitionSiteWithFilteredUses($method, $pc, $uses)"
+    override def toString = s"DefinitionSiteWithFilteredUses($method,pc=$pc,uses=$uses)"
 }
+
+// TODO @Florian add apply/unapply for DefinitionSiteWithFilteredUses... better names?
