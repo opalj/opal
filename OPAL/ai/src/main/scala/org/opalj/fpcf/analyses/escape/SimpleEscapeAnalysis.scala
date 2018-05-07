@@ -31,9 +31,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSitesKey
-import org.opalj.ai.ValueOrigin
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
@@ -41,13 +39,15 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis.V
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSitesKey
+import org.opalj.ai.ValueOrigin
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
+import org.opalj.tac.TACStmts
 
 class SimpleEscapeAnalysisContext(
         val entity:                  Entity,
@@ -55,7 +55,7 @@ class SimpleEscapeAnalysisContext(
         val targetMethod:            DeclaredMethod,
         val uses:                    IntTrieSet,
         val code:                    Array[Stmt[V]],
-        val cfg:                     CFG,
+        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
@@ -129,7 +129,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
         targetMethod: DeclaredMethod,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
-        cfg:          CFG
+        cfg:          CFG[Stmt[V], TACStmts[V]]
     ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
         entity,
         defSite,

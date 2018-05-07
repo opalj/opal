@@ -31,11 +31,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSitesKey
-import org.opalj.ai.Domain
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.domain.RecordDefUse
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -46,13 +42,17 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis.V
 import org.opalj.fpcf.properties._
+import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSitesKey
+import org.opalj.ai.Domain
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
+import org.opalj.tac.TACStmts
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  Entity,
@@ -60,13 +60,12 @@ class InterProceduralEscapeAnalysisContext(
         val targetMethod:            DeclaredMethod,
         val uses:                    IntTrieSet,
         val code:                    Array[Stmt[V]],
-        val cfg:                     CFG,
+        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
         val propertyStore:           PropertyStore,
         val isMethodOverridable:     Method ⇒ Answer
-
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with IsMethodOverridableContainer
@@ -74,7 +73,7 @@ class InterProceduralEscapeAnalysisContext(
     with DeclaredMethodsContainer
     with CFGContainer
 
-class InterProceduralEscapeAnalysisState()
+class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
 
 /**
@@ -142,7 +141,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
         targetMethod: DeclaredMethod,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
-        cfg:          CFG
+        cfg:          CFG[Stmt[V], TACStmts[V]]
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         defSite,

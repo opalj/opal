@@ -64,6 +64,7 @@ import org.opalj.tac.VirtualMethodCall
  * @author Florian Kuebler
  */
 trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
+
     override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
 
     override type AnalysisState <: AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
