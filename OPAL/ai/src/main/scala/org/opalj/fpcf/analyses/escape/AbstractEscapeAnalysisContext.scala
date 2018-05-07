@@ -43,6 +43,8 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
+import org.opalj.tac.TACStmts
+import org.opalj.tac.Var
 
 /**
  * Provides the basic information corresponding to an entity to determine its escape information.
@@ -83,7 +85,9 @@ trait AbstractEscapeAnalysisContext {
 }
 
 trait CFGContainer {
-    val cfg: CFG
+    type V <: Var[V]
+
+    val cfg: CFG[Stmt[V], TACStmts[V]]
 }
 
 trait PropertyStoreContainer {

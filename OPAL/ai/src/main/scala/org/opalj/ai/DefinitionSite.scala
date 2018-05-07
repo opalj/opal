@@ -31,7 +31,7 @@ package ai
 
 import org.opalj.br.Method
 
-sealed class DefinitionSite(val method: Method, val pc: PC, val uses: PCs) {
+sealed class DefinitionSite(val method: Method, val pc: Int, val uses: PCs) {
 
     def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSite]
 
@@ -52,9 +52,9 @@ sealed class DefinitionSite(val method: Method, val pc: PC, val uses: PCs) {
 }
 
 object DefinitionSite {
-    def unapply(ds: DefinitionSite): Option[(Method, PC, PCs)] = Some((ds.method, ds.pc, ds.uses))
+    def unapply(ds: DefinitionSite): Option[(Method, Int, PCs)] = Some((ds.method, ds.pc, ds.uses))
 }
-final class DefinitionSiteWithFilteredUses(method: Method, pc: PC, uses: PCs)
+final class DefinitionSiteWithFilteredUses(method: Method, pc: Int, uses: PCs)
     extends DefinitionSite(method, pc, uses) {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSiteWithFilteredUses]

@@ -53,6 +53,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
+import org.opalj.tac.TACStmts
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  Entity,
@@ -60,7 +61,7 @@ class InterProceduralEscapeAnalysisContext(
         val targetMethod:            DeclaredMethod,
         val uses:                    IntTrieSet,
         val code:                    Array[Stmt[V]],
-        val cfg:                     CFG,
+        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
@@ -142,7 +143,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
         targetMethod: DeclaredMethod,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
-        cfg:          CFG
+        cfg:          CFG[Stmt[V], TACStmts[V]]
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         defSite,

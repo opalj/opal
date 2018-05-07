@@ -68,6 +68,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.TACStmts
 
 import scala.annotation.switch
 
@@ -376,7 +377,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         defSite: DefinitionSite,
         index:   PC,
         code:    Array[Stmt[V]],
-        cfg:     CFG
+        cfg:     CFG[Stmt[V], TACStmts[V]]
     ): PropertyComputationResult = {
         val uses = defSite.uses.map(pc ⇒ code.indexWhere(_.pc == pc)).filter(_ != -1)
         val ctx = createContext(defSite, index, declaredMethods(defSite.method), uses, code, cfg)
@@ -389,7 +390,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         targetMethod: DeclaredMethod,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
-        cfg:          CFG
+        cfg:          CFG[Stmt[V], TACStmts[V]]
     ): AnalysisContext
 
     def createState: AnalysisState

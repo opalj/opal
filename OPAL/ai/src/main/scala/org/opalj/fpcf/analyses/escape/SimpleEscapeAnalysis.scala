@@ -48,6 +48,7 @@ import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
+import org.opalj.tac.TACStmts
 
 class SimpleEscapeAnalysisContext(
         val entity:                  Entity,
@@ -55,7 +56,7 @@ class SimpleEscapeAnalysisContext(
         val targetMethod:            DeclaredMethod,
         val uses:                    IntTrieSet,
         val code:                    Array[Stmt[V]],
-        val cfg:                     CFG,
+        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
@@ -129,7 +130,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
         targetMethod: DeclaredMethod,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
-        cfg:          CFG
+        cfg:          CFG[Stmt[V], TACStmts[V]]
     ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
         entity,
         defSite,
