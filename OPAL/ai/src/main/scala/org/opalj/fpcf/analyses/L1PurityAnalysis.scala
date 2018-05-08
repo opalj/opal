@@ -300,15 +300,20 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @param definedMethod a defined method with body.
      */
-    def determinePurity(definedMethod: DeclaredMethod): PropertyComputationResult = {
-        val DefinedMethod(_, method) = definedMethod
+    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+        val method = definedMethod.methodDefinition
+        val declClass = method.classFile.thisType
+
+        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // don't re-analyze the code
+        if(declClass ne definedMethod.declaringClassType)
+            return baseMethodPurity(definedMethod);
 
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
             return Result(definedMethod, LBImpure);
 
         val TACode(_, code, cfg, _, _) = tacai(method)
-        val declClass = method.classFile.thisType
 
         implicit val state: State =
             new State(LBPure, LBPure, Set.empty, method, definedMethod, declClass, code)
@@ -402,8 +407,8 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
     def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.filter { dm ⇒
-            dm.hasDefinition && dm.methodDefinition.body.isDefined
+        val methodsWithBody = dms.collect {
+            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined => dm.asDefinedMethod
         }
         ps.scheduleForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity

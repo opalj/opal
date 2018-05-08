@@ -60,6 +60,7 @@ import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.tac.ArrayLength
@@ -654,20 +655,35 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Unit
 
     /**
+     * Retrieves and commits the methods purity as calculated for its declaring class type for the
+     * current DefinedMethod that represents the non-overwritten method in a subtype.
+     */
+    def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
+
+        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
+            case FinalEP(_, p) => Result(dm, p)
+            case ep @ IntermediateEP(_, lb, ub) => IntermediateResult(dm, lb, ub, Seq(ep), c)
+            case epk => IntermediateResult(dm, LBImpure, CompileTimePure, Seq(epk), c)
+        }
+
+        c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
+    }
+
+    /**
      * Determines the purity of the given method.
      *
      * @param definedMethod A defined method with a body.
      */
-    def determinePurity(definedMethod: DeclaredMethod): PropertyComputationResult
+    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult
 
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
             case dm: DefinedMethod if dm.definedMethod.body.isDefined ⇒
                 determinePurity(dm)
-            case dm: DefinedMethod ⇒ Result(dm, Impure)
+            case dm: DeclaredMethod ⇒ Result(dm, Impure)
             case _ ⇒
-                throw new UnknownError("purity is only defined for definedmethods")
+                throw new UnknownError("purity is only defined for declared methods")
         }
     }
 

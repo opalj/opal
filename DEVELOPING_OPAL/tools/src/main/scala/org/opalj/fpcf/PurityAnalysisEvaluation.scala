@@ -140,7 +140,8 @@ object PurityAnalysisEvaluation {
         val JDKFiles = if (withoutJDK) Traversable.empty
         else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
-        val projectEvaluationDir = new File(evaluationDir, cp.getName)
+        val dirName = if(cp eq JRELibraryFolder) "JDK" else cp.getName
+        val projectEvaluationDir = new File(evaluationDir, dirName)
         if (!projectEvaluationDir.exists()) projectEvaluationDir.mkdir()
 
         var projectTime: Seconds = Seconds.None
@@ -183,7 +184,8 @@ object PurityAnalysisEvaluation {
         }
 
         val declaredMethods = project.get(DeclaredMethodsKey)
-        val projMethods = for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody) yield m._1
+        val projMethods = for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
+            yield declaredMethods(m._1)
 
         time {
             val pks: Set[PropertyKind] = support.flatMap(
@@ -200,8 +202,8 @@ object PurityAnalysisEvaluation {
             LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
             analysis.startLazily(project, propertyStore)
 
-            projMethods.foreach { m ⇒
-                propertyStore(declaredMethods(m), Purity.key)
+            projMethods.foreach { dm ⇒
+                propertyStore(dm, Purity.key)
             }
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
@@ -219,11 +221,10 @@ object PurityAnalysisEvaluation {
             if (runtimeWriter != null) runtimeWriter.close()
         }
 
-        val purityEs = propertyStore.entities(Purity.key).filter {
-            case FinalEP(_, Impure)                       ⇒ false
-            case FinalEP(m, _) if projMethods.contains(m) ⇒ true
-            case _                                        ⇒ false
-        }.toSeq
+        val purityEs = propertyStore(projMethods, Purity.key).filter {
+            case FinalEP(_, p) => p ne Impure
+            case ep => throw new RuntimeException(s"non final purity result $ep")
+        }
 
         val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
         val pure = purityEs.collect { case FinalEP(m: DefinedMethod, LBPure) ⇒ m }
@@ -355,7 +356,7 @@ object PurityAnalysisEvaluation {
         }
 
         if (cp eq null) {
-            throw new IllegalArgumentException(s"no classpath given (use -cp <classpath> or -JDK")
+            throw new IllegalArgumentException(s"no classpath given (use -cp <classpath> or -JDK)")
         }
 
         val analysis = analysisName match {
