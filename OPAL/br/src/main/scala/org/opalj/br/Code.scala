@@ -579,6 +579,7 @@ final class Code private (
         finalPCs:       PCs,
         cfJoins:        IntTrieSet
     ): LiveVariables = {
+        // IMPROVE Use StackMapTable (if available) to preinitialize the live variable information
         val instructions = this.instructions
         val instructionsLength = instructions.length
         val liveVariables = new Array[BitArraySet](instructionsLength)
