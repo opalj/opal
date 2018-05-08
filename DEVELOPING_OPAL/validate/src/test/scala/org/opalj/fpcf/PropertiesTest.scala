@@ -66,7 +66,7 @@ import org.opalj.fpcf.properties.PropertyMatcher
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
-    val withRT = false
+    def withRT = false
 
     /**
      * The representation of the fixture project.

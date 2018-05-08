@@ -67,7 +67,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
 
-        if (!declaredMethod.hasDefinition)
+        if (!declaredMethod.hasDefinition || declaredMethod.methodDefinition.body.isEmpty)
             return Result(declaredMethod, UsesVaryingData);
 
         val method = declaredMethod.methodDefinition
