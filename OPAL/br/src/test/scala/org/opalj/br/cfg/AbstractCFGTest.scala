@@ -36,21 +36,27 @@ import org.opalj.io.writeAndOpen
 import org.opalj.br.instructions.Instruction
 
 /**
- * Helper methods to test the constructed CFGs.
+ * Helper methods to test the CFG related methods.
  *
  * @author Michael Eichberg
  */
-trait CFGTests extends FunSpec with Matchers {
+abstract class AbstractCFGTest extends FunSpec with Matchers {
 
+    /**
+     * Tests the correspondence of the information made available using a CFG
+     * and `Code.cfPCs`.
+     */
     def cfgNodesCheck(
-        m:              Method,
-        code:           Code,
-        cfg:            CFG[Instruction, Code],
+        m:    Method,
+        code: Code,
+        cfg:  CFG[Instruction, Code]
+    )(
+        implicit
         classHierarchy: ClassHierarchy
     ): Unit = {
         // validate that cfPCs returns the same information as the CFG
-        val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs(classHierarchy)
-        val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs(classHierarchy)
+        val (cfJoins, cfForks, forkTargetPCs) = code.cfPCs
+        val (allPredecessorPCs, exitPCs, cfJoinsAlt) = code.predecessorPCs
 
         assert(cfJoins == cfJoinsAlt)
 
@@ -97,7 +103,7 @@ trait CFGTests extends FunSpec with Matchers {
         assert((code.cfJoins -- cfJoins).isEmpty)
     }
 
-    def testCFGProperties(
+    def printCFGOnFailure(
         method:         Method,
         code:           Code,
         cfg:            CFG[Instruction, Code],
@@ -109,7 +115,9 @@ trait CFGTests extends FunSpec with Matchers {
             cfgNodesCheck(method, code, cfg, classHierarchy)
             f
         } catch {
-            case t: Throwable ⇒ writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv"); throw t
+            case t: Throwable ⇒
+                writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv")
+                throw t
         }
     }
 

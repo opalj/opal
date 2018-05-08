@@ -43,23 +43,14 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 
 /**
- * Just reads a lot of classfiles and builds CFGs for all methods with a body to
- * test if no exceptions occur and that the different methods return comparable results.
+ * Just reads a lot of class files and computes CFGs related information for all methods
+ * with a body. Basically, tests if no exceptions occur and that the different methods
+ * return comparable results.
  *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-class CFGFactoryTest extends CFGTests {
-
-    def analyzeProject(project: SomeProject): Unit = {
-        time {
-            try {
-                doAnalyzeProject(project)
-            } catch {
-                case ce: ConcurrentExceptions ⇒ ce.printStackTrace(Console.err)
-            }
-        } { t ⇒ info("the analysis took "+t.toSeconds) }
-    }
+class CFGsSmokeTest extends AbstractCFGTest {
 
     def doAnalyzeProject(project: SomeProject): Unit = {
         implicit val classHierarchy = project.classHierarchy
@@ -141,7 +132,7 @@ class CFGFactoryTest extends CFGTests {
             }
 
             // check that cfg.successors and cfg.foreachSuccessor return the same sets
-            code.iterate { (pc, instruction) ⇒
+            code iterate { (pc, instruction) ⇒
                 {
                     val cfgSuccessors = cfg.successors(pc)
                     var cfgForeachSuccessors = IntTrieSet.empty
@@ -173,6 +164,14 @@ class CFGFactoryTest extends CFGTests {
             s"analyzed ${methodsCount.get}/$methodsWithBodyCount methods "+
                 s"in ∑ ${Nanoseconds(executionTime.get).toSeconds}"
         )
+    }
+
+    def analyzeProject(project: SomeProject): Unit = {
+        time {
+            try {                doAnalyzeProject(project)            } catch {
+                case ce: ConcurrentExceptions ⇒ ce.printStackTrace(Console.err)
+            }
+        } { t ⇒ info("the analysis took "+t.toSeconds) }
     }
 
     //

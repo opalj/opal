@@ -41,11 +41,11 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectJDKTest extends FunSpec with Matchers {
+class ProjectTest extends FunSpec with Matchers {
 
     describe("Project") {
 
-        it("\"methodsWithBody\" should - for a simple project - only return methods with bodies") {
+        it("\"methodsWithBody\" should only return methods with bodies") {
             val project = TestSupport.createJREProject
             project.allMethodsWithBody.foreach { m ⇒ assert(m.body.isDefined) }
         }
