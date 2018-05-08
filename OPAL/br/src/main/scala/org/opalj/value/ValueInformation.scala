@@ -208,7 +208,7 @@ case object ADoubleValue extends IsDoubleValue
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue[T <: IsReferenceValue[T]] extends KnownValue { this: T ⇒
+trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T ⇒
 
     final override def isVoid: Boolean = false
 
