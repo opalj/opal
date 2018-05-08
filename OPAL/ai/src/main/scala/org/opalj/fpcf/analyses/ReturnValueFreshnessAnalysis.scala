@@ -145,8 +145,30 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * Ensures that we invoke [[doDetermineFreshness]] for [[org.opalj.br.DefinedMethod]]s only.
      */
     def determineFreshness(e: Entity): PropertyComputationResult = e match {
-        case dm: DefinedMethod ⇒ doDetermineFreshness(dm)
-        case _                 ⇒ throw new RuntimeException(s"Unsupported entity $e")
+        case dm @ DefinedMethod(dc, m) if m.classFile.thisType == dc ⇒ doDetermineFreshness(dm)
+
+        // if the method is inherited, query the result for the one in its defining class
+        case DefinedMethod(_, m) ⇒
+
+            def c(someEPS: SomeEPS): PropertyComputationResult = {
+                handleReturnValueFreshness(someEPS)
+            }
+
+            def handleReturnValueFreshness(
+                eOptP: SomeEOptionP
+            ): PropertyComputationResult = eOptP match {
+                case FinalEP(_, p) ⇒ Result(e, p)
+                case IntermediateEP(_, lb, ub) ⇒
+                    IntermediateResult(e, lb, ub, Set(eOptP), c)
+                case _ ⇒
+                    IntermediateResult(e, NoFreshReturnValue, FreshReturnValue, Set(eOptP), c)
+            }
+
+            handleReturnValueFreshness(
+                propertyStore(declaredMethods(m), ReturnValueFreshness.key)
+            )
+
+        case _ ⇒ throw new RuntimeException(s"Unsupported entity $e")
     }
 
     /**
