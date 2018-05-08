@@ -307,7 +307,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (method.isSynchronized)
             return Result(definedMethod, LBImpure);
 
-        val TACode(_, code, cfg, _, _) = tacai(method)
+        val TACode(_, code, _, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
         implicit val state: State =

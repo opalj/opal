@@ -116,7 +116,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
-                val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, _, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.thisParameter
                 val ctx = createContext(fp, param.origin, dm, param.useSites, code, cfg)
                 doDetermineEscape(ctx, createState)
@@ -126,7 +126,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
-                val TACode(params, code, cfg, _, _) = project.get(DefaultTACAIKey)(m)
+                val TACode(params, code, _, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
                 val ctx = createContext(fp, param.origin, dm, param.useSites, code, cfg)
                 doDetermineEscape(ctx, createState)

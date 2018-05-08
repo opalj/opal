@@ -853,7 +853,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
     def determinePurity(definedMethod: DeclaredMethod): PropertyComputationResult = {
         val DefinedMethod(_, method) = definedMethod
-        val TACode(_, code, cfg, _, _) = tacai(method)
+        val TACode(_, code, _, cfg, _, _) = tacai(method)
         val declClass = method.classFile.thisType
 
         implicit val state: State =

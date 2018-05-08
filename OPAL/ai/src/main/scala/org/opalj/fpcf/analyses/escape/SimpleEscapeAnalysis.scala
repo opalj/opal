@@ -112,7 +112,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) if m.name == "<init>" ⇒
-                val TACode(params, code, cfg, _, _) = tacaiProvider(m)
+                val TACode(params, code, _, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
                 val ctx = createContext(fp, -1, dm, useSites, code, cfg)
                 doDetermineEscape(ctx, createState)

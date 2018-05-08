@@ -365,7 +365,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     def determineEscape(e: Entity): PropertyComputationResult
 
     def determineEscapeOfDS(defSite: DefinitionSite): PropertyComputationResult = {
-        val TACode(_, code, cfg, _, _) = tacaiProvider(defSite.method)
+        val TACode(_, code, _, cfg, _, _) = tacaiProvider(defSite.method)
 
         val index = code indexWhere { stmt ⇒ stmt.pc == defSite.pc }
 

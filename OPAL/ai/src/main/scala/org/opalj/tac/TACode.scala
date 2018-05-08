@@ -52,11 +52,16 @@ import org.opalj.br.cfg.CFG
  *               value will reflect this usage.
  *               In case of the naive representation it "just" contains the names of the
  *               registers which store the parameters.
+ * @param pcToIndex The mapping between the pcs of the original bytecode instructions to the
+ *               index of the first statement that was generated for the bytecode instruction
+ *               - if any. For details see `TACNaive` and `TACAI`
+ *
  * @author Michael Eichberg
  */
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
         stmts:             Array[Stmt[V]], // CONST
+        pcToIndex:         Array[Int],
         cfg:               CFG[Stmt[V], TACStmts[V]],
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]

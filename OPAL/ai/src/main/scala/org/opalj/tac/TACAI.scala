@@ -1019,16 +1019,16 @@ object TACAI {
             )
         val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
-        val taCode = TACode[TACMethodParameter, AIDUVar](
-            tacParams, tacStmts, taCodeCFG, taExceptionHanders, lnt
+        val initialTAC = TACode[TACMethodParameter, AIDUVar](
+            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHanders, lnt
         )
 
         if (optimizations.nonEmpty) {
-            val base = TACOptimizationResult(taCode, wasTransformed = false)
+            val base = TACOptimizationResult(initialTAC, wasTransformed = false)
             val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
             result.code
         } else {
-            taCode
+            initialTAC
         }
     }
 
