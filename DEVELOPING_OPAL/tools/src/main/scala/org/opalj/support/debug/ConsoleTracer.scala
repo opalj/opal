@@ -29,6 +29,8 @@
 package org.opalj.support.debug
 
 import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.value.IsReferenceValue
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.Domain
@@ -37,10 +39,8 @@ import org.opalj.ai.NoUpdate
 import org.opalj.ai.Update
 import org.opalj.ai.AIResult
 import org.opalj.ai.SomeUpdate
-import org.opalj.ai.IsReferenceValue
 import org.opalj.ai.domain
 import org.opalj.ai.domain.TheCode
-import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * A tracer that prints out a trace's results on the console.
