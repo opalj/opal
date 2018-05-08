@@ -53,7 +53,9 @@ import org.opalj.br.analyses.Project
 class CFGsSmokeTest extends AbstractCFGTest {
 
     def doAnalyzeProject(project: SomeProject): Unit = {
+
         implicit val classHierarchy = project.classHierarchy
+
         val methodsWithBodyCount = project.allMethodsWithBody.size
         val methodsCount = new AtomicInteger(0)
         val executionTime = new AtomicLong(0L)
@@ -92,7 +94,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
                 else
                     allEndPCs += bb.endPC
             }
-            cfgNodesCheck(method, code, cfg, classHierarchy)
+            cfgNodesCheck(method, code, cfg)
 
             // check the wiring
             cfg.allBBs.foreach { bb ⇒
