@@ -33,10 +33,10 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.bi.TestResources
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation
 
@@ -51,8 +51,13 @@ import org.opalj.util.PerformanceEvaluation
 class DisassemblerSmokeTest extends FunSpec with Matchers {
 
     describe("the Disassembler") {
-
-        for { file ← bi.TestResources.allBITestJARs ++ Traversable(bytecode.JRELibraryFolder) } {
+        val jmodsZip = TestResources.locateTestResources(
+            "classfiles/Java9-selected-jmod-module-info.classes.zip",
+            "bi"
+        )
+        val jreLibraryFolder = bytecode.JRELibraryFolder
+        val specialResources = Traversable(jmodsZip,jreLibraryFolder)
+        for { file ← bi.TestResources.allBITestJARs ++ specialResources } {
 
             describe(s"(when processing $file)") {
 
