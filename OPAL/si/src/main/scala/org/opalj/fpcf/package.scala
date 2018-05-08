@@ -45,8 +45,12 @@ import org.opalj.log.OPALLogger.info
  * refine a field's type (for the purpose of the analysis) can (reuse) the information
  * about the return types of methods, which however may depend on the refined field types.
  *
- * The framework is generic enough to facilitate the implementation of
- * anytime algorithms.
+ * The framework is generic enough to facilitate the implementation of anytime algorithms.
+ *
+ * @note ''This framework assumes that all data-structures that are passed to the framework
+ *       are effectively immutable!''
+ *       (Effectively immutable means that the datastructure is never updated after it was
+ *       passed to the framework.)
  *
  * @note The dependency relation is as follows:
  *      “A depends on B”
@@ -54,6 +58,7 @@ import org.opalj.log.OPALLogger.info
  *      “A is the depender, B is the dependee”.
  *          `===`
  *      “B is depended on by A”
+ *
  * @author Michael Eichberg
  */
 package object fpcf {

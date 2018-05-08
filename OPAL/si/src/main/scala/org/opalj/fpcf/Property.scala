@@ -29,11 +29,13 @@
 package org.opalj.fpcf
 
 /**
- * An information associated with an entity. Each property belongs to exactly one
+ * An ''immutable information'' associated with an entity. Each property belongs to exactly one
  * property kind specified by the [[PropertyKey]]. Furthermore, each property
  * is associated with at most one property per property kind.
  *
  * ==Implementation Requirements==
+ * If a property is mutable and (by some analysis) mutated the overall results are no longer
+ * deterministic!
  *
  * ===Structural Equality===
  * Each implementation of the property trait has to implement an `equals` method that
