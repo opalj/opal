@@ -27,16 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
 package fpcf
+package properties
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
 
 sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInformation {
@@ -68,12 +62,12 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
     /**
      * The key associated with every purity property.
      */
-    final val key = PropertyKey.create[DeclaredMethod,MethodReturnValue](
+    final val key = PropertyKey.create[DeclaredMethod, MethodReturnValue](
         "org.opalj.value.MethodReturnValue",
-        (_ : PropertyStore, m : DeclaredMethod) ⇒ {
+        (_: PropertyStore, m: DeclaredMethod) ⇒ {
             MethodReturnValue(ValueInformation(m.descriptor.returnType))
         },
-        (_ : PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ {
+        (_: PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ {
             FinalEP(eps.e, eps.ub)
         }
     )
