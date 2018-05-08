@@ -35,7 +35,6 @@ import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
-import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
@@ -142,10 +141,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
                 forall(catchBB ⇒ catchNodes.contains(catchBB)),
             catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
-                (allBBs.collect {
+                allBBs.collect {
                     case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
                         s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
-                }).mkString("\n")
+                }.mkString("\n")
         )
 
         // 5.   Check that predecessors and successors are consistent.
@@ -554,17 +553,33 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
-    final val CheckConsistencyKey = "org.opalj.br.debug.cfg.CFG.consistency"
+    final val CheckConsistencyKey = "org.opalj.debug.br.cfg.CFG.checkConsistency"
 
-    final val CheckConsistency: Boolean = {
+    private[this] var checkConsistency: Boolean = {
+        val initialCheckConsistency = BaseConfig.getBoolean(CheckConsistencyKey)
+        updateCheckConsistency(initialCheckConsistency)
+        initialCheckConsistency
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def CheckConsistency: Boolean = checkConsistency
+
+    def updateCheckConsistency(newCheckConsistency: Boolean): Unit = {
         implicit val logContext = GlobalLogContext
-        if (BaseConfig.as[Option[Boolean]](CheckConsistencyKey).getOrElse(false)) {
-            info("OPAL", s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)")
-            true
-        } else {
-            info("OPAL", s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)")
-            false
-        }
+        checkConsistency =
+            if (newCheckConsistency) {
+                info(
+                    "OPAL",
+                    s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)"
+                )
+                true
+            } else {
+                info(
+                    "OPAL",
+                    s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)"
+                )
+                false
+            }
     }
 
 }
