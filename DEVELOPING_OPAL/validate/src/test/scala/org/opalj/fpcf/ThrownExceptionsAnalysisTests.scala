@@ -63,9 +63,9 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
             (e, _, annotations) ← methodsWithAnnotations
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
         } {
-            val epk = EPK(e, ThrownExceptions.Key)
+            val epk = EPK(e, ThrownExceptions.key)
             ps.scheduleForEntity(e) { e ⇒
-                IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), { (_) ⇒ NoResult })
+                IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), _ ⇒ NoResult)
             }
         }
 
@@ -86,7 +86,11 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         validateProperties(
             as,
             methodsWithAnnotations,
-            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+            Set(
+                "ExpectedExceptions",
+                "ExpectedExceptionsByOverridingMethods",
+                "ThrownExceptionsAreUnknown"
+            )
         )
     }
 

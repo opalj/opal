@@ -36,9 +36,54 @@ import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions._
-import org.opalj.fpcf.properties._
-
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.ISTORE_0
+import org.opalj.br.instructions.LSTORE_0
+import org.opalj.br.instructions.FSTORE_0
+import org.opalj.br.instructions.DSTORE_0
+import org.opalj.br.instructions.ASTORE_0
+import org.opalj.br.instructions.ISTORE
+import org.opalj.br.instructions.FSTORE
+import org.opalj.br.instructions.LSTORE
+import org.opalj.br.instructions.DSTORE
+import org.opalj.br.instructions.ASTORE
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.br.instructions.MONITOREXIT
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.DRETURN
+import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.FRETURN
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.IREM
+import org.opalj.br.instructions.IDIV
+import org.opalj.br.instructions.LDCInt
+import org.opalj.br.instructions.LDIV
+import org.opalj.br.instructions.LoadLong
+import org.opalj.br.instructions.LREM
+import org.opalj.fpcf.properties.ThrownExceptions
+import org.opalj.fpcf.properties.ThrownExceptionsFallback
+import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods
+import org.opalj.fpcf.properties.ThrownExceptions.MethodIsAbstract
+import org.opalj.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
+import org.opalj.fpcf.properties.ThrownExceptions.MethodIsNative
+import org.opalj.fpcf.properties.ThrownExceptions.UnknownExceptionIsThrown
+import org.opalj.fpcf.properties.ThrownExceptions.AnalysisLimitation
+import org.opalj.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
+import org.opalj.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
+import org.opalj.fpcf.properties.ThrownExceptions.SomeException
 /**
  * Transitive analysis of thrown exceptions
  * [[org.opalj.fpcf.properties.ThrownExceptions]] property.
@@ -66,12 +111,12 @@ class L1ThrownExceptionsAnalysis private (
      */
     def determineThrownExceptions(m: Method): PropertyComputationResult = {
         if (m.isNative)
-            return Result(m, ThrownExceptions.MethodIsNative);
+            return Result(m, MethodIsNative);
         if (m.isAbstract)
-            return Result(m, ThrownExceptions.MethodIsAbstract);
+            return Result(m, MethodIsAbstract);
         val body = m.body
         if (body.isEmpty)
-            return Result(m, ThrownExceptions.MethodBodyIsNotAvailable);
+            return Result(m, MethodBodyIsNotAvailable);
 
         //
         //... when we reach this point the method is non-empty
@@ -81,7 +126,7 @@ class L1ThrownExceptionsAnalysis private (
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        var exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val initialExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
         var result: ThrownExceptions = null
 
@@ -101,15 +146,18 @@ class L1ThrownExceptionsAnalysis private (
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
-                    result = ThrownExceptions.UnknownExceptionIsThrown
+                    result = UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
-                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) = instruction
+                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
+                        instruction
+
                     if ((declaringClass eq ObjectType.Object) && (
                         (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                         (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
-                        (name == "equals" && descriptor == ThrownExceptionsFallback.ObjectEqualsMethodDescriptor) ||
-                        (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
+                        (name == "equals" &&
+                            descriptor == ThrownExceptionsFallback.ObjectEqualsMethodDescriptor) ||
+                            (name == "toString" && descriptor == MethodDescriptor.JustReturnsString)
                     )) {
                         true
                     } else {
@@ -118,17 +166,17 @@ class L1ThrownExceptionsAnalysis private (
                                 project.nonVirtualCall(mii) match {
                                     case Success(callee) ⇒
                                         // Query the store for information about the callee
-                                        ps(callee, ThrownExceptions.Key) match {
-                                            case EPS(_, _, ThrownExceptions.MethodIsAbstract) |
-                                                EPS(_, _, ThrownExceptions.MethodBodyIsNotAvailable) |
-                                                EPS(_, _, ThrownExceptions.MethodIsNative) |
-                                                EPS(_, _, ThrownExceptions.UnknownExceptionIsThrown) |
-                                                EPS(_, _, ThrownExceptions.AnalysisLimitation) |
-                                                EPS(_, _, ThrownExceptions.UnresolvedInvokeDynamicInstruction) ⇒
-                                                result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
+                                        ps(callee, ThrownExceptions.key) match {
+                                            case EPS(_, _, MethodIsAbstract) |
+                                                EPS(_, _, MethodBodyIsNotAvailable) |
+                                                EPS(_, _, MethodIsNative) |
+                                                EPS(_, _, UnknownExceptionIsThrown) |
+                                                EPS(_, _, AnalysisLimitation) |
+                                                EPS(_, _, UnresolvedInvokeDynamicInstruction) ⇒
+                                                result = MethodCalledThrowsUnknownExceptions
                                                 false
                                             case eps: EPS[Entity, Property] ⇒
-                                                exceptions ++= eps.ub.types.concreteTypes
+                                                initialExceptions ++= eps.ub.types.concreteTypes
                                                 if (eps.isRefinable) {
                                                     dependees += eps
                                                 }
@@ -138,17 +186,17 @@ class L1ThrownExceptionsAnalysis private (
                                                 true
                                         }
                                     case _ ⇒
-                                        result = ThrownExceptions.UnknownExceptionIsThrown
+                                        result = UnknownExceptionIsThrown
                                         false
                                 }
                             case _ ⇒
-                                result = ThrownExceptions.UnknownExceptionIsThrown
+                                result = UnknownExceptionIsThrown
                                 false
                         }
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    result = ThrownExceptions.UnresolvedInvokeDynamicInstruction
+                    result = UnresolvedInvokeDynamicInstruction
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
@@ -160,13 +208,13 @@ class L1ThrownExceptionsAnalysis private (
                     }
                     callees.foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
-                        ps(callee, ThrownExceptionsByOverridingMethods.Key) match {
+                        ps(callee, ThrownExceptionsByOverridingMethods.key) match {
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
-                                result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
+                                result = MethodCalledThrowsUnknownExceptions
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
-                                result = ThrownExceptions.MethodCalledThrowsUnknownExceptions
+                                result = MethodCalledThrowsUnknownExceptions
                             case eps: EPS[Entity, Property] ⇒
-                                exceptions ++= eps.ub.exceptions.concreteTypes
+                                initialExceptions ++= eps.ub.exceptions.concreteTypes
                                 if (eps.isRefinable) {
                                     dependees += eps
                                 }
@@ -201,26 +249,28 @@ class L1ThrownExceptionsAnalysis private (
 
                 case PUTFIELD.opcode ⇒
                     isFieldAccessed = true
-                    fieldAccessMayThrowNullPointerException = fieldAccessMayThrowNullPointerException ||
-                        isStaticMethod || // <= the receiver is some object
-                        isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                        {
-                            val predecessorPC = code.pcOfPreviousInstruction(pc)
-                            val predecessorOfPredecessorPC = code.pcOfPreviousInstruction(predecessorPC)
-                            val valueInstruction = instructions(predecessorPC)
+                    fieldAccessMayThrowNullPointerException =
+                        fieldAccessMayThrowNullPointerException ||
+                            isStaticMethod || // <= the receiver is some object
+                            isLocalVariable0Updated || // <= we don't know the receiver object at all
+                            cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
+                            {
+                                val predecessorPC = code.pcOfPreviousInstruction(pc)
+                                val predecessorOfPredecessorPC =
+                                    code.pcOfPreviousInstruction(predecessorPC)
+                                val valueInstruction = instructions(predecessorPC)
 
-                            instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
-                                valueInstruction.isInstanceOf[StackManagementInstruction] ||
-                                // we have to ensure that our "this" reference is not used for something else... =>
-                                valueInstruction.numberOfPoppedOperands(NotRequired) > 0
-                            // the number of pushed operands is always equal or smaller than 1
-                            // except of the stack management instructions
-                        }
+                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
+                                    valueInstruction.isInstanceOf[StackManagementInstruction] ||
+                                    // we have to ensure that our "this" reference is not used for something else... =>
+                                    valueInstruction.numberOfPoppedOperands(NotRequired) > 0
+                                // the number of pushed operands is always equal or smaller than 1
+                                // except of the stack management instructions
+                            }
                     true
 
                 case MONITORENTER.opcode | MONITOREXIT.opcode ⇒
-                    exceptions ++= instruction.jvmExceptions
+                    initialExceptions ++= instruction.jvmExceptions
                     isSynchronizationUsed = true
                     true
                 case IRETURN.opcode | LRETURN.opcode |
@@ -239,11 +289,11 @@ class L1ThrownExceptionsAnalysis private (
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
-                                exceptions ++= instruction.jvmExceptions
+                                initialExceptions ++= instruction.jvmExceptions
                                 true
                         }
                     } else {
-                        exceptions ++= instruction.jvmExceptions
+                        initialExceptions ++= instruction.jvmExceptions
                         true
                     }
 
@@ -256,16 +306,16 @@ class L1ThrownExceptionsAnalysis private (
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
-                                exceptions ++= instruction.jvmExceptions
+                                initialExceptions ++= instruction.jvmExceptions
                                 true
                         }
                     } else {
-                        exceptions ++= instruction.jvmExceptions
+                        initialExceptions ++= instruction.jvmExceptions
                         true
                     }
 
                 case _ /* all other instructions */ ⇒
-                    exceptions ++= instruction.jvmExceptions
+                    initialExceptions ++= instruction.jvmExceptions
                     true
             }
         }
@@ -278,11 +328,13 @@ class L1ThrownExceptionsAnalysis private (
         }
         if (fieldAccessMayThrowNullPointerException ||
             (isFieldAccessed && isLocalVariable0Updated)) {
-            exceptions += ObjectType.NullPointerException
+            initialExceptions += ObjectType.NullPointerException
         }
         if (isSynchronizationUsed) {
-            exceptions += ObjectType.IllegalMonitorStateException
+            initialExceptions += ObjectType.IllegalMonitorStateException
         }
+
+        var exceptions = initialExceptions.toImmutableTypesSet
 
         def c(eps: SomeEPS): PropertyComputationResult = {
             dependees = dependees.filter { d ⇒
@@ -298,34 +350,34 @@ class L1ThrownExceptionsAnalysis private (
 
                 // Check if we got some unknown exceptions. We can terminate the analysis if
                 // that's the case as we cannot compute a more precise result.
-                case ThrownExceptions.MethodIsAbstract |
-                    ThrownExceptions.MethodBodyIsNotAvailable |
-                    ThrownExceptions.MethodIsNative |
-                    ThrownExceptions.UnknownExceptionIsThrown |
-                    ThrownExceptions.AnalysisLimitation |
-                    ThrownExceptions.UnresolvedInvokeDynamicInstruction ⇒
-                    return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+                case MethodIsAbstract |
+                    MethodBodyIsNotAvailable |
+                    MethodIsNative |
+                    UnknownExceptionIsThrown |
+                    AnalysisLimitation |
+                    UnresolvedInvokeDynamicInstruction ⇒
+                    return Result(m, MethodCalledThrowsUnknownExceptions)
                 case te: ThrownExceptions ⇒
-                    exceptions = te.types.concreteTypes ++: exceptions
+                    exceptions = exceptions ++ te.types.concreteTypes
 
                 // Properties from ThrownExceptionsByOverridingMethods
                 case ThrownExceptionsByOverridingMethods.SomeException |
                     ThrownExceptionsByOverridingMethods.MethodIsOverridable ⇒
-                    return Result(m, ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+                    return Result(m, MethodCalledThrowsUnknownExceptions)
                 case tebom: ThrownExceptionsByOverridingMethods ⇒
-                    exceptions = tebom.exceptions.concreteTypes ++: exceptions
+                    exceptions = exceptions ++ tebom.exceptions.concreteTypes
             }
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptions(exceptions))
             } else {
-                IntermediateResult(m, ThrownExceptions.SomeException, new ThrownExceptions(exceptions), dependees, c)
+                IntermediateResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
             }
         }
 
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptions(exceptions))
         } else {
-            IntermediateResult(m, ThrownExceptions.SomeException, new ThrownExceptions(exceptions), dependees, c)
+            IntermediateResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
         }
     }
 }
@@ -339,10 +391,10 @@ class L1ThrownExceptionsAnalysis private (
 object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyKind] = {
-        Set(properties.ThrownExceptionsByOverridingMethods.Key)
+        Set(ThrownExceptionsByOverridingMethods)
     }
 
-    override def derives: Set[PropertyKind] = Set(ThrownExceptions.Key)
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
@@ -359,7 +411,7 @@ object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
         propertyStore.registerLazyPropertyComputation[ThrownExceptions](
-            ThrownExceptions.Key,
+            ThrownExceptions.key,
             analysis.lazilyDetermineThrownExceptions
         )
         analysis

@@ -259,8 +259,8 @@ public class ExceptionUsages {
         }
     }
 
-    @DoesNotThrowException(
-        reason="just calls empty default constructor and \"empty\" method of final class"
+    @ExpectedExceptions(
+        reason="allocates new object => may raise OutOfMemoryException"
     )
     public int noSubclasses() {
         FooBar foobar = new FooBar();

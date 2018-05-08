@@ -272,7 +272,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(PropertyStoreKey)
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(_.derives))
+        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
+            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
+        ))
         val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()
