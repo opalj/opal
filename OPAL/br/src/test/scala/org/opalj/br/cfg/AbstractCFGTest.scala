@@ -31,6 +31,7 @@ package cfg
 
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+import org.scalatest.BeforeAndAfterAll
 
 import org.opalj.io.writeAndOpen
 import org.opalj.br.instructions.Instruction
@@ -40,7 +41,17 @@ import org.opalj.br.instructions.Instruction
  *
  * @author Michael Eichberg
  */
-abstract class AbstractCFGTest extends FunSpec with Matchers {
+abstract class AbstractCFGTest extends FunSpec with Matchers with BeforeAndAfterAll {
+
+    private[this] var oldCFGConsistencySettig = CFG.CheckConsistency
+
+    override def beforeAll(): Unit = {
+        CFG.updateCheckConsistency(true)
+    }
+
+    override def afterAll(): Unit = {
+        CFG.updateCheckConsistency(oldCFGConsistencySettig)
+    }
 
     /**
      * Tests the correspondence of the information made available using a CFG
@@ -103,16 +114,19 @@ abstract class AbstractCFGTest extends FunSpec with Matchers {
         assert((code.cfJoins -- cfJoins).isEmpty)
     }
 
+    /** If the execution of `f` results in an exception the CFG is printed. */
     def printCFGOnFailure(
-        method:         Method,
-        code:           Code,
-        cfg:            CFG[Instruction, Code],
-        classHierarchy: ClassHierarchy
+        method: Method,
+        code:   Code,
+        cfg:    CFG[Instruction, Code]
     )(
         f: ⇒ Unit
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
     ): Unit = {
         try {
-            cfgNodesCheck(method, code, cfg, classHierarchy)
+            cfgNodesCheck(method, code, cfg)
             f
         } catch {
             case t: Throwable ⇒

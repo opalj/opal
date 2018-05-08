@@ -53,11 +53,13 @@ class CFGTest extends AbstractCFGTest {
         val testProject: Project[URL] = biProject("controlflow.jar")
         val testClassFile = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
+        implicit val testClassHierarchy = testProject.classHierarchy
+
         it("the cfg of a method with no control flow statements should have one BasicBlock node") {
             val m = testClassFile.findMethod("singleBlock").head
             val code = m.body.get
             val cfg = CFGFactory(code)
-            printCFGOnFailure(m, code, cfg, testProject.classHierarchy) {
+            printCFGOnFailure(m, code, cfg) {
                 cfg.allBBs.size should be(1)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
@@ -69,7 +71,7 @@ class CFGTest extends AbstractCFGTest {
             val m = testClassFile.findMethod("conditionalOneReturn").head
             val code = m.body.get
             val cfg = CFGFactory(code)
-            printCFGOnFailure(m, code, cfg, testProject.classHierarchy) {
+            printCFGOnFailure(m, code, cfg) {
                 cfg.allBBs.size should be(11)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(1)
@@ -81,7 +83,7 @@ class CFGTest extends AbstractCFGTest {
             val m = testClassFile.findMethod("conditionalTwoReturns").head
             val code = m.body.get
             val cfg = CFGFactory(code)
-            printCFGOnFailure(m, code, cfg, testProject.classHierarchy) {
+            printCFGOnFailure(m, code, cfg) {
                 cfg.allBBs.size should be(6)
                 cfg.startBlock.successors.size should be(2)
                 cfg.normalReturnNode.predecessors.size should be(3)
