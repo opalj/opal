@@ -122,5 +122,4 @@ package object fpcf {
      */
     final type ComputationResults = Traversable[SomeFinalEP]
 
-
 }
