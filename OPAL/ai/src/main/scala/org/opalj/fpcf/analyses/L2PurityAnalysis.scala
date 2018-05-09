@@ -732,22 +732,92 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             state.updateStaticDataUsage(None)
         }
 
-        for ((_, (_, s)) ← state.fieldLocalityDependees) {
-            s.filter(_._2 meet state.ubPurity ne state.ubPurity)
+        var newFieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
+        for ((dependee, (eop, data)) ← state.fieldLocalityDependees) {
+            val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
+            if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, ((eop, newData))))
         }
-        state.fieldLocalityDependees.filter(dependee ⇒ dependee._2._2.nonEmpty)
+        state.fieldLocalityDependees = newFieldLocalityDependees
 
-        for ((_, (_, s)) ← state.rvfDependees) {
-            s.filter(_._2 meet state.ubPurity ne state.ubPurity)
+        var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+        for ((dependee, (eop, data)) ← state.rvfDependees) {
+            val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
+            if (newData.nonEmpty) newRVFDependees += ((dependee, ((eop, newData))))
         }
-        state.rvfDependees.filter(dependee ⇒ dependee._2._2.nonEmpty)
+        state.rvfDependees = newRVFDependees
 
-        for ((_, (_, s)) ← state.virtualRVFDependees) {
-            s.filter(_._2 meet state.ubPurity ne state.ubPurity)
+        var newVRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+        for ((dependee, (eop, data)) ← state.virtualRVFDependees) {
+            val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
+            if (newData.nonEmpty) newVRVFDependees += ((dependee, ((eop, newData))))
         }
-        state.virtualRVFDependees.filter(dependee ⇒ dependee._2._2.nonEmpty)
+        state.virtualRVFDependees = newVRVFDependees
 
-        //IMPROVE: We could filter Purity/V~urity dependees with an lb not less than maxPurity
+        var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[(Option[Expr[V]], Seq[Expr[V]])])] = Map.empty
+        for ((dependee, eAndD) ← state.purityDependees) {
+            if (eAndD._1.hasNoProperty || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
+                newPurityDependees += ((dependee, eAndD))
+        }
+        state.purityDependees = newPurityDependees
+
+        var newVPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[(Option[Expr[V]], Seq[Expr[V]])])] = Map.empty
+        for ((dependee, eAndD) ← state.virtualPurityDependees) {
+            if (eAndD._1.hasNoProperty ||
+                (eAndD._1.lb.individualProperty meet state.ubPurity ne state.ubPurity))
+                newVPurityDependees += ((dependee, eAndD))
+        }
+        state.virtualPurityDependees = newVPurityDependees
+    }
+
+    /**
+     * Raises the lower bound on the purity whenever possible.
+     */
+    def adjustLowerBound()(implicit state: State): Unit = {
+        var newLowerBound = state.ubPurity
+
+        for ((eop, _) ← state.purityDependees.valuesIterator) {
+            eop match {
+                case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb
+                case _             ⇒ return ; // Nothing to be done, lower bound must still be LBImpure
+            }
+        }
+
+        for ((eop, _) ← state.virtualPurityDependees.valuesIterator) {
+            eop match {
+                case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb.individualProperty
+                case _             ⇒ return ; // Nothing to be done, lower bound must still be LBImpure
+            }
+        }
+
+        if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet LBPure
+
+        if (state.fieldMutabilityDependees.nonEmpty || state.classImmutabilityDependees.nonEmpty ||
+            state.typeImmutabilityDependees.nonEmpty) {
+            newLowerBound = newLowerBound meet LBSideEffectFree
+        }
+
+        for {
+            (_, data) ← state.fieldLocalityDependees.valuesIterator
+            (_, purity) ← data
+        } {
+            newLowerBound = newLowerBound meet purity
+        }
+
+        for {
+            (_, data) ← state.rvfDependees.valuesIterator
+            (_, purity) ← data
+        } {
+            newLowerBound = newLowerBound meet purity
+        }
+
+        for {
+            (_, data) ← state.virtualRVFDependees.valuesIterator
+            (_, purity) ← data
+        } {
+            newLowerBound = newLowerBound meet purity
+        }
+
+        state.lbPurity = newLowerBound
     }
 
     /**
@@ -831,6 +901,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         if (state.ubPurity ne oldPurity)
             cleanupDependees() // Remove dependees that we don't need anymore.
+        adjustLowerBound()
 
         if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)

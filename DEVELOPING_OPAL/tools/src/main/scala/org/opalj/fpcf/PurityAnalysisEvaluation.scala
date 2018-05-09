@@ -63,6 +63,9 @@ import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.DomainSpecificRater
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.Impure
 import org.opalj.fpcf.properties.LBContextuallyPure
@@ -98,7 +101,6 @@ object PurityAnalysisEvaluation {
             "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
-            "[-packages <colon separated list of packages, e.g. java/util:javax>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
@@ -114,6 +116,9 @@ object PurityAnalysisEvaluation {
             LazyTypeImmutabilityAnalysis
         ),
         List(
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyVirtualMethodStaticDataUsageAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyVirtualCallAggregatingEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
@@ -133,8 +138,7 @@ object PurityAnalysisEvaluation {
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
-        evaluationDir:         File,
-        packages:              Option[Array[String]]
+        evaluationDir:         File
     ): Unit = {
         val classFiles = JavaClassFileReader().ClassFiles(cp)
         val JDKFiles = if (withoutJDK) Traversable.empty
@@ -322,7 +326,6 @@ object PurityAnalysisEvaluation {
         var cwa = false
         var multiProjects = false
         var evalDir: Option[File] = None
-        var packages: Option[Array[String]] = None
 
         // PARSING PARAMETERS
         var i = 0
@@ -339,8 +342,7 @@ object PurityAnalysisEvaluation {
         while (i < args.length) {
             args(i) match {
                 case "-cp"          ⇒ cp = new File(readNextArg())
-                case "-JDK"         ⇒
-                    cp = JRELibraryFolder; withoutJDK = true
+                case "-JDK"         ⇒ cp = JRELibraryFolder; withoutJDK = true
                 case "-analysis"    ⇒ analysisName = Some(readNextArg())
                 case "-domain"      ⇒ domainName = Some(readNextArg())
                 case "-rater"       ⇒ raterName = Some(readNextArg())
@@ -349,7 +351,6 @@ object PurityAnalysisEvaluation {
                 case "-closedWorld" ⇒ cwa = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evalDir = Some(new File(readNextArg()))
-                case "-packages"    ⇒ packages = Some(readNextArg().split(':'))
                 case unknown ⇒
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
@@ -405,12 +406,11 @@ object PurityAnalysisEvaluation {
                     withoutJDK,
                     individual,
                     cwa,
-                    evaluationDir,
-                    packages
+                    evaluationDir
                 )
             }
         } else {
-            evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir, packages)
+            evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir)
         }
 
         val end = Calendar.getInstance()
