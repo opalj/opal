@@ -129,7 +129,9 @@ trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
 /**
  * Factory object to create instances of the FieldMutabilityAnalysis.
  */
-object EagerL0FieldMutabilityAnalysis extends L0FieldMutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL0FieldMutabilityAnalysis
+    extends L0FieldMutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0FieldMutabilityAnalysis(project)
@@ -139,14 +141,19 @@ object EagerL0FieldMutabilityAnalysis extends L0FieldMutabilityAnalysisScheduler
             else
                 project.allClassFiles
 
-        val classFiles = classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
+        val fields = {
+            classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
+        }
 
-        propertyStore.scheduleForEntities(classFiles)(analysis.determineFieldMutability)
+        propertyStore.scheduleForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
 }
 
-object LazyL0FieldMutabilityAnalysis extends L0FieldMutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL0FieldMutabilityAnalysis
+    extends L0FieldMutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0FieldMutabilityAnalysis(project)
         propertyStore.registerLazyPropertyComputation(
@@ -155,4 +162,5 @@ object LazyL0FieldMutabilityAnalysis extends L0FieldMutabilityAnalysisScheduler 
         )
         analysis
     }
+
 }

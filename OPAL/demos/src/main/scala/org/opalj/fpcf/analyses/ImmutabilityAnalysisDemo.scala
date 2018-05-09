@@ -41,6 +41,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 
+import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.TypeImmutability
 
@@ -97,36 +98,35 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
     }
 
     def analyze(theProject: Project[URL], parallelismLevel: Int): () ⇒ String = {
+        var result = "Results:\n"
         val project = Project.recreate(theProject) // We need an empty project(!)
-
-        import project.get
 
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
         val propertyStore = time {
             PropertyStoreKey.parallelismLevel = parallelismLevel
-            get(PropertyStoreKey)
+            project.get(PropertyStoreKey)
         } { r ⇒ setupTime = r }
 
         time {
-            L0FieldMutabilityAnalysis.start(project, propertyStore)
-            ClassImmutabilityAnalysis.start(project, propertyStore)
-            TypeImmutabilityAnalysis.start(project, propertyStore)
-            propertyStore.waitOnPropertyComputationCompletion(true)
+            propertyStore.setupPhase(Set(
+                FieldMutability.key, ClassImmutability.key, TypeImmutability.key
+            ))
+            LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore)
+            EagerClassImmutabilityAnalysis.start(project, propertyStore)
+            EagerTypeImmutabilityAnalysis.start(project, propertyStore)
+
+            propertyStore.waitOnPhaseCompletion()
         } { r ⇒ analysisTime = r }
 
-        println(s"\nsetup: ${setupTime.toSeconds}; analysis: ${analysisTime.toSeconds}")
+        result += s"\t- analysis time: ${analysisTime.toSeconds}\n"
 
         () ⇒ {
-            propertyStore match {
-                case lbps: LockBasedPropertyStore ⇒ lbps.validate(None)
-                case _                            ⇒ // nothing to do
-            }
-
             val immutableClasses =
                 propertyStore.entities(ClassImmutability.key).
-                    filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
-                    groupBy { _.p }.map { kv ⇒
+                    filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
+                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
+                    map { kv ⇒
                         (
                             kv._1,
                             kv._2.toList.sortWith { (a, b) ⇒
@@ -138,27 +138,31 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                     }
 
             val immutableClassesPerCategory =
-                immutableClasses.map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).toList.sorted.mkString("\n")
+                immutableClasses.
+                    map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).
+                    toBuffer.sorted.
+                    mkString("\n")
 
             val immutableTypes =
                 propertyStore.entities(TypeImmutability.key).
-                    filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
-                    groupBy { _.p }.map { kv ⇒
+                    filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
+                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
+                    map { kv ⇒
                         (kv._1, kv._2.size)
                     }
             val immutableTypesPerCategory =
-                immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toList.sorted.mkString("\n")
+                immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toBuffer.sorted.mkString("\n")
 
             val immutableClassesInfo =
                 immutableClasses.values.flatten.filter { ep ⇒
                     !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
-                }.map { ep ⇒
-                    ep.e.asInstanceOf[ClassFile].thisType.toJava+
-                        " => "+ep.p+
-                        " => "+propertyStore(ep.e, TypeImmutability.key).p
-                }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
+                }.map { eps ⇒
+                    eps.e.asInstanceOf[ClassFile].thisType.toJava+
+                        " => "+eps.ub+
+                        " => "+propertyStore(eps.e, TypeImmutability.key).ub
+                }.mkString("\t\timmutability:\n\t\t", "\n\t\t", "\n")
 
-            "Details:\n"+
+            "\t- details:\n"+
                 immutableClassesInfo+
                 "\nSummary (w.r.t classes):\n"+
                 "\tObject Immutability:\n"+
