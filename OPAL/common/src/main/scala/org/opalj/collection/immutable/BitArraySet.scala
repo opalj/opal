@@ -31,7 +31,9 @@ package collection
 package immutable
 
 /**
- * An immutable bit set which uses an array to store the underlying values.
+ * An immutable bit set for storing positive int values. An array is used to store
+ * the underlying values. The empty bit set and sets where the maximum value is 64
+ * use optimized representations.
  *
  * @author Michael Eichberg
  */
@@ -71,6 +73,13 @@ private[immutable] final object EmptyBitArraySet extends BitArraySet { thisSet �
     override def contains(i: Int): Boolean = false
 
     override def intIterator: IntIterator = IntIterator.empty
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BitArraySet ⇒ that.isEmpty
+            case _                 ⇒ false
+        }
+    }
 
     override def hashCode: Int = 1 // from j.u.Arrays.hashCode
 }
