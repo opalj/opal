@@ -32,6 +32,12 @@ package properties
 
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 
+sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInformation {
+
+    final type Self = ThrownExceptions
+
+}
+
 /**
  * The set of exceptions that are potentially thrown by a specific method.
  * This includes the set of exceptions thrown by (transitively) called methods (if any).
@@ -63,11 +69,10 @@ import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
  *
  * @author Michael Eichberg
  */
-case class ThrownExceptions(types: BRTypesSet) extends Property {
+case class ThrownExceptions(types: BRTypesSet) extends Property
+        with ThrownExceptionsPropertyMetaInformation {
 
-    final type Self = ThrownExceptions
-
-    final def key = ThrownExceptions.Key
+    final def key = ThrownExceptions.key
 
     /**
      * Returns `true` if and only if the method does not '''yet''' throw exceptions. I.e., if
@@ -85,16 +90,20 @@ case class ThrownExceptions(types: BRTypesSet) extends Property {
             """ThrownExceptionsAreUnknown(reason="method body is not available")"""
         else if (this == ThrownExceptions.AnalysisLimitation)
             """ThrownExceptionsAreUnknown(reason="analysis limitation")"""
+        else if (this == ThrownExceptions.MethodCalledThrowsUnknownExceptions)
+            """ThrownExceptionsAreUnknown(reason="Method called throws unknown exception")"""
         else if (this == ThrownExceptions.SomeException)
             """ThrownExceptionsAreUnknown(reason="<unspecified>")"""
         else
-            super.toString
+            s"ThrownExceptions(${types.toString})"
     }
 }
 
-object ThrownExceptions {
+object ThrownExceptions extends ThrownExceptionsPropertyMetaInformation {
 
-    final val Key: PropertyKey[ThrownExceptions] = {
+    def apply(types: BRTypesSet): ThrownExceptions = new ThrownExceptions(types)
+
+    final val key: PropertyKey[ThrownExceptions] = {
         PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
             "ThrownExceptions",
             ThrownExceptionsFallback,
