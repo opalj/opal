@@ -88,12 +88,12 @@ final class PKESequentialPropertyStore private (
     // --------------------------------------------------------------------------------------------
 
     private[this] val ps: Array[AnyRefMap[Entity, PropertyValue]] = {
-        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new AnyRefMap() }
     }
 
     // Those computations that will only be scheduled if the result is required
     private[this] var lazyComputations: Array[SomePropertyComputation] = {
-        new Array(SupportedPropertyKinds)
+        new Array(PropertyKind.SupportedPropertyKinds)
     }
 
     // The list of scheduled computations
@@ -611,11 +611,11 @@ final class PKESequentialPropertyStore private (
         assert(tasks.isEmpty)
 
         // this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
-        this.computedPropertyKinds = new Array[Boolean](SupportedPropertyKinds)
+        this.computedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
         computedPropertyKinds foreach { pk ⇒ this.computedPropertyKinds(pk.id) = true }
 
         // this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
-        this.delayedPropertyKinds = new Array[Boolean](SupportedPropertyKinds)
+        this.delayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
         delayedPropertyKinds foreach { pk ⇒ this.delayedPropertyKinds(pk.id) = true }
     }
 

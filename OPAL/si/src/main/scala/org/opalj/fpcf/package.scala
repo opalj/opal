@@ -78,12 +78,6 @@ package object fpcf {
     }
 
     /**
-     * The maximum number of Property Kinds that is (currently!) supported. Increasing this
-     * number will increase the required memory.
-     */
-    final val SupportedPropertyKinds: Int = 128
-
-    /**
      * The type of the values stored in a property store.
      *
      * Basically, a simple type alias to facilitate comprehension of the code.

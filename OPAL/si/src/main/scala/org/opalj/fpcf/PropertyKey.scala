@@ -98,9 +98,11 @@ object PropertyKey {
             }
 
             lastKeyId += 1
-            if (lastKeyId == SupportedPropertyKinds) {
+            if (lastKeyId == PropertyKind.SupportedPropertyKinds) {
                 throw new IllegalStateException(
-                    s"the maximum number of property keys $SupportedPropertyKinds is already used"
+                    "maximum number of property keys exceeded "+
+                        PropertyKind.SupportedPropertyKinds+
+                        ";increase PropertyKind.SupportedPropertyKinds"
                 )
             }
             propertyKeyNames += name
