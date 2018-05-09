@@ -48,9 +48,11 @@ final class DependentCalls { // This class is immutable
     private static int myValue =
             -1; /* the FieldMutabilityAnalysis is required to determine that this field is effectivelyFinal  */
 
+    @CompileTimePure("nothing done here")
     @Pure(value = "nothing done here",
             eps = @EP(cf = Object.class, method = "<init>()V", pk = "Purity",
-                    p = "LBPure", analyses = L0PurityAnalysis.class))
+                    p = "LBPure", analyses = L0PurityAnalysis.class),
+            analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     @Impure(value = "Object.init<> not recognized as pure",
             eps = @EP(cf = Object.class, method = "<init>()V", pk = "Purity",
                     p = "LBPure"),
@@ -59,9 +61,9 @@ final class DependentCalls { // This class is immutable
         /* empty */
     }
 
+    @CompileTimePure("only constructs an object of this immutable class")
     @Pure(value = "only constructs an object of this immutable class",
-            analyses = { L1PurityAnalysis.class,
-                    L2PurityAnalysis.class })
+            analyses = L1PurityAnalysis.class)
     @Impure(value = "Instantiates new object", analyses = L0PurityAnalysis.class)
     public static DependentCalls createDependentCalls() {
         return new DependentCalls();
@@ -184,56 +186,62 @@ final class DependentCalls { // This class is immutable
     // which we don't know if do not analyze the JDK!
     //
 
+    @CompileTimePure(value = "calls compile-time pure Math.abs",
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
     @Impure(value = "Math.abs not recognized as pure",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"),
-            negate = true)
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbs(int i) {
         return Math.abs(i) * 21;
     }
 
+    @CompileTimePure(value = "calls compile-time pure Math.abs",
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
     @Impure(value = "Math.abs not recognized as pure",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"),
-            negate = true)
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCallee(int i) {
         return cpureCallsAbs(i + 21);
     }
 
+    @CompileTimePure(value = "calls compile-time pure Math.abs",
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
     @Impure(value = "Math.abs not recognized as pure",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"),
-            negate = true)
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCallee1(int i) {
         return cpureCallsAbsCallee(i - 21);
     }
 
+    @CompileTimePure(value = "calls compile-time pure Math.abs",
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
     @Impure(value = "Math.abs not recognized as pure",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"),
-            negate = true)
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCallee2(int i) {
         return cpureCallsAbsCallee(i * 21);
     }
 
+    @CompileTimePure(value = "calls compile-time pure Math.abs",
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
     @Impure(value = "Math.abs not recognized as pure",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"),
-            negate = true)
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCalleeCallee(int i) {
         return cpureCallsAbsCalleeCallee1(i + 21) * cpureCallsAbsCalleeCallee2(i - 21);
     }
 
+    @CompileTimePure(value = "calls compile-time pure Math.abs",
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
     @Impure(value = "Math.abs not recognized as pure",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"),
-            negate = true)
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCalleeCalleCallee(int i) {
         return cpureCallsAbsCalleeCalleeCallee(1299);
     }

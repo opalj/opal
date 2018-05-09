@@ -67,8 +67,8 @@ public class ReferenceTypes {
     // (Unless the object escapes the thread)
     // They are impure if they write other object's fields, though
 
-    @Pure(value = "Only initializes fields",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Only initializes fields")
+    @Pure(value = "Only initializes fields", analyses = L1PurityAnalysis.class)
     @Impure(value = "Sets array entries", analyses = L0PurityAnalysis.class)
     public ReferenceTypes() {
         nonFinalField = 5;
@@ -140,22 +140,21 @@ public class ReferenceTypes {
     // Objects returned from methods are local if they are fresh and therefore the method can be
     // pure even if the object returned is mutable
 
-    @Pure(value = "Returns a new object",
-            analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
+    @CompileTimePure("Returns a new object")
+    @Pure(value = "Returns a new object", analyses = L1PurityAnalysis.class)
     @Impure(value = "Allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObject() {
         return new Object();
     }
 
-    @Pure(value = "Returns a new object", analyses = L2PurityAnalysis.class,
+
+    @Pure(value = "Returns new object, but type (-> mutability) is not precisely known anymore",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
-                    method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue")
-    )
+            method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue"))
     @SideEffectFree(value = "Anaylsis doesn't recognize new object/freshness not recognized",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue",
-                    analyses = L2PurityAnalysis.class), negate = true
-    )
+                    analyses = L2PurityAnalysis.class), negate = true)
     @Impure(value = "Transitively allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObjectIndirect() {
         return getNewObject();
@@ -169,13 +168,11 @@ public class ReferenceTypes {
 
     @Pure(value = "Returns a new object", analyses = L2PurityAnalysis.class,
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
-                    method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue")
-    )
+                    method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue"))
     @SideEffectFree(value = "Anaylsis doesn't recognize new object/freshness not recognized",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue",
-                    analyses = L2PurityAnalysis.class), negate = true
-    )
+                    analyses = L2PurityAnalysis.class), negate = true)
     @Impure(value = "Allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObjectDirectOrIndirect(boolean b) {
         if (b) return new Object();
@@ -199,8 +196,8 @@ public class ReferenceTypes {
 
     // Reading and writing fields of fresh objects is pure
 
-    @Pure(value = "Uses mutable field of fresh object",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses mutable field of fresh object")
+    @Pure(value = "Uses mutable field of fresh object", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
     public static int getFreshObjectField() {
         ReferenceTypes obj = new ReferenceTypes();

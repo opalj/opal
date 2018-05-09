@@ -58,7 +58,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  */
 class PurityTests extends PropertiesTest {
 
-    override val withRT = true
+    override def withRT = true
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as = executeAnalyses(

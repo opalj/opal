@@ -41,7 +41,6 @@ import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
@@ -137,14 +136,12 @@ object PurityAnalysisEvaluation {
         evaluationDir:         File,
         packages:              Option[Array[String]]
     ): Unit = {
-        var classFiles = JavaClassFileReader().ClassFiles(cp)
-        if (!withoutJDK && (cp ne JRELibraryFolder)) {
-            classFiles ++= JavaClassFileReader().ClassFiles(JRELibraryFolder)
-        }
+        val classFiles = JavaClassFileReader().ClassFiles(cp)
+        val JDKFiles = if (withoutJDK) Traversable.empty
+        else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
-        val isJDK: Boolean = cp eq JRELibraryFolder
-
-        val projectEvaluationDir = new File(evaluationDir, cp.getName)
+        val dirName = if(cp eq JRELibraryFolder) "JDK" else cp.getName
+        val projectEvaluationDir = new File(evaluationDir, dirName)
         if (!projectEvaluationDir.exists()) projectEvaluationDir.mkdir()
 
         var projectTime: Seconds = Seconds.None
@@ -160,7 +157,7 @@ object PurityAnalysisEvaluation {
         else baseConfig
 
         val project = time {
-            Project(classFiles, Traversable.empty, true, Traversable.empty)
+            Project(classFiles, JDKFiles, false, Traversable.empty)
         } { t ⇒ projectTime = t.toSeconds }
 
         time {
@@ -186,6 +183,10 @@ object PurityAnalysisEvaluation {
             case LazyL2PurityAnalysis ⇒ supportingAnalyses(2)
         }
 
+        val declaredMethods = project.get(DeclaredMethodsKey)
+        val projMethods = for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
+            yield declaredMethods(m._1)
+
         time {
             val pks: Set[PropertyKind] = support.flatMap(
                 _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
@@ -201,25 +202,8 @@ object PurityAnalysisEvaluation {
             LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
             analysis.startLazily(project, propertyStore)
 
-            val declaredMethods = project.get(DeclaredMethodsKey)
-            val projectMethods = project.allMethodsWithBody.par.filter { m ⇒
-                val pn = m.classFile.thisType.packageName
-                packages match {
-                    case None ⇒
-                        isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
-                            !pn.startsWith("javafx") && !pn.startsWith("jdk") &&
-                            !pn.startsWith("sun") && !pn.startsWith("oracle") &&
-                            !pn.startsWith("com/sun") && !pn.startsWith("com/oracle") &&
-                            !pn.startsWith("netscape") && !pn.startsWith("org/ietf/jgss") &&
-                            !pn.startsWith("org/jcp/xml/dsig/internal") &&
-                            !pn.startsWith("org/omg") && !pn.startsWith("org/w3c/dom") &&
-                            !pn.startsWith("org/xml/sax")
-                    case Some(ps) ⇒
-                        ps.exists(pn.startsWith(_))
-                }
-            }.toIterator
-            projectMethods.foreach { m ⇒
-                propertyStore(declaredMethods(m), Purity.key)
+            projMethods.foreach { dm ⇒
+                propertyStore(dm, Purity.key)
             }
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
@@ -237,27 +221,10 @@ object PurityAnalysisEvaluation {
             if (runtimeWriter != null) runtimeWriter.close()
         }
 
-        val entitiesWithPurity = propertyStore.entities(Purity.key).filter {
-            case FinalEP(_, Impure) ⇒ false
-            case FinalEP(_, _)      ⇒ true
+        val purityEs = propertyStore(projMethods, Purity.key).filter {
+            case FinalEP(_, p) => p ne Impure
+            case ep => throw new RuntimeException(s"non final purity result $ep")
         }
-
-        val purityEs = entitiesWithPurity.filter { ep ⇒
-            val pn = ep.e.asInstanceOf[DeclaredMethod].declaringClassType.asObjectType.packageName
-            packages match {
-                case None ⇒
-                    isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
-                        !pn.startsWith("javafx") && !pn.startsWith("jdk") &&
-                        !pn.startsWith("sun") && !pn.startsWith("oracle") &&
-                        !pn.startsWith("com/sun") && !pn.startsWith("com/oracle") &&
-                        !pn.startsWith("netscape") && !pn.startsWith("org/ietf/jgss") &&
-                        !pn.startsWith("org/jcp/xml/dsig/internal") &&
-                        !pn.startsWith("org/omg") && !pn.startsWith("org/w3c/dom") &&
-                        !pn.startsWith("org/xml/sax")
-                case Some(ps) ⇒
-                    ps.exists(pn.startsWith(_))
-            }
-        }.toSeq
 
         val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
         val pure = purityEs.collect { case FinalEP(m: DefinedMethod, LBPure) ⇒ m }
@@ -372,7 +339,7 @@ object PurityAnalysisEvaluation {
         while (i < args.length) {
             args(i) match {
                 case "-cp"          ⇒ cp = new File(readNextArg())
-                case "-JDK"         ⇒ cp = JRELibraryFolder
+                case "-JDK"         ⇒ cp = JRELibraryFolder; withoutJDK = true
                 case "-analysis"    ⇒ analysisName = Some(readNextArg())
                 case "-domain"      ⇒ domainName = Some(readNextArg())
                 case "-rater"       ⇒ raterName = Some(readNextArg())
@@ -389,7 +356,7 @@ object PurityAnalysisEvaluation {
         }
 
         if (cp eq null) {
-            throw new IllegalArgumentException(s"no classpath given (use -cp <classpath> or -JDK")
+            throw new IllegalArgumentException(s"no classpath given (use -cp <classpath> or -JDK)")
         }
 
         val analysis = analysisName match {

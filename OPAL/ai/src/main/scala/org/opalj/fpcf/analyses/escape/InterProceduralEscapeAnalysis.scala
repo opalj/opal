@@ -67,11 +67,11 @@ class InterProceduralEscapeAnalysisContext(
         val propertyStore:           PropertyStore,
         val isMethodOverridable:     Method ⇒ Answer
 ) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with IsMethodOverridableContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
-    with CFGContainer
+        with PropertyStoreContainer
+        with IsMethodOverridableContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
+        with CFGContainer
 
 class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -82,13 +82,13 @@ class InterProceduralEscapeAnalysisState
  * @author Florian Kuebler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends DefaultEscapeAnalysis
-    with AbstractInterProceduralEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        with AbstractInterProceduralEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
@@ -101,7 +101,32 @@ class InterProceduralEscapeAnalysis private[analyses] (
      */
     def determineEscape(e: Entity): PropertyComputationResult = {
         e match {
-            case as: DefinitionSite         ⇒ determineEscapeOfDS(as)
+
+            case as: DefinitionSite ⇒ determineEscapeOfDS(as)
+
+            // if the underlying method is inherited, we avoid recomputation and query the 
+            // result of the method for its defining class.
+            case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
+                def handleEscapeState(
+                    eOptionP: SomeEOptionP
+                ): PropertyComputationResult = eOptionP match {
+                    case FinalEP(_, p) ⇒
+                        Result(e, p)
+
+                    case IntermediateEP(_, lb, ub) ⇒
+                        IntermediateResult(e, lb, ub, Set(eOptionP), c)
+
+                    case _ ⇒
+                        IntermediateResult(e, GlobalEscape, NoEscape, Set(eOptionP), c)
+                }
+
+                def c(someEPS: SomeEPS): PropertyComputationResult = {
+                    handleEscapeState(someEPS)
+                }
+
+                val fp = virtualFormalParameters(declaredMethods(m))(i)
+
+                handleEscapeState(propertyStore(fp, EscapeProperty.key))
 
             case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
 

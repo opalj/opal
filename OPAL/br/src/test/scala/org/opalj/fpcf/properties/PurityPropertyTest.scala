@@ -58,7 +58,7 @@ class PurityPropertyTest extends FlatSpec with Matchers {
     "purity levels" should "have the right properties" in {
         for (prop ← allPurities) {
             assert(
-                prop.isCompileTimePure ^ prop == CompileTimePure,
+                prop.isCompileTimePure == (prop == CompileTimePure),
                 s"$prop.isCompileTimePure was ${prop.isCompileTimePure}"
             )
         }
