@@ -306,7 +306,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
-        if(declClass ne definedMethod.declaringClassType)
+        if (declClass ne definedMethod.declaringClassType)
             return baseMethodPurity(definedMethod);
 
         // We treat all synchronized methods as impure
@@ -409,7 +409,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined => dm.asDefinedMethod
+            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
         ps.scheduleForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity

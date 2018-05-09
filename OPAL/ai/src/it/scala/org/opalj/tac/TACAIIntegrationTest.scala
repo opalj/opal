@@ -73,7 +73,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             val aiResult = BaseAI(m, domainFactory(project, m))
             try {
 
-                val TACode(params, tacAICode, _,cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
+                val TACode(params, tacAICode, _, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
                 ToTxt(params, tacAICode, cfg, false, true, true)
 
                 // Some additional consistency tests...
@@ -118,7 +118,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
     }
 
     protected def domainFactories = {
-        Seq[(String,(SomeProject,Method) => Domain with RecordDefUse)](
+        Seq[(String, (SomeProject, Method) ⇒ Domain with RecordDefUse)](
             (
                 "l0.PrimitiveTACAIDomain",
                 (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)

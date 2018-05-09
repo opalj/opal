@@ -46,7 +46,7 @@ import scala.annotation.switch
  * @author Dominik Helm
  */
 class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomeProject)
-        extends FPCFAnalysis {
+    extends FPCFAnalysis {
 
     import project.nonVirtualCall
 
@@ -228,7 +228,7 @@ trait L0AllocationFreenessAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(project)
@@ -241,7 +241,7 @@ object EagerL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisSch
 }
 
 object LazyL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(project)
         propertyStore.registerLazyPropertyComputation(

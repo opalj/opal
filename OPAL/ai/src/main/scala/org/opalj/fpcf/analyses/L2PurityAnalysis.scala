@@ -856,10 +856,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
-        if(declClass ne definedMethod.declaringClassType)
+        if (declClass ne definedMethod.declaringClassType)
             return baseMethodPurity(definedMethod.asDefinedMethod);
 
-        val TACode(_, code,_, cfg, _, _) = tacai(method)
+        val TACode(_, code, _, cfg, _, _) = tacai(method)
 
         implicit val state: State =
             new State(CompileTimePure, CompileTimePure, method, definedMethod, declClass, code)
@@ -960,7 +960,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L2PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined => dm.asDefinedMethod
+            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
         ps.scheduleForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity

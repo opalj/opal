@@ -140,7 +140,7 @@ object PurityAnalysisEvaluation {
         val JDKFiles = if (withoutJDK) Traversable.empty
         else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
-        val dirName = if(cp eq JRELibraryFolder) "JDK" else cp.getName
+        val dirName = if (cp eq JRELibraryFolder) "JDK" else cp.getName
         val projectEvaluationDir = new File(evaluationDir, dirName)
         if (!projectEvaluationDir.exists()) projectEvaluationDir.mkdir()
 
@@ -222,8 +222,8 @@ object PurityAnalysisEvaluation {
         }
 
         val purityEs = propertyStore(projMethods, Purity.key).filter {
-            case FinalEP(_, p) => p ne Impure
-            case ep => throw new RuntimeException(s"non final purity result $ep")
+            case FinalEP(_, p) ⇒ p ne Impure
+            case ep            ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
 
         val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
@@ -339,7 +339,8 @@ object PurityAnalysisEvaluation {
         while (i < args.length) {
             args(i) match {
                 case "-cp"          ⇒ cp = new File(readNextArg())
-                case "-JDK"         ⇒ cp = JRELibraryFolder; withoutJDK = true
+                case "-JDK"         ⇒
+                    cp = JRELibraryFolder; withoutJDK = true
                 case "-analysis"    ⇒ analysisName = Some(readNextArg())
                 case "-domain"      ⇒ domainName = Some(readNextArg())
                 case "-rater"       ⇒ raterName = Some(readNextArg())

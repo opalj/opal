@@ -56,7 +56,7 @@ class DisassemblerSmokeTest extends FunSpec with Matchers {
             "bi"
         )
         val jreLibraryFolder = bytecode.JRELibraryFolder
-        val specialResources = Traversable(jmodsZip,jreLibraryFolder)
+        val specialResources = Traversable(jmodsZip, jreLibraryFolder)
         for { file ← bi.TestResources.allBITestJARs ++ specialResources } {
 
             describe(s"(when processing $file)") {

@@ -52,7 +52,7 @@ import scala.annotation.switch
  * @author Dominik Helm
  */
 class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject)
-        extends FPCFAnalysis {
+    extends FPCFAnalysis {
 
     import project.nonVirtualCall
     import project.resolveFieldReference
@@ -240,7 +240,7 @@ trait StaticDataUsageAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new StaticDataUsageAnalysis(project)
@@ -253,7 +253,7 @@ object EagerStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
 }
 
 object LazyStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new StaticDataUsageAnalysis(project)
         propertyStore.registerLazyPropertyComputation(

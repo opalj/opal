@@ -297,9 +297,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p) => Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) => IntermediateResult(dm, lb, ub, Seq(ep), c)
-            case epk => IntermediateResult(dm, LBImpure, CompileTimePure, Seq(epk), c)
+            case FinalEP(_, p)                  ⇒ Result(dm, p)
+            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
+            case epk                            ⇒ IntermediateResult(dm, LBImpure, CompileTimePure, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
@@ -313,7 +313,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
-        if(method.classFile.thisType ne definedMethod.declaringClassType)
+        if (method.classFile.thisType ne definedMethod.declaringClassType)
             return baseMethodPurity(definedMethod);
 
         if (method.body.isEmpty)
@@ -348,7 +348,7 @@ object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L0PurityAnalysis(project)
         val dms = project.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined => dm.asDefinedMethod
+            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
         propertyStore.scheduleForEntities(methodsWithBody)(analysis.determinePurity)
         analysis

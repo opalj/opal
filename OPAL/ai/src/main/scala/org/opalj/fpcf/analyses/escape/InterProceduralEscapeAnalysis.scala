@@ -67,11 +67,11 @@ class InterProceduralEscapeAnalysisContext(
         val propertyStore:           PropertyStore,
         val isMethodOverridable:     Method ⇒ Answer
 ) extends AbstractEscapeAnalysisContext
-        with PropertyStoreContainer
-        with IsMethodOverridableContainer
-        with VirtualFormalParametersContainer
-        with DeclaredMethodsContainer
-        with CFGContainer
+    with PropertyStoreContainer
+    with IsMethodOverridableContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
+    with CFGContainer
 
 class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -82,13 +82,13 @@ class InterProceduralEscapeAnalysisState
  * @author Florian Kuebler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends DefaultEscapeAnalysis
-        with AbstractInterProceduralEscapeAnalysis
-        with ConstructorSensitiveEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEscapeAnalysis
-        with ExceptionAwareEscapeAnalysis {
+    with AbstractInterProceduralEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
@@ -104,7 +104,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
             case as: DefinitionSite ⇒ determineEscapeOfDS(as)
 
-            // if the underlying method is inherited, we avoid recomputation and query the 
+            // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
             case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
                 def handleEscapeState(
