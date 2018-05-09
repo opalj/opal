@@ -304,7 +304,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val method = definedMethod.methodDefinition
         val declClass = method.classFile.thisType
 
-        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declClass ne definedMethod.declaringClassType)
             return baseMethodPurity(definedMethod);
@@ -314,7 +314,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             return Result(definedMethod, LBImpure);
 
         val TACode(_, code, _, cfg, _, _) = tacai(method)
-        val declClass = method.classFile.thisType
 
         implicit val state: State =
             new State(LBPure, LBPure, Set.empty, method, definedMethod, declClass, code)
