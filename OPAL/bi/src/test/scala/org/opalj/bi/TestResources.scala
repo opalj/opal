@@ -83,8 +83,6 @@ object TestResources {
             s"$subProjectFolder/$unmanagedResourcesFolder$resourceName",
             s"$subProjectFolder/$managedResourcesFolder/$resourceName"
         )
-
-        // IMPROVE Consider using flatMap etc.
         pathPrefixCandidates(subProjectFolder) foreach { pathFunction ⇒
             resourceFiles foreach { rf ⇒
                 pathFunction(rf) foreach { fCandidate ⇒
@@ -108,6 +106,7 @@ object TestResources {
             if fCandidate.isDefined
             f = new File(fCandidate.get)
             if f.exists
+            if f.canRead
             if f.isDirectory
             jarFile ← f.listFiles(JARsFileFilter)
         } yield {
@@ -118,7 +117,7 @@ object TestResources {
     def allUnmanagedBITestJARs(): Traversable[File] = {
         var allJARs: List[File] = Nil
         val f = locateTestResources("classfiles", "bi")
-        if (f.exists && f.isDirectory) {
+        if (f.exists && f.isDirectory && f.canRead) {
             allJARs ++= f.listFiles(JARsFileFilter)
         }
         allJARs
