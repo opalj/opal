@@ -47,7 +47,7 @@ sealed abstract class BitArraySet extends BitSet { thisSet ⇒
 
     final def |(that: BitArraySet): BitArraySet = this ++ that
 
-    override def equals(other: scala.Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
             case that: BitArraySet ⇒ this.intIterator.sameValues(that.intIterator)
             case _                 ⇒ false
