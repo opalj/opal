@@ -72,7 +72,7 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
         } {
             try {
                 // without using AIResults
-                val TACode(params, tacNaiveCode, cfg, _, _) = TACNaive(
+                val TACode(params, tacNaiveCode,_, cfg, _, _) = TACNaive(
                     method = m,
                     classHierarchy = ch,
                     optimizations = AllTACNaiveOptimizations

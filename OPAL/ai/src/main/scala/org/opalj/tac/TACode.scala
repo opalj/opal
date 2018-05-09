@@ -76,6 +76,8 @@ case class TACode[P <: AnyRef, V <: Var[V]](
         pc - 1
     }
 
+    final override def pcOfNextInstruction(pc: Int): Int = pc + 1
+
     override def kindId: Int = TACode.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
