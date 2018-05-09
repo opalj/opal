@@ -128,6 +128,5 @@ package object fpcf {
      */
     final type ComputationResults = Traversable[SomeFinalEP]
 
-    final type PropertyKeyID = Int
 
 }
