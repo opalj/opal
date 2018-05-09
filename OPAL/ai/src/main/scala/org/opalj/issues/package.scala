@@ -32,11 +32,9 @@ import java.io.File
 import java.net.URL
 
 import play.api.libs.json.Writes
-
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsObject
-
 import org.opalj.br.LocalVariable
 import org.opalj.br.Type
 import org.opalj.br.BaseType
@@ -47,6 +45,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.methodAccessFlagsToString
 import org.opalj.ai.domain.l1.IntegerRangeValues
+import org.opalj.br.CTIntType
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
@@ -127,6 +126,7 @@ package object issues {
     def typeToIDL(t: Type): JsValue = {
         t match {
             case bt: BaseType ⇒ Json.obj("bt" → bt.toJava)
+            case CTIntType    ⇒ Json.obj("bt" → "<Computational Type Int>")
 
             case ot: ObjectType ⇒
                 Json.obj("ot" → ot.toJava, "simpleName" → ot.simpleName)
