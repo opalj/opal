@@ -31,6 +31,11 @@ package ai
 package domain
 package l0
 
+import org.opalj.value.IsCharValue
+import org.opalj.value.IsByteValue
+import org.opalj.value.IsShortValue
+import org.opalj.value.IsBooleanValue
+import org.opalj.value.IsIntegerValue
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.BooleanType
@@ -69,18 +74,20 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     }
 
-    trait BooleanValue
-        extends ComputationalTypeIntegerValue[BooleanType]
-        with IsBooleanValue[BooleanValue] {
+    trait BooleanValue extends ComputationalTypeIntegerValue[BooleanType] with IsBooleanValue {
         this: DomainTypedValue[BooleanType] ⇒
+
+        final override def valueType: Option[BooleanType] = Some(BooleanType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.BooleanValue(vo)
         }
     }
 
-    trait ByteValue extends ComputationalTypeIntegerValue[ByteType] with IsByteValue[ByteValue] {
+    trait ByteValue extends ComputationalTypeIntegerValue[ByteType] with IsByteValue {
         this: DomainTypedValue[ByteType] ⇒
+
+        final override def valueType: Option[ByteType] = Some(ByteType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ByteValue(vo)
@@ -88,10 +95,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     }
 
-    trait CharValue
-        extends ComputationalTypeIntegerValue[CharType]
-        with IsCharValue[CharValue] {
+    trait CharValue extends ComputationalTypeIntegerValue[CharType] with IsCharValue {
         this: DomainTypedValue[CharType] ⇒
+
+        final override def valueType: Option[CharType] = Some(CharType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.CharValue(vo)
@@ -99,10 +106,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     }
 
-    trait ShortValue
-        extends ComputationalTypeIntegerValue[ShortType]
-        with IsShortValue[ShortValue] {
+    trait ShortValue extends ComputationalTypeIntegerValue[ShortType] with IsShortValue {
         this: DomainTypedValue[ShortType] ⇒
+
+        final override def valueType: Option[ShortType] = Some(ShortType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ShortValue(vo)
@@ -110,10 +117,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     }
 
-    trait IntegerValue
-        extends ComputationalTypeIntegerValue[IntegerType]
-        with IsIntegerValue[IntegerValue] {
+    trait IntegerValue extends ComputationalTypeIntegerValue[IntegerType] with IsIntegerValue {
         this: DomainTypedValue[IntegerType] ⇒
+
+        final override def valueType: Option[IntegerType] = Some(IntegerType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.IntegerValue(vo)

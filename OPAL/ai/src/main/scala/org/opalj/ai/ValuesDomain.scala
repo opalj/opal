@@ -42,6 +42,9 @@ import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.NullVariableInfo
 import org.opalj.br.ObjectVariableInfo
 import org.opalj.value.ValueInformation
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.KnownValue
+import org.opalj.value.UnknownValue
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -397,7 +400,7 @@ trait ValuesDomain {
 
     type DomainTypedValue[+T <: Type] >: Null <: DomainValue
 
-    trait TypedValue[+T <: Type] extends Value with KnownType {
+    trait TypedValue[+T <: Type] extends Value with KnownValue {
         this: DomainTypedValue[T] ⇒
 
         /**
@@ -668,7 +671,7 @@ trait ValuesDomain {
      * it is possible that the returned type(s) is(are) only an upper bound of the
      * real type unless the type is a primitive type.
      *
-     * This default implementation always returns [[org.opalj.ai.UnknownType]].
+     * This default implementation always returns [[org.opalj.value.UnknownValue]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is
@@ -691,10 +694,11 @@ trait ValuesDomain {
      * }
      * }}}
      */
+    // FIXME Get rid of this by forcing all DomainValues to inherit from ValueInformation...
     def typeOfValue(value: DomainValue): ValueInformation = {
         value match {
             case ta: ValueInformation ⇒ ta
-            case _                   ⇒ UnknownValue
+            case _                    ⇒ UnknownValue
         }
     }
 

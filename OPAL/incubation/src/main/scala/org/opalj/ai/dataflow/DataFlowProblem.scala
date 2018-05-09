@@ -94,7 +94,7 @@ trait DataFlowProblem[Source, P] {
     protected[this] trait TaintedValue extends TaintInformation {
         final override def isTainted(): Boolean = true
 
-        def typeInformation: ValueInformation
+        def valueInformation: ValueInformation
         def domainValue: DomainValue
     }
 
@@ -108,7 +108,7 @@ trait DataFlowProblem[Source, P] {
      * Extractor to match tainted values.
      */
     object Tainted {
-        def unapply(value: TaintedValue): Some[ValueInformation] = Some(value.typeInformation)
+        def unapply(value: TaintedValue): Some[ValueInformation] = Some(value.valueInformation)
     }
 
     case class Invoke(

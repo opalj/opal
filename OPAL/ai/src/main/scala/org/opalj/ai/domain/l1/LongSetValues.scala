@@ -33,6 +33,7 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
+import org.opalj.value.IsLongValue
 import org.opalj.br._
 
 /**
@@ -68,8 +69,10 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     /**
      * Abstracts over all values with computational type `long`.
      */
-    sealed trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
+    sealed trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] ⇒
+
+        final override def valueType: Option[LongType] = Some(LongType)
 
         final override def computationalType: ComputationalType = ComputationalTypeLong
 
