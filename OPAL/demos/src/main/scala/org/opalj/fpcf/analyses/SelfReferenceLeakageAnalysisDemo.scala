@@ -64,7 +64,7 @@ object SelfReferenceLeakageAnalysisDemo extends DefaultOneStepAnalysis {
 
         var analysisTime = Seconds.None
         time {
-            SelfReferenceLeakageAnalysis.analyze(project)
+            L0SelfReferenceLeakageAnalysis.analyze(project)
             projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
         } { t ⇒ analysisTime = t.toSeconds }
 
