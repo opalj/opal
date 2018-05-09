@@ -34,7 +34,6 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.Method
-import org.opalj.br.ClassFile
 
 /**
  * @author Michael Reif
@@ -46,53 +45,37 @@ trait AnalysisDemo extends DefaultOneStepAnalysis {
     )(
         implicit
         propertyStore: PropertyStore
-    ): Traversable[EP[Entity, property.Self]] = {
-        propertyStore.entities(property.key).filter { ep ⇒ ep.p == property }
+    ): Iterator[Entity] = {
+        propertyStore.entities(property, property)
     }
 
-    def finalReport(infoStrings: Traversable[String], caption: String): String =
+    def finalReport(infoStrings: Traversable[String], caption: String): String = {
         infoStrings.mkString(s"\n$caption:", "\n\t", s"\nTotal: ${infoStrings.size}\n\n")
+    }
 }
 
 trait MethodAnalysisDemo extends AnalysisDemo {
 
     def buildMethodInfo(
-        entities:    Traversable[SomeEP],
-        withJarInfo: Boolean             = false
+        entities:    Traversable[SomeEPS],
+        withJarInfo: Boolean              = false
     )(
         implicit
         project: Project[URL]
-    ): Traversable[String] = entities.map { ep ⇒
-        val method = ep.e.asInstanceOf[Method]
-        val methodString = getVisibilityModifier(method)+" "+method.name
-        val classFile = method.classFile
-        val jarInfo = if (withJarInfo)
-            project.source(classFile.thisType)
-        else ""
-        val classVisibility = if (classFile.isPublic) "public" else ""
-        jarInfo + s"\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
+    ): Traversable[String] = {
+        entities map { eps ⇒
+            val method = eps.e.asInstanceOf[Method]
+            val methodString = getVisibilityModifier(method)+" "+method.name
+            val classFile = method.classFile
+            val jarInfo = if (withJarInfo)
+                project.source(classFile.thisType)
+            else ""
+            val classVisibility = if (classFile.isPublic) "public" else ""
+            jarInfo + s"\n\t $classVisibility "+classFile.thisType.toJava+" | "+methodString
+        }
     }
 
     private[this] def getVisibilityModifier(method: Method): String = {
-        method.visibilityModifier map { mod ⇒
-            if (mod.javaName.nonEmpty) mod.javaName.get else ""
-        } getOrElse ""
-    }
-}
-
-trait ClassAnalysisDemo extends AnalysisDemo {
-
-    def buildClassInfo(
-        entities:    Traversable[(Entity, Property)],
-        withJarInfo: Boolean                         = false
-    )(
-        implicit
-        project: Project[URL]
-    ): Traversable[String] = entities.map { e ⇒
-        val classFile = e._1.asInstanceOf[ClassFile]
-        val jarInfo = if (withJarInfo)
-            project.source(classFile.thisType)
-        else ""
-        jarInfo+"\n\t "+classFile.thisType.toJava
+        method.visibilityModifier.map(v ⇒ v.javaName.get).getOrElse("")
     }
 }
