@@ -248,7 +248,8 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
     /**
      * The unique id of this type. Types are associated with globally unique ids to
-     * make it easy to define a global order.
+     * make it easy to define a global order. The id Int.MinValue is used for Void;
+     * Int.MinValue + 1 is used for CTIntType.
      */
     def id: Int
 
@@ -485,9 +486,6 @@ object BaseType {
         )
 }
 
-/** All values which are stored in a value with computational type integer. */
-sealed trait CTIntType extends BaseType
-
 sealed abstract class NumericType protected () extends BaseType {
 
     /**
@@ -539,8 +537,26 @@ sealed abstract class NumericType protected () extends BaseType {
 
 }
 
+/** All values which are stored in a value with computational type integer. */
+sealed trait CTIntType extends Type {
+
+    final override def computationalType: ComputationalType = ComputationalTypeInt
+
+}
+
 /**
- * An IntLikeType is every type (byte, char, short and int) that uses a primtive int
+ * In some cases we abstract over all computational type integer values.
+ */
+case object CTIntType extends CTIntType {
+    final val id = Int.MinValue + 1
+    def toBinaryJavaName: String = throw new UnsupportedOperationException()
+    def toJVMTypeName: String = throw new UnsupportedOperationException()
+    def toJava: String = throw new UnsupportedOperationException()
+    def toJavaClass: Class[_] = throw new UnsupportedOperationException()
+}
+
+/**
+ * An IntLikeType is every type (byte, char, short and int) that uses a primitive int
  * to store the current value and which has explicit support in the JVM.
  *
  * @note `Boolean` values are (at least conceptually) also stored in ints. However, the
@@ -564,8 +580,6 @@ sealed abstract class ByteType private () extends IntLikeType {
     final val WrapperType = ObjectType.Byte
 
     final override def isByteType: Boolean = true
-
-    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -615,8 +629,6 @@ sealed abstract class CharType private () extends IntLikeType {
     final val WrapperType = ObjectType.Character
 
     final override def isCharType: Boolean = true
-
-    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -771,8 +783,6 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     final override def isShortType: Boolean = true
 
-    final override def computationalType: ComputationalType = ComputationalTypeInt
-
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "short"
@@ -821,8 +831,6 @@ sealed abstract class IntegerType private () extends IntLikeType {
     final val WrapperType = ObjectType.Integer
 
     final override def isIntegerType: Boolean = true
-
-    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -926,7 +934,7 @@ case object LongType extends LongType
  * no special further support for handling booleans. In particular the conversion of
  * some "byte|short|char|int" value to an int value is not directly supported.
  */
-sealed abstract class BooleanType private () extends CTIntType {
+sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     final val atype = 4
 
@@ -937,8 +945,6 @@ sealed abstract class BooleanType private () extends CTIntType {
     final override def isBooleanType: Boolean = true
 
     final override def asBooleanType: BooleanType = this
-
-    final override def computationalType: ComputationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
