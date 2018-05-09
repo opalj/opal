@@ -33,7 +33,7 @@ package properties
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 
 sealed trait ThrownExceptionsByOverridingMethodsPropertyMetaInformation
-        extends PropertyMetaInformation {
+    extends PropertyMetaInformation {
 
     final type Self = ThrownExceptionsByOverridingMethods
 
@@ -50,7 +50,7 @@ sealed trait ThrownExceptionsByOverridingMethodsPropertyMetaInformation
  * @author Michael Eichberg
  */
 object ThrownExceptionsByOverridingMethods
-        extends ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
+    extends ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
     def apply(exceptions: BRTypesSet = BRTypesSet.empty): ThrownExceptionsByOverridingMethods =
         new ThrownExceptionsByOverridingMethods(exceptions)
 

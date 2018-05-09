@@ -70,7 +70,7 @@ sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInforma
  * @author Michael Eichberg
  */
 case class ThrownExceptions(types: BRTypesSet) extends Property
-        with ThrownExceptionsPropertyMetaInformation {
+    with ThrownExceptionsPropertyMetaInformation {
 
     final def key = ThrownExceptions.key
 
