@@ -32,6 +32,13 @@ package properties
 
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
 
+sealed trait ThrownExceptionsByOverridingMethodsPropertyMetaInformation
+        extends PropertyMetaInformation {
+
+    final type Self = ThrownExceptionsByOverridingMethods
+
+}
+
 /**
  * The set of exceptions thrown by a method, including the exceptions thrown by overriding methods.
  * If the type hierarchy is extensible then the set is generally unbounded.
@@ -42,16 +49,15 @@ import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object ThrownExceptionsByOverridingMethods {
+object ThrownExceptionsByOverridingMethods
+        extends ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
+    def apply(exceptions: BRTypesSet = BRTypesSet.empty): ThrownExceptionsByOverridingMethods =
+        new ThrownExceptionsByOverridingMethods(exceptions)
 
     def fallbackPropertyComputation(
         ps: PropertyStore,
-        dm: br.DeclaredMethod
+        m:  br.Method
     ): ThrownExceptionsByOverridingMethods = {
-        if (!dm.hasDefinition)
-            return SomeException;
-
-        val m = dm.methodDefinition
         if (m.isFinal || m.isStatic || m.isInitializer || m.isPrivate) {
             new ThrownExceptionsByOverridingMethods(ThrownExceptionsFallback(ps, m).types)
         } else {
@@ -59,11 +65,12 @@ object ThrownExceptionsByOverridingMethods {
         }
     }
 
-    final val Key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
-        PropertyKey.create[br.DeclaredMethod, ThrownExceptionsByOverridingMethods](
+    final val key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
+        PropertyKey.create[br.Method, ThrownExceptionsByOverridingMethods](
             name = "ThrownExceptionsByOverridingMethods",
-            fallbackPropertyComputation = fallbackPropertyComputation _,
-            (_: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptionsByOverridingMethods]) ⇒ eps.toUBEP
+            fallbackPropertyComputation _,
+            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒
+                eps.toUBEP
         )
     }
 
@@ -71,16 +78,16 @@ object ThrownExceptionsByOverridingMethods {
 
     final val SomeException = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 
-    final val MethodIsOverridable = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
+    final val MethodIsOverridable =
+        new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 }
 
 case class ThrownExceptionsByOverridingMethods(
         exceptions: BRTypesSet = BRTypesSet.empty
-) extends Property {
+) extends Property with ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
 
-    final type Self = ThrownExceptionsByOverridingMethods
+    final def key = ThrownExceptionsByOverridingMethods.key
 
-    final def key = ThrownExceptionsByOverridingMethods.Key
-
+    override def toString: String = s"ThrownExceptionsByOverridingMethods(${exceptions.toString})"
 }
 

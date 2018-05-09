@@ -26,47 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package properties
-package thrown_exceptions
-
-import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
+package org.opalj
+package br
+package collection
+package immutable
 
 /**
- * Matches a methods's `ThrownExceptions` property.
+ * An efficient representation of a set of types if some types are actually upper type bounds
+ * and hence already represent sets of types.
  *
- * @author Andreas Muttscheller
+ * @author Dominik Helm
  */
-class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
+case class TypesSet(
+        final val concreteTypes:   Set[ObjectType],
+        final val upperTypeBounds: Set[ObjectType]
+)(implicit classHierarchy: ClassHierarchy) extends collection.TypesSet {
 
-    def validateProperty(
-        p:          SomeProject,
-        as:         Set[ObjectType],
-        entity:     Entity,
-        a:          AnnotationLike,
-        properties: Traversable[Property]
-    ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
-        val analysesElementValues =
-            getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+    import classHierarchy.isSubtypeOf
 
-        // Succeed either if the required analysis did NOT run, or the property is correct
-        val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
-            properties.forall { p ⇒
-                p.key != ThrownExceptions.key || // If we got another key, ignore
-                    (p.isInstanceOf[ThrownExceptions] &&
-                        p.asInstanceOf[ThrownExceptions].throwsNoExceptions)
+    def ++(tpes: Traversable[ObjectType]): TypesSet = {
+        var newConcreteTypes = concreteTypes
+        tpes foreach { tpe ⇒
+            if (!newConcreteTypes.contains(tpe) &&
+                !upperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb).isYes)) {
+                newConcreteTypes += tpe
             }
-        if (isPropertyValid)
-            None
-        else {
-            Some(a.elementValuePairs.head.value.toString)
         }
+        TypesSet(newConcreteTypes, upperTypeBounds)
     }
-
 }
