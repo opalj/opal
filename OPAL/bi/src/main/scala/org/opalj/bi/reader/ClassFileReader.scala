@@ -390,13 +390,14 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         jarFile:          ZipFile,
         exceptionHandler: ExceptionHandler
     ): List[(ClassFile, URL)] = {
-        val mutex = new Object
+        val Lock = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
-        def addClassFile(cf: ClassFile, url: URL) =
-            mutex.synchronized {
-                classFiles = (cf, url) :: classFiles
+        def addClassFile(cf: ClassFile, url: URL) = {
+            Lock.synchronized {
+                classFiles ::= ((cf, url))
             }
+        }
 
         ClassFiles(jarFile, addClassFile, exceptionHandler)
         classFiles
@@ -524,7 +525,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
         } catch {
             case e: Exception ⇒
-                exceptionHandler(file, new IOException("cannot process: "+file, e))
+                exceptionHandler(file, e)
                 Nil
         }
     }
@@ -539,7 +540,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             ) { in ⇒ ClassFile(in).map(classFile ⇒ (classFile, file.toURI.toURL)) }
         } catch {
             case e: Exception ⇒
-                exceptionHandler(file, new IOException(s"cannot process $file", e))
+                exceptionHandler(file, e)
                 Nil
         }
     }
@@ -574,7 +575,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 if (files eq null)
                     return ;
 
-                files.foreach { file ⇒
+                files foreach { file ⇒
                     val filename = file.getName
                     if (file.isFile) {
                         if (file.length() == 0) Nil
