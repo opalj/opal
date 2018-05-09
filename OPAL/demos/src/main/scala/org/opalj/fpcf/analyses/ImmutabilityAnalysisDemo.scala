@@ -147,9 +147,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
                 propertyStore.entities(TypeImmutability.key).
                     filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
                     groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
-                    map { kv ⇒
-                        (kv._1, kv._2.size)
-                    }
+                    map(kv ⇒                        (kv._1, kv._2.size))
             val immutableTypesPerCategory =
                 immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toBuffer.sorted.mkString("\n")
 
