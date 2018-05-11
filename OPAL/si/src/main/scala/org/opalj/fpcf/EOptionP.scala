@@ -30,14 +30,20 @@ package org.opalj
 package fpcf
 
 /**
- * An entity and an associated property - if it is available.
+ * An entity and an associated property - if it is (already) available.
  *
  * @author Michael Eichberg
  */
 sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
-     * The entity.
+     * The entity. E.g., a class, method or field. In general, it is recommended
+     * to use entities that stand for specific elements in the code, but which
+     * are not the concrete source code entities themselves. This greatly facilitates
+     * associating properties with entities where the respective code is not available.
+     * For example, by using "declared methods" it is possible to associate (predetermined)
+     * properties with (selected) library methods even if those methods are not part of
+     * the analysis.
      */
     val e: E
 
@@ -50,7 +56,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     def toEPK: EPK[E, P]
 
     /**
-     * @return `true` if the entity is associated with a property.
+     * @return `true` if the entity is associated with a (preliminary) property.
      */
     def hasProperty: Boolean
 
@@ -58,7 +64,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
      * Returns `true` if and only if we have a property and the property was stored in the
-     * store using `(Multi)Result`. I.e., a `PhaseFinal` property is not considered to be final.
+     * store using `(Multi)Result`.
      */
     def isFinal: Boolean
 
@@ -68,11 +74,45 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * Combines the test if we have a final property and – if we have one – if it is equal (by
      * means of equality check) to the given one.
      */
-    def is[T >: P](p: T): Boolean = this.hasProperty && isFinal && this.ub == p
+    def is(p: AnyRef): Boolean = this.hasProperty && isFinal && this.ub == p
 
     /**
-     * Returns the upper bound of the property if it is available otherwise an
-     * `UnsupportedOperationException` is thrown.
+     * Returns the upper bound of the property if it is available – [[hasProperty]] has to be
+     * `true` – otherwise an `UnsupportedOperationException` is thrown.
+     *
+     * The upper bound always models the best/most precise result w.r.t. the underlying lattice.
+     * Here, "best" means that the set of potentially reachable states/instructions that the
+     * analyzed program can ever have is potentially smaller when compared to a worse property.
+     *
+     * The upper bound models the sound and precise result under the assumption that the
+     * properties of all explicitly and implicitly relevant entities is as last queried or
+     * implicitly assumed. I.e., unless a dependee is updated the upper bound represents
+     * the correct and most precise result.
+     *
+     * The lower bound models the worst case property that a specific entity can have under
+     * assumption that all other relevant properties will get their worst properties. This
+     * can – but does not have to be – the underlying lattice's bottom value.
+     * The lower bound is generally helpful for client analyses to determine final
+     * results quicker. For example, imagine the following code:
+     * {{{
+     * def f(a : AnyRef) : Unit = a match {
+     *   case a : List[_] => if (a.exists( _ == null)) throw  new IllegalArgumentException
+     *   case _ => throw new UnknownError
+     * }
+     * def m(){
+     *   try {
+     *     f(List(1,2,3))
+     *   } catch {
+     *     case nfe:  NumberFormatException => ...
+     *   }
+     * }
+     * }}}
+     * In that case (assuming we do not perform context sensitive analyses),
+     * if the lower bound for `f` for the set of thrown exceptions is determined
+     * to be `Set(IllegalArgumentException,UnkownError)`, the catch of the
+     * `NumberFormatException` can be ruled out and a final result for `m` can be
+     * computed.
+     *
      *
      * @note If the property is final, the lb (and ub) will return the final property `p`.
      */
@@ -81,7 +121,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
      * Returns the lower bound of the property if it is available
-     * otherwise an `UnsupportedOperationException` is thrown.
+     * otherwise an `UnsupportedOperationException` is thrown. For details regarding the
+     * precise semantics see the discussion for [[ub]].
      *
      * @note If the property is final, the lb (and ub) will return the final property `p`.
      */
@@ -115,22 +156,23 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
+    /**
+     * Creates a [[FinalEP]] object using the current ub.
+     *
+     * No check is done whether the current state is actually final.
+     */
     final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
     final override def hasProperty: Boolean = true
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: EPS[_, _] ⇒
-                (that.e eq this.e) && this.lb == that.lb && this.ub == that.ub
-            case _ ⇒
-                false
+            case that: EPS[_, _] ⇒ (that.e eq this.e) && this.lb == that.lb && this.ub == that.ub
+            case _               ⇒ false
         }
     }
 
-    final override def hashCode: Int = {
-        ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
-    }
+    final override def hashCode: Int = ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
 }
 
 /**
@@ -147,12 +189,21 @@ object EPS {
             IntermediateEP(e, lb, ub)
     }
 
+    /**
+     * Returns the `(Entity, LowerBound, UpperBound)`.
+     */
     def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
         Some((eps.e, eps.lb, eps.ub))
     }
 
 }
 
+/**
+ * Encapsulate the intermediate state related to the computation of the property `P` of
+ * the respective kind for the entity `E`.
+ *
+ * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
+ */
 final class IntermediateEP[+E <: Entity, +P <: Property](
         val e:  E,
         val lb: P,
@@ -177,6 +228,12 @@ object IntermediateEP {
     }
 }
 
+/**
+ * Encapsulate the final state related to the computation of the property `P` of
+ * the respective kind for the entity `E`.
+ *
+ * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
+ */
 final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
     override def isFinal: Boolean = true
@@ -205,7 +262,8 @@ object FinalEP {
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
  * Compared to a standard `Tuple2` the entities are compared using reference comparison
- * and not equality based on `equals` checks. `PropertyKey`s are compared using equals.
+ * and not equality based on `equals` checks. `PropertyKey`s are compared using equals
+ * (structural equality).
  *
  * @author Michael Eichberg
  */

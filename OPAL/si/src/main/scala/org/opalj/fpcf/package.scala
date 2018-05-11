@@ -33,11 +33,12 @@ import org.opalj.log.OPALLogger.info
 
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
- * computations. The framework in particular supports the development of static analyses.
+ * computations of properties ordered by a lattice. The framework in particular supports the
+ * development of static analyses.
  *
- * In this case, the fixpoint computations/ static analyses are generally operating on the
- * code and need to be executed until the computation has reached its (implicit) fixpoint.
- * The fixpoint framework explicitly supports cyclic dependencies/computations.
+ * In this case, the fixpoint computations/static analyses are generally operating on the
+ * code and need to be executed until the computations have reached their (implicit) fixpoint.
+ * The fixpoint framework explicitly supports resolving cyclic dependencies/computations.
  * A prime use case of the fixpoint framework are all those analyses that may interact with
  * the results of other analyses.
  *
@@ -47,8 +48,8 @@ import org.opalj.log.OPALLogger.info
  *
  * The framework is generic enough to facilitate the implementation of anytime algorithms.
  *
- * @note ''This framework assumes that all data-structures that are passed to the framework
- *       are effectively immutable!''
+ * @note ''This framework assumes that all data-structures (e.g., dependee lists and properties)
+ *       that are passed to the framework are effectively immutable!''
  *       (Effectively immutable means that the datastructure is never updated after it was
  *       passed to the framework.)
  *

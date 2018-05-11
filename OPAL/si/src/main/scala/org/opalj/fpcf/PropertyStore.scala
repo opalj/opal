@@ -356,6 +356,9 @@ abstract class PropertyStore {
      *
      * If a different property is already associated with the given entity, an
      * IllegalStateException is thrown.
+     *
+     * @note   If any computation resulted in an exception, then `set` will fail and
+     *         the exception related to the failing computation will be thrown again.
      */
     @throws[IllegalStateException]
     def set(e: Entity, p: Property): Unit
@@ -419,20 +422,26 @@ abstract class PropertyStore {
      * Schedules the execution of the given `PropertyComputation` function for the given entity.
      * This is of particular interest to start an incremental computation
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierarchy in a top-down manner.
+     *
+     * @note   If any computation resulted in an exception, then the scheduling will fail and
+     *         the exception related to the failing computation will be thrown again.
      */
     def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
-     * Processes the result. Generally, not called by analyses. If this function is directly
-     * called, the caller has to ensure that we don't have overlapping results and that the
-     * given result is a meaningful update of the previous property associated with the respective
-     * entity - if any!
+     * Processes the result; generally, not directly called by analyses.
+     * If this function is directly called, the caller has to ensure that we don't have overlapping
+     * results and that the given result is a meaningful update of the previous property
+     * associated with the respective entity - if any!
+     *
+     * @note   If any computation resulted in an exception, then `handleResult` will fail and
+     *         the exception related to the failing computation will be thrown again.
      */
     def handleResult(r: PropertyComputationResult): Unit
 
     /**
      * Awaits the completion of all property computation functions which were previously registered.
-     * As soon as all initial computations have finished dependencies on E/P pairs for which
+     * As soon as all initial computations have finished, dependencies on E/P pairs for which
      * no value was computed and will be computed(!) (see `setupPhase` for details) will be
      * identified and the fallback value will be used. After that, cycle resolution will be
      * performed. I.e., first all _closed_ strongly connected components will be identified
@@ -446,6 +455,9 @@ abstract class PropertyStore {
      * @note   If a second thread is used to register [[PropertyComputation]] functions
      *         no guarantees are given; it is recommended to schedule all property computation
      *         functions using one thread and using that thread to call this method.
+     * @note   If a computation fails with an exception, the property store will stop in due time
+     *         and return the thrown exception. No strong guarantees are given which exception
+     *         is returned in case of concurrent execution.
      */
     def waitOnPhaseCompletion(): Unit
 

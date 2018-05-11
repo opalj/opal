@@ -30,12 +30,12 @@ package org.opalj.fpcf
 
 /**
  * An ''immutable information'' associated with an entity. Each property belongs to exactly one
- * property kind specified by the [[PropertyKey]]. Furthermore, each property
- * is associated with at most one property per property kind.
+ * property kind specified by the [[PropertyKey]]. For details regarding the semantics of
+ * a property see [[EOptionP#ub]].
  *
  * ==Implementation Requirements==
- * If a property is mutable and (by some analysis) mutated the overall results are no longer
- * deterministic!
+ * Properties have to be (effectively) immutable when passed to the framework. If a property
+ * is mutable and (by some analysis) mutated the overall results are no longer deterministic!
  *
  * ===Structural Equality===
  * Each implementation of the property trait has to implement an `equals` method that
@@ -91,4 +91,3 @@ private[fpcf] case object PropertyIsLazilyComputed extends Property {
     final override private[fpcf] def isBeingComputed: Boolean = true
 
 }
-
