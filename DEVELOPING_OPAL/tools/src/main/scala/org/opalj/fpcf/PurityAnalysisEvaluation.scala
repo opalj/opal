@@ -350,7 +350,7 @@ object PurityAnalysisEvaluation {
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evalDir = Some(new File(readNextArg()))
                 case "-noJDK"       ⇒ withoutJDK = true
-                case "-JDK"         ⇒
+                case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
                 case unknown ⇒
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
