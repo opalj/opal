@@ -80,7 +80,7 @@ class MethodBuilderTest extends FlatSpec {
         )
 
         val simpleMethodClazz = loader.loadClass("SimpleMethodClass")
-        val simpleMethodInstance = simpleMethodClazz.newInstance()
+        val simpleMethodInstance = simpleMethodClazz.getDeclaredConstructor().newInstance()
         val mirror = runtimeMirror(loader).reflect(simpleMethodInstance)
         val method = mirror.symbol.typeSignature.member(TermName("testMethod")).asMethod
 
@@ -224,7 +224,8 @@ class MethodBuilderTest extends FlatSpec {
     }
 
     "the generated method `tryCatchFinallyTest`" should "execute as expected" in {
-        val attributeTestInstance = loader.loadClass("AttributeMethodClass").newInstance()
+        val attributeMethodClass = loader.loadClass("AttributeMethodClass")
+        val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
         val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
         val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
 

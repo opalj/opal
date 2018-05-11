@@ -118,7 +118,7 @@ trait ConcreteArrayValues
      *          where the properties do not depend on the concrete values, then it is also
      *          possible to track those arrays.
      */
-    protected def reifyArray(pc: PC, count: Int, arrayType: ArrayType): Boolean = {
+    protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
         if (debug)
             OPALLogger.info("array values", s"$pc: reify ${arrayType.toJava} $count dimension(s)?")
 
@@ -162,7 +162,7 @@ trait ConcreteArrayValues
         override def length: Some[Int] = Some(values.length)
 
         override def doLoad(
-            loadPC:              PC,
+            loadPC:              Int,
             index:               DomainValue,
             potentialExceptions: ExceptionValues
         ): ArrayLoadResult = {
@@ -186,7 +186,7 @@ trait ConcreteArrayValues
         }
 
         override def doStore(
-            storePC:             PC,
+            storePC:             Int,
             value:               DomainValue,
             index:               DomainValue,
             potentialExceptions: ExceptionValues
@@ -227,7 +227,7 @@ trait ConcreteArrayValues
         }
 
         override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             other:  DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue] = {
 
@@ -337,7 +337,7 @@ trait ConcreteArrayValues
     }
 
     override def NewArray(
-        pc:        PC,
+        pc:        Int,
         count:     DomainValue,
         arrayType: ArrayType
     ): DomainArrayValue = {

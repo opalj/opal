@@ -69,7 +69,7 @@ sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInforma
  * If an upper bound of a method's complexity cannot be estimated, the method will have
  * `Int.MaxValue` complexity.
  *
- * @param value The estimated complexity of a specific method ([[0...`Int.MaxMavlue`]])
+ * @param value The estimated complexity of a specific method ([0...`Int.MaxMavlue`])
  *
  * @author Michael Eichberg
  */

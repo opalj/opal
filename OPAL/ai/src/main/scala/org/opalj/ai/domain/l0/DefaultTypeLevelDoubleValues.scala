@@ -46,7 +46,7 @@ trait DefaultTypeLevelDoubleValues extends DefaultDomainValueBinding with TypeLe
      */
     case object ADoubleValue extends super.DoubleValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             // Since `value` is guaranteed to have computational type double and we
             // don't care about the precise value, as this DomainValue already
             // just represents "some" double value, we can always safely return
@@ -55,17 +55,16 @@ trait DefaultTypeLevelDoubleValues extends DefaultDomainValueBinding with TypeLe
 
         override def abstractsOver(other: DomainValue): Boolean = other eq this
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: Int): DomainValue = this
 
-        override def adapt(target: TargetDomain, valueOrigin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue = {
             target.DoubleValue(valueOrigin)
+        }
 
     }
 
-    final override def DoubleValue(valueOrigin: ValueOrigin): DoubleValue =
-        ADoubleValue
+    final override def DoubleValue(valueOrigin: Int): DoubleValue = ADoubleValue
 
-    final override def DoubleValue(valueOrigin: ValueOrigin, value: Double): DoubleValue =
-        ADoubleValue
+    final override def DoubleValue(valueOrigin: Int, value: Double): DoubleValue = ADoubleValue
 }
 

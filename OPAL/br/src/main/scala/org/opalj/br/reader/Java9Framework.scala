@@ -31,9 +31,9 @@ package br
 package reader
 
 /**
- * This "framework" can be used to read Java 9 (version 53) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented.
+ * This "framework" can be used to read Java 9 (version 53) and Java 10 (version 54) class files.
+ * All standard information (as defined in the Java Virtual Machine Specification) is represented.
+ * (Java 10 did not introduce new attributes.)
  *
  * @author Michael Eichberg
  */

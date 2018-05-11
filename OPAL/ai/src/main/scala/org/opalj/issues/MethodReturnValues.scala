@@ -35,11 +35,10 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
-import org.opalj.br.PC
-import org.opalj.br.{PCAndInstruction ⇒ BRPCAndInstruction}
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.AIResult
+import org.opalj.br.PCAndAnyRef
 import org.opalj.collection.immutable.Chain
 
 class MethodReturnValues(
@@ -53,23 +52,26 @@ class MethodReturnValues(
 
     private[this] def operandsArray = result.operandsArray
 
-    def collectMethodReturnValues: Chain[(PC, String)] = {
-        code.collectWithIndex {
-            case BRPCAndInstruction(
-                pc,
-                instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor)
-                ) if !descriptor.returnType.isVoidType && {
-                val nextPC = instr.indexOfNextInstruction(pc)
-                val operands = operandsArray(nextPC)
-                operands != null &&
-                    operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-            } ⇒
-                val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
-                val nextPCOperandHead = operandsArray(instr.indexOfNextInstruction(pc)).head
-                (
-                    pc,
-                    s"$nextPCOperandHead ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
-                )
+    def collectMethodReturnValues: Chain[PCAndAnyRef[String]] = {
+        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) ⇒
+            instruction match {
+                case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor) if !descriptor.returnType.isVoidType && {
+                    val nextPC = instr.indexOfNextInstruction(pc)
+                    val operands = operandsArray(nextPC)
+                    operands != null &&
+                        operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
+                } ⇒
+                    val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
+                    val nextPCOperandHead = operandsArray(instr.indexOfNextInstruction(pc)).head
+
+                    PCAndAnyRef(
+                        pc,
+                        s"$nextPCOperandHead ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
+                    ) :&: returnValues
+
+                case _ ⇒ returnValues
+            }
+
         }
     }
 
@@ -77,7 +79,8 @@ class MethodReturnValues(
         import PCLineComprehension.{pcNode, lineNode, line}
         val methodReturnValues =
             collectMethodReturnValues.map { methodData ⇒
-                val (pc, details) = methodData
+                val pc = methodData.pc
+                val details = methodData.value
                 <li>
                     { pcNode(classFileFQN, methodJVMSignature, pc) }
                     &nbsp;
@@ -105,7 +108,8 @@ class MethodReturnValues(
         Json.obj(
             "type" → "MethodReturnValues",
             "values" → collectMethodReturnValues.map { methodData ⇒
-                val (pc, details) = methodData
+                val pc = methodData.pc
+                val details = methodData.value
 
                 Json.obj(
                     "classFileFQN" → classFileFQN,

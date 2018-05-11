@@ -50,7 +50,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value2 A long value (guaranteed by the JVM's semantics).
      * @return A domain value that encapsulates an integer value with the value -1,0 or 1.
      */
-    def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
     // UNARY ARITHMETIC EXPRESSIONS
@@ -62,7 +62,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param pc The pc of the neg instruction.
      * @param value A long value (guaranteed by the JVM's semantics).
      */
-    def lneg(pc: PC, value: DomainValue): DomainValue
+    def lneg(pc: Int, value: DomainValue): DomainValue
 
     //
     // BINARY ARITHMETIC EXPRESSIONS
@@ -77,7 +77,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value1 A long value (guaranteed by the JVM's semantics).
      * @param value2 A long value (guaranteed by the JVM's semantics).
      */
-    def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Subtraction'' of two long values.
@@ -86,7 +86,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value1 A long value (guaranteed by the JVM's semantics.)
      * @param value2 A long value (guaranteed by the JVM's semantics.)
      */
-    def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Division'' of two long values.
@@ -97,7 +97,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @return The return value is the calculated value and/or (depending on the domain)
      *      an `ArithmeticException` if `value2` is `0`.
      */
-    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): LongValueOrArithmeticException
+    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue): LongValueOrArithmeticException
 
     /**
      * ''Multiplication'' of two long values.
@@ -106,7 +106,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value1 A long value (guaranteed by the JVM's semantics).
      * @param value2 A long value (guaranteed by the JVM's semantics).
      */
-    def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Remainder'' of two long values.
@@ -117,7 +117,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @return The return value is the calculated value and/or (depending on the domain)
      *      an `ArithmeticException` if `value2` is `0`.
      */
-    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): LongValueOrArithmeticException
+    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): LongValueOrArithmeticException
 
     /**
      * ''Boolean and'' of two long values.
@@ -126,7 +126,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value1 A long value (guaranteed by the JVM's semantics).
      * @param value2 A long value (guaranteed by the JVM's semantics).
      */
-    def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Boolean or'' of two long values.
@@ -135,7 +135,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value1 A long value (guaranteed by the JVM's semantics).
      * @param value2 A long value (guaranteed by the JVM's semantics).
      */
-    def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''xor'' of two long values.
@@ -144,7 +144,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value1 A long value (guaranteed by the JVM's semantics).
      * @param value2 A long value (guaranteed by the JVM's semantics).
      */
-    def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Shift left'' of a long value.
@@ -154,7 +154,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value2 A int value (guaranteed by the JVM's semantics) that determines
      *      the number of bits to shift.
      */
-    def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Shift right'' of a long value.
@@ -164,7 +164,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value2 An int value (guaranteed by the JVM's semantics) that determines
      *      the number of bits to shift.
      */
-    def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     /**
      * ''Unsigned shift right'' of a long value.
@@ -174,6 +174,6 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
      * @param value2 A int value (guaranteed by the JVM's semantics) that determines
      *      the number of bits to shift.
      */
-    def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
 }

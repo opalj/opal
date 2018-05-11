@@ -241,7 +241,7 @@ case object NoEscape extends FinalEscapeProperty {
 
     final val PID = 0
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "No"
 
@@ -249,11 +249,12 @@ case object NoEscape extends FinalEscapeProperty {
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = that
 
-    override final def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
+    final override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = PID == that.propertyValueID
 
     override def isBottom: Boolean = false
 
     override def isTop: Boolean = true
+
 }
 
 /**
@@ -286,7 +287,7 @@ case object EscapeInCallee extends FinalEscapeProperty {
 
     final val PID = 1
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "InCallee"
 
@@ -334,7 +335,7 @@ case object EscapeViaParameter extends FinalEscapeProperty {
 
     final val PID = 2
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaParameter"
 
@@ -383,7 +384,7 @@ case object EscapeViaReturn extends FinalEscapeProperty {
 
     final val PID = 3
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaReturn"
 
@@ -436,7 +437,7 @@ case object EscapeViaAbnormalReturn extends FinalEscapeProperty {
 
     final val PID = 4
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaAbnormalReturn"
 
@@ -472,7 +473,7 @@ case object EscapeViaParameterAndReturn extends FinalEscapeProperty {
 
     final val PID = 5
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaParameterAndReturn"
 
@@ -513,7 +514,7 @@ case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
 
     final val PID = 6
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaParameterAndAbnormalReturn"
 
@@ -554,7 +555,7 @@ case object EscapeViaNormalAndAbnormalReturn extends FinalEscapeProperty {
 
     final val PID = 7
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaNormalAndAbnormalReturn"
 
@@ -595,7 +596,7 @@ case object EscapeViaNormalAndAbnormalReturn extends FinalEscapeProperty {
 case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProperty {
     final val PID = 8
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaParameterAndNormalAndAbnormalReturn"
 
@@ -678,7 +679,7 @@ case object GlobalEscape extends GlobalEscape {
 
     final val PID = 9
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "Global"
 
@@ -710,7 +711,7 @@ case object EscapeViaHeapObject extends GlobalEscape {
 
     final val PID = 10
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaHeapObject"
 
@@ -743,7 +744,7 @@ case object EscapeViaStaticField extends GlobalEscape {
 
     final val PID = 11
 
-    override def propertyValueID: PropertyKeyID = PID
+    override def propertyValueID: Int = PID
 
     override def propertyName: String = "ViaStaticField"
 
@@ -760,7 +761,7 @@ case object EscapeViaStaticField extends GlobalEscape {
  * (i.e. for [[org.opalj.fpcf.RefinableResult]]).
  */
 case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty {
-    override def propertyValueID: PropertyKeyID = property.propertyValueID + 20
+    override def propertyValueID: Int = property.propertyValueID + 20
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
         case _: FinalEscapeProperty ⇒ property lessOrEqualRestrictive that
         case AtMost(thatProperty)   ⇒ property lessOrEqualRestrictive thatProperty

@@ -44,6 +44,9 @@ import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
@@ -54,6 +57,8 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  * @author Dominik Helm
  */
 class PurityTests extends PropertiesTest {
+
+    override def withRT = true
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as = executeAnalyses(
@@ -86,6 +91,9 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL2PurityAnalysis),
             Set(
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyVirtualMethodStaticDataUsageAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyVirtualCallAggregatingEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,

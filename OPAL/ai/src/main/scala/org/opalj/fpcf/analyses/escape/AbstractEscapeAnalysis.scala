@@ -31,13 +31,9 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSite
-import org.opalj.ai.Domain
+import org.opalj.ai.DefinitionSiteLike
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.PC
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -50,7 +46,6 @@ import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
-import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
@@ -64,6 +59,7 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACStmts
 import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
@@ -71,6 +67,7 @@ import org.opalj.tac.VirtualMethodCall
 
 import scala.annotation.switch
 
+// TODO @Florian Replace dead link to AllocationSite
 /**
  * An abstract escape analysis for a concrete [[org.opalj.br.AllocationSite]] or a
  * [[org.opalj.br.analyses.VirtualFormalParameter]].
@@ -83,18 +80,22 @@ import scala.annotation.switch
  * information for the given entity and calls doDetermineEscape.
  *
  * @define JustIntraProcedural ''This analysis only uses intra-procedural knowledge and does not
- *                             take the behavior of the called method into consideration.''
+ *                             take the behavior of the called method(s) into consideration.''
  * @author Florian Kuebler
  */
 
 trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
-
     type AnalysisContext <: AbstractEscapeAnalysisContext
     type AnalysisState <: AbstractEscapeAnalysisState
 
-    def doDetermineEscape(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
+    def doDetermineEscape(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): PropertyComputationResult = {
+        if (context.targetMethod.name == "handlingReturnGlobalEscape")
+            println()
         // for every use-site, check its escape state
         for (use ← context.uses) {
             checkStmtForEscape(context.code(use))
@@ -113,8 +114,9 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         (stmt.astID: @switch) match {
             case PutStatic.ASTID ⇒
                 val value = stmt.asPutStatic.value
-                if (context.usesDefSite(value))
+                if (context.usesDefSite(value)) {
                     state.meetMostRestrictive(EscapeViaStaticField)
+                }
 
             case ReturnValue.ASTID ⇒
                 if (context.usesDefSite(stmt.asReturnValue.expr))
@@ -342,7 +344,11 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                 Result(context.entity, state.mostRestrictiveProperty)
             }
         } else {
-            IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, state.dependees, continuation)
+            IntermediateResult(
+                context.entity,
+                GlobalEscape, state.mostRestrictiveProperty,
+                state.dependees, continuation
+            )
         }
     }
 
@@ -357,44 +363,51 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
      * For some entities a result might be returned immediately.
      */
-    def determineEscape(e: Entity): PropertyComputationResult
+    def determineEscape(e: Entity): PropertyComputationResult = e match {
+        case dsl: DefinitionSiteLike ⇒
+            determineEscapeOfDS(dsl)
 
-    def determineEscapeOfDS(defSite: DefinitionSite): PropertyComputationResult = {
-        val TACode(_, code, cfg, _, _) = tacaiProvider(defSite.method)
+        case vfp: VirtualFormalParameter ⇒
+            determineEscapeOfFP(vfp)
 
-        val index = code indexWhere { stmt ⇒ stmt.pc == defSite.pc }
+        case _ ⇒ throw new RuntimeException(s"unsupported entity $e")
+    }
 
-        // check if the allocation site is not dead
-        if (index != -1)
-            findUsesAndAnalyze(defSite, index, code, cfg)
-        else /* the allocation site is part of dead code */ Result(defSite, NoEscape)
+    def determineEscapeOfDS(dsl: DefinitionSiteLike): PropertyComputationResult = {
+        val tacai = tacaiProvider(dsl.method)
+        val uses = dsl.usedBy.map(tacai.pcToIndex(_))
+        val defSite = tacai.pcToIndex(dsl.pc)
+
+        // if the definition site is dead (-1), the object does not escape
+        if (defSite == -1)
+            Result(dsl, NoEscape)
+        else {
+            val ctx = createContext(dsl, defSite, dsl.method, uses, tacai.stmts, tacai.cfg)
+            doDetermineEscape(ctx, createState)
+        }
+
     }
 
     def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
 
-    protected[this] final def findUsesAndAnalyze(
-        defSite: DefinitionSite,
-        index:   PC,
-        code:    Array[Stmt[V]],
-        cfg:     CFG
-    ): PropertyComputationResult = {
-        val uses = defSite.uses.map(pc ⇒ code.indexWhere(_.pc == pc)).filter(_ != -1)
-        val ctx = createContext(defSite, index, declaredMethods(defSite.method), uses, code, cfg)
-        doDetermineEscape(ctx, createState)
-    }
-
     def createContext(
         entity:       Entity,
         defSite:      ValueOrigin,
-        targetMethod: DeclaredMethod,
+        targetMethod: Method,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
-        cfg:          CFG
+        cfg:          CFG[Stmt[V], TACStmts[V]]
     ): AnalysisContext
 
     def createState: AnalysisState
 
-    protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]] = project.get(DefaultTACAIKey)
-    protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = project.get(VirtualFormalParametersKey)
-    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = {
+        project.get(DefaultTACAIKey)
+    }
+    protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = {
+        project.get(VirtualFormalParametersKey)
+    }
+    protected[this] val declaredMethods: DeclaredMethods = {
+        project.get(DeclaredMethodsKey)
+    }
 }

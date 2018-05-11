@@ -886,13 +886,16 @@ object TACNaive {
         // single instruction and that instruction was transformed such that we have multiple
         // instructions now. In such a case (e.g., the rewriting of swap...) the additional
         // instructions will never cause any exceptions.
-        val tacCFG = cfg.mapPCsToIndexes(pcToIndex, (i) ⇒ i, lastIndex = index - 1)
-
         finalStatements foreach { stmt ⇒
             stmt.remapIndexes(pcToIndex, (_) ⇒ false /*CaughtException is not used by TACNaive*/ )
         }
         val tacCode = finalStatements.toArray
-
+        val tacCFG = cfg.mapPCsToIndexes[Stmt[IdBasedVar], TACStmts[IdBasedVar]](
+            TACStmts(tacCode),
+            pcToIndex,
+            (i) ⇒ i,
+            lastIndex = index - 1
+        )
         def getStartAndEndIndex(
             oldEH:      ExceptionHandler,
             newIndexes: Array[Int]
@@ -955,12 +958,14 @@ object TACNaive {
 
         val tacEHs = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
 
+        val taCodeParams = new Parameters(tacParams)
+        val lnt = code.lineNumberTable
         if (optimizations.nonEmpty) {
-            val initialTACode = TACode(new Parameters(tacParams), tacCode, tacCFG, tacEHs, code.lineNumberTable)
-            val base = TACOptimizationResult[Param, IdBasedVar](initialTACode, wasTransformed = false)
+            val initialTAC = TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs, lnt)
+            val base = TACOptimizationResult[Param, IdBasedVar](initialTAC, wasTransformed = false)
             optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac)).code
         } else {
-            TACode(new Parameters(tacParams), tacCode, tacCFG, tacEHs, code.lineNumberTable)
+            TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs, lnt)
         }
     }
 

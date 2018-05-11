@@ -38,23 +38,23 @@ package ai
  */
 trait PrimitiveValuesConversionsDomain { domain: ValuesDomain ⇒
 
-    def i2d(pc: PC, value: DomainValue): DomainValue
-    def i2f(pc: PC, value: DomainValue): DomainValue
-    def i2l(pc: PC, value: DomainValue): DomainValue
+    def i2d(pc: Int, value: DomainValue): DomainValue
+    def i2f(pc: Int, value: DomainValue): DomainValue
+    def i2l(pc: Int, value: DomainValue): DomainValue
 
     /** Conversion of the given long value to a double value. */
-    def l2d(pc: PC, value: DomainValue): DomainValue
+    def l2d(pc: Int, value: DomainValue): DomainValue
     /** Conversion of the given long value to a float value. */
-    def l2f(pc: PC, value: DomainValue): DomainValue
+    def l2f(pc: Int, value: DomainValue): DomainValue
     /** Conversion of the given long value to an integer value. */
-    def l2i(pc: PC, value: DomainValue): DomainValue
+    def l2i(pc: Int, value: DomainValue): DomainValue
 
-    def f2d(pc: PC, value: DomainValue): DomainValue
-    def f2i(pc: PC, value: DomainValue): DomainValue
-    def f2l(pc: PC, value: DomainValue): DomainValue
+    def f2d(pc: Int, value: DomainValue): DomainValue
+    def f2i(pc: Int, value: DomainValue): DomainValue
+    def f2l(pc: Int, value: DomainValue): DomainValue
 
-    def d2f(pc: PC, value: DomainValue): DomainValue
-    def d2i(pc: PC, value: DomainValue): DomainValue
-    def d2l(pc: PC, value: DomainValue): DomainValue
+    def d2f(pc: Int, value: DomainValue): DomainValue
+    def d2i(pc: Int, value: DomainValue): DomainValue
+    def d2l(pc: Int, value: DomainValue): DomainValue
 
 }

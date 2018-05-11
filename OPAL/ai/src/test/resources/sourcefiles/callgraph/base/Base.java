@@ -58,14 +58,3 @@ public interface Base {
     void implementedMethod();
 
 }
-/*
- * TODO covariant TODO overloaded methods TODO PR fixture
- * 
- * TODO Arrays (-) TODO Generics (--) TODO synchronized (-*)
- * 
- * 
- * ----
- * 
- * TODO Fixtures annotieren TODO NoCalls+IgnoreCalls Annotations TODO Missing Annotation
- * => warning TODO Callgraph Test
- */

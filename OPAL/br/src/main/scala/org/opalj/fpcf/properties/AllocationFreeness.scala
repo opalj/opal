@@ -80,7 +80,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, AllocationFreeness](
         "AllocationFreeness",
-        (ps: PropertyStore, dm: DeclaredMethod) ⇒ {
+        (_: PropertyStore, dm: DeclaredMethod) ⇒ {
             if (dm.hasDefinition && dm.methodDefinition.body.isDefined) {
                 val method = dm.methodDefinition
                 val body = method.body.get
@@ -102,7 +102,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                             INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode ⇒
                             hasAllocation = true
                         case ASTORE_0.opcode if !method.isStatic ⇒
-                            if(mayOverwriteSelf) overwritesSelf = true
+                            if (mayOverwriteSelf) overwritesSelf = true
                             else hasAllocation = true
                         case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
                             if (method.isStatic || overwritesSelf)

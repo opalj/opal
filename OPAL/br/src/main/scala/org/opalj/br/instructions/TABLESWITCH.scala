@@ -47,15 +47,11 @@ trait TABLESWITCHLike extends CompoundConditionalBranchInstructionLike {
     /** The largest '''case''' value. `high` &geq; `low` */
     def high: Int
 
-    final def opcode: Opcode = TABLESWITCH.opcode
+    final override def opcode: Opcode = TABLESWITCH.opcode
 
-    final def mnemonic: String = "tableswitch"
+    final override def mnemonic: String = "tableswitch"
 
-    final def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
-        indexOfNextInstruction(currentPC, false)
-    }
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
+    final override def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + (high - low + 1) * 4
     }
 
@@ -69,6 +65,10 @@ case class TABLESWITCH(
 ) extends CompoundConditionalBranchInstruction with TABLESWITCHLike {
 
     final override def asTABLESWITCH: this.type = this
+
+    final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
+        indexOfNextInstruction(currentPC, false)
+    }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
         LabeledTABLESWITCH(

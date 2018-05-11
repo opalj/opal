@@ -67,8 +67,8 @@ public class ReferenceTypes {
     // (Unless the object escapes the thread)
     // They are impure if they write other object's fields, though
 
-    @Pure(value = "Only initializes fields",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Only initializes fields")
+    @Pure(value = "Only initializes fields", analyses = L1PurityAnalysis.class)
     @Impure(value = "Sets array entries", analyses = L0PurityAnalysis.class)
     public ReferenceTypes() {
         nonFinalField = 5;
@@ -114,17 +114,20 @@ public class ReferenceTypes {
         return staticEffectivelyFinalImmutableObj;
     }
 
-    @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Returns mutable object")
+    @Impure(value = "Returns mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticFinalObj() {
         return staticFinalObj;
     }
 
+    @SideEffectFree("Returns mutable object")
     @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticEffectivelyFinalObj() {
         return staticEffectivelyFinalObj;
     }
 
-    @Impure(value = "Uses non-final object", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Returns object from non-final field")
+    @Impure(value = "Returns object from non-final field", analyses = L0PurityAnalysis.class)
     public static Object getStaticNonFinalObj() {
         return staticNonFinalObj;
     }
@@ -137,41 +140,39 @@ public class ReferenceTypes {
     // Objects returned from methods are local if they are fresh and therefore the method can be
     // pure even if the object returned is mutable
 
-    @Pure(value = "Returns a new object",
-            analyses = { L1PurityAnalysis.class, L2PurityAnalysis.class })
+    @CompileTimePure("Returns a new object")
+    @Pure(value = "Returns a new object", analyses = L1PurityAnalysis.class)
     @Impure(value = "Allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObject() {
         return new Object();
     }
 
-    @Pure(value = "Returns a new object", analyses = L2PurityAnalysis.class,
+
+    @Pure(value = "Returns new object, but type (-> mutability) is not precisely known anymore",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
-                    method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue")
-    )
+            method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue"))
     @SideEffectFree(value = "Anaylsis doesn't recognize new object/freshness not recognized",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue",
-                    analyses = L2PurityAnalysis.class), negate = true
-    )
+                    analyses = L2PurityAnalysis.class), negate = true)
     @Impure(value = "Transitively allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObjectIndirect() {
         return getNewObject();
     }
 
-    @Impure(value = "Uses mutable object", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Returns mutable object")
+    @Impure(value = "Returns mutable object", analyses = L0PurityAnalysis.class)
     public static Object getStaticFinalObjIndirect() {
         return getStaticFinalObj();
     }
 
     @Pure(value = "Returns a new object", analyses = L2PurityAnalysis.class,
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
-                    method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue")
-    )
+                    method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue"))
     @SideEffectFree(value = "Anaylsis doesn't recognize new object/freshness not recognized",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue",
-                    analyses = L2PurityAnalysis.class), negate = true
-    )
+                    analyses = L2PurityAnalysis.class), negate = true)
     @Impure(value = "Allocates new object", analyses = L0PurityAnalysis.class)
     public static Object getNewObjectDirectOrIndirect(boolean b) {
         if (b) return new Object();
@@ -195,8 +196,8 @@ public class ReferenceTypes {
 
     // Reading and writing fields of fresh objects is pure
 
-    @Pure(value = "Uses mutable field of fresh object",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses mutable field of fresh object")
+    @Pure(value = "Uses mutable field of fresh object", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
     public static int getFreshObjectField() {
         ReferenceTypes obj = new ReferenceTypes();
@@ -219,8 +220,8 @@ public class ReferenceTypes {
     // Reading and writing entries of fresh arrays is pure, though
     // Array access may throw IndexOutOfBounds exceptions, but this is pure
 
-    @Pure(value = "Uses array length of final array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses array length of final array")
+    @Pure(value = "Uses array length of final array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getFinalArrLength() {
         int[] arr = nonConstFinalArr;
@@ -229,10 +230,13 @@ public class ReferenceTypes {
         return arr.length;
     }
 
+    @CompileTimePure(value = "Uses array length of effectively final array",
+            eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
+                    pk = "FieldMutability", p = "EffectivelyFinalField"))
     @Pure(value = "Uses array length of effectively final array",
             eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
                     pk = "FieldMutability", p = "EffectivelyFinalField"),
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+            analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getEffectivelyFinalArrLength() {
         int[] arr = constEffectivelyFinalArr;
@@ -241,6 +245,7 @@ public class ReferenceTypes {
         return arr.length;
     }
 
+    @SideEffectFree("Uses array length")
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getNonFinalArrLength() {
         int[] arr = nonFinalArr;
@@ -249,8 +254,8 @@ public class ReferenceTypes {
         return arr.length;
     }
 
-    @Pure(value = "Uses array length from parameter array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses array length from parameter array")
+    @Pure(value = "Uses array length from parameter array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public static int getArrLengthStatic(int[] arr) {
         if (arr == null)
@@ -284,7 +289,7 @@ public class ReferenceTypes {
 
     @DomainSpecificExternallyPure(value = "Modified array is local",
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "LocalField"))
+                    p = "ExtensibleLocalField"))
     @Impure(value = "Modifies array entry/array not recognized as local", negate = true,
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
                     p = "ExtensibleLocalField", analyses = L2PurityAnalysis.class))
@@ -299,8 +304,8 @@ public class ReferenceTypes {
         arr[index] = value;
     }
 
-    @Pure(value = "Uses entries from fresh array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Uses entries from fresh array")
+    @Pure(value = "Uses entries from fresh array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array entries", analyses = L0PurityAnalysis.class)
     public static int getFreshArrayEntry(int index) {
         int[] arr = new int[]{1, 2, 3};
@@ -310,8 +315,8 @@ public class ReferenceTypes {
         return 0;
     }
 
-    @Pure(value = "Modifies entries on fresh array",
-            analyses = {L1PurityAnalysis.class, L2PurityAnalysis.class})
+    @CompileTimePure("Modifies entries on fresh array")
+    @Pure(value = "Modifies entries on fresh array", analyses = L1PurityAnalysis.class)
     @Impure(value = "Modifies array entry", analyses = L0PurityAnalysis.class)
     public static int[] setFreshArrayEntry(int index, int value) {
         int[] arr = new int[]{1, 2, 3};

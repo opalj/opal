@@ -100,11 +100,11 @@ object AccessFlagsContexts extends Enumeration {
      */
     val MODULE_FLAGS: IndexedSeq[AccessFlag] = {
         IndexedSeq(
-            ACC_TRANSITIVE, // requires_flag
-            ACC_STATIC_PHASE, // requires_flag
-            ACC_DYNAMIC_PHASE, // export_flag
-            ACC_SYNTHETIC, // requires_flag
-            ACC_MANDATED // requires_flag
+            ACC_OPEN,
+            ACC_TRANSITIVE,
+            ACC_STATIC_PHASE,
+            ACC_SYNTHETIC,
+            ACC_MANDATED
         )
     }
 

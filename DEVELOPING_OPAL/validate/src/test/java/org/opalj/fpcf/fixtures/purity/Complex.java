@@ -29,6 +29,7 @@
 package org.opalj.fpcf.fixtures.purity;
 
 import org.opalj.fpcf.analyses.L0PurityAnalysis;
+import org.opalj.fpcf.analyses.L1PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**
@@ -47,11 +48,14 @@ class Complex {
 
     // Base methods for others to depend on
 
-    @Pure("Returns final static field")
+    @CompileTimePure("Returns final static field")
+    @Pure(value = "Returns final static field",
+            analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public static int pureBase() {
         return staticFinal;
     }
 
+    @SideEffectFree("Returns non-final static field")
     @Impure(value = "Returns non-final static field", analyses = L0PurityAnalysis.class)
     public static int sefBase() {
         return staticNonFinal;
@@ -64,16 +68,19 @@ class Complex {
 
     // Methods depending on side-effect free method which are pure internally
 
+    @SideEffectFree("Calls a side-effect free method")
     @Impure(value = "Calls side-effect free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_0(int a) {
         return a + Complex.sefBase();
     }
 
+    @SideEffectFree("Transitively calls a side-effect free method")
     @Impure(value = "Transitively calls side-effect free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_1(int a, int b) {
         return sef_0_0(1) + sef_0_2(a - 1, b);
     }
 
+    @SideEffectFree("Transitively calls a side-effect free method")
     @Impure(value = "Transitively calls side-effect free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_2(int a, int b) {
         if (a < 0) {
@@ -83,6 +90,7 @@ class Complex {
         }
     }
 
+    @SideEffectFree("Transitively calls a side-effect free method")
     @Impure(value = "Transitively calls side-effect free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_3(int a) {
         return a - sef_0_0(a);
@@ -124,6 +132,7 @@ class Complex {
         return a[Complex.pureBase()];
     }
 
+    @SideEffectFree("Uses static non-final field")
     @Impure(value = "Uses static non-final field", analyses = L0PurityAnalysis.class)
     public static int sef_1_1(int a) {
         return staticNonFinal + Complex.pureBase();

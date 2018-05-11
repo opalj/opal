@@ -35,9 +35,9 @@ import org.opalj.graphs
 
 import scala.collection.mutable.AnyRefMap
 import org.opalj.collection.mutable.AnyRefAppendChain
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 
@@ -57,12 +57,12 @@ final class PKESequentialPropertyStore private (
 
     /*
      * Controls in which order updates are processed/scheduled.
+     *
+     * May be changed at any time.
      */
     @volatile var dependeeUpdateHandling: DependeeUpdateHandling = EagerDependeeUpdateHandling
 
     @volatile var delayHandlingOfDependerNotification: Boolean = true
-
-    final type PKId = Long
 
     protected[this] var scheduledTasksCounter: Int = 0
     final def scheduledTasks: Int = scheduledTasksCounter
@@ -73,6 +73,12 @@ final class PKESequentialPropertyStore private (
     protected[this] var eagerOnUpdateComputationsCounter: Int = 0
     final def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
 
+    protected[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
+    final def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
+
+    protected[this] var resolvedCyclesCounter: Int = 0
+    final def resolvedCycles: Int = resolvedCyclesCounter
+
     private[this] var quiescenceCounter = 0
 
     // --------------------------------------------------------------------------------------------
@@ -82,12 +88,12 @@ final class PKESequentialPropertyStore private (
     // --------------------------------------------------------------------------------------------
 
     private[this] val ps: Array[AnyRefMap[Entity, PropertyValue]] = {
-        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new AnyRefMap() }
     }
 
     // Those computations that will only be scheduled if the result is required
     private[this] var lazyComputations: Array[SomePropertyComputation] = {
-        new Array(SupportedPropertyKinds)
+        new Array(PropertyKind.SupportedPropertyKinds)
     }
 
     // The list of scheduled computations
@@ -95,9 +101,11 @@ final class PKESequentialPropertyStore private (
     // private[this] var tasks: Chain[() ⇒ Unit] = Chain.empty
     private[this] var tasks: AnyRefAppendChain[() ⇒ Unit] = new AnyRefAppendChain()
 
-    private[this] var computedPropertyKinds: IntTrieSet = null // has to be set before usage
+    // private[this] var computedPropertyKinds: IntTrieSet = null // has to be set before usage
+    private[this] var computedPropertyKinds: Array[Boolean] = null // has to be set before usage
 
-    private[this] var delayedPropertyKinds: IntTrieSet = null // has to be set before usage
+    // private[this] var delayedPropertyKinds: IntTrieSet = null // has to be set before usage
+    private[this] var delayedPropertyKinds: Array[Boolean] = null // has to be set before usage
 
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
@@ -200,12 +208,11 @@ final class PKESequentialPropertyStore private (
                 // the entity is unknown ...
                 lazyComputations(pkId) match {
                     case null ⇒
-                        assert(
-                            computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
-                            "setup phase was not called"
-                        )
-                        if (computedPropertyKinds.contains(pkId) ||
-                            delayedPropertyKinds.contains(pkId)) {
+                        if (debug && computedPropertyKinds == null) {
+                            /*&& delayedPropertyKinds ne null (not necessary)*/
+                            throw new IllegalStateException("setup phase was not called")
+                        }
+                        if (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) {
                             epk
                         } else {
                             FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
@@ -227,6 +234,7 @@ final class PKESequentialPropertyStore private (
                     // we have a property
                     EPS(e, pValue.lb.asInstanceOf[P], pValue.ub.asInstanceOf[P])
                 else {
+                    //... ub is null or is PropertyIsLazilyComputed...
                     // We do not (yet) have a value, but a lazy property
                     // computation is already scheduled (if available).
                     // Recall that it is a strict requirement that a
@@ -234,16 +242,13 @@ final class PKESequentialPropertyStore private (
                     // of an IntermediateResult must have been queried;
                     // however the sequential store does not create the
                     // data-structure eagerly!
-                    if (debug && !(
-                        ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
-                    )) {
+                    if (debug && ub == null && lazyComputations(pkId) != null) {
                         throw new IllegalStateException(
-                            "registered lazy computations was not triggerd, "+
+                            "registered lazy computation was not triggered; "+
                                 "this happens, e.g., if the list of dependees contains EPKs "+
                                 "that are instantiated by the client but never queried"
                         )
                     }
-                    // before.
                     epk
                 }
         }
@@ -402,7 +407,6 @@ final class PKESequentialPropertyStore private (
 
             case Some(finalPValue) ⇒
                 throw new IllegalStateException(s"$e: update of $finalPValue")
-
         }
     }
 
@@ -412,8 +416,7 @@ final class PKESequentialPropertyStore private (
 
         if (debug && lazyComputations(pkId) != null) {
             throw new IllegalArgumentException(
-                s"$e: setting $p is not supported; "+
-                    s"lazy computation scheduled for property kind $key"
+                s"$e: setting $p is not supported; lazy computation is scheduled for $key"
             )
         }
 
@@ -460,7 +463,6 @@ final class PKESequentialPropertyStore private (
                 newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
             case IntermediateResult.id ⇒
-                // IMPROVE Process all dependee updates
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
@@ -608,8 +610,13 @@ final class PKESequentialPropertyStore private (
     ): Unit = {
         assert(tasks.isEmpty)
 
-        this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
-        this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
+        // this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
+        this.computedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        computedPropertyKinds foreach { pk ⇒ this.computedPropertyKinds(pk.id) = true }
+
+        // this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
+        this.delayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        delayedPropertyKinds foreach { pk ⇒ this.delayedPropertyKinds(pk.id) = true }
     }
 
     override def waitOnPhaseCompletion(): Unit = {
@@ -635,7 +642,7 @@ final class PKESequentialPropertyStore private (
                 //     scheduled or will be scheduled; but it is still possible that we will
                 //     not have a property for a specific entity, if the underlying analysis
                 //     doesn't compute one; in that case we need to put in fallback values.)
-                // IMPROVE: parForeachArrayElement(ps,isInterrupted = () => false){                    ???                }
+                // IMPROVE parForeachArrayElement(ps,isInterrupted = () => false){ ... }
                 for {
                     (ePValue, pkId) ← ps.zipWithIndex
                     (e, pValue) ← ePValue
@@ -646,13 +653,13 @@ final class PKESequentialPropertyStore private (
                         // assert(pv.dependers.isEmpty)
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                        val fallbackResult = Result(e, fallbackProperty)
-                        info(
+                        trace(
                             "analysis progress",
                             s"used fallback $fallbackProperty for $e "+
                                 "(though an analysis was supposedly scheduled)"
                         )
-                        handleResult(fallbackResult)
+                        fallbacksUsedForComputedPropertiesCounter += 1
+                        update(e, fallbackProperty, fallbackProperty, Nil)
 
                         continueComputation = true
                     }
@@ -681,9 +688,7 @@ final class PKESequentialPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
                     )
-                    for {
-                        cSCC ← cSCCs
-                    } {
+                    for { cSCC ← cSCCs } {
                         val headEPK = cSCC.head
                         val e = headEPK.e
                         val pkId = headEPK.pk.id
@@ -700,6 +705,7 @@ final class PKESequentialPropertyStore private (
                             "analysis progress",
                             s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
                         )
+                        resolvedCyclesCounter += 1
                         update(newEP.e, newEP.p, newEP.p, Nil)
                         continueComputation = true
                     }
@@ -734,7 +740,7 @@ final class PKESequentialPropertyStore private (
                 (e, pValue) ← ePValue
                 if !pValue.isFinal
             } {
-                error("analysis progress", s"unexpected intermediate property state: $e ⇒ $pValue")
+                error("analysis progress", s"intermediate property state: $e ⇒ $pValue")
             }
         }
     }

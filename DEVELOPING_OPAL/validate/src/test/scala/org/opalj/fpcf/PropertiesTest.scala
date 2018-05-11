@@ -66,7 +66,7 @@ import org.opalj.fpcf.properties.PropertyMatcher
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
-    val withRT = false
+    def withRT = false
 
     /**
      * The representation of the fixture project.
@@ -157,7 +157,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         } {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
-            val matcher = matcherClass.newInstance().asInstanceOf[PropertyMatcher]
+            val matcherClassConstructor = matcherClass.getDeclaredConstructor()
+            val matcher = matcherClassConstructor.newInstance().asInstanceOf[PropertyMatcher]
             if (matcher.isRelevant(p, ats, e, annotation)) {
 
                 it(entityIdentifier(s"$annotationTypeName")) {
@@ -240,7 +241,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
-            Some(dm) = declaredMethods(DefinedMethod(m.classFile.thisType, m))
+            dm = declaredMethods(DefinedMethod(m.classFile.thisType, m))
         } yield {
             val fp = formalParameters(dm)(i + 1)
             (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)
@@ -272,7 +273,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(PropertyStoreKey)
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(_.derives))
+        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
+            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
+        ))
         val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()

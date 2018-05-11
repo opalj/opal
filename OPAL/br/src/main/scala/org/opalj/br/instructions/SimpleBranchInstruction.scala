@@ -32,9 +32,12 @@ package instructions
 
 trait SimpleBranchInstructionLike
     extends ControlTransferInstructionLike
-    with ConstantLengthInstruction
+    with ConstantLengthInstructionLike
 
-trait SimpleBranchInstruction extends ControlTransferInstruction with SimpleBranchInstructionLike {
+trait SimpleBranchInstruction
+    extends SimpleBranchInstructionLike
+    with ConstantLengthInstruction
+    with ControlTransferInstruction {
 
     final override def isSimpleBranchInstruction: Boolean = true
 

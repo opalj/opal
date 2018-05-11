@@ -40,6 +40,16 @@ import org.opalj.collection.immutable.Chain
 trait Instruction extends InstructionLike {
 
     /**
+     * The index of the next instruction in the (sparse) code array.
+     *
+     * @note    This is primarily a convenience method that delegates to the method
+     *          `indexOfNextInstrution(PC,Boolean)`. However, given that this is also the
+     *          standard method called by clients, it is often meaningful to directly implement
+     *          this. In particular since most instructions cannot be modified by wide.
+     */
+    def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int
+
+    /**
      * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it is handled locally and
@@ -53,13 +63,13 @@ trait Instruction extends InstructionLike {
      *          at runtime.
      */
     def nextInstructions(
-        currentPC:             PC,
+        currentPC:             Int,
         regularSuccessorsOnly: Boolean = false
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC]
+    ): Chain[Int /*PC*/ ]
 
     /**
      * Checks for structural equality of two instructions.
@@ -75,7 +85,7 @@ trait Instruction extends InstructionLike {
      *
      * @param currentPC The pc of the current instruction.
      */
-    def toLabeledInstruction(currentPC: PC): LabeledInstruction
+    def toLabeledInstruction(currentPC: Int): LabeledInstruction
 
     // ---------------------------------------------------------------------------------------------
     //
@@ -84,6 +94,7 @@ trait Instruction extends InstructionLike {
     // ---------------------------------------------------------------------------------------------
 
     def isSimpleBranchInstruction: Boolean = false
+    def isSimpleConditionalBranchInstruction: Boolean = false
     def isCompoundConditionalBranchInstruction: Boolean = false
     def isGotoInstruction: Boolean = false
     def isStackManagementInstruction: Boolean = false
@@ -158,7 +169,7 @@ object Instruction {
      *
      * @see [[Instruction.isIsomorphic]] for further details.
      */
-    def areIsomorphic(aPC: PC, bPC: PC)(implicit code: Code): Boolean = {
+    def areIsomorphic(aPC: Int, bPC: Int)(implicit code: Code): Boolean = {
         assert(aPC != bPC)
 
         code.instructions(aPC).isIsomorphic(aPC, bPC)
@@ -166,13 +177,13 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
-        currentPC:   PC,
+        currentPC:   Int,
         exceptions:  List[ObjectType]
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): Chain[Int /*PC*/ ] = {
         var pcs = Chain.singleton(instruction.indexOfNextInstruction(currentPC))
         exceptions foreach { exception ⇒
             pcs = (code.handlersForException(currentPC, exception).map(_.handlerPC)) ++!: pcs
@@ -182,13 +193,13 @@ object Instruction {
 
     private[instructions] def nextInstructionOrExceptionHandler(
         instruction: Instruction,
-        currentPC:   PC,
+        currentPC:   Int,
         exception:   ObjectType
     )(
         implicit
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
-    ): Chain[PC] = {
+    ): Chain[Int /*PC*/ ] = {
         val nextInstruction = instruction.indexOfNextInstruction(currentPC)
         nextInstruction :&: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }

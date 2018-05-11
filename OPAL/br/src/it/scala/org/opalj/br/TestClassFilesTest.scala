@@ -53,15 +53,16 @@ import org.opalj.bytecode.JRELibraryFolder
 @RunWith(classOf[JUnitRunner])
 class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
 
-    behavior of "OPAL's ClassFiles"
+    behavior of "OPAL's ClassFiles reader"
 
     var count = 0
     for {
-        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
-        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
+        file ← allBITestJARs() ++ Iterator(JRELibraryFolder)
+        if file.length() > 0
+        if file.getName.endsWith(".jar") || file.getName.endsWith(".jmod")
     } {
         count += 1
-        it should (s"be able to parse the class files in $file") in {
+        it should s"be able to parse the class files in $file" in {
             val testedForBeingIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedForBeingNotIsomorphicCount = new java.util.concurrent.atomic.AtomicInteger(0)
             val testedMethods = new java.util.concurrent.atomic.AtomicBoolean(false)

@@ -97,7 +97,7 @@ object NoResult extends PropertyComputationResult {
  *
  * All current computations that depend on the property of the entity will be invoked.
  *
- * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
+ * @param dependees The entity/property (kind) pairs the analysis depends on. Each
  *      `entity`/`property kind` pair must occur at most once in the list, the current
  *      entity/property kind (`ep`) must not occur; i.e., self-reference are forbidden!
  *      A dependee must have been queried using `PropertyStore.apply(...)`; directly
@@ -114,6 +114,9 @@ object NoResult extends PropertyComputationResult {
  *      An `IntermediateResult` returned by an `OnUpdateContinuation` must contain the EPS given
  *      to the continuation function or a newer EPS (i.e., an onUpdateContinuation is allowed
  *      to query the store again).
+ *
+ *      ''The given set of dependees must not be mutated; it is used internally and if the
+ *      set is mutated, propagation of changes no longer works reliably.''
  *
  * @param c
  *      The function which is called if a property of any of the dependees is updated.

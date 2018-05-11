@@ -32,15 +32,14 @@ package domain
 package l1
 
 import java.net.URL
+
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.Iterable
-import org.opalj.ai.CorrelationalDomain
-import org.opalj.ai.Domain
-import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
+import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -49,6 +48,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.Domain
+import org.opalj.ai.InterruptableAI
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -89,7 +91,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-        protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
+        protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit = {
             if (theReturnedValue == null)
                 theReturnedValue = value.summarize(Int.MinValue)
             else

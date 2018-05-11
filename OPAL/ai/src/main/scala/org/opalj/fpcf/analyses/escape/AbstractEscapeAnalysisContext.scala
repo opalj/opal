@@ -31,18 +31,15 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.Domain
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.DeclaredMethod
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Method
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.DUVar
+import org.opalj.ai.ValueOrigin
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
+import org.opalj.tac.TACStmts
 
 /**
  * Provides the basic information corresponding to an entity to determine its escape information.
@@ -54,12 +51,10 @@ import org.opalj.tac.UVar
  */
 trait AbstractEscapeAnalysisContext {
 
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
-
     val entity: Entity
     val uses: IntTrieSet
     val defSite: ValueOrigin
-    val targetMethod: DeclaredMethod
+    val targetMethod: Method
     val code: Array[Stmt[V]]
 
     /**
@@ -83,7 +78,7 @@ trait AbstractEscapeAnalysisContext {
 }
 
 trait CFGContainer {
-    val cfg: CFG
+    val cfg: CFG[Stmt[V], TACStmts[V]]
 }
 
 trait PropertyStoreContainer {

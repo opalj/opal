@@ -41,7 +41,7 @@ trait MonitorInstructionsDomain { this: ValuesDomain ⇒
      *
      * @note A monitor enter instruction may throw a `NullPointerException`.
      */
-    def monitorenter(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+    def monitorenter(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * Handles a `monitorexit` instruction.
@@ -49,6 +49,6 @@ trait MonitorInstructionsDomain { this: ValuesDomain ⇒
      * @note A monitor exit instruction may throw a `NullPointerException` or an
      *      `IllegalMonitorStateException`.
      */
-    def monitorexit(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValues]
+    def monitorexit(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValues]
 
 }

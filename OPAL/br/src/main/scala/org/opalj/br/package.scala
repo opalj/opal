@@ -192,6 +192,8 @@ package object br {
                 <span class="type base_type">{ bt.toJava }</span>
             case VoidType ⇒
                 <span class="type void_type">void</span>
+            case CTIntType ⇒
+                <span class="type base_type">{ "<Computational Type Integer>" }</span>
         }
     }
 

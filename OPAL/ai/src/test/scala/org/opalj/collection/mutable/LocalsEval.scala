@@ -68,7 +68,7 @@ object LocalsEval extends App {
                 data = data.updated(
                     index,
                     if (currentValue == null)
-                        new Integer(value) else new Integer(currentValue + value)
+                        Integer.valueOf(value) else Integer.valueOf(currentValue + value)
                 )
                 i += 1
             }
@@ -100,7 +100,7 @@ object LocalsEval extends App {
                 val currentValue = data(index)
                 newData(index) =
                     if (currentValue == null)
-                        new Integer(value) else new Integer(currentValue + value)
+                        Integer.valueOf(value) else Integer.valueOf(currentValue + value)
                 data = newData
                 i += 1
             }

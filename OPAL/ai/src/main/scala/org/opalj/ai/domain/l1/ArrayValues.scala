@@ -86,7 +86,7 @@ trait ArrayValues extends l1.ReferenceValues {
         }
 
         override def doJoinWithNonNullValueWithSameOrigin(
-            joinPC: PC,
+            joinPC: Int,
             other:  DomainSingleOriginReferenceValue
         ): Update[DomainSingleOriginReferenceValue] = {
 
@@ -179,7 +179,7 @@ trait ArrayValues extends l1.ReferenceValues {
     }
 
     override def NewArray(
-        pc:        PC,
+        pc:        Int,
         length:    DomainValue,
         arrayType: ArrayType
     ): DomainArrayValue = {
@@ -195,7 +195,7 @@ trait ArrayValues extends l1.ReferenceValues {
      * `..., count1, [count2, ...] →`
      */
     override def NewArray(
-        pc:        PC,
+        pc:        Int,
         lengths:   Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {

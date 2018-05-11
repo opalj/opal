@@ -60,6 +60,11 @@ class EscapeAnalysisTests extends PropertiesTest {
             }
         )
         val ps = p.get(PropertyStoreKey)
+
+        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
+            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
+        ))
+
         lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()

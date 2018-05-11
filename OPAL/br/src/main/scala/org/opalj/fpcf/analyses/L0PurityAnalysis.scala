@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import org.opalj.br.ArrayType
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualDeclaredMethod
@@ -292,10 +291,30 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     }
 
     /**
+     * Retrieves and commits the methods purity as calculated for its declaring class type for the
+     * current DefinedMethod that represents the non-overwritten method in a subtype.
+     */
+    def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
+
+        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
+            case FinalEP(_, p)                  ⇒ Result(dm, p)
+            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
+            case epk                            ⇒ IntermediateResult(dm, LBImpure, CompileTimePure, Seq(epk), c)
+        }
+
+        c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
+    }
+
+    /**
      * Determines the purity of the given method.
      */
-    def determinePurity(definedMethod: DeclaredMethod): PropertyComputationResult = {
-        val DefinedMethod(_, method) = definedMethod
+    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+        val method = definedMethod.methodDefinition
+
+        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // don't re-analyze the code
+        if (method.classFile.thisType ne definedMethod.declaringClassType)
+            return baseMethodPurity(definedMethod);
 
         if (method.body.isEmpty)
             return Result(definedMethod, LBImpure);
@@ -327,7 +346,11 @@ object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAna
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(project)
-        propertyStore.scheduleForEntities(project.get(DeclaredMethodsKey).declaredMethods)(analysis.determinePurity)
+        val dms = project.get(DeclaredMethodsKey).declaredMethods
+        val methodsWithBody = dms.collect {
+            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+        }
+        propertyStore.scheduleForEntities(methodsWithBody)(analysis.determinePurity)
         analysis
     }
 }

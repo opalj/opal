@@ -76,7 +76,7 @@ trait ConstraintsBetweenIntegerValues
         constraints = new Array[ConstraintsStore](theInstructions.length)
     }
 
-    private[this] var lastConstraint: Option[(PC, IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+    private[this] var lastConstraint: Option[(Int /*PC*/ , IntegerLikeValue, IntegerLikeValue, Constraint)] = {
         None
     }
 
@@ -109,7 +109,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     def establishConstraint(
-        pc: PC,
+        pc: Int,
         v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint
     ): ConstraintsStore = {
 
@@ -127,7 +127,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     private[this] def addConstraint(
-        pc: PC,
+        pc: Int,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue,
         c:  Constraint
@@ -137,7 +137,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     private[this] def addConstraint(
-        pc: PC,
+        pc: Int,
         v1: DomainValue,
         v2: DomainValue,
         c:  Constraint
@@ -149,7 +149,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     private[this] def getConstraint(
-        pc: PC,
+        pc: Int,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue
     ): Option[Constraint] = {
@@ -166,7 +166,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     private[this] def getConstraint(
-        pc: PC,
+        pc: Int,
         v1: DomainValue,
         v2: DomainValue
     ): Option[Constraint] = {
@@ -187,19 +187,19 @@ trait ConstraintsBetweenIntegerValues
     }
 
     abstract override def flow(
-        currentPC:                        PC,
+        currentPC:                        Int,
         currentOperands:                  Operands,
         currentLocals:                    Locals,
-        successorPC:                      PC,
+        successorPC:                      Int,
         isSuccessorScheduled:             Answer,
         isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed:                 Boolean,
-        worklist:                         List[PC],
+        worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
         tracer:                           Option[AITracer]
-    ): List[PC] = {
+    ): List[Int /*PC*/ ] = {
 
         def clone(store: ConstraintsStore): ConstraintsStore = {
             def stillExists(value: IntegerLikeValue): Boolean = {
@@ -296,7 +296,7 @@ trait ConstraintsBetweenIntegerValues
     // -----------------------------------------------------------------------------------
 
     abstract override def intAreEqual(
-        pc:     PC,
+        pc:     Int,
         value1: DomainValue, value2: DomainValue
     ): Answer = {
         super.intAreEqual(pc, value1, value2) match {
@@ -318,7 +318,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     override def intIsLessThan(
-        pc:    PC,
+        pc:    Int,
         left:  DomainValue,
         right: DomainValue
     ): Answer = {
@@ -340,7 +340,7 @@ trait ConstraintsBetweenIntegerValues
         }
     }
 
-    override def intIsLessThanOrEqualTo(pc: PC, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThanOrEqualTo(pc: Int, left: DomainValue, right: DomainValue): Answer = {
         super.intIsLessThanOrEqualTo(pc, left, right) match {
             case Unknown ⇒
                 val constraint = getConstraint(pc, left, right)
@@ -366,7 +366,7 @@ trait ConstraintsBetweenIntegerValues
     // -----------------------------------------------------------------------------------
 
     abstract override def intEstablishValue(
-        pc:       PC,
+        pc:       Int,
         theValue: Int,
         value:    DomainValue,
         operands: Operands,
@@ -382,7 +382,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     abstract override def intEstablishAreEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -398,7 +398,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     override def intEstablishAreNotEqual(
-        pc:       PC,
+        pc:       Int,
         value1:   DomainValue,
         value2:   DomainValue,
         operands: Operands,
@@ -414,7 +414,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     override def intEstablishIsLessThan(
-        pc:       PC,
+        pc:       Int,
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
@@ -430,7 +430,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     override def intEstablishIsLessThanOrEqualTo(
-        pc:       PC,
+        pc:       Int,
         left:     DomainValue,
         right:    DomainValue,
         operands: Operands,
@@ -451,7 +451,7 @@ trait ConstraintsBetweenIntegerValues
     //
     // -----------------------------------------------------------------------------------
 
-    //    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    //    override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
     //        (value1, value2) match {
     //            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
     //                // to identify overflows we simply do the "add" on long values
@@ -469,7 +469,7 @@ trait ConstraintsBetweenIntegerValues
     //    }
 
     //
-    //    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
+    //    override def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue = {
     //        value match {
     //            case IntegerRange(lb, ub) ⇒
     //                val newLB = lb.toLong + increment.toLong
@@ -483,7 +483,7 @@ trait ConstraintsBetweenIntegerValues
     //        }
     //    }
     //
-    //    override def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+    //    override def isub(pc: Int, left: DomainValue, right: DomainValue): DomainValue = {
     //        if (left eq right)
     //            return IntegerRange(0, 0)
     //
@@ -504,7 +504,7 @@ trait ConstraintsBetweenIntegerValues
     //    }
     //
     //    override def idiv(
-    //        pc: PC,
+    //        pc: Int,
     //        numerator: DomainValue,
     //        denominator: DomainValue): IntegerValueOrArithmeticException = {
     //        denominator match {
@@ -522,7 +522,7 @@ trait ConstraintsBetweenIntegerValues
     //        }
     //    }
     //
-    //    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+    //    override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
     //        value1 match {
     //            case IntegerRange(lb1, ub1) ⇒
     //                if (lb1 == 0 && ub1 == 0) IntegerRange(0, 0)
@@ -561,7 +561,7 @@ trait ConstraintsBetweenIntegerValues
     //    }
     //
     //    override def irem(
-    //        pc: PC,
+    //        pc: Int,
     //        left: DomainValue,
     //        right: DomainValue): IntegerValueOrArithmeticException = {
     //        right match {
@@ -577,22 +577,22 @@ trait ConstraintsBetweenIntegerValues
     //        }
     //    }
     //
-    //    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    //    override def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
-    //    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    //    override def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
-    //    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    //    override def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
-    //    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    //    override def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
-    //    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    //    override def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
-    //    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    //    override def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
 
@@ -603,7 +603,7 @@ trait ConstraintsBetweenIntegerValues
     // -----------------------------------------------------------------------------------
 
     protected[this] def constraintsToText(
-        pc:            PC,
+        pc:            Int,
         valueToString: AnyRef ⇒ String
     ): String = {
         if (constraints(pc) == null)
@@ -619,7 +619,7 @@ trait ConstraintsBetweenIntegerValues
     }
 
     abstract override def properties(
-        pc:            PC,
+        pc:            Int,
         valueToString: AnyRef ⇒ String
     ): Option[String] = {
         val superProperties = super.properties(pc)

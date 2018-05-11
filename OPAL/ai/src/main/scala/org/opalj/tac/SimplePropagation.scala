@@ -128,7 +128,14 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar] {
 
         }
         val taCode = tac.code
-        val newTACode = TACode(taCode.params, code, cfg, taCode.exceptionHandlers, taCode.lineNumberTable)
+        val newTACode = TACode(
+            taCode.params,
+            code, // <= mutated
+            taCode.pcToIndex, // <= we only introduce nops => no need to update the mapping
+            cfg,
+            taCode.exceptionHandlers,
+            taCode.lineNumberTable
+        )
         new TACOptimizationResult(newTACode, wasTransformed)
     }
 }

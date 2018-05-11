@@ -97,11 +97,17 @@ sealed abstract class AIResult {
         evaluatedInstructions
     }
 
+    /** True if and only if a subroutine (JSR) was actually evaluated. */
+    val subroutinesWereEvaluated: Boolean
+
     /**
      * Returns all instructions that belong to a subroutine.
      */
-    lazy val subroutineInstructions: IntArraySet = {
-        AIResultBuilder.subroutineInstructions(evaluatedPCs)
+    lazy val subroutinePCs: IntArraySet = {
+        if (subroutinesWereEvaluated)
+            AIResultBuilder.subroutinePCs(evaluatedPCs)
+        else
+            IntArraySet.empty
     }
 
     /**
@@ -135,7 +141,7 @@ sealed abstract class AIResult {
      * Contains the memory layout before the call to a subroutine. This list is
      * empty if the abstract interpretation completed successfully.
      */
-    val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
 
     /**
      * Contains the memory layout related to the method's subroutines (if any).
@@ -209,6 +215,8 @@ object AICompleted {
 
 /**
  * Encapsulates the final result of the successful abstract interpretation of a method.
+ *
+ * @author Michael Eichberg
  */
 sealed abstract class AICompleted extends AIResult {
 
@@ -234,7 +242,7 @@ sealed abstract class AICompleted extends AIResult {
  * layout and which depend on the given domain. */
 object AIResultBuilder { builder ⇒
 
-    def subroutineInstructions(evaluatedPCs: IntArrayStack): IntArraySet = {
+    def subroutinePCs(evaluatedPCs: IntArrayStack): IntArraySet = {
         var instructions = IntArraySet.empty
         var subroutineLevel = 0
         // It is possible to have a method with just JSRs and no RETs...
@@ -262,9 +270,10 @@ object AIResultBuilder { builder ⇒
     )(
         theWorklist:                         List[Int /*PC*/ ],
         theEvaluatedPCs:                     IntArrayStack,
+        theSubroutinesWereEvaluated:         Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
         theLocalsArray:                      theDomain.LocalsArray,
-        theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)],
+        theMemoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)], // IMPROVE Use explicit data structure for storing the state to avoid (Un)Boxing
         theSubroutinesOperandsArray:         theDomain.OperandsArray,
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIAborted { val domain: theDomain.type } = {
@@ -276,9 +285,10 @@ object AIResultBuilder { builder ⇒
             val domain: theDomain.type = theDomain
             val worklist: List[Int /*PC*/ ] = theWorklist
             val evaluatedPCs: IntArrayStack = theEvaluatedPCs
+            val subroutinesWereEvaluated: Boolean = theSubroutinesWereEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall // IMPROVE Use explicit data structure for storing the state to avoid (Un)Boxing
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
             val subroutinesOperandsArray: theDomain.OperandsArray = theSubroutinesOperandsArray
             val subroutinesLocalsArray: theDomain.LocalsArray = theSubroutinesLocalsArray
 
@@ -286,7 +296,7 @@ object AIResultBuilder { builder ⇒
                 ai.continueInterpretation(
                     code, cfJoins, liveVariables, domain
                 )(
-                    worklist, evaluatedPCs,
+                    worklist, evaluatedPCs, subroutinesWereEvaluated,
                     operandsArray, localsArray,
                     memoryLayoutBeforeSubroutineCall, subroutinesOperandsArray, subroutinesLocalsArray
                 )
@@ -305,9 +315,10 @@ object AIResultBuilder { builder ⇒
         theLiveVariables: LiveVariables,
         theDomain:        Domain
     )(
-        theEvaluatedPCs:  IntArrayStack,
-        theOperandsArray: theDomain.OperandsArray,
-        theLocalsArray:   theDomain.LocalsArray
+        theEvaluatedPCs:             IntArrayStack,
+        theSubroutinesWereEvaluated: Boolean,
+        theOperandsArray:            theDomain.OperandsArray,
+        theLocalsArray:              theDomain.LocalsArray
     ): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
@@ -316,9 +327,10 @@ object AIResultBuilder { builder ⇒
             val liveVariables: LiveVariables = theLiveVariables
             val domain: theDomain.type = theDomain
             val evaluatedPCs: IntArrayStack = theEvaluatedPCs
+            val subroutinesWereEvaluated: Boolean = theSubroutinesWereEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
+            val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
             val subroutinesOperandsArray: theDomain.OperandsArray = null
             val subroutinesLocalsArray: theDomain.LocalsArray = null
 
@@ -326,14 +338,13 @@ object AIResultBuilder { builder ⇒
                 // In general, make sure that we don't change "this result"!
 
                 // We have to extract the information about the subroutines... if we have any...
-                val subroutinePCs = builder.subroutineInstructions(theEvaluatedPCs)
-                val evaluatedPCs = this.evaluatedPCs.clone()
+
                 val operandsArray = this.operandsArray.clone()
                 val localsArray = this.localsArray.clone()
                 var subroutinesOperandsArray: domain.OperandsArray = null
                 var subroutinesLocalsArray: domain.LocalsArray = null
-
-                if (subroutinePCs.nonEmpty) {
+                if (subroutinesWereEvaluated) {
+                    val subroutinePCs = builder.subroutinePCs(theEvaluatedPCs)
                     val codeSize = code.instructions.length
                     subroutinesOperandsArray = new Array(codeSize)
                     subroutinesLocalsArray = new Array(codeSize)
@@ -348,7 +359,7 @@ object AIResultBuilder { builder ⇒
                 ai.continueInterpretation(
                     code, cfJoins, liveVariables, domain
                 )(
-                    AI.initialWorkList, evaluatedPCs,
+                    AI.initialWorkList, evaluatedPCs, subroutinesWereEvaluated,
                     operandsArray, localsArray,
                     Nil, subroutinesOperandsArray, subroutinesLocalsArray
                 )

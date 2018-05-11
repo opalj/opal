@@ -62,6 +62,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     type CONSTANT_MethodHandle_info <: Constant_Pool_Entry
     type CONSTANT_MethodType_info <: Constant_Pool_Entry
     type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
+    type CONSTANT_Module_info <: Constant_Pool_Entry
+    type CONSTANT_Package_info <: Constant_Pool_Entry
 
     //
     // FACTORY METHODS
@@ -82,6 +84,9 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     protected def CONSTANT_MethodHandle_info(reference_kind: Int, reference_index: Int): CONSTANT_MethodHandle_info
     protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
     protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_InvokeDynamic_info
+    // JAVA 9 Constant Pool Entries
+    protected def CONSTANT_Module_info(name_index: Int): CONSTANT_Module_info
+    protected def CONSTANT_Package_info(name_index: Int): CONSTANT_Package_info
 
     /**
      * Creates a storage area for functions that will be called after the class file was
@@ -194,6 +199,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                         val tin = new DataInputStream(new ByteArrayInputStream(data))
                         CONSTANT_Utf8_info(raw, tin.readUTF)
                     }
+
                 case CONSTANT_MethodHandle_ID ⇒
                     i += 1
                     CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
@@ -203,6 +209,13 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                 case CONSTANT_InvokeDynamic_ID ⇒
                     i += 1
                     CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+
+                case CONSTANT_Module_ID ⇒
+                    i += 1
+                    CONSTANT_Module_info(in.readUnsignedShort)
+                case CONSTANT_Package_ID ⇒
+                    i += 1
+                    CONSTANT_Package_info(in.readUnsignedShort)
 
                 case _ ⇒
                     val message = s"unsupported constant pool tag id: $tag"

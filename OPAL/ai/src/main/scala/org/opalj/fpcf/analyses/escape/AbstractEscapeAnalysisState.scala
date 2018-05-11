@@ -47,6 +47,7 @@ import scala.collection.mutable
  * @author Florian Kuebler
  */
 trait AbstractEscapeAnalysisState {
+
     private[this] var _dependees = Set.empty[EOptionP[Entity, Property]]
     private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
@@ -93,8 +94,10 @@ trait AbstractEscapeAnalysisState {
  * to the [[PropertyStore]].
  */
 trait DependeeCache {
+
     private[escape] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
         mutable.Map()
+
     private[escape] val vdependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] =
         mutable.Map()
 }

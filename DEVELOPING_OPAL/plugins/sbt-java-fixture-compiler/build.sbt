@@ -1,11 +1,11 @@
 // For information on how to use this plugin, see the accompanying Readme.md document.
 name := "sbt-java-fixture-compiler"
-version := "1.0"
+version := "1.0.1"
 description := "compiles Java projects using a fixed version of the Eclipse compiler"
 organization := "de.opal-project"
 licenses += ("BSC 2-clause", url("https://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.6"
 
 sbtPlugin := true
 

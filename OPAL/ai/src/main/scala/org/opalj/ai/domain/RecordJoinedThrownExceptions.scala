@@ -46,14 +46,14 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
     type ThrownException = ExceptionValue
 
     override protected[this] def recordThrownException(
-        pc:    PC,
+        pc:    Int,
         value: ExceptionValue
     ): ThrownException = {
         value
     }
 
     override protected[this] def joinThrownExceptions(
-        pc:                        PC,
+        pc:                        Int,
         previouslyThrownException: ThrownException,
         thrownException:           ExceptionValue
     ): ThrownException = {

@@ -53,7 +53,7 @@ public @interface CompileTimePure {
      */
     String value(); // default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default { };
+    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
 
     EP[] eps() default {};
 

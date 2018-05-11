@@ -231,6 +231,8 @@ final class IntArrayStack private (
         }
     }
 
+    def toArray: Array[Int] = java.util.Arrays.copyOfRange(data, 0, size0)
+
     override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
     override def toString: String = {

@@ -60,7 +60,9 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
     final val suppressPerMethodReports = "-suppressPerMethodReports"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
-        super.checkAnalysisSpecificParameters(parameters.filter(p ⇒ p != L1TEParameter && p != suppressPerMethodReports))
+        super.checkAnalysisSpecificParameters(
+            parameters.filter(p ⇒ p != L1TEParameter && p != suppressPerMethodReports)
+        )
     }
 
     def doAnalyze(
@@ -70,10 +72,7 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val ps = project.get(PropertyStoreKey)
-        ps.setupPhase(
-            Set(ThrownExceptions.Key, ThrownExceptionsByOverridingMethods.Key),
-            Set.empty
-        )
+        ps.setupPhase(Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key))
 
         time {
             if (parameters.contains(L1TEParameter)) {
@@ -89,11 +88,12 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
             println(s"ThrownExceptionsAnalysis took ${n.toSeconds.toString}")
         }
 
-        val allMethods = ps.entities(ThrownExceptions.Key).toIterable
+        val allMethods = ps.entities(ThrownExceptions.key).toIterable
         val (epsWithThrownExceptions, epsWhichDoNotThrowExceptions) =
             allMethods.partition(_.ub.throwsNoExceptions)
         val methodsWithThrownExceptions = epsWithThrownExceptions.map(_.e.asInstanceOf[Method])
-        val privateMethodsWhichDoNotThrowExceptions = epsWhichDoNotThrowExceptions.map(_.e.asInstanceOf[Method])
+        val privateMethodsWhichDoNotThrowExceptions =
+            epsWhichDoNotThrowExceptions.map(_.e.asInstanceOf[Method])
 
         val methodsWithThrownExceptionsCount = methodsWithThrownExceptions.size
         val privateMethodsWithThrownExceptionsCount =

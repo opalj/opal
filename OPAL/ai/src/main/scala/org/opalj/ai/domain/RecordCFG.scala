@@ -33,8 +33,11 @@ package domain
 import java.lang.ref.{SoftReference ⇒ SRef}
 import java.util.function.IntConsumer
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
 import scala.collection.BitSet
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
@@ -46,9 +49,9 @@ import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
-import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
@@ -127,7 +130,7 @@ trait RecordCFG
      *          bb based cfg; the monitor associated with exceptionHandlerSuccessors is not (to be)
      *          used otherwise!
      */
-    private[this] var theBBCFG: SRef[CFG] = _
+    private[this] var theBBCFG: SRef[CFG[Instruction, Code]] = _
 
     //
     // METHODS WHICH RECORD THE AI TIME CFG AND WHICH ARE CALLED BY THE FRAMEWORK
@@ -167,19 +170,19 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def flow(
-        currentPC:                        PC,
+        currentPC:                        Int,
         currentOperands:                  Operands,
         currentLocals:                    Locals,
-        successorPC:                      PC,
+        successorPC:                      Int,
         isSuccessorScheduled:             Answer,
         isExceptionalControlFlow:         Boolean,
         abruptSubroutineTerminationCount: Int,
         wasJoinPerformed:                 Boolean,
-        worklist:                         List[PC],
+        worklist:                         List[Int /*PC*/ ],
         operandsArray:                    OperandsArray,
         localsArray:                      LocalsArray,
         tracer:                           Option[AITracer]
-    ): List[PC] = {
+    ): List[Int /*PC*/ ] = {
 
         if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
             theJumpBackTargetPCs += successorPC
@@ -216,9 +219,13 @@ trait RecordCFG
      * @note If another domain always overrides this method the invocation of this one has to be
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
-    abstract override def jumpToSubroutine(pc: PC, branchTarget: PC, returnTarget: PC): Unit = {
-        theSubroutineStartPCs += branchTarget
-        super.jumpToSubroutine(pc, branchTarget, returnTarget)
+    abstract override def jumpToSubroutine(
+        pc:             Int,
+        branchTargetPC: Int,
+        returnTargetPC: Int
+    ): Unit = {
+        theSubroutineStartPCs += branchTargetPC
+        super.jumpToSubroutine(pc, branchTargetPC, returnTargetPC)
     }
 
     /**
@@ -227,7 +234,7 @@ trait RecordCFG
      * @note If another domain always overrides this method the invocation of this one has to be
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
-    abstract override def returnVoid(pc: PC): Computation[Nothing, ExceptionValue] = {
+    abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
         super.returnVoid(pc)
     }
@@ -239,7 +246,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def ireturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -253,7 +260,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def lreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -267,7 +274,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def freturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -281,7 +288,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def dreturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -295,7 +302,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def areturn(
-        pc:    PC,
+        pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         theExitPCs += pc
@@ -309,7 +316,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def abruptMethodExecution(
-        pc:             PC,
+        pc:             Int,
         exceptionValue: ExceptionValue
     ): Unit = {
         theExitPCs += pc
@@ -360,7 +367,7 @@ trait RecordCFG
      * Returns `true` if the instruction with the given `pc` was executed.
      * The `pc` has to identify a valid instruction.
      */
-    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
+    private[this] final def unsafeWasExecuted(pc: Int): Boolean = {
         (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
             theExitPCs.contains(pc)
     }
@@ -487,7 +494,7 @@ trait RecordCFG
      * @note This method will traverse the entire graph if `successorPC` is '''not''' a regular
      *       predecessor of `pc`. Hence, consider using the `(Post)DominatorTree`.
      */
-    def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+    def isRegularPredecessorOf(pc: Int, successorPC: Int): Boolean = {
         if (pc == successorPC)
             return true;
 
@@ -519,7 +526,7 @@ trait RecordCFG
      *          thrown exception is directly handled inside this code block.
      * @note    The successor instructions are necessarily the handlers of catch blocks.
      */
-    def exceptionHandlerSuccessorsOf(pc: PC): PCs = {
+    def exceptionHandlerSuccessorsOf(pc: Int): PCs = {
         val s = exceptionHandlerSuccessors(pc)
         if (s ne null) s else NoPCs
     }
@@ -552,7 +559,7 @@ trait RecordCFG
     /**
      * Computes the transitive hull of all instructions reachable from the given instruction.
      */
-    def allReachable(pc: PC): IntTrieSet = {
+    def allReachable(pc: Int): IntTrieSet = {
         var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
@@ -643,7 +650,7 @@ trait RecordCFG
      *
      * @param pc A valid program counter.
      */
-    def predecessorsOf(pc: PC): PCs = {
+    def predecessorsOf(pc: Int): PCs = {
         val s = predecessors(pc)
         if (s ne null) s else NoPCs
     }
@@ -776,10 +783,12 @@ trait RecordCFG
         remainingPotentialInfiniteLoopHeaders
     }
 
-    def bbCFG: CFG = {
-        getOrInitField[CFG](() ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors) {
-            computeBBCFG
-        }
+    def bbCFG: CFG[Instruction, Code] = {
+        getOrInitField[CFG[Instruction, Code]](
+            () ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
+        ) {
+                computeBBCFG
+            }
     }
 
     /**
@@ -788,7 +797,7 @@ trait RecordCFG
      * (a) to detect dead paths or (b) to identify that a method call may never throw an exception
      * (in the given situation).
      */
-    private[this] def computeBBCFG: CFG = {
+    private[this] def computeBBCFG: CFG[Instruction, Code] = {
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -801,7 +810,8 @@ trait RecordCFG
         // that was actually executed!
         val bbs = new Array[BasicBlock](codeSize)
 
-        val exceptionHandlers = mutable.HashMap.empty[PC, CatchNode]
+        // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
+        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode]
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
         } {
@@ -812,8 +822,13 @@ trait RecordCFG
                 //         that jumps to the handler.
                 handlesException(exceptionHandler)) {
                 val handlerPC = exceptionHandler.handlerPC
-                val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-                val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                // OLD val catchNodeCandiate = new CatchNode(exceptionHandler, index)
+                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                var catchNode = exceptionHandlers.get(handlerPC)
+                if (catchNode == null) {
+                    catchNode = new CatchNode(exceptionHandler, index)
+                    exceptionHandlers.put(handlerPC, catchNode)
+                }
                 var handlerBB = bbs(handlerPC)
                 if (handlerBB eq null) {
                     handlerBB = new BasicBlock(handlerPC)
@@ -866,7 +881,7 @@ trait RecordCFG
 
                 // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
                 // INCOMING AND OUTGOING DEPENDENCIES!
-                def connect(sourceBB: BasicBlock, targetBBStartPC: PC): Unit = {
+                def connect(sourceBB: BasicBlock, targetBBStartPC: Int): Unit = {
                     var targetBB = bbs(targetBBStartPC)
                     if (targetBB eq null) {
                         targetBB = new BasicBlock(targetBBStartPC)
@@ -923,7 +938,8 @@ trait RecordCFG
         }
 
         // 3. create CFG class
-        CFG(code, normalReturnNode, abnormalReturnNode, exceptionHandlers.values.toList, bbs)
+        val exBBs = exceptionHandlers.values.iterator().asScala.toList
+        CFG(code, normalReturnNode, abnormalReturnNode, exBBs, bbs)
     }
 
     /**
@@ -1064,7 +1080,7 @@ trait RecordCFG
                 }
 
                 def pcsToString(pcs: List[Int /*PC*/ ]): String = {
-                    def pcToString(pc: PC): String = {
+                    def pcToString(pc: Int): String = {
                         val ln = code.lineNumber(pc).map(ln ⇒ s"[ln=$ln]").getOrElse("")
                         pc + ln+": "+cfgDomain.code.instructions(pc).toString(pc)
                     }

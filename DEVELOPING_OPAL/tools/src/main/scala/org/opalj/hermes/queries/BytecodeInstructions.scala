@@ -34,7 +34,6 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
-import org.opalj.br.{PCAndInstruction ⇒ BRPCAndInstruction}
 
 /**
  * Counts the number of occurrences of each bytecode instruction.
@@ -74,9 +73,11 @@ object BytecodeInstructions extends FeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            BRPCAndInstruction(pc, i) ← body
+            pcAndInstruction ← body
         } {
-            instructionsLocations(i.opcode) += InstructionLocation(methodLocation, pc)
+            val instruction = pcAndInstruction.instruction
+            val pc = pcAndInstruction.pc
+            instructionsLocations(instruction.opcode) += InstructionLocation(methodLocation, pc)
         }
 
         for { (locations, opcode) ← instructionsLocations.iterator.zipWithIndex } yield {

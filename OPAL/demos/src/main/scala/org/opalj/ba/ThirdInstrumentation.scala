@@ -224,11 +224,11 @@ object ThirdInstrumentation extends App {
     }
     val cl = new ProjectBasedInMemoryClassLoader(cfr)
     val newClass = cl.findClass(TheType.toJava)
-    val instance = newClass.newInstance()
+    val instance = newClass.getDeclaredConstructor().newInstance()
     newClass.getMethod("callsToString").invoke(instance)
     newClass.getMethod("playingWithTypes", classOf[Object]).invoke(instance, new ArrayList[AnyRef]())
-    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
-    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
+    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, Integer.valueOf(0))
+    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, Integer.valueOf(1))
     newClass.getMethod("endlessLoop").invoke(instance)
 
     println("expected: org.opalj.ba.SimpleInstrumentationDemo{ public void killMe1() }")

@@ -207,7 +207,7 @@ trait IntIterator { self ⇒
     }
 
     /**
-     * Converts this iterator to Scala Iterator (which potentially will (un)box
+     * Converts this iterator to a Scala Iterator (which potentially will (un)box
      * the returned values.)
      */
     def iterator: Iterator[Int] = {
@@ -215,6 +215,19 @@ trait IntIterator { self ⇒
             def hasNext: Boolean = self.hasNext
             def next: Int = self.next()
         }
+    }
+
+    /**
+     * Compares the returned values to check if the iteration order is the same.
+     *
+     * Both iterators may be consumed up to an arbitrary point.
+     */
+    def sameValues(that: IntIterator): Boolean = {
+        while (this.hasNext) {
+            if (!that.hasNext || this.next() != that.next())
+                return false;
+        }
+        !that.hasNext
     }
 
 }

@@ -58,6 +58,11 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
     def foreach(f: IntConsumer): Unit
     def withFilter(p: (Int) ⇒ Boolean): T
     def map(f: Int ⇒ Int): T
+    /**
+     * Uses the keys of this set to map them to the value found in
+     * the given array at the respective index.
+     */
+    def map(map: Array[Int]): T
     def mapToAny[A](f: IntFunction[A]): Set[A] = {
         var r = Set.empty[A]
         foreach { v ⇒ r += f(v) }
@@ -94,6 +99,8 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
     }
 
     final def ++(that: TraversableOnce[Int]): T = that.foldLeft(this)(_ + _)
+
+    final def ++(that: IntIterator): T = that.foldLeft(this)(_ + _)
 
     def iterator: Iterator[Int]
     def intIterator: IntIterator

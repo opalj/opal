@@ -45,7 +45,6 @@ import scala.collection.mutable.Builder
 sealed abstract class IntArraySet
     extends ((Int) ⇒ Int)
     with IntSet[IntArraySet]
-    with IntWorkSet[IntArraySet] // TODO Remove this mixin as soon as we have a better data-structure!
     with IntCollectionWithStableOrdering[IntArraySet] {
 
     /**
@@ -74,13 +73,11 @@ case object EmptyIntArraySet extends IntArraySet {
     override def size: Int = 0
     override def max: Int = throw new UnsupportedOperationException("empty set")
     override def min: Int = throw new UnsupportedOperationException("empty set")
-    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
-        throw new UnsupportedOperationException("empty")
-    }
     override def foreach(f: IntConsumer): Unit = {}
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
     override def map(f: Int ⇒ Int): IntArraySet = this
+    override def map(map: Array[Int]): IntArraySet = this
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = this
     override def -(i: Int): this.type = this
     override def subsetOf(other: IntArraySet): Boolean = true
@@ -116,9 +113,6 @@ case class IntArraySet1(i: Int) extends IntArraySet {
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def max: Int = this.i
     override def min: Int = this.i
-    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
-        IntHeadAndRestOfSet(i, EmptyIntArraySet)
-    }
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = if (p(i)) this else EmptyIntArraySet
     override def map(f: Int ⇒ Int): IntArraySet = {
         val i = this.i
@@ -127,6 +121,13 @@ case class IntArraySet1(i: Int) extends IntArraySet {
             new IntArraySet1(newI)
         else
             this
+    }
+    override def map(map: Array[Int]): IntArraySet = {
+        val mappedI = map(i)
+        if (mappedI == i)
+            this
+        else
+            new IntArraySet1(mappedI)
     }
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i)
     override def -(i: Int): IntArraySet = if (this.i != i) this else EmptyIntArraySet
@@ -181,10 +182,6 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def size: Int = 2
     override def min: Int = this.i1
     override def max: Int = this.i2
-    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
-        IntHeadAndRestOfSet(i2, new IntArraySet1(i1))
-    }
-
     override def iterator: Iterator[Int] = new AbstractIterator[Int] {
         private[this] var i = 0
         def hasNext: Boolean = i < 2
@@ -232,6 +229,9 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
             IntArraySet(newI1, newI2) // ensures invariant
         else
             this
+    }
+    override def map(map: Array[Int]): IntArraySet = {
+        IntArraySet2(map(i1), map(i2))
     }
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i1) ++ f(i2)
     override def -(i: Int): IntArraySet = {
@@ -289,9 +289,6 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def size: Int = 3
     override def min: Int = this.i1
     override def max: Int = this.i3
-    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = {
-        IntHeadAndRestOfSet(i3, new IntArraySet2(i1, i2))
-    } // TODO Remove
 
     override def iterator: Iterator[Int] = new AbstractIterator[Int] {
         var i = 0
@@ -359,6 +356,9 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
         else
             this
     }
+    override def map(map: Array[Int]): IntArraySet = {
+        IntArraySet3(map(i1), map(i2), map(i3))
+    }
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i1) ++ f(i2) ++ f(i3)
 
     override def -(i: Int): IntArraySet = {
@@ -416,12 +416,7 @@ case class IntArraySetN private[immutable] (
     override def isEmpty: Boolean = false
     override def max: Int = is(is.length - 1)
     override def min: Int = is(0)
-    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = { // TODO Remove
-        if (is.length > 4)
-            IntHeadAndRestOfSet(max, new IntArraySetN(is.init))
-        else
-            IntHeadAndRestOfSet(max, new IntArraySet3(is(0), is(1), is(2)))
-    }
+
     override def foreach(f: IntConsumer): Unit = {
         val max = is.length
         var i = 0
@@ -443,10 +438,13 @@ case class IntArraySetN private[immutable] (
         }
     }
 
-    override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = new FilteredIntArraySet(p, this)
+    override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = {
+        new FilteredIntArraySet(p, this)
+    }
 
     override def map(f: Int ⇒ Int): IntArraySet = {
         // let's check if all values are mapped to their original values; if so return "this"
+        val is = this.is
         val max = is.length
         var i = 0
         var f_is_i: Int = 0 // the initial value is never used!
@@ -458,11 +456,22 @@ case class IntArraySetN private[immutable] (
         if (i == max)
             return this;
 
-        val isb = new IntArraySetBuilder
+        val isb = new IntArraySetBuilder(max)
         var l = 0
         while (l < i) { isb += is(l) /*the values were unchanged*/ ; l += 1 }
         while (i < max) {
             isb += f(is(i))
+            i += 1
+        }
+        isb.result()
+    }
+    override def map(map: Array[Int]): IntArraySet = {
+        val is = this.is
+        val max = is.length
+        val isb = new IntArraySetBuilder(max)
+        var i = 0
+        while (i < max) {
+            isb += map(is(i))
             i += 1
         }
         isb.result()
@@ -672,8 +681,8 @@ private[immutable] class FilteredIntArraySet(
     override def min: Int = getFiltered.min
     override def max: Int = getFiltered.max
     override def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
+    override def map(map: Array[Int]): IntArraySet = getFiltered.map(map)
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = getFiltered.flatMap(f)
-    override def getAndRemove: IntHeadAndRestOfSet[IntArraySet] = getFiltered.getAndRemove // TODO remove
     override def -(i: Int): IntArraySet = getFiltered - i
     override def +(i: Int): IntArraySet = getFiltered + 1
     override def toChain: Chain[Int] = intIterator.toChain
@@ -690,6 +699,10 @@ class IntArraySetBuilder private[immutable] (
 
     def this() {
         this(new Array[Int](4), 0)
+    }
+
+    def this(initialSize: Int) {
+        this(new Array[Int](Math.max(initialSize, 4)), 0)
     }
 
     override def +=(elem: Int): this.type = {
@@ -796,6 +809,17 @@ object IntArraySet {
             else new IntArraySet3(v0, i3, v1)
         } else {
             new IntArraySet3(v0, v1, i3)
+        }
+    }
+
+    /** Constructs a sorted IntArraySet ''potentially using the given data-structure''. */
+    def fromSortedArray(data: Array[Int]): IntArraySet = {
+        data.length match {
+            case 0     ⇒ EmptyIntArraySet
+            case 1     ⇒ new IntArraySet1(data(0))
+            case 2     ⇒ new IntArraySet2(data(0), data(1))
+            case 3     ⇒ new IntArraySet3(data(0), data(1), data(2))
+            case size0 ⇒ new IntArraySetN(data)
         }
     }
 

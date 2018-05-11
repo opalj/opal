@@ -33,6 +33,7 @@ import org.opalj.br.Attribute
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.LineNumberTable
 import org.opalj.br.SimilarityTestConfiguration
+import org.opalj.br.CodeSequence
 import org.opalj.br.cfg.CFG
 
 /**
@@ -51,16 +52,31 @@ import org.opalj.br.cfg.CFG
  *               value will reflect this usage.
  *               In case of the naive representation it "just" contains the names of the
  *               registers which store the parameters.
+ * @param pcToIndex The mapping between the pcs of the original bytecode instructions to the
+ *               index of the first statement that was generated for the bytecode instruction
+ *               - if any. For details see `TACNaive` and `TACAI`
+ *
  * @author Michael Eichberg
  */
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
         stmts:             Array[Stmt[V]], // CONST
-        cfg:               CFG,
+        pcToIndex:         Array[Int],
+        cfg:               CFG[Stmt[V], TACStmts[V]],
         exceptionHandlers: ExceptionHandlers,
         lineNumberTable:   Option[LineNumberTable]
 // TODO Support the rewriting of TypeAnnotations etc.
-) extends Attribute {
+) extends Attribute with CodeSequence[Stmt[V]] {
+
+    final override def instructions: Array[Stmt[V]] = stmts
+
+    final override def pcOfPreviousInstruction(pc: Int): Int = {
+        // The representation is compact: hence, the previous instruction/statement just
+        // has the current index/pc - 1.
+        pc - 1
+    }
+
+    final override def pcOfNextInstruction(pc: Int): Int = pc + 1
 
     override def kindId: Int = TACode.KindId
 

@@ -36,8 +36,8 @@ import java.util.function.IntFunction
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
- * The post-dominator tree (see [[PostDominatorTree$#apply*]] for details regarding
- * the properties).
+ * A representation of a post-dominator tree (see [[PostDominatorTree$#apply*]]
+ * for details regarding the properties).
  *
  * For information regarding issues related to using post-dominator trees for computing
  * control dependence information see "A New Foundation for Control Dependence and Slicing for

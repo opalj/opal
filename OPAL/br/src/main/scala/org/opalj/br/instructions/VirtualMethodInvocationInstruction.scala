@@ -39,7 +39,7 @@ abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstru
 
     override def isVirtualMethodCall: Boolean = true
 
-    override final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
         1 + methodDescriptor.parametersCount
     }
 

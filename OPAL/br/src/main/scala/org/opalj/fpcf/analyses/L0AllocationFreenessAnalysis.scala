@@ -31,6 +31,7 @@ package fpcf
 package analyses
 
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties.AllocationFreeness
@@ -52,19 +53,41 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
+     * Retrieves and commits the methods allocation freeness as calculated for its declaring class
+     * type for the current DefinedMethod that represents the non-overwritten method in a subtype.
+     */
+    def baseMethodAllocationFreeness(dm: DefinedMethod): PropertyComputationResult = {
+
+        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
+            case FinalEP(_, af)                 ⇒ Result(dm, af)
+            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
+            case epk ⇒
+                IntermediateResult(dm, MethodWithAllocations, AllocationFreeMethod, Seq(epk), c)
+        }
+
+        c(propertyStore(declaredMethods(dm.definedMethod), AllocationFreeness.key))
+    }
+
+    /**
      * Determines the allocation freeness of the method.
      *
      * This function encapsulates the continuation.
      */
     def determineAllocationFreeness(
-        declaredMethod: DeclaredMethod
+        definedMethod: DefinedMethod
     ): PropertyComputationResult = {
 
-        if (!declaredMethod.hasDefinition || declaredMethod.methodDefinition.body.isEmpty)
-            return Result(declaredMethod, MethodWithAllocations);
+        if (definedMethod.methodDefinition.body.isEmpty)
+            return Result(definedMethod, MethodWithAllocations);
 
-        val method = declaredMethod.methodDefinition
+        val method = definedMethod.methodDefinition
         val declaringClassType = method.classFile.thisType
+
+        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // don't re-analyze the code
+        if (declaringClassType ne definedMethod.declaringClassType)
+            return baseMethodAllocationFreeness(definedMethod.asDefinedMethod);
+
         val methodDescriptor = method.descriptor
         val methodName = method.name
         val body = method.body.get
@@ -81,7 +104,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             val instruction = instructions(currentPC)
             (instruction.opcode: @switch) match {
                 case NEW.opcode | NEWARRAY.opcode | MULTIANEWARRAY.opcode | ANEWARRAY.opcode ⇒
-                    return Result(declaredMethod, MethodWithAllocations);
+                    return Result(definedMethod, MethodWithAllocations);
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
                     case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
@@ -104,7 +127,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                                         dependees += ep
 
                                     case EPS(_, _, _) ⇒
-                                        return Result(declaredMethod, MethodWithAllocations);
+                                        return Result(definedMethod, MethodWithAllocations);
 
                                     case epk ⇒
                                         dependees += epk
@@ -113,41 +136,41 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                             case _ /* Empty or Failure */ ⇒
                                 // We know nothing about the target method (it is not
                                 // found in the scope of the current project).
-                                return Result(declaredMethod, MethodWithAllocations);
+                                return Result(definedMethod, MethodWithAllocations);
 
                         }
                 }
 
                 case ASTORE_0.opcode if !method.isStatic ⇒
-                    if(mayOverwriteSelf) overwritesSelf = true
+                    if (mayOverwriteSelf) overwritesSelf = true
                     else // A PUTFIELD may result in a NPE raised (and therefore allocated)
-                        return Result(declaredMethod, MethodWithAllocations)
+                        return Result(definedMethod, MethodWithAllocations)
 
                 case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
                     if (method.isStatic || overwritesSelf)
-                        return Result(declaredMethod, MethodWithAllocations);
+                        return Result(definedMethod, MethodWithAllocations);
                     else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
                         ALOAD_0.opcode)
-                        return Result(declaredMethod, MethodWithAllocations);
+                        return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
 
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     // We don't handle these calls here, just treat them as having allocations
-                    return Result(declaredMethod, MethodWithAllocations);
+                    return Result(definedMethod, MethodWithAllocations);
 
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) allocate no objects
                     // as long as no implicit exceptions are raised.
                     if (instruction.jvmExceptions.nonEmpty) {
                         // JVM Exceptions result in the exception object being allocated.
-                        return Result(declaredMethod, MethodWithAllocations);
+                        return Result(definedMethod, MethodWithAllocations);
                     }
             }
             currentPC = body.pcOfNextInstruction(currentPC)
         }
 
         if (dependees.isEmpty)
-            return Result(declaredMethod, AllocationFreeMethod);
+            return Result(definedMethod, AllocationFreeMethod);
 
         // This function computes the “allocation freeness for a method based on the allocation
         // freeness of its callees
@@ -158,10 +181,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             eps match {
                 case FinalEP(_, AllocationFreeMethod) ⇒
                     if (dependees.isEmpty)
-                        Result(declaredMethod, AllocationFreeMethod)
+                        Result(definedMethod, AllocationFreeMethod)
                     else {
                         IntermediateResult(
-                            declaredMethod,
+                            definedMethod,
                             MethodWithAllocations,
                             AllocationFreeMethod,
                             dependees,
@@ -170,12 +193,12 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                     }
 
                 case FinalEP(_, MethodWithAllocations) ⇒
-                    Result(declaredMethod, MethodWithAllocations)
+                    Result(definedMethod, MethodWithAllocations)
 
                 case IntermediateEP(_, _, _) ⇒
                     dependees += eps
                     IntermediateResult(
-                        declaredMethod,
+                        definedMethod,
                         MethodWithAllocations,
                         AllocationFreeMethod,
                         dependees,
@@ -184,20 +207,15 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             }
         }
 
-        IntermediateResult(
-            declaredMethod,
-            MethodWithAllocations,
-            AllocationFreeMethod,
-            dependees,
-            c
-        )
+        IntermediateResult(definedMethod, MethodWithAllocations, AllocationFreeMethod, dependees, c)
     }
 
     /** Called when the analysis is scheduled lazily. */
     def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
         e match {
-            case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case e ⇒
+            case m: DefinedMethod  ⇒ determineAllocationFreeness(m)
+            case m: DeclaredMethod ⇒ Result(m, MethodWithAllocations)
+            case _ ⇒
                 throw new UnknownError("allocation freeness is only defined for methods")
         }
     }
@@ -214,7 +232,9 @@ object EagerL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisSch
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(project)
-        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
+        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
+            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+        }
         propertyStore.scheduleForEntities(declaredMethods)(analysis.determineAllocationFreeness)
         analysis
     }

@@ -34,8 +34,9 @@ package l1
 import scala.reflect.ClassTag
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br._
+import org.opalj.value.IsIntegerValue
 import org.opalj.collection.SingletonSet
+import org.opalj.br._
 
 /**
  * This domain enables the tracking of integer values using sets. The cardinality of
@@ -79,8 +80,10 @@ trait IntegerSetValues
      */
     abstract class IntegerLikeValue
         extends TypedValue[CTIntType]
-        with IsIntegerValue[IntegerLikeValue] {
+        with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
+
+        final override def valueType: Option[CTIntType] = Some(CTIntType)
 
         final override def computationalType: ComputationalType = ComputationalTypeInt
 

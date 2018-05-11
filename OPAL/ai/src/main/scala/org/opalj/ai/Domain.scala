@@ -119,7 +119,7 @@ trait Domain
     /**
      * Creates the domain value that represents the constant field value.
      */
-    final def ConstantFieldValue(pc: PC, cv: ConstantFieldValue[_]): DomainValue = {
+    final def ConstantFieldValue(pc: Int, cv: ConstantFieldValue[_]): DomainValue = {
         (cv.kindId: @scala.annotation.switch) match {
             case ConstantInteger.KindId ⇒ IntegerValue(pc, cv.toInt)
             case ConstantLong.KindId    ⇒ LongValue(pc, cv.toLong)

@@ -45,7 +45,7 @@ import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFree
  * @author Dominik Helm
  */
 class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineAllocationFreeness(dm: DeclaredMethod): PropertyComputationResult = {
         if (!dm.hasDefinition) return Result(dm, VMethodWithAllocations);
@@ -99,7 +99,7 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
     def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case e ⇒ throw new UnknownError(
+            case _ ⇒ throw new UnknownError(
                 "virtual method allocation freeness is only defined for declared methods"
             )
         }

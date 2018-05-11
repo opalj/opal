@@ -37,6 +37,7 @@ import java.util.Arrays.fill
 import scala.collection.AbstractIterator
 import scala.collection.mutable
 import scala.collection.immutable.IntMap
+import scala.collection.immutable.Queue
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
 import org.opalj.util.AnyToAnyThis
@@ -49,10 +50,12 @@ import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.IntQueue
-import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.IntPair
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -82,6 +85,7 @@ final class Code private (
 ) extends Attribute
     with CommonAttributes
     with InstructionsContainer
+    with CodeSequence[Instruction]
     with FilterMonadic[PCAndInstruction, Nothing] {
     code ⇒
 
@@ -163,7 +167,7 @@ final class Code private (
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code foreach { (instructionLocation: PCAndInstruction) ⇒
+            code foreach { instructionLocation: PCAndInstruction ⇒
                 if (p(instructionLocation)) {
                     f(instructionLocation) foreach { v ⇒ that += v }
                 }
@@ -172,7 +176,7 @@ final class Code private (
         }
 
         def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
-            code.foreach { (instructionLocation: PCAndInstruction) ⇒
+            code foreach { instructionLocation: PCAndInstruction ⇒
                 if (p(instructionLocation)) f(instructionLocation)
             }
         }
@@ -204,9 +208,7 @@ final class Code private (
         bf: CanBuildFrom[Nothing, B, That]
     ): That = {
         val that = bf()
-        code.foreach { instructionLocation ⇒
-            f(instructionLocation) foreach { v ⇒ that += v }
-        }
+        code foreach { instructionLocation ⇒ f(instructionLocation).foreach(that += _) }
         that.result
     }
 
@@ -222,15 +224,15 @@ final class Code private (
      */
     def programCounters: IntIterator = {
         new IntIterator {
-            var pc = 0 // there is always at least one instruction
+            var nextPC = 0 // there is always at least one instruction
 
             def next(): Int = {
-                val next = pc
-                pc = pcOfNextInstruction(pc)
-                next
+                val pc = nextPC
+                nextPC = pcOfNextInstruction(nextPC)
+                pc
             }
 
-            def hasNext: Boolean = pc < instructions.length
+            def hasNext: Boolean = nextPC < instructions.length
         }
     }
 
@@ -252,8 +254,8 @@ final class Code private (
     }
 
     /**
-     * Calculates for each instruction to which subroutine the respective instruction
-     * belongs to – if any. This information is required to, e.g., identify the subroutine
+     * Calculates for each instruction the subroutine to which it belongs to – if any.
+     * This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note   Calling this method only makes sense for Java bytecode that actually contains
@@ -345,9 +347,8 @@ final class Code private (
             remainingExceptionHandlers =
                 for {
                     eh ← remainingExceptionHandlers
-                    ExceptionHandler(startPC, endPC, handlerPC, _) = eh
-                    if subroutineIds(handlerPC) == -1 // we did not already analyze the handler
-                    if !belongsToCurrentSubroutine(startPC, endPC, handlerPC)
+                    if subroutineIds(eh.handlerPC) == -1 // we did not already analyze the handler
+                    if !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
                 } yield {
                     eh
                 }
@@ -445,10 +446,10 @@ final class Code private (
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        var cfJoins = IntTrieSet.empty
+        var cfJoins: IntTrieSet = EmptyIntTrieSet
 
-        val isReached = FixedSizeBitSet.create(instructionsLength)
-        isReached += 0 // the first instruction is always reached!
+        val isReached = new Array[Boolean](instructionsLength)
+        isReached(0) = true // the first instruction is always reached!
 
         var pc = 0
         while (pc < instructionsLength) {
@@ -456,10 +457,10 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
-                if (isReached.contains(pc))
+                if (isReached(pc))
                     cfJoins += pc
                 else
-                    isReached += pc
+                    isReached(pc) = true
             }
 
             (instruction.opcode: @switch) match {
@@ -487,29 +488,31 @@ final class Code private (
      *
      * @return  (1) An array which contains for each instruction the set of all predecessors,
      *          (2) the set of all instructions which have only predecessors; i.e., no successors
-     *          and (3) also the set of all instructions where multiple paths join.
-     *          `(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)`
+     *          and (3) the set of all instructions where multiple paths join.
+     *          ´(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, PCs/*CF_JOINS*/)´.
      *
      * Note, that in case of completely broken code, set 2 may contain other
      * instructions than `return` and `athrow` instructions.
      * If the code contains jsr/ret instructions the full blown CFG is computed.
      */
-    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, IntTrieSet) = {
+    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
+        implicit val code = this
+
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
-        allPredecessorPCs(0) = IntTrieSet.empty // initialization for the start node
-        var exitPCs = IntTrieSet.empty
+        allPredecessorPCs(0) = EmptyIntTrieSet // initialization for the start node
+        var exitPCs: IntTrieSet = EmptyIntTrieSet
 
-        var cfJoins = IntTrieSet.empty
-        val isReached = FixedSizeBitSet.create(instructionsLength)
-        isReached += 0 // the first instruction is always reached!
+        var cfJoins: IntTrieSet = EmptyIntTrieSet
+        val isReached = new Array[Boolean](instructionsLength)
+        isReached(0) = true // the first instruction is always reached!
         @inline def runtimeSuccessor(successorPC: Int): Unit = {
-            if (isReached.contains(successorPC))
+            if (isReached(successorPC))
                 cfJoins += successorPC
             else
-                isReached += successorPC
+                isReached(successorPC) = true
         }
 
         lazy val cfg = CFGFactory(code, classHierarchy) // fallback if we analyze pre Java 5 code...
@@ -518,9 +521,9 @@ final class Code private (
             val i = instructions(pc)
             val nextPCs =
                 if (i.opcode == RET.opcode)
-                    i.asInstanceOf[RET].nextInstructions(pc, () ⇒ cfg)(this)
+                    i.asInstanceOf[RET].nextInstructions(pc, () ⇒ cfg)
                 else
-                    i.nextInstructions(pc, false)(this, classHierarchy)
+                    i.nextInstructions(pc, regularSuccessorsOnly = false)
             if (nextPCs.isEmpty) {
                 exitPCs += pc
             } else {
@@ -536,7 +539,7 @@ final class Code private (
                             allPredecessorPCs(nextPC) = predecessorPCs + pc
                         }
                     } else {
-                        // this handles cases where we have totally broken code; e.g.,
+                        // This handles cases where we have totally broken code; e.g.,
                         // compile-time dead code at the end of the method where the
                         // very last instruction is not even a ret/jsr/goto/return/atrow
                         // instruction (e.g., a NOP instruction as in case of jPython
@@ -545,7 +548,7 @@ final class Code private (
                     }
                 }
             }
-            pc = i.indexOfNextInstruction(pc)(this)
+            pc = i.indexOfNextInstruction(pc)
         }
 
         (allPredecessorPCs, exitPCs, cfJoins)
@@ -573,8 +576,9 @@ final class Code private (
     def liveVariables(
         predecessorPCs: Array[PCs],
         finalPCs:       PCs,
-        cfJoins:        IntTrieSet
+        cfJoins:        PCs
     ): LiveVariables = {
+        // IMPROVE Use StackMapTable (if available) to preinitialize the live variable information
         val instructions = this.instructions
         val instructionsLength = instructions.length
         val liveVariables = new Array[BitArraySet](instructionsLength)
@@ -587,8 +591,8 @@ final class Code private (
             var liveVariableInfo = AllDead
             if (instruction.readsLocal) {
                 // This instruction is by construction "not a final instruction"
-                // because these instructions never throw any(!) exceptions and
-                // also never "return" instructions.
+                // because this instruction never throws any(!) exceptions and it
+                // also never "returns" instructions.
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
@@ -666,16 +670,16 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (IntTrieSet /*joins*/ , IntTrieSet /*forks*/ , IntMap[IntTrieSet] /*forkTargetPCs*/ ) = {
+    ): (PCs /*joins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        var cfJoins = IntTrieSet.empty
-        var cfForks = IntTrieSet.empty
+        var cfJoins: IntTrieSet = EmptyIntTrieSet
+        var cfForks: IntTrieSet = EmptyIntTrieSet
         var cfForkTargets = IntMap.empty[IntTrieSet]
 
-        val isReached = FixedSizeBitSet.create(instructionsLength)
-        isReached += 0 // the first instruction is always reached!
+        val isReached = new Array[Boolean](instructionsLength)
+        isReached(0) = true // the first instruction is always reached!
 
         lazy val cfg = CFGFactory(this, classHierarchy)
 
@@ -685,13 +689,13 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
-                if (isReached.contains(pc))
+                if (isReached(pc))
                     cfJoins += pc
                 else
-                    isReached += pc
+                    isReached(pc) = true
             }
 
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
                 case RET.opcode ⇒
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.
@@ -726,16 +730,6 @@ final class Code private (
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(pc, instruction)
-            pc = pcOfNextInstruction(pc)
-        }
-    }
-
-    @inline final def foreach[U](f: (PCAndInstruction) ⇒ U): Unit = {
-        val instructionsLength = instructions.length
-        var pc = 0
-        while (pc < instructionsLength) {
-            val instruction = instructions(pc)
-            f(PCAndInstruction(pc, instruction))
             pc = pcOfNextInstruction(pc)
         }
     }
@@ -1048,8 +1042,8 @@ final class Code private (
      * the given instruction (pc).
      */
     def localVariable(pc: Int, index: Int): Option[LocalVariable] = {
-        localVariableTable.flatMap { lvs ⇒
-            lvs.find { lv ⇒
+        localVariableTable flatMap { lvs ⇒
+            lvs find { lv ⇒
                 val result = lv.index == index &&
                     lv.startPC <= pc &&
                     (lv.startPC + lv.length) > pc
@@ -1144,6 +1138,59 @@ final class Code private (
         }
     }
 
+    def foldLeft[T <: Any](start: T)(f: (T, Int /*PC*/ , Instruction) ⇒ T): T = {
+        val max_pc = instructions.length
+        var pc = 0
+        var vs = start
+        while (pc < max_pc) {
+            vs = f(vs, pc, instructions(pc))
+            pc = pcOfNextInstruction(pc)
+        }
+        vs
+    }
+
+    /**
+     * Collects all instructions for which the given function is defined. The order in
+     * which the instructions are collected is reversed when compared to the order in the
+     * instructions array.
+     */
+    def collectInstructions[B <: AnyRef](f: PartialFunction[Instruction, B]): List[B] = {
+        val max_pc = instructions.length
+        var result: List[B] = List.empty
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= r.asInstanceOf[B]
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        result
+    }
+
+    /**
+     * Collects all instructions for which the given function is defined. The order in
+     * which the instructions are collected is reversed when compared to the order in the
+     * instructions array.
+     */
+    def collectInstructionsWithIndex[B <: AnyRef](
+        f: PartialFunction[Instruction, B]
+    ): List[PCAndAnyRef[B]] = {
+        val max_pc = instructions.length
+        var result: List[PCAndAnyRef[B]] = List.empty
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        result
+    }
+
     /**
      * Collects all instructions for which the given function is defined.
      *
@@ -1171,124 +1218,19 @@ final class Code private (
      *         defined combined with the index (program counter) of the instruction in the
      *         code array.
      */
-    def collect[B](f: PartialFunction[Instruction, B]): Seq[(PC, B)] = { // IMPROVE Use specialized data-structure PCAndValue
+    def collect[B <: AnyRef](f: PartialFunction[Instruction, B]): List[PCAndAnyRef[B]] = {
         val max_pc = instructions.length
         var pc = 0
-        var result: List[(PC, B)] = List.empty
+        var result: List[PCAndAnyRef[B]] = List.empty
         while (pc < max_pc) {
             val instruction = instructions(pc)
             val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                result ::= ((pc, r.asInstanceOf[B]))
+                result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
             }
             pc = pcOfNextInstruction(pc)
         }
         result.reverse
-    }
-
-    /**
-     * Collects the results of the evaluation of the partial function until the partial function
-     * is not defined.
-     *
-     * @return The program counter of the instruction for which the given partial function was
-     *         not defined along with the list of previous results. '''The results are sorted in
-     *         descending order w.r.t. the PC'''.
-     */
-    def collectUntil[B](f: PartialFunction[PCAndInstruction, B]): (PC, Seq[B]) = { // IMPROVE Use specialized data-structure PCAndValue
-        val max_pc = instructions.length
-        var pc = 0
-        var result: List[B] = List.empty
-        while (pc < max_pc) {
-            val instruction = instructions(pc)
-            val value = PCAndInstruction(pc, instruction)
-            if (f.isDefinedAt(value)) {
-                result = f(value) :: result
-            } else {
-                return (pc, result);
-            }
-            pc = pcOfNextInstruction(pc)
-        }
-        (pc, result)
-    }
-
-    /**
-     * Collects all instructions for which the given function is defined. The order in
-     * which the instructions are collected is reversed when compared to the order in the
-     * instructions array.
-     */
-    def collectInstructions[B](f: PartialFunction[Instruction, B]): Seq[B] = {
-        val max_pc = instructions.length
-        var result: List[B] = List.empty
-        var pc = 0
-        while (pc < max_pc) {
-            val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
-            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                result ::= r.asInstanceOf[B]
-            }
-            pc = pcOfNextInstruction(pc)
-        }
-        result
-    }
-
-    /**
-     * Applies the given function `f` to all instruction objects for which the function is
-     * defined. The function is passed a tuple consisting of the current program
-     * counter/index in the code array and the corresponding instruction.
-     *
-     * ==Example==
-     * Example usage to collect the program counters (indexes) of all instructions that
-     * are the target of a conditional branch instruction:
-     * {{{
-     * code.collectWithIndex({
-     *  case (pc, cbi: ConditionalBranchInstruction) ⇒
-     *      Seq(cbi.indexOfNextInstruction(pc, code), pc + cbi.branchoffset)
-     *  }) // .flatten should equal (Seq(...))
-     * }}}
-     */
-    def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): Chain[B] = {
-        val max_pc = instructions.length
-        var pc = 0
-        val vs = Chain.newBuilder[B]
-        while (pc < max_pc) {
-            val params = PCAndInstruction(pc, instructions(pc))
-            val r: Any = f.applyOrElse(params, AnyToAnyThis)
-            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                vs += r.asInstanceOf[B]
-            }
-            pc = pcOfNextInstruction(pc)
-        }
-        vs.result()
-    }
-
-    def foldLeft[T](start: T)(f: (T, PC, Instruction) ⇒ T): T = {
-        val max_pc = instructions.length
-        var pc = 0
-        var vs = start
-        while (pc < max_pc) {
-            vs = f(vs, pc, instructions(pc))
-            pc = pcOfNextInstruction(pc)
-        }
-        vs
-    }
-
-    /**
-     * Applies the given function to the first instruction for which the given function
-     * is defined.
-     */
-    def collectFirstWithIndex[B](f: PartialFunction[PCAndInstruction, B]): Option[B] = {
-        val max_pc = instructions.length
-        var pc = 0
-        while (pc < max_pc) {
-            val params = PCAndInstruction(pc, instructions(pc))
-            val r: Any = f.applyOrElse(params, AnyToAnyThis)
-            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                return Some(r.asInstanceOf[B]);
-            }
-            pc = pcOfNextInstruction(pc)
-        }
-
-        None
     }
 
     /**
@@ -1308,132 +1250,41 @@ final class Code private (
         None
     }
 
-    /**
-     * Slides over the code array and tries to apply the given function to each sequence
-     * of instructions consisting of `windowSize` elements.
-     *
-     * ==Scenario==
-     * If you want to search for specific patterns of bytecode instructions. Some "bug
-     * patterns" are directly related to specific bytecode sequences and these patterns
-     * can easily be identified using this method.
-     *
-     * ==Example==
-     * Search for sequences of the bytecode instructions `PUTFIELD` and `ALOAD_O` in the
-     * method's body and return the list of program counters of the start of the
-     * identified sequences.
-     * {{{
-     * code.slidingCollect(2)({
-     *  case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
-     * }) should be(Seq(...))
-     * }}}
-     *
-     * @note If possible, use one of the more specialized methods, such as, [[collectPair]].
-     *       The pure iteration overhead caused by this method is roughly 10-20 times higher
-     *       than this one.
-     *
-     * @param windowSize The size of the sequence of instructions that is passed to the
-     *                   partial function.
-     *                   It must be larger than 0. **Do not use this method with windowSize "1"**;
-     *                   it is more efficient to use the `collect` or `collectWithIndex` methods
-     *                   instead.
-     *
-     * @return The list of results of applying the function f for each matching sequence.
-     */
-    def slidingCollect[B](
-        windowSize: Int
-    )(
-        f: PartialFunction[(PC, Seq[Instruction]), B] // IMPROVE Use better data structure PCAndValue
-    ): Seq[B] = {
-        require(windowSize > 0)
-
-        import scala.collection.immutable.Queue
-
-        val max_pc = instructions.length
-        var instrs: Queue[Instruction] = Queue.empty
-        var firstPC, lastPC = 0
-        var elementsInQueue = 0
-
-        //
-        // INITIALIZATION
-        //
-        while (elementsInQueue < windowSize - 1 && lastPC < max_pc) {
-            instrs = instrs.enqueue(instructions(lastPC))
-            lastPC = pcOfNextInstruction(lastPC)
-            elementsInQueue += 1
+    @inline final def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            f(PCAndInstruction(pc, instruction))
+            pc = pcOfNextInstruction(pc)
         }
-
-        //
-        // SLIDING OVER THE CODE
-        //
-        var result: List[B] = List.empty
-        while (lastPC < max_pc) {
-            instrs = instrs.enqueue(instructions(lastPC))
-
-            val r: Any = f.applyOrElse((firstPC, instrs), AnyToAnyThis)
-            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                result ::= r.asInstanceOf[B]
-            }
-
-            firstPC = pcOfNextInstruction(firstPC)
-            lastPC = pcOfNextInstruction(lastPC)
-            instrs = instrs.tail
-        }
-
-        result.reverse
     }
 
-    /**
-     * Finds a sequence of instructions that are matched by the given partial function.
-     *
-     * @note If possible, use one of the more specialized methods, such as, [[collectPair]].
-     *       The pure iteration overhead caused by this method is roughly 10-20 times higher
-     *       than this one.
-     *
-     * @return List of pairs where the first element is the pc of the first instruction
-     *         of a matched sequence and the second value is the result of the evaluation
-     *         of the partial function.
-     */
-    def findSequence[B](
-        windowSize: Int
-    )(
-        f: PartialFunction[Seq[Instruction], B]
-    ): List[(PC, B)] = { // IMPROVE Use better data structure PCAndValue
-        require(windowSize > 0)
-
-        import scala.collection.immutable.Queue
-
+    def collectFirst[B](f: PartialFunction[Instruction, B]): Option[B] = {
         val max_pc = instructions.length
-        var instrs: Queue[Instruction] = Queue.empty
-        var firstPC, lastPC = 0
-        var elementsInQueue = 0
-
-        //
-        // INITIALIZATION
-        //
-        while (elementsInQueue < windowSize - 1 && lastPC < max_pc) {
-            instrs = instrs.enqueue(instructions(lastPC))
-            lastPC = pcOfNextInstruction(lastPC)
-            elementsInQueue += 1
-        }
-
-        //
-        // SLIDING OVER THE CODE
-        //
-        var result: List[(PC, B)] = List.empty // IMPROVE Use better data structure PCAndValue
-        while (lastPC < max_pc) {
-            instrs = instrs.enqueue(instructions(lastPC))
-
-            val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
+        var pc = 0
+        while (pc < max_pc) {
+            val params = instructions(pc)
+            val r: Any = f.applyOrElse(params, AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                result ::= ((firstPC, r.asInstanceOf[B]))
+                return Some(r.asInstanceOf[B]);
             }
-
-            firstPC = pcOfNextInstruction(firstPC)
-            lastPC = pcOfNextInstruction(lastPC)
-            instrs = instrs.tail
+            pc = pcOfNextInstruction(pc)
         }
 
-        result.reverse
+        None
+    }
+
+    def filter[B](f: (Int /*PC*/ , Instruction) ⇒ Boolean): IntArraySet = {
+        val max_pc = instructions.length
+
+        val pcs = IntArrayStack.empty
+        var pc = 0
+        while (pc < max_pc) {
+            if (f(pc, instructions(pc))) pcs += pc
+            pc = pcOfNextInstruction(pc)
+        }
+        IntArraySet.fromSortedArray(pcs.toArray)
     }
 
     /**
@@ -1450,29 +1301,83 @@ final class Code private (
      *      } yield ...
      * }}}
      */
-    def collectPair[B](f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = { // IMPROVE Use better data structure PCAndValue
+    def collectPair[B <: AnyRef](
+        f: PartialFunction[(Instruction, Instruction), B]
+    ): List[PCAndAnyRef[B]] = {
         val max_pc = instructions.length
 
-        var first_pc = 0
-        var firstInstruction = instructions(first_pc)
-        var second_pc = pcOfNextInstruction(0)
+        var firstPC = 0
+        var firstInstruction = instructions(firstPC)
+        var secondPC = pcOfNextInstruction(0)
         var secondInstruction: Instruction = null
 
-        var result: List[(PC, B)] = List.empty
-        while (second_pc < max_pc) {
-            secondInstruction = instructions(second_pc)
+        var result: List[PCAndAnyRef[B]] = Nil
+        while (secondPC < max_pc) {
+            secondInstruction = instructions(secondPC)
 
             val instrs = (firstInstruction, secondInstruction)
             val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
-                result ::= ((first_pc, r.asInstanceOf[B]))
+                result ::= PCAndAnyRef(firstPC, r.asInstanceOf[B])
             }
 
             firstInstruction = secondInstruction
-            first_pc = second_pc
-            second_pc = pcOfNextInstruction(second_pc)
+            firstPC = secondPC
+            secondPC = pcOfNextInstruction(secondPC)
         }
         result
+    }
+
+    /**
+     * Finds a sequence of instructions that are matched by the given partial function.
+     *
+     * @note If possible, use one of the more specialized methods, such as, [[collectPair]].
+     *       The pure iteration overhead caused by this method is roughly 10-20 times higher
+     *       than this one.
+     *
+     * @return List of pairs where the first element is the pc of the first instruction
+     *         of a matched sequence and the second value is the result of the evaluation
+     *         of the partial function.
+     */
+    def findSequence[B <: AnyRef](
+        windowSize: Int
+    )(
+        f: PartialFunction[Queue[Instruction], B]
+    ): List[PCAndAnyRef[B]] = {
+        require(windowSize > 0)
+
+        val max_pc = instructions.length
+        var instrs: Queue[Instruction] = Queue.empty
+        var firstPC, lastPC = 0
+        var elementsInQueue = 0
+
+        //
+        // INITIALIZATION
+        //
+        while (elementsInQueue < windowSize - 1 && lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+            lastPC = pcOfNextInstruction(lastPC)
+            elementsInQueue += 1
+        }
+
+        //
+        // SLIDING OVER THE CODE
+        //
+        var result: List[PCAndAnyRef[B]] = Nil
+        while (lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+
+            val r: Any = f.applyOrElse(instrs, AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= PCAndAnyRef(firstPC, r.asInstanceOf[B])
+            }
+
+            firstPC = pcOfNextInstruction(firstPC)
+            lastPC = pcOfNextInstruction(lastPC)
+            instrs = instrs.tail
+        }
+
+        result.reverse
     }
 
     /**
@@ -1494,15 +1399,15 @@ final class Code private (
      *  } yield (classFile, method, pc)
      * }}}
      */
-    def matchPair(f: (Instruction, Instruction) ⇒ Boolean): List[PC] = { // IMPROVE Use (specialized) Chain[Int]
+    def matchPair(f: (Instruction, Instruction) ⇒ Boolean): Chain[Int /*PC*/ ] = {
         val max_pc = instructions.length
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
 
-        var result: List[PC] = List.empty
+        var result: Chain[Int /*PC*/ ] = Naught
         while (pc2 < max_pc) {
             if (f(instructions(pc1), instructions(pc2))) {
-                result = pc1 :: result
+                result = pc1 :&: result
             }
 
             pc1 = pc2
@@ -1514,7 +1419,7 @@ final class Code private (
     /**
      * Finds all sequences of three consecutive instructions that are matched by `f`.
      */
-    def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = { // IMPROVE Use (specialized) Chain[Int]
+    def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): Chain[Int /*PC*/ ] = {
         matchTriple(Int.MaxValue, f)
     }
 
@@ -1529,20 +1434,20 @@ final class Code private (
     def matchTriple(
         matchMaxTriples: Int                                               = Int.MaxValue,
         f:               (Instruction, Instruction, Instruction) ⇒ Boolean
-    ): List[PC] = { // IMPROVE Use (specialized) Chain[Int]
+    ): Chain[Int /*PC*/ ] = {
         val max_pc = instructions.length
         var matchedTriplesCount = 0
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
-            return List.empty;
+            return Naught;
 
         var pc3 = pcOfNextInstruction(pc2)
 
-        var result: List[PC] = List.empty
+        var result: Chain[Int /*PC*/ ] = Naught
         while (pc3 < max_pc && matchedTriplesCount < matchMaxTriples) {
             if (f(instructions(pc1), instructions(pc2), instructions(pc3))) {
-                result = pc1 :: result
+                result = pc1 :&: result
             }
 
             matchedTriplesCount += 1
@@ -1683,7 +1588,7 @@ final class Code private (
      * @return the stack depth or -1 if the instruction is invalid/dead.
      */
     @throws[ClassFormatError]("if it is impossible to compute the maximum height of the stack")
-    def stackDepthAt(atPC: Int, cfg: CFG): Int = {
+    def stackDepthAt(atPC: Int, cfg: CFG[Instruction, Code]): Int = {
         var paths: Chain[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
@@ -1731,6 +1636,149 @@ final class Code private (
             exceptionHandlers.toString+","+
             attributes.toString+
             ")"
+    }
+
+    /**
+     * Collects the results of the evaluation of the partial function until the partial function
+     * is not defined.
+     *
+     * @return The program counter of the instruction for which the given partial function was
+     *         not defined along with the list of previous results. '''The results are sorted in
+     *         descending order w.r.t. the PC'''.
+     */
+    def collectUntil[B <: AnyRef](f: PartialFunction[PCAndInstruction, B]): PCAndAnyRef[List[B]] = {
+        val max_pc = instructions.length
+        var pc = 0
+        var result: List[B] = List.empty
+        while (pc < max_pc) {
+            val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result = r.asInstanceOf[B] :: result
+            } else {
+                return PCAndAnyRef(pc, result);
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        PCAndAnyRef(pc, result)
+    }
+
+    /**
+     * Applies the given function to the first instruction for which the given function
+     * is defined.
+     */
+    def collectFirstWithIndex[B](f: PartialFunction[PCAndInstruction, B]): Option[B] = {
+        val max_pc = instructions.length
+        var pc = 0
+        while (pc < max_pc) {
+            val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                return Some(r.asInstanceOf[B]);
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+
+        None
+    }
+
+    /**
+     * Applies the given function `f` to all instruction objects for which the function is
+     * defined. The function is passed a tuple consisting of the current program
+     * counter/index in the code array and the corresponding instruction.
+     *
+     * ==Example==
+     * Example usage to collect the program counters (indexes) of all instructions that
+     * are the target of a conditional branch instruction:
+     * {{{
+     * code.collectWithIndex({
+     *  case (pc, cbi: ConditionalBranchInstruction) ⇒
+     *      Seq(cbi.indexOfNextInstruction(pc, code), pc + cbi.branchoffset)
+     *  }) // .flatten should equal (Seq(...))
+     * }}}
+     */
+    def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): Chain[B] = {
+        val max_pc = instructions.length
+        var pc = 0
+        val vs = Chain.newBuilder[B]
+        while (pc < max_pc) {
+            val r: Any = f.applyOrElse(PCAndInstruction(pc, instructions(pc)), AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                vs += r.asInstanceOf[B]
+            }
+            pc = pcOfNextInstruction(pc)
+        }
+        vs.result()
+    }
+
+    /**
+     * Slides over the code array and tries to apply the given function to each sequence
+     * of instructions consisting of `windowSize` elements.
+     *
+     * ==Scenario==
+     * If you want to search for specific patterns of bytecode instructions. Some "bug
+     * patterns" are directly related to specific bytecode sequences and these patterns
+     * can easily be identified using this method.
+     *
+     * ==Example==
+     * Search for sequences of the bytecode instructions `PUTFIELD` and `ALOAD_O` in the
+     * method's body and return the list of program counters of the start of the
+     * identified sequences.
+     * {{{
+     * code.slidingCollect(2)({
+     *  case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
+     * }) should be(Seq(...))
+     * }}}
+     *
+     * @note If possible, use one of the more specialized methods, such as, [[collectPair]].
+     *       The pure iteration overhead caused by this method is roughly 10-20 times higher
+     *       than this one.
+     *
+     * @param windowSize The size of the sequence of instructions that is passed to the
+     *                   partial function.
+     *                   It must be larger than 0. **Do not use this method with windowSize "1"**;
+     *                   it is more efficient to use the `collect` or `collectWithIndex` methods
+     *                   instead.
+     *
+     * @return The list of results of applying the function f for each matching sequence.
+     */
+    def slidingCollect[B <: AnyRef](
+        windowSize: Int
+    )(
+        f: PartialFunction[PCAndAnyRef[Queue[Instruction]], B]
+    ): List[B] = {
+        require(windowSize > 0)
+
+        val max_pc = instructions.length
+        var instrs: Queue[Instruction] = Queue.empty
+        var firstPC, lastPC = 0
+        var elementsInQueue = 0
+
+        //
+        // INITIALIZATION
+        //
+        while (elementsInQueue < windowSize - 1 && lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+            lastPC = pcOfNextInstruction(lastPC)
+            elementsInQueue += 1
+        }
+
+        //
+        // SLIDING OVER THE CODE
+        //
+        var result: List[B] = List.empty
+        while (lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+
+            val r: Any = f.applyOrElse(PCAndAnyRef(firstPC, instrs), AnyToAnyThis)
+            if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                result ::= r.asInstanceOf[B]
+            }
+
+            firstPC = pcOfNextInstruction(firstPC)
+            lastPC = pcOfNextInstruction(lastPC)
+            instrs = instrs.tail
+        }
+
+        result.reverse
     }
 
 }
@@ -1864,7 +1912,7 @@ object Code {
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
         classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
-    ): CFG = {
+    ): CFG[Instruction, Code] = {
         CFGFactory(
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
             classHierarchy
@@ -1900,17 +1948,17 @@ object Code {
     def computeMaxStack(
         instructions:      Array[Instruction],
         exceptionHandlers: ExceptionHandlers,
-        cfg:               CFG
+        cfg:               CFG[Instruction, Code]
     ): Int = {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0
 
-        // IMPROVE [L1] Use IntPair
-        var paths: Chain[( /*PC*/ Int, Int /*stackdepth before executing the instruction*/ )] = Naught
+        // IntPair:  /*PC*/ Int, Int /*stackdepth before executing the instruction*/
+        var paths: Chain[IntPair] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
-        paths :&:= ((0, 0))
+        paths :&:= IntPair(0, 0)
         visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
@@ -1918,17 +1966,19 @@ object Code {
         // containing the exception itself.
         for (exceptionHandler ← exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
-            if (visitedPCs.add(handlerPC)) paths :&:= ((handlerPC, 1))
+            if (visitedPCs.add(handlerPC)) paths :&:= IntPair(handlerPC, 1)
         }
 
         while (paths.nonEmpty) {
-            val (pc, initialStackDepth) = paths.head
+            val stackInfo = paths.head
+            val pc = stackInfo._1
+            val initialStackDepth = stackInfo._2
             paths = paths.tail
             val stackDepth = initialStackDepth + instructions(pc).stackSlotsChange
             maxStackDepth = Math.max(maxStackDepth, stackDepth)
             cfg.foreachSuccessor(pc) { succPC ⇒
                 if (visitedPCs.add(succPC)) {
-                    paths :&:= ((succPC, stackDepth))
+                    paths :&:= IntPair(succPC, stackDepth)
                 }
             }
         }

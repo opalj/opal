@@ -45,7 +45,9 @@ import org.opalj.da.ClassFileReader.LineNumberTable_attribute
  */
 object Assembler {
 
-    def as[T](x: AnyRef): T = x.asInstanceOf[T]
+    private[bc] def as[T](x: AnyRef): T = x.asInstanceOf[T]
+
+    // TODO Add Java9/Java10 support!
 
     implicit object RichCONSTANT_Class_info extends ClassFileElement[CONSTANT_Class_info] {
         def write(

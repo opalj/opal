@@ -75,10 +75,7 @@ object FirstInstrumentation extends App {
                     val lCode = LabeledCode(code)
                     var modified = false
                     for {
-                        PCAndInstruction(
-                            pc,
-                            INVOKEVIRTUAL(_, "toString", JustReturnsString)
-                            ) ← code
+                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code
                     } {
                         modified = true
                         lCode.insert(
@@ -134,9 +131,9 @@ object FirstInstrumentation extends App {
     // instrumented method)
     val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
     val newClass = cl.findClass(TheType.toJava)
-    val instance = newClass.newInstance()
+    val instance = newClass.getDeclaredConstructor().newInstance()
     newClass.getMethod("callsToString").invoke(instance)
-    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(0))
-    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, new Integer(1))
+    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, Integer.valueOf(0))
+    newClass.getMethod("returnsValue", classOf[Int]).invoke(instance, Integer.valueOf(1))
 
 }

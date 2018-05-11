@@ -72,6 +72,9 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
         nts
     }
 
+    def toImmutableTypesSet: immutable.TypesSet =
+        immutable.TypesSet(theConcreteTypes, theUpperTypeBounds)(classHierarchy)
+
     def +=(tpe: ObjectType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&
             !theUpperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb).isYes)) {

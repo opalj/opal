@@ -165,7 +165,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     } catch {
                         case t: Throwable ⇒ fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
                     }
-                val domainOrigins = d.origin(op).toSet
+                val domainOrigins = d.origins(op)
                 domainOrigins foreach { o ⇒
                     if (!(
                         defUseOrigins.contains(o) ||

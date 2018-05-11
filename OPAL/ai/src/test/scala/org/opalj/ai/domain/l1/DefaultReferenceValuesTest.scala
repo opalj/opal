@@ -35,7 +35,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
@@ -43,6 +42,7 @@ import org.opalj.collection.immutable.UIDSet2
 import org.opalj.collection.immutable.Chain
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.TestSupport.biProject
+import org.opalj.value.BaseReferenceValues
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType

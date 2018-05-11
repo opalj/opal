@@ -172,7 +172,7 @@ object TAC {
             } {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {
-                        val tac @ TACode(params, code, cfg, ehs, _) =
+                        val tac @ TACode(params, code, _, cfg, ehs, _) =
                             TACNaive(m, ch, AllTACNaiveOptimizations)
                         if (toString) Console.out.println(m.toJava(tac.toString))
 
@@ -196,7 +196,7 @@ object TAC {
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(m, d)
-                        val tac @ TACode(params, code, cfg, ehs, _) =
+                        val tac @ TACode(params, code, _, cfg, ehs, _) =
                             TACAI(m, project.classHierarchy, aiResult)(Nil)
                         if (toString) Console.out.println(m.toJava(tac.toString))
 

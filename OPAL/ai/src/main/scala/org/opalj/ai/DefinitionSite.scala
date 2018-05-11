@@ -30,46 +30,7 @@ package org.opalj
 package ai
 
 import org.opalj.br.Method
+import org.opalj.collection.immutable.IntTrieSet
 
-sealed class DefinitionSite(val method: Method, val pc: PC, val uses: PCs) {
-
-    def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSite]
-
-    override def equals(other: Any): Boolean = other match {
-        case that: DefinitionSite ⇒
-            (that canEqual this) &&
-                method == that.method &&
-                pc == that.pc
-        case _ ⇒ false
-    }
-
-    override def hashCode(): Int = {
-        val state: Seq[Any] = Seq(method, pc)
-        state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
-    }
-
-    override def toString = s"DefinitionSite($method, $pc)"
-}
-
-object DefinitionSite {
-    def unapply(ds: DefinitionSite): Option[(Method, PC, PCs)] = Some((ds.method, ds.pc, ds.uses))
-}
-final class DefinitionSiteWithFilteredUses(method: Method, pc: PC, uses: PCs)
-    extends DefinitionSite(method, pc, uses) {
-
-    override def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSiteWithFilteredUses]
-
-    override def equals(other: Any): Boolean = other match {
-        case that: DefinitionSiteWithFilteredUses ⇒
-            super.equals(that) &&
-                uses == that.uses
-        case _ ⇒ false
-    }
-
-    override def hashCode(): Int = {
-        val state: Seq[Any] = Seq(super.hashCode(), uses)
-        state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
-    }
-
-    override def toString = s"DefinitionSiteWithFilteredUses($method, $pc, $uses)"
-}
+// TODO @Florian/@Dominik Please, document
+case class DefinitionSite(method: Method, pc: Int, usedBy: IntTrieSet) extends DefinitionSiteLike

@@ -61,7 +61,7 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
-    protected[this] def recordReturnedValue(pc: PC, value: DomainValue): ReturnedValue
+    protected[this] def recordReturnedValue(pc: Int, value: DomainValue): ReturnedValue
 
     /**
      * Joins the previously returned value and the newly given `value`. Both values
@@ -75,12 +75,12 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
     protected[this] def joinReturnedValues(
-        pc:                      PC,
+        pc:                      Int,
         previouslyReturnedValue: ReturnedValue,
         value:                   DomainValue
     ): ReturnedValue
 
-    private[this] var returnedValues: Map[PC, ReturnedValue] = _
+    private[this] var returnedValues: Map[Int /*PC*/ , ReturnedValue] = _ // IMPROVE Use Int2ObjectMap
 
     abstract override def initProperties(
         code:          Code,
@@ -94,9 +94,9 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
     /**
      * Returns the set of all returned values.
      */
-    def allReturnedValues: Map[PC, ReturnedValue] = returnedValues
+    def allReturnedValues: Map[Int /*PC */ , ReturnedValue] = returnedValues // IMPROVE Use Int2ObjectMap
 
-    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
+    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit = {
         returnedValues =
             returnedValues.updated(
                 pc,

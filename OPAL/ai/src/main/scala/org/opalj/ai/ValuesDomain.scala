@@ -31,6 +31,7 @@ package ai
 
 import scala.language.higherKinds
 import scala.reflect.ClassTag
+
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.ComputationalTypeReference
@@ -40,6 +41,10 @@ import org.opalj.br.TopVariableInfo
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.NullVariableInfo
 import org.opalj.br.ObjectVariableInfo
+import org.opalj.value.ValueInformation
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.KnownValue
+import org.opalj.value.UnknownValue
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -166,7 +171,7 @@ trait ValuesDomain {
          *          is defined if and only if the value is guaranteed to encapsulate a
          *          `ReturnAddressValue`.
          */
-        private[ai] def asReturnAddressValue: PC = {
+        private[ai] def asReturnAddressValue: Int = {
             throw new ClassCastException(this.getClass.getSimpleName+" is no return address value")
         }
 
@@ -238,7 +243,7 @@ trait ValuesDomain {
          *          '''The given `value` and this value are guaranteed to have
          *          the same computational type, but are not reference equal.'''
          */
-        protected[this] def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
+        protected[this] def doJoin(pc: Int, value: DomainValue): Update[DomainValue]
 
         /**
          * Checks that the given value and this value are compatible with regard to
@@ -255,7 +260,7 @@ trait ValuesDomain {
          * @return  [[MetaInformationUpdateIllegalValue]] or the result of calling
          *          [[doJoin]].
          */
-        def join(pc: PC, that: DomainValue): Update[DomainValue] = {
+        def join(pc: Int, that: DomainValue): Update[DomainValue] = {
             assert(that ne this, "join is only defined for objects that are different")
 
             if ((that eq TheIllegalValue) || (this.computationalType ne that.computationalType))
@@ -367,7 +372,7 @@ trait ValuesDomain {
          * @note   This method is predefined to facilitate the development of
          *         project-wide analyses.
          */
-        def summarize(pc: PC): DomainValue
+        def summarize(pc: Int): DomainValue
 
         /**
          * Adapts this value to the given domain (default: throws a domain exception
@@ -388,14 +393,14 @@ trait ValuesDomain {
          *         project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue = {
+        def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue = {
             throw new DomainException(s"adaptation of $this to $target is unsupported")
         }
     }
 
     type DomainTypedValue[+T <: Type] >: Null <: DomainValue
 
-    trait TypedValue[+T <: Type] extends Value with KnownType {
+    trait TypedValue[+T <: Type] extends Value with KnownValue {
         this: DomainTypedValue[T] ⇒
 
         /**
@@ -498,16 +503,16 @@ trait ValuesDomain {
         final override def verificationTypeInfo: VerificationTypeInfo = TopVariableInfo
 
         @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             throw DomainException("doJoin(...) is not supported by IllegalValue")
         }
 
         @throws[DomainException]("summarize(...) is not supported by IllegalValue")
-        override def summarize(pc: PC): DomainValue = {
+        override def summarize(pc: Int): DomainValue = {
             throw DomainException("summarize(...) is not supported by IllegalValue")
         }
 
-        override def join(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override def join(pc: Int, other: DomainValue): Update[DomainValue] = {
             if (other eq TheIllegalValue)
                 NoUpdate
             else
@@ -563,7 +568,7 @@ trait ValuesDomain {
         }
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
-        override def summarize(pc: PC): DomainValue = {
+        override def summarize(pc: Int): DomainValue = {
             throw DomainException("summarize(...) is not supported by RETValue")
         }
     }
@@ -574,7 +579,7 @@ trait ValuesDomain {
      */
     class ReturnAddressValues extends RETValue { this: DomainReturnAddressValues ⇒
 
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case _: RETValue ⇒ NoUpdate
                 case _           ⇒ MetaInformationUpdateIllegalValue
@@ -608,11 +613,11 @@ trait ValuesDomain {
      *      the point-of-view of OPAL-AI - just throw an `OperationNotSupportedException`
      *      as these additional methods will never be called by OPAL-AI.
      */
-    class ReturnAddressValue(val address: PC) extends RETValue { this: DomainReturnAddressValue ⇒
+    class ReturnAddressValue(val address: Int) extends RETValue { this: DomainReturnAddressValue ⇒
 
         private[ai] final override def asReturnAddressValue: Int = address
 
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case _: RETValue ⇒ StructuralUpdate(TheReturnAddressValues)
                 case _           ⇒ MetaInformationUpdateIllegalValue
@@ -646,7 +651,7 @@ trait ValuesDomain {
     /**
      * Factory method to create an instance of a `ReturnAddressValue`.
      */
-    def ReturnAddressValue(address: PC): DomainReturnAddressValue
+    def ReturnAddressValue(address: Int): DomainReturnAddressValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -666,7 +671,7 @@ trait ValuesDomain {
      * it is possible that the returned type(s) is(are) only an upper bound of the
      * real type unless the type is a primitive type.
      *
-     * This default implementation always returns [[org.opalj.ai.UnknownType]].
+     * This default implementation always returns [[org.opalj.value.UnknownValue]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is
@@ -689,10 +694,11 @@ trait ValuesDomain {
      * }
      * }}}
      */
-    def typeOfValue(value: DomainValue): TypeInformation = {
+    // FIXME Get rid of this by forcing all DomainValues to inherit from ValueInformation...
+    def typeOfValue(value: DomainValue): ValueInformation = {
         value match {
-            case ta: TypeInformation ⇒ ta
-            case _                   ⇒ UnknownType
+            case ta: ValueInformation ⇒ ta
+            case _                    ⇒ UnknownValue
         }
     }
 
@@ -704,7 +710,7 @@ trait ValuesDomain {
      *
      * This operation is commutative.
      */
-    def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
+    def mergeDomainValues(pc: Int, v1: DomainValue, v2: DomainValue): DomainValue = {
         if (v1 eq v2)
             return v1;
 
@@ -727,7 +733,7 @@ trait ValuesDomain {
      *      it is not very efficient. However, it should be easy to tailor it for a
      *      specific domain/domain values, if need be.
      */
-    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
+    def summarize(pc: Int, values: Iterable[DomainValue]): DomainValue = {
         var summary = values.head.summarize(pc)
         values.tail foreach { value ⇒
             if (summary ne value) {
@@ -753,7 +759,10 @@ trait ValuesDomain {
      * `Domain`s that define (additional) properties should (`abstract`) `override`
      * this method and should return a textual representation of the property.
      */
-    def properties(pc: PC, propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = {
+    def properties(
+        pc:               Int,
+        propertyToString: AnyRef ⇒ String = (v) ⇒ v.toString
+    ): Option[String] = {
         None
     }
 }

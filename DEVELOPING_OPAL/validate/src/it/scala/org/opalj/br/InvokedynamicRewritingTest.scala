@@ -72,9 +72,9 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
         it("simpleLambdaAdd should calculate 2+2 correctly") {
             val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
-            val instance = c.newInstance()
+            val instance = c.getDeclaredConstructor().newInstance()
             val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
-            val res = m.invoke(instance, new Integer(2), new Integer(2))
+            val res = m.invoke(instance, Integer.valueOf(2), Integer.valueOf(2))
 
             assert(res.asInstanceOf[Integer] == 4)
         }

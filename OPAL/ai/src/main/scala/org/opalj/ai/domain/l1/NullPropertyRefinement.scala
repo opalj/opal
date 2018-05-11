@@ -33,6 +33,7 @@ package l1
 
 import scala.annotation.switch
 
+import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
@@ -69,11 +70,11 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
     domain: ReferenceValuesDomain with Origin ⇒
 
     abstract override def afterEvaluation(
-        pc:                       PC,
+        pc:                       Int,
         instruction:              Instruction,
         oldOperands:              Operands,
         oldLocals:                Locals,
-        targetPC:                 PC,
+        targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
         newOperands:              Operands,
         newLocals:                Locals
@@ -94,7 +95,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         val exception = newOperands.head
                         val TypeOfReferenceValue(utb) = exception
                         (utb.head eq ObjectType.NullPointerException) && {
-                            val origins = origin(exception)
+                            val origins = originsIterator(exception)
                             origins.nonEmpty && {
                                 val origin = origins.next
                                 isVMLevelValue(origin) && pcOfVMLevelValue(origin) == pc &&

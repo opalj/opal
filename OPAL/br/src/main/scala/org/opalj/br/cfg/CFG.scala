@@ -35,7 +35,6 @@ import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
-import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
@@ -69,8 +68,8 @@ import org.opalj.graphs.Node
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-case class CFG(
-        code:                    Code,
+case class CFG[I <: AnyRef, C <: CodeSequence[I]](
+        code:                    C,
         normalReturnNode:        ExitNode,
         abnormalReturnNode:      ExitNode,
         catchNodes:              Seq[CatchNode],
@@ -142,10 +141,10 @@ case class CFG(
                 flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
                 forall(catchBB ⇒ catchNodes.contains(catchBB)),
             catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
-                (allBBs.collect {
+                allBBs.collect {
                     case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
                         s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
-                }).mkString("\n")
+                }.mkString("\n")
         )
 
         // 5.   Check that predecessors and successors are consistent.
@@ -181,7 +180,7 @@ case class CFG(
      * @return The basic block associated with the given `pc`. If the `pc` is not valid
      *         `null` is returned or an index out of bounds exception is thrown.
      */
-    def bb(pc: PC): BasicBlock = basicBlocks(pc)
+    def bb(pc: Int): BasicBlock = basicBlocks(pc)
 
     /**
      * Returns the set of all reachable [[CFGNode]]s of the control flow graph.
@@ -230,11 +229,11 @@ case class CFG(
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.
      */
-    def successors(pc: PC): IntTrieSet = {
+    def successors(pc: Int): IntTrieSet = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            IntTrieSet1(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            IntTrieSet1(code.pcOfNextInstruction(pc))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var successorPCs = IntTrieSet.empty
@@ -253,11 +252,11 @@ case class CFG(
      * instruction. (E.g., relevant in case of a switch where multiple cases are handled in the
      * same way.)
      */
-    def foreachSuccessor(pc: PC)(f: PC ⇒ Unit): Unit = {
+    def foreachSuccessor(pc: Int)(f: Int ⇒ Unit): Unit = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
-            f(code.instructions(pc).indexOfNextInstruction(pc)(code))
+            f(code.pcOfNextInstruction(pc))
         } else {
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var visited = IntTrieSet.empty
@@ -275,7 +274,7 @@ case class CFG(
         }
     }
 
-    def predecessors(pc: PC): IntTrieSet = {
+    def predecessors(pc: Int): IntTrieSet = {
         if (pc == 0)
             return IntTrieSet.empty;
 
@@ -296,7 +295,7 @@ case class CFG(
         }
     }
 
-    def foreachPredecessor(pc: PC)(f: PC ⇒ Unit): Unit = {
+    def foreachPredecessor(pc: Int)(f: Int ⇒ Unit): Unit = {
         if (pc == 0)
             return ;
 
@@ -336,17 +335,19 @@ case class CFG(
      *         instructions/statements, but which all belong to the same basic block.
      *         ''This situation cannot be handled using pcToIndex.''
      *         This information is used to ensure that - if a basic block which currently just
-     *         encompasses a single instruction will encompass the new and the old instruction afterwards.
+     *         encompasses a single instruction, it will encompass the new and the old instruction
+     *         afterwards.
      *         The returned value will be used as the `endIndex.`
      *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
      *         Hence, the function is given the mapped index has to return that value if the index
      *         does not belong to the expanded instruction.
      */
-    def mapPCsToIndexes(
-        pcToIndex:            Array[PC],
-        singletonBBsExpander: PC ⇒ Int,
+    def mapPCsToIndexes[NewI <: AnyRef, NewC <: CodeSequence[NewI]](
+        newCode:              NewC,
+        pcToIndex:            Array[Int /*PC*/ ],
+        singletonBBsExpander: Int /*PC*/ ⇒ Int,
         lastIndex:            Int
-    ): CFG = {
+    ): CFG[NewI, NewC] = {
 
         /*
         // [USED FOR DEBUGGING PURPOSES] *********************************************************
@@ -471,7 +472,9 @@ case class CFG(
             Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
-        CFG(code, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
+        CFG[NewI, NewC](
+            newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks
+        )
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -550,17 +553,33 @@ case class CFG(
 
 object CFG {
 
-    final val CheckConsistencyKey = "org.opalj.br.debug.cfg.CFG.consistency"
+    final val CheckConsistencyKey = "org.opalj.debug.br.cfg.CFG.checkConsistency"
 
-    final val CheckConsistency: Boolean = {
+    private[this] var checkConsistency: Boolean = {
+        val initialCheckConsistency = BaseConfig.getBoolean(CheckConsistencyKey)
+        updateCheckConsistency(initialCheckConsistency)
+        initialCheckConsistency
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def CheckConsistency: Boolean = checkConsistency
+
+    def updateCheckConsistency(newCheckConsistency: Boolean): Unit = {
         implicit val logContext = GlobalLogContext
-        if (BaseConfig.as[Option[Boolean]](CheckConsistencyKey).getOrElse(false)) {
-            info("OPAL", s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)")
-            true
-        } else {
-            info("OPAL", s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)")
-            false
-        }
+        checkConsistency =
+            if (newCheckConsistency) {
+                info(
+                    "OPAL",
+                    s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)"
+                )
+                true
+            } else {
+                info(
+                    "OPAL",
+                    s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)"
+                )
+                false
+            }
     }
 
 }

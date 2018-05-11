@@ -85,19 +85,9 @@ trait InstructionLike {
     def mayThrowExceptions: Boolean
 
     /**
-     * The index of the next instruction in the (sparse) code array.
-     *
-     * @note    This is primarily a convenience method that delegates to the method
-     *          `indexOfNextInstrution(PC,Boolean)`. However, given that this is also the
-     *          standard method called by clients, it is often meaningful to directly implement
-     *          this. In particular since most instructions cannot be modified by wide.
-     */
-    def indexOfNextInstruction(currentPC: PC)(implicit code: Code): Int
-
-    /**
      * The index of the next instruction in the code array.
      */
-    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int
+    def indexOfNextInstruction(currentPC: Int, modifiedByWide: Boolean): Int
 
     /**
      * Determines if this instruction is isomorphic to the given instruction.
@@ -128,7 +118,7 @@ trait InstructionLike {
      *      }}}
      * @note this.isIsomorphic(`thisPC`,`thisPC`) is always `true`
      */
-    def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean
+    def isIsomorphic(thisPC: Int, otherPC: Int)(implicit code: Code): Boolean
 
     /**
      * The number of values that are popped from the operand stack. Here, long and

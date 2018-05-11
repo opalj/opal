@@ -42,7 +42,7 @@ case class CONSTANT_MethodType_info(
         descriptor_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
-    override final def size: Int = 1 + 2
+    final override def size: Int = 1 + 2
 
     override def Constant_Type_Value: ConstantPoolTag = ConstantPoolTags.CONSTANT_MethodType
 

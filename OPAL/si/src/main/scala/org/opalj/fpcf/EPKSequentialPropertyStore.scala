@@ -214,10 +214,10 @@ final class EPKSequentialPropertyStore private (
                         epk
 
                     case None ⇒
-                        assert(
-                            computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
-                            "setup phase was not called"
-                        )
+                        if (debug && computedPropertyKinds == null) {
+                            /*&& delayedPropertyKinds ne null (not necessary)*/
+                            throw new IllegalStateException("setup phase was not called")
+                        }
                         if (computedPropertyKinds.contains(pkIdInt) ||
                             delayedPropertyKinds.contains(pkIdInt)) {
                             epk
@@ -265,16 +265,13 @@ final class EPKSequentialPropertyStore private (
                         // of an IntermediateResult must have been queried;
                         // however the sequential store does not create the
                         // data-structure eagerly!
-                        if (debug && !(
-                            ub == PropertyIsLazilyComputed || !lazyComputations.contains(pkId)
-                        )) {
+                        if (debug && ub == null && lazyComputations(pkId) != null) {
                             throw new IllegalStateException(
                                 "registered lazy computations was not triggerd, "+
                                     "this happens, e.g., if the list of dependees contains EPKs "+
                                     "which are directly instantiated without being queried before"
                             )
                         }
-                        // before.
                         epk
                     }
             }

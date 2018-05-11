@@ -121,9 +121,9 @@ object ProgressManagement {
 
     val None: (Int) ⇒ ProgressManagement = (maxSteps) ⇒ new ProgressManagement {
 
-        override final def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
+        final override def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
 
-        override final def isInterrupted: Boolean = false
+        final override def isInterrupted: Boolean = false
 
     }
 }

@@ -138,57 +138,59 @@ package object bytecode {
      * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found). If the rt.jar cannot be found an
      * exception is raised.
-     *
-     * @note    The Java 9 JDK/JRE is structured in a different way.
-     *          // IMPROVE [JDK9] Add mechanism to locate JDK 9 System class files
      */
     lazy val JRELibraryFolder: File = {
-        System.getProperties()
+        val javaVersion = System.getProperty("java.version")
+        if (javaVersion.startsWith("1.")) {
+            val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
+            val paths = sunBootClassPath.split(File.pathSeparator)
+            paths.find(_.endsWith("rt.jar")) match {
 
-        val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
-        val paths = sunBootClassPath.split(File.pathSeparator)
-        paths.find(_.endsWith("rt.jar")) match {
+                case Some(libPath) ⇒
+                    new File(libPath.substring(0, libPath.length() - 6))
 
-            case Some(libPath) ⇒
-                new File(libPath.substring(0, libPath.length() - 6))
-
-            case None ⇒
-                val sunBootLibraryPath = System.getProperty("sun.boot.library.path")
-                if (sunBootLibraryPath == null) {
-                    throw new RuntimeException("cannot locate the JRE libraries")
-                } else {
-                    new File(sunBootLibraryPath)
-                }
+                case None ⇒
+                    val sunBootLibraryPath = System.getProperty("sun.boot.library.path")
+                    if (sunBootLibraryPath == null) {
+                        throw new RuntimeException("cannot locate the JRE libraries")
+                    } else {
+                        new File(sunBootLibraryPath)
+                    }
+            }
+        } else {
+            val javaJMods = System.getProperty("java.home")+"/jmods"
+            new File(javaJMods)
         }
     }
 
     /**
-     * Returns the most likely position of the JRE's library folder. (I.e., the
-     * location in which the rt.jar file and the other jar files belonging to the
-     * Java runtime environment can be found).
-     *
-     * @note    The Java 9 JDK/JRE does not have an `rt.jar`.
-     *          // IMPROVE [JDK9] Mechanism to find the primary module.
-     *
+     * Returns the most likely position of the JAR/JMod that contains Java's main classes.
      */
     lazy val RTJar: File = {
-        val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
-        val paths = sunBootClassPath.split(File.pathSeparator)
 
-        paths.find(_.endsWith("rt.jar")) match {
-            case Some(rtJarPath) ⇒ new File(rtJarPath)
-            case None ⇒
-                val rtJarCandidates =
-                    new File(System.getProperty("sun.boot.library.path")).listFiles(
-                        new java.io.FilenameFilter() {
-                            def accept(dir: File, name: String) = name == "rt.jar"
-                        }
-                    )
-                if (rtJarCandidates.length != 1) {
-                    throw new RuntimeException("cannot locate the JRE libraries")
-                } else {
-                    rtJarCandidates(0)
-                }
+        val javaVersion = System.getProperty("java.version")
+        if (javaVersion.startsWith("1.")) {
+            val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
+            val paths = sunBootClassPath.split(File.pathSeparator)
+
+            paths.find(_.endsWith("rt.jar")) match {
+                case Some(rtJarPath) ⇒ new File(rtJarPath)
+                case None ⇒
+                    val rtJarCandidates =
+                        new File(System.getProperty("sun.boot.library.path")).listFiles(
+                            new java.io.FilenameFilter() {
+                                def accept(dir: File, name: String) = name == "rt.jar"
+                            }
+                        )
+                    if (rtJarCandidates.length != 1) {
+                        throw new RuntimeException("cannot locate the JRE libraries")
+                    } else {
+                        rtJarCandidates(0)
+                    }
+            }
+        } else {
+            val javaBaseJMod = System.getProperty("java.home")+"/jmods/java.base.jmod" // ~ rt.jar
+            new File(javaBaseJMod)
         }
     }
 

@@ -247,7 +247,7 @@ object ToTxt {
     def apply[P <: AnyRef, V <: Var[V]](
         params:     Parameters[P],
         stmts:      Array[Stmt[V]],
-        cfg:        CFG,
+        cfg:        CFG[Stmt[V], TACStmts[V]],
         skipParams: Boolean,
         indented:   Boolean,
         includePC:  Boolean
@@ -338,15 +338,13 @@ object ToTxt {
         classHierarchy: ClassHierarchy                                            = ClassHierarchy.PreInitializedClassHierarchy,
         aiResult:       Option[AIResult { val domain: Domain with RecordDefUse }] = None
     ): String = {
-        (
-            aiResult map { aiResult ⇒
-                val taCode = TACAI(method, classHierarchy, aiResult)(Nil)
-                ToTxt(taCode.params, taCode.stmts, taCode.cfg, skipParams = false, true, true)
-            } getOrElse {
-                val TACode(params, stmts, cfg, _, _) = TACNaive(method, classHierarchy, List(SimplePropagation))
-                ToTxt(params, stmts, cfg, skipParams = true, true, true)
-            }
-        ).mkString("\n")
+        aiResult.map { aiResult ⇒
+            val taCode = TACAI(method, classHierarchy, aiResult)(Nil)
+            ToTxt(taCode.params, taCode.stmts, taCode.cfg, skipParams = false, true, true)
+        }.getOrElse {
+            val taCode = TACNaive(method, classHierarchy, List(SimplePropagation))
+            ToTxt(taCode.params, taCode.stmts, taCode.cfg, skipParams = true, true, true)
+        }.mkString("\n")
     }
 
 }
