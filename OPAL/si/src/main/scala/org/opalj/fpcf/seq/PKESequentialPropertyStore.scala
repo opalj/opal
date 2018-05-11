@@ -260,7 +260,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply(e,pk)
+    def force(e: Entity, pk: SomePropertyKey): Unit = apply(e, pk)
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
