@@ -33,12 +33,16 @@ import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
+
 /**
  * A property store manages the execution of computations of properties related to specific
  * entities (e.g., methods, fields and classes of a program). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
- * to handle the dependencies between the entities. Furthermore, the property store may parallelize
- * the computation of the properties as far as possible without requiring users to take care of it;
+ * to handle the computations related to the dependencies between the entities.
+ * Furthermore, the property store may parallelize the computation of the properties as far as
+ * possible without requiring users to take care of it;
  * users are also generally not required to think about the concurrency when implementing an
  * analysis.
  *
@@ -48,11 +52,15 @@ import scala.reflect.runtime.universe.typeOf
  * I.e., if some information is not or just not completely available, the analysis should
  * still continue using the provided information and (internally) records the dependency.
  * Later on, when the analysis has computed its result, it reports the same and informs the
- * framework about its dependencies.
+ * framework about its dependencies. Based on the later the framework will call back the analysis
+ * when a dependency is updated. In general, an analysis should always try to minimize the number
+ * of dependencies to the minimum set to enable the property store to suspend computations that
+ * are no longer required.
  *
- * ===Core Requirements on Property Computation Functions===
+ * ===Core Requirements on Property Computation Functions (Modular Static Analysis)===
+ *  The following requirements ensure correctness and determinism of the result.
  *  - (At Most One Lazy Function per Property Kind) A specific kind of property is (in each
- *    phase) always computed by only one registered `PropertyComputation` function.
+ *    phase) always computed by only one registered lazy `PropertyComputation` function.
  *    No other analysis is (conceptually) allowed to derive a value for an E/PK pairing
  *    for which a lazy function is registered.
  *  - (Thread-Safe PropertyComputation functions) If a single instance of a property computation
@@ -63,8 +71,8 @@ import scala.reflect.runtime.universe.typeOf
  *    entities have to compute result sets that are disjoint.
  *    For example, an analysis that performs a computation on class files and
  *    that derives properties of a specific kind related to a class file's methods must ensure
- *    that the same analysis running concurrently on two different class files do not derive
- *    information about the same method.
+ *    that two concurrent calls of the same analysis - running concurrently on two different
+ *    class files - does not derive information about the same method.
  *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new) property for
  *    a specific element then the result must be equal or more specific.
  *
@@ -77,7 +85,8 @@ import scala.reflect.runtime.universe.typeOf
  * value will be committed.
  *
  * ==Thread Safety==
- * A PropertyStore is thread-safe.
+ * The sequential property stores are not thread-safe; the parallelized implementation(s) is
+ * thread-safe.
  *
  * ==Common Abbreviations==
  * - e =         Entity
@@ -142,10 +151,10 @@ abstract class PropertyStore {
     //
 
     /**
-     * If "debug" is set to `true` and we have an update related to an ordered property,
+     * If "debug" is `true` and we have an update related to an ordered property,
      * we will then check if the update is correct!
      */
-    @volatile var debug: Boolean = false
+    final def debug: Boolean = PropertyStore.Debug
 
     /**
      * Returns a consistent snapshot of the stored properties.
@@ -171,6 +180,10 @@ abstract class PropertyStore {
      */
     def scheduledOnUpdateComputations: Int
 
+    /**
+     * The number of times a property was directly computed again due to an updated
+     * dependee.
+     */
     def eagerOnUpdateComputations: Int
 
     //
@@ -261,6 +274,16 @@ abstract class PropertyStore {
      *         `Final|IntermediateEP(e,Property)` otherwise.
      */
     def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
+
+    /**
+     * Enforce the evaluation of the specified property kind for the given entity, even
+     * if the property is computed lazily and no "eager computation" requires the results 
+     * anymore.
+     * Using `force` is in particular necessary in a case where a specific analysis should
+     * be scheduled lazily because libraries should only be analyzed as much as required.
+     * For example, if we want to compute the purity of the methods of a specific application...
+     */
+    def force(e : Entity, pk : Property) : Unit
 
     /**
      * Returns an iterator of the different properties associated with the given element.
@@ -418,5 +441,32 @@ abstract class PropertyStore {
      *         functions using one thread and using that thread to call this method.
      */
     def waitOnPhaseCompletion(): Unit
+
+}
+
+object PropertyStore {
+
+    final val DebugKey = "org.opalj.debug.fpcf.PropertyStore.Debug"
+
+    private[this] var debug: Boolean = {
+        val initialDebug = BaseConfig.getBoolean(DebugKey)
+        updateDebug(initialDebug)
+        initialDebug
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def Debug: Boolean = debug
+
+    def updateDebug(newDebug: Boolean): Unit = {
+        implicit val logContext = GlobalLogContext
+        debug =
+            if (newDebug) {
+                info("OPAL", s"$DebugKey: debugging support on")
+                true
+            } else {
+                info("OPAL", s"$DebugKey: debugging support off")
+                false
+            }
+    }
 
 }

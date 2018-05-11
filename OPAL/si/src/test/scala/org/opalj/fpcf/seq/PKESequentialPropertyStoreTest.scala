@@ -27,32 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.fpcf
+package seq
 
-class TrueTrueTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class TrueTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = true
         )
         s.delayHandlingOfDependerNotification = true
-
         s
     }
 
 }
 
-class FalseTrueTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = true
@@ -61,13 +55,11 @@ class FalseTrueTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithD
         s
     }
 }
-class TrueFalseTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+class TrueFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = false
@@ -76,13 +68,11 @@ class TrueFalseTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithD
         s
     }
 }
-class TrueTrueFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+class TrueTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = true
@@ -92,13 +82,10 @@ class TrueTrueFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWithD
     }
 }
 
-class FalseFalseTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = false
@@ -108,13 +95,10 @@ class FalseFalseTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWith
     }
 }
 
-class FalseTrueFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = true
@@ -124,13 +108,10 @@ class FalseTrueFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWith
     }
 }
 
-class TrueFalseFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class TrueFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = false
@@ -140,13 +121,10 @@ class TrueFalseFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWith
     }
 }
 
-class FalseFalseFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FalseFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-
-        s.debug = debug
-
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = false
@@ -156,22 +134,20 @@ class FalseFalseFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWit
     }
 }
 
-class EagerFalseEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class EagerFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-        s.debug = debug
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = EagerDependeeUpdateHandling
         s.delayHandlingOfDependerNotification = false
         s
     }
 }
 
-class EagerTrueEPKSequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class EagerTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = EPKSequentialPropertyStore()
-        s.debug = debug
+        val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = EagerDependeeUpdateHandling
         s.delayHandlingOfDependerNotification = true
         s

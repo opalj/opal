@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 
 import org.opalj.log.GlobalLogContext
 
@@ -44,7 +44,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
+sealed abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterAll {
 
     import Palindromes.NoPalindrome
     import Palindromes.Palindrome
@@ -96,20 +96,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps.waitOnPhaseCompletion()
             ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
-        }
-
-        it("should catch non-monotonic updates when debugging is turned on") {
-            val ps = createPropertyStore()
-            ps.debug = true
-            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
-            ???
-        }
-
-        it("should catch updates when the upper bound is lower than the lower bound") {
-            val ps = createPropertyStore()
-            ps.debug = true
-            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
-            ???
         }
 
         it("should not crash when e1 has two dependencies e2 and e3 "+
@@ -980,7 +966,35 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 }
 
 abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
-    val debug: Boolean = true
+
+    private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    override def beforeAll(): Unit = PropertyStore.updateDebug(true)
+    override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
+
+    describe("the property store with turned-on debugging support") {
+
+        it("should catch non-monotonic updates") {
+            assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+            
+        }
+
+        it("should catch updates when the upper bound is lower than the lower bound") {
+            assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+            ???
+        }
+    }
+}
+
+abstract class PropertyStoreTestWithoutDebugging extends PropertyStoreTest {
+    private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    override def beforeAll(): Unit = PropertyStore.updateDebug(false)
+    override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 }
 
 // Test fixture related to a simple marker property
