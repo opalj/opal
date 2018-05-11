@@ -294,7 +294,7 @@ final class PKESequentialPropertyStore private (
         /*user level*/ assert(
             !lb.isOrderedProperty || {
                 val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
             }
         )
         ps(pkId).get(e) match {
@@ -323,10 +323,10 @@ final class PKESequentialPropertyStore private (
                             val lbAsOP = lb.asOrderedProperty
                             if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
                                 val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
-                                lbAsOP.checkIsEqualOrBetterThan(oldLBWithUBType)
+                                lbAsOP.checkIsEqualOrBetterThan(e, oldLBWithUBType)
                                 val pValueUBAsOP = oldUB.asOrderedProperty
                                 val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
-                                pValueUBAsOP.checkIsEqualOrBetterThan(ubWithOldUBType)
+                                pValueUBAsOP.checkIsEqualOrBetterThan(e, ubWithOldUBType)
                             }
                         } catch {
                             case t: Throwable ⇒
