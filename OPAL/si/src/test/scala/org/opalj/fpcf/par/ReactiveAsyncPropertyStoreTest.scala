@@ -26,15 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj.fpcf.par
+
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreTestWithDebugging
 
 class ReactiveAsyncPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = ReactiveAsyncPropertyStore()
-
-        s.debug = debug
-        s
+        ReactiveAsyncPropertyStore()
     }
 
 }

@@ -49,7 +49,7 @@ import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
-import org.opalj.log.{Error => ErrorLogLevel}
+import org.opalj.log.{Error ⇒ ErrorLogLevel}
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest._
 
@@ -70,7 +70,6 @@ import org.scalatest._
 
 class PsThrownExceptionsAnalysisTest extends PropertyStoreCompareTester {
     val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
-        ps.debug = true
         ps.setupPhase(
             Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
         )
@@ -228,8 +227,8 @@ trait PropertyStoreCompareTester extends FunSpec with Matchers with Inspectors w
 object PropertyStoreCompareTester {
 
     val propertyStoreList: List[String] = List(
-        "org.opalj.fpcf.ReactiveAsyncPropertyStore",
-        "org.opalj.fpcf.PKESequentialPropertyStore"
+        "org.opalj.fpcf.par.ReactiveAsyncPropertyStore",
+        "org.opalj.fpcf.seq.PKESequentialPropertyStore"
     )
 
     val baseConfig: Config = ConfigFactory.load()

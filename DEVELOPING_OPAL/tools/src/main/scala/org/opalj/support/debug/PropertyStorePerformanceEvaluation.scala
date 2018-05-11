@@ -41,16 +41,16 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.RTJar
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.fpcf.EPKSequentialPropertyStore
-import org.opalj.fpcf.EagerDependeeUpdateHandling
-import org.opalj.fpcf.LazyDependeeUpdateHandling
-import org.opalj.fpcf.PKESequentialPropertyStore
+import org.opalj.fpcf.seq.EPKSequentialPropertyStore
+import org.opalj.fpcf.seq.EagerDependeeUpdateHandling
+import org.opalj.fpcf.seq.LazyDependeeUpdateHandling
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
-import org.opalj.fpcf.ReactiveAsyncPropertyStore
 import org.opalj.fpcf.analyses._
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.par.ReactiveAsyncPropertyStore
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
@@ -351,7 +351,7 @@ object PropertyStorePerformanceEvaluation {
 
         // *** ReactiveAsyncPropertyStore ***
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.ReactiveAsyncPropertyStore",
+            "org.opalj.fpcf.par.ReactiveAsyncPropertyStore",
             true
         )
     )

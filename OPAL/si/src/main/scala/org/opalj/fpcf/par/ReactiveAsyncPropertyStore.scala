@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj.fpcf.par
 
 import java.util.concurrent.atomic.AtomicLong
 
@@ -34,6 +34,29 @@ import com.phaller.rasync._
 import com.phaller.rasync.lattice.Key
 import com.phaller.rasync.lattice.Updater
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.IncrementalResult
+import org.opalj.fpcf.IntermediateResult
+import org.opalj.fpcf.MultiResult
+import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyComputation
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyIsLazilyComputed
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.PropertyStoreFactory
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPK
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePropertyComputation
+import org.opalj.fpcf.SomePropertyKey
 import org.opalj.log.LogContext
 
 import scala.collection.concurrent.TrieMap
@@ -49,8 +72,6 @@ class ReactiveAsyncPropertyStore private (
         implicit
         val logContext: LogContext
 ) extends PropertyStore {
-
-    // TODO Properties must be immutable!!!!!!!!!!!
 
     private implicit val handlerPool: HandlerPool = new HandlerPool(parallelism = parallelism)
 
@@ -192,6 +213,24 @@ class ReactiveAsyncPropertyStore private (
                 }
                 EPK(e, pk)
         }
+    }
+
+    /**
+     * Enforce the evaluation of the specified property kind for the given entity, even
+     * if the property is computed lazily and no "eager computation" requires the results
+     * anymore.
+     * Using `force` is in particular necessary in a case where a specific analysis should
+     * be scheduled lazily because the computed information is not necessary for all entities,
+     * but strictly required for some elements.
+     * E.g., if you want to compute a property for some piece of code, but not for those
+     * elements of the used library that are strictly necessary.
+     * For example, if we want to compute the purity of the methods of a specific application,
+     * we may have to compute the property for some entities of the libraries, but we don't
+     * want to compute them for all.
+     */
+    override def force(e: Entity, pk: SomePropertyKey): Unit = {
+        // apply triggers lazy computation
+        apply(e, pk)
     }
 
     /**
@@ -437,9 +476,9 @@ class ReactiveAsyncPropertyStore private (
                 val currentResult = cc.cell.getResult()
                 if (p.isOrderedProperty && currentResult != null) {
                     val pAsOP = p.asOrderedProperty
-                    pAsOP.checkIsEqualOrBetterThan(currentResult.lb.asInstanceOf[pAsOP.Self])
+                    pAsOP.checkIsEqualOrBetterThan(e, currentResult.lb.asInstanceOf[pAsOP.Self])
                     val storedUbAsOP = currentResult.ub.asOrderedProperty
-                    storedUbAsOP.checkIsEqualOrBetterThan(p.asInstanceOf[storedUbAsOP.Self])
+                    storedUbAsOP.checkIsEqualOrBetterThan(e, p.asInstanceOf[storedUbAsOP.Self])
                 }
                 cc.putFinal(new PropertyValue(p))
                 dependencyMap.remove((e, p.key.id))
@@ -452,7 +491,7 @@ class ReactiveAsyncPropertyStore private (
                 assert(
                     !lb.isOrderedProperty || {
                         val ubAsOP = ub.asOrderedProperty
-                        ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
+                        ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
                     }
                 )
 
@@ -474,9 +513,9 @@ class ReactiveAsyncPropertyStore private (
                     // For ordered properties: Check if the new value is better than the current one
                     if (lb.isOrderedProperty && oldResult != null) {
                         val lbAsOP = lb.asOrderedProperty
-                        lbAsOP.checkIsEqualOrBetterThan(oldResult.lb.asInstanceOf[lbAsOP.Self])
+                        lbAsOP.checkIsEqualOrBetterThan(e, oldResult.lb.asInstanceOf[lbAsOP.Self])
                         val storedUbAsOP = oldResult.ub.asOrderedProperty
-                        storedUbAsOP.checkIsEqualOrBetterThan(ub.asInstanceOf[storedUbAsOP.Self])
+                        storedUbAsOP.checkIsEqualOrBetterThan(e, ub.asInstanceOf[storedUbAsOP.Self])
                     }
                     cc.putNext(new PropertyValue(lb, ub))
                 }
@@ -573,9 +612,15 @@ class ReactiveAsyncPropertyStore private (
                     val currentResult = cc.cell.getResult()
                     if (someFinalEP.p.isOrderedProperty && currentResult != null) {
                         val pAsOP = someFinalEP.p.asOrderedProperty
-                        pAsOP.checkIsEqualOrBetterThan(currentResult.lb.asInstanceOf[pAsOP.Self])
+                        pAsOP.checkIsEqualOrBetterThan(
+                            someFinalEP.e,
+                            currentResult.lb.asInstanceOf[pAsOP.Self]
+                        )
                         val storedUbAsOP = currentResult.ub.asOrderedProperty
-                        storedUbAsOP.checkIsEqualOrBetterThan(someFinalEP.p.asInstanceOf[storedUbAsOP.Self])
+                        storedUbAsOP.checkIsEqualOrBetterThan(
+                            someFinalEP.e,
+                            someFinalEP.p.asInstanceOf[storedUbAsOP.Self]
+                        )
                     }
                     cc.putFinal(new PropertyValue(someFinalEP.p))
                     dependencyMap.remove((someFinalEP.e, someFinalEP.p.key.id))

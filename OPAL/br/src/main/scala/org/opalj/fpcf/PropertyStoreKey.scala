@@ -47,7 +47,7 @@ import org.opalj.br.analyses.ProjectInformationKey
 object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.fpcf."
-    final val DefaultPropertyStoreImplementation = "org.opalj.fpcf.ReactiveAsyncPropertyStore"
+    final val DefaultPropertyStoreImplementation = "org.opalj.fpcf.par.ReactiveAsyncPropertyStore"
 
     /**
      * Used to specify the number of threads the property store should use. This
