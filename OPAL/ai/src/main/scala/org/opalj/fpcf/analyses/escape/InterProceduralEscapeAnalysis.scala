@@ -32,7 +32,6 @@ package analyses
 package escape
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
@@ -43,7 +42,6 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties._
-import org.opalj.ai.DefinitionSite
 import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
@@ -57,7 +55,7 @@ import org.opalj.tac.TACStmts
 class InterProceduralEscapeAnalysisContext(
         val entity:                  Entity,
         val defSite:                 ValueOrigin,
-        val targetMethod:            DeclaredMethod,
+        val targetMethod:            Method,
         val uses:                    IntTrieSet,
         val code:                    Array[Stmt[V]],
         val cfg:                     CFG[Stmt[V], TACStmts[V]],
@@ -95,15 +93,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
-    /**
-     * Determine whether the given entity ([[org.opalj.ai.DefinitionSite]] or
-     * [[org.opalj.br.analyses.VirtualFormalParameter]]) escapes its method.
-     */
-    def determineEscape(e: Entity): PropertyComputationResult = {
-        e match {
-
-            case as: DefinitionSite ⇒ determineEscapeOfDS(as)
-
+    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
+        fp match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
             case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
@@ -111,50 +102,38 @@ class InterProceduralEscapeAnalysis private[analyses] (
                     eOptionP: SomeEOptionP
                 ): PropertyComputationResult = eOptionP match {
                     case FinalEP(_, p) ⇒
-                        Result(e, p)
+                        Result(fp, p)
 
                     case IntermediateEP(_, lb, ub) ⇒
-                        IntermediateResult(e, lb, ub, Set(eOptionP), c)
+                        IntermediateResult(fp, lb, ub, Set(eOptionP), c)
 
                     case _ ⇒
-                        IntermediateResult(e, GlobalEscape, NoEscape, Set(eOptionP), c)
+                        IntermediateResult(fp, GlobalEscape, NoEscape, Set(eOptionP), c)
                 }
 
                 def c(someEPS: SomeEPS): PropertyComputationResult = {
                     handleEscapeState(someEPS)
                 }
 
-                val fp = virtualFormalParameters(declaredMethods(m))(i)
+                val parameterOfBase = virtualFormalParameters(declaredMethods(m))(-i - 1)
 
-                handleEscapeState(propertyStore(fp, EscapeProperty.key))
+                handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
-            case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
-
-            case e ⇒
-                throw new IllegalArgumentException(s"can't handle entity $e")
-        }
-    }
-
-    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
-        fp match {
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) ⇒
-                val TACode(params, code, _, cfg, _, _) = project.get(DefaultTACAIKey)(m)
-                val param = params.thisParameter
-                val ctx = createContext(fp, param.origin, dm, param.useSites, code, cfg)
-                doDetermineEscape(ctx, createState)
 
             // parameters of base types are not considered
-            case VirtualFormalParameter(m, i) if m.descriptor.parameterType(-i - 2).isBaseType ⇒
+            case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType ⇒
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(dm @ DefinedMethod(_, m), i) ⇒
+
+            case VirtualFormalParameter(DefinedMethod(_, m), i) ⇒
                 val TACode(params, code, _, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
-                val ctx = createContext(fp, param.origin, dm, param.useSites, code, cfg)
+                val ctx = createContext(fp, param.origin, m, param.useSites, code, cfg)
                 doDetermineEscape(ctx, createState)
+
             case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
                 throw new IllegalArgumentException()
         }
@@ -163,7 +142,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override def createContext(
         entity:       Entity,
         defSite:      ValueOrigin,
-        targetMethod: DeclaredMethod,
+        targetMethod: Method,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]

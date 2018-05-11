@@ -54,6 +54,7 @@ import org.opalj.br.ElementValuePair
 import org.opalj.br.AnnotationLike
 import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -231,11 +232,11 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     // there can't be any annotations of the implicit "this" parameter...
-    def explicitFormalParametersWithAnnotations: Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
-        val formalParameters = FixtureProject.get(VirtualFormalParametersKey)
-        val declaredMethods = FixtureProject.get(DeclaredMethodsKey)
+    def explicitFormalParametersWithAnnotations(p: SomeProject): Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
+        val formalParameters = p.get(VirtualFormalParametersKey)
+        val declaredMethods = p.get(DeclaredMethodsKey)
         for {
-            m ← FixtureProject.allMethods
+            m ← p.allMethods
             //m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
             i ← parameterAnnotations.indices
@@ -248,8 +249,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def allocationSitesWithAnnotations: Traversable[(DefinitionSite, String ⇒ String, Traversable[AnnotationLike])] = {
-        val allocationSites: Seq[DefinitionSite] = FixtureProject.get(DefinitionSitesKey).getAllocationSites
+    def allocationSitesWithAnnotations(p: SomeProject): Traversable[(DefinitionSite, String ⇒ String, Traversable[AnnotationLike])] = {
+        val allocationSites: Seq[DefinitionSite] = p.get(DefinitionSitesKey).getAllocationSites
         for {
             as ← allocationSites
             m = as.method

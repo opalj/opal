@@ -60,6 +60,11 @@ class EscapeAnalysisTests extends PropertiesTest {
             }
         )
         val ps = p.get(PropertyStoreKey)
+
+        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
+            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
+        ))
+
         lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()
@@ -70,7 +75,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         val as = executeAnalyses(Set.empty, Set.empty)
         validateProperties(
             as,
-            allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
+            allocationSitesWithAnnotations(as._1) ++ explicitFormalParametersWithAnnotations(as._1),
             Set("EscapeProperty")
         )
     }
@@ -79,7 +84,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set.empty)
         validateProperties(
             as,
-            allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
+            allocationSitesWithAnnotations(as._1) ++ explicitFormalParametersWithAnnotations(as._1),
             Set("EscapeProperty")
         )
     }
@@ -88,7 +93,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         val as = executeAnalyses(Set(EagerInterProceduralEscapeAnalysis), Set(LazyVirtualCallAggregatingEscapeAnalysis))
         validateProperties(
             as,
-            allocationSitesWithAnnotations ++ explicitFormalParametersWithAnnotations,
+            allocationSitesWithAnnotations(as._1) ++ explicitFormalParametersWithAnnotations(as._1),
             Set("EscapeProperty")
         )
     }

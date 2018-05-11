@@ -54,8 +54,9 @@ import org.opalj.tac.NonVirtualMethodCall
  * constructor or escapes. Is this the case, leastRestrictiveProperty will be set to the lower bound
  * of the current value and the calculated escape state.
  *
- * For non constructor calls, [[org.opalj.fpcf.properties.AtMost(EscapeInCallee)]] of `e will be `
- * returned whenever the receiver or a parameter is a use of defSite.
+ * For non constructor calls, [[org.opalj.fpcf.properties.AtMost]]
+ * ([[org.opalj.fpcf.properties.EscapeInCallee]]) of `e will be ` returned whenever the receiver or
+ * a parameter is a use of defSite.
  *
  * @author Florian Kuebler
  */

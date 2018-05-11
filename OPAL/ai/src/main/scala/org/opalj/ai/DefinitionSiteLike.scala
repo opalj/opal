@@ -27,36 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package ai
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.opalj.br.Method
+import org.opalj.collection.immutable.IntTrieSet
 
-/**
- * Tests the support for "project" related functionality.
- *
- * @author Michael Eichberg
- */
-@RunWith(classOf[JUnitRunner])
-class ProjectTest extends FunSpec with Matchers {
+trait DefinitionSiteLike {
 
-    describe("Project") {
+    val pc: Int
 
-        it("\"methodsWithBody\" should only return methods with bodies") {
-            val project = TestSupport.createJREProject
-            project.allMethodsWithBody.foreach { m ⇒ assert(m.body.isDefined) }
-        }
+    val method: Method
 
-        it("\"methodsWithBody\" should return library methods if the library methods have bodies") {
-            val project = TestSupport.biProjectWithJDK("ai.jar", jdkAPIOnly = false)
-            project.allMethodsWithBody.foreach { m ⇒ assert(m.body.isDefined) }
-            val stringClassFile = project.classFile(ObjectType.String).get
-            val toStringMethod = stringClassFile.findMethod("toString").head
-            assert(toStringMethod.body.isDefined)
-        }
-    }
+    val usedBy: IntTrieSet
 
 }

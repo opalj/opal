@@ -30,39 +30,7 @@ package org.opalj
 package ai
 
 import org.opalj.br.Method
+import org.opalj.collection.immutable.IntTrieSet
 
-// TODO @Florian/@Dominik Please, document (in parituclar the special case "...FilteredUses" and that equal is not defined w.r.t. "uses"
-sealed class DefinitionSite(val method: Method, val pc: Int, val uses: PCs) {
-
-    def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSite]
-
-    override def equals(other: Any): Boolean = other match {
-        case that: DefinitionSite ⇒ (that canEqual this) && method == that.method && pc == that.pc
-        case _                    ⇒ false
-    }
-
-    override def hashCode(): Int = ((method.hashCode() * 31) + pc)
-
-    override def toString = s"DefinitionSite($method,pc=$pc,uses=$uses)"
-}
-
-object DefinitionSite {
-    def unapply(ds: DefinitionSite): Option[(Method, Int, PCs)] = Some((ds.method, ds.pc, ds.uses))
-}
-
-final class DefinitionSiteWithFilteredUses(method: Method, pc: Int, uses: PCs)
-    extends DefinitionSite(method, pc, uses) {
-
-    override def canEqual(other: Any): Boolean = other.isInstanceOf[DefinitionSiteWithFilteredUses]
-
-    override def equals(other: Any): Boolean = other match {
-        case that: DefinitionSiteWithFilteredUses ⇒ super.equals(that) && uses == that.uses
-        case _                                    ⇒ false
-    }
-
-    override def hashCode(): Int = super.hashCode() * 31 + uses.hashCode()
-
-    override def toString = s"DefinitionSiteWithFilteredUses($method,pc=$pc,uses=$uses)"
-}
-
-// TODO @Florian add apply/unapply for DefinitionSiteWithFilteredUses... better names?
+// TODO @Florian/@Dominik Please, document
+case class DefinitionSite(method: Method, pc: Int, usedBy: IntTrieSet) extends DefinitionSiteLike

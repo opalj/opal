@@ -159,7 +159,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
             // for arrays we know the concrete method which is defined by java.lang.Object
             val methodO = project.instanceCall(
-                targetMethod.declaringClassType.asObjectType, ObjectType.Object, name, descr
+                targetMethod.classFile.thisType, ObjectType.Object, name, descr
             )
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
@@ -168,9 +168,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
             // if the receiver type is precisely known, we can handle the concrete method
             val valueType = value.valueType.get
-            assert(targetMethod.declaringClassType.isObjectType)
             var methodO = project.instanceCall(
-                targetMethod.declaringClassType.asObjectType, valueType, name, descr
+                targetMethod.classFile.thisType, valueType, name, descr
             )
 
             // check if the method is abstract?
@@ -198,7 +197,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         } else /* non-null, not precise object type */ {
 
             val target = project.instanceCall(
-                targetMethod.declaringClassType.asObjectType, receiverType, name, descr
+                targetMethod.classFile.thisType, receiverType, name, descr
             )
 
             // did we found a method and is this method not overridable?
