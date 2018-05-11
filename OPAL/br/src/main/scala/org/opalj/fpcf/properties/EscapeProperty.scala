@@ -151,12 +151,12 @@ sealed abstract class EscapeProperty
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
             case AtMost(_)                                                  ⇒ //TODO this is not correct -> fix me!
             case other: EscapeProperty if other lessOrEqualRestrictive this ⇒
             case p ⇒
-                throw new RuntimeException(s"illegal refinement of property $p to $this")
+                throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
         }
     }
 
@@ -776,7 +776,7 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
         case _: GlobalEscape           ⇒ that
     }
     //TODO REMOVE ME
-    override def checkIsEqualOrBetterThan(other: EscapeProperty): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: EscapeProperty): Unit = {}
 }
 
 /**

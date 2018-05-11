@@ -442,10 +442,10 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
                 type Self = ReachableNodes
                 def key = ReachableNodes.Key
-                def checkIsEqualOrBetterThan(other: Self): Unit = {
+                def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
                     if (!this.nodes.subsetOf(other.nodes)) {
                         throw new IllegalArgumentException(
-                            this+" is not equal or better than "+other
+                            s"$e: $this is not equal or better than $other"
                         )
                     }
                 }
@@ -1181,12 +1181,12 @@ object Purity {
     final val Key = PropertyKey.create[Entity, Purity]("Purity", Impure)
 }
 case object Pure extends Purity {
-    def checkIsEqualOrBetterThan(other: Purity): Unit = { /* always true */ }
+    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = { /* always true */ }
 }
 case object Impure extends Purity {
-    def checkIsEqualOrBetterThan(other: Purity): Unit = {
+    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = {
         if (other != Impure) {
-            throw new IllegalArgumentException(other+" is not equal or better than "+this)
+            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
         }
     }
 }
@@ -1220,9 +1220,9 @@ case class ReachableNodesCount(value: Int) extends OrderedProperty {
     def key = ReachableNodesCount.Key
 
     @throws[IllegalArgumentException]("if this property is not more precise than the given one")
-    def checkIsEqualOrBetterThan(other: ReachableNodesCount): Unit = {
+    def checkIsEqualOrBetterThan(e: Entity, other: ReachableNodesCount): Unit = {
         if (this.value > other.value) {
-            throw new IllegalArgumentException(other+" is not equal or better than "+this)
+            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
         }
     }
 
