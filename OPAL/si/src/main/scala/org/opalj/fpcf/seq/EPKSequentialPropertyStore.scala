@@ -267,7 +267,7 @@ final class EPKSequentialPropertyStore private (
                         // of an IntermediateResult must have been queried;
                         // however the sequential store does not create the
                         // data-structure eagerly!
-                        if (debug && ub == null && lazyComputations(pkId) != null) {
+                        if (debug && ub == null && lazyComputations.getOrElse(pkId, null) != null) {
                             throw new IllegalStateException(
                                 "registered lazy computation was not triggerd, "+
                                     "this happens, e.g., if the list of dependees contains EPKs "+
@@ -318,7 +318,7 @@ final class EPKSequentialPropertyStore private (
         /*user level*/ assert(
             !lb.isOrderedProperty || {
                 val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
             }
         )
         ps.get(e) match {
@@ -359,14 +359,14 @@ final class EPKSequentialPropertyStore private (
                                 val lbAsOP = lb.asOrderedProperty
                                 if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
                                     val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
-                                    lbAsOP.checkIsEqualOrBetterThan(oldLBWithUBType)
+                                    lbAsOP.checkIsEqualOrBetterThan(e, oldLBWithUBType)
                                     val pValueUBAsOP = oldUB.asOrderedProperty
                                     val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
-                                    pValueUBAsOP.checkIsEqualOrBetterThan(ubWithOldUBType)
+                                    pValueUBAsOP.checkIsEqualOrBetterThan(e, ubWithOldUBType)
                                 }
                             } catch {
                                 case t: Throwable ⇒
-                                    throw new IllegalStateException(
+                                    throw new IllegalArgumentException(
                                         s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
                                             newDependees.mkString("newDependees={", ", ", "}")+
                                             "; cause="+t.getMessage,
