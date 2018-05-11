@@ -251,7 +251,7 @@ lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG  ANALYSIS AGAIN!
+/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
 lazy val bp = `BugPicker`
 lazy val `BugPicker` = (project in file("OPAL/bp"))
   .settings(buildSettings: _*)
