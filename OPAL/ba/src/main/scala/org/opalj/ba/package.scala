@@ -89,17 +89,18 @@ import org.opalj.br.instructions._ // we need ALL of them...
  */
 package object ba { ba ⇒
 
+    final val FrameworkName = "OPAL Bytecode Assembler"
+
     {
-        val name = "Bytecode Assembler"
         // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
         import OPALLogger.info
         try {
             scala.Predef.assert(false)
             // when we reach this point assertions are off...
-            info(name, s"Production Build")
+            info(FrameworkName, s"Production Build")
         } catch {
-            case _: AssertionError ⇒ info(name, "Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
 

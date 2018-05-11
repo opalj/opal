@@ -30,11 +30,9 @@ package org.opalj
 package ba
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import java.lang.{Boolean ⇒ JBoolean}
 import java.io.File
 import java.io.DataInputStream
@@ -45,6 +43,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithCaching
@@ -122,9 +121,13 @@ class BRtoBATest extends FlatSpec with Matchers {
         }
     }
 
+    val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip","bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs()
-        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
+        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        if file.isFile
+        if file.canRead
+        if file.length() > 0
+        if file.getName.endsWith(".jar") || file.getName.endsWith(".zip")
     } {
         it should (s"be able to process every class of $file") in { process(file) }
     }
