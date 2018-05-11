@@ -39,7 +39,6 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
-import org.opalj.ai.DefinitionSite
 import org.opalj.ai.DefinitionSiteLike
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -528,7 +527,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
      * Checks, whether the result of a super.clone call does not escape except for being returned.
      */
     private[this] def handleEscapeStateOfResultOfSuperClone(
-        eOptionP: EOptionP[DefinitionSite, EscapeProperty]
+        eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
 
@@ -560,8 +559,8 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 state.removeMethodDependee(newEP)
                 handleReturnValueFreshness(newEP)
 
-            case e: DefinitionSite ⇒
-                val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
+            case e: DefinitionSiteLike ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSiteLike, EscapeProperty]]
                 state.removeDefinitionSiteDependee(newEP)
                 if (state.isDefinitionSiteOfClone(e))
                     handleEscapeStateOfResultOfSuperClone(newEP)

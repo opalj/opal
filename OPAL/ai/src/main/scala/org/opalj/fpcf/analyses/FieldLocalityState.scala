@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.ai.DefinitionSite
 import org.opalj.ai.DefinitionSiteLike
 import org.opalj.br.Field
 import org.opalj.fpcf.properties.EscapeProperty
@@ -54,7 +53,7 @@ class FieldLocalityState(val field: Field) {
         declaredMethodsDependees.isEmpty &&
             definitionSitesDependees.isEmpty
     }
-    def isDefinitionSiteOfClone(e: DefinitionSite): Boolean =
+    def isDefinitionSiteOfClone(e: DefinitionSiteLike): Boolean =
         clonedDependees.contains(e)
 
     def addMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit =
