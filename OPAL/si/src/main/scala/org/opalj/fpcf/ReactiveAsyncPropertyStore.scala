@@ -77,7 +77,7 @@ class ReactiveAsyncPropertyStore private (
     // method we don't know what properties are computed in the given function. This will only be
     // known once the execution is done.
     private type PropertyTrieMap = TrieMap[Entity, CellCompleter[RAKey, PropertyValue]]
-    val ps: Array[PropertyTrieMap] = Array.fill(SupportedPropertyKinds) { TrieMap.empty }
+    val ps: Array[PropertyTrieMap] = Array.fill(PropertyKind.SupportedPropertyKinds) { TrieMap.empty }
 
     // This map keeps track of the dependencies. Key is (Entity, PropertyKind.id)
     val dependencyMap = TrieMap.empty[(Entity, Int), Traversable[SomeEPK]]
