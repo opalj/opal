@@ -189,7 +189,11 @@ final class PKESequentialPropertyStore private (
         lazyComputations(pk.id) = pc
     }
 
-    override def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
+    override def scheduleForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit = handleExceptions {
         scheduledTasksCounter += 1
         tasks.append(() ⇒ handleResult(pc(e)))
     }
@@ -414,7 +418,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def set(e: Entity, p: Property): Unit = {
+    override def set(e: Entity, p: Property): Unit = handleExceptions {
         val key = p.key
         val pkId = key.id
 
@@ -429,7 +433,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def handleResult(r: PropertyComputationResult): Unit = {
+    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
         r.id match {
 
@@ -623,7 +627,7 @@ final class PKESequentialPropertyStore private (
         delayedPropertyKinds foreach { pk ⇒ this.delayedPropertyKinds(pk.id) = true }
     }
 
-    override def waitOnPhaseCompletion(): Unit = {
+    override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback and cycle resolution:
         var isInterrupted: Boolean = false

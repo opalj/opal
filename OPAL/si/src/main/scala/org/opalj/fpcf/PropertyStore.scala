@@ -29,6 +29,8 @@
 package org.opalj
 package fpcf
 
+import scala.util.control.ControlThrowable
+
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
@@ -446,6 +448,24 @@ abstract class PropertyStore {
      *         functions using one thread and using that thread to call this method.
      */
     def waitOnPhaseCompletion(): Unit
+
+    protected[this] var exception: Throwable @volatile = null
+
+    protected[this] def handleExceptions[U](f: ⇒ U): U = {
+        if (exception ne null)
+            throw exception;
+
+        try {
+            f
+        } catch {
+            case ct: ControlThrowable ⇒
+                /*  BASICALLY IGNORED - BUT THERE IS ROOM FOR IMPROVEMENT! */
+                throw ct;
+            case t: Throwable ⇒
+                exception = t
+                throw t;
+        }
+    }
 
 }
 
