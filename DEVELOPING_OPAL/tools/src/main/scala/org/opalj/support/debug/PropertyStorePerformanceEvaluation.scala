@@ -485,8 +485,8 @@ object PropertyStorePerformanceEvaluation {
                             VirtualMethodEscapeProperty.key,
                             FieldLocality.key,
                             Purity.key,
-                            ThrownExceptions.Key,
-                            ThrownExceptionsByOverridingMethods.Key
+                            ThrownExceptions.key,
+                            ThrownExceptionsByOverridingMethods.key
                         ))
 
                         analysis match {

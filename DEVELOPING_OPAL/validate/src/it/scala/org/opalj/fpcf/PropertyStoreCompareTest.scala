@@ -72,7 +72,7 @@ class PsThrownExceptionsAnalysisTest extends PropertyStoreCompareTester {
     val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
         ps.debug = true
         ps.setupPhase(
-            Set(ThrownExceptions.Key, ThrownExceptionsByOverridingMethods.Key)
+            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
         )
 
         L1ThrownExceptionsAnalysis.start(fixtureProject, ps)
@@ -83,12 +83,12 @@ class PsThrownExceptionsAnalysisTest extends PropertyStoreCompareTester {
 
     it should behave like testEntitiesAndProperties[Method](
         psResults,
-        ThrownExceptionsByOverridingMethods.Key,
+        ThrownExceptionsByOverridingMethods.key,
         fixtureProject.allMethodsWithBody
     )
     it should behave like testEntitiesAndProperties[Method](
         psResults,
-        ThrownExceptions.Key,
+        ThrownExceptions.key,
         fixtureProject.allMethodsWithBody
     )
 }
