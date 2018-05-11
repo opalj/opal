@@ -126,7 +126,7 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
 /**
  * An analysis that determines for a given method, whether its the return value is a fresh object
  * that is created by the method (or its callees) and does not escape other than
- * [[EscapeViaReturn]].
+ * [[org.opalj.fpcf.properties.EscapeViaReturn]].
  *
  * In other words, it aggregates the escape information for allocation-sites that are used as return
  * value.

@@ -56,7 +56,7 @@ sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInfor
 }
 
 /**
- * Describes whether a [[DeclaredMethod]] or its (transitive) callees may allocate any
+ * Describes whether a [[org.opalj.br.DeclaredMethod]] or its (transitive) callees may allocate any
  * objects/arrays.
  *
  * @author Dominik Helm
@@ -128,7 +128,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
  */
 case object AllocationFreeMethod extends AllocationFreeness {
 
-    override def checkIsEqualOrBetterThan(other: AllocationFreeness): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {}
 
     override val aggregatedProperty: VirtualMethodAllocationFreeness = VAllocationFreeMethod
 
@@ -140,9 +140,9 @@ case object AllocationFreeMethod extends AllocationFreeness {
  */
 case object MethodWithAllocations extends AllocationFreeness {
 
-    override def checkIsEqualOrBetterThan(other: AllocationFreeness): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {
         if (other ne MethodWithAllocations)
-            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
 
     override val aggregatedProperty: VirtualMethodAllocationFreeness = VMethodWithAllocations

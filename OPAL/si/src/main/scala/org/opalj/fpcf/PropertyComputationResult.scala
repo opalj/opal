@@ -30,6 +30,8 @@ package org.opalj.fpcf
 
 /**
  * Encapsulates the result of the computation of a property.
+ *
+ * @author Michael Eichberg
  */
 sealed abstract class PropertyComputationResult {
 
@@ -39,21 +41,21 @@ sealed abstract class PropertyComputationResult {
 
 /**
  * Encapsulates the final result of the computation of a property. I.e., the analysis
- * determined that the computed property will not be updated because there is no further chance
- * to do so.
+ * determined that the computed property will not be updated because there is no further
+ * chance to do so.
  *
  * A final result is only to be used if no further refinement is possible or may happen.
  *
  * @note The framework will invoke and deregister all dependent computations (observers). If –
- *      after having a result another result w.r.t. the given entity and property is given to
- *      the property store – the behavior is undefined and may/will result in immediate but
- *      also deferred arbitrary failures!
+ *      after having a result - another result w.r.t. the given entity and property is given to
+ *      the property store the behavior is undefined and may/will result in immediate and/or
+ *      deferred failures!
  */
 sealed abstract class FinalPropertyComputationResult extends PropertyComputationResult
 
 /**
  * Encapsulates the '''final result''' of the computation of the property `p` for the given
- * entity `e`.
+ * entity `e`. See [[EOptionP#ub]] for a discussion related to properties.
  *
  * @see [[FinalPropertyComputationResult]] for further information.
  */

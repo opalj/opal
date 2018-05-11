@@ -76,7 +76,7 @@ object CompileTimeConstancy extends CompileTimeConstancyPropertyMetaInformation 
  */
 case object CompileTimeConstantField extends CompileTimeConstancy {
 
-    override def checkIsEqualOrBetterThan(other: CompileTimeConstancy): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: CompileTimeConstancy): Unit = {}
 }
 
 /**
@@ -84,8 +84,8 @@ case object CompileTimeConstantField extends CompileTimeConstancy {
  */
 case object CompileTimeVaryingField extends CompileTimeConstancy {
 
-    override def checkIsEqualOrBetterThan(other: CompileTimeConstancy): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: CompileTimeConstancy): Unit = {
         if (other ne CompileTimeVaryingField)
-            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
 }

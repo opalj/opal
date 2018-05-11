@@ -41,7 +41,7 @@ sealed trait FieldLocalityMetaInformation extends PropertyMetaInformation {
  *
  * [[LocalField]]s have a lifetime that is not longer than that of the field's owning instance.
  * [[ExtensibleLocalField]]s provide the same guarantee only if the (dynamic) type of the owning
- * instance is known not to extend [[java.lang.Cloneable]].
+ * instance is known not to extend `java.lang.Cloneable`.
  * The lifetime of a value in a [[LocalFieldWithGetter]] can only be extended by it being returned
  * by a method. I.e. if the caller of such method knows that it's receiver is fresh, the field's
  * value may also be treated as fresh.
@@ -76,7 +76,7 @@ case object LocalField extends FieldLocality {
 
 /**
  * The field is a [[LocalField]] only if the owning instance's (dynamic) type does not implement
- * [[java.lang.Cloneable]]. Otherwise, the field's value may escape through a shallow copy created
+ * `java.lang.Cloneable`. Otherwise, the field's value may escape through a shallow copy created
  * through `java.lang.Object.clone`.
  */
 case object ExtensibleLocalField extends FieldLocality {
@@ -105,7 +105,7 @@ case object LocalFieldWithGetter extends FieldLocality {
 /**
  * The field is a [[LocalField]] except that value's read from it may escape by being returned by
  * a method of the owning instance. Also, the owning instance's (dynamic) type may not
- * implement [[java.lang.Cloneable]] or the field may escape through a shallow copy. Clients can
+ * implement `java.lang.Cloneable` or the field may escape through a shallow copy. Clients can
  * treat the field's value as fresh if the method's receiver is fresh and not cloneable.
  */
 case object ExtensibleLocalFieldWithGetter extends FieldLocality {

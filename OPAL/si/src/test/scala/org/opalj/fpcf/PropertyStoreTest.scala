@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 
 import org.opalj.log.GlobalLogContext
 
@@ -44,7 +44,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterEach {
+sealed abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAfterAll {
 
     import Palindromes.NoPalindrome
     import Palindromes.Palindrome
@@ -96,20 +96,6 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             ps.waitOnPhaseCompletion()
             ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
-        }
-
-        it("should catch non-monotonic updates when debugging is turned on") {
-            val ps = createPropertyStore()
-            ps.debug = true
-            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
-            ???
-        }
-
-        it("should catch updates when the upper bound is lower than the lower bound") {
-            val ps = createPropertyStore()
-            ps.debug = true
-            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
-            ???
         }
 
         it("should not crash when e1 has two dependencies e2 and e3 "+
@@ -459,10 +445,10 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
             case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
                 type Self = ReachableNodes
                 def key = ReachableNodes.Key
-                def checkIsEqualOrBetterThan(other: Self): Unit = {
+                def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
                     if (!this.nodes.subsetOf(other.nodes)) {
                         throw new IllegalArgumentException(
-                            this+" is not equal or better than "+other
+                            s"$e: $this is not equal or better than $other"
                         )
                     }
                 }
@@ -983,7 +969,156 @@ abstract class PropertyStoreTest extends FunSpec with Matchers with BeforeAndAft
 }
 
 abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
-    val debug: Boolean = true
+
+    private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    override def beforeAll(): Unit = PropertyStore.updateDebug(true)
+    override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
+
+    describe("the property store with turned-on debugging support") {
+
+        it("should catch IntermediateResults with inverted property bounds") {
+            assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+            def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = ???
+            def aAnalysis(string: String): PropertyComputationResult = {
+                val bEOptionP = ps("b", ReachableNodesCount.Key)
+                new IntermediateResult(
+                    "a", ReachableNodesCount(10), ReachableNodesCount(20), List(bEOptionP),
+                    aContinuation
+                )
+            }
+            assertThrows[IllegalArgumentException] {
+                ps.scheduleForEntity("a")(aAnalysis)
+                ps.waitOnPhaseCompletion()
+            }
+        }
+
+        it("should catch non-monotonic updates related to the lower bound") {
+            assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
+
+            var count = 0
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+
+            def lazyAnalysis(string: String): PropertyComputationResult = {
+                val aEOptionP = ps("a", ReachableNodesCount.Key)
+                count += 1
+                new IntermediateResult(
+                    string, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
+                    aContinuation
+                )
+            }
+            def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = {
+                new IntermediateResult(
+                    "a",
+                    ReachableNodesCount(8), // <= invalid refinement of lower bound!
+                    ReachableNodesCount(1),
+                    List(bStringEOptionP),
+                    aContinuation
+                )
+            }
+            def aAnalysis(string: String): PropertyComputationResult = {
+                val bEOptionP = ps("b", ReachableNodesCount.Key)
+                new IntermediateResult(
+                    "a", ReachableNodesCount(20), ReachableNodesCount(0), List(bEOptionP),
+                    aContinuation
+                )
+            }
+            ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+            assertThrows[IllegalArgumentException] {
+                ps.scheduleForEntity("a")(aAnalysis)
+                ps.waitOnPhaseCompletion()
+            }
+        }
+
+        it("should catch non-monotonic updates related to the upper bound") {
+            assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
+
+            var count = 0
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+
+            def lazyAnalysis(string: String): PropertyComputationResult = {
+                val aEOptionP = ps("a", ReachableNodesCount.Key)
+                count += 1
+                new IntermediateResult(
+                    string, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
+                    aContinuation
+                )
+            }
+            def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = {
+                new IntermediateResult(
+                    "a",
+                    ReachableNodesCount(21),
+                    ReachableNodesCount(0), // <= invalid refinement of upper bound!
+                    List(bStringEOptionP),
+                    aContinuation
+                )
+            }
+            def aAnalysis(string: String): PropertyComputationResult = {
+                val bEOptionP = ps("b", ReachableNodesCount.Key)
+                new IntermediateResult(
+                    "a", ReachableNodesCount(20), ReachableNodesCount(1), List(bEOptionP),
+                    aContinuation
+                )
+            }
+            ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+            assertThrows[IllegalArgumentException] {
+                ps.scheduleForEntity("a")(aAnalysis)
+                ps.waitOnPhaseCompletion()
+            }
+        }
+
+        it("should catch updates when the upper bound is lower than the lower bound") {
+            assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
+
+            var count = 0
+
+            val ps = createPropertyStore()
+            ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+
+            def lazyAnalysis(string: String): PropertyComputationResult = {
+                val aEOptionP = ps("a", ReachableNodesCount.Key)
+                count += 1
+                new IntermediateResult(
+                    string, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
+                    aContinuation
+                )
+            }
+            def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = {
+                new IntermediateResult(
+                    "a",
+                    // bounds have surpassed themselve
+                    ReachableNodesCount(5),
+                    ReachableNodesCount(15),
+                    List(bStringEOptionP),
+                    aContinuation
+                )
+            }
+            def aAnalysis(string: String): PropertyComputationResult = {
+                val bEOptionP = ps("b", ReachableNodesCount.Key)
+                new IntermediateResult(
+                    "a", ReachableNodesCount(20), ReachableNodesCount(1), List(bEOptionP),
+                    aContinuation
+                )
+            }
+            ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+            assertThrows[IllegalArgumentException] {
+                ps.scheduleForEntity("a")(aAnalysis)
+                ps.waitOnPhaseCompletion()
+            }
+        }
+    }
+}
+
+abstract class PropertyStoreTestWithoutDebugging extends PropertyStoreTest {
+    private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    override def beforeAll(): Unit = PropertyStore.updateDebug(false)
+    override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 }
 
 // Test fixture related to a simple marker property
@@ -1049,12 +1184,12 @@ object Purity {
     final val Key = PropertyKey.create[Entity, Purity]("Purity", Impure)
 }
 case object Pure extends Purity {
-    def checkIsEqualOrBetterThan(other: Purity): Unit = { /* always true */ }
+    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = { /* always true */ }
 }
 case object Impure extends Purity {
-    def checkIsEqualOrBetterThan(other: Purity): Unit = {
+    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = {
         if (other != Impure) {
-            throw new IllegalArgumentException(other+" is not equal or better than "+this)
+            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
         }
     }
 }
@@ -1088,9 +1223,9 @@ case class ReachableNodesCount(value: Int) extends OrderedProperty {
     def key = ReachableNodesCount.Key
 
     @throws[IllegalArgumentException]("if this property is not more precise than the given one")
-    def checkIsEqualOrBetterThan(other: ReachableNodesCount): Unit = {
+    def checkIsEqualOrBetterThan(e: Entity, other: ReachableNodesCount): Unit = {
         if (this.value > other.value) {
-            throw new IllegalArgumentException(other+" is not equal or better than "+this)
+            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
         }
     }
 

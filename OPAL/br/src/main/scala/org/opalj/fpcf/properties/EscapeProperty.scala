@@ -127,7 +127,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at
  * most [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
- * [[org.opalj.ai.DefinitionSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are
+ * `org.opalj.ai.DefinitionSiteLike` and [[org.opalj.br.analyses.VirtualFormalParameter]] are
  * generally used as [[Entity]] in combination with this property.
  *
  * [[VirtualMethodEscapeProperty]] provides a wrapper of this property addressing aggregated escape
@@ -151,12 +151,12 @@ sealed abstract class EscapeProperty
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
-    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
             case AtMost(_)                                                  ⇒ //TODO this is not correct -> fix me!
             case other: EscapeProperty if other lessOrEqualRestrictive this ⇒
             case p ⇒
-                throw new RuntimeException(s"illegal refinement of property $p to $this")
+                throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
         }
     }
 
@@ -757,8 +757,7 @@ case object EscapeViaStaticField extends GlobalEscape {
 /**
  * A refineable property that provides an upper bound. Only refinements to values below or equal to
  * `property` are allowed to perform.
- * This property should be used, if the analysis is not able to compute a more precise property
- * (i.e. for [[org.opalj.fpcf.RefinableResult]]).
+ * This property should be used, if the analysis is not able to compute a more precise property.
  */
 case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty {
     override def propertyValueID: Int = property.propertyValueID + 20
@@ -776,7 +775,7 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
         case _: GlobalEscape           ⇒ that
     }
     //TODO REMOVE ME
-    override def checkIsEqualOrBetterThan(other: EscapeProperty): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: EscapeProperty): Unit = {}
 }
 
 /**

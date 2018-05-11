@@ -42,7 +42,7 @@ import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
  * An analysis that aggregates the results of the [[ReturnValueFreshnessAnalysis]] for all possible
- * methods represented by a given [[DeclaredMethod]].
+ * methods represented by a given [[org.opalj.br.DeclaredMethod]].
  *
  * @author Florian Kuebler
  */

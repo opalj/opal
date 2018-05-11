@@ -64,9 +64,8 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val ps = project.get(PropertyStoreKey)
-        ps.debug = true
 
+        val ps = project.get(PropertyStoreKey)
         ps.setupPhase(Set(
             EscapeProperty.key,
             FieldLocality.key,

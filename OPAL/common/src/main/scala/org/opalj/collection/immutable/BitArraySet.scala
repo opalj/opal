@@ -207,7 +207,9 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
         if (newBucketValue == 0 && bucket == lastBucket) {
             // check how many buckets can be deleted....
             var emptyBuckets = 1
-            while (emptyBuckets < setLength && set(lastBucket - emptyBuckets) == 0) { emptyBuckets += 1 }
+            while (emptyBuckets < setLength && set(lastBucket - emptyBuckets) == 0) {
+                emptyBuckets += 1
+            }
             (setLength - emptyBuckets) match {
                 case 0 ⇒ EmptyBitArraySet
                 case 1 ⇒ new BitArraySet64(set(0))

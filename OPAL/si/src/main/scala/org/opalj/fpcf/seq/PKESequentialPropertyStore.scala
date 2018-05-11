@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
+package seq
 
 import scala.reflect.runtime.universe.Type
 import java.lang.System.identityHashCode
@@ -88,7 +90,7 @@ final class PKESequentialPropertyStore private (
     // --------------------------------------------------------------------------------------------
 
     private[this] val ps: Array[AnyRefMap[Entity, PropertyValue]] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { new AnyRefMap() }
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new AnyRefMap(50000) }
     }
 
     // Those computations that will only be scheduled if the result is required
@@ -187,7 +189,11 @@ final class PKESequentialPropertyStore private (
         lazyComputations(pk.id) = pc
     }
 
-    override def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
+    override def scheduleForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit = handleExceptions {
         scheduledTasksCounter += 1
         tasks.append(() ⇒ handleResult(pc(e)))
     }
@@ -254,10 +260,12 @@ final class PKESequentialPropertyStore private (
         }
     }
 
+    def force(e: Entity, pk: SomePropertyKey): Unit = apply(e, pk)
+
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
      */
-    private[fpcf] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = {
+    private[seq] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = {
         ps(pkId).get(e) match {
             case None         ⇒ null
             case Some(pValue) ⇒ pValue
@@ -286,7 +294,7 @@ final class PKESequentialPropertyStore private (
         /*user level*/ assert(
             !lb.isOrderedProperty || {
                 val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
             }
         )
         ps(pkId).get(e) match {
@@ -315,14 +323,14 @@ final class PKESequentialPropertyStore private (
                             val lbAsOP = lb.asOrderedProperty
                             if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
                                 val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
-                                lbAsOP.checkIsEqualOrBetterThan(oldLBWithUBType)
+                                lbAsOP.checkIsEqualOrBetterThan(e, oldLBWithUBType)
                                 val pValueUBAsOP = oldUB.asOrderedProperty
                                 val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
-                                pValueUBAsOP.checkIsEqualOrBetterThan(ubWithOldUBType)
+                                pValueUBAsOP.checkIsEqualOrBetterThan(e, ubWithOldUBType)
                             }
                         } catch {
                             case t: Throwable ⇒
-                                throw new IllegalStateException(
+                                throw new IllegalArgumentException(
                                     s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
                                         newDependees.mkString("newDependees={", ", ", "}")+
                                         "; cause="+t.getMessage,
@@ -410,7 +418,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def set(e: Entity, p: Property): Unit = {
+    override def set(e: Entity, p: Property): Unit = handleExceptions {
         val key = p.key
         val pkId = key.id
 
@@ -425,7 +433,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def handleResult(r: PropertyComputationResult): Unit = {
+    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
         r.id match {
 
@@ -619,7 +627,7 @@ final class PKESequentialPropertyStore private (
         delayedPropertyKinds foreach { pk ⇒ this.delayedPropertyKinds(pk.id) = true }
     }
 
-    override def waitOnPhaseCompletion(): Unit = {
+    override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback and cycle resolution:
         var isInterrupted: Boolean = false

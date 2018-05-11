@@ -29,16 +29,22 @@
 package org.opalj
 package fpcf
 
+import scala.util.control.ControlThrowable
+
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * A property store manages the execution of computations of properties related to specific
  * entities (e.g., methods, fields and classes of a program). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
- * to handle the dependencies between the entities. Furthermore, the property store may parallelize
- * the computation of the properties as far as possible without requiring users to take care of it;
+ * to handle the computations related to the dependencies between the entities.
+ * Furthermore, the property store may parallelize the computation of the properties as far as
+ * possible without requiring users to take care of it;
  * users are also generally not required to think about the concurrency when implementing an
  * analysis.
  *
@@ -48,11 +54,15 @@ import scala.reflect.runtime.universe.typeOf
  * I.e., if some information is not or just not completely available, the analysis should
  * still continue using the provided information and (internally) records the dependency.
  * Later on, when the analysis has computed its result, it reports the same and informs the
- * framework about its dependencies.
+ * framework about its dependencies. Based on the later the framework will call back the analysis
+ * when a dependency is updated. In general, an analysis should always try to minimize the number
+ * of dependencies to the minimum set to enable the property store to suspend computations that
+ * are no longer required.
  *
- * ===Core Requirements on Property Computation Functions===
+ * ===Core Requirements on Property Computation Functions (Modular Static Analysis)===
+ *  The following requirements ensure correctness and determinism of the result.
  *  - (At Most One Lazy Function per Property Kind) A specific kind of property is (in each
- *    phase) always computed by only one registered `PropertyComputation` function.
+ *    phase) always computed by only one registered lazy `PropertyComputation` function.
  *    No other analysis is (conceptually) allowed to derive a value for an E/PK pairing
  *    for which a lazy function is registered.
  *  - (Thread-Safe PropertyComputation functions) If a single instance of a property computation
@@ -63,8 +73,8 @@ import scala.reflect.runtime.universe.typeOf
  *    entities have to compute result sets that are disjoint.
  *    For example, an analysis that performs a computation on class files and
  *    that derives properties of a specific kind related to a class file's methods must ensure
- *    that the same analysis running concurrently on two different class files do not derive
- *    information about the same method.
+ *    that two concurrent calls of the same analysis - running concurrently on two different
+ *    class files - does not derive information about the same method.
  *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new) property for
  *    a specific element then the result must be equal or more specific.
  *
@@ -77,7 +87,8 @@ import scala.reflect.runtime.universe.typeOf
  * value will be committed.
  *
  * ==Thread Safety==
- * A PropertyStore is thread-safe.
+ * The sequential property stores are not thread-safe; the parallelized implementation(s) is
+ * thread-safe.
  *
  * ==Common Abbreviations==
  * - e =         Entity
@@ -142,10 +153,10 @@ abstract class PropertyStore {
     //
 
     /**
-     * If "debug" is set to `true` and we have an update related to an ordered property,
+     * If "debug" is `true` and we have an update related to an ordered property,
      * we will then check if the update is correct!
      */
-    @volatile var debug: Boolean = false
+    final def debug: Boolean = PropertyStore.Debug
 
     /**
      * Returns a consistent snapshot of the stored properties.
@@ -171,6 +182,10 @@ abstract class PropertyStore {
      */
     def scheduledOnUpdateComputations: Int
 
+    /**
+     * The number of times a property was directly computed again due to an updated
+     * dependee.
+     */
     def eagerOnUpdateComputations: Int
 
     //
@@ -263,6 +278,21 @@ abstract class PropertyStore {
     def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
 
     /**
+     * Enforce the evaluation of the specified property kind for the given entity, even
+     * if the property is computed lazily and no "eager computation" requires the results
+     * anymore.
+     * Using `force` is in particular necessary in a case where a specific analysis should
+     * be scheduled lazily because the computed information is not necessary for all entities,
+     * but strictly required for some elements.
+     * E.g., if you want to compute a property for some piece of code, but not for those
+     * elements of the used library that are strictly necessary.
+     * For example, if we want to compute the purity of the methods of a specific application,
+     * we may have to compute the property for some entities of the libraries, but we don't
+     * want to compute them for all.
+     */
+    def force(e: Entity, pk: SomePropertyKey): Unit
+
+    /**
      * Returns an iterator of the different properties associated with the given element.
      *
      * This method is the preferred way to get a snapshot of all properties of an entity and should
@@ -326,6 +356,9 @@ abstract class PropertyStore {
      *
      * If a different property is already associated with the given entity, an
      * IllegalStateException is thrown.
+     *
+     * @note   If any computation resulted in an exception, then `set` will fail and
+     *         the exception related to the failing computation will be thrown again.
      */
     @throws[IllegalStateException]
     def set(e: Entity, p: Property): Unit
@@ -389,20 +422,26 @@ abstract class PropertyStore {
      * Schedules the execution of the given `PropertyComputation` function for the given entity.
      * This is of particular interest to start an incremental computation
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierarchy in a top-down manner.
+     *
+     * @note   If any computation resulted in an exception, then the scheduling will fail and
+     *         the exception related to the failing computation will be thrown again.
      */
     def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
-     * Processes the result. Generally, not called by analyses. If this function is directly
-     * called, the caller has to ensure that we don't have overlapping results and that the
-     * given result is a meaningful update of the previous property associated with the respective
-     * entity - if any!
+     * Processes the result; generally, not directly called by analyses.
+     * If this function is directly called, the caller has to ensure that we don't have overlapping
+     * results and that the given result is a meaningful update of the previous property
+     * associated with the respective entity - if any!
+     *
+     * @note   If any computation resulted in an exception, then `handleResult` will fail and
+     *         the exception related to the failing computation will be thrown again.
      */
     def handleResult(r: PropertyComputationResult): Unit
 
     /**
      * Awaits the completion of all property computation functions which were previously registered.
-     * As soon as all initial computations have finished dependencies on E/P pairs for which
+     * As soon as all initial computations have finished, dependencies on E/P pairs for which
      * no value was computed and will be computed(!) (see `setupPhase` for details) will be
      * identified and the fallback value will be used. After that, cycle resolution will be
      * performed. I.e., first all _closed_ strongly connected components will be identified
@@ -416,7 +455,55 @@ abstract class PropertyStore {
      * @note   If a second thread is used to register [[PropertyComputation]] functions
      *         no guarantees are given; it is recommended to schedule all property computation
      *         functions using one thread and using that thread to call this method.
+     * @note   If a computation fails with an exception, the property store will stop in due time
+     *         and return the thrown exception. No strong guarantees are given which exception
+     *         is returned in case of concurrent execution.
      */
     def waitOnPhaseCompletion(): Unit
+
+    protected[this] var exception: Throwable @volatile = null
+
+    protected[this] def handleExceptions[U](f: ⇒ U): U = {
+        if (exception ne null)
+            throw exception;
+
+        try {
+            f
+        } catch {
+            case ct: ControlThrowable ⇒
+                /*  BASICALLY IGNORED - BUT THERE IS ROOM FOR IMPROVEMENT! */
+                throw ct;
+            case t: Throwable ⇒
+                exception = t
+                throw t;
+        }
+    }
+
+}
+
+object PropertyStore {
+
+    final val DebugKey = "org.opalj.debug.fpcf.PropertyStore.Debug"
+
+    private[this] var debug: Boolean = {
+        val initialDebug = BaseConfig.getBoolean(DebugKey)
+        updateDebug(initialDebug)
+        initialDebug
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def Debug: Boolean = debug
+
+    def updateDebug(newDebug: Boolean): Unit = {
+        implicit val logContext = GlobalLogContext
+        debug =
+            if (newDebug) {
+                info("OPAL", s"$DebugKey: debugging support on")
+                true
+            } else {
+                info("OPAL", s"$DebugKey: debugging support off")
+                false
+            }
+    }
 
 }

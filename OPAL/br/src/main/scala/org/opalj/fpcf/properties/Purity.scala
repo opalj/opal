@@ -68,7 +68,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 }
 
 /**
- * Describes the level of the purity of a [[DeclaredMethod]].
+ * Describes the level of the purity of a [[org.opalj.br.DeclaredMethod]].
  *
  * In general, a method is pure if its result only depends on its inputs
  * and/or immutable global state and the execution of the method does not have any side effects;

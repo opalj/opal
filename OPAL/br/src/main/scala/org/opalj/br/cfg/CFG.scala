@@ -76,7 +76,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         private val basicBlocks: Array[BasicBlock]
 ) { cfg ⇒
 
-    if (CFG.CheckConsistency) {
+    if (CFG.Validate) {
         val allBBs = basicBlocks.filter(_ != null)
         val allBBsSet = allBBs.toSet
         // 1. Check that each basic block has a lower start pc than the end pc
@@ -553,31 +553,25 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
-    final val CheckConsistencyKey = "org.opalj.debug.br.cfg.CFG.checkConsistency"
+    final val ValidateKey = "org.opalj.debug.br.cfg.CFG.Validate"
 
-    private[this] var checkConsistency: Boolean = {
-        val initialCheckConsistency = BaseConfig.getBoolean(CheckConsistencyKey)
-        updateCheckConsistency(initialCheckConsistency)
-        initialCheckConsistency
+    private[this] var validate: Boolean = {
+        val initialValidate = BaseConfig.getBoolean(ValidateKey)
+        updateValidate(initialValidate)
+        initialValidate
     }
 
     // We think of it as a runtime constant (which can be changed for testing purposes).
-    def CheckConsistency: Boolean = checkConsistency
+    def Validate: Boolean = validate
 
-    def updateCheckConsistency(newCheckConsistency: Boolean): Unit = {
+    def updateValidate(newValidate: Boolean): Unit = {
         implicit val logContext = GlobalLogContext
-        checkConsistency =
-            if (newCheckConsistency) {
-                info(
-                    "OPAL",
-                    s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)"
-                )
+        validate =
+            if (newValidate) {
+                info("OPAL", s"$ValidateKey: validation on")
                 true
             } else {
-                info(
-                    "OPAL",
-                    s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)"
-                )
+                info("OPAL", s"$ValidateKey: validation off")
                 false
             }
     }

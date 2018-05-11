@@ -53,9 +53,9 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     /**
      * Invoked for in the lazy computation case.
-     * Final fields are considered [[DeclaredFinalField]], non-final and non-private fields or
-     * fields of library classes whose method bodies are not available are considered
-     * [[NonFinalFieldByAnalysis]].
+     * Final fields are considered [[org.opalj.fpcf.properties.DeclaredFinalField]], non-final and
+     * non-private fields or fields of library classes whose method bodies are not available are
+     * considered [[org.opalj.fpcf.properties.NonFinalFieldByAnalysis]].
      * For all other cases the call is delegated to [[determineFieldMutability]].
      */
     def determineFieldMutabilityLazy(e: Entity): PropertyComputationResult = {

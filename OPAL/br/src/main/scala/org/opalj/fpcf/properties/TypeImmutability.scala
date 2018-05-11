@@ -95,7 +95,7 @@ case object ImmutableType extends TypeImmutability {
     override def isImmutableContainer: Boolean = false
     override def isMutable: Boolean = false
 
-    override def checkIsEqualOrBetterThan(other: Self): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
     def meet(that: TypeImmutability): TypeImmutability = if (this == that) this else that
 
@@ -109,9 +109,9 @@ case object ImmutableContainerType extends TypeImmutability {
 
     def meet(that: TypeImmutability): TypeImmutability = if (that == MutableType) that else this
 
-    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == ImmutableType) {
-            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
     }
 }
@@ -124,9 +124,9 @@ case object MutableType extends TypeImmutability {
 
     def meet(other: TypeImmutability): this.type = this
 
-    override def checkIsEqualOrBetterThan(other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other != MutableType) {
-            throw new IllegalArgumentException(s"impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
     }
 }

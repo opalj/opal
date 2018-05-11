@@ -30,9 +30,11 @@ package org.opalj
 package fpcf
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.br.analyses.{ProjectInformationKey, SomeProject}
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.log.{LogContext, OPALLogger}
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
