@@ -94,8 +94,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): PropertyComputationResult = {
-        if (context.targetMethod.name == "handlingReturnGlobalEscape")
-            println()
         // for every use-site, check its escape state
         for (use ← context.uses) {
             checkStmtForEscape(context.code(use))
