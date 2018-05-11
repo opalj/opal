@@ -29,7 +29,7 @@
 package org.opalj.fpcf
 
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.analyses.VirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.ThrownExceptions
 
 /**
@@ -78,9 +78,9 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         )
     }
 
-    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
+    describe("L1ThrownExceptionsAnalysis and VirtualMethodThrownExceptionsAnalysis are executed") {
         val as = executeAnalyses(Set(
-            ThrownExceptionsByOverridingMethodsAnalysis,
+            VirtualMethodThrownExceptionsAnalysis,
             L1ThrownExceptionsAnalysis
         ))
         validateProperties(

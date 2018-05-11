@@ -38,7 +38,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.analyses.VirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.ThrownExceptions
 import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods
 import org.opalj.fpcf.properties.ThrownExceptionsFallback
@@ -76,7 +76,7 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
 
         time {
             if (parameters.contains(L1TEParameter)) {
-                ThrownExceptionsByOverridingMethodsAnalysis.startLazily(project, ps)
+                VirtualMethodThrownExceptionsAnalysis.startLazily(project, ps)
                 L1ThrownExceptionsAnalysis.start(project, ps)
             } else {
                 val fallbackAnalysis = new ThrownExceptionsFallback(ps)

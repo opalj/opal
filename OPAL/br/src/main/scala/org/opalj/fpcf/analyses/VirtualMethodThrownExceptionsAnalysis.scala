@@ -52,11 +52,11 @@ import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods.MethodIsOve
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-class ThrownExceptionsByOverridingMethodsAnalysis private (
+class VirtualMethodThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private def lazilyAggregateExceptionsThrownByOverridingMethods(
+    private[analyses] def lazilyAggregateExceptionsThrownByOverridingMethods(
         e: Entity
     ): PropertyComputationResult = {
         e match {
@@ -71,7 +71,9 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
     /**
      * Aggregates the exceptions thrown by a method and all overriding methods.
      */
-    def aggregateExceptionsThrownByOverridingMethods(m: Method): PropertyComputationResult = {
+    private[analyses] def aggregateExceptionsThrownByOverridingMethods(
+        m: Method
+    ): PropertyComputationResult = {
         // If an unknown subclass can override this method we cannot gather information about
         // the thrown exceptions. Return the analysis immediately.
         if (project.get(IsOverridableMethodKey)(m).isYesOrUnknown) {
@@ -155,22 +157,36 @@ class ThrownExceptionsByOverridingMethodsAnalysis private (
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object ThrownExceptionsByOverridingMethodsAnalysis extends FPCFAnalysisScheduler {
+object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyKind] = Set(ThrownExceptions)
 
     override def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
 
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
+        val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
         val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
         ps.scheduleForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
         analysis
     }
 
+}
+
+/**
+ * Factory/executor of the thrown exceptions analysis.
+ *
+ * @author Andreas Muttscheller
+ * @author Michael Eichberg
+ */
+object LazyVirtualMethodThrownExceptionsAnalysis extends FPCFLazyAnalysisScheduler {
+
+    override def uses: Set[PropertyKind] = Set(ThrownExceptions)
+
+    override def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
     def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new ThrownExceptionsByOverridingMethodsAnalysis(project)
+        val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
         ps.registerLazyPropertyComputation[ThrownExceptionsByOverridingMethods](
             ThrownExceptionsByOverridingMethods.key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods

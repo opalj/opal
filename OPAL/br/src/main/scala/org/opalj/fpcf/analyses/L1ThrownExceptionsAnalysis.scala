@@ -388,7 +388,7 @@ class L1ThrownExceptionsAnalysis private (
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
+object L1ThrownExceptionsAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyKind] = {
         Set(ThrownExceptionsByOverridingMethods)
