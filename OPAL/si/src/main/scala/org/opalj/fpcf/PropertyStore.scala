@@ -277,13 +277,18 @@ abstract class PropertyStore {
 
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
-     * if the property is computed lazily and no "eager computation" requires the results 
+     * if the property is computed lazily and no "eager computation" requires the results
      * anymore.
      * Using `force` is in particular necessary in a case where a specific analysis should
-     * be scheduled lazily because libraries should only be analyzed as much as required.
-     * For example, if we want to compute the purity of the methods of a specific application...
+     * be scheduled lazily because the computed information is not necessary for all entities,
+     * but strictly required for some elements.
+     * E.g., if you want to compute a property for some piece of code, but not for those
+     * elements of the used library that are strictly necessary.
+     * For example, if we want to compute the purity of the methods of a specific application,
+     * we may have to compute the property for some entities of the libraries, but we don't
+     * want to compute them for all.
      */
-    def force(e : Entity, pk : Property) : Unit
+    def force(e: Entity, pk: SomePropertyKey): Unit
 
     /**
      * Returns an iterator of the different properties associated with the given element.
