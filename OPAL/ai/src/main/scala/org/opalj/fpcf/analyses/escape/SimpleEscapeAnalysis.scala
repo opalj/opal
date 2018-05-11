@@ -31,28 +31,27 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.DeclaredMethod
+import org.opalj.ai.DefinitionSitesKey
+import org.opalj.ai.ValueOrigin
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSitesKey
-import org.opalj.ai.ValueOrigin
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
+import org.opalj.tac.TACode
 
 class SimpleEscapeAnalysisContext(
         val entity:                  Entity,
         val defSite:                 ValueOrigin,
-        val targetMethod:            DeclaredMethod,
+        val targetMethod:            Method,
         val uses:                    IntTrieSet,
         val code:                    Array[Stmt[V]],
         val cfg:                     CFG[Stmt[V], TACStmts[V]],
@@ -87,38 +86,18 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
 
-    /**
-     * Calls [[doDetermineEscape]] with the definition site, the use sites, the
-     * [[org.opalj.tac.TACode]], the [[org.opalj.tac.Parameters]] and the method in which the entity
-     * is defined. Allocation sites that are part of dead code are immediately returned as
-     * [[org.opalj.fpcf.properties.NoEscape]].
-     * [[org.opalj.br.analyses.VirtualFormalParameter]]s that are not the this local of a constructor are
-     * flagged as [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
-     *
-     * @param e The entity whose escape state has to be determined.
-     */
-    override def determineEscape(e: Entity): PropertyComputationResult = {
-        e match {
-            // for allocation sites, find the code containing the allocation site
-            case defSite: DefinitionSite    ⇒ determineEscapeOfDS(defSite)
-            case fp: VirtualFormalParameter ⇒ determineEscapeOfFP(fp)
-            case e ⇒
-                throw new IllegalArgumentException(s"can't handle entity $e")
-        }
-    }
 
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(dm @ DefinedMethod(_, m), -1) if m.name == "<init>" ⇒
+            case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isInitializer ⇒
                 val TACode(params, code, _, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
-                val ctx = createContext(fp, -1, dm, useSites, code, cfg)
+                val ctx = createContext(fp, -1, m, useSites, code, cfg)
                 doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(_, _) ⇒
-                //TODO
-                //IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
         }
     }
@@ -126,7 +105,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override def createContext(
         entity:       Entity,
         defSite:      ValueOrigin,
-        targetMethod: DeclaredMethod,
+        targetMethod: Method,
         uses:         IntTrieSet,
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]

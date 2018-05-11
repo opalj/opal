@@ -53,12 +53,6 @@ class DefinitionSites(val project: SomeProject) {
         if (prev == null) defSite else prev
     }
 
-    def apply(m: Method, pc: Int, uses: PCs): DefinitionSiteWithFilteredUses = {
-        val defSite = new DefinitionSiteWithFilteredUses(m, pc, uses)
-        val prev = definitionSites.putIfAbsent(defSite, defSite).asInstanceOf[DefinitionSiteWithFilteredUses]
-        if (prev == null) defSite else prev
-    }
-
     def getAllocationSites: Seq[DefinitionSite] = {
         val allocationSites = new ConcurrentLinkedQueue[DefinitionSite]()
 

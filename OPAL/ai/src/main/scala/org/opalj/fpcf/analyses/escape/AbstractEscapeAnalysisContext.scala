@@ -32,7 +32,6 @@ package analyses
 package escape
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
@@ -55,7 +54,7 @@ trait AbstractEscapeAnalysisContext {
     val entity: Entity
     val uses: IntTrieSet
     val defSite: ValueOrigin
-    val targetMethod: DeclaredMethod
+    val targetMethod: Method
     val code: Array[Stmt[V]]
 
     /**

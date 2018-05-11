@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package analyses
 
+import java.util.concurrent.ConcurrentHashMap
+
 import org.opalj
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
@@ -38,6 +40,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSiteLike
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -264,7 +267,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
      * @note (Re-)Adds dependees as necessary.
      */
     private[this] def handleEscape(
-        eOptionP: EOptionP[DefinitionSite, EscapeProperty]
+        eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
 
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
@@ -302,7 +305,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
     /**
      * Returns, whether the definition site is a GetField on the method's receiver.
      */
-    private[this] def isGetFieldOfReceiver(defSite: DefinitionSite): Boolean = {
+    private[this] def isGetFieldOfReceiver(defSite: DefinitionSiteLike): Boolean = {
         val stmt = tacaiProvider(defSite.method).stmts.find(_.pc == defSite.pc)
         stmt match {
             case Some(Assignment(_, _, getField: GetField[V])) ⇒
@@ -330,7 +333,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                     true
                 } else {
                     val filteredUses = aiResult(method).domain.usedBy(stmt.pc) - putField
-                    val defSiteEntity = definitionSites(method, stmt.pc, filteredUses)
+                    val defSiteEntity = DefinitionSitesWithoutPutField(method, stmt.pc, filteredUses)
                     val escape = propertyStore(defSiteEntity, EscapeProperty.key)
                     // does the value escape?
                     handleEscape(escape)
@@ -616,3 +619,19 @@ object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPC
         analysis
     }
 }
+
+//TODO document
+object DefinitionSitesWithoutPutField {
+    private val defSites =
+        new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
+
+    def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
+        val defSite = new DefinitionSiteWithoutPutField(method, pc, usedBy)
+        val prev = defSites.putIfAbsent(defSite, defSite)
+        if (prev == null) defSite else prev
+    }
+}
+
+final case class DefinitionSiteWithoutPutField(
+    method: Method, pc: Int, usedBy: IntTrieSet
+) extends DefinitionSiteLike

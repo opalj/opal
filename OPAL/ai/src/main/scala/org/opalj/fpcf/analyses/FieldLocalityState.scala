@@ -32,6 +32,7 @@ package analyses
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.DefinitionSite
+import org.opalj.ai.DefinitionSiteLike
 import org.opalj.br.Field
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
@@ -39,9 +40,9 @@ import org.opalj.fpcf.properties.LocalField
 
 class FieldLocalityState(val field: Field) {
     private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
-    private[this] var definitionSitesDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
+    private[this] var definitionSitesDependees: Set[EOptionP[DefinitionSiteLike, EscapeProperty]] = Set.empty
 
-    private[this] var clonedDependees: Set[DefinitionSite] = Set.empty
+    private[this] var clonedDependees: Set[DefinitionSiteLike] = Set.empty
 
     private[this] var temporary: FieldLocality = LocalField
 
@@ -67,18 +68,18 @@ class FieldLocalityState(val field: Field) {
         addMethodDependee(ep)
     }
 
-    def addClonedDefinitionSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
+    def addClonedDefinitionSiteDependee(ep: EOptionP[DefinitionSiteLike, EscapeProperty]): Unit = {
         addDefinitionSiteDependee(ep)
         clonedDependees += ep.e
     }
 
-    def addDefinitionSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit =
+    def addDefinitionSiteDependee(ep: EOptionP[DefinitionSiteLike, EscapeProperty]): Unit =
         definitionSitesDependees += ep
 
-    def removeDefinitionSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit =
+    def removeDefinitionSiteDependee(ep: EOptionP[DefinitionSiteLike, EscapeProperty]): Unit =
         definitionSitesDependees = definitionSitesDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
 
-    def updateAllocationSiteDependee(ep: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
+    def updateAllocationSiteDependee(ep: EOptionP[DefinitionSiteLike, EscapeProperty]): Unit = {
         removeDefinitionSiteDependee(ep)
         addDefinitionSiteDependee(ep)
     }
