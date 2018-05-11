@@ -38,6 +38,7 @@ import org.opalj.log.LogContext
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
+import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
 import scala.reflect.runtime.universe.Type
 
@@ -86,9 +87,7 @@ class ReactiveAsyncPropertyStore private (
     var delayedPropertyKinds: Set[PropertyKind] = Set.empty
 
     // Counters for debug purposes
-    val debugCounter = TrieMap.empty[String, AtomicLong]
-    var debugInResolve = false
-    var debugInFallback = false
+    val profilingCounter = TrieMap.empty[String, AtomicLong]
     val dependencyCounter = TrieMap.empty[Int, AtomicLong]
 
     // This datastructure holds the to be lazily computed properties. The key is the property kind
@@ -108,7 +107,7 @@ class ReactiveAsyncPropertyStore private (
         val counters = s"\tCounters\n"+
             f"\t\t${"Number"}%10s  ${"Name"}%-90s\n"+
             f"\t\t${"------"}%10s  ${"----"}%-90s\n"+
-            debugCounter.toSeq.sortBy(x ⇒ x._1).map { x ⇒
+            profilingCounter.toSeq.sortBy(x ⇒ x._1).map { x ⇒
                 f"\t\t${x._2.get}%10s  ${x._1}%-90s\n"
             }.mkString
 
@@ -128,7 +127,7 @@ class ReactiveAsyncPropertyStore private (
      * Simple counter of the number of tasks that were executed to perform an initial
      * computation of a property for some entity.
      */
-    override def scheduledTasks: Int = debugCounter
+    override def scheduledTasks: Int = profilingCounter
         .getOrElseUpdate("EagerlyScheduledComputations", new AtomicLong(0))
         .intValue()
 
@@ -136,7 +135,7 @@ class ReactiveAsyncPropertyStore private (
      * Simple counter of the number of tasks (OnUpdateContinuations) that were executed
      * in response to an updated property.
      */
-    override def scheduledOnUpdateComputations: Int = debugCounter
+    override def scheduledOnUpdateComputations: Int = profilingCounter
         .getOrElseUpdate("handleResult.IntermediateResult.continuationFunction", new AtomicLong(0))
         .intValue()
 
@@ -232,7 +231,7 @@ class ReactiveAsyncPropertyStore private (
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = {
         ps
             .toIterator
-            .filter(_.contains(e))
+            .filter(psE ⇒ psE.contains(e) && psE(e).cell.getResult() != null)
             .map { psE ⇒
                 val cc = psE.readOnlySnapshot.apply(e)
                 cc.cell.getResult().toEPS[E, Property](cc.cell.key.e.asInstanceOf[E]).get
@@ -360,6 +359,9 @@ class ReactiveAsyncPropertyStore private (
      * any eager analysis that potentially reads the value.
      */
     override def registerLazyPropertyComputation[P <: Property](pk: PropertyKey[P], pc: SomePropertyComputation): Unit = {
+        assert(computedPropertyKinds.nonEmpty, "setupPhase must be called with at least one computedPropertyKinds")
+        assert(!profilingCounter.contains("EagerlyScheduledComputations"), "lazy computations should only be registered while no analysis are scheduled")
+
         lazyTasks += (pk.id -> pc)
         incCounter("LazilyScheduledComputations")
     }
@@ -412,23 +414,33 @@ class ReactiveAsyncPropertyStore private (
      */
     override def handleResult(r: PropertyComputationResult): Unit = {
         incCounter("handleResult")
-        incCounter(s"handleResult ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
+
+        if (isInterrupted()) {
+            handlerPool.interrupt()
+        }
 
         r.id match {
             case NoResult.id ⇒
                 incCounter("handleResult.NoResult")
-                incCounter(s"handleResult.NoResult ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
 
             case Result.id ⇒
                 val Result(e, p) = r
                 incCounter("handleResult.Result")
-                incCounter(s"handleResult.Result ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
                 // For a final result just put the final value into the cell
                 val psE = ps(p.key.id)
                 val cc = psE.getOrElseUpdate(
                     e, CellCompleter[RAKey, PropertyValue](new RAKey(e, p.key))
                 )
                 assert(!cc.cell.isComplete)
+
+                // For ordered properties: Check if the new value is better than the current one
+                val currentResult = cc.cell.getResult()
+                if (p.isOrderedProperty && currentResult != null) {
+                    val pAsOP = p.asOrderedProperty
+                    pAsOP.checkIsEqualOrBetterThan(currentResult.lb.asInstanceOf[pAsOP.Self])
+                    val storedUbAsOP = currentResult.ub.asOrderedProperty
+                    storedUbAsOP.checkIsEqualOrBetterThan(p.asInstanceOf[storedUbAsOP.Self])
+                }
                 cc.putFinal(new PropertyValue(p))
                 dependencyMap.remove((e, p.key.id))
 
@@ -437,9 +449,14 @@ class ReactiveAsyncPropertyStore private (
                 if (dependees.isEmpty) {
                     assert(false, "IntermediateResult without dependees")
                 }
+                assert(
+                    !lb.isOrderedProperty || {
+                        val ubAsOP = ub.asOrderedProperty
+                        ubAsOP.checkIsEqualOrBetterThan(lb.asInstanceOf[ubAsOP.Self]); true
+                    }
+                )
 
                 incCounter("handleResult.IntermediateResult")
-                incCounter(s"handleResult.IntermediateResult ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
 
                 // 1. For intermediate results, first put the intermediate value in the cell
                 val psE = ps(ub.key.id)
@@ -454,7 +471,13 @@ class ReactiveAsyncPropertyStore private (
                 // all dependencies.
                 val oldResult = cc.cell.getResult()
                 if (oldResult == null || oldResult.lb != lb || oldResult.ub != ub) {
-                    // TODO check OrderedProperty
+                    // For ordered properties: Check if the new value is better than the current one
+                    if (lb.isOrderedProperty && oldResult != null) {
+                        val lbAsOP = lb.asOrderedProperty
+                        lbAsOP.checkIsEqualOrBetterThan(oldResult.lb.asInstanceOf[lbAsOP.Self])
+                        val storedUbAsOP = oldResult.ub.asOrderedProperty
+                        storedUbAsOP.checkIsEqualOrBetterThan(ub.asInstanceOf[storedUbAsOP.Self])
+                    }
                     cc.putNext(new PropertyValue(lb, ub))
                 }
 
@@ -500,7 +523,7 @@ class ReactiveAsyncPropertyStore private (
                     // Only if putFinal was called
                     cc.cell.whenSequential(dependeeCell, (p, _) ⇒ {
                         incCounter("handleResult.IntermediateResult.continuationFunction")
-                        incCounter(s"handleResult.IntermediateResult.continuationFunction ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
+                        assert(!cc.cell.isComplete)
 
                         // Ignore null updates. They can occur if we are in fallback and a cell
                         // was not scheduled
@@ -518,7 +541,6 @@ class ReactiveAsyncPropertyStore private (
                 val IncrementalResult(ir, nextComputations) = r
 
                 incCounter("handleResult.IncrementalResult")
-                incCounter(s"handleResult.IncrementalResult ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
                 // nextComputations haven't been scheduled yet. So here we can eagerly schedule
                 // them.
 
@@ -532,14 +554,12 @@ class ReactiveAsyncPropertyStore private (
             case Results.id ⇒
                 val Results(results) = r
                 incCounter("handleResult.Results")
-                incCounter(s"handleResult.Results ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
                 // Stop timing here, because we have recursion and time would count double
                 results foreach handleResult
 
             case MultiResult.id ⇒
                 val MultiResult(mr) = r
                 incCounter("handleResult.MultiResult")
-                incCounter(s"handleResult.MultiResult ${if (debugInResolve) "*RESOLVE*" else if (debugInFallback) "*FALLBACK*" else "*ANALYSIS*"}")
                 mr foreach { someFinalEP ⇒
                     val psE = ps(someFinalEP.p.key.id)
                     val cc = psE.getOrElseUpdate(
@@ -549,6 +569,14 @@ class ReactiveAsyncPropertyStore private (
                         )
                     )
                     assert(!cc.cell.isComplete)
+                    // For ordered properties: Check if the new value is better than the current one
+                    val currentResult = cc.cell.getResult()
+                    if (someFinalEP.p.isOrderedProperty && currentResult != null) {
+                        val pAsOP = someFinalEP.p.asOrderedProperty
+                        pAsOP.checkIsEqualOrBetterThan(currentResult.lb.asInstanceOf[pAsOP.Self])
+                        val storedUbAsOP = currentResult.ub.asOrderedProperty
+                        storedUbAsOP.checkIsEqualOrBetterThan(someFinalEP.p.asInstanceOf[storedUbAsOP.Self])
+                    }
                     cc.putFinal(new PropertyValue(someFinalEP.p))
                     dependencyMap.remove((someFinalEP.e, someFinalEP.p.key.id))
                 }
@@ -574,24 +602,31 @@ class ReactiveAsyncPropertyStore private (
      *       functions using one thread and using that thread to call this method.
      */
     override def waitOnPhaseCompletion(): Unit = {
-        val fut = handlerPool.quiescentResolveCell
-        Await.ready(fut, Duration.Inf)
+        if (this.isInterrupted())
+            return ;
 
-        debugInResolve = false
-        debugInFallback = false
+        handlerPool.resume()
+
+        val fut = handlerPool.quiescentResolveCell
+        var interrupted: Boolean = false
+
+        while (!interrupted && !fut.isCompleted) {
+            try {
+                Await.ready(fut, 1.second)
+            } catch {
+                case _: TimeoutException ⇒ interrupted = this.isInterrupted()
+            }
+        }
     }
 
     private def incCounter(key: String, n: Int = 1): Long = {
-        debugCounter.getOrElseUpdate(key, new AtomicLong(0)).addAndGet(n.toLong)
+        profilingCounter.getOrElseUpdate(key, new AtomicLong(0)).addAndGet(n.toLong)
     }
 
     class RAKey(val e: Entity, val pk: PropertyKey[Property]) extends Key[PropertyValue] {
         override def resolve[K <: Key[PropertyValue]](
             cells: Iterable[Cell[K, PropertyValue]]
         ): Iterable[(Cell[K, PropertyValue], PropertyValue)] = {
-            debugInResolve = true
-            debugInFallback = false
-
             // Self cycles are not resolved but retain their current result
             if (cells.size == 1) {
                 return cells.map(c ⇒ (c, new PropertyValue(c.getResult.ub)))
@@ -613,9 +648,6 @@ class ReactiveAsyncPropertyStore private (
         override def fallback[K <: Key[PropertyValue]](
             cells: Iterable[Cell[K, PropertyValue]]
         ): Iterable[(Cell[K, PropertyValue], PropertyValue)] = {
-            debugInResolve = false
-            debugInFallback = true
-
             incCounter("RAKey.fallback.cells.size", cells.size)
             incCounter("FallbackCalls")
 
@@ -647,7 +679,7 @@ class ReactiveAsyncPropertyStore private (
             res
         }
 
-        override def toString = s"ReactivePropertyStoreKey $e"
+        override def toString = s"RAKey $e (pkId ${pk.id})"
     }
 
     /**
