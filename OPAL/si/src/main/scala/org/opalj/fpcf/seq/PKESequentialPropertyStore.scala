@@ -330,7 +330,7 @@ final class PKESequentialPropertyStore private (
                             }
                         } catch {
                             case t: Throwable ⇒
-                                throw new IllegalStateException(
+                                throw new IllegalArgumentException(
                                     s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
                                         newDependees.mkString("newDependees={", ", ", "}")+
                                         "; cause="+t.getMessage,
