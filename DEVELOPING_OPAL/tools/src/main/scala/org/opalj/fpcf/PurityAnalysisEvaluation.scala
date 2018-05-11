@@ -342,15 +342,16 @@ object PurityAnalysisEvaluation {
         while (i < args.length) {
             args(i) match {
                 case "-cp"          ⇒ cp = new File(readNextArg())
-                case "-JDK"         ⇒ cp = JRELibraryFolder; withoutJDK = true
                 case "-analysis"    ⇒ analysisName = Some(readNextArg())
                 case "-domain"      ⇒ domainName = Some(readNextArg())
                 case "-rater"       ⇒ raterName = Some(readNextArg())
-                case "-noJDK"       ⇒ withoutJDK = true
                 case "-individual"  ⇒ individual = true
                 case "-closedWorld" ⇒ cwa = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evalDir = Some(new File(readNextArg()))
+                case "-noJDK"       ⇒ withoutJDK = true
+                case "-JDK"         ⇒
+                    cp = JRELibraryFolder; withoutJDK = true
                 case unknown ⇒
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
