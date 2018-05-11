@@ -59,10 +59,11 @@ class FieldBuilderTest extends FlatSpec {
 
     behavior of "Fields"
 
+    val binaryClassName = "test/FieldClass"
     val (daClassFile, _) =
         CLASS(
             accessModifiers = SUPER PUBLIC,
-            thisType = "test/FieldClass",
+            thisType = binaryClassName,
             fields = FIELDS(
                 FIELD(FINAL PUBLIC, "publicField", "I"),
                 FIELD(PRIVATE, "privateField", "Z")
@@ -98,13 +99,13 @@ class FieldBuilderTest extends FlatSpec {
         ).toDA()
 
     val rawClassFile = Assembler(daClassFile)
-
+    val javaClassName = binaryClassName.replace('/', '.')
     val loader = new InMemoryClassLoader(
-        Map("org.example.FieldClass" → rawClassFile),
+        Map(javaClassName → rawClassFile),
         this.getClass.getClassLoader
     )
 
-    val fieldInstance = loader.loadClass("test.FieldClass").getDeclaredConstructor().newInstance()
+    val fieldInstance = loader.loadClass(javaClassName).getDeclaredConstructor().newInstance()
     val mirror = runtimeMirror(loader).reflect(fieldInstance)
 
     val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head
