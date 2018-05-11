@@ -89,17 +89,17 @@ object PropertyStorePerformanceEvaluation {
     val propertyStoreImplementationList: List[PropertyStoreEvaluation] = List(
         // *** Default Sequential Schedulings ***
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false
         ),
 
         // *** PKESequentialPropertyStore ***
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "EagerTrue",
             { ps ⇒
@@ -109,7 +109,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "EagerFalse",
             { ps ⇒
@@ -119,7 +119,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyTrueTrueTrue",
             { ps ⇒
@@ -132,7 +132,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyTrueTrueFalse",
             { ps ⇒
@@ -145,7 +145,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyTrueFalseTrue",
             { ps ⇒
@@ -158,7 +158,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyTrueFalseFalse",
             { ps ⇒
@@ -171,7 +171,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyFalseTrueTrue",
             { ps ⇒
@@ -184,7 +184,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyFalseTrueFalse",
             { ps ⇒
@@ -197,7 +197,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyFalseFalseTrue",
             { ps ⇒
@@ -210,7 +210,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.PKESequentialPropertyStore",
+            "org.opalj.fpcf.seq.PKESequentialPropertyStore",
             false,
             "LazyFalseFalseFalse",
             { ps ⇒
@@ -225,7 +225,7 @@ object PropertyStorePerformanceEvaluation {
 
         // *** EPKSequentialPropertyStore ***
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "EagerTrue",
             { ps ⇒
@@ -235,7 +235,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "EagerFalse",
             { ps ⇒
@@ -245,7 +245,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyTrueTrueTrue",
             { ps ⇒
@@ -258,7 +258,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyTrueTrueFalse",
             { ps ⇒
@@ -271,7 +271,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyTrueFalseTrue",
             { ps ⇒
@@ -284,7 +284,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyTrueFalseFalse",
             { ps ⇒
@@ -297,7 +297,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyFalseTrueTrue",
             { ps ⇒
@@ -310,7 +310,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyFalseTrueFalse",
             { ps ⇒
@@ -323,7 +323,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyFalseFalseTrue",
             { ps ⇒
@@ -336,7 +336,7 @@ object PropertyStorePerformanceEvaluation {
             }
         ),
         new PropertyStoreEvaluation(
-            "org.opalj.fpcf.EPKSequentialPropertyStore",
+            "org.opalj.fpcf.seq.EPKSequentialPropertyStore",
             false,
             "LazyFalseFalseFalse",
             { ps ⇒
