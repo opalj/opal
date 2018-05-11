@@ -66,10 +66,10 @@ class SimpleEscapeAnalysisContext(
     with CFGContainer
 
 /**
- * A simple escape analysis that can handle [[org.opalj.ai.DefinitionSite]]s and
+ * A simple escape analysis that can handle [[org.opalj.ai.DefinitionSiteLike]]s and
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
- * [[org.opalj.fpcf.properties.AtMost(NoEscape)]].
+ * [[org.opalj.fpcf.properties.AtMost]]([[org.opalj.fpcf.properties.NoEscape]]).
  *
  *
  *
@@ -85,7 +85,6 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
-
 
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {

@@ -127,7 +127,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at
  * most [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
  *
- * [[org.opalj.ai.DefinitionSite]] and [[org.opalj.br.analyses.VirtualFormalParameter]] are
+ * `org.opalj.ai.DefinitionSiteLike` and [[org.opalj.br.analyses.VirtualFormalParameter]] are
  * generally used as [[Entity]] in combination with this property.
  *
  * [[VirtualMethodEscapeProperty]] provides a wrapper of this property addressing aggregated escape
@@ -757,8 +757,7 @@ case object EscapeViaStaticField extends GlobalEscape {
 /**
  * A refineable property that provides an upper bound. Only refinements to values below or equal to
  * `property` are allowed to perform.
- * This property should be used, if the analysis is not able to compute a more precise property
- * (i.e. for [[org.opalj.fpcf.RefinableResult]]).
+ * This property should be used, if the analysis is not able to compute a more precise property.
  */
 case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty {
     override def propertyValueID: Int = property.propertyValueID + 20

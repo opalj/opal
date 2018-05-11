@@ -41,7 +41,7 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * Values are [[FreshReturnValue]] for always freshly allocated return values, [[Getter]] for
  * return values that can be treated as fresh if the methods's receiver is known to be fresh and
  * [[ExtensibleGetter]] if additionally the method's receiver type must not implement
- * [[java.lang.Cloneable]].
+ * `java.lang.Cloneable`.
  * If the return value of a method may not be fresh, the method has [[NoFreshReturnValue]].
  * [[PrimitiveReturnValue]] is used for methods with a return type that is a base type or void. The
  * return value freshness should never be relevant for such methods.

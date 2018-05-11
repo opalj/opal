@@ -69,7 +69,7 @@ import scala.annotation.switch
 
 // TODO @Florian Replace dead link to AllocationSite
 /**
- * An abstract escape analysis for a concrete [[org.opalj.br.AllocationSite]] or a
+ * An abstract escape analysis for a [[org.opalj.ai.DefinitionSiteLike]] or a
  * [[org.opalj.br.analyses.VirtualFormalParameter]].
  * The entity and all other information required by the analyses such as the defSite, uses or the
  * code correspond to this entity are given as [[AbstractEscapeAnalysisContext]].

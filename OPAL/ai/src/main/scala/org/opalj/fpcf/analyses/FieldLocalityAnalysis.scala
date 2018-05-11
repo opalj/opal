@@ -108,7 +108,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
 
     /**
      * Checks if the field locality can be determined trivially.
-     * Otherwise it forwards to [[step2]].
+     * Otherwise it forwards to `FieldLocalityAnalysis.step2`.
      */
     def step1(field: Field): PropertyComputationResult = {
         val fieldType = field.fieldType
@@ -632,5 +632,5 @@ object DefinitionSitesWithoutPutField {
 }
 
 final case class DefinitionSiteWithoutPutField(
-    method: Method, pc: Int, usedBy: IntTrieSet
+        method: Method, pc: Int, usedBy: IntTrieSet
 ) extends DefinitionSiteLike

@@ -341,8 +341,9 @@ object PurityAnalysisEvaluation {
 
         while (i < args.length) {
             args(i) match {
-                case "-cp"          ⇒ cp = new File(readNextArg())
-                case "-JDK"         ⇒ cp = JRELibraryFolder; withoutJDK = true
+                case "-cp" ⇒ cp = new File(readNextArg())
+                case "-JDK" ⇒
+                    cp = JRELibraryFolder; withoutJDK = true
                 case "-analysis"    ⇒ analysisName = Some(readNextArg())
                 case "-domain"      ⇒ domainName = Some(readNextArg())
                 case "-rater"       ⇒ raterName = Some(readNextArg())

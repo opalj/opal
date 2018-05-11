@@ -56,7 +56,7 @@ sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInfor
 }
 
 /**
- * Describes whether a [[DeclaredMethod]] or its (transitive) callees may allocate any
+ * Describes whether a [[org.opalj.br.DeclaredMethod]] or its (transitive) callees may allocate any
  * objects/arrays.
  *
  * @author Dominik Helm
