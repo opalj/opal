@@ -43,14 +43,14 @@ import org.opalj.br.instructions.Instruction
  */
 abstract class AbstractCFGTest extends FunSpec with Matchers with BeforeAndAfterAll {
 
-    private[this] var oldCFGConsistencySettig = CFG.CheckConsistency
+    private[this] var oldCFGValidateSetting = CFG.Validate
 
     override def beforeAll(): Unit = {
-        CFG.updateCheckConsistency(true)
+        CFG.updateValidate(true)
     }
 
     override def afterAll(): Unit = {
-        CFG.updateCheckConsistency(oldCFGConsistencySettig)
+        CFG.updateValidate(oldCFGValidateSetting)
     }
 
     /**
