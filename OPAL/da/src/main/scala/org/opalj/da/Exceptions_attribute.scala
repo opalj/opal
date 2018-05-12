@@ -46,7 +46,7 @@ import scala.xml.Text
  */
 case class Exceptions_attribute(
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: IndexedSeq[Constant_Pool_Index]
+        exception_index_table: IndexedSeq[Constant_Pool_Index] // IMPROVE Use IndexedIntSeq or some other data structure which does not require boxing values!
 ) extends Attribute {
 
     override def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2

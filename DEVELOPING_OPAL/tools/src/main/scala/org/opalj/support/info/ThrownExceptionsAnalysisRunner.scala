@@ -37,8 +37,8 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.ThrownExceptions
 import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods
 import org.opalj.fpcf.properties.ThrownExceptionsFallback
@@ -77,7 +77,7 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
         time {
             if (parameters.contains(L1TEParameter)) {
                 LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, ps)
-                L1ThrownExceptionsAnalysis.start(project, ps)
+                EagerL1ThrownExceptionsAnalysis.start(project, ps)
             } else {
                 val fallbackAnalysis = new ThrownExceptionsFallback(ps)
                 ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
@@ -101,13 +101,13 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
         val methodsWhichDoNotThrowExceptionsCount =
             privateMethodsWhichDoNotThrowExceptions.count(_.isPrivate)
 
-        val report = if (parameters.contains(suppressPerMethodReports))
-            ""
-        else
-            epsWithThrownExceptions.map { p ⇒
-                val m = p.e.asInstanceOf[Method]
-                s"${m.toJava} ⇒ ${p.ub}"
-            }.toList.sorted.mkString("\n")
+        val report =
+            if (parameters.contains(suppressPerMethodReports))
+                ""
+            else
+                epsWithThrownExceptions.map { p ⇒
+                    s"${p.e.asInstanceOf[Method].toJava} ⇒ ${p.ub}"
+                }.toList.sorted.mkString("\n")
 
         BasicReport(
             report +

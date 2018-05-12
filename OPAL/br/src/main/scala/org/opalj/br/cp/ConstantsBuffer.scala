@@ -224,6 +224,24 @@ class ConstantsBuffer private (
         getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex), 1)
     }
 
+    //
+    // Java9+ CPEntries
+    //
+
+    @throws[ConstantPoolException]
+    def CPEModule(name: String): Int = {
+        val cpeUtf8 = CPEUtf8(name)
+        val cpEntryIndex = getOrElseUpdate(CONSTANT_Module_info(cpeUtf8), 1)
+        validateIndex(cpEntryIndex, false)
+    }
+
+    @throws[ConstantPoolException]
+    def CPEPackage(name: String): Int = {
+        val cpeUtf8 = CPEUtf8(name)
+        val cpEntryIndex = getOrElseUpdate(CONSTANT_Package_info(cpeUtf8), 1)
+        validateIndex(cpEntryIndex, false)
+    }
+
     /**
      * Converts this constant pool buffer to an array and also returns an immutable view of the
      * current state of the constants pool. This in particular enables the creation of the

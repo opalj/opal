@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
-import org.opalj.br.PC
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -90,11 +89,11 @@ import org.opalj.fpcf.properties.ThrownExceptions.SomeException
  *
  * @author Andreas Muttscheller
  */
-class L1ThrownExceptionsAnalysis private (
+class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
+    private[analyses] def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
         e match {
             case m: Method ⇒
                 determineThrownExceptions(m)
@@ -142,7 +141,7 @@ class L1ThrownExceptionsAnalysis private (
          *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
          */
-        def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
+        def collectAllExceptions(pc: Int, instruction: Instruction): Boolean = {
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
@@ -382,19 +381,23 @@ class L1ThrownExceptionsAnalysis private (
     }
 }
 
+abstract class ThrownExceptionsAnalysis extends ComputationSpecification {
+    override def uses: Set[PropertyKind] = {
+        Set(ThrownExceptionsByOverridingMethods)
+    }
+
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+}
+
 /**
  * Factory and runner for the [[L1ThrownExceptionsAnalysis]].
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object L1ThrownExceptionsAnalysis extends FPCFEagerAnalysisScheduler {
-
-    override def uses: Set[PropertyKind] = {
-        Set(ThrownExceptionsByOverridingMethods)
-    }
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+object EagerL1ThrownExceptionsAnalysis
+    extends ThrownExceptionsAnalysis
+    with FPCFEagerAnalysisScheduler {
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
@@ -406,6 +409,33 @@ object L1ThrownExceptionsAnalysis extends FPCFEagerAnalysisScheduler {
         propertyStore.scheduleForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
+
+    /** Registers an analysis to compute the thrown exceptions lazily. */
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new L1ThrownExceptionsAnalysis(project)
+        propertyStore.registerLazyPropertyComputation[ThrownExceptions](
+            ThrownExceptions.key,
+            analysis.lazilyDetermineThrownExceptions
+        )
+        analysis
+    }
+}
+
+/**
+ * Factory and runner for the [[L1ThrownExceptionsAnalysis]].
+ *
+ * @author Andreas Muttscheller
+ * @author Michael Eichberg
+ */
+object LazyL1ThrownExceptionsAnalysis
+    extends ThrownExceptionsAnalysis
+    with FPCFLazyAnalysisScheduler {
+
+    override def uses: Set[PropertyKind] = {
+        Set(ThrownExceptionsByOverridingMethods)
+    }
+
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
 
     /** Registers an analysis to compute the thrown exceptions lazily. */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
