@@ -114,13 +114,11 @@ trait AttributesReader
      * <li>RuntimeVisibleTypeAnnotations_attribute </li>
      * <li>RuntimeInvisibleTypeAnnotations_attribute </li>
      * </ul>
-     * <b>Java 9</b>Attributes (Aug. 2016):<br />
+     * <b>Java 9</b>Attributes:<br />
      * <ul>
      * <li>Module_attribute</li>
-     * <li>ConcealedPackages_attribute</li>
-     * <li>Version_attribute</li>
      * <li>MainClass_attribute</li>
-     * <li>TargetPlatform_attribute</li>
+     * <li>ModulePackages_attribute</li>
      * </ul>
      *
      * The returned function is allowed to return null; in this case the attribute
