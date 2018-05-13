@@ -48,11 +48,13 @@ import scala.collection.JavaConverters._
 import org.opalj.io.FailAfterByteArrayOutputStream
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
 
 /**
  * Tests the assembler by loading and writing a large number of class files and by
- * comparing the output with the original class file.
+ * comparing the output with the original class file. In this case the output has to
+ * identical at the byte level.
  *
  * @author Michael Eichberg
  */
@@ -61,20 +63,23 @@ class AssemberTest extends FlatSpec with Matchers {
 
     behavior of "the Assembler"
 
+    val jmodsFile =
+        locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip","bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs()
-        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
+        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        if file.isFile
+        if file.canRead
+        if file.length() > 0
+        if file.getName.endsWith(".jar") || file.getName.endsWith(".zip")
     } {
-        it should (s"be able to process every class of $file") in {
-
-            val zipFile = new ZipFile(file)
+        it should s"be able to recreate every class of $file" in {
             val entriesCount = new AtomicInteger(0)
 
             val Lock = new Object
             var exceptions: List[Throwable] = Nil
 
+            val zipFile = new ZipFile(file)
             zipFile.entries().asScala.filter(_.getName.endsWith(".class")).toList.par.foreach { ze ⇒
-
                 val (classFile, raw) = {
                     val file = zipFile.getInputStream(ze)
                     val classFileSize = ze.getSize.toInt
@@ -90,17 +95,18 @@ class AssemberTest extends FlatSpec with Matchers {
 
                 try {
                     var segmentInformation: List[(String, Int)] = Nil
-
-                    val reassembledClassFile =
+                    val reassembledClassFile : Array[Byte] =
                         try {
                             Assembler(classFile, (s, w) ⇒ segmentInformation ::= ((s, w)))
                         } catch {
-                            case t: Throwable ⇒ t.printStackTrace(); throw t
+                            case t: Throwable ⇒
+                                t.printStackTrace()
+                                throw t;
                         }
                     segmentInformation = segmentInformation.reverse
 
                     // let's check all bytes for similarity
-                    reassembledClassFile.zip(raw).zipWithIndex.foreach { e ⇒
+                    reassembledClassFile.zip(raw).zipWithIndex foreach { e ⇒
                         val ((c, r), i) = e
                         if (c != r) {
                             val (succeeded, remaining) = segmentInformation.partition(_._2 < i)
@@ -137,7 +143,7 @@ class AssemberTest extends FlatSpec with Matchers {
                             val details = e.getMessage + e.getClass.getSimpleName
                             val message = s"failed: $ze(${classFile.thisType}); message:"+details
                             val newException = new RuntimeException(message, e)
-                            exceptions = newException :: exceptions
+                            exceptions ::= newException
                         }
                 }
             }
@@ -152,7 +158,7 @@ class AssemberTest extends FlatSpec with Matchers {
                     )
                 fail(message)
             } else {
-                info(s"sucessfully processed ${entriesCount.get} class files")
+                info(s"successfully processed ${entriesCount.get} class files")
             }
         }
     }
