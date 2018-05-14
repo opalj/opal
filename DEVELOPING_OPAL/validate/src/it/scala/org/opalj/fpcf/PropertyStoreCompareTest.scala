@@ -34,7 +34,10 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.bytecode.RTJar
@@ -44,12 +47,13 @@ import org.opalj.fpcf.PropertyStoreCompareTester.propertyStoreImplementationKey
 import org.opalj.fpcf.PropertyStoreCompareTester.propertyStoreList
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses._
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties._
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
-import org.opalj.log.{Error ⇒ ErrorLogLevel}
+import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest._
 
@@ -92,76 +96,186 @@ class PsThrownExceptionsAnalysisTest extends PropertyStoreCompareTester {
     )
 }
 
-//class PsTypeImmutabilityAnalysisTest extends PropertyStoreCompareTester {
-//    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
-//        TypeImmutabilityAnalysis.start(fixtureProject, ps)
-//
-//        ps.waitOnPhaseCompletion()
-//    }
-//
-//    it should behave like testEntitiesAndProperties(psResults, TypeImmutability.key)
-//}
-//
-//class PsClassImmutabilityAnalysis extends PropertyStoreCompareTester {
-//    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
-//        ClassImmutabilityAnalysis.start(fixtureProject, ps)
-//
-//        ps.waitOnPhaseCompletion()
-//    }
-//
-//    it should behave like testEntitiesAndProperties(psResults, ClassImmutability.key)
-//}
-//
-//class PsL0FieldMutabilityAnalysis extends PropertyStoreCompareTester {
-//    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
-//        L0FieldMutabilityAnalysis.start(fixtureProject, ps)
-//
-//        ps.waitOnPhaseCompletion()
-//    }
-//
-//    it should behave like testEntitiesAndProperties(psResults, FieldMutability.key)
-//}
-//
-//class PsL1FieldMutabilityAnalysis extends PropertyStoreCompareTester {
-//    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
-//        L1FieldMutabilityAnalysis.start(fixtureProject, ps)
-//
-//        ps.waitOnPhaseCompletion()
-//    }
-//
-//    it should behave like testEntitiesAndProperties(psResults, FieldMutability.key)
-//}
-//
-//class PsL0PurityAnalysis extends PropertyStoreCompareTester {
-//    val psResults = executeAnalysisForEachPropertyStore(true) { (fixtureProject, ps) ⇒
-//        L1FieldMutabilityAnalysis.start(fixtureProject, ps)
-//        L0PurityAnalysis.start(fixtureProject, ps)
-//
-//        ps.waitOnPhaseCompletion()
-//    }
-//
-//    // L0PurityAnalysis depends on TypeImmutability fallback values and L1FieldMutabilityAnalysis
-//    it should behave like testEntitiesAndProperties(psResults, TypeImmutability.key)
-//    it should behave like testEntitiesAndProperties(psResults, FieldMutability.key)
-//    it should behave like testEntitiesAndProperties(psResults, Purity.key)
-//}
-//
-//class PsL1PurityAnalysis extends PropertyStoreCompareTester {
-//    val psResults = executeAnalysisForEachPropertyStore(true) { (fixtureProject, ps) ⇒
-//        ClassImmutabilityAnalysis.start(fixtureProject, ps)
-//        TypeImmutabilityAnalysis.start(fixtureProject, ps)
-//        L1FieldMutabilityAnalysis.start(fixtureProject, ps)
-//        L1PurityAnalysis.start(fixtureProject, ps)
-//
-//        ps.waitOnPhaseCompletion()
-//    }
-//
-//    // L1PurityAnalysis depends on TypeImmutability, ClassImmutability and L1FieldMutabilityAnalysis
-//    //it should behave like testEntitiesAndProperties(psResults, TypeImmutability.key)
-//    //it should behave like testEntitiesAndProperties(psResults, ClassImmutability.key)
-//    //it should behave like testEntitiesAndProperties(psResults, FieldMutability.key)
-//    it should behave like testEntitiesAndProperties(psResults, Purity.key)
-//}
+class PsTypeImmutabilityAnalysisTest extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(TypeImmutability.key, ClassImmutability.key)
+        )
+        EagerTypeImmutabilityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    it should behave like testEntitiesAndProperties[ObjectType](
+        psResults,
+        TypeImmutability.key,
+        fixtureProject.allClassFiles.filter(_.thisType ne ObjectType.Object).map(_.thisType).toSeq
+    )
+}
+
+class PsClassImmutabilityAnalysis extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(TypeImmutability.key, ClassImmutability.key, FieldMutability.key)
+        )
+
+        EagerClassImmutabilityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    it should behave like testEntitiesAndProperties[ObjectType](
+        psResults,
+        ClassImmutability.key,
+        fixtureProject.allClassFiles.map(_.thisType).toSeq
+    )
+}
+
+class PsL0FieldMutabilityAnalysis extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(FieldMutability.key)
+        )
+        EagerL0FieldMutabilityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    val classFileCandidates =
+        if (fixtureProject.libraryClassFilesAreInterfacesOnly)
+            fixtureProject.allProjectClassFiles
+        else
+            fixtureProject.allClassFiles
+
+    val fields = {
+        classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
+    }
+
+    it should behave like testEntitiesAndProperties[Field](
+        psResults,
+        FieldMutability.key,
+        fields.toSeq
+    )
+}
+
+class PsL1FieldMutabilityAnalysis extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(FieldMutability.key)
+        )
+        EagerL1FieldMutabilityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    it should behave like testEntitiesAndProperties[Field](
+        psResults,
+        FieldMutability.key,
+        fixtureProject.allFields.toSeq
+    )
+}
+
+/**
+  * @note needs at least 4GB RAM!
+  */
+class PsL0PurityAnalysis extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(org.opalj.fpcf.properties.Purity.key, FieldMutability.key, TypeImmutability.key)
+        )
+        LazyL0FieldMutabilityAnalysis.startLazily(fixtureProject, ps)
+        EagerL0PurityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    val dms = fixtureProject.get(DeclaredMethodsKey).declaredMethods
+    val methodsWithBody = dms.collect {
+        case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+    }
+
+    it should behave like testEntitiesAndProperties[DefinedMethod](
+        psResults,
+        org.opalj.fpcf.properties.Purity.key,
+        methodsWithBody.toSeq
+    )
+}
+
+/**
+  * @note needs at least 8GB RAM!
+  */
+class PsL1PurityAnalysis extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(
+                org.opalj.fpcf.properties.Purity.key,
+                VirtualMethodPurity.key,
+                FieldMutability.key,
+                ClassImmutability.key,
+                TypeImmutability.key
+            )
+        )
+        LazyL1FieldMutabilityAnalysis.startLazily(fixtureProject, ps)
+        LazyVirtualMethodPurityAnalysis.startLazily(fixtureProject, ps)
+        EagerL1PurityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    val dms = fixtureProject.get(DeclaredMethodsKey).declaredMethods
+    val methodsWithBody = dms.collect {
+        case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+    }
+    val configuredPurity: ConfiguredPurity = fixtureProject.get(ConfiguredPurityKey)
+
+    it should behave like testEntitiesAndProperties[DefinedMethod](
+        psResults,
+        org.opalj.fpcf.properties.Purity.key,
+        methodsWithBody.filterNot(configuredPurity.wasSet).toSeq
+    )
+}
+
+/**
+  * @note needs at least 10GB RAM!
+  */
+class PsL2PurityAnalysis extends PropertyStoreCompareTester {
+    val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        ps.setupPhase(
+            Set(
+                org.opalj.fpcf.properties.Purity.key,
+                FieldMutability.key,
+                ClassImmutability.key,
+                TypeImmutability.key,
+                VirtualMethodPurity.key,
+                FieldLocality.key,
+                ReturnValueFreshness.key,
+                VirtualMethodReturnValueFreshness.key
+            )
+        )
+        LazyL1FieldMutabilityAnalysis.startLazily(fixtureProject, ps)
+        LazyVirtualMethodPurityAnalysis.startLazily(fixtureProject, ps)
+        LazyReturnValueFreshnessAnalysis.startLazily(fixtureProject, ps)
+        LazyVirtualReturnValueFreshnessAnalysis.startLazily(fixtureProject, ps)
+        LazyInterProceduralEscapeAnalysis.startLazily(fixtureProject, ps)
+        LazyVirtualCallAggregatingEscapeAnalysis.startLazily(fixtureProject, ps)
+        LazyFieldLocalityAnalysis.startLazily(fixtureProject, ps)
+        EagerL2PurityAnalysis.start(fixtureProject, ps)
+
+        ps.waitOnPhaseCompletion()
+    }
+
+    val dms = fixtureProject.get(DeclaredMethodsKey).declaredMethods
+    val methodsWithBody = dms.collect {
+        case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+    }
+    val configuredPurity: ConfiguredPurity = fixtureProject.get(ConfiguredPurityKey)
+
+    it should behave like testEntitiesAndProperties[DefinedMethod](
+        psResults,
+        org.opalj.fpcf.properties.Purity.key,
+        methodsWithBody.filterNot(configuredPurity.wasSet).toSeq
+    )
+}
 
 trait PropertyStoreCompareTester extends FunSpec with Matchers with Inspectors with PrivateMethodTester {
     def executeAnalysisForEachPropertyStore()(
@@ -186,7 +300,7 @@ trait PropertyStoreCompareTester extends FunSpec with Matchers with Inspectors w
         pk:                PropertyKey[Property],
         scheduledEntities: Seq[E]
     ) = {
-        it(s"should have computed for scheduled entities - ${pk.toString}") {
+        it(s"should have computed results for scheduled entities - ${pk.toString}") {
             psResults.foreach { ps ⇒
                 val el0 = ps._2.entities(pk).map(_.e).toSet
 
@@ -213,7 +327,14 @@ trait PropertyStoreCompareTester extends FunSpec with Matchers with Inspectors w
 
                     pl0.foreach { p ⇒
                         forExactly(1, pl1) { p1 ⇒
-                            withClue(s"${e} - ${psList(0)._1} - ${psList(1)._1}: ") { p1 should equal(p) }
+                            withClue(s"$e: $p - $p1: ") {
+                                // We cannot compare the IntermediateEP / FinalEP / EPS directly,
+                                // it compares the entity on an object identity level. In this test
+                                // the objects are equal, but not on an object level.
+                                p1.e should equal(p.e)
+                                p1.ub should equal(p.ub)
+                                p1.lb should equal(p.lb)
+                            }
                         }
                     }
 
