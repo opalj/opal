@@ -61,7 +61,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] ( final val project:
         }
 
         val methods = project.virtualCall(
-            m.declaringClassType.asObjectType.packageName, //TODO is this correct?
+            m.declaringClassType.asObjectType.packageName,
             m.declaringClassType,
             m.name,
             m.descriptor
