@@ -41,8 +41,8 @@ import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
- * An analysis that aggregates the results of the [[ReturnValueFreshnessAnalysis]] for all possible
- * methods represented by a given [[org.opalj.br.DeclaredMethod]].
+ * An analysis that aggregates whether the return value for all possible methods represented by a
+ * given [[org.opalj.br.DeclaredMethod]] are always freshly allocated.
  *
  * @author Florian Kuebler
  */
