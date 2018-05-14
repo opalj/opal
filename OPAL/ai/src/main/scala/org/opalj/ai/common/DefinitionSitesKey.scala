@@ -28,6 +28,7 @@
  */
 package org.opalj
 package ai
+package common
 
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys

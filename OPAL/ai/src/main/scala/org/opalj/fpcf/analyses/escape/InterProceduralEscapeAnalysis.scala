@@ -42,9 +42,9 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties._
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
