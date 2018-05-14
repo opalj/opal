@@ -70,7 +70,8 @@ class AssemberTest extends FlatSpec with Matchers {
         if file.isFile
         if file.canRead
         if file.length() > 0
-        if file.getName.endsWith(".jar") || file.getName.endsWith(".zip")
+        fileName = file.getName
+        if fileName.endsWith(".jar") || fileName.endsWith(".zip") || fileName.endsWith(".jmod")
     } {
         it should s"be able to recreate every class of $file" in {
             val entriesCount = new AtomicInteger(0)

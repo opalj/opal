@@ -282,10 +282,8 @@ object Assembler {
                     serializeAs[CONSTANT_InvokeDynamic_info](cpe)
 
                 // JAVA 9
-                case CPTags.CONSTANT_Module_ID ⇒
-                    serializeAs[CONSTANT_Module_info](cpe)
-                case CPTags.CONSTANT_Package_ID ⇒
-                    serializeAs[CONSTANT_Package_info](cpe)
+                case CPTags.CONSTANT_Module_ID  ⇒ serializeAs[CONSTANT_Module_info](cpe)
+                case CPTags.CONSTANT_Package_ID ⇒ serializeAs[CONSTANT_Package_info](cpe)
             }
         }
     }
@@ -689,7 +687,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes foreach (serializeAs[Attribute])
+            attributes.foreach(serializeAs[Attribute])
         }
     }
 
@@ -706,7 +704,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes foreach { serializeAs[Attribute] }
+            attributes.foreach(serializeAs[Attribute])
         }
     }
 
@@ -727,6 +725,7 @@ object Assembler {
             segmentInformation("ClassFileMetaInformation", out.size)
 
             writeShort(cp.length)
+            // OLD cp.tail.filter(_ ne null).foreach(serialize(_))
             val cpIt = cp.iterator
             cpIt.next()
             cpIt.filter(_ ne null).foreach(cpe ⇒ serialize(cpe))
