@@ -50,16 +50,21 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.info
 
 /**
- * TODO @Florian please, add some documentation!
+ * An evaluation of the impact of field/array writes to the
+ * [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]] as the three-address code currently
+ * does not support may-alias information for fields and arrays.
  *
- * @author Florian Kübler
+ * Among others, it estimates the number of arraystores/putfields with non-escaping objects as
+ * receiver.
+ *
+ * @author Florian Kuebler
  */
 object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
 
-    override def title: String = "" // TODO @Florian please, add a title
+    override def title: String = "Field and array usage evaluation"
 
     override def description: String = {
-        "" // TODO @Florian please, add some documentation!
+        "Evaluates the impact of field and array usage to the escape analysis."
     }
 
     override def doAnalyze(
@@ -137,7 +142,6 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                     case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar ⇒
                                                         if (objRef2.asVar.definedBy.exists(defSitesOfObjRef.contains)) {
                                                             getFields += 1
-                                                            //println(s"${m.toJava} ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} ${as.allocatedType}")
                                                         }
 
                                                     case _ ⇒
@@ -194,7 +198,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                             println(
                                                                 s"""
                                                                     |${m.toJava}:
-                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} new ${as}
+                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} new $as
                                                                     |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(pcOfStore)} $arrayStore}
                                                                  """.stripMargin
                                                             )

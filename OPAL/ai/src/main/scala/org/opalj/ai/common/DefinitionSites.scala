@@ -42,10 +42,22 @@ import org.opalj.br.instructions.NEWARRAY
 
 import scala.collection.JavaConverters._
 
+/**
+ * Holds a mutable map of [[DefinitionSite]] objects to ensure unique identities.
+ * The map is filled on-the-fly while querying.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 class DefinitionSites(val project: SomeProject) {
     val definitionSites = new ConcurrentHashMap[DefinitionSite, DefinitionSite]()
     private[this] val aiResult = project.get(SimpleAIKey)
 
+    /**
+     * Returns the [[DefinitionSite]] instance for the given program counter and given method.
+     * The definition site is either retrieved from the map (if present) or a new one is created
+     * and stored into the map.
+     */
     def apply(m: Method, pc: Int): DefinitionSite = {
         val uses = aiResult(m).domain.safeUsedBy(pc)
         val defSite = new DefinitionSite(m, pc, uses)
@@ -53,6 +65,12 @@ class DefinitionSites(val project: SomeProject) {
         if (prev == null) defSite else prev
     }
 
+    /**
+     * Computes all [[DefinitionSite]]s that correspond to an allocation in the project.
+     * I.e. all definition sites corresponding to [[org.opalj.br.instructions.NEW]],
+     * [[org.opalj.br.instructions.NEWARRAY]], [[org.opalj.br.instructions.ANEWARRAY]] or
+     * [[org.opalj.br.instructions.MULTIANEWARRAY]] instructions.
+     */
     def getAllocationSites: Seq[DefinitionSite] = {
         val allocationSites = new ConcurrentLinkedQueue[DefinitionSite]()
 

@@ -67,7 +67,6 @@ import org.opalj.tac.VirtualMethodCall
 
 import scala.annotation.switch
 
-// TODO @Florian Replace dead link to AllocationSite
 /**
  * An abstract escape analysis for a [[org.opalj.ai.DefinitionSiteLike]] or a
  * [[org.opalj.br.analyses.VirtualFormalParameter]].
@@ -210,9 +209,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         if (call.name == "<init>") {
             if (context.usesDefSite(call.receiver)) {
                 handleThisLocalOfConstructor(call)
+            } else {
+                // an object can't be a parameter and the receiver of a constructor call
+                handleParameterOfConstructor(call)
             }
-            //TODO should be also correct in an else branch
-            handleParameterOfConstructor(call)
 
         } else {
             handleNonVirtualAndNonConstructorCall(call)
