@@ -32,8 +32,8 @@ package analyses
 
 import org.opalj
 import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod

@@ -31,8 +31,8 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject

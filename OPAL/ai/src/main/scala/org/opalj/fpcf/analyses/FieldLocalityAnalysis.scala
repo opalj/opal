@@ -40,10 +40,10 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey

@@ -31,7 +31,7 @@ package org.opalj.tac
 import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.ai.DefinitionSitesKey
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.collection.immutable.IntTrieSet
