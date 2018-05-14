@@ -133,7 +133,9 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
 /**
  * A companion object used to start the analysis.
  */
-object EagerSimpleEscapeAnalysis extends SimpleEscapeAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerSimpleEscapeAnalysis
+    extends SimpleEscapeAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
@@ -144,7 +146,9 @@ object EagerSimpleEscapeAnalysis extends SimpleEscapeAnalysisScheduler with FPCF
     }
 }
 
-object LazySimpleEscapeAnalysis extends SimpleEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazySimpleEscapeAnalysis
+    extends SimpleEscapeAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
