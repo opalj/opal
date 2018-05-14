@@ -619,18 +619,34 @@ object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPC
     }
 }
 
-//TODO document
+/**
+ * Holds a map of [[DefinitionSiteWithoutPutField]] values, in order to provide unique identities
+ * (enable comparison via eq/neq).
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 object DefinitionSitesWithoutPutField {
     private val defSites =
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
 
     def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
-        val defSite = new DefinitionSiteWithoutPutField(method, pc, usedBy)
+        val defSite = DefinitionSiteWithoutPutField(method, pc, usedBy)
         val prev = defSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
     }
 }
 
+/**
+ * Represents a definition site of an object that is stored into a field (that is being analyzed
+ * for locality) where the field write use-site is removed from the set of use-sites.
+ * It acts as an entity for the escape analysis (we are interested whether the objects stored into
+ * a field are local, i.e. doe not escape).
+ * Here, the [[org.opalj.tac.PutField]] would let the object escape.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 final case class DefinitionSiteWithoutPutField(
-        method: Method, pc: Int, usedBy: IntTrieSet
+    method: Method, pc: Int, usedBy: IntTrieSet
 ) extends DefinitionSiteLike
