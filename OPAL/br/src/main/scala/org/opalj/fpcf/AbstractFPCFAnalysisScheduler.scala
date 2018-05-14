@@ -56,7 +56,7 @@ private[fpcf] trait AbstractFPCFAnalysisScheduler extends ComputationSpecificati
 }
 
 /**
- * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines interal helper functions and
+ * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines internal helper functions and
  * values.
  *
  * @author Michael Reif
