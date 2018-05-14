@@ -346,7 +346,9 @@ object ConstantsBuffer {
             case LoadMethodType(value)   ⇒ CPEUtf8(value.toJVMDescriptor)
             case LoadMethodHandle(value) ⇒ CPERefOfCPEMethodHandle(value)
             case LoadString(value)       ⇒ CPEUtf8(value)
-            case _                       ⇒ // the other entries do not reference other entries
+            case _: LoadFloat            ⇒ // does not reference other entries
+            case _: LoadInt              ⇒ // does not reference other entries
+            case that                    ⇒ throw new UnknownError(s"unknown LDC: $that")
         }
         nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex
 
@@ -357,7 +359,12 @@ object ConstantsBuffer {
         // 5.   Correct nextIndex to point to the first not used index; all previous indexes
         //      are now used!
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
-
+        assert(
+            buffer.size == constantsBuffer.nextIndex,
+            "constant pool contains holes:\n\t"+
+                ldcs.mkString("LDCs={", ", ", "}\n\t") +
+                buffer.toList.map(_.swap).sortBy(e ⇒ e._1).mkString("Buffer=[\n\t", "\n\t", "]\n")
+        )
         constantsBuffer
     }
 }
