@@ -50,15 +50,16 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.info
 
 /**
+ * TODO @Florian please, add some documentation!
  *
  * @author Florian Kübler
  */
 object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
 
-    override def title: String = ""
+    override def title: String = "" // TODO @Florian please, add a title
 
     override def description: String = {
-        ""
+        "" // TODO @Florian please, add some documentation!
     }
 
     override def doAnalyze(
