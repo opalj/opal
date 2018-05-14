@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf.par
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
 
 import com.phaller.rasync._
@@ -72,8 +73,15 @@ class ReactiveAsyncPropertyStore private (
         implicit
         val logContext: LogContext
 ) extends PropertyStore {
+    // Queue that hold all thrown exceptions inside ReactiveAsync. This is needed because the
+    // exceptions are not thrown in the main thread, i.e. the thread that called waitOnPhaseCompletion.
+    // waitOnPhaseCompletion checks this list and throws the first exception to the client.
+    private val thrownExceptionsInHandlerPool = new ConcurrentLinkedQueue[Throwable]()
 
-    private implicit val handlerPool: HandlerPool = new HandlerPool(parallelism = parallelism)
+    private implicit val handlerPool: HandlerPool = new HandlerPool(
+        parallelism = parallelism,
+        unhandledExceptionHandler = t ⇒ thrownExceptionsInHandlerPool.add(t)
+    )
 
     implicit object RAUpdater extends Updater[PropertyValue] {
         override val initial: PropertyValue = null
@@ -101,7 +109,7 @@ class ReactiveAsyncPropertyStore private (
     val ps: Array[PropertyTrieMap] = Array.fill(PropertyKind.SupportedPropertyKinds) { TrieMap.empty }
 
     // This map keeps track of the dependencies. Key is (Entity, PropertyKind.id)
-    val dependencyMap = TrieMap.empty[(Entity, Int), Traversable[SomeEPK]]
+    val dependencyMap = TrieMap.empty[SomeEPK, Traversable[SomeEPK]]
 
     // PropertyKinds that will be computed now or at a later time
     var computedPropertyKinds: Set[PropertyKind] = Set.empty
@@ -470,6 +478,9 @@ class ReactiveAsyncPropertyStore private (
                 val cc = psE.getOrElseUpdate(
                     e, CellCompleter[RAKey, PropertyValue](new RAKey(e, p.key))
                 )
+                if (debug && cc.cell.isComplete) {
+                    throw new IllegalArgumentException(s"Property $p for entity $e is already final")
+                }
                 assert(!cc.cell.isComplete)
 
                 // For ordered properties: Check if the new value is better than the current one
@@ -481,19 +492,20 @@ class ReactiveAsyncPropertyStore private (
                     storedUbAsOP.checkIsEqualOrBetterThan(e, p.asInstanceOf[storedUbAsOP.Self])
                 }
                 cc.putFinal(new PropertyValue(p))
-                dependencyMap.remove((e, p.key.id))
+                dependencyMap.remove(EPK(e, p.key))
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, lb, ub, dependees, c) = r
-                if (dependees.isEmpty) {
-                    assert(false, "IntermediateResult without dependees")
-                }
-                assert(
-                    !lb.isOrderedProperty || {
-                        val ubAsOP = ub.asOrderedProperty
-                        ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
+
+                if (debug) {
+                    if (dependees.isEmpty) {
+                        throw new IllegalArgumentException("IntermediateResult without dependees")
                     }
-                )
+                    if (lb.isOrderedProperty) {
+                        val ubAsOP = ub.asOrderedProperty
+                        ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+                    }
+                }
 
                 incCounter("handleResult.IntermediateResult")
 
@@ -520,11 +532,11 @@ class ReactiveAsyncPropertyStore private (
                     cc.putNext(new PropertyValue(lb, ub))
                 }
 
-                val oldDependees = dependencyMap.getOrElse((e, lb.key.id), Traversable.empty)
+                val oldDependees = dependencyMap.getOrElse(EPK(e, lb.key), Traversable.empty)
                 val dependeesEPK = dependees.map(_.toEPK)
                 val newDependees = dependeesEPK.filterNot(oldDependees.toSet)
                 val removedDependees = oldDependees.filterNot(dependeesEPK.toSet)
-                dependencyMap.put((e, lb.key.id), dependeesEPK)
+                dependencyMap.put(EPK(e, lb.key), dependeesEPK)
 
                 // 2. Check which dependencies the cell has. Remove dependencies that are
                 // no longer necessary.
@@ -550,16 +562,13 @@ class ReactiveAsyncPropertyStore private (
                     ).cell
 
                     // whenNext is also called if dependeeCell is already final
-                    // cell1.whenNextSequential(cell2, ...)
-                    // cell1.whenNextSequential(cell3, ...)
+                    // cell1.whenSequential(cell2, ...)
+                    // cell1.whenSequential(cell3, ...)
                     // -> runs sequential
 
-                    // cell1.whenNextSequential(cell3, ...)
-                    // cell2.whenNextSequential(cell3, ...)
+                    // cell1.whenSequential(cell3, ...)
+                    // cell2.whenSequential(cell3, ...)
                     // -> runs parallel
-
-                    // if dependeeCell putNext() is called, whenNext is NOT called currently!
-                    // Only if putFinal was called
                     cc.cell.whenSequential(dependeeCell, (p, _) ⇒ {
                         incCounter("handleResult.IntermediateResult.continuationFunction")
                         assert(!cc.cell.isComplete)
@@ -568,8 +577,7 @@ class ReactiveAsyncPropertyStore private (
                         // was not scheduled
                         if (p != null && !someEOptionP.is(p)) {
                             // EPS.apply creates a FinalEP if lp == ub
-                            val newEps = EPS(dependeeCell.key.e, p.lb, p.ub)
-                            val newEPs = c(newEps)
+                            val newEPs = c(EPS(dependeeCell.key.e, p.lb, p.ub))
                             handleResult(newEPs)
                         }
                         NoOutcome
@@ -580,10 +588,6 @@ class ReactiveAsyncPropertyStore private (
                 val IncrementalResult(ir, nextComputations) = r
 
                 incCounter("handleResult.IncrementalResult")
-                // nextComputations haven't been scheduled yet. So here we can eagerly schedule
-                // them.
-
-                // Stop timing here, because we have recursion and time would count double
                 handleResult(ir)
 
                 nextComputations foreach {
@@ -593,7 +597,6 @@ class ReactiveAsyncPropertyStore private (
             case Results.id ⇒
                 val Results(results) = r
                 incCounter("handleResult.Results")
-                // Stop timing here, because we have recursion and time would count double
                 results foreach handleResult
 
             case MultiResult.id ⇒
@@ -607,6 +610,9 @@ class ReactiveAsyncPropertyStore private (
                             new RAKey(someFinalEP.e, someFinalEP.p.key)
                         )
                     )
+                    if (debug && cc.cell.isComplete) {
+                        throw new IllegalArgumentException(s"Property ${someFinalEP.p} for entity ${someFinalEP.e} is already final")
+                    }
                     assert(!cc.cell.isComplete)
                     // For ordered properties: Check if the new value is better than the current one
                     val currentResult = cc.cell.getResult()
@@ -623,7 +629,7 @@ class ReactiveAsyncPropertyStore private (
                         )
                     }
                     cc.putFinal(new PropertyValue(someFinalEP.p))
-                    dependencyMap.remove((someFinalEP.e, someFinalEP.p.key.id))
+                    dependencyMap.remove(EPK(someFinalEP.e, someFinalEP.p.key))
                 }
         }
 
@@ -647,6 +653,7 @@ class ReactiveAsyncPropertyStore private (
      *       functions using one thread and using that thread to call this method.
      */
     override def waitOnPhaseCompletion(): Unit = {
+        thrownExceptionsInHandlerPool.clear()
         if (this.isInterrupted())
             return ;
 
@@ -661,6 +668,11 @@ class ReactiveAsyncPropertyStore private (
             } catch {
                 case _: TimeoutException ⇒ interrupted = this.isInterrupted()
             }
+        }
+
+        // If an exception occured in a ReactiveAsync task, throw the first exception to the client
+        if (!thrownExceptionsInHandlerPool.isEmpty) {
+            throw thrownExceptionsInHandlerPool.peek()
         }
     }
 
