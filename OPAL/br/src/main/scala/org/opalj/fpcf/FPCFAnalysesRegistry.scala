@@ -59,7 +59,8 @@ object FPCFAnalysesRegistry {
 
     private[this] implicit def logContext: LogContext = GlobalLogContext
 
-    private[this] var idToEagerScheduler: Map[String, AbstractFPCFAnalysisScheduler] = Map.empty
+    private[this] var idToEagerScheduler: Map[String, FPCFEagerAnalysisScheduler] = Map.empty
+    private[this] var idToLazyScheduler: Map[String, FPCFLazyAnalysisScheduler] = Map.empty
     private[this] var idToDescription: Map[String, String] = Map.empty
 
     /**
@@ -69,15 +70,21 @@ object FPCFAnalysesRegistry {
      * @param analysisDescription A short description of the analysis and the properties that the
      *                            analysis computes; in particular w.r.t. a specific set of entities.
      * @param analysisFactory     The factory.
+     * @param lazyFactory         Register the analysis factory as lazy analysis factory.
      */
     def register(
         analysisID:          String,
         analysisDescription: String,
-        analysisFactory:     String
+        analysisFactory:     String,
+        lazyFactory:         Boolean
     ): Unit = this.synchronized {
         val analysisRunner = resolveAnalysisRunner(analysisFactory)
         if (analysisRunner.nonEmpty) {
-            idToEagerScheduler += ((analysisID, analysisRunner.get))
+            if (lazyFactory) idToLazyScheduler +=
+                ((analysisID, analysisRunner.get.asInstanceOf[FPCFLazyAnalysisScheduler]))
+            else idToEagerScheduler +=
+                ((analysisID, analysisRunner.get.asInstanceOf[FPCFEagerAnalysisScheduler]))
+
             idToDescription += ((analysisID, analysisDescription))
             info("OPAL Setup", s"registered analysis: $analysisID ($analysisDescription)")
         } else {
@@ -123,8 +130,10 @@ object FPCFAnalysesRegistry {
                 val id = entry.getKey
                 val metaData = entry.getValue.asInstanceOf[ConfigObject]
                 val description = metaData.getOrDefault("description", null).unwrapped.toString
-                val factory = metaData.getOrDefault("factory", null).unwrapped.toString
-                register(id, description, factory)
+                val eagerFactory = metaData.getOrDefault("eagerFactory", null).unwrapped.toString
+                register(id, description, eagerFactory, lazyFactory = false)
+                val lazyFactory = metaData.getOrDefault("lazyFactory", null).unwrapped.toString
+                register(id, description, lazyFactory, lazyFactory = true)
             }
         } catch {
             case e: Exception ⇒
@@ -136,7 +145,7 @@ object FPCFAnalysesRegistry {
      * Returns the ids of the registered analyses.
      */
     def analysisIDs(): Iterable[String] = this.synchronized {
-        idToEagerScheduler.keys
+        idToDescription.keys
     }
 
     /**
@@ -148,17 +157,31 @@ object FPCFAnalysesRegistry {
     }
 
     /**
-     * Returns the current view of the registry.
+     * Returns the current view of the registry for eager factories.
      */
-    def factories: Iterable[AbstractFPCFAnalysisScheduler] = this.synchronized {
+    def eagerFactories: Iterable[FPCFEagerAnalysisScheduler] = this.synchronized {
         idToEagerScheduler.values
     }
 
     /**
-     * Returns the factory for analysis with a matching description.
+     * Returns the current view of the registry for lazy factories.
      */
-    def factory(id: String): AbstractFPCFAnalysisScheduler = this.synchronized {
+    def lazyFactories: Iterable[FPCFLazyAnalysisScheduler] = this.synchronized {
+        idToLazyScheduler.values
+    }
+
+    /**
+     * Returns the eager factory for analysis with a matching description.
+     */
+    def eagerFactory(id: String): FPCFEagerAnalysisScheduler = this.synchronized {
         idToEagerScheduler(id)
+    }
+
+    /**
+     * Returns the lazy factory for analysis with a matching description.
+     */
+    def lazyFactory(id: String): FPCFLazyAnalysisScheduler = this.synchronized {
+        idToLazyScheduler(id)
     }
 
     registerFromConfig()
