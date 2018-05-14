@@ -64,7 +64,7 @@ class AssemberTest extends FlatSpec with Matchers {
     behavior of "the Assembler"
 
     val jmodsFile =
-        locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip","bi")
+        locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
         file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile
@@ -96,7 +96,7 @@ class AssemberTest extends FlatSpec with Matchers {
 
                 try {
                     var segmentInformation: List[(String, Int)] = Nil
-                    val reassembledClassFile : Array[Byte] =
+                    val reassembledClassFile: Array[Byte] =
                         try {
                             Assembler(classFile, (s, w) ⇒ segmentInformation ::= ((s, w)))
                         } catch {

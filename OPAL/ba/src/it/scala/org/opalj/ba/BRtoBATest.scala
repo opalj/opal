@@ -98,9 +98,9 @@ class BRtoBATest extends FlatSpec with Matchers {
             } catch {
                 case e: Exception ⇒
                     Lock.synchronized {
-                    Console.err.println(s"reading/writing of $url -> failed: ${e.getMessage}\n")
-                    e.printStackTrace(Console.err)
-                        val details = e.getMessage +"; " + e.getClass.getSimpleName
+                        Console.err.println(s"reading/writing of $url -> failed: ${e.getMessage}\n")
+                        e.printStackTrace(Console.err)
+                        val details = e.getMessage+"; "+e.getClass.getSimpleName
                         val message = s"$url(${brClassFile1.thisType.toJava}): "+details
                         val newException = new RuntimeException(message, e)
                         exceptions = newException :: exceptions
@@ -123,7 +123,7 @@ class BRtoBATest extends FlatSpec with Matchers {
         }
     }
 
-    val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip","bi")
+    val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
         file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
         if file.isFile
