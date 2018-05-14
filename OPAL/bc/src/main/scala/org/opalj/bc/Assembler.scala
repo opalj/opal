@@ -726,7 +726,7 @@ object Assembler {
             writeShort(major_version)
             segmentInformation("ClassFileMetaInformation", out.size)
 
-            writeShort(cp.size)
+            writeShort(cp.length)
             val cpIt = cp.iterator
             cpIt.next()
             cpIt.filter(_ ne null).foreach(cpe ⇒ serialize(cpe))
