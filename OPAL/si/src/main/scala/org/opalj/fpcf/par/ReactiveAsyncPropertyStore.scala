@@ -43,6 +43,7 @@ import org.opalj.fpcf.IncrementalResult
 import org.opalj.fpcf.IntermediateResult
 import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyComputation
 import org.opalj.fpcf.PropertyComputationResult
@@ -630,6 +631,21 @@ class ReactiveAsyncPropertyStore private (
                     }
                     cc.putFinal(new PropertyValue(someFinalEP.p))
                     dependencyMap.remove(EPK(someFinalEP.e, someFinalEP.p.key))
+                }
+            case PartialResult.id ⇒
+                val PartialResult(e, pk, u) = r
+                EPK(e, pk).synchronized {
+                    type E = e.type
+                    type P = Property
+                    val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
+                    val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
+                    newEPSOption foreach { newEPS ⇒
+                        val psE = ps(newEPS.ub.key.id)
+                        val cc = psE.getOrElseUpdate(
+                            e, CellCompleter[RAKey, PropertyValue](new RAKey(e, newEPS.ub.key))
+                        )
+                        cc.putNext(new PropertyValue(newEPS.lb, newEPS.ub))
+                    }
                 }
         }
 
