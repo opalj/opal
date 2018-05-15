@@ -34,7 +34,7 @@ import scala.collection.mutable
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.debug
+import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.br.analyses.SomeProject
 
@@ -49,7 +49,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     val propertyStore = project.get(PropertyStoreKey)
     //  private[this] def propertyStore = project.get(PropertyStoreKey)
 
-    final val doDebug = {
+    final val debug = {
         project.config.as[Option[Boolean]](FPCFAnalysesManager.ConfigKey).getOrElse(false)
     }
 
@@ -60,38 +60,28 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         analysisRunner: FPCFEagerAnalysisScheduler
     ): Unit = derivedProperties.synchronized {
         assert(
-            !analysisRunner.derives.exists { pKind ⇒ derivedProperties.contains(pKind.id) },
+            !analysisRunner.derives.exists(pKind ⇒ derivedProperties.contains(pKind.id)),
             s"FPCFAnalysisManager: a property has already been derived ${analysisRunner.derives}"
         )
         derivedProperties ++= analysisRunner.derives.map(_.id)
     }
 
-    final def runAll(analyses: FPCFEagerAnalysisScheduler*): Unit = runAll(analyses, true)
+    final def runAll(analyses: FPCFEagerAnalysisScheduler*): Unit = runAll(analyses)
 
-    final def runAll(
-        analyses:         Traversable[FPCFEagerAnalysisScheduler],
-        waitOnCompletion: Boolean                                 = true
-    ): Unit = {
-        analyses.foreach { run(_, false) }
-        if (waitOnCompletion) {
-            propertyStore.waitOnPhaseCompletion()
-        }
+    final def runAll(analyses: Traversable[FPCFEagerAnalysisScheduler]): Unit = {
+        analyses.foreach(run)
+        propertyStore.waitOnPhaseCompletion()
     }
 
-    def run(
-        analysisRunner:   FPCFEagerAnalysisScheduler,
-        waitOnCompletion: Boolean                    = true
-    ): Unit = this.synchronized {
+    private[this] def run(analysisRunner: FPCFEagerAnalysisScheduler): Unit = this.synchronized {
         if (!isDerived(analysisRunner.derives)) {
-            if (doDebug) {
-                debug("analysis configuration", s"scheduling the analysis ${analysisRunner.name}")
+            if (debug) {
+                trace("analysis configuration", s"scheduling the analysis ${analysisRunner.name}")
             }
 
             registerProperties(analysisRunner)
             analysisRunner.start(project, propertyStore)
-            if (waitOnCompletion) {
-                propertyStore.waitOnPhaseCompletion()
-            }
+
         } else {
             val runner = analysisRunner.name
             error("analysis configuration", s"$runner is running/was executed for this project")
@@ -102,7 +92,9 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         derivedProperties contains pKind.id
     }
 
-    def isDerived(pKinds: Set[PropertyKind]): Boolean = pKinds exists (pKind ⇒ isDerived(pKind))
+    def isDerived(pKinds: Set[PropertyKind]): Boolean = {
+        pKinds exists (pKind ⇒ isDerived(pKind))
+    }
 
 }
 
