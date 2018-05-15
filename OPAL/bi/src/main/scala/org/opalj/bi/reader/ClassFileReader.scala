@@ -37,17 +37,22 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.file.Files
 import java.util.zip.{ZipEntry, ZipFile}
 import java.net.URL
+import java.net.URI
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.util.control.ControlThrowable
+import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
 import org.apache.commons.text.similarity.LevenshteinDistance
-import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 import org.opalj.control.repeat
 import org.opalj.io.process
@@ -624,6 +629,44 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         files.flatMap(file ⇒ ClassFiles(file, exceptionHandler))
     }
 
+    /** Returns the class files of the current Java Runtime Image grouped by module. */
+    def JRTClassFiles: Iterable[(String, List[(ClassFile, URL)])] = {
+        def traverseModule(module: Path): List[(ClassFile, URL)] = {
+            var allClassFiles = List.empty[(ClassFile, URL)]
+
+            def traversePath(p: Path): Unit = {
+                if (Files.isDirectory(p)) {
+                    try {
+                        for (subPath ← Files.newDirectoryStream(p, "*").asScala) {
+                            traversePath(subPath)
+                        }
+                    } catch {
+                        case e: Exception ⇒ {
+                            error(
+                                "class file reader",
+                                "failed processing Java 9+ Runtime Image (jrt:/)",
+                                e
+                            )
+                        }
+                    }
+                } else if (p.getFileName.toString.endsWith(".class")) {
+                    val cf = ClassFile(() ⇒ Files.newInputStream(p))
+                    allClassFiles = cf.map(c ⇒ (c, p.toUri.toURL)) ++: allClassFiles
+                }
+            }
+            traversePath(module)
+            allClassFiles
+        }
+
+        val allModulesPath = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("/modules")
+        for {
+            modulePath ← Files.newDirectoryStream(allModulesPath, "*").asScala
+            if Files.isDirectory(modulePath)
+        } yield {
+            (modulePath.getFileName.toString, traverseModule(modulePath))
+        }
+    }
+
     /**
      * Searches for the first class file that is accepted by the filter. If no class file
      * can be found that is accepted by the filter the set of all class names is returned.
@@ -691,7 +734,7 @@ object ClassFileReader {
     type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
 
     final val defaultExceptionHandler: ExceptionHandler = (source, t) ⇒ {
-        OPALLogger.error("class file reader", s"processing $source failed", t)(GlobalLogContext)
+        error("class file reader", s"processing $source failed", t)(GlobalLogContext)
     }
 
 }
