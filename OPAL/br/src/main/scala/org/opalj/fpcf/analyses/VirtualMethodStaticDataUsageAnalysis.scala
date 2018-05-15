@@ -144,7 +144,7 @@ object EagerVirtualMethodStaticDataUsageAnalysis
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(project)
         val vms = project.get(DeclaredMethodsKey)
-        propertyStore.scheduleForEntities(vms.declaredMethods)(analysis.determineUsage)
+        propertyStore.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineUsage)
         analysis
     }
 }

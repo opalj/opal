@@ -135,20 +135,20 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
  */
 object EagerSimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         val ass = project.get(DefinitionSitesKey).getAllocationSites
         val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
+        propertyStore.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
 }
 
 object LazySimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

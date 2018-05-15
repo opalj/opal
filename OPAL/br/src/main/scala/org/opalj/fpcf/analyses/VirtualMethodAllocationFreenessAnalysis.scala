@@ -119,7 +119,7 @@ object EagerVirtualMethodAllocationFreenessAnalysis
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodAllocationFreenessAnalysis(project)
         val vms = project.get(DeclaredMethodsKey)
-        propertyStore.scheduleForEntities(vms.declaredMethods)(analysis.determineAllocationFreeness)
+        propertyStore.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineAllocationFreeness)
         analysis
     }
 }

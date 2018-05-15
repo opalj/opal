@@ -61,7 +61,7 @@ object MethodComplexityDemo extends DefaultOneStepAnalysis {
         implicit val propertyStore = theProject.get(PropertyStoreKey)
 
         val analysis = new MethodComplexityAnalysis
-        propertyStore.scheduleForEntities(project.allMethodsWithBody) { m ⇒ Result(m, analysis(m)) }
+        propertyStore.scheduleEagerComputationsForEntities(project.allMethodsWithBody) { m ⇒ Result(m, analysis(m)) }
         propertyStore.waitOnPropertyComputationCompletion(true)
         println(propertyStore.toString)
         val ratings = propertyStore.entities { p ⇒

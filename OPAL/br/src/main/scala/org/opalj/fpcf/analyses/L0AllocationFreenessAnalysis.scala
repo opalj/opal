@@ -235,7 +235,7 @@ object EagerL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisSch
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
             case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleForEntities(declaredMethods)(analysis.determineAllocationFreeness)
+        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)
         analysis
     }
 }

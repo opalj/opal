@@ -64,7 +64,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
         } {
             val epk = EPK(e, ThrownExceptions.key)
-            ps.scheduleForEntity(e) { e ⇒
+            ps.scheduleEagerComputationForEntity(e) { e ⇒
                 IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), _ ⇒ NoResult)
             }
         }

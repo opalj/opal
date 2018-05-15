@@ -30,8 +30,11 @@ package org.opalj
 package fpcf
 package seq
 
-// NOTE
-// For collaboratively computed properties isFinal maybe false, but we do not have dependees!
+/**
+ * @note   For collaboratively computed properties isFinal maybe false, but we do not
+ *         have dependees!
+ * @author Michael Eichberg
+ */
 private[seq] sealed abstract class PropertyValue {
     // lb/ub are :
     //   - null if some analyses depend on it, but no lazy computation is scheduled

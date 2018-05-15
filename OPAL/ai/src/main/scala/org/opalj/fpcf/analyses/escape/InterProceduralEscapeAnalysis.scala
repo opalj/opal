@@ -179,7 +179,7 @@ object EagerInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisS
         val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         val ass = project.get(DefinitionSitesKey).getAllocationSites
 
-        propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
+        propertyStore.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
 }

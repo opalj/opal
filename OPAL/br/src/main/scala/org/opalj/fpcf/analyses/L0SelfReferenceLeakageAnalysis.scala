@@ -249,7 +249,7 @@ object L0SelfReferenceLeakageAnalysis extends FPCFEagerAnalysisScheduler {
         val analysis = new L0SelfReferenceLeakageAnalysis(project, debug)
         import analysis.determineSelfReferenceLeakage
         import project.allProjectClassFiles
-        propertyStore.scheduleForEntities(allProjectClassFiles)(determineSelfReferenceLeakage)
+        propertyStore.scheduleEagerComputationsForEntities(allProjectClassFiles)(determineSelfReferenceLeakage)
         analysis
     }
 

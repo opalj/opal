@@ -384,9 +384,9 @@ abstract class PropertyStore {
      * queried. In general, this requires that lazy property computations are scheduled before
      * any eager analysis that potentially reads the value.
      */
-    def registerLazyPropertyComputation[P <: Property](
+    def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: SomePropertyComputation
+        pc: PropertyComputation[E]
     ): Unit
 
     /**
@@ -408,14 +408,14 @@ abstract class PropertyStore {
     /**
      * Will call the given function `c` for all elements of `es` in parallel.
      *
-     * @see [[scheduleForEntity]] for details.
+     * @see [[scheduleEagerComputationForEntity]] for details.
      */
-    def scheduleForEntities[E <: Entity](
+    def scheduleEagerComputationsForEntities[E <: Entity](
         es: TraversableOnce[E]
     )(
         c: PropertyComputation[E]
     ): Unit = {
-        es.foreach(e ⇒ scheduleForEntity(e)(c))
+        es.foreach(e ⇒ scheduleEagerComputationForEntity(e)(c))
     }
 
     /**
@@ -426,7 +426,7 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then the scheduling will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
+    def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
      * Processes the result; generally, not directly called by analyses.
@@ -437,7 +437,11 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then `handleResult` will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def handleResult(r: PropertyComputationResult): Unit
+    def handleResult(r: PropertyComputationResult, wasLazilyTriggered: Boolean): Unit
+
+    final def handleResult(r: PropertyComputationResult): Unit = {
+        handleResult(r, wasLazilyTriggered = false)
+    }
 
     /**
      * Awaits the completion of all property computation functions which were previously registered.

@@ -135,7 +135,7 @@ object EagerVirtualCallAggregatingEscapeAnalysis extends VirtualCallAggregatingE
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
         val vfps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
-        propertyStore.scheduleForEntities(vfps)(analysis.determineEscape)
+        propertyStore.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
         analysis
     }
 }

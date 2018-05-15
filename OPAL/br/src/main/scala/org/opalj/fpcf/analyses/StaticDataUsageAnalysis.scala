@@ -247,7 +247,7 @@ object EagerStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
             case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleForEntities(declaredMethods)(analysis.determineUsage)
+        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineUsage)
         analysis
     }
 }

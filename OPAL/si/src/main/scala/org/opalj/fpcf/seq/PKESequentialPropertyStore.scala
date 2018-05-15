@@ -34,9 +34,9 @@ import scala.reflect.runtime.universe.Type
 import java.lang.System.identityHashCode
 
 import org.opalj.graphs
-
 import scala.collection.mutable.AnyRefMap
-import org.opalj.collection.mutable.AnyRefAppendChain
+import java.util.ArrayDeque
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -49,6 +49,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - they have a property OR
  *  - a computation is already scheduled that will compute the property OR
  *  - we have a `depender`.
+ *
+ * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore private (
         val ctx: Map[Type, AnyRef]
@@ -99,9 +101,7 @@ final class PKESequentialPropertyStore private (
     }
 
     // The list of scheduled computations
-
-    // private[this] var tasks: Chain[() ⇒ Unit] = Chain.empty
-    private[this] var tasks: AnyRefAppendChain[() ⇒ Unit] = new AnyRefAppendChain()
+    private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
     // private[this] var computedPropertyKinds: IntTrieSet = null // has to be set before usage
     private[this] var computedPropertyKinds: Array[Boolean] = null // has to be set before usage
@@ -178,24 +178,34 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def registerLazyPropertyComputation[P](
+    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: SomePropertyComputation
+        pc: PropertyComputation[E]
     ): Unit = {
-        assert(
-            tasks.isEmpty,
-            "lazy computations should only be registered while no analysis are scheduled"
-        )
-        lazyComputations(pk.id) = pc
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "lazy computations should only be registered while no analysis are scheduled"
+            )
+        }
+        lazyComputations(pk.id) = pc.asInstanceOf[SomePropertyComputation]
     }
 
-    override def scheduleForEntity[E <: Entity](
+    override def scheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.append(() ⇒ handleResult(pc(e)))
+        tasks.addLast(new EagerPropertyComputationTask(this, e, pc))
+    }
+
+    private[this] def scheduleLazyComputationForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit = handleExceptions {
+        scheduledTasksCounter += 1
+        tasks.addLast(new LazyPropertyComputationTask(this, e, pc))
     }
 
     // triggers lazy property computations!
@@ -227,8 +237,8 @@ final class PKESequentialPropertyStore private (
                     case lc: PropertyComputation[E] @unchecked ⇒
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
-                        ps(pkId) += ((e, PropertyValue.lazilyComputed))
-                        scheduleForEntity(e)(lc)
+                        ps(pkId).put(e, PropertyValue.lazilyComputed)
+                        scheduleLazyComputationForEntity(e)(lc)
                         // return the "current" result
                         epk
 
@@ -300,7 +310,7 @@ final class PKESequentialPropertyStore private (
         ps(pkId).get(e) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
-                ps(pkId) += ((e, PropertyValue(lb, ub, newDependees)))
+                ps(pkId).put(e, PropertyValue(lb, ub, newDependees))
                 // registration with the new dependees is done when processing IntermediateResult
                 true
 
@@ -361,34 +371,34 @@ final class PKESequentialPropertyStore private (
                     dependeeIntermediatePValue.dependers = dependersOfDependee - epk
                 }
                 if (newPValueIsFinal)
-                    ps(pkId) += ((e, new FinalPropertyValue(ub)))
+                    ps(pkId).put(e, new FinalPropertyValue(ub))
                 else
                     pValue.dependees = newDependees
 
                 // 3. Notify dependers if necessary
                 if (lb != oldLB || ub != oldUB || newPValueIsFinal) {
-
                     pValue.dependers foreach { depender ⇒
                         val (dependerEPK, onUpdateContinuation) = depender
-                        val t =
+                        val t: QualifiedTask =
                             if (newPValueIsFinal) {
-                                () ⇒ handleResult(onUpdateContinuation(FinalEP(e, ub)))
+                                // TODO....
+                                new EagerOnFinalUpdateComputationTask(
+                                    this,
+                                    FinalEP(e, ub),
+                                    onUpdateContinuation
+                                )
                             } else {
-                                () ⇒
-                                    {
-                                        // get the most current pValue when the depender
-                                        // is eventually evaluated; the effectiveness
-                                        // of this check depends on the scheduling strategy(!)
-                                        val pValue = ps(pkId)(e)
-                                        val eps = EPS(e, pValue.lb, pValue.ub)
-                                        handleResult(onUpdateContinuation(eps))
-                                    }
+                                new EagerOnUpdateComputationTask(
+                                    this,
+                                    epk,
+                                    onUpdateContinuation
+                                )
                             }
                         scheduledOnUpdateComputationsCounter += 1
                         if (delayHandlingOfDependerNotification)
-                            tasks.append(t)
+                            tasks.addLast(t)
                         else
-                            tasks.prepend(t)
+                            tasks.addFirst(t)
                         // Clear depender => dependee lists.
                         // Given that we have triggered the depender, we now have
                         // to remove the respective onUpdateContinuation from all
@@ -433,7 +443,10 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
+    override def handleResult(
+        r:                  PropertyComputationResult,
+        wasLazilyTriggered: Boolean
+    ): Unit = handleExceptions {
 
         r.id match {
 
@@ -444,7 +457,7 @@ final class PKESequentialPropertyStore private (
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                 handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleForEntity(e)(pc) }
+                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
             case Results.id ⇒
                 val Results(results) = r
@@ -515,54 +528,58 @@ final class PKESequentialPropertyStore private (
 
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
                                 eagerOnUpdateComputationsCounter += 1
-                                if (dependeePValue.isFinal) {
-                                    handleResult(c(FinalEP(dependeeE, dependeePValue.ub)))
-                                } else {
-                                    val newEP = EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
-                                    handleResult(c(newEP))
-                                }
+                                val newEP =
+                                    if (dependeePValue.isFinal) {
+                                        FinalEP(dependeeE, dependeePValue.ub)
+                                    } else {
+                                        EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
+                                    }
+                                handleResult(c(newEP), wasLazilyTriggered)
                                 return ;
                             }
                         }
                         true // all updates are handled; otherwise we have an early return
 
-                    case LazyDependeeUpdateHandling(
-                        delayHandlingOfFinalDependeeUpdates,
-                        delayHandlingOfNonFinalDependeeUpdates
-                        ) ⇒
+                    case dependeeUpdateHandling: LazyDependeeUpdateHandling ⇒
                         newDependees forall { newDependee ⇒
                             if (debug) checkNonFinal(newDependee)
                             val dependeeE = newDependee.e
-                            val dependeePKId = newDependee.pk.id
+                            val dependeePK = newDependee.pk
+                            val dependeePKId = dependeePK.id
                             val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
-                                // There were updates... hence, we will update the value for other analyses
-                                // which want to get the most current value in the meantime, but we postpone
-                                // notification of other analyses which are depending on it until we have
-                                // the updated value (minimize the overall number of notifications.)
+                                // There were updates...
+                                // hence, we will update the value for other analyses
+                                // which want to get the most current value in the meantime,
+                                // but we postpone notification of other analyses which are
+                                // depending on it until we have the updated value (minimize
+                                // the overall number of notifications.)
                                 // println(s"update: $e => $p (isFinal=false;notifyDependers=false)")
-
                                 scheduledOnUpdateComputationsCounter += 1
                                 if (dependeePValue.isFinal) {
-                                    def t(): Unit = {
-                                        val newEP = FinalEP(dependeeE, dependeePValue.ub)
-                                        handleResult(c(newEP))
-                                    }
-                                    if (delayHandlingOfFinalDependeeUpdates)
-                                        tasks.append(() ⇒ t())
+                                    val t =
+                                        OnFinalUpdateComputationTask(
+                                            this,
+                                            dependeeE, dependeePValue.ub,
+                                            c,
+                                            wasLazilyTriggered
+                                        )
+                                    if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)
+                                        tasks.addLast(t)
                                     else
-                                        tasks.prepend(() ⇒ t())
+                                        tasks.addFirst(t)
                                 } else {
-                                    val t = () ⇒ {
-                                        handleResult({
-                                            val newestPValue = ps(dependeePKId)(dependeeE)
-                                            c(EPS(dependeeE, newestPValue.lb, newestPValue.ub))
-                                        })
-                                    }
-                                    if (delayHandlingOfNonFinalDependeeUpdates)
-                                        tasks.append(t)
+                                    val t =
+                                        OnUpdateComputationTask(
+                                            this,
+                                            EPK(dependeeE, dependeePK),
+                                            c,
+                                            wasLazilyTriggered
+                                        )
+                                    if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
+                                        tasks.addLast(t)
                                     else
-                                        tasks.prepend(t)
+                                        tasks.addFirst(t)
                                 }
                                 false
                             } else {
@@ -587,10 +604,10 @@ final class PKESequentialPropertyStore private (
                         ps(dependeePKId).get(dependeeE) match {
                             case None ⇒
                                 // the dependee is not known
-                                ps(dependeePKId) += ((
+                                ps(dependeePKId).put(
                                     dependeeE,
                                     new IntermediatePropertyValue(dependerEPK, c)
-                                ))
+                                )
 
                             case Some(dependeePValue: IntermediatePropertyValue) ⇒
                                 val dependeeDependers = dependeePValue.dependers
@@ -634,8 +651,9 @@ final class PKESequentialPropertyStore private (
         do {
             continueComputation = false
 
-            while (tasks.nonEmpty && !isInterrupted) {
-                tasks.take().apply()
+            while (!tasks.isEmpty && !isInterrupted) {
+                val task = tasks.pollFirst()
+                task.apply()
                 isInterrupted = this.isInterrupted()
             }
             if (tasks.isEmpty) quiescenceCounter += 1
@@ -644,20 +662,19 @@ final class PKESequentialPropertyStore private (
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
-                // 1. let's search all EPKs for which we have no analyses scheduled in the
-                //    future and use the fall back for them
+                // 1. Let's search all EPKs for which we have no analyses scheduled in the
+                //    future and use the fall back for them.
                 //    (Recall that we return fallback properties eagerly if no analysis is
                 //     scheduled or will be scheduled; but it is still possible that we will
                 //     not have a property for a specific entity, if the underlying analysis
                 //     doesn't compute one; in that case we need to put in fallback values.)
-                // IMPROVE parForeachArrayElement(ps,isInterrupted = () => false){ ... }
                 for {
-                    (ePValue, pkId) ← ps.zipWithIndex
+                    (ePValue, pkId) ← ps.iterator.zipWithIndex
                     (e, pValue) ← ePValue
                 } {
                     // Check that we have no running computations and that the
                     // property will not be computed later on.
-                    if (pValue.ub == null && !delayedPropertyKinds.contains(pkId)) {
+                    if (pValue.ub == null && !delayedPropertyKinds(pkId)) {
                         // assert(pv.dependers.isEmpty)
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
@@ -756,6 +773,8 @@ final class PKESequentialPropertyStore private (
 
 /**
  * Factory for creating `EPKSequentialPropertyStore`s.
+ *
+ * @author Michael Eichberg
  */
 object PKESequentialPropertyStore extends PropertyStoreFactory {
 

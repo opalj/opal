@@ -48,6 +48,7 @@ import org.scalatest.junit.JUnitRunner
  */
 @RunWith(classOf[JUnitRunner])
 class L1PurityIntegrationTest extends FunSpec with Matchers {
+
     val dependencies =
         Seq(
             EagerL1FieldMutabilityAnalysis,
@@ -55,8 +56,7 @@ class L1PurityIntegrationTest extends FunSpec with Matchers {
             EagerTypeImmutabilityAnalysis
         )
 
-    def checkProject(project: () ⇒ SomeProject, withDependencies: Boolean): Unit = {
-        val p = project()
+    def checkProject(p: SomeProject, withDependencies: Boolean): Unit = {
         val analysesManager = p.get(FPCFAnalysesManagerKey)
         val analyses =
             if (withDependencies)
@@ -79,26 +79,26 @@ class L1PurityIntegrationTest extends FunSpec with Matchers {
         val (name, projectFactory) = biProject
         it(s"it should be able to run the analysis for $name without dependencies") {
             time {
-                checkProject(projectFactory, withDependencies = false)
+                checkProject(projectFactory(), withDependencies = false)
             } { t ⇒ info(s"analysis took ${t.toSeconds}") }
         }
 
         it(s"it should be able to run the analysis for $name with dependencies") {
             time {
-                checkProject(projectFactory, withDependencies = true)
+                checkProject(projectFactory(), withDependencies = true)
             } { t ⇒ info(s"analysis took ${t.toSeconds}") }
         }
     }
 
     it("it should be able to run the analysis for the JDK without dependencies") {
         time {
-            checkProject(() ⇒ createJREProject(), withDependencies = false)
+            checkProject(createJREProject(), withDependencies = false)
         } { t ⇒ info(s"analysis took ${t.toSeconds}") }
     }
 
     it("it should be able to run the analysis for the JDK with dependencies") {
         time {
-            checkProject(() ⇒ createJREProject(), withDependencies = true)
+            checkProject(createJREProject(), withDependencies = true)
         } { t ⇒ info(s"analysis took ${t.toSeconds}") }
     }
 }

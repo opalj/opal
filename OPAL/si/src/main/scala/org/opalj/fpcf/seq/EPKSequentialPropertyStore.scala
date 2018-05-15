@@ -48,6 +48,10 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - they have a property OR
  *  - a computation is already scheduled that will compute the property OR
  *  - we have a `depender`.
+ *
+ *  Compared to the [[PKESequentialPropertyStore]] this implementation can be considered a
+ *  bare-bone implementation that primarily supports required features. Furthermore, this
+ *  implementation is less polished w.r.t. the usage of data-structures.
  */
 final class EPKSequentialPropertyStore private (
         val ctx: Map[Type, AnyRef]
@@ -171,18 +175,18 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    override def registerLazyPropertyComputation[P](
+    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: SomePropertyComputation
+        pc: PropertyComputation[E]
     ): Unit = {
         assert(
             tasks.isEmpty,
             "lazy computations should only be registered while no analysis are scheduled"
         )
-        lazyComputations += ((pk.id.toLong, pc))
+        lazyComputations.put(pk.id.toLong, pc.asInstanceOf[SomePropertyComputation])
     }
 
-    override def scheduleForEntity[E <: Entity](
+    override def scheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
@@ -211,7 +215,7 @@ final class EPKSequentialPropertyStore private (
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
                         ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
-                        scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                        scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
                         // return the "current" result
                         epk
 
@@ -238,7 +242,7 @@ final class EPKSequentialPropertyStore private (
                             // create PropertyValue to ensure that we do not schedule
                             // multiple (lazy) computations => the entity is now known
                             pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
-                            scheduleForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                            scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
                             epk
 
                         case None ⇒
@@ -473,8 +477,10 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
-
+    override def handleResult(
+        r:                  PropertyComputationResult,
+        wasLazilyTriggered: Boolean /* currently ignored */
+    ): Unit = handleExceptions {
         r.id match {
 
             case NoResult.id ⇒
@@ -484,7 +490,7 @@ final class EPKSequentialPropertyStore private (
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
                 handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleForEntity(e)(pc) }
+                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
             case Results.id ⇒
                 val Results(results) = r
@@ -511,7 +517,6 @@ final class EPKSequentialPropertyStore private (
                 newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
             case IntermediateResult.id ⇒
-                // IMPROVE Process all dependee updates
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {

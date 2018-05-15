@@ -80,7 +80,7 @@ object ThrownExceptionsAnalysisRunner extends DefaultOneStepAnalysis {
                 EagerL1ThrownExceptionsAnalysis.start(project, ps)
             } else {
                 val fallbackAnalysis = new ThrownExceptionsFallback(ps)
-                ps.scheduleForEntities(project.allMethods)(fallbackAnalysis)
+                ps.scheduleEagerComputationsForEntities(project.allMethods)(fallbackAnalysis)
             }
 
             ps.waitOnPhaseCompletion()

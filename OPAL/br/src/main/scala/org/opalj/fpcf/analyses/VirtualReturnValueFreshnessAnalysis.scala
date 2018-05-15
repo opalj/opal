@@ -127,7 +127,7 @@ object EagerVirtualReturnValueFreshnessAnalysis extends VirtualReturnValueFreshn
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
+        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
     }
 }

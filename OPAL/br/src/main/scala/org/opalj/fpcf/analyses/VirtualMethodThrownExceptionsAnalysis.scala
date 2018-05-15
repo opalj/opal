@@ -166,7 +166,7 @@ object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisSched
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
         val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
-        ps.scheduleForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
+        ps.scheduleEagerComputationsForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
         analysis
     }
 
@@ -187,7 +187,7 @@ object LazyVirtualMethodThrownExceptionsAnalysis extends FPCFLazyAnalysisSchedul
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
     def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
-        ps.registerLazyPropertyComputation[ThrownExceptionsByOverridingMethods](
+        ps.registerLazyPropertyComputation(
             ThrownExceptionsByOverridingMethods.key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods
         )

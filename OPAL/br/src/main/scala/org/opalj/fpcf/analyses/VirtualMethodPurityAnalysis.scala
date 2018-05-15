@@ -116,7 +116,7 @@ object EagerVirtualMethodPurityAnalysis extends VirtualMethodPurityAnalysisSched
         val analysis = new VirtualMethodPurityAnalysis(project)
         val vms = project.get(DeclaredMethodsKey)
         val configuredPurity = project.get(ConfiguredPurityKey)
-        propertyStore.scheduleForEntities(
+        propertyStore.scheduleEagerComputationsForEntities(
             vms.declaredMethods.filter { dm ⇒
                 !configuredPurity.wasSet(dm) && dm.isInstanceOf[DefinedMethod]
             }.map(_.asInstanceOf[DefinedMethod])

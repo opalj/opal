@@ -73,7 +73,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             val ps = createPropertyStore()
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
-            ps.scheduleForEntity("a") { e ⇒
+            ps.scheduleEagerComputationForEntity("a") { e ⇒
                 ps.isInterrupted = () ⇒ true
                 val dependee = EPK("d", Palindromes.PalindromeKey)
                 ps(dependee) // we use a fake dependency...
@@ -86,7 +86,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 )
             }
             ps.waitOnPhaseCompletion()
-            ps.scheduleForEntity("d")(e ⇒ Result("d", Palindrome))
+            ps.scheduleEagerComputationForEntity("d")(e ⇒ Result("d", Palindrome))
 
             ps("a", Palindromes.PalindromeKey) should be(IntermediateEP("a", NoPalindrome, Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
@@ -104,7 +104,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             val ps = createPropertyStore()
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
-            ps.scheduleForEntity("a") { e ⇒
+            ps.scheduleEagerComputationForEntity("a") { e ⇒
                 val dependees = Seq(EPK("d", Palindromes.PalindromeKey), EPK("e", Palindromes.PalindromeKey))
                 dependees.foreach(ps(_)) // we use a fake dependency...
                 ps.set("d", Palindrome)
@@ -148,7 +148,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.hasProperty("cbc", palindromeKey) should be(false)
             ps.hasProperty("aba", superPalindromeKey) should be(false)
 
-            ps.scheduleForEntity("a") { e ⇒
+            ps.scheduleEagerComputationForEntity("a") { e ⇒
                 ps.isInterrupted = () ⇒ true
                 val dependee = EPK("d", Palindromes.PalindromeKey)
                 ps(dependee) // we use a fake dependency...
@@ -241,7 +241,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
 
             val pk = Palindromes.PalindromeKey
             val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
-            ps.scheduleForEntities(es) { e ⇒
+            ps.scheduleEagerComputationsForEntities(es) { e ⇒
                 Result(e, if (e.reverse == e) Palindrome else NoPalindrome)
             }
             ps.waitOnPhaseCompletion()
@@ -359,7 +359,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     )
                 }
             )
-            ps.scheduleForEntity("e") { e: String ⇒
+            ps.scheduleEagerComputationForEntity("e") { e: String ⇒
                 val initiallyExpectedEP = EPK("e", sppk)
                 ps("e", sppk) should be(initiallyExpectedEP)
                 IntermediateResult(
@@ -633,7 +633,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     ps.registerLazyPropertyComputation(
                         ReachableNodesCount.Key, reachableNodesCountAnalysis(ps)
                     )
-                    ps.scheduleForEntities(nodeEntitiesPermutation)(reachableNodesAnalysis(ps))
+                    ps.scheduleEagerComputationsForEntities(nodeEntitiesPermutation)(reachableNodesAnalysis(ps))
                     ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
 
                     ps.waitOnPhaseCompletion()
@@ -852,7 +852,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
             }
 
-            ps.scheduleForEntity(nodeRoot)(analysis(0))
+            ps.scheduleEagerComputationForEntity(nodeRoot)(analysis(0))
             ps.waitOnPhaseCompletion
 
             ps(nodeRoot, TreeLevelKey) should be(FinalEP(nodeRoot, TreeLevel(0)))
@@ -876,7 +876,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     Result(e, p)
                 }
             )
-            ps.scheduleForEntity(
+            ps.scheduleEagerComputationForEntity(
                 "aaa"
             ) { s: String ⇒
                     ps("a", ppk) match {
@@ -943,7 +943,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     c(ps(nextNode, Purity.Key))
                 }
                 // 4. execute analysis
-                ps.scheduleForEntities(allNodes)(purityAnalysis)
+                ps.scheduleEagerComputationsForEntities(allNodes)(purityAnalysis)
                 ps.waitOnPhaseCompletion()
 
                 // 5. let's evaluate the result
@@ -987,7 +987,7 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                 )
             }
             assertThrows[IllegalArgumentException] {
-                ps.scheduleForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1026,7 +1026,7 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
             assertThrows[IllegalArgumentException] {
-                ps.scheduleForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1065,7 +1065,7 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
             assertThrows[IllegalArgumentException] {
-                ps.scheduleForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1105,7 +1105,7 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
             assertThrows[IllegalArgumentException] {
-                ps.scheduleForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }

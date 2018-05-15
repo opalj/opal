@@ -599,7 +599,7 @@ object EagerFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FP
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val allFields = project.allFields
         val analysis = new FieldLocalityAnalysis(project)
-        propertyStore.scheduleForEntities(allFields)(analysis.step1)
+        propertyStore.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
         analysis
     }
 }
@@ -648,5 +648,5 @@ object DefinitionSitesWithoutPutField {
  * @author Florian Kuebler
  */
 final case class DefinitionSiteWithoutPutField(
-    method: Method, pc: Int, usedBy: IntTrieSet
+        method: Method, pc: Int, usedBy: IntTrieSet
 ) extends DefinitionSiteLike

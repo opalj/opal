@@ -406,14 +406,14 @@ object EagerL1ThrownExceptionsAnalysis
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
         val allMethods = project.allMethodsWithBody
-        propertyStore.scheduleForEntities(allMethods)(analysis.determineThrownExceptions)
+        propertyStore.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
 
     /** Registers an analysis to compute the thrown exceptions lazily. */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.registerLazyPropertyComputation[ThrownExceptions](
+        propertyStore.registerLazyPropertyComputation(
             ThrownExceptions.key,
             analysis.lazilyDetermineThrownExceptions
         )
@@ -440,7 +440,7 @@ object LazyL1ThrownExceptionsAnalysis
     /** Registers an analysis to compute the thrown exceptions lazily. */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.registerLazyPropertyComputation[ThrownExceptions](
+        propertyStore.registerLazyPropertyComputation(
             ThrownExceptions.key,
             analysis.lazilyDetermineThrownExceptions
         )

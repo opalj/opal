@@ -250,7 +250,7 @@ object EagerTypeImmutabilityAnalysis
 
         val types = project.allClassFiles.filter(_.thisType ne ObjectType.Object).map(_.thisType)
 
-        ps.scheduleForEntities(types) {
+        ps.scheduleEagerComputationsForEntities(types) {
             analysis.step1(typeExtensibility)
         }
 

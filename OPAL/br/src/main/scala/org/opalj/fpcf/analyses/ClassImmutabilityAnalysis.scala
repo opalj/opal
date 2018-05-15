@@ -464,7 +464,7 @@ object EagerClassImmutabilityAnalysis
         val analysis = new ClassImmutabilityAnalysis(project)
 
         val cfs = setResultsAnComputeEntities(project, propertyStore)
-        propertyStore.scheduleForEntities(cfs) {
+        propertyStore.scheduleEagerComputationsForEntities(cfs) {
             e ⇒
                 analysis.determineClassImmutability(
                     null, FinalEP(ObjectType.Object, ImmutableObject), true, false
