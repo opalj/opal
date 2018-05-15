@@ -51,9 +51,9 @@ import org.opalj.fpcf.properties.EscapeProperty
 @RunWith(classOf[JUnitRunner])
 class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
 
-    def checkProject(p : SomeProject): Unit = {
+    def checkProject(p: SomeProject): Unit = {
         val ps = p.get(PropertyStoreKey)
-        ps.setupPhase(Set(EscapeProperty),Set.empty)
+        ps.setupPhase(Set(EscapeProperty), Set.empty)
         EagerSimpleEscapeAnalysis.start(p)
         ps.waitOnPhaseCompletion()
     }
@@ -70,6 +70,6 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
     }
 
     it(s"it should be able to analyze the JDK") {
-        time {checkProject(createJREProject()) } { t ⇒ info(s"the analysis took ${t.toSeconds}") }
+        time { checkProject(createJREProject()) } { t ⇒ info(s"the analysis took ${t.toSeconds}") }
     }
 }
