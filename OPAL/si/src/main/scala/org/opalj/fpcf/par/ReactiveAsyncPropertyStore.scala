@@ -448,7 +448,7 @@ class ReactiveAsyncPropertyStore private (
             if (r.id == IntermediateResult.id) {
                 val IntermediateResult(_, _, _, d, _) = r
                 dependencyCounter.getOrElseUpdate(d.size, new AtomicLong(0)).incrementAndGet()
-                incCounter("Dependencies", d.size)
+                incCounter("DependenciesLowerBound", d.size)
             }
             handleResult(r)
         })
@@ -644,6 +644,13 @@ class ReactiveAsyncPropertyStore private (
                         val cc = psE.getOrElseUpdate(
                             e, CellCompleter[RAKey, PropertyValue](new RAKey(e, newEPS.ub.key))
                         )
+                        val currentResult = cc.cell.getResult()
+                        if (newEPS.lb.isOrderedProperty && currentResult != null) {
+                            val lbAsOP = newEPS.lb.asOrderedProperty
+                            lbAsOP.checkIsEqualOrBetterThan(e, currentResult.lb.asInstanceOf[lbAsOP.Self])
+                            val storedUbAsOP = currentResult.ub.asOrderedProperty
+                            storedUbAsOP.checkIsEqualOrBetterThan(e, newEPS.ub.asInstanceOf[storedUbAsOP.Self])
+                        }
                         cc.putNext(new PropertyValue(newEPS.lb, newEPS.ub))
                     }
                 }
