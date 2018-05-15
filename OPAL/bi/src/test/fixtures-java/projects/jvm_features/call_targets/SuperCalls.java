@@ -29,8 +29,6 @@
 package call_targets;
 
 /**
- * Defines an annotation which basically covers all features an annotation can have.
- *
  * NOTE<br />
  * This class is only meant to be (automatically) compiled by OPAL's build script.
  *
