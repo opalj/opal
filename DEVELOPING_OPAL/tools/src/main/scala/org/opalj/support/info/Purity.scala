@@ -27,7 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package support
+package info
 
 import java.io.File
 import java.io.FileOutputStream
@@ -45,8 +46,15 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.L1PurityAnalysis
 import org.opalj.fpcf.analyses.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
@@ -88,7 +96,12 @@ import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-object PurityAnalysisEvaluation {
+/**
+ * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
+ *
+ * @author Dominik Helm
+ */
+object Purity {
 
     def usage: String = {
         "Usage: java …PurityAnalysisEvaluation \n"+
@@ -138,15 +151,15 @@ object PurityAnalysisEvaluation {
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
-        evaluationDir:         File
+        evaluationDir:         Option[File]
     ): Unit = {
         val classFiles = JavaClassFileReader().ClassFiles(cp)
         val JDKFiles = if (withoutJDK) Traversable.empty
         else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         val dirName = if (cp eq JRELibraryFolder) "JDK" else cp.getName
-        val projectEvaluationDir = new File(evaluationDir, dirName)
-        if (!projectEvaluationDir.exists()) projectEvaluationDir.mkdir()
+        val projectDir = evaluationDir.map(new File(_, dirName))
+        if (projectDir.isDefined && !projectDir.get.exists()) projectDir.get.mkdir()
 
         var projectTime: Seconds = Seconds.None
         var tacTime: Seconds = Seconds.None
@@ -196,7 +209,7 @@ object PurityAnalysisEvaluation {
                 _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
             ).toSet +
                 VirtualMethodPurity.key.asInstanceOf[PropertyKind] +
-                Purity.key.asInstanceOf[PropertyKind]
+                fpcf.properties.Purity.key.asInstanceOf[PropertyKind]
             propertyStore.setupPhase(pks)
 
             for (supportAnalysis ← support) {
@@ -207,25 +220,27 @@ object PurityAnalysisEvaluation {
             analysis.startLazily(project, propertyStore)
 
             projMethods.foreach { dm ⇒
-                propertyStore(dm, Purity.key)
+                propertyStore.force(dm, fpcf.properties.Purity.key)
             }
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val runtime = new File(projectEvaluationDir, "runtime.csv")
-        val runtimeNew = !runtime.exists()
-        val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
-        try {
-            if (runtimeNew) {
-                runtime.createNewFile()
-                runtimeWriter.println("project;tac;propertyStore;analysis")
+        if(projectDir.isDefined) {
+            val runtime = new File(projectDir.get, "runtime.csv")
+            val runtimeNew = !runtime.exists()
+            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
+            try {
+                if (runtimeNew) {
+                    runtime.createNewFile()
+                    runtimeWriter.println("project;tac;propertyStore;analysis")
+                }
+                runtimeWriter.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime;")
+            } finally {
+                if (runtimeWriter != null) runtimeWriter.close()
             }
-            runtimeWriter.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime;")
-        } finally {
-            if (runtimeWriter != null) runtimeWriter.close()
         }
 
-        val purityEs = propertyStore(projMethods, Purity.key).filter {
+        val purityEs = propertyStore(projMethods, fpcf.properties.Purity.key).filter {
             case FinalEP(_, p) ⇒ p ne Impure
             case ep            ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
@@ -245,72 +260,93 @@ object PurityAnalysisEvaluation {
         val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBDContextuallySideEffectFree) ⇒ m }
         val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, LBImpure) ⇒ m }
 
-        val results = new File(projectEvaluationDir, "method-results.csv")
-        val resultsNew = !results.exists()
-        val resultsWriter = new PrintWriter(new FileOutputStream(results, !individual))
-        try {
-            if (resultsNew) {
-                results.createNewFile()
-                if (!individual)
-                    resultsWriter.println("{c};{};{d},{n};{n,d},{r};{r,d},{n,r};{n,r,d},"+
-                        "{p};{p,d},{n,p},{n,p,d},{i^};count")
-            }
+        if(projectDir.isDefined) {
+            val results = new File(projectDir.get, "method-results.csv")
+            val resultsNew = !results.exists()
+            val resultsWriter = new PrintWriter(new FileOutputStream(results, !individual))
+            try {
+                if (resultsNew) {
+                    results.createNewFile()
+                    if (!individual)
+                        resultsWriter.println("{c};{};{d},{n};{n,d},{r};{r,d},{n,r};{n,r,d}," +
+                            "{p};{p,d},{n,p},{n,p,d},{i^};count")
+                }
 
-            if (!individual) {
-                resultsWriter.println(
-                    s"${compileTimePure.size};${pure.size};${dPure.size};${sideEffectFree.size};"+
-                        s"${dSideEffectFree.size};${externallyPure.size};${dExternallyPure.size};"+
-                        s"${externallySideEffectFree.size};${dExternallySideEffectFree.size};"+
-                        s"${contextuallyPure.size};${dContextuallyPure.size};"+
-                        s"${contextuallySideEffectFree.size};${dContextuallySideEffectFree.size};"+
-                        s"${lbImpure.size};${purityEs.size}"
-                )
-            } else {
-                for (m ← compileTimePure) {
-                    resultsWriter.println(s"{c} => ${m.definedMethod.toJava}")
+                if (!individual) {
+                    resultsWriter.println(
+                        s"${compileTimePure.size};${pure.size};${dPure.size};${sideEffectFree.size};" +
+                            s"${dSideEffectFree.size};${externallyPure.size};${dExternallyPure.size};" +
+                            s"${externallySideEffectFree.size};${dExternallySideEffectFree.size};" +
+                            s"${contextuallyPure.size};${dContextuallyPure.size};" +
+                            s"${contextuallySideEffectFree.size};${dContextuallySideEffectFree.size};" +
+                            s"${lbImpure.size};${purityEs.size}"
+                    )
+                } else {
+                    for (m ← compileTimePure) {
+                        resultsWriter.println(s"{c} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← pure) {
+                        resultsWriter.println(s"{} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← dPure) {
+                        resultsWriter.println(s"{d} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← sideEffectFree) {
+                        resultsWriter.println(s"{n} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← dSideEffectFree) {
+                        resultsWriter.println(s"{n,d} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← externallyPure) {
+                        resultsWriter.println(s"{r} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← dExternallyPure) {
+                        resultsWriter.println(s"{r,d} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← externallySideEffectFree) {
+                        resultsWriter.println(s"{n,r} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← dExternallySideEffectFree) {
+                        resultsWriter.println(s"{n,r,d} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← contextuallyPure) {
+                        resultsWriter.println(s"{p} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← dContextuallyPure) {
+                        resultsWriter.println(s"{p,d} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← contextuallySideEffectFree) {
+                        resultsWriter.println(s"{n,p} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← dContextuallySideEffectFree) {
+                        resultsWriter.println(s"{n,p,d} => ${m.definedMethod.toJava}")
+                    }
+                    for (m ← lbImpure) {
+                        resultsWriter.println(s"{i^} => ${m.definedMethod.toJava}")
+                    }
                 }
-                for (m ← pure) {
-                    resultsWriter.println(s"{} => ${m.definedMethod.toJava}")
-                }
-                for (m ← dPure) {
-                    resultsWriter.println(s"{d} => ${m.definedMethod.toJava}")
-                }
-                for (m ← sideEffectFree) {
-                    resultsWriter.println(s"{n} => ${m.definedMethod.toJava}")
-                }
-                for (m ← dSideEffectFree) {
-                    resultsWriter.println(s"{n,d} => ${m.definedMethod.toJava}")
-                }
-                for (m ← externallyPure) {
-                    resultsWriter.println(s"{r} => ${m.definedMethod.toJava}")
-                }
-                for (m ← dExternallyPure) {
-                    resultsWriter.println(s"{r,d} => ${m.definedMethod.toJava}")
-                }
-                for (m ← externallySideEffectFree) {
-                    resultsWriter.println(s"{n,r} => ${m.definedMethod.toJava}")
-                }
-                for (m ← dExternallySideEffectFree) {
-                    resultsWriter.println(s"{n,r,d} => ${m.definedMethod.toJava}")
-                }
-                for (m ← contextuallyPure) {
-                    resultsWriter.println(s"{p} => ${m.definedMethod.toJava}")
-                }
-                for (m ← dContextuallyPure) {
-                    resultsWriter.println(s"{p,d} => ${m.definedMethod.toJava}")
-                }
-                for (m ← contextuallySideEffectFree) {
-                    resultsWriter.println(s"{n,p} => ${m.definedMethod.toJava}")
-                }
-                for (m ← dContextuallySideEffectFree) {
-                    resultsWriter.println(s"{n,p,d} => ${m.definedMethod.toJava}")
-                }
-                for (m ← lbImpure) {
-                    resultsWriter.println(s"{i^} => ${m.definedMethod.toJava}")
-                }
+            } finally {
+                if (resultsWriter != null) resultsWriter.close()
             }
-        } finally {
-            if (resultsWriter != null) resultsWriter.close()
+        } else {
+            val result =
+                propertyStore.toString(false)+
+                "\ncompile-time pure:                     "+compileTimePure.size+
+                "\nAt least pure:                         "+pure.size+
+                "\nAt least domain-specficic pure:        "+dPure.size+
+                "\nAt least side-effect free:             "+sideEffectFree.size+
+                "\nAt least d-s side effect free:         "+dSideEffectFree.size+
+                "\nAt least externally pure:              "+externallyPure.size+
+                "\nAt least d-s externally pure:          "+dExternallyPure.size+
+                "\nAt least externally side-effect free:  "+externallySideEffectFree.size+
+                "\nAt least d-s ext. side-effect free:    "+dExternallySideEffectFree.size+
+                "\nAt least contextually pure:            "+contextuallyPure.size+
+                "\nAt least d-s contextually pure:        "+dContextuallyPure.size+
+                "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
+                "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
+                "\nImpure:                                "+lbImpure.size
+
+            println(result)
         }
     }
 
@@ -325,7 +361,7 @@ object PurityAnalysisEvaluation {
         var individual = false
         var cwa = false
         var multiProjects = false
-        var evalDir: Option[File] = None
+        var evaluationDir: Option[File] = None
 
         // PARSING PARAMETERS
         var i = 0
@@ -348,7 +384,7 @@ object PurityAnalysisEvaluation {
                 case "-individual"  ⇒ individual = true
                 case "-closedWorld" ⇒ cwa = true
                 case "-multi"       ⇒ multiProjects = true
-                case "-eval"        ⇒ evalDir = Some(new File(readNextArg()))
+                case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-noJDK"       ⇒ withoutJDK = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
@@ -390,8 +426,7 @@ object PurityAnalysisEvaluation {
             mirror.reflectModule(module).instance.asInstanceOf[DomainSpecificRater]
         }
 
-        val evaluationDir = if (evalDir.isEmpty) new File(".") else evalDir.get
-        if (!evaluationDir.exists()) evaluationDir.mkdir
+        if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir
 
         val begin = Calendar.getInstance()
         println(begin.getTime)

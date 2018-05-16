@@ -26,20 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
-package analyses
+package org.opalj.support.info
 
 import java.net.URL
 
+import org.opalj.fpcf
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.ExtensibleLocalField
 import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
-import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoLocalField
@@ -52,7 +55,7 @@ import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
  *
  * @author Florian Kuebler
  */
-object FieldLocalityDemo extends DefaultOneStepAnalysis {
+object FieldLocality extends DefaultOneStepAnalysis {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
@@ -62,8 +65,8 @@ object FieldLocalityDemo extends DefaultOneStepAnalysis {
 
         ps.setupPhase(
             Set(
-                FieldLocality.key,
-                ReturnValueFreshness.key,
+                fpcf.properties.FieldLocality.key,
+                fpcf.properties.ReturnValueFreshness.key,
                 EscapeProperty.key,
                 VirtualMethodEscapeProperty.key,
                 VirtualMethodReturnValueFreshness.key
