@@ -51,7 +51,7 @@ import org.opalj.fpcf.properties.EscapeProperty
 @RunWith(classOf[JUnitRunner])
 class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
 
-    def reportAnalysisTime(t : Nanoseconds ): Unit = { info(s"analysis took ${t.toSeconds}") }
+    def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
     def checkProject(p: SomeProject): Unit = {
         val ps = p.get(PropertyStoreKey)
@@ -66,13 +66,13 @@ class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
             val (name, projectFactory) = biProject
             it(s"for $name") {
                 val p = projectFactory()
-                time {                    checkProject(p)                } {reportAnalysisTime }
+                time { checkProject(p) } { reportAnalysisTime }
             }
         }
 
         it(s"for the JDK") {
             val p = createJREProject()
-            time {                checkProject(p)            } { reportAnalysisTime }
+            time { checkProject(p) } { reportAnalysisTime }
         }
     }
 }

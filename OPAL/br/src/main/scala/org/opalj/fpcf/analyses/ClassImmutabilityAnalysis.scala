@@ -460,7 +460,7 @@ object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
 
         val analysis = new ClassImmutabilityAnalysis(project)
 
@@ -484,7 +484,7 @@ object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    override protected[fpcf] def startLazily(
+    override def startLazily(
         project: SomeProject, propertyStore: PropertyStore
     ): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(project)

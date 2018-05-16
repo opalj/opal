@@ -1755,8 +1755,10 @@ object Project {
             val libraryTypes = Set.empty[ObjectType]
             for ((libClassFile, source) ← libraryClassFilesWithSources) {
                 val libraryType = libClassFile.thisType
+
                 if (libClassFile.isModuleDeclaration) {
                     processModule(libClassFile, Some(source), libraryModules)
+
                 } else if (projectTypes.contains(libClassFile.thisType)) {
                     val libraryTypeQualifier =
                         if (libClassFile.isInterfaceDeclaration) "interface" else "class"
