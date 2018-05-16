@@ -33,37 +33,32 @@ package field_mutability
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
-import org.opalj.br.BooleanValue
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Matches a field's `FieldMutability` property. The match is successful if the field either
- * does not have a corresponding property (in which case the fallback property will be
- * `NonFinalField`) or if the property is an instance of `NonFinalField`.
+ * Matches a field's `FieldMutability` property. The match is successful if the field has the
+ * property [[LazyInitialized]] and a sufficiently capable analysis was scheduled.
  *
  * @author Michael Eichberg
  */
-class NonFinalMatcher extends AbstractPropertyMatcher {
+class LazyInitializedMatcher extends AbstractPropertyMatcher {
+
+    private final val PropertyReasonID = 0
+
+    final val SupportedAnalyses: Set[ObjectType] = {
+        Set(
+            ObjectType("org/opalj/fpcf/analyses/L0FieldMutabilityAnalysis"),
+            ObjectType("org/opalj/fpcf/analyses/L1FieldMutabilityAnalysis")
+        )
+    }
 
     override def isRelevant(
-        p:  SomeProject,
-        as: Set[ObjectType],
-        e:  Entity,
-        a:  AnnotationLike
+        p:      SomeProject,
+        as:     Set[ObjectType],
+        entity: Object,
+        a:      AnnotationLike
     ): Boolean = {
-        val annotationType = a.annotationType.asObjectType
-
-        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead").asInstanceOf[BooleanValue].value
-
-        if (prematurelyRead) {
-            val propertyStore = p.get(PropertyStoreKey)
-            propertyStore(e, FieldPrematurelyRead.key) match {
-                case FinalEP(_, PrematurelyReadField) ⇒ true
-                case _                                ⇒ false
-            }
-        } else {
-            true
-        }
+        as.exists(SupportedAnalyses.contains)
     }
 
     def validateProperty(
@@ -73,10 +68,16 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (properties.forall(p ⇒ p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
+        val annotationType = a.annotationType.asObjectType
+
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        if (analyses.exists(as.contains) && !properties.exists(p ⇒ p == LazyInitializedField)) {
+            // ... when we reach this point the expected property was not found.
+            Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
+        } else {
             None
-        else {
-            Some(a.elementValuePairs.head.value.toString)
         }
     }
 

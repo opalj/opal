@@ -28,40 +28,39 @@
  */
 package org.opalj
 package fpcf
+package properties
 
-import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.fpcf.analyses.LazyL2PurityAnalysis
+sealed trait FieldPrematurelyReadPropertyMetaInformation extends PropertyMetaInformation {
+
+    type Self = FieldPrematurelyRead
+
+}
 
 /**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Identifies fields that are read before they are initialized. This may e.g. happen through virtual
+ * calls in a super class constructor.
  *
- * @author Michael Eichberg
+ * @author Dominik Helm
  */
-class FieldMutabilityTests extends PropertiesTest {
+sealed trait FieldPrematurelyRead extends Property with FieldPrematurelyReadPropertyMetaInformation {
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
+    final def key = FieldPrematurelyRead.key // All instances have to share the SAME key!
 
-    describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerL0FieldMutabilityAnalysis),
-            Set(LazyUnsoundPrematurelyReadFieldsAnalysis)
+}
+
+object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation {
+
+    final val PropertyKeyName = "FieldPrematurelyRead"
+
+    final val key: PropertyKey[FieldPrematurelyRead] = {
+        PropertyKey.create(
+            PropertyKeyName,
+            PrematurelyReadField
         )
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerL1FieldMutabilityAnalysis),
-            Set(LazyUnsoundPrematurelyReadFieldsAnalysis, LazyL2PurityAnalysis)
-        )
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
     }
 
 }
+
+case object NotPrematurelyReadField extends FieldPrematurelyRead
+
+case object PrematurelyReadField extends FieldPrematurelyRead

@@ -46,4 +46,6 @@ public @interface NonFinal{
      * A short reasoning of this property.
      */
     String value();// default = "N/A";
+
+    boolean prematurelyRead() default false;
 }

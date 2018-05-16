@@ -26,42 +26,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf.properties.field_mutability;
 
-import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.fpcf.analyses.LazyL2PurityAnalysis
+import org.opalj.fpcf.FPCFAnalysis;
+import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
+import org.opalj.fpcf.properties.PropertyValidator;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Tests if the properties specified in the test project (the classes in the (sub-)package of
- * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
- * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ * Annotation to state that the annotated field is declared final (and not read prematurely!).
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
-class FieldMutabilityTests extends PropertiesTest {
+@PropertyValidator(key="FieldMutability",validator=DeclaredFinalMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface DeclaredFinal {
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
+    /**
+     * A short reasoning of this property.
+     */
+    String value() ; // default = "N/A";
 
-    describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerL0FieldMutabilityAnalysis),
-            Set(LazyUnsoundPrematurelyReadFieldsAnalysis)
-        )
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerL1FieldMutabilityAnalysis),
-            Set(LazyUnsoundPrematurelyReadFieldsAnalysis, LazyL2PurityAnalysis)
-        )
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
-    }
-
+    Class<? extends FPCFAnalysis>[] analyses() default {L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class};
 }

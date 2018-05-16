@@ -50,6 +50,7 @@ import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodHandle
 import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.Field
 import org.opalj.br.analyses.ProjectLike
 
 /**
@@ -537,7 +538,16 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
 
+    def declaringClass: ObjectType
+    def name: String
     def declaredFieldType: FieldType
+
+    /**
+     * Identifies the field if it can be found.
+     */
+    def resolveField(implicit p: ProjectLike): Option[Field] = {
+        p.resolveFieldReference(declaringClass, name, declaredFieldType)
+    }
 
 }
 

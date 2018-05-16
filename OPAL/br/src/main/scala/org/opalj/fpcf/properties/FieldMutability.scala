@@ -57,6 +57,7 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
  *
  * - declared final
  *   - actually directly declared as final
+ *   - no premature reads occur (through a virtual call in a (super) constructor)
  *
  * - lazy initialized
  *   - all field writes and reads are known, i.e., in case of ...
@@ -70,11 +71,14 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
  *   - if the field is set to a value that is not the default value, the field is in all
  *     cases (even in case of concurrent execution!) set to the same value (`0`, `0l`,
  *     `0f`, `0d`, `null`)
+ *   - the field's value can never be observed uninitialized and the initialization itself can not
+ *     be observed (except for locks required to ensure that the synchronization happens only once)
  *
  * - effectively final
  *   - all field writes are known (see above)
  *   - all writes happen unconditionally at initialization time
  *   - as soon as the field is read no more writes will ever occur
+ *   - no premature reads occur (through a virtual call in a (super) constructor)
  *
  * - non-final
  *   - a field is non final if non of the the previous cases holds
@@ -101,8 +105,13 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
             PropertyKeyName,
             (_: PropertyStore, e: Entity) ⇒ {
                 e match {
-                    case f: Field ⇒
+                    case f: Field if f.isStatic ⇒
                         if (f.isFinal) DeclaredFinalField else NonFinalFieldByAnalysis
+                    case f: Field if f.isFinal ⇒
+                        //TODO only if field is not read before initialization (by call in super
+                        // constructor or constructor initializing the field)
+                        if (true) DeclaredFinalField else NonFinalFieldByAnalysis
+                    case f: Field ⇒ NonFinalFieldByAnalysis
                     case x ⇒
                         val m = x.getClass.getSimpleName+" is not an org.opalj.br.Field"
                         throw new IllegalArgumentException(m)
