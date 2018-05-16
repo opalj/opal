@@ -1277,7 +1277,7 @@ object ObjectType {
      */
     def primitiveType(wrapperType: ObjectType): Option[BaseType] = {
         val wrapperId = wrapperType.id
-        if (wrapperId < 0 || wrapperId > Double.id) {
+        if (wrapperId < Boolean.id || wrapperId > Double.id) {
             None
         } else {
             Some(primitiveType(wrapperId))
