@@ -166,7 +166,7 @@ package object bytecode {
     /**
      * Returns the most likely position of the JAR/JMod that contains Java's main classes.
      */
-    lazy val RTJar: File = {
+    lazy val RTJar: File = { // TODO [Java9+] Rename to JavaBase
 
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {
