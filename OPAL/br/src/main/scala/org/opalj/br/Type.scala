@@ -1279,17 +1279,17 @@ object ObjectType {
     }
 
     def primitiveTypeWrapperMatcher[Args, T](
-        booleanMatch: (Args) ⇒ T,
-        byteMatch:    (Args) ⇒ T,
-        charMatch:    (Args) ⇒ T,
-        shortMatch:   (Args) ⇒ T,
-        integerMatch: (Args) ⇒ T,
-        longMatch:    (Args) ⇒ T,
-        floatMatch:   (Args) ⇒ T,
-        doubleMatch:  (Args) ⇒ T,
-        orElse:       (Args) ⇒ T
+        booleanMatch: Args ⇒ T,
+        byteMatch:    Args ⇒ T,
+        charMatch:    Args ⇒ T,
+        shortMatch:   Args ⇒ T,
+        integerMatch: Args ⇒ T,
+        longMatch:    Args ⇒ T,
+        floatMatch:   Args ⇒ T,
+        doubleMatch:  Args ⇒ T,
+        orElse:       Args ⇒ T
     ): (ObjectType, Args) ⇒ T = {
-        val fs = new Array[(Args) ⇒ T](8)
+        val fs = new Array[Args ⇒ T](8)
         fs(0) = booleanMatch
         fs(1) = byteMatch
         fs(2) = charMatch

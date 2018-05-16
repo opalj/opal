@@ -452,36 +452,38 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
 }
 
 /**
- * Runs an immutability analysis to determine the mutability of objects.
+ * Scheduler to run the immutability analysis eagerly.
  *
  * @author Michael Eichberg
  */
 object EagerClassImmutabilityAnalysis
-    extends ClassImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends ClassImmutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
 
         val analysis = new ClassImmutabilityAnalysis(project)
 
         val cfs = setResultsAnComputeEntities(project, propertyStore)
-        propertyStore.scheduleEagerComputationsForEntities(cfs) {
-            e ⇒
-                analysis.determineClassImmutability(
-                    null, FinalEP(ObjectType.Object, ImmutableObject), true, false
-                )(e)
-        }
+        propertyStore.scheduleEagerComputationsForEntities(cfs)(
+            analysis.determineClassImmutability(
+                null, FinalEP(ObjectType.Object, ImmutableObject), true, false
+            )
+        )
 
         analysis
     }
-
 }
 
+/**
+ * Scheduler to run the immutability analysis lazily.
+ *
+ * @author Michael Eichberg
+ */
 object LazyClassImmutabilityAnalysis
-    extends ClassImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
-    /**
-     * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
-     */
+    extends ClassImmutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
     override protected[fpcf] def startLazily(
         project: SomeProject, propertyStore: PropertyStore
     ): FPCFAnalysis = {
