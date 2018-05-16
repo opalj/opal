@@ -31,12 +31,12 @@ package fpcf
 package analyses
 
 import org.junit.runner.RunWith
-
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Nanoseconds
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
@@ -44,12 +44,14 @@ import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 
 /**
- * Let the [[EagerSimpleEscapeAnalysis]] run against all BI projects and the JDK.
+ * Tests that the [[EagerSimpleEscapeAnalysis]] does not throw exceptions.
  *
  * @author Florian Kübler
  */
 @RunWith(classOf[JUnitRunner])
-class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
+class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
+
+    def reportAnalysisTime(t : Nanoseconds ): Unit = { info(s"analysis took ${t.toSeconds}") }
 
     def checkProject(p: SomeProject): Unit = {
         val ps = p.get(PropertyStoreKey)
@@ -58,18 +60,19 @@ class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
         ps.waitOnPhaseCompletion()
     }
 
-    allBIProjects() foreach { biProject ⇒
-        val (name, projectFactory) = biProject
-        it(s"it should be able to analyze $name") {
-            time {
-                checkProject(projectFactory())
-            } { t ⇒
-                info(s"the analysis took ${t.toSeconds}")
+    describe(s"executing the simple escape analysis should not fail") {
+
+        allBIProjects() foreach { biProject ⇒
+            val (name, projectFactory) = biProject
+            it(s"for $name") {
+                val p = projectFactory()
+                time {                    checkProject(p)                } {reportAnalysisTime }
             }
         }
-    }
 
-    it(s"it should be able to analyze the JDK") {
-        time { checkProject(createJREProject()) } { t ⇒ info(s"the analysis took ${t.toSeconds}") }
+        it(s"for the JDK") {
+            val p = createJREProject()
+            time {                checkProject(p)            } { reportAnalysisTime }
+        }
     }
 }

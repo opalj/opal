@@ -31,74 +31,92 @@ package fpcf
 package analyses
 
 import org.junit.runner.RunWith
+
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
+
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Simple integration test to ensure [[L1PurityAnalysis]] does not cause any exceptions.
+ * Simple test to ensure that the [[L1PurityAnalysis]] does not cause any exceptions.
  *
  * @author Dominik Helm
+ *         @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class L1PurityIntegrationTest extends FunSpec with Matchers {
+class L1PuritySmokeTest extends FunSpec with Matchers {
 
-    val dependencies =
-        Seq(
+    def reportAnalysisTime(t : Nanoseconds ): Unit = { info(s"analysis took ${t.toSeconds}") }
+
+    val primaryAnalyses : Set[ComputationSpecification] =Set(
+        EagerL1PurityAnalysis,
+        EagerVirtualMethodPurityAnalysis
+    )
+
+    val supportAnalyses : Set[ComputationSpecification] =        Set(
             EagerL1FieldMutabilityAnalysis,
             EagerClassImmutabilityAnalysis,
             EagerTypeImmutabilityAnalysis
         )
 
-    def checkProject(p: SomeProject, withDependencies: Boolean): Unit = {
-        val analysesManager = p.get(FPCFAnalysesManagerKey)
-        val analyses =
-            if (withDependencies)
-                dependencies :+ EagerL1PurityAnalysis :+ EagerVirtualMethodPurityAnalysis
+    def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {
+        val analyses  =
+            if (withSupportAnalyses)
+                primaryAnalyses ++ supportAnalyses
             else
-                Seq(EagerL1PurityAnalysis, EagerVirtualMethodPurityAnalysis)
-        analysesManager.runAll(analyses)
+                primaryAnalyses
+        p.get(FPCFAnalysesManagerKey).runAll(analyses)
 
         val propertyStore = p.get(PropertyStoreKey)
+        // TODO @Florian... the following test seems to be broken; the error report should be more telling when it fails
         if (!propertyStore.entities(Purity.key).exists(_.isRefinable) ||
             !propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
-            val message = "Analysis left over non-final purity results"
-            fail(message)
+            fail("Analysis left over non-final purity results")
         }
     }
 
     // TESTS
 
-    allBIProjects() foreach { biProject ⇒
-        val (name, projectFactory) = biProject
-        it(s"it should be able to run the analysis for $name without dependencies") {
-            time {
-                checkProject(projectFactory(), withDependencies = false)
-            } { t ⇒ info(s"analysis took ${t.toSeconds}") }
+    describe ("executing the L1 purity analysis should not fail") {
+
+
+        allBIProjects() foreach { biProject ⇒
+            val (name, projectFactory) = biProject
+
+            it(s"for $name when no support analyses are scheduled") {
+                val p = projectFactory()
+                time {
+                    checkProject(p, withSupportAnalyses = false)
+                }(reportAnalysisTime)
+            }
+
+            it(s"for $name when support analyses are scheduled") {
+                val p = projectFactory()
+                time {
+                    checkProject(p, withSupportAnalyses = true)
+                }(reportAnalysisTime)
+            }
         }
 
-        it(s"it should be able to run the analysis for $name with dependencies") {
+        it("for the JDK without support analyses") {
+            val p = createJREProject()
             time {
-                checkProject(projectFactory(), withDependencies = true)
-            } { t ⇒ info(s"analysis took ${t.toSeconds}") }
+                checkProject(p, withSupportAnalyses = false)
+            }(reportAnalysisTime)
         }
-    }
 
-    it("it should be able to run the analysis for the JDK without dependencies") {
-        time {
-            checkProject(createJREProject(), withDependencies = false)
-        } { t ⇒ info(s"analysis took ${t.toSeconds}") }
-    }
-
-    it("it should be able to run the analysis for the JDK with dependencies") {
-        time {
-            checkProject(createJREProject(), withDependencies = true)
-        } { t ⇒ info(s"analysis took ${t.toSeconds}") }
+        it("for the JDK with support support analyses") {
+            val p = createJREProject()
+            time {
+                checkProject(p, withSupportAnalyses = true)
+            }(reportAnalysisTime)
+        }
     }
 }
