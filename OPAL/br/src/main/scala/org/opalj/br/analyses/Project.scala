@@ -99,8 +99,7 @@ import org.opalj.concurrent.ConcurrentExceptions
  * Projects can easily be created and queried using the Scala `REPL`. For example,
  * to create a project, you can use:
  * {{{
- * val JRE = "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home/jre/lib"
- * val project = org.opalj.br.analyses.Project(new java.io.File(JRE))
+ * val project = org.opalj.br.analyses.Project(org.opalj.bytecode.JRELibraryFolder)
  * }}}
  * Now, to determine the number of methods that have at least one parameter of type
  * `int`, you can use:
