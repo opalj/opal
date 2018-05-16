@@ -100,20 +100,24 @@ trait ComputationSpecification {
 
 }
 
-class AnalysisScenario(
-        private[this] var ccs:                      Set[ComputationSpecification] = Set.empty,
-        private[this] var lazilyComputedProperties: Set[PropertyKind]             = Set.empty
-) {
+class AnalysisScenario {
+
+    private[this] var ccs: Set[ComputationSpecification] = Set.empty
+
+    private[this] var lazilyComputedProperties: Set[PropertyKind] = Set.empty
+
+    def allProperties: Set[PropertyKind] = {
+        ccs.foldLeft(Set.empty[PropertyKind]) { (c, n) ⇒ c ++ n.derives ++ n.uses }
+    }
 
     def +=(cs: ComputationSpecification): Unit = this.synchronized {
         ccs += cs
         if (cs.isLazy) {
-            cs.derives.find(lazilyComputedProperties.contains).foreach { p ⇒
-                throw new SpecificationViolation(
-                    s"registration of $cs failed; $p is already computed by an analysis"
-                )
+            // check that lazily computed properties are always only computed by ONE analysis
+            cs.derives.find(lazilyComputedProperties.contains) foreach { p ⇒
+                val m = s"registration of $cs failed; $p is already computed by an analysis"
+                throw new SpecificationViolation(m)
             }
-
             lazilyComputedProperties ++= cs.derives
         }
     }
@@ -121,7 +125,7 @@ class AnalysisScenario(
     /**
      * Returns the graph which depicts the dependencies between the properties based on
      * the selected computations. I.e., a property `d` depends on another property `p` if the
-     * algorithm wich computes `d` uses the property `p`.
+     * algorithm which computes `d` uses the property `p`.
      */
     def propertyComputationsDependencies: Graph[PropertyKind] = {
         val psDeps = Graph.empty[PropertyKind]
@@ -214,7 +218,15 @@ class AnalysisScenario(
 
         Schedule(batches)
     }
+}
 
+object AnalysisScenario {
+
+    def apply(analyses: Set[ComputationSpecification]): AnalysisScenario = {
+        val as = new AnalysisScenario
+        analyses.foreach(as.+=)
+        as
+    }
 }
 
 /**
@@ -227,7 +239,7 @@ case class Schedule(
 ) extends ((PropertyStore) ⇒ Unit) {
 
     def apply(ps: PropertyStore): Unit = {
-        batches.foreach { batch ⇒
+        batches foreach { batch ⇒
             val computedProperties =
                 batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
             val openProperties =
