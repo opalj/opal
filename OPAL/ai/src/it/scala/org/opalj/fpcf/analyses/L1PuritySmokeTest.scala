@@ -53,21 +53,21 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class L1PuritySmokeTest extends FunSpec with Matchers {
 
-    def reportAnalysisTime(t : Nanoseconds ): Unit = { info(s"analysis took ${t.toSeconds}") }
+    def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    val primaryAnalyses : Set[ComputationSpecification] =Set(
+    val primaryAnalyses: Set[ComputationSpecification] = Set(
         EagerL1PurityAnalysis,
         EagerVirtualMethodPurityAnalysis
     )
 
-    val supportAnalyses : Set[ComputationSpecification] =        Set(
-            EagerL1FieldMutabilityAnalysis,
-            EagerClassImmutabilityAnalysis,
-            EagerTypeImmutabilityAnalysis
-        )
+    val supportAnalyses: Set[ComputationSpecification] = Set(
+        EagerL1FieldMutabilityAnalysis,
+        EagerClassImmutabilityAnalysis,
+        EagerTypeImmutabilityAnalysis
+    )
 
     def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {
-        val analyses  =
+        val analyses =
             if (withSupportAnalyses)
                 primaryAnalyses ++ supportAnalyses
             else
@@ -75,17 +75,15 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
         p.get(FPCFAnalysesManagerKey).runAll(analyses)
 
         val propertyStore = p.get(PropertyStoreKey)
-        // TODO @Florian... the following test seems to be broken; the error report should be more telling when it fails
-        if (!propertyStore.entities(Purity.key).exists(_.isRefinable) ||
-            !propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
+        if (propertyStore.entities(Purity.key).exists(_.isRefinable) ||
+            propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
             fail("Analysis left over non-final purity results")
         }
     }
 
     // TESTS
 
-    describe ("executing the L1 purity analysis should not fail") {
-
+    describe("executing the L1 purity analysis should not fail") {
 
         allBIProjects() foreach { biProject ⇒
             val (name, projectFactory) = biProject
