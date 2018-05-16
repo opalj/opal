@@ -42,6 +42,7 @@ import org.opalj.br.analyses.SomeProject
  * `NonFinalField`) or if the property is an instance of `NonFinalField`.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 class NonFinalMatcher extends AbstractPropertyMatcher {
 

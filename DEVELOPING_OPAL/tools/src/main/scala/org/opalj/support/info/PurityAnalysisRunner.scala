@@ -57,7 +57,6 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
-import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.LBContextuallyPure
 import org.opalj.fpcf.properties.LBContextuallySideEffectFree
 import org.opalj.fpcf.properties.LBDContextuallyPure
@@ -110,7 +109,7 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
         propertyStore.setupPhase(Set(
             ClassImmutability.key,
             TypeImmutability.key,
-            FieldMutability.key,
+            fpcf.properties.FieldMutability.key,
             VirtualMethodPurity.key,
             ReturnValueFreshness.key,
             VirtualMethodReturnValueFreshness.key,

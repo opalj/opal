@@ -37,11 +37,12 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Matches a field's `FieldMutability` property. The match is successful if the field has the
- * property [[LazyInitialized]] and a sufficiently capable analysis was scheduled.
+ * given property and a sufficiently capable analysis was scheduled.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
-class LazyInitializedMatcher extends AbstractPropertyMatcher {
+class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractPropertyMatcher {
 
     private final val PropertyReasonID = 0
 
@@ -73,7 +74,7 @@ class LazyInitializedMatcher extends AbstractPropertyMatcher {
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
-        if (analyses.exists(as.contains) && !properties.exists(p ⇒ p == LazyInitializedField)) {
+        if (analyses.exists(as.contains) && !properties.exists(p ⇒ p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
@@ -82,3 +83,9 @@ class LazyInitializedMatcher extends AbstractPropertyMatcher {
     }
 
 }
+
+class DeclaredFinalMatcher extends FieldMutabilityMatcher(DeclaredFinalField)
+
+class EffectivelyFinalMatcher extends FieldMutabilityMatcher(EffectivelyFinalField)
+
+class LazyInitializedMatcher extends FieldMutabilityMatcher(LazyInitializedField)

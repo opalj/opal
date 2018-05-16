@@ -38,7 +38,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated field is lazily initialized
+ * Annotation to state that the annotated field is lazily initialized.
  *
  * @author Michael Eichberg
  * @author Dominik Helm

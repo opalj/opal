@@ -31,6 +31,7 @@ package fpcf
 package properties
 
 import org.opalj.br.Field
+import org.opalj.br.analyses.SomeProject
 
 sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -103,18 +104,16 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
     final val key: PropertyKey[FieldMutability] = {
         PropertyKey.create(
             PropertyKeyName,
-            (_: PropertyStore, e: Entity) ⇒ {
-                e match {
-                    case f: Field if f.isStatic ⇒
-                        if (f.isFinal) DeclaredFinalField else NonFinalFieldByAnalysis
-                    case f: Field if f.isFinal ⇒
-                        //TODO only if field is not read before initialization (by call in super
-                        // constructor or constructor initializing the field)
-                        if (true) DeclaredFinalField else NonFinalFieldByAnalysis
-                    case f: Field ⇒ NonFinalFieldByAnalysis
-                    case x ⇒
-                        val m = x.getClass.getSimpleName+" is not an org.opalj.br.Field"
-                        throw new IllegalArgumentException(m)
+            (ps: PropertyStore, f: Field) ⇒ {
+                if (f.isStatic) {
+                    if (f.isFinal) DeclaredFinalField else NonFinalFieldByLackOfInformation
+                } else if (f.isFinal) {
+                    if(FieldPrematurelyRead.isPrematurelyReadFallback(ps.context[SomeProject], f))
+                        NonFinalFieldByAnalysis
+                    else
+                        DeclaredFinalField
+                } else {
+                    NonFinalFieldByLackOfInformation
                 }
             },
             (_, eps: EPS[Field, FieldMutability]) ⇒ eps.toUBEP

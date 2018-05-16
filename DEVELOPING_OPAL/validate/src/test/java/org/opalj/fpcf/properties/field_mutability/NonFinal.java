@@ -47,5 +47,10 @@ public @interface NonFinal{
      */
     String value();// default = "N/A";
 
+    /**
+     * True if the field is non-final because it is read prematurely.
+     * Tests may ignore @NonFinal annotations if the FieldPrematurelyRead property for the field
+     * did not identify the premature read.
+     */
     boolean prematurelyRead() default false;
 }

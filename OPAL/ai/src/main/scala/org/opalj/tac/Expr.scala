@@ -134,6 +134,9 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asNewArray: NewArray[V] = throw new ClassCastException();
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
     def asArrayLength: ArrayLength[V] = throw new ClassCastException();
+    def isFieldRead: Boolean = false
+    def asFieldRead: FieldRead[V] = throw new ClassCastException();
+    def isGetField: Boolean = false
     def asGetField: GetField[V] = throw new ClassCastException();
     def asGetStatic: GetStatic = throw new ClassCastException();
     def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
@@ -538,6 +541,9 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
 
+    final override def isFieldRead: Boolean = true
+    final override def asFieldRead: this.type = this
+
     def declaringClass: ObjectType
     def name: String
     def declaredFieldType: FieldType
@@ -559,6 +565,7 @@ case class GetField[+V <: Var[V]](
         objRef:            Expr[V]
 ) extends FieldRead[V] {
 
+    final override def isGetField: Boolean = true
     final override def asGetField: this.type = this
     final override def astID: Int = GetField.ASTID
     final override def subExprCount: Int = 1
