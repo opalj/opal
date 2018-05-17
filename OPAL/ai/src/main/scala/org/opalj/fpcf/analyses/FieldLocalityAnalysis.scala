@@ -587,14 +587,18 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
     }
 }
 
-trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+
     override def derives: Set[PropertyKind] = Set(FieldLocality)
 
-    override def uses: Set[PropertyKind] =
+    override def uses: Set[PropertyKind] = {
         Set(ReturnValueFreshness, VirtualMethodReturnValueFreshness)
+    }
 }
 
-object EagerFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerFieldLocalityAnalysis
+    extends FieldLocalityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val allFields = project.allFields
@@ -604,7 +608,9 @@ object EagerFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FP
     }
 }
 
-object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyFieldLocalityAnalysis
+    extends FieldLocalityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

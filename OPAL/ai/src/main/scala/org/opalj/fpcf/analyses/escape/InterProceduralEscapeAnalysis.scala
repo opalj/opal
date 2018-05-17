@@ -163,14 +163,16 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override def createState: InterProceduralEscapeAnalysisState = new InterProceduralEscapeAnalysisState()
 }
 
-trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification {
+sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification {
 
     override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
     override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 }
 
-object EagerInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerInterProceduralEscapeAnalysis
+    extends InterProceduralEscapeAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
@@ -184,7 +186,9 @@ object EagerInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisS
     }
 }
 
-object LazyInterProceduralEscapeAnalysis extends InterProceduralEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyInterProceduralEscapeAnalysis
+    extends InterProceduralEscapeAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

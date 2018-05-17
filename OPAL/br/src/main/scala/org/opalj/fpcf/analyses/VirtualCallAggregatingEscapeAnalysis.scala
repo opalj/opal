@@ -123,14 +123,16 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 }
 
-trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification {
+sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification {
 
     override def derives: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
     override def uses: Set[PropertyKind] = Set(EscapeProperty)
 }
 
-object EagerVirtualCallAggregatingEscapeAnalysis extends VirtualCallAggregatingEscapeAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerVirtualCallAggregatingEscapeAnalysis
+    extends VirtualCallAggregatingEscapeAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
@@ -139,7 +141,9 @@ object EagerVirtualCallAggregatingEscapeAnalysis extends VirtualCallAggregatingE
         analysis
     }
 }
-object LazyVirtualCallAggregatingEscapeAnalysis extends VirtualCallAggregatingEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyVirtualCallAggregatingEscapeAnalysis
+    extends VirtualCallAggregatingEscapeAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
         propertyStore.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
