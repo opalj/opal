@@ -142,19 +142,22 @@ public class ExceptionUsages {
         throw new NullPointerException();
     }
 
-
     @ExpectedExceptions()
     public static final int staticFinalCallThrowsException() {
         staticThrowsException();
         return 42;
     }
 
+    @ExpectedExceptions()
+    public int throwExceptionFromParameter(RuntimeException re) {
+        re.printStackTrace();
+        throw re;
+    }
 
     @ExpectedExceptions()
     public int throwException() {
         throw new NullPointerException();
     }
-
 
     @ExpectedExceptionsByOverridingMethods(
             reason="method call, may be overridden by unknown class"
