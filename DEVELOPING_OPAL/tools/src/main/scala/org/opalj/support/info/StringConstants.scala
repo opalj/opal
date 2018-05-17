@@ -47,7 +47,9 @@ object StringConstants extends DefaultOneStepAnalysis {
 
     override def title: String = "String Constants"
 
-    override def description: String = "collects all constant strings in the specified code base"
+    override def description: String = {
+        "Collects all constant strings (based on LDC instructions) found in the specified code."
+    }
 
     def doAnalyze(
         project:       Project[URL],
@@ -70,8 +72,7 @@ object StringConstants extends DefaultOneStepAnalysis {
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }
 
-        val report = mappedData.mkString("Strings:\n", "\n", s"\nFound ${data.size} strings.")
-
+        val report = mappedData.mkString(s"Found ${data.size} strings:\n", "\n", "\n")
         BasicReport(report)
     }
 }
