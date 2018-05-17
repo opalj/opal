@@ -34,6 +34,7 @@ import com.typesafe.config.Config
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.log.OPALLogger.error
+import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -59,9 +60,9 @@ class FPCFAnalysesManager private[fpcf] (
         new Array[Boolean](PropertyKind.SupportedPropertyKinds)
     }
 
-    final def runAll(analyses: ComputationSpecification*): Unit = runAll(analyses.toSet)
+    final def runAll(analyses: ComputationSpecification*): PropertyStore = runAll(analyses.toSet)
 
-    final def runAll(analyses: Set[ComputationSpecification]): Unit = this.synchronized {
+    final def runAll(analyses: Set[ComputationSpecification]): PropertyStore = this.synchronized {
         val scenario = AnalysisScenario(analyses)
         val properties = scenario.allProperties
         if (properties exists { p ⇒
@@ -76,18 +77,27 @@ class FPCFAnalysesManager private[fpcf] (
             }
         }) {
             // ... some property (kind) was already computed/scheduled
-            return ;
+            return propertyStore;
         }
         properties foreach { p ⇒ derivedProperties(p.id) = true }
 
         val schedule = scenario.computeSchedule
-        schedule(propertyStore)
+
+        if (trace) { debug("analysis progress", "executing "+schedule) }
+        time {
+            schedule(propertyStore)
+        } { t ⇒
+            if (trace) debug("analysis progress", s"execution took ${t.toSeconds}")
+        }
         if (trace) {
             debug(
                 "analysis progress",
-                properties.mkString("used and derived properties = {", ", ", "}")
+                properties.map(p ⇒ PropertyKey.name(p.id)).mkString(
+                    "used and derived properties = {", ", ", "}"
+                )
             )
         }
+        propertyStore
     }
 }
 
