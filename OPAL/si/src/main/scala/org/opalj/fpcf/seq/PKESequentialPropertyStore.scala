@@ -687,11 +687,13 @@ final class PKESequentialPropertyStore private (
                         // assert(pv.dependers.isEmpty)
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                        trace(
-                            "analysis progress",
-                            s"used fallback $fallbackProperty for $e "+
-                                "(though an analysis was supposedly scheduled)"
-                        )
+                        if (traceFallbacks) {
+                            trace(
+                                "analysis progress",
+                                s"used fallback $fallbackProperty for $e "+
+                                    "(though an analysis was supposedly scheduled)"
+                            )
+                        }
                         fallbacksUsedForComputedPropertiesCounter += 1
                         update(e, fallbackProperty, fallbackProperty, Nil)
 
@@ -735,10 +737,12 @@ final class PKESequentialPropertyStore private (
                                 cSCC.take(10).mkString("", ",", "...")
                             else
                                 cSCC.mkString(",")
-                        info(
-                            "analysis progress",
-                            s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
-                        )
+                        if (traceCycleResolutions) {
+                            info(
+                                "analysis progress",
+                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                            )
+                        }
                         resolvedCyclesCounter += 1
                         update(newEP.e, newEP.p, newEP.p, Nil)
                         continueComputation = true

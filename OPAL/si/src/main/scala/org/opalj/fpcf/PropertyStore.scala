@@ -158,6 +158,10 @@ abstract class PropertyStore {
      */
     final def debug: Boolean = PropertyStore.Debug
 
+    final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
+
+    final def traceCycleResolutions: Boolean = PropertyStore.TraceCycleResolutions
+
     /**
      * Returns a consistent snapshot of the stored properties.
      *
@@ -512,6 +516,57 @@ object PropertyStore {
                 true
             } else {
                 info("OPAL", s"$DebugKey: debugging support off")
+                false
+            }
+    }
+
+    //
+    // The following settings are primarily about comprehending analysis results than
+    // about debugging analyses.
+    //
+
+    final val TraceFallbacksKey = "org.opalj.debug.fpcf.PropertyStore.TraceFallbacks"
+
+    private[this] var traceFallbacks: Boolean = {
+        val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
+        updateTraceFallbacks(initialTraceFallbacks)
+        initialTraceFallbacks
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def TraceFallbacks: Boolean = traceFallbacks
+
+    def updateTraceFallbacks(newTraceFallbacks: Boolean): Unit = {
+        implicit val logContext = GlobalLogContext
+        traceFallbacks =
+            if (newTraceFallbacks) {
+                info("OPAL", s"$TraceFallbacksKey: usages of fallbacks are reported")
+                true
+            } else {
+                info("OPAL", s"$TraceFallbacksKey: fallbacks are not reported")
+                false
+            }
+    }
+
+    final val TraceCycleResolutionsKey = "org.opalj.debug.fpcf.PropertyStore.TraceCycleResolutions"
+
+    private[this] var traceCycleResolutions: Boolean = {
+        val initialTraceCycleResolutions = BaseConfig.getBoolean(TraceCycleResolutionsKey)
+        updateTraceCycleResolutions(initialTraceCycleResolutions)
+        initialTraceCycleResolutions
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def TraceCycleResolutions: Boolean = traceCycleResolutions
+
+    def updateTraceCycleResolutions(newTraceCycleResolutions: Boolean): Unit = {
+        implicit val logContext = GlobalLogContext
+        traceCycleResolutions =
+            if (newTraceCycleResolutions) {
+                info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are reported")
+                true
+            } else {
+                info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are not reported")
                 false
             }
     }
