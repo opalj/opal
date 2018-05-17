@@ -39,7 +39,7 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
-import org.opalj.ai.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -97,8 +97,12 @@ import org.opalj.tac.VirtualFunctionCall
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class FieldLocalityAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
@@ -633,8 +637,10 @@ object LazyFieldLocalityAnalysis
  * @author Florian Kuebler
  */
 object DefinitionSitesWithoutPutField {
-    private val defSites =
+
+    private val defSites = {
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
+    }
 
     def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
         val defSite = DefinitionSiteWithoutPutField(method, pc, usedBy)

@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 package properties
 package escape
-import org.opalj.ai.DefinitionSite
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter

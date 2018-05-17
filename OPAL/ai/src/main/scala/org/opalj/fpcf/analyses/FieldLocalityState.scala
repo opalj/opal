@@ -31,13 +31,14 @@ package fpcf
 package analyses
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.ai.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.br.Field
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.LocalField
 
 class FieldLocalityState(val field: Field) {
+
     private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var definitionSitesDependees: Set[EOptionP[DefinitionSiteLike, EscapeProperty]] = Set.empty
 

@@ -66,7 +66,7 @@ class SimpleEscapeAnalysisContext(
     with CFGContainer
 
 /**
- * A simple escape analysis that can handle [[org.opalj.ai.DefinitionSiteLike]]s and
+ * A simple escape analysis that can handle [[org.opalj.ai.common.DefinitionSiteLike]]s and
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost]]([[org.opalj.fpcf.properties.NoEscape]]).

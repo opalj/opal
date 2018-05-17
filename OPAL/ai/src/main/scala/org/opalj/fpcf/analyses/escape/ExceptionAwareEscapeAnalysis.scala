@@ -31,7 +31,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSite
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn

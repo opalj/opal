@@ -34,7 +34,7 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
-import org.opalj.ai.DefinitionSite
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
