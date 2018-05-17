@@ -28,12 +28,15 @@
  */
 package org.opalj.support.debug
 
+import java.io.File
+import java.net.URL
+
 import org.opalj.graphs.toDot
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.writeAndOpen
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.reader.Java7LibraryFramework.ClassFiles
 
 /**
  * Creates a `dot` (Graphviz) based representation of the class hierarchy
@@ -44,24 +47,26 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 object ClassHierarchyVisualizer {
 
     def main(args: Array[String]): Unit = {
-        if (!args.forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+        if (!args.forall(arg ⇒ arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
+            Console.err.println("Usage: java …ClassHierarchy <.jar|.jmod file>+")
             sys.exit(-1)
         }
 
+        println("Extracting class hierarchy.")
         val classHierarchy =
             if (args.length == 0) {
                 ClassHierarchy.PreInitializedClassHierarchy
             } else {
                 val classFiles =
-                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new java.io.File(filename))
+                    (List.empty[(ClassFile, URL)] /: args) { (cfs, filename) ⇒
+                        cfs ++ ClassFiles(new File(filename))
                     }
                 ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
             }
 
+        println("Creating class hierarchy visualization.")
         val dotGraph = toDot(Set(classHierarchy.toGraph()), "back")
-        writeAndOpen(dotGraph, "ClassHierarchy", ".gv")
+        val file = writeAndOpen(dotGraph, "ClassHierarchy", ".gv")
+        println(s"Wrote class hierarchy graph to: $file.")
     }
 }
