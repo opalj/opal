@@ -162,6 +162,8 @@ abstract class PropertyStore {
      * Returns a consistent snapshot of the stored properties.
      *
      * @note Some computations may still be running.
+     *
+     * @param printProperties If `true` prints the properties of all entities.
      */
     def toString(printProperties: Boolean): String
 
@@ -280,7 +282,8 @@ abstract class PropertyStore {
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
      * if the property is computed lazily and no "eager computation" requires the results
-     * anymore.
+     * anymore. Force also ensures that the property is stored in the store even if
+     * the fallback value is used.
      * Using `force` is in particular necessary in a case where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
      * but strictly required for some elements.
@@ -393,6 +396,9 @@ abstract class PropertyStore {
      * Needs to be called before an analysis is scheduled to inform the property store which
      * properties will be computed now and which are computed in a later phase. The later
      * information is used to decide when we use a fallback.
+     *
+     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
+     *        this case both sets have to be empty.
      *
      * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
      *
