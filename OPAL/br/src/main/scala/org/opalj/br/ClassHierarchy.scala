@@ -2742,8 +2742,8 @@ object ClassHierarchy {
                 OPALLogger.warn(
                     "project configuration",
                     s"the type declaration for ${objectType.toJava} is ignored; "+
-                    "class is already defined in the code base "+
-                    "or defined multiple times in the configured type hierarchy"
+                        "class is already defined in the code base "+
+                        "or defined multiple times in the configured type hierarchy"
                 )
             }
         }
