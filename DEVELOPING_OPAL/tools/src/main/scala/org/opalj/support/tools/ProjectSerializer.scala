@@ -74,10 +74,15 @@ object ProjectSerializer {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-in"           ⇒ { i += 1; in = args(i) }
-                case "-out"          ⇒ { i += 1; out = args(i) }
-                case "-h" | "--help" ⇒ { showUsage(error = None); System.exit(0) }
-                case arg             ⇒ { showUsage(Some(s"Unsupported: $arg")); System.exit(2) }
+                case "-in"  ⇒ { i += 1; in = args(i) }
+                case "-out" ⇒ { i += 1; out = args(i) }
+
+                case "-h" | "--help" ⇒
+                    showUsage(error = None);
+                    System.exit(0)
+                case arg ⇒
+                    showUsage(Some(s"Unsupported: $arg"))
+                    System.exit(2)
             }
             i += 1
         }
