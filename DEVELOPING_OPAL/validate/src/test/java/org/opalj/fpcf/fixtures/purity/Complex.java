@@ -29,7 +29,7 @@
 package org.opalj.fpcf.fixtures.purity;
 
 import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.L1PurityAnalysis;
+import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**

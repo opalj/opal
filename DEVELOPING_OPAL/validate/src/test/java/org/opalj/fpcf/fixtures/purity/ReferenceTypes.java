@@ -29,8 +29,8 @@
 package org.opalj.fpcf.fixtures.purity;
 
 import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.L2PurityAnalysis;
-import org.opalj.fpcf.analyses.L1PurityAnalysis;
+import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
+import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**
@@ -324,6 +324,15 @@ public class ReferenceTypes {
             arr[index % 3] = value;
         }
         return arr;
+    }
+
+    //
+
+    @SideEffectFree("hashCode is not deterministic on new objects")
+    @Impure(value = "Analysis doesn't recognize side-effect free methods",
+            analyses = L0PurityAnalysis.class)
+    private int newHashCode(){
+        return new Object().hashCode();
     }
 
     // Synchronization is impure (unless done on a fresh, non-escaping object)

@@ -26,9 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package analyses
-// TODO @Dominik please fix package structure
+package org.opalj
+package support
+package info
 
 import java.net.URL
 
@@ -36,7 +36,8 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.LBSideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
@@ -44,10 +45,9 @@ import org.opalj.fpcf.properties.CompileTimePure
 /**
  * Identifies pure/side-effect free methods with a void return type.
  *
- * TODO @Dominik please move to Develop.support.info
  * @author Dominik Helm
  */
-object PureVoidMethodsAnalysis extends DefaultOneStepAnalysis {
+object PureVoidMethods extends DefaultOneStepAnalysis {
 
     override def title: String = "Pure Void Methods Analysis"
 
@@ -61,10 +61,10 @@ object PureVoidMethodsAnalysis extends DefaultOneStepAnalysis {
 
         val propertyStore = project.get(PropertyStoreKey)
 
-        val entities = propertyStore.entities(Purity.key)
+        val entities = propertyStore.entities(fpcf.properties.Purity.key)
 
         val voidReturn = entities.collect {
-            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | LBPure | LBSideEffectFree)) // Do not report empty methods, they are often used for base implementations of listeners or similar
+            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | LBPure | LBSideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
             // Emtpy methods still have a return instruction and therefore a body size of 1
             if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
                 m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.size != 1 ⇒
