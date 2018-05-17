@@ -36,6 +36,7 @@ import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.Type
+import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.IntegerType
 import org.opalj.br.BaseType
@@ -133,6 +134,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asNewArray: NewArray[V] = throw new ClassCastException();
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
     def asArrayLength: ArrayLength[V] = throw new ClassCastException();
+    def asFieldRead: FieldRead[V] = throw new ClassCastException();
+    def isGetField: Boolean = false
     def asGetField: GetField[V] = throw new ClassCastException();
     def asGetStatic: GetStatic = throw new ClassCastException();
     def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
@@ -537,7 +540,18 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
 
+    final override def asFieldRead: this.type = this
+
+    def declaringClass: ObjectType
+    def name: String
     def declaredFieldType: FieldType
+
+    /**
+     * Identifies the field if it can be found.
+     */
+    def resolveField(implicit p: ProjectLike): Option[Field] = {
+        p.resolveFieldReference(declaringClass, name, declaredFieldType)
+    }
 
 }
 
@@ -549,6 +563,7 @@ case class GetField[+V <: Var[V]](
         objRef:            Expr[V]
 ) extends FieldRead[V] {
 
+    final override def isGetField = true
     final override def asGetField: this.type = this
     final override def astID: Int = GetField.ASTID
     final override def subExprCount: Int = 1

@@ -31,24 +31,24 @@ package fpcf
 package analyses
 
 import org.junit.runner.RunWith
-
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
-
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
 /**
- * Simple test to ensure that the [[L1PurityAnalysis]] does not cause any exceptions.
+ * Simple test to ensure that the [[org.opalj.fpcf.analyses.purity.L1PurityAnalysis]] does not cause
+ * any exceptions.
  *
  * @author Dominik Helm
- *         @author Michael Eichberg
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class L1PuritySmokeTest extends FunSpec with Matchers {

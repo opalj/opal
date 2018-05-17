@@ -29,7 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
-// TODO @Dominik please fix package structure
+package purity
 
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse

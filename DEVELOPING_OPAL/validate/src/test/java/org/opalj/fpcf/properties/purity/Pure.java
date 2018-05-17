@@ -29,7 +29,9 @@
 package org.opalj.fpcf.properties.purity;
 
 import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.*;
+import org.opalj.fpcf.analyses.L0PurityAnalysis;
+import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
+import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.Documented;

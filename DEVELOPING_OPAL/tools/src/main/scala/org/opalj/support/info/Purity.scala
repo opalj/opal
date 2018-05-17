@@ -54,22 +54,22 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.DeclaredMethodsKey
-import org.opalj.fpcf.analyses.L1PurityAnalysis
-import org.opalj.fpcf.analyses.L2PurityAnalysis
+import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
+import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL1PurityAnalysis
-import org.opalj.fpcf.analyses.LazyL2PurityAnalysis
+import org.opalj.fpcf.analyses.purity.LazyL1PurityAnalysis
+import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.SystemOutLoggingAllExceptionRater
-import org.opalj.fpcf.analyses.DomainSpecificRater
+import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import org.opalj.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
@@ -106,7 +106,7 @@ object Purity {
             "-cp <JAR file/Folder containing class files> OR -JDK\n"+
             "[-analysis <L0|L1|L2>]\n"+
             "[-domain <class name of the domain>]\n"+
-            "[-rater <class name of the rater]\n"+
+            "[-rater <class name of the rater>]\n"+
             "[-noJDK] (do not analyze any JDK methods)\n"+
             "[-individual] (reports the purity result for each method)\n"+
             "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
