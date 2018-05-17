@@ -163,22 +163,18 @@ trait AnalysisExecutor {
                 Some(file)
         }
 
-        def verifyFiles(filenames: Array[String]): Seq[File] = {
-            filenames.toSeq.map(verifyFile).flatten
-        }
+        def verifyFiles(filenames: Array[String]): Seq[File] = filenames.toSeq.flatMap(verifyFile)
 
         val (cp, args1) = try {
-            {
-                def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
+            def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
 
-                args.partition(_.startsWith("-cp=")) match {
-                    case (Array(), notCPArgs) ⇒
-                        (Array(System.getProperty("user.dir")), notCPArgs)
-                    case (Array(cpParam), notCPArgs) ⇒
-                        (splitCPath(cpParam), notCPArgs)
-                    case (cpParams: Array[String], notCPArgs) ⇒
-                        (cpParams.map(splitCPath).flatten, notCPArgs)
-                }
+            args.partition(_.startsWith("-cp=")) match {
+                case (Array(), notCPArgs) ⇒
+                    (Array(System.getProperty("user.dir")), notCPArgs)
+                case (Array(cpParam), notCPArgs) ⇒
+                    (splitCPath(cpParam), notCPArgs)
+                case (cpParams: Array[String], notCPArgs) ⇒
+                    (cpParams.flatMap(splitCPath), notCPArgs)
             }
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
