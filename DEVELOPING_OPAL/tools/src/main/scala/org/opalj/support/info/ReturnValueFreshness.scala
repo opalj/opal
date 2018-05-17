@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analyses
+package support
+package info
 
 import java.net.URL
 
@@ -36,10 +36,15 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.DeclaredMethodsKey
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.ExtensibleGetter
-import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
@@ -58,7 +63,7 @@ import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
  *
  * @author Florian Kuebler
  */
-object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
+object ReturnValueFreshness extends DefaultOneStepAnalysis {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
@@ -68,10 +73,10 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         val ps = project.get(PropertyStoreKey)
         ps.setupPhase(Set(
             EscapeProperty.key,
-            FieldLocality.key,
+            fpcf.properties.FieldLocality.key,
             VirtualMethodEscapeProperty.key,
             VirtualMethodReturnValueFreshness.key,
-            ReturnValueFreshness.key
+            fpcf.properties.ReturnValueFreshness.key
         ))
 
         LazyInterProceduralEscapeAnalysis.startLazily(project, ps)
@@ -82,7 +87,7 @@ object ReturnValueFreshnessDemo extends DefaultOneStepAnalysis {
         LazyReturnValueFreshnessAnalysis.startLazily(project, ps)
 
         for (dm ← project.get(DeclaredMethodsKey).declaredMethods) {
-            ps(dm, ReturnValueFreshness.key)
+            ps.force(dm, fpcf.properties.ReturnValueFreshness.key)
         }
 
         ps.waitOnPhaseCompletion()

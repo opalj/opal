@@ -68,6 +68,8 @@ import org.opalj.log.OPALLogger
  * TODO Discuss the case if a constructor calls an instance method which is overrideable (See Verifiable Functional Purity Paper for some arguements.)
  *
  * @author Michael Eichberg
+ * @author Florian Kübler
+ * @author Dominik Helm
  */
 class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
