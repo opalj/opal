@@ -166,7 +166,7 @@ final class PKESequentialPropertyStore private (
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
             val properties = for {
-                (ePValue, pkId) ← ps.zipWithIndex
+                (ePValue, pkId) ← ps.iterator.zipWithIndex
                 (e, pValue) ← ePValue
             } yield {
                 val propertyKindName = PropertyKey.name(pkId)
@@ -174,7 +174,7 @@ final class PKESequentialPropertyStore private (
             }
             properties.mkString("PropertyStore(\n\t", "\n\t", "\n")
         } else {
-            s"PropertyStore(entitiesCount=${ps.size})"
+            s"PropertyStore(properties=${ps.iterator.map(_.size).sum})"
         }
     }
 
@@ -210,11 +210,18 @@ final class PKESequentialPropertyStore private (
 
     // triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        apply(EPK(e, pk))
+        apply(EPK(e, pk), false)
     }
 
     // triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
+        apply(epk, false)
+    }
+
+    private[this] def apply[E <: Entity, P <: Property](
+        epk:   EPK[E, P],
+        force: Boolean
+    ): EOptionP[E, P] = {
         val e = epk.e
         val pk = epk.pk
         val pkId = pk.id
@@ -231,7 +238,9 @@ final class PKESequentialPropertyStore private (
                         if (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) {
                             epk
                         } else {
-                            FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
+                            val p = PropertyKey.fallbackProperty(this, e, pk)
+                            if (force) { set(e, p) }
+                            FinalEP(e, p)
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒
@@ -270,7 +279,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply(e, pk)
+    def force(e: Entity, pk: SomePropertyKey): Unit = apply[Entity, Property](EPK(e, pk), true)
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
