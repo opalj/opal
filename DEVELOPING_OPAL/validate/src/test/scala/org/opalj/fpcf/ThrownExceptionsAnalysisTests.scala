@@ -59,6 +59,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         val as = executeAnalyses(Set.empty)
         val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
         val (p, ps, _) = as
+        ps.setupPhase(Set(ThrownExceptions.key))
         for {
             (e, _, annotations) ← methodsWithAnnotations
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty

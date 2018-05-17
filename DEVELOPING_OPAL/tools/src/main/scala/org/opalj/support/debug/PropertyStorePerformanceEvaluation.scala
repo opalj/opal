@@ -517,8 +517,8 @@ object PropertyStorePerformanceEvaluation {
                             //InterProceduralEscapeAnalysis.start(project, propertyStore)
                             //VirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
                             case "L1ThrownExceptionsAnalysis" ⇒
-                                ThrownExceptionsByOverridingMethodsAnalysis.startLazily(project, propertyStore)
-                                L1ThrownExceptionsAnalysis.start(project, propertyStore)
+                                LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
+                                EagerL1ThrownExceptionsAnalysis.start(project, propertyStore)
                         }
 
                         propertyStore.waitOnPhaseCompletion()

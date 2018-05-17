@@ -78,8 +78,8 @@ class PsThrownExceptionsAnalysisTest extends PropertyStoreCompareTester {
             Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
         )
 
-        L1ThrownExceptionsAnalysis.start(fixtureProject, ps)
-        ThrownExceptionsByOverridingMethodsAnalysis.start(fixtureProject, ps)
+        EagerL1ThrownExceptionsAnalysis.start(fixtureProject, ps)
+        EagerVirtualMethodAllocationFreenessAnalysis.start(fixtureProject, ps)
 
         ps.waitOnPhaseCompletion()
     }

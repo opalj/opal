@@ -57,7 +57,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomePropertyComputation
 import org.opalj.fpcf.SomePropertyKey
 import org.opalj.log.LogContext
 
@@ -124,7 +123,7 @@ class ReactiveAsyncPropertyStore private (
     // This datastructure holds the to be lazily computed properties. The key is the property kind
     // id and the value is the some property computation function. It will be called in the apply
     // method to trigger computations.
-    val lazyTasks = TrieMap.empty[Int, SomePropertyComputation]
+    val lazyTasks = TrieMap.empty[Int, PropertyComputation[_]]
 
     // Tasks that were already scheduled.
     val startedLazyTasks = TrieMap.empty[(Int, Entity), Boolean]
@@ -216,7 +215,7 @@ class ReactiveAsyncPropertyStore private (
                 lazyTasks.get(pkId).foreach { pc ⇒
                     if (startedLazyTasks.putIfAbsent((pkId, e), true).isEmpty) {
                         incCounter("apply.lazy.schedule")
-                        scheduleForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
+                        scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[E]])
                     } else {
                         incCounter("apply.lazy.ignore")
                     }
@@ -407,7 +406,7 @@ class ReactiveAsyncPropertyStore private (
      * queried. In general, this requires that lazy property computations are scheduled before
      * any eager analysis that potentially reads the value.
      */
-    override def registerLazyPropertyComputation[P <: Property](pk: PropertyKey[P], pc: SomePropertyComputation): Unit = {
+    override def registerLazyPropertyComputation[E <: Entity, P <: Property](pk: PropertyKey[P], pc: PropertyComputation[E]): Unit = {
         assert(computedPropertyKinds.nonEmpty, "setupPhase must be called with at least one computedPropertyKinds")
         assert(!profilingCounter.contains("EagerlyScheduledComputations"), "lazy computations should only be registered while no analysis are scheduled")
 
@@ -438,7 +437,7 @@ class ReactiveAsyncPropertyStore private (
      * This is of particular interest to start an incremental computation
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierarchy in a top-down manner.
      */
-    override def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
+    override def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {
         assert(computedPropertyKinds.nonEmpty, "setupPhase must be called with at least one computedPropertyKinds")
         incCounter("EagerlyScheduledComputations")
 
@@ -461,7 +460,7 @@ class ReactiveAsyncPropertyStore private (
      * given result is a meaningful update of the previous property associated with the respective
      * entity - if any!
      */
-    override def handleResult(r: PropertyComputationResult): Unit = {
+    override def handleResult(r: PropertyComputationResult, wasLazilyTriggered: Boolean): Unit = {
         incCounter("handleResult")
 
         if (isInterrupted()) {
@@ -593,7 +592,7 @@ class ReactiveAsyncPropertyStore private (
                 handleResult(ir)
 
                 nextComputations foreach {
-                    case (c, e) ⇒ scheduleForEntity(e)(c)
+                    case (c, e) ⇒ scheduleEagerComputationForEntity(e)(c)
                 }
 
             case Results.id ⇒

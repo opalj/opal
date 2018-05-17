@@ -88,7 +88,7 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         )
         apply.invoke(
             propertyStoreCompanionClass.getField("MODULE$").get(null),
-            new Integer(parallelismLevel),
+            Integer.valueOf(parallelismLevel),
             context,
             project.logContext
         ).asInstanceOf[PropertyStore]
