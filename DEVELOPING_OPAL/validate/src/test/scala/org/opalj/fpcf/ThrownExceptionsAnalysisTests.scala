@@ -28,8 +28,8 @@
  */
 package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
+import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.ThrownExceptions
 
 /**
@@ -64,7 +64,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
         } {
             val epk = EPK(e, ThrownExceptions.key)
-            ps.scheduleForEntity(e) { e ⇒
+            ps.scheduleEagerComputationForEntity(e) { e ⇒
                 IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), _ ⇒ NoResult)
             }
         }
@@ -78,10 +78,10 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         )
     }
 
-    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
+    describe("L1ThrownExceptionsAnalysis and EagerVirtualMethodAllocationFreenessAnalysis are executed") {
         val as = executeAnalyses(Set(
-            ThrownExceptionsByOverridingMethodsAnalysis,
-            L1ThrownExceptionsAnalysis
+            EagerVirtualMethodAllocationFreenessAnalysis,
+            EagerL1ThrownExceptionsAnalysis
         ))
         validateProperties(
             as,

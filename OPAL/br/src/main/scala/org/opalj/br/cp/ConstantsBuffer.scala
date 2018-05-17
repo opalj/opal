@@ -52,7 +52,7 @@ import org.opalj.br.instructions.LoadMethodType
  */
 class ConstantsBuffer private (
         private var nextIndex:    Int,
-        private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index]
+        private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
 ) extends ConstantsPoolLike {
 
     private[this] val bootstrapMethods = new BootstrapMethodsBuffer()
@@ -217,11 +217,29 @@ class ConstantsBuffer private (
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
             CPEMethodHandle(bootstrapMethod.handle, false)
-            bootstrapMethod.arguments.foreach { CPEntryForBootstrapArgument }
+            bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
             indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
         val cpNameAndTypeIndex = CPENameAndType(name, jvmDescriptor)
         getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex), 1)
+    }
+
+    //
+    // Java9+ CPEntries
+    //
+
+    @throws[ConstantPoolException]
+    def CPEModule(name: String): Int = {
+        val cpeUtf8 = CPEUtf8(name)
+        val cpEntryIndex = getOrElseUpdate(CONSTANT_Module_info(cpeUtf8), 1)
+        validateIndex(cpEntryIndex, false)
+    }
+
+    @throws[ConstantPoolException]
+    def CPEPackage(name: String): Int = {
+        val cpeUtf8 = CPEUtf8(name)
+        val cpEntryIndex = getOrElseUpdate(CONSTANT_Package_info(cpeUtf8), 1)
+        validateIndex(cpEntryIndex, false)
     }
 
     /**
@@ -233,7 +251,7 @@ class ConstantsBuffer private (
      */
     def build: (Array[Constant_Pool_Entry], ConstantsPool) = {
         val cp = new Array[Constant_Pool_Entry](nextIndex)
-        constantPool.foreach { e ⇒
+        constantPool foreach { e ⇒
             val (cpe, index) = e
             cp(index) = cpe
         }
@@ -263,13 +281,19 @@ object ConstantsBuffer {
     def getOrCreateCPEntry(ldc: LDC[_])(implicit constantsBuffer: ConstantsBuffer): Int = {
         import constantsBuffer._
         ldc match {
-            case LoadInt(value)          ⇒ CPEInteger(value, requiresUByteIndex = true)
-            case LoadFloat(value)        ⇒ CPEFloat(value, requiresUByteIndex = true)
-            case LoadString(value)       ⇒ CPEString(value, requiresUByteIndex = true)
-            case LoadClass(value)        ⇒ CPEClass(value, requiresUByteIndex = true)
-
-            case LoadMethodHandle(value) ⇒ CPEMethodHandle(value, requiresUByteIndex = true)
-            case LoadMethodType(value)   ⇒ CPEMethodType(value, requiresUByteIndex = true)
+            case LoadInt(value) ⇒
+                CPEInteger(value, requiresUByteIndex = true)
+            case LoadFloat(value) ⇒
+                CPEFloat(value, requiresUByteIndex = true)
+            case LoadString(value) ⇒
+                CPEString(value, requiresUByteIndex = true)
+            case LoadClass(value) ⇒
+                CPEClass(value, requiresUByteIndex = true)
+            // Java 7+
+            case LoadMethodHandle(value) ⇒
+                CPEMethodHandle(value, requiresUByteIndex = true)
+            case LoadMethodType(value) ⇒
+                CPEMethodType(value, requiresUByteIndex = true)
         }
     }
 
@@ -301,7 +325,7 @@ object ConstantsBuffer {
         The basic idea is to first add the referenced constant pool entries (which always use two
         byte references) and afterwards create the LDC related constant pool entries.
         For the first phase the pool's nextIndex is set to the first index that is required by the
-        referenced entries. After that, nextIndex is set to 1 and all LDC relate entries
+        referenced entries. After that, nextIndex is set to 1 and all LDC related entries
         are created.
 
         The only exception are the CPClass entries they strictly need to be processed first
@@ -319,7 +343,7 @@ object ConstantsBuffer {
 
         // 2. let's add the CONSTANT_Class_Info entries
         constantsBuffer.nextIndex = 1
-        ldClasses foreach { ldc ⇒ CPEClass(ldc.asInstanceOf[LoadClass].value, true) }
+        ldClasses.foreach(ldc ⇒ CPEClass(ldc.asInstanceOf[LoadClass].value, true))
         val nextLDCIndex = constantsBuffer.nextIndex
 
         // 3.  process all referenced constant pool entries (UTF8, NAME_AND_TYPE, FIELDREF,...)
@@ -328,18 +352,25 @@ object ConstantsBuffer {
             case LoadMethodType(value)   ⇒ CPEUtf8(value.toJVMDescriptor)
             case LoadMethodHandle(value) ⇒ CPERefOfCPEMethodHandle(value)
             case LoadString(value)       ⇒ CPEUtf8(value)
-            case _                       ⇒ // the other entries do not reference other entries
+            case _: LoadFloat            ⇒ // does not reference other entries
+            case _: LoadInt              ⇒ // does not reference other entries
+            case that                    ⇒ throw new UnknownError(s"unknown LDC: $that")
         }
         nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex
 
         // 4.   Add all other CONSTANT_(INTEGER|FLOAT|STRING|METHODHANDLE|METHODTYPE) entries
         constantsBuffer.nextIndex = nextLDCIndex
-        ldOtherConstants foreach { getOrCreateCPEntry }
+        ldOtherConstants.foreach(getOrCreateCPEntry)
 
         // 5.   Correct nextIndex to point to the first not used index; all previous indexes
         //      are now used!
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
-
+        assert(
+            buffer.size == constantsBuffer.nextIndex,
+            "constant pool contains holes:\n\t"+
+                ldcs.mkString("LDCs={", ", ", "}\n\t") +
+                buffer.toList.map(_.swap).sortBy(e ⇒ e._1).mkString("Buffer=[\n\t", "\n\t", "]\n")
+        )
         constantsBuffer
     }
 }

@@ -39,7 +39,7 @@ package reader
  */
 trait Java9LibraryFramework
     extends Java8LibraryFramework
-    with Module_attributeBinding
+    // with Module_attributeBinding ALREADY MIXED IN (see Java7Framework for details!)
     with ModuleMainClass_attributeBinding
     with ModulePackages_attributeBinding
 

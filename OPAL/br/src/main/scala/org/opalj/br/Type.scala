@@ -1148,12 +1148,14 @@ object ObjectType {
             fqn.substring(0, index)
     }
 
+    // THE FOLLOWING OBJECT TYPES ARE PREDEFINED BECAUSE OF
+    // THEIR PERVASIVE USAGE AND THEIR EXPLICIT MENTIONING IN THE
+    // THE JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
     final val Object = ObjectType("java/lang/Object")
     final val ObjectId = 0
     require(Object.id == ObjectId)
 
     final val Boolean = ObjectType("java/lang/Boolean")
-
     final val Byte = ObjectType("java/lang/Byte")
     final val Character = ObjectType("java/lang/Character")
     final val Short = ObjectType("java/lang/Short")
@@ -1167,10 +1169,14 @@ object ObjectType {
 
     final val String = ObjectType("java/lang/String")
     final val StringId = 10
+    require(String.id == StringId)
 
     final val Class = ObjectType("java/lang/Class")
     final val ClassId = 11
     require(Class.id == ClassId)
+
+    final val ModuleInfo = ObjectType("module-info")
+    require(ModuleInfo.id == 12)
 
     final val System = ObjectType("java/lang/System")
 
@@ -1271,7 +1277,7 @@ object ObjectType {
      */
     def primitiveType(wrapperType: ObjectType): Option[BaseType] = {
         val wrapperId = wrapperType.id
-        if (wrapperId < 0 || wrapperId > Double.id) {
+        if (wrapperId < Boolean.id || wrapperId > Double.id) {
             None
         } else {
             Some(primitiveType(wrapperId))
@@ -1279,17 +1285,17 @@ object ObjectType {
     }
 
     def primitiveTypeWrapperMatcher[Args, T](
-        booleanMatch: (Args) ⇒ T,
-        byteMatch:    (Args) ⇒ T,
-        charMatch:    (Args) ⇒ T,
-        shortMatch:   (Args) ⇒ T,
-        integerMatch: (Args) ⇒ T,
-        longMatch:    (Args) ⇒ T,
-        floatMatch:   (Args) ⇒ T,
-        doubleMatch:  (Args) ⇒ T,
-        orElse:       (Args) ⇒ T
+        booleanMatch: Args ⇒ T,
+        byteMatch:    Args ⇒ T,
+        charMatch:    Args ⇒ T,
+        shortMatch:   Args ⇒ T,
+        integerMatch: Args ⇒ T,
+        longMatch:    Args ⇒ T,
+        floatMatch:   Args ⇒ T,
+        doubleMatch:  Args ⇒ T,
+        orElse:       Args ⇒ T
     ): (ObjectType, Args) ⇒ T = {
-        val fs = new Array[(Args) ⇒ T](8)
+        val fs = new Array[Args ⇒ T](8)
         fs(0) = booleanMatch
         fs(1) = byteMatch
         fs(2) = charMatch

@@ -241,7 +241,7 @@ trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
 object EagerTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
 
@@ -250,7 +250,7 @@ object EagerTypeImmutabilityAnalysis
 
         val types = project.allClassFiles.filter(_.thisType ne ObjectType.Object).map(_.thisType)
 
-        ps.scheduleForEntities(types) {
+        ps.scheduleEagerComputationsForEntities(types) {
             analysis.step1(typeExtensibility)
         }
 
@@ -265,7 +265,7 @@ object LazyTypeImmutabilityAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override protected[fpcf] def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
 
         val typeExtensibility = p.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(p)

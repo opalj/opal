@@ -174,7 +174,7 @@ object EagerL1FieldMutabilityAnalysis extends L1FieldMutabilityAnalysisScheduler
 
         val fields = project.allFields
 
-        propertyStore.scheduleForEntities(fields)(analysis.determineFieldMutability)
+        propertyStore.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
 }

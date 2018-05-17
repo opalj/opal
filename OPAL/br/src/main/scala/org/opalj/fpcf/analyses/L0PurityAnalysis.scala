@@ -350,7 +350,7 @@ object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAna
         val methodsWithBody = dms.collect {
             case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleForEntities(methodsWithBody)(analysis.determinePurity)
+        propertyStore.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
         analysis
     }
 }

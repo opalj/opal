@@ -34,7 +34,7 @@ package br
  *
  * @author Michael Eichberg
  */
-case class ModuleMainClass(mainClass: ObjectType) extends Attribute {
+case class ModuleMainClass(mainClassType: ObjectType) extends Attribute {
 
     final override def kindId: Int = ModuleMainClass.KindId
 

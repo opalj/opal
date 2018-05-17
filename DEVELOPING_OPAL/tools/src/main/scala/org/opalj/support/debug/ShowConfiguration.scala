@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.support.info
+package org.opalj
+package support
+package debug
 
 import java.util.Properties
 import java.io.FileInputStream
@@ -100,7 +102,13 @@ object ShowConfiguration {
         //
         // Handling of java.security
         //
-        val javaSecurityFile = javaHome+"/lib/security/java.security"
+        val javaSecurityFile =
+            if (!javaVersion.startsWith("1.")) {
+                // Java 9+
+                javaHome+"/conf/security/java.security"
+            } else {
+                javaHome+"/lib/security/java.security"
+            }
         val javaSecurity = new Properties()
         javaSecurity.load(new FileInputStream(javaSecurityFile))
         println(s"\nSecurity Configuration ($javaSecurityFile): ")

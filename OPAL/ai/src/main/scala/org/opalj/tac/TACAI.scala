@@ -881,6 +881,7 @@ object TACAI {
 
             pc = nextPC
             while (pc < codeSize && !wasExecuted(pc)) {
+                pcToIndex(pc) = -1
                 pc = pcOfNextInstruction(pc)
             }
         } while (pc < codeSize)

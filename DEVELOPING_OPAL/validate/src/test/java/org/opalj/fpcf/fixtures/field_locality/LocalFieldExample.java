@@ -47,10 +47,10 @@ public class LocalFieldExample implements Cloneable {
             clone.data[i] = data[i];
         }
 
-        if(data.length>5){
-            clone.localField = new Double(data.length);
-        }else{
-            clone.localField = new Integer(5);
+        if(data.length > 5) {
+            clone.localField = new Object();
+        } else {
+            clone.localField = new RuntimeException();
         }
 
         return clone;

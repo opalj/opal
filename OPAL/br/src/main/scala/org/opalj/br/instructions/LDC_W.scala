@@ -77,18 +77,26 @@ final case class LoadFloat_W(value: Float) extends LDC_W[Float] {
             }
         )
     }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case LoadFloat_W(thatValue) ⇒
+                thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
+            case _ ⇒ false
+        }
+    }
 }
 
 final case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 final case class LoadMethodHandle_W(value: MethodHandle) extends LDC_W[MethodHandle] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodDescriptor] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 /**

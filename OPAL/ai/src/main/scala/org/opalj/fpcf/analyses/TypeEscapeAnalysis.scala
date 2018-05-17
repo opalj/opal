@@ -109,7 +109,7 @@ object TypeEscapeAnalysis extends FPCFEagerAnalysisScheduler {
         //val analysesManager = project.get(FPCFAnalysesManagerKey)
         //analysesManager.run(SimpleEscapeAnalysis)
         val analysis = new TypeEscapeAnalysis(project)
-        propertyStore.scheduleForEntities(project.allClassFiles)(analysis.determineTypeEscape)
+        propertyStore.scheduleEagerComputationsForEntities(project.allClassFiles)(analysis.determineTypeEscape)
         analysis
     }
 

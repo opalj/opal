@@ -26,24 +26,53 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package annotations.escape;
+package org.opalj
+package fpcf
+package analyses
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import org.junit.runner.RunWith
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitRunner
 
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.ElementType.TYPE_USE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Nanoseconds
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.fpcf.properties.EscapeProperty
 
 /**
- * Container for having escape property annotations multiple times
- * for different algorithms
+ * Tests that the [[EagerSimpleEscapeAnalysis]] does not throw exceptions.
  *
  * @author Florian Kübler
  */
-@Retention(RUNTIME)
-@Target({ TYPE_USE, PARAMETER })
-public @interface EscapeProperties {
+@RunWith(classOf[JUnitRunner])
+class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
 
-    Escapes[] value();
+    def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
+
+    def checkProject(p: SomeProject): Unit = {
+        val ps = p.get(PropertyStoreKey)
+        ps.setupPhase(Set(EscapeProperty), Set.empty)
+        EagerSimpleEscapeAnalysis.start(p)
+        ps.waitOnPhaseCompletion()
+    }
+
+    describe(s"executing the simple escape analysis should not fail") {
+
+        allBIProjects() foreach { biProject ⇒
+            val (name, projectFactory) = biProject
+            it(s"for $name") {
+                val p = projectFactory()
+                time { checkProject(p) } { reportAnalysisTime }
+            }
+        }
+
+        it(s"for the JDK") {
+            val p = createJREProject()
+            time { checkProject(p) } { reportAnalysisTime }
+        }
+    }
 }

@@ -218,7 +218,10 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     CONSTANT_Package_info(in.readUnsignedShort)
 
                 case _ ⇒
-                    val message = s"unsupported constant pool tag id: $tag"
+                    val header = s"wrong constant pool tag: $tag (entry: $i/$constant_pool_count); "
+                    val message =
+                        constant_pool_entries.iterator.zipWithIndex.take(i).drop(1).map(_.swap).
+                            mkString(header+"previous entries:\n\t", "\n\t", "\n")
                     throw new BytecodeProcessingFailedException(message)
             }
         }

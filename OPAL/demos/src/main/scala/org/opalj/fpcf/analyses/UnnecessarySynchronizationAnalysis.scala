@@ -33,7 +33,7 @@ package analyses
 import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.ai.DefinitionSitesKey
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method

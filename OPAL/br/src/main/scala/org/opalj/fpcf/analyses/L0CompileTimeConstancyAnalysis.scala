@@ -124,7 +124,7 @@ object EagerL0CompileTimeConstancyAnalysis extends L0CompileTimeConstancyAnalysi
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0CompileTimeConstancyAnalysis(project)
-        propertyStore.scheduleForEntities(project.allFields)(analysis.determineConstancy)
+        propertyStore.scheduleEagerComputationsForEntities(project.allFields)(analysis.determineConstancy)
         analysis
     }
 }

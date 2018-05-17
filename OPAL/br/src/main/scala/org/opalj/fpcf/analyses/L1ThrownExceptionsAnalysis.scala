@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
-import org.opalj.br.PC
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -84,17 +83,18 @@ import org.opalj.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
 import org.opalj.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
 import org.opalj.fpcf.properties.ThrownExceptions.SomeException
+
 /**
- * Transitive analysis of thrown exceptions
- * [[org.opalj.fpcf.properties.ThrownExceptions]] property.
+ * Analysis of thrown exceptions; computes the [[org.opalj.fpcf.properties.ThrownExceptions]]
+ * property.
  *
  * @author Andreas Muttscheller
  */
-class L1ThrownExceptionsAnalysis private (
+class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
+    private[analyses] def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
         e match {
             case m: Method ⇒
                 determineThrownExceptions(m)
@@ -142,12 +142,13 @@ class L1ThrownExceptionsAnalysis private (
          *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
          */
-        def collectAllExceptions(pc: PC, instruction: Instruction): Boolean = {
+        def collectAllExceptions(pc: Int, instruction: Instruction): Boolean = {
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
                     result = UnknownExceptionIsThrown
                     false
+
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
                     val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
                         instruction
@@ -176,6 +177,7 @@ class L1ThrownExceptionsAnalysis private (
                                                 result = MethodCalledThrowsUnknownExceptions
                                                 false
                                             case eps: EPS[Entity, Property] ⇒
+                                                // TODO FIXME Describe or fix handling of upper type bound.
                                                 initialExceptions ++= eps.ub.types.concreteTypes
                                                 if (eps.isRefinable) {
                                                     dependees += eps
@@ -200,20 +202,23 @@ class L1ThrownExceptionsAnalysis private (
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                    // TODO FIXME Check that the set of callees is closed! (use the respective keys!)
                     val callerPackage = m.classFile.thisType.packageName
                     val callees = instruction match {
                         case iv: INVOKEVIRTUAL   ⇒ project.virtualCall(callerPackage, iv)
                         case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
                         case _                   ⇒ Set.empty[Method]
                     }
-                    callees.foreach { callee ⇒
+                    callees foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
+                        // TODO FIXME It is non-obvious why you use the ThrownExceptionsByOverridingMethods when your already iterate over all callees.
                         ps(callee, ThrownExceptionsByOverridingMethods.key) match {
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
                                 result = MethodCalledThrowsUnknownExceptions
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
                                 result = MethodCalledThrowsUnknownExceptions
                             case eps: EPS[Entity, Property] ⇒
+                                // TODO FIXME Describe or fix handling of upper type bound.
                                 initialExceptions ++= eps.ub.exceptions.concreteTypes
                                 if (eps.isRefinable) {
                                     dependees += eps
@@ -323,7 +328,10 @@ class L1ThrownExceptionsAnalysis private (
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
 
         if (!areAllExceptionsCollected) {
-            assert(result ne null, "!areAllExceptionsCollected without result")
+            assert(
+                result ne null,
+                "all exceptions are exepcted to be collected but the set is null"
+            )
             return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
@@ -382,19 +390,23 @@ class L1ThrownExceptionsAnalysis private (
     }
 }
 
+abstract class ThrownExceptionsAnalysis extends ComputationSpecification {
+    override def uses: Set[PropertyKind] = {
+        Set(ThrownExceptionsByOverridingMethods)
+    }
+
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+}
+
 /**
  * Factory and runner for the [[L1ThrownExceptionsAnalysis]].
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
-
-    override def uses: Set[PropertyKind] = {
-        Set(ThrownExceptionsByOverridingMethods)
-    }
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+object EagerL1ThrownExceptionsAnalysis
+    extends ThrownExceptionsAnalysis
+    with FPCFEagerAnalysisScheduler {
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
@@ -403,14 +415,41 @@ object L1ThrownExceptionsAnalysis extends FPCFAnalysisScheduler {
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
         val allMethods = project.allMethodsWithBody
-        propertyStore.scheduleForEntities(allMethods)(analysis.determineThrownExceptions)
+        propertyStore.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
 
     /** Registers an analysis to compute the thrown exceptions lazily. */
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.registerLazyPropertyComputation[ThrownExceptions](
+        propertyStore.registerLazyPropertyComputation(
+            ThrownExceptions.key,
+            analysis.lazilyDetermineThrownExceptions
+        )
+        analysis
+    }
+}
+
+/**
+ * Factory and runner for the [[L1ThrownExceptionsAnalysis]].
+ *
+ * @author Andreas Muttscheller
+ * @author Michael Eichberg
+ */
+object LazyL1ThrownExceptionsAnalysis
+    extends ThrownExceptionsAnalysis
+    with FPCFLazyAnalysisScheduler {
+
+    override def uses: Set[PropertyKind] = {
+        Set(ThrownExceptionsByOverridingMethods)
+    }
+
+    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+
+    /** Registers an analysis to compute the thrown exceptions lazily. */
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new L1ThrownExceptionsAnalysis(project)
+        propertyStore.registerLazyPropertyComputation(
             ThrownExceptions.key,
             analysis.lazilyDetermineThrownExceptions
         )

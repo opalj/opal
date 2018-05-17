@@ -47,8 +47,6 @@ object Assembler {
 
     private[bc] def as[T](x: AnyRef): T = x.asInstanceOf[T]
 
-    // TODO Add Java9/Java10 support!
-
     implicit object RichCONSTANT_Class_info extends ClassFileElement[CONSTANT_Class_info] {
         def write(
             ci: CONSTANT_Class_info
@@ -227,6 +225,34 @@ object Assembler {
         }
     }
 
+    implicit object RichCONSTANT_Module_info extends ClassFileElement[CONSTANT_Module_info] {
+        def write(
+            ci: CONSTANT_Module_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(name_index)
+        }
+    }
+
+    implicit object RichCONSTANT_Package_info extends ClassFileElement[CONSTANT_Package_info] {
+        def write(
+            ci: CONSTANT_Package_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(name_index)
+        }
+    }
+
     implicit object RichConstant_Pool_Entry extends ClassFileElement[Constant_Pool_Entry] {
         def write(
             cpe: Constant_Pool_Entry
@@ -247,12 +273,17 @@ object Assembler {
                     CPTags.CONSTANT_Methodref_ID |
                     CPTags.CONSTANT_InterfaceMethodref_ID ⇒ serializeAs[CONSTANT_Ref](cpe)
 
+                // JAVA 7
                 case CPTags.CONSTANT_MethodHandle_ID ⇒
                     serializeAs[CONSTANT_MethodHandle_info](cpe)
                 case CPTags.CONSTANT_MethodType_ID ⇒
                     serializeAs[CONSTANT_MethodType_info](cpe)
                 case CPTags.CONSTANT_InvokeDynamic_ID ⇒
                     serializeAs[CONSTANT_InvokeDynamic_info](cpe)
+
+                // JAVA 9
+                case CPTags.CONSTANT_Module_ID  ⇒ serializeAs[CONSTANT_Module_info](cpe)
+                case CPTags.CONSTANT_Package_ID ⇒ serializeAs[CONSTANT_Package_info](cpe)
             }
         }
     }
@@ -559,16 +590,16 @@ object Assembler {
                         writeShort(ex.catch_type)
                     }
                     writeShort(attributes.length)
-                    attributes.foreach { serialize(_) }
+                    attributes foreach { a ⇒ serialize(a) }
 
                 case e: Exceptions_attribute ⇒
                     writeShort(e.exception_index_table.size)
-                    e.exception_index_table.foreach { writeShort(_) }
+                    e.exception_index_table.foreach(writeShort)
 
                 case i: InnerClasses_attribute ⇒
                     import i._
                     writeShort(classes.size)
-                    classes.foreach { c ⇒
+                    classes foreach { c ⇒
                         writeShort(c.inner_class_info_index)
                         writeShort(c.outer_class_info_index)
                         writeShort(c.inner_name_index)
@@ -587,7 +618,58 @@ object Assembler {
                 case _: Deprecated_attribute        ⇒ // nothing more to do
                 case _: Synthetic_attribute         ⇒ // nothing more to do
 
-                case a: Unknown_attribute           ⇒ out.write(a.info, 0, a.info.length)
+                case a: Module_attribute ⇒
+                    writeShort(a.module_name_index)
+                    writeShort(a.module_flags)
+                    writeShort(a.module_version_index)
+
+                    writeShort(a.requires.length)
+                    a.requires foreach { r ⇒
+                        writeShort(r.requires_index)
+                        writeShort(r.requires_flags)
+                        writeShort(r.requires_version_index)
+                    }
+
+                    writeShort(a.exports.length)
+                    a.exports foreach { e ⇒
+                        writeShort(e.exports_index)
+                        writeShort(e.exports_flags)
+                        writeShort(e.exports_to_index_table.length)
+                        e.exports_to_index_table foreach { et ⇒
+                            writeShort(et.exports_to_index)
+                        }
+                    }
+
+                    writeShort(a.opens.length)
+                    a.opens foreach { o ⇒
+                        writeShort(o.opens_index)
+                        writeShort(o.opens_flags)
+                        writeShort(o.opens_to_index_table.length)
+                        o.opens_to_index_table foreach { ot ⇒
+                            writeShort(ot.opens_to_index)
+                        }
+                    }
+
+                    writeShort(a.uses.length)
+                    a.uses foreach { u ⇒ writeShort(u.uses_index) }
+
+                    writeShort(a.provides.length)
+                    a.provides foreach { p ⇒
+                        writeShort(p.provides_index)
+                        writeShort(p.provides_with_index_table.length)
+                        p.provides_with_index_table foreach { pw ⇒
+                            writeShort(pw.provides_with_index)
+                        }
+                    }
+
+                case a: ModuleMainClass_attribute ⇒
+                    writeShort(a.main_class_index)
+
+                case a: ModulePackages_attribute ⇒
+                    writeShort(a.package_index_table.length)
+                    a.package_index_table.foreach(writeShort)
+
+                case a: Unknown_attribute ⇒ out.write(a.info, 0, a.info.length)
             }
         }
     }
@@ -605,7 +687,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes foreach (serializeAs[Attribute])
+            attributes.foreach(serializeAs[Attribute])
         }
     }
 
@@ -622,7 +704,7 @@ object Assembler {
             writeShort(name_index)
             writeShort(descriptor_index)
             writeShort(attributes.size)
-            attributes foreach { serializeAs[Attribute] }
+            attributes.foreach(serializeAs[Attribute])
         }
     }
 
@@ -642,8 +724,11 @@ object Assembler {
             writeShort(major_version)
             segmentInformation("ClassFileMetaInformation", out.size)
 
-            writeShort(cp.size)
-            cp.tail.filter(_ ne null).foreach { serialize(_) }
+            writeShort(cp.length)
+            // OLD cp.tail.filter(_ ne null).foreach(serialize(_))
+            val cpIt = cp.iterator
+            cpIt.next()
+            cpIt.filter(_ ne null).foreach(cpe ⇒ serialize(cpe))
             segmentInformation("ConstantPool", out.size)
 
             writeShort(access_flags)

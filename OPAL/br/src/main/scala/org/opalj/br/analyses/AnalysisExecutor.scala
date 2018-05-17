@@ -34,14 +34,13 @@ import java.net.URL
 import java.io.File
 
 import scala.util.control.ControlThrowable
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.Info
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -155,32 +154,28 @@ trait AnalysisExecutor {
                 !filename.endsWith(".ear") &&
                 !filename.endsWith(".war") &&
                 !filename.endsWith(".zip") &&
+                !filename.endsWith(".jmod") &&
                 !filename.endsWith(".class")) {
-                showError(s"Input file is neither a directory nor a class or JAR file: $file.")
+                showError(s"Input file is neither a directory nor a class or JAR/JMod file: $file.")
                 None
             } else
                 Some(file)
         }
 
-        def verifyFiles(filenames: Array[String]): Seq[File] = {
-            filenames.toSeq.map(verifyFile).flatten
-        }
+        def verifyFiles(filenames: Array[String]): Seq[File] = filenames.toSeq.flatMap(verifyFile)
 
         val (cp, args1) = try {
-            {
-                def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
+            def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
 
-                args.partition(_.startsWith("-cp=")) match {
-                    case (Array(), notCPArgs) ⇒
-                        (Array(System.getProperty("user.dir")), notCPArgs)
-                    case (Array(cpParam), notCPArgs) ⇒
-                        (splitCPath(cpParam), notCPArgs)
-                    case (cpParams: Array[String], notCPArgs) ⇒
-                        (cpParams.map(splitCPath).flatten, notCPArgs)
-                }
+            args.partition(_.startsWith("-cp=")) match {
+                case (Array(), notCPArgs) ⇒
+                    (Array(System.getProperty("user.dir")), notCPArgs)
+                case (Array(cpParam), notCPArgs) ⇒
+                    (splitCPath(cpParam), notCPArgs)
+                case (cpParams: Array[String], notCPArgs) ⇒
+                    (cpParams.flatMap(splitCPath), notCPArgs)
             }
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("fatal", "failed parsing the classpath", t)
                 sys.exit(2)
@@ -216,9 +211,7 @@ trait AnalysisExecutor {
                     val projectType = projectTypeParameter.substring(14).replace("_", " ")
                     (ProjectTypes.withName(projectType), args3)
             }
-
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("project configuration", "failed parsing the analysis mode", t)
                 printUsage
@@ -236,7 +229,6 @@ trait AnalysisExecutor {
             }
 
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("project configuration", "failed parsing completelyLoadLibraries", t)
                 printUsage
@@ -275,7 +267,7 @@ trait AnalysisExecutor {
         OPALLogger.info("info", "executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
-        OPALLogger.progress("Result:\n"+result.toConsoleString)
+        OPALLogger.log(Info(result.toConsoleString))
     }
 
     protected def handleParsingExceptions(
@@ -338,9 +330,7 @@ trait AnalysisExecutor {
                 libraryClassFiles,
                 libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
                 Traversable.empty
-            )(
-                    config = configuredConfig
-                )
+            )(config = configuredConfig)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         OPALLogger.info(

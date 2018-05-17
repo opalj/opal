@@ -26,25 +26,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package escape;
+package org.opalj
+package fpcf
+
+import org.opalj.collection.immutable.Chain
 
 /**
- * @author Florian Kuebler
+ * Encapsulates a computed schedule and enables the execution of it.
+ *
+ * @param batches The representation of the computed schedule.
+ *
+ * @author Michael Eichberg
  */
-public class ClassWithFields {
-    public static Object global;
-    public Object f;
-    public ClassWithFields g;
+case class Schedule(
+        batches: Chain[Chain[ComputationSpecification]]
+) extends ((PropertyStore) ⇒ Unit) {
 
-    public ClassWithFields() {
+    def apply(ps: PropertyStore): Unit = {
+        batches foreach { batch ⇒
+            val computedProperties =
+                batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
+            val openProperties =
+                batches.dropWhile(_ ne batch).tail. // collect properties derived in the future
+                    map(batch ⇒ batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)).
+                    reduceOption((l, r) ⇒ l ++ r).
+                    getOrElse(Set.empty)
+            ps.setupPhase(computedProperties, openProperties)
+            batch.foreach { fpc ⇒ fpc.schedule(ps) }
+            ps.waitOnPhaseCompletion()
+        }
     }
 
-    public ClassWithFields(Object param) {
-        this.f = param;
+    override def toString: String = {
+        batches.map(_.map(_.name).mkString("{", ", ", "}")).mkString("Schedule(\n\t", "\n\t", "\n)")
     }
 
-    public ClassWithFields(int i) {
-        global = this;
-        System.out.println(i);
-    }
 }

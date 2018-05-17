@@ -31,7 +31,7 @@ package fpcf
 package properties
 
 sealed trait VirtualMethodReturnValueFreshnessMetaInformation extends PropertyMetaInformation {
-    override final type Self = VirtualMethodReturnValueFreshness
+    final override type Self = VirtualMethodReturnValueFreshness
 }
 
 /**

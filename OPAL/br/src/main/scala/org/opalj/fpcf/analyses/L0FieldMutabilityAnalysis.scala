@@ -145,7 +145,7 @@ object EagerL0FieldMutabilityAnalysis
             classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
         }
 
-        propertyStore.scheduleForEntities(fields)(analysis.determineFieldMutability)
+        propertyStore.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
 }

@@ -76,7 +76,7 @@ object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
             maxLocalsDistrbution = maxLocalsDistrbution.updated(body.maxLocals, newMaxLocalsCount)
         }
 
-        BasicReport("Results\n\n"+
+        BasicReport("\nResults:\n"+
             "Method Parameters Distribution:\n"+
             "#Parameters\tFrequency:\n"+
             methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t\t"+v }).mkString("\n")+"\n\n"+

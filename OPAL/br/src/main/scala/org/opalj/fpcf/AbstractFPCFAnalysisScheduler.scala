@@ -38,8 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger
  * I.e., this trait is typically implemented by the singleton object that facilitates
  * the creation of analyses.
  *
- * @note It is possible to use an analysis that directly uses the property store and
- *      an analysis that uses this factory infrastructure at the same time.
+ * @note   It is possible to use an analysis that directly uses the property store and
+ *         an analysis that uses this factory infrastructure at the same time.
  *
  * @author Michael Reif
  * @author Michael Eichberg
@@ -56,7 +56,7 @@ private[fpcf] trait AbstractFPCFAnalysisScheduler extends ComputationSpecificati
 }
 
 /**
- * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines interal helper functions and
+ * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines internal helper functions and
  * values.
  *
  * @author Michael Reif

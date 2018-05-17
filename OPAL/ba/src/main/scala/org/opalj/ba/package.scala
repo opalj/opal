@@ -29,7 +29,6 @@
 package org.opalj
 
 import scala.language.implicitConversions
-
 import scala.annotation.switch
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
@@ -55,6 +54,11 @@ import org.opalj.bi.ACC_TRANSIENT
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.ACC_NATIVE
 import org.opalj.bi.ACC_STRICT
+import org.opalj.bi.ACC_OPEN
+import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_TRANSITIVE
+import org.opalj.bi.ACC_MANDATED
+import org.opalj.bi.ACC_STATIC_PHASE
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Class_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Fieldref_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Methodref_ID
@@ -69,10 +73,12 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodHandle_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Module_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
-import org.opalj.br.cp._ // we need ALL of them...
+import org.opalj.br.cp._
 import org.opalj.br.instructions._ // we need ALL of them...
 
 /**
@@ -89,17 +95,18 @@ import org.opalj.br.instructions._ // we need ALL of them...
  */
 package object ba { ba ⇒
 
+    final val FrameworkName = "OPAL Bytecode Assembler"
+
     {
-        val name = "Bytecode Assembler"
         // Log the information whether a production build or a development build is used.
         implicit val logContext = GlobalLogContext
         import OPALLogger.info
         try {
             scala.Predef.assert(false)
             // when we reach this point assertions are off...
-            info(name, s"Production Build")
+            info(FrameworkName, s"Production Build")
         } catch {
-            case _: AssertionError ⇒ info(name, "Development Build (Assertions are enabled)")
+            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
 
@@ -169,6 +176,11 @@ package object ba { ba ⇒
     final val STRICT = new AccessModifier(ACC_STRICT.mask)
     final val VOLATILE = new AccessModifier(ACC_VOLATILE.mask)
     final val TRANSIENT = new AccessModifier(ACC_TRANSIENT.mask)
+    final val MODULE = new AccessModifier(ACC_MODULE.mask)
+    final val OPEN = new AccessModifier(ACC_OPEN.mask)
+    final val MANDATED = new AccessModifier(ACC_MANDATED.mask)
+    final val TRANSITIVE = new AccessModifier(ACC_TRANSITIVE.mask)
+    final val STATIC_PHASE = new AccessModifier(ACC_STATIC_PHASE.mask)
 
     // *********************************************************************************************
     //
@@ -1049,9 +1061,62 @@ package object ba { ba ⇒
                 val daPAs = typeAnnotations.map(toDA)
                 Some(da.RuntimeVisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
 
+            case br.ModuleMainClass.KindId ⇒
+                val br.ModuleMainClass(mainClassType /*:ObjectType*/ ) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ModuleMainClassAttribute.Name)
+                val mainClassIndex = CPEClass(mainClassType, false)
+                Some(da.ModuleMainClass_attribute(attributeNameIndex, mainClassIndex))
+
+            case br.ModulePackages.KindId ⇒
+                val br.ModulePackages(packages /*:IndexedSeq[Sgring]*/ ) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ModulePackagesAttribute.Name)
+                Some(da.ModulePackages_attribute(attributeNameIndex, packages.map(CPEPackage)))
+
+            case br.Module.KindId ⇒
+                val br.Module(name, flags, version, requires, exports, opens, uses, provides) = attribute
+                val attributeNameIndex = CPEUtf8(bi.ModuleAttribute.Name)
+                Some(da.Module_attribute(
+                    attributeNameIndex,
+                    CPEModule(name),
+                    flags,
+                    version.map(CPEUtf8).getOrElse(0),
+                    requires.map(require ⇒
+                        da.RequiresEntry(
+                            CPEModule(require.requires),
+                            require.flags,
+                            require.version.map(CPEUtf8).getOrElse(0)
+                        )),
+                    exports.map(export ⇒
+                        da.ExportsEntry(
+                            CPEPackage(export.exports),
+                            export.flags,
+                            export.exportsTo.map(exportTo ⇒
+                                da.ExportsToEntry(CPEModule(exportTo)))
+                        )),
+                    opens.map(open ⇒
+                        da.OpensEntry(
+                            CPEPackage(open.opens),
+                            open.flags,
+                            open.toPackages.map(openTo ⇒
+                                da.OpensToIndexEntry(CPEModule(openTo)))
+                        )),
+                    uses.map(use ⇒ da.UsesEntry(CPEClass(use, false))),
+                    provides.map(provide ⇒
+                        da.ProvidesEntry(
+                            CPEClass(provide.provides, false),
+                            provide.withInterfaces.map(withInterface ⇒
+                                da.ProvidesWithIndexEntry(CPEClass(withInterface, false)))
+                        ))
+                ))
+
+            //
+            // OPAL'S OWN ATTRIBUTES
+            //
+
             case br.VirtualTypeFlag.KindId ⇒
                 if (config.retainOPALAttributes) {
                     val attributeNameIndex = CPEUtf8(br.VirtualTypeFlag.Name)
+                    // We "hijack" the unknown attribute for our purposes
                     Some(da.Unknown_attribute(attributeNameIndex, Array()))
                 } else {
                     None
@@ -1074,13 +1139,12 @@ package object ba { ba ⇒
                 }
 
             case _ ⇒
-                // e.g.  - 44 The Module Attribute (Java 9)
                 throw new Error(s"unsupported attribute: ${attribute.getClass.getName}")
         }
     }
 
     def toDA(constantPool: Array[Constant_Pool_Entry]): Array[da.Constant_Pool_Entry] = {
-        constantPool.map { cpEntry ⇒
+        constantPool map { cpEntry ⇒
             if (cpEntry eq null)
                 null
             else {
@@ -1140,6 +1204,14 @@ package object ba { ba ⇒
                     case CONSTANT_InvokeDynamic_ID ⇒
                         val CONSTANT_InvokeDynamic_info(bootstrapIndex, nameAndTypeIndex) = cpEntry
                         da.CONSTANT_InvokeDynamic_info(bootstrapIndex, nameAndTypeIndex)
+
+                    case CONSTANT_Module_ID ⇒
+                        val CONSTANT_Module_info(nameIndex) = cpEntry
+                        da.CONSTANT_Module_info(nameIndex)
+
+                    case CONSTANT_Package_ID ⇒
+                        val CONSTANT_Package_info(nameIndex) = cpEntry
+                        da.CONSTANT_Package_info(nameIndex)
 
                 }
             }

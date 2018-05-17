@@ -410,7 +410,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
         val methodsWithBody = dms.collect {
             case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }
-        ps.scheduleForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
+        ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity
         )
         analysis

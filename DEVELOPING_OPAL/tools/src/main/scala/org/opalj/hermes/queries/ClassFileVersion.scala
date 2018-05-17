@@ -32,7 +32,7 @@ package queries
 
 import org.opalj.collection.mutable.ArrayMap
 import org.opalj.collection.immutable.Naught
-import org.opalj.bi.Java9MajorVersion
+import org.opalj.bi.Java10MajorVersion
 import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
 import org.opalj.bi.jdkVersion
@@ -49,7 +49,7 @@ object ClassFileVersion extends FeatureQuery {
 
     override val featureIDs: Seq[String] = {
         featureId(Java1MajorVersion) +: (
-            for (majorVersion ← (Java5MajorVersion to Java9MajorVersion))
+            for (majorVersion ← (Java5MajorVersion to Java10MajorVersion))
                 yield featureId(majorVersion)
         )
     }
@@ -60,7 +60,7 @@ object ClassFileVersion extends FeatureQuery {
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        val data = ArrayMap[LocationsContainer[S]](Java9MajorVersion)
+        val data = ArrayMap[LocationsContainer[S]](Java10MajorVersion)
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
@@ -84,7 +84,7 @@ object ClassFileVersion extends FeatureQuery {
             else
                 Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
         } +: (
-            for (majorVersion ← (Java5MajorVersion to Java9MajorVersion)) yield {
+            for (majorVersion ← (Java5MajorVersion to Java10MajorVersion)) yield {
                 val featureId = this.featureId(majorVersion)
                 val extensions = data(majorVersion)
                 if (extensions ne null) {

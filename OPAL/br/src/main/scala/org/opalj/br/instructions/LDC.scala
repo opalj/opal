@@ -82,6 +82,16 @@ final case class LoadFloat(value: Float) extends LDC[Float] {
                 (this.value == otherLoadFloat.value)
         }
     }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case LoadFloat(thatValue) ⇒
+                thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
+            case _ ⇒ false
+        }
+    }
+
+    // HashCode of "value.NaN" is stable and 0
 }
 
 /**

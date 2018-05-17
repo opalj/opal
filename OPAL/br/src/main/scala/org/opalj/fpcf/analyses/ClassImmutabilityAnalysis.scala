@@ -68,6 +68,8 @@ import org.opalj.log.OPALLogger
  * TODO Discuss the case if a constructor calls an instance method which is overrideable (See Verifiable Functional Purity Paper for some arguements.)
  *
  * @author Michael Eichberg
+ * @author Florian Kübler
+ * @author Dominik Helm
  */
 class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
@@ -452,37 +454,39 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
 }
 
 /**
- * Runs an immutability analysis to determine the mutability of objects.
+ * Scheduler to run the immutability analysis eagerly.
  *
  * @author Michael Eichberg
  */
 object EagerClassImmutabilityAnalysis
-    extends ClassImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends ClassImmutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
 
         val analysis = new ClassImmutabilityAnalysis(project)
 
         val cfs = setResultsAnComputeEntities(project, propertyStore)
-        propertyStore.scheduleForEntities(cfs) {
-            e ⇒
-                analysis.determineClassImmutability(
-                    null, FinalEP(ObjectType.Object, ImmutableObject), true, false
-                )(e)
-        }
+        propertyStore.scheduleEagerComputationsForEntities(cfs)(
+            analysis.determineClassImmutability(
+                null, FinalEP(ObjectType.Object, ImmutableObject), true, false
+            )
+        )
 
         analysis
     }
-
 }
 
+/**
+ * Scheduler to run the immutability analysis lazily.
+ *
+ * @author Michael Eichberg
+ */
 object LazyClassImmutabilityAnalysis
-    extends ClassImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
-    /**
-     * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
-     */
-    override protected[fpcf] def startLazily(
+    extends ClassImmutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
+    override def startLazily(
         project: SomeProject, propertyStore: PropertyStore
     ): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(project)

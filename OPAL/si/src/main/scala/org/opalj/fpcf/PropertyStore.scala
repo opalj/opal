@@ -162,6 +162,8 @@ abstract class PropertyStore {
      * Returns a consistent snapshot of the stored properties.
      *
      * @note Some computations may still be running.
+     *
+     * @param printProperties If `true` prints the properties of all entities.
      */
     def toString(printProperties: Boolean): String
 
@@ -280,7 +282,8 @@ abstract class PropertyStore {
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
      * if the property is computed lazily and no "eager computation" requires the results
-     * anymore.
+     * anymore. Force also ensures that the property is stored in the store even if
+     * the fallback value is used.
      * Using `force` is in particular necessary in a case where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
      * but strictly required for some elements.
@@ -384,15 +387,18 @@ abstract class PropertyStore {
      * queried. In general, this requires that lazy property computations are scheduled before
      * any eager analysis that potentially reads the value.
      */
-    def registerLazyPropertyComputation[P <: Property](
+    def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: SomePropertyComputation
+        pc: PropertyComputation[E]
     ): Unit
 
     /**
      * Needs to be called before an analysis is scheduled to inform the property store which
      * properties will be computed now and which are computed in a later phase. The later
      * information is used to decide when we use a fallback.
+     *
+     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
+     *        this case both sets have to be empty.
      *
      * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
      *
@@ -408,14 +414,14 @@ abstract class PropertyStore {
     /**
      * Will call the given function `c` for all elements of `es` in parallel.
      *
-     * @see [[scheduleForEntity]] for details.
+     * @see [[scheduleEagerComputationForEntity]] for details.
      */
-    def scheduleForEntities[E <: Entity](
+    def scheduleEagerComputationsForEntities[E <: Entity](
         es: TraversableOnce[E]
     )(
         c: PropertyComputation[E]
     ): Unit = {
-        es.foreach(e ⇒ scheduleForEntity(e)(c))
+        es.foreach(e ⇒ scheduleEagerComputationForEntity(e)(c))
     }
 
     /**
@@ -426,7 +432,7 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then the scheduling will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def scheduleForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
+    def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
      * Processes the result; generally, not directly called by analyses.
@@ -437,7 +443,11 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then `handleResult` will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def handleResult(r: PropertyComputationResult): Unit
+    def handleResult(r: PropertyComputationResult, wasLazilyTriggered: Boolean): Unit
+
+    final def handleResult(r: PropertyComputationResult): Unit = {
+        handleResult(r, wasLazilyTriggered = false)
+    }
 
     /**
      * Awaits the completion of all property computation functions which were previously registered.

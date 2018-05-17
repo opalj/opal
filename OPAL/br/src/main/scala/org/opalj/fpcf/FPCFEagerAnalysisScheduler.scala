@@ -38,7 +38,7 @@ import org.opalj.br.analyses.SomeProject
  */
 trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
-    override final def isLazy: Boolean = false
+    final override def isLazy: Boolean = false
 
     final override def schedule(ps: PropertyStore): Unit = {
         start(ps.context[org.opalj.br.analyses.SomeProject], ps)

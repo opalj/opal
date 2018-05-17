@@ -49,7 +49,7 @@ object PrintBaseCFG {
 
         if (args.length != 3) {
             println("You have to specify the method that should be analyzed.")
-            println("\t1: a jar/class file or a directory containing jar/class files.")
+            println("\t1: a jar/jmod/class file or a directory containing jar/jmod/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the class.")
             return ;

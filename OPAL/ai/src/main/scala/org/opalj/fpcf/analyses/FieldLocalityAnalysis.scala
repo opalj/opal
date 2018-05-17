@@ -40,10 +40,10 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
@@ -587,24 +587,30 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
     }
 }
 
-trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+
     override def derives: Set[PropertyKind] = Set(FieldLocality)
 
-    override def uses: Set[PropertyKind] =
+    override def uses: Set[PropertyKind] = {
         Set(ReturnValueFreshness, VirtualMethodReturnValueFreshness)
+    }
 }
 
-object EagerFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerFieldLocalityAnalysis
+    extends FieldLocalityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val allFields = project.allFields
         val analysis = new FieldLocalityAnalysis(project)
-        propertyStore.scheduleForEntities(allFields)(analysis.step1)
+        propertyStore.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
         analysis
     }
 }
 
-object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyFieldLocalityAnalysis
+    extends FieldLocalityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
@@ -619,18 +625,34 @@ object LazyFieldLocalityAnalysis extends FieldLocalityAnalysisScheduler with FPC
     }
 }
 
-//TODO document
+/**
+ * Holds a map of [[DefinitionSiteWithoutPutField]] values, in order to provide unique identities
+ * (enable comparison via eq/neq).
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 object DefinitionSitesWithoutPutField {
     private val defSites =
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
 
     def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
-        val defSite = new DefinitionSiteWithoutPutField(method, pc, usedBy)
+        val defSite = DefinitionSiteWithoutPutField(method, pc, usedBy)
         val prev = defSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
     }
 }
 
+/**
+ * Represents a definition site of an object that is stored into a field (that is being analyzed
+ * for locality) where the field write use-site is removed from the set of use-sites.
+ * It acts as an entity for the escape analysis (we are interested whether the objects stored into
+ * a field are local, i.e. doe not escape).
+ * Here, the [[org.opalj.tac.PutField]] would let the object escape.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 final case class DefinitionSiteWithoutPutField(
         method: Method, pc: Int, usedBy: IntTrieSet
 ) extends DefinitionSiteLike

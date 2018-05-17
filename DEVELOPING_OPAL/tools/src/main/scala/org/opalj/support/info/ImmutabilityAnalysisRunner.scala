@@ -110,7 +110,7 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
             }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
         BasicReport(
-            "Details:\n"+
+            "\nImmutability Information:\n"+
                 immutableClassesInfo+
                 "\nSummary (w.r.t classes):\n"+
                 "\tObject Immutability:\n"+

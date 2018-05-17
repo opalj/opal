@@ -41,8 +41,8 @@ import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
- * An analysis that aggregates the results of the [[ReturnValueFreshnessAnalysis]] for all possible
- * methods represented by a given [[org.opalj.br.DeclaredMethod]].
+ * An analysis that aggregates whether the return value for all possible methods represented by a
+ * given [[org.opalj.br.DeclaredMethod]] are always freshly allocated.
  *
  * @author Florian Kuebler
  */
@@ -61,7 +61,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] ( final val project:
         }
 
         val methods = project.virtualCall(
-            m.declaringClassType.asObjectType.packageName, //TODO is this correct?
+            m.declaringClassType.asObjectType.packageName,
             m.declaringClassType,
             m.name,
             m.descriptor
@@ -117,22 +117,27 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] ( final val project:
 
 }
 
-trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+
     override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
 
     override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
 }
 
-object EagerVirtualReturnValueFreshnessAnalysis extends VirtualReturnValueFreshnessAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerVirtualReturnValueFreshnessAnalysis
+    extends VirtualReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
+        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
     }
 }
 
-object LazyVirtualReturnValueFreshnessAnalysis extends VirtualCallAggregatingEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyVirtualReturnValueFreshnessAnalysis
+    extends VirtualReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
     override def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
         propertyStore.registerLazyPropertyComputation(

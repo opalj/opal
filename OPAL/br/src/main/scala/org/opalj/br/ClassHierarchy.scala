@@ -118,8 +118,8 @@ import org.opalj.br.ObjectType.Object
  * @param   isSupertypeInformationCompleteMap A map which stores for each ''known type''
  *          if its supertype information is complete.
  *
- * @param   supertypes Contains for each object type the set of class types and interface types it
- *          inherits from. This set is computed on a best-effort basis.
+ * @param   supertypeInformation Contains for each object type the set of class types and
+ *          interface types it inherits from. This set is computed on a best-effort basis.
  *
  *          In some cases the supertype information may be incomplete, because the project
  *          as such is incomplete. Whether the type information is complete for a given type
@@ -147,8 +147,8 @@ class ClassHierarchy private (
         val leafTypes:                                       UIDSet[ObjectType],
         private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
 
-        val supertypes: Map[ObjectType, SupertypeInformation],
-        val subtypes:   Map[ObjectType, SubtypeInformation]
+        val supertypeInformation: Map[ObjectType, SupertypeInformation],
+        val subtypeInformation:   Map[ObjectType, SubtypeInformation]
 )(
         implicit
         val logContext: LogContext
@@ -166,8 +166,8 @@ class ClassHierarchy private (
             rootTypes,
             leafTypes,
             isSupertypeInformationCompleteMap,
-            supertypes,
-            subtypes
+            supertypeInformation,
+            subtypeInformation
         )(
             newLogContext
         )
@@ -513,7 +513,7 @@ class ClassHierarchy private (
      * @return  The set of all direct and indirect subtypes of the given type.
      */
     def allSubtypes(objectType: ObjectType, reflexive: Boolean): Set[ObjectType] = {
-        subtypes.get(objectType) match {
+        subtypeInformation.get(objectType) match {
             case Some(subtypeInformation) ⇒
                 val result = subtypeInformation.all
                 if (reflexive)
@@ -610,7 +610,9 @@ class ClassHierarchy private (
         if (isUnknown(objectType))
             return ;
 
-        subtypes.get(objectType) foreach { subtypeInformation ⇒ subtypeInformation.foreach(f) }
+        subtypeInformation.get(objectType) foreach { subtypeInformation ⇒
+            subtypeInformation.foreach(f)
+        }
 
         /* REMOVE as of 27.7.2017
         // We had to change this method to get better performance.
@@ -867,7 +869,9 @@ class ClassHierarchy private (
         if (isUnknown(objectType))
             return ;
 
-        supertypes.get(objectType).foreach(supertypes ⇒ supertypes.foreach(f))
+        supertypeInformation.get(objectType) foreach { supertypeInformation ⇒
+            supertypeInformation.foreach(f)
+        }
 
         /* REMOVE as of 27.7.2017
         val oid = objectType.id
@@ -959,7 +963,7 @@ class ClassHierarchy private (
         if (isUnknown(objectType))
             return UIDSet.empty
 
-        var ts = supertypes.get(objectType).get.all
+        var ts = supertypeInformation.get(objectType).get.all
         if (reflexive) ts += objectType
         ts
     }
@@ -2635,7 +2639,7 @@ object ClassHierarchy {
                 return ;
             }
 
-            def addToSet(data: Array[UIDSet[ObjectType]], index: Int, t: ObjectType) = {
+            def addToSet(data: Array[UIDSet[ObjectType]], index: Int, t: ObjectType): Unit = {
                 val objectTypes = data(index)
                 data(index) = {
                     if (objectTypes eq null)
@@ -2645,7 +2649,7 @@ object ClassHierarchy {
                 }
             }
 
-            def ensureHasSet(data: Array[UIDSet[ObjectType]], index: Int) = {
+            def ensureHasSet(data: Array[UIDSet[ObjectType]], index: Int): Unit = {
                 if (data(index) eq null) {
                     data(index) = UIDSet.empty
                 }
@@ -2702,15 +2706,6 @@ object ClassHierarchy {
             }
         }
 
-        typeDeclarations.seq foreach { typeDeclaration ⇒
-            process(
-                typeDeclaration.objectType,
-                typeDeclaration.isInterfaceType,
-                isFinal = false,
-                typeDeclaration.theSuperclassType,
-                typeDeclaration.theSuperinterfaceTypes
-            )
-        }
         // Analyzes the given class file and extends the current class hierarchy.
         val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
         classFiles.seq foreach { classFile ⇒
@@ -2729,6 +2724,27 @@ object ClassHierarchy {
                         UIDSet.empty ++ classFile.interfaceTypes
                     )
                 }
+            }
+        }
+
+        typeDeclarations.seq foreach { typeDeclaration ⇒
+            val objectType = typeDeclaration.objectType
+            if (!processedClassType(objectType.id)) {
+                processedClassType(objectType.id) = true
+                process(
+                    objectType,
+                    typeDeclaration.isInterfaceType,
+                    isFinal = false,
+                    typeDeclaration.theSuperclassType,
+                    typeDeclaration.theSuperinterfaceTypes
+                )
+            } else {
+                OPALLogger.warn(
+                    "project configuration",
+                    s"the type declaration for ${objectType.toJava} is ignored; "+
+                        "class is already defined in the code base "+
+                        "or defined multiple times in the configured type hierarchy"
+                )
             }
         }
 
@@ -2945,7 +2961,7 @@ object ClassHierarchy {
 
             val typesToProcess = mutable.Queue.empty[ObjectType] ++ rootInterfaceTypes
 
-            // IDEA: breadth-first traversal of the class hierary with some fallback if an
+            // IDEA: breadth-first traversal of the class hierarchy with some fallback if an
             // interface inherits from multiple interfaces (and maybe from the same (indirect)
             // superinterface.)
 
@@ -2974,13 +2990,13 @@ object ClassHierarchy {
                             superinterfaceTypesMap(supertype.id) eq null
                     }
                 }) {
-                    supertypes += ((
+                    supertypes = supertypes.updated(
                         t,
                         SupertypeInformation(
                             ClassHierarchy.JustObject,
                             allSuperSuperinterfaceTypes ++ superinterfaceTypes
                         )
-                    ))
+                    )
                     typesToProcess ++= subinterfaceTypesMap(t.id)
                 } else {
                     typesToProcess += t
@@ -2989,7 +3005,7 @@ object ClassHierarchy {
 
             // 2. process all class types
             val rootTypes = await(rootTypesFuture, Inf) // we may have to wait...
-            typesToProcess ++= rootTypes.iterator filter { t ⇒ !interfaceTypesMap(t.id) }
+            typesToProcess ++= rootTypes.iterator.filter(t ⇒ !interfaceTypesMap(t.id))
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 val superinterfaceTypes = {
@@ -3017,7 +3033,7 @@ object ClassHierarchy {
                                     allInterfaceTypes
                             }) + nextSuperinterfacetype
                         }
-                supertypes += ((
+                supertypes = supertypes.updated(
                     t,
                     SupertypeInformation(
                         {
@@ -3028,7 +3044,7 @@ object ClassHierarchy {
                         },
                         allSuperinterfaceTypes
                     )
-                ))
+                )
                 typesToProcess ++= subclassTypesMap(t.id)
             }
 

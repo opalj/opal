@@ -27,11 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package ai
+package common
+
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Factory for analyses that can be executed eagerly and lazily. In general, lazily is
- * preferred. However, for debugging purposes (i.e., if we don't have a client) eager
- * execution might be necessary.
+ * The [[org.opalj.br.analyses.ProjectInformationKey]] to retrieve the
+ * [[DefinitionSites]] object for a project.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
  */
-trait FPCFAnalysisScheduler extends FPCFEagerAnalysisScheduler
+object DefinitionSitesKey extends ProjectInformationKey[DefinitionSites, Nothing] {
+
+    override protected def requirements: ProjectInformationKeys = Seq.empty
+
+    override protected def compute(project: SomeProject): DefinitionSites = {
+        new DefinitionSites(project)
+    }
+}

@@ -32,8 +32,8 @@ package analyses
 
 import org.opalj
 import org.opalj.ai.DefinitionSite
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.Domain
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -486,23 +486,31 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
     }
 }
 
-trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+
     override def derives: Set[PropertyKind] = Set(ReturnValueFreshness)
 
-    override def uses: Set[PropertyKind] =
+    override def uses: Set[PropertyKind] = {
         Set(EscapeProperty, VirtualMethodReturnValueFreshness, FieldLocality)
+    }
 }
 
-object EagerReturnValueFreshnessAnalysis extends ReturnValueFreshnessAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerReturnValueFreshnessAnalysis
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
+
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new ReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleForEntities(declaredMethods)(analysis.determineFreshness)
+        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
     }
 }
 
-object LazyReturnValueFreshnessAnalysis extends ReturnValueFreshnessAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyReturnValueFreshnessAnalysis
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

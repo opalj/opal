@@ -46,7 +46,9 @@ import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
  *
  * @author Dominik Helm
  */
-class VirtualMethodStaticDataUsageAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualMethodStaticDataUsageAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineUsage(dm: DeclaredMethod): PropertyComputationResult = {
@@ -142,13 +144,14 @@ object EagerVirtualMethodStaticDataUsageAnalysis
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(project)
         val vms = project.get(DeclaredMethodsKey)
-        propertyStore.scheduleForEntities(vms.declaredMethods)(analysis.determineUsage)
+        propertyStore.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineUsage)
         analysis
     }
 }
 
 object LazyVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler with FPCFLazyAnalysisScheduler {
+
     def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
         ps.registerLazyPropertyComputation(

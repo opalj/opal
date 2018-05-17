@@ -37,7 +37,7 @@ sealed trait FieldLocalityMetaInformation extends PropertyMetaInformation {
 }
 
 /**
- * A property to describe the lifetime of the values stored in an instance field.
+ * Describe the lifetime of the values stored in an instance field.
  *
  * [[LocalField]]s have a lifetime that is not longer than that of the field's owning instance.
  * [[ExtensibleLocalField]]s provide the same guarantee only if the (dynamic) type of the owning

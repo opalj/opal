@@ -30,7 +30,7 @@ package org.opalj
 package ba
 
 /**
- * Represents the access flags of a class, method or field declaration.
+ * Represents the access flags of a class (module), method or field declaration.
  *
  * All standard access flags are predefined.
  *
@@ -105,4 +105,19 @@ final class AccessModifier(private[ba] val accessFlags: Int) extends AnyVal {
         new AccessModifier(this.accessFlags | ba.TRANSIENT.accessFlags)
     }
 
+    final def MODULE: AccessModifier = {
+        new AccessModifier(this.accessFlags | ba.MODULE.accessFlags)
+    }
+    final def OPEN: AccessModifier = {
+        new AccessModifier(this.accessFlags | ba.OPEN.accessFlags)
+    }
+    final def MANDATED: AccessModifier = {
+        new AccessModifier(this.accessFlags | ba.MANDATED.accessFlags)
+    }
+    final def TRANSITIVE: AccessModifier = {
+        new AccessModifier(this.accessFlags | ba.TRANSITIVE.accessFlags)
+    }
+    final def STATIC_PHASE: AccessModifier = {
+        new AccessModifier(this.accessFlags | ba.STATIC_PHASE.accessFlags)
+    }
 }

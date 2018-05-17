@@ -31,8 +31,8 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSitesKey
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -133,18 +133,22 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
 /**
  * A companion object used to start the analysis.
  */
-object EagerSimpleEscapeAnalysis extends SimpleEscapeAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerSimpleEscapeAnalysis
+    extends SimpleEscapeAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         val ass = project.get(DefinitionSitesKey).getAllocationSites
         val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore.scheduleForEntities(fps ++ ass)(analysis.determineEscape)
+        propertyStore.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
 }
 
-object LazySimpleEscapeAnalysis extends SimpleEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazySimpleEscapeAnalysis
+    extends SimpleEscapeAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

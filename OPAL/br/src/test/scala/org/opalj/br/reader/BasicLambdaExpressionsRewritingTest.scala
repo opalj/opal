@@ -33,12 +33,13 @@ package reader
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalactic.Equality
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
-import org.opalj.log.{GlobalLogContext, LogContext}
+import org.opalj.log.LogContext
+import org.opalj.log.StandardLogContext
+import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
@@ -106,7 +107,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 val expectedTarget = getInvokedMethod(project, classFile, annotations)
                 val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
 
-                withClue { s"failed to resolve $factoryCall in ${method.toJava}" }(
+                withClue { s"failed to resolve ${method.toJava(factoryCall.toString)}" }(
                     actualTarget.get should ===(expectedTarget.get)
                 )
             }
@@ -315,20 +316,23 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
     }
 
     describe("rewriting of lambda expressions") {
-        val cache = new BytecodeInstructionsCache
-        implicit val logContext: LogContext = GlobalLogContext
+        implicit val logContext: LogContext = new StandardLogContext()
+        OPALLogger.register(logContext, new ConsoleOPALLogger(ansiColored = true))
+
         val baseConfig: Config = ConfigFactory.load()
         val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
         val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
         val testConfig = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
-        class Framework extends {
+        object Framework extends {
             override val config = testConfig
-        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache)
-        val framework = new Framework()
+        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(
+            new BytecodeInstructionsCache
+        )
+
         val project = Project(
-            framework.ClassFiles(lambda18TestResources),
+            Framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             true,
             Traversable.empty,
@@ -337,5 +341,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
             logContext
         )
         testProject(project)
+
+        OPALLogger.unregister(logContext)
     }
 }
