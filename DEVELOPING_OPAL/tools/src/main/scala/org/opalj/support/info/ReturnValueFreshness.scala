@@ -36,61 +36,53 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.DeclaredMethodsKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.PrimitiveReturnValue
-import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 
 /**
- * A small demo determining the return value freshness for all methods in the current project.
+ * Computes return value freshness information; see
+ * [[org.opalj.fpcf.properties.ReturnValueFreshness]] for details.
  *
  * @author Florian Kuebler
  */
 object ReturnValueFreshness extends DefaultOneStepAnalysis {
+
+    override def title: String = "\"Freshness\" of Return Values"
+
+    override def description: String = {
+        "Describes whether a method returns a value that is allocated in that method or its "+
+            "callees and only has escape state \"Escape Via Return\""
+    }
+
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(PropertyStoreKey)
-        ps.setupPhase(Set(
-            EscapeProperty.key,
-            fpcf.properties.FieldLocality.key,
-            VirtualMethodEscapeProperty.key,
-            VirtualMethodReturnValueFreshness.key,
-            fpcf.properties.ReturnValueFreshness.key
-        ))
+        val ps = project.get(FPCFAnalysesManagerKey).runAll(
+            LazyInterProceduralEscapeAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyVirtualCallAggregatingEscapeAnalysis,
+            LazyVirtualReturnValueFreshnessAnalysis,
+            EagerReturnValueFreshnessAnalysis
+        )
 
-        LazyInterProceduralEscapeAnalysis.startLazily(project, ps)
-        LazyFieldLocalityAnalysis.startLazily(project, ps)
-        LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, ps)
-        LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, ps)
-
-        LazyReturnValueFreshnessAnalysis.startLazily(project, ps)
-
-        for (dm ← project.get(DeclaredMethodsKey).declaredMethods) {
-            ps.force(dm, fpcf.properties.ReturnValueFreshness.key)
-        }
-
-        ps.waitOnPhaseCompletion()
+        // TODO Provide more useful information about the entities and then add tests
 
         val fresh = ps.finalEntities(FreshReturnValue).toSeq
         val notFresh = ps.finalEntities(NoFreshReturnValue).toSeq
@@ -104,7 +96,7 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         val vextGetter = ps.finalEntities(VExtensibleGetter).toSeq
 
         for (ep ← notFresh) {
-            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> No Fresh")
+            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> Not Fresh")
         }
 
         for (ep ← getter) {
