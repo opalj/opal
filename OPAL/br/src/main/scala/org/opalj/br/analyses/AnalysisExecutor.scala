@@ -267,7 +267,7 @@ trait AnalysisExecutor {
         OPALLogger.info("info", "executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
-        OPALLogger.log(Info("Result:\n"+result.toConsoleString))
+        OPALLogger.log(Info(result.toConsoleString))
     }
 
     protected def handleParsingExceptions(
