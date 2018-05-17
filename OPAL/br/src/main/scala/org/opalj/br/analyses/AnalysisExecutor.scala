@@ -34,14 +34,13 @@ import java.net.URL
 import java.io.File
 
 import scala.util.control.ControlThrowable
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.Info
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -268,7 +267,7 @@ trait AnalysisExecutor {
         OPALLogger.info("info", "executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
-        OPALLogger.progress("Result:\n"+result.toConsoleString)
+        OPALLogger.log(Info("Result:\n"+result.toConsoleString))
     }
 
     protected def handleParsingExceptions(
@@ -331,9 +330,7 @@ trait AnalysisExecutor {
                 libraryClassFiles,
                 libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
                 Traversable.empty
-            )(
-                    config = configuredConfig
-                )
+            )(config = configuredConfig)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         OPALLogger.info(
