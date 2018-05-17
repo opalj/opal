@@ -189,6 +189,7 @@ object EagerInterProceduralEscapeAnalysis
 object LazyInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
+
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

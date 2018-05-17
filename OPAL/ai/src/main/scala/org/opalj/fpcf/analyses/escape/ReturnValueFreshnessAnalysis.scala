@@ -80,6 +80,7 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
 
 class ReturnValueFreshnessState(val dm: DeclaredMethod) {
+
     private[this] var returnValueDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
     private[this] var defSiteDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
@@ -124,8 +125,8 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
 }
 
 /**
- * An analysis that determines for a given method, whether its the return value is a fresh object
- * that is created by the method (or its callees) and does not escape other than
+ * This analysis determines for a given method whether the return value is a fresh object
+ * that is created by the method (or its callees) and that does not escape other than
  * [[org.opalj.fpcf.properties.EscapeViaReturn]].
  *
  * In other words, it aggregates the escape information for allocation-sites that are used as return
@@ -138,7 +139,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue] // TODO @Florian already defined in the package, isn't it?
+
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val definitionSites = project.get(DefinitionSitesKey)
@@ -359,7 +361,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
      * @return false if the return value may still be fresh, true otherwise.
      * @note (Re-)Adds dependees as necessary.
      */
-    def handleEscapeProperty(ep: EOptionP[DefinitionSite, EscapeProperty])(implicit state: ReturnValueFreshnessState): Boolean = ep match {
+    def handleEscapeProperty(
+        ep: EOptionP[DefinitionSite, EscapeProperty]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = ep match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
@@ -391,7 +398,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
      * @return false if the return value may still be fresh, true otherwise.
      * @note (Re-)Adds dependees as necessary.
      */
-    def handleFieldLocalityProperty(ep: EOptionP[Field, FieldLocality])(implicit state: ReturnValueFreshnessState): Boolean = ep match {
+    def handleFieldLocalityProperty(
+        ep: EOptionP[Field, FieldLocality]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = ep match {
         case FinalEP(_, LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             false

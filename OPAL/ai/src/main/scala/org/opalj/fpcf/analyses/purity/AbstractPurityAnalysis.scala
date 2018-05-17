@@ -242,6 +242,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         call:     Call[V],
         receiver: Option[Expr[V]]
     )(implicit state: AnalysisState): Boolean = {
+        // TODO @Florian Why AnalaysisState and not StateType?
         implicit val code: Array[Stmt[V]] = state.code
         val ratedResult = rater.handleCall(call, receiver)
         if (ratedResult.isDefined)
