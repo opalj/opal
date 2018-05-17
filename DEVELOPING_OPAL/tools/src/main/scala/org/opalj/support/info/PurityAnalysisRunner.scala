@@ -89,6 +89,7 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
     final val L1PurityAnalysisParameter = "-analysis=L1PurityAnalysis"
     final val L2PurityAnalysisParameter = "-analysis=L2PurityAnalysis"
+    final val suppressPerMethodReports = "-suppressPerMethodReports"
 
     override def title: String = "Purity Analysis"
 
@@ -98,7 +99,8 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         super.checkAnalysisSpecificParameters(
-            parameters.filter(p ⇒ p != L1PurityAnalysisParameter && p != L2PurityAnalysisParameter)
+            parameters.filter(p ⇒
+                p != L1PurityAnalysisParameter && p != L2PurityAnalysisParameter && p != suppressPerMethodReports)
         )
     }
 
@@ -150,7 +152,9 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
         val methodsWithPurityPropertyAsStrings =
             methodsWithPurityProperty.map(m ⇒ m._1.toJava+" >> "+m._2)
 
-        val methodInfo =
+        val methodInfo = if (parameters.contains(suppressPerMethodReports))
+            ""
+        else
             methodsWithPurityPropertyAsStrings.toList.sorted.mkString(
                 "\nPurity of methods:\n\t",
                 "\n\t",
@@ -159,20 +163,20 @@ object PurityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val result = methodInfo +
             propertyStore.toString(false)+
-            "\ncompile-time pure:                     "+methodsWithPurityProperty.count(m ⇒ m._2 == CompileTimePure)+
-            "\nAt least pure:                         "+methodsWithPurityProperty.count(m ⇒ m._2 == LBPure)+
-            "\nAt least domain-specficic pure:        "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDPure)+
-            "\nAt least side-effect free:             "+methodsWithPurityProperty.count(m ⇒ m._2 == LBSideEffectFree)+
-            "\nAt least d-s side effect free:         "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDSideEffectFree)+
-            "\nAt least externally pure:              "+methodsWithPurityProperty.count(m ⇒ m._2 == LBExternallyPure)+
-            "\nAt least d-s externally pure:          "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDExternallyPure)+
-            "\nAt least externally side-effect free:  "+methodsWithPurityProperty.count(m ⇒ m._2 == LBExternallySideEffectFree)+
-            "\nAt least d-s ext. side-effect free:    "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDExternallySideEffectFree)+
-            "\nAt least contextually pure:            "+methodsWithPurityProperty.count(m ⇒ m._2 == LBContextuallyPure)+
-            "\nAt least d-s contextually pure:        "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDContextuallyPure)+
-            "\nAt least contextually side-effect free:"+methodsWithPurityProperty.count(m ⇒ m._2 == LBContextuallySideEffectFree)+
-            "\nAt least d-s cont. side-effect free:   "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDContextuallySideEffectFree)+
-            "\nImpure:                                "+methodsWithPurityProperty.count(m ⇒ m._2 == LBImpure)
+                "\ncompile-time pure:                     "+methodsWithPurityProperty.count(m ⇒ m._2 == CompileTimePure)+
+                "\nAt least pure:                         "+methodsWithPurityProperty.count(m ⇒ m._2 == LBPure)+
+                "\nAt least domain-specficic pure:        "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDPure)+
+                "\nAt least side-effect free:             "+methodsWithPurityProperty.count(m ⇒ m._2 == LBSideEffectFree)+
+                "\nAt least d-s side effect free:         "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDSideEffectFree)+
+                "\nAt least externally pure:              "+methodsWithPurityProperty.count(m ⇒ m._2 == LBExternallyPure)+
+                "\nAt least d-s externally pure:          "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDExternallyPure)+
+                "\nAt least externally side-effect free:  "+methodsWithPurityProperty.count(m ⇒ m._2 == LBExternallySideEffectFree)+
+                "\nAt least d-s ext. side-effect free:    "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDExternallySideEffectFree)+
+                "\nAt least contextually pure:            "+methodsWithPurityProperty.count(m ⇒ m._2 == LBContextuallyPure)+
+                "\nAt least d-s contextually pure:        "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDContextuallyPure)+
+                "\nAt least contextually side-effect free:"+methodsWithPurityProperty.count(m ⇒ m._2 == LBContextuallySideEffectFree)+
+                "\nAt least d-s cont. side-effect free:   "+methodsWithPurityProperty.count(m ⇒ m._2 == LBDContextuallySideEffectFree)+
+                "\nImpure:                                "+methodsWithPurityProperty.count(m ⇒ m._2 == LBImpure)
 
         println(result)
         BasicReport("")

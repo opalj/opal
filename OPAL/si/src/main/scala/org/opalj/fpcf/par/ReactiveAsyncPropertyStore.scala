@@ -81,15 +81,16 @@ class ReactiveAsyncPropertyStore private (
 
     private implicit val handlerPool: HandlerPool = new HandlerPool(
         parallelism = parallelism,
-        unhandledExceptionHandler = t ⇒ thrownExceptionsInHandlerPool.add(t)
+        unhandledExceptionHandler = t ⇒ {
+            thrownExceptionsInHandlerPool.add(t)
+            t.printStackTrace()
+        }
     )
 
     implicit object RAUpdater extends Updater[PropertyValue] {
         override val initial: PropertyValue = null
 
         override def update(current: PropertyValue, next: PropertyValue): PropertyValue = next
-
-        override def ignoreIfFinal: Boolean = true
     }
 
     // Our internal property store is an Array of TrieMaps. We use it because of its lock free
@@ -546,7 +547,7 @@ class ReactiveAsyncPropertyStore private (
                     // When querying the properties, the cell already exists. At some point it was
                     // added and in step 3 the cell was generated
                     val dependeeCell = psE(someEOptionP.e).cell
-                    dependeeCell.removeCombinedCallbacks(cc.cell)
+                    cc.cell.removeDependency(dependeeCell)
                 }
 
                 incCounter("handleResult.IntermediateResult.removedCallbacks", removedDependees.size)
@@ -697,6 +698,8 @@ class ReactiveAsyncPropertyStore private (
         if (!thrownExceptionsInHandlerPool.isEmpty) {
             throw thrownExceptionsInHandlerPool.peek()
         }
+
+        incCounter("dependencyMap.size", dependencyMap.size)
     }
 
     private def incCounter(key: String, n: Int = 1): Long = {
