@@ -43,7 +43,7 @@ import org.opalj.fpcf.properties.thrown_exceptions.Types;
 public class ExceptionUsages {
 
     //
-    // CASES RELATED TO NOW EXCEPTIONS
+    // CASES RELATED TO NO EXCEPTIONS
     //
 
     @DoesNotThrowException(reason="just returns constant", requires={})
