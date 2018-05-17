@@ -37,69 +37,6 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.:&:
 
-case class SpecificationViolation(message: String) extends Exception(message)
-
-/**
- * Specification of the properties of a fix-point computation (FPC) that are relevant
- * when computing the correct scheduling order.
- */
-trait ComputationSpecification {
-
-    /**
-     * Returns a short descriptive name of the analysis which is described by this specification.
-     *
-     * The default name is the name of `this` class.
-     *
-     * '''This method should be overridden.'''
-     */
-    def name: String = {
-        val nameCandidate = this.getClass.getSimpleName
-        if (nameCandidate.endsWith("$"))
-            nameCandidate.substring(0, nameCandidate.length() - 1)
-        else
-            nameCandidate
-    }
-
-    /**
-     * Returns the kinds of properties which are queried by this analysis.
-     *
-     * @note   This set consists only of property kinds which are directly used by the analysis.
-     *
-     * @note   Self usages don't have to be documented since the analysis will derive this
-     *         property during the computation.
-     */
-    def uses: Set[PropertyKind]
-
-    /**
-     * Returns the set of property kinds derived by the underlying analysis.
-     */
-    def derives: Set[PropertyKind]
-
-    require(derives.nonEmpty, "the computation does not derive any information")
-
-    /**
-     * Has to be true if a computation is performed lazily. This is used to check that we
-     * never schedule multiple analyses which compute the same kind of property.
-     */
-    def isLazy: Boolean
-
-    /**
-     * Called by the scheduler to start execution of this analysis.
-     *
-     * The analysis may very well be a lazy computation.
-     */
-    def schedule(ps: PropertyStore): Unit
-
-    override def toString: String = {
-        val uses =
-            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
-        val derives =
-            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
-        s"FPC(name=$name,$uses,$derives)"
-    }
-
-}
-
 class AnalysisScenario {
 
     private[this] var ccs: Set[ComputationSpecification] = Set.empty
@@ -115,7 +52,9 @@ class AnalysisScenario {
         if (cs.isLazy) {
             // check that lazily computed properties are always only computed by ONE analysis
             cs.derives.find(lazilyComputedProperties.contains) foreach { p ⇒
-                val m = s"registration of $cs failed; $p is already computed by an analysis"
+                val m =
+                    s"registration of $cs failed; "+
+                        s"${PropertyKey.name(p.id)} is already computed by an analysis"
                 throw new SpecificationViolation(m)
             }
             lazilyComputedProperties ++= cs.derives
@@ -227,34 +166,4 @@ object AnalysisScenario {
         analyses.foreach(as.+=)
         as
     }
-}
-
-/**
- * Encapsulates a computed schedule and enables the execution of it.
- *
- * @param batches The representation of the computed schedule.
- */
-case class Schedule(
-        batches: Chain[Chain[ComputationSpecification]]
-) extends ((PropertyStore) ⇒ Unit) {
-
-    def apply(ps: PropertyStore): Unit = {
-        batches foreach { batch ⇒
-            val computedProperties =
-                batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
-            val openProperties =
-                batches.dropWhile(_ ne batch).tail. // collect properties derived in the future
-                    map(batch ⇒ batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)).
-                    reduceOption((l, r) ⇒ l ++ r).
-                    getOrElse(Set.empty)
-            ps.setupPhase(computedProperties, openProperties)
-            batch.foreach { fpc ⇒ fpc.schedule(ps) }
-            ps.waitOnPhaseCompletion()
-        }
-    }
-
-    override def toString: String = {
-        batches.map(_.map(_.name).mkString("{", ", ", "}")).mkString("Schedule(\n\t", "\n\t", "\n)")
-    }
-
 }
