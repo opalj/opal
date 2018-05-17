@@ -29,9 +29,11 @@
 package org.opalj
 package fpcf
 package analyses
+// TODO @Florian please fix package structure
 
-import org.opalj
-import org.opalj.ai.DefinitionSite
+import scala.annotation.switch
+
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.Domain
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
@@ -76,8 +78,6 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
-
-import scala.annotation.switch
 
 class ReturnValueFreshnessState(val dm: DeclaredMethod) {
     private[this] var returnValueDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
@@ -134,7 +134,10 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class ReturnValueFreshnessAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
@@ -263,7 +266,12 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * @return false if the return value may still be fresh, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleVirtualCall(callSite: VirtualFunctionCall[V])(implicit state: ReturnValueFreshnessState): Boolean = {
+    def handleVirtualCall(
+        callSite: VirtualFunctionCall[V]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = {
         val VirtualFunctionCall(_, dc, _, name, desc, receiver, _) = callSite
 
         val value = receiver.asVar.value.asDomainReferenceValue
@@ -328,7 +336,12 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * @return false if the return value may still be fresh, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleConcreteCall(callee: opalj.Result[Method])(implicit state: ReturnValueFreshnessState): Boolean = {
+    def handleConcreteCall(
+        callee: org.opalj.Result[Method]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = {
         if (callee.isEmpty) // Unknown method, not found in the scope of the current project
             return true;
 

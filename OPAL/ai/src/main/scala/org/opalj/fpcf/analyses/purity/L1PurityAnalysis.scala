@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+// TODO @Dominik please fix package structure
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.isVMLevelValue

@@ -31,6 +31,9 @@ package fpcf
 package analyses
 package escape
 
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.tac.NonVirtualMethodCall
@@ -43,13 +46,14 @@ import org.opalj.tac.NonVirtualMethodCall
  * @author Florian Kuebler
  */
 trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis {
+
     override type AnalysisContext <: AbstractEscapeAnalysisContext
 
     private[this] case class PredefinedResult(object_type: String, escape_of_this: String)
-    private[this] val ConfigKey = "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
 
-    import net.ceedubs.ficus.Ficus._
-    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+    private[this] val ConfigKey = {
+        "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
+    }
 
     /**
      * Statically loads the configuration and gets the escape property objects via reflection.

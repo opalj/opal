@@ -54,7 +54,7 @@ import org.opalj.tac.SelfReferenceParameter
  * @note Requires that the 3-address code's expressions are not deeply nested.
  *
  * @author Dominik Helm
- * @author Florian Kuebler
+ * @author Florian Kübler
  * @author Michael Eichberg
  */
 class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
@@ -158,7 +158,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
+sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
+
     override def uses: Set[PropertyKind] = Set.empty
 
     override def derives: Set[PropertyKind] = Set(FieldMutability)
@@ -167,7 +168,9 @@ trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
 /**
  * Executor for the field mutability analysis.
  */
-object EagerL1FieldMutabilityAnalysis extends L1FieldMutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL1FieldMutabilityAnalysis
+    extends L1FieldMutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(project)
@@ -182,7 +185,9 @@ object EagerL1FieldMutabilityAnalysis extends L1FieldMutabilityAnalysisScheduler
 /**
  * Executor for the lazy field mutability analysis.
  */
-object LazyL1FieldMutabilityAnalysis extends L1FieldMutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL1FieldMutabilityAnalysis
+    extends L1FieldMutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(project)

@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analyses
+package org.opalj.fpcf
+package analyses
+// TODO @Dominik please fix package structure
 
 import java.net.URL
 
@@ -34,8 +36,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.LBSideEffectFree
@@ -44,6 +44,7 @@ import org.opalj.fpcf.properties.CompileTimePure
 /**
  * Identifies pure/side-effect free methods with a void return type.
  *
+ * TODO @Dominik please move to Develop.support.info
  * @author Dominik Helm
  */
 object PureVoidMethodsAnalysis extends DefaultOneStepAnalysis {

@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+// TODO @Florian please fix package structure
 
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse

@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+// TODO @Dominik please fix package structure
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -64,6 +65,7 @@ import scala.collection.JavaConverters._
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
  *
+ * TODO @Dominik please move to Develop.support.info
  * @author Dominik Helm
  */
 object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
