@@ -325,8 +325,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // Reference comparisons may have different results for structurally equal values
             case If.ASTID ⇒
-                if (stmt.asIf.leftExpr.cTpe eq ComputationalTypeReference)
-                    atMost(LBSideEffectFree)
+                val If(_, left, _, right, _) = stmt
+                if ((left.cTpe eq ComputationalTypeReference))
+                    if (!(isLocal(left, CompileTimePure) || isLocal(right, CompileTimePure)))
+                        atMost(LBSideEffectFree)
                 true
 
             // The following statements do not further influence purity

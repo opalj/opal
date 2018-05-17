@@ -46,8 +46,8 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
-import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.FinalField
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.LBImpure
@@ -269,8 +269,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.definedMethod, LBImpure)
 
             // Cases that are pure
-            case FinalEP(_, EffectivelyFinalField | // Reading eff. final fields
-                ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalEP(_, _: FinalField)                   ⇒ // Reading eff. final fields
+            case FinalEP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
             case FinalEP(_, _: FieldMutability | // Reading non-final field
