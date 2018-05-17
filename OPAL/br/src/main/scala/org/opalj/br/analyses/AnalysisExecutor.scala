@@ -177,7 +177,6 @@ trait AnalysisExecutor {
                     (cpParams.flatMap(splitCPath), notCPArgs)
             }
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("fatal", "failed parsing the classpath", t)
                 sys.exit(2)
@@ -213,9 +212,7 @@ trait AnalysisExecutor {
                     val projectType = projectTypeParameter.substring(14).replace("_", " ")
                     (ProjectTypes.withName(projectType), args3)
             }
-
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("project configuration", "failed parsing the analysis mode", t)
                 printUsage
@@ -233,7 +230,6 @@ trait AnalysisExecutor {
             }
 
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("project configuration", "failed parsing completelyLoadLibraries", t)
                 printUsage
