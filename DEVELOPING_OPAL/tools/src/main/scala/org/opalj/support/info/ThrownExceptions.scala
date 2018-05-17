@@ -110,7 +110,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         val privateMethodsNotThrowingExceptions =
             epsNotThrowingExceptions.map(_.e.asInstanceOf[Method]).filter(_.isPrivate)
 
-        val report =
+        val perMethodsReport =
             if (parameters.contains(SuppressPerMethodReports))
                 ""
             else
@@ -119,11 +119,13 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 }.toList.sorted.mkString("\n")
 
         BasicReport(
-            report +
-                ps.toString(false)+"\n"+
-                "\n#methods with a thrown exceptions property: "+
-                s"${allMethods.size} (${project.methodsCount})"+
-                "\n#methods with exceptions information more precise than _ <: Throwable: "+
+            "\nThrown Exceptions Information:\n"+
+                perMethodsReport+"\n"+
+                ps.toString(printProperties = false)+
+                "\nStatistics:\n"+
+                "#methods with a thrown exceptions property: "+
+                s"${allMethods.size} (${project.methodsCount})\n"+
+                "#methods with exceptions information more precise than _ <: Throwable: "+
                 s"${methodsThrowingExceptions.size + epsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions == 0: ${epsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions == 0 and private: ${privateMethodsNotThrowingExceptions.size}\n"+

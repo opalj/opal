@@ -72,7 +72,6 @@ object StringConstants extends DefaultOneStepAnalysis {
             }.mkString("\""+escapedString+"\":\n\t - ", "\n\t - ", "\n")
         }
 
-        val report = mappedData.mkString(s"Found ${data.size} strings:\n", "\n", "\n")
-        BasicReport(report)
+        BasicReport(mappedData.mkString(s"\nFound ${data.size} strings:\n", "\n", "\n"))
     }
 }
