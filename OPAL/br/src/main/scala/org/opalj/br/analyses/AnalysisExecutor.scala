@@ -155,8 +155,9 @@ trait AnalysisExecutor {
                 !filename.endsWith(".ear") &&
                 !filename.endsWith(".war") &&
                 !filename.endsWith(".zip") &&
+                !filename.endsWith(".jmod") &&
                 !filename.endsWith(".class")) {
-                showError(s"Input file is neither a directory nor a class or JAR file: $file.")
+                showError(s"Input file is neither a directory nor a class or JAR/JMod file: $file.")
                 None
             } else
                 Some(file)
