@@ -83,9 +83,10 @@ import org.opalj.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
 import org.opalj.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
 import org.opalj.fpcf.properties.ThrownExceptions.SomeException
+
 /**
- * Transitive analysis of thrown exceptions
- * [[org.opalj.fpcf.properties.ThrownExceptions]] property.
+ * Analysis of thrown exceptions; computes the [[org.opalj.fpcf.properties.ThrownExceptions]]
+ * property.
  *
  * @author Andreas Muttscheller
  */
@@ -147,6 +148,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                 case ATHROW.opcode ⇒
                     result = UnknownExceptionIsThrown
                     false
+
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
                     val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
                         instruction
@@ -175,6 +177,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                                                 result = MethodCalledThrowsUnknownExceptions
                                                 false
                                             case eps: EPS[Entity, Property] ⇒
+                                                // TODO FIXME Describe or fix handling of upper type bound.
                                                 initialExceptions ++= eps.ub.types.concreteTypes
                                                 if (eps.isRefinable) {
                                                     dependees += eps
@@ -199,20 +202,23 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                    // TODO FIXME Check that the set of callees is closed! (use the respective keys!)
                     val callerPackage = m.classFile.thisType.packageName
                     val callees = instruction match {
                         case iv: INVOKEVIRTUAL   ⇒ project.virtualCall(callerPackage, iv)
                         case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
                         case _                   ⇒ Set.empty[Method]
                     }
-                    callees.foreach { callee ⇒
+                    callees foreach { callee ⇒
                         // Check the classhierarchy for thrown exceptions
+                        // TODO FIXME It is non-obvious why you use the ThrownExceptionsByOverridingMethods when your already iterate over all callees.
                         ps(callee, ThrownExceptionsByOverridingMethods.key) match {
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
                                 result = MethodCalledThrowsUnknownExceptions
                             case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
                                 result = MethodCalledThrowsUnknownExceptions
                             case eps: EPS[Entity, Property] ⇒
+                                // TODO FIXME Describe or fix handling of upper type bound.
                                 initialExceptions ++= eps.ub.exceptions.concreteTypes
                                 if (eps.isRefinable) {
                                     dependees += eps
@@ -322,7 +328,10 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
 
         if (!areAllExceptionsCollected) {
-            assert(result ne null, "!areAllExceptionsCollected without result")
+            assert(
+                result ne null,
+                "all exceptions are exepcted to be collected but the set is null"
+            )
             return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
