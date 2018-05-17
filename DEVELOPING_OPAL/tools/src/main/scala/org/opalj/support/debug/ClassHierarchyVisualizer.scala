@@ -29,13 +29,13 @@
 package org.opalj.support.debug
 
 import java.io.File
-import java.net.URL
 
 import org.opalj.graphs.toDot
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.writeAndOpen
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.br.reader.Java7LibraryFramework.ClassFiles
 
 /**
@@ -58,10 +58,14 @@ object ClassHierarchyVisualizer {
                 ClassHierarchy.PreInitializedClassHierarchy
             } else {
                 val classFiles =
-                    (List.empty[(ClassFile, URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new File(filename))
+                    (List.empty[ClassFile] /: args) { (classFiles, filename) ⇒
+                        classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
                     }
-                ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
+                if (classFiles.forall(cf ⇒ cf.thisType != ObjectType.Object))
+                    // load pre-configured class hierarchy...
+                    ClassHierarchy(classFiles)(GlobalLogContext)
+                else
+                    ClassHierarchy(classFiles, Seq.empty)(GlobalLogContext)
             }
 
         println("Creating class hierarchy visualization.")

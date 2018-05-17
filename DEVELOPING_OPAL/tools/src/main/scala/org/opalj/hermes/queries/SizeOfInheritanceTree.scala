@@ -72,7 +72,7 @@ object SizeOfInheritanceTree extends FeatureQuery {
         val features = Array.fill[LocationsContainer[S]](featureIDs.size)(new LocationsContainer[S])
         var classCount = 0
         var sumOfSizeOfInheritanceTrees = 0
-        val supertypes = classHierarchy.supertypes
+        val supertypes = classHierarchy.supertypeInformation
         classHierarchy.foreachKnownType { t ⇒
             if (project.isProjectType(t)) {
                 val l = ClassFileLocation(project, t)
