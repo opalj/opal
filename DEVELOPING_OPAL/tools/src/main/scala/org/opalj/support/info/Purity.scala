@@ -46,7 +46,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.fpcf.PropertyMetaInformation
@@ -89,7 +88,6 @@ import org.opalj.fpcf.properties.LBExternallySideEffectFree
 import org.opalj.fpcf.properties.LBImpure
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.LBSideEffectFree
-import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.tac.DefaultTACAIKey
@@ -225,7 +223,7 @@ object Purity {
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
 
-        if(projectDir.isDefined) {
+        if (projectDir.isDefined) {
             val runtime = new File(projectDir.get, "runtime.csv")
             val runtimeNew = !runtime.exists()
             val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
@@ -260,7 +258,7 @@ object Purity {
         val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBDContextuallySideEffectFree) ⇒ m }
         val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, LBImpure) ⇒ m }
 
-        if(projectDir.isDefined) {
+        if (projectDir.isDefined) {
             val results = new File(projectDir.get, "method-results.csv")
             val resultsNew = !results.exists()
             val resultsWriter = new PrintWriter(new FileOutputStream(results, !individual))
@@ -268,17 +266,17 @@ object Purity {
                 if (resultsNew) {
                     results.createNewFile()
                     if (!individual)
-                        resultsWriter.println("{c};{};{d},{n};{n,d},{r};{r,d},{n,r};{n,r,d}," +
+                        resultsWriter.println("{c};{};{d},{n};{n,d},{r};{r,d},{n,r};{n,r,d},"+
                             "{p};{p,d},{n,p},{n,p,d},{i^};count")
                 }
 
                 if (!individual) {
                     resultsWriter.println(
-                        s"${compileTimePure.size};${pure.size};${dPure.size};${sideEffectFree.size};" +
-                            s"${dSideEffectFree.size};${externallyPure.size};${dExternallyPure.size};" +
-                            s"${externallySideEffectFree.size};${dExternallySideEffectFree.size};" +
-                            s"${contextuallyPure.size};${dContextuallyPure.size};" +
-                            s"${contextuallySideEffectFree.size};${dContextuallySideEffectFree.size};" +
+                        s"${compileTimePure.size};${pure.size};${dPure.size};${sideEffectFree.size};"+
+                            s"${dSideEffectFree.size};${externallyPure.size};${dExternallyPure.size};"+
+                            s"${externallySideEffectFree.size};${dExternallySideEffectFree.size};"+
+                            s"${contextuallyPure.size};${dContextuallyPure.size};"+
+                            s"${contextuallySideEffectFree.size};${dContextuallySideEffectFree.size};"+
                             s"${lbImpure.size};${purityEs.size}"
                     )
                 } else {
@@ -331,20 +329,20 @@ object Purity {
         } else {
             val result =
                 propertyStore.toString(false)+
-                "\ncompile-time pure:                     "+compileTimePure.size+
-                "\nAt least pure:                         "+pure.size+
-                "\nAt least domain-specficic pure:        "+dPure.size+
-                "\nAt least side-effect free:             "+sideEffectFree.size+
-                "\nAt least d-s side effect free:         "+dSideEffectFree.size+
-                "\nAt least externally pure:              "+externallyPure.size+
-                "\nAt least d-s externally pure:          "+dExternallyPure.size+
-                "\nAt least externally side-effect free:  "+externallySideEffectFree.size+
-                "\nAt least d-s ext. side-effect free:    "+dExternallySideEffectFree.size+
-                "\nAt least contextually pure:            "+contextuallyPure.size+
-                "\nAt least d-s contextually pure:        "+dContextuallyPure.size+
-                "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
-                "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
-                "\nImpure:                                "+lbImpure.size
+                    "\ncompile-time pure:                     "+compileTimePure.size+
+                    "\nAt least pure:                         "+pure.size+
+                    "\nAt least domain-specficic pure:        "+dPure.size+
+                    "\nAt least side-effect free:             "+sideEffectFree.size+
+                    "\nAt least d-s side effect free:         "+dSideEffectFree.size+
+                    "\nAt least externally pure:              "+externallyPure.size+
+                    "\nAt least d-s externally pure:          "+dExternallyPure.size+
+                    "\nAt least externally side-effect free:  "+externallySideEffectFree.size+
+                    "\nAt least d-s ext. side-effect free:    "+dExternallySideEffectFree.size+
+                    "\nAt least contextually pure:            "+contextuallyPure.size+
+                    "\nAt least d-s contextually pure:        "+dContextuallyPure.size+
+                    "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
+                    "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
+                    "\nImpure:                                "+lbImpure.size
 
             println(result)
         }
