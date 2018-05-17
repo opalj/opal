@@ -2635,7 +2635,7 @@ object ClassHierarchy {
                 return ;
             }
 
-            def addToSet(data: Array[UIDSet[ObjectType]], index: Int, t: ObjectType) = {
+            def addToSet(data: Array[UIDSet[ObjectType]], index: Int, t: ObjectType): Unit = {
                 val objectTypes = data(index)
                 data(index) = {
                     if (objectTypes eq null)
@@ -2645,7 +2645,7 @@ object ClassHierarchy {
                 }
             }
 
-            def ensureHasSet(data: Array[UIDSet[ObjectType]], index: Int) = {
+            def ensureHasSet(data: Array[UIDSet[ObjectType]], index: Int): Unit = {
                 if (data(index) eq null) {
                     data(index) = UIDSet.empty
                 }
