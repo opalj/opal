@@ -117,13 +117,16 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] ( final val project:
 
 }
 
-trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+
     override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
 
     override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
 }
 
-object EagerVirtualReturnValueFreshnessAnalysis extends VirtualReturnValueFreshnessAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerVirtualReturnValueFreshnessAnalysis
+    extends VirtualReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
@@ -132,7 +135,9 @@ object EagerVirtualReturnValueFreshnessAnalysis extends VirtualReturnValueFreshn
     }
 }
 
-object LazyVirtualReturnValueFreshnessAnalysis extends VirtualCallAggregatingEscapeAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyVirtualReturnValueFreshnessAnalysis
+    extends VirtualReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
     override def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
         propertyStore.registerLazyPropertyComputation(
