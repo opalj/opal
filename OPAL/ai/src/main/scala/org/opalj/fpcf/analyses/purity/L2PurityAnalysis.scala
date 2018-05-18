@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+package purity
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.isVMLevelValue

@@ -29,9 +29,11 @@
 package org.opalj
 package fpcf
 package analyses
+// TODO @Florian please fix package structure
 
-import org.opalj
-import org.opalj.ai.DefinitionSite
+import scala.annotation.switch
+
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.Domain
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
@@ -77,9 +79,8 @@ import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
 
-import scala.annotation.switch
-
 class ReturnValueFreshnessState(val dm: DeclaredMethod) {
+
     private[this] var returnValueDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
     private[this] var defSiteDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
@@ -124,8 +125,8 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
 }
 
 /**
- * An analysis that determines for a given method, whether its the return value is a fresh object
- * that is created by the method (or its callees) and does not escape other than
+ * This analysis determines for a given method whether the return value is a fresh object
+ * that is created by the method (or its callees) and that does not escape other than
  * [[org.opalj.fpcf.properties.EscapeViaReturn]].
  *
  * In other words, it aggregates the escape information for allocation-sites that are used as return
@@ -134,8 +135,12 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+class ReturnValueFreshnessAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
+    type V = DUVar[(Domain with RecordDefUse)#DomainValue] // TODO @Florian already defined in the package, isn't it?
+
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val definitionSites = project.get(DefinitionSitesKey)
@@ -263,7 +268,12 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * @return false if the return value may still be fresh, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleVirtualCall(callSite: VirtualFunctionCall[V])(implicit state: ReturnValueFreshnessState): Boolean = {
+    def handleVirtualCall(
+        callSite: VirtualFunctionCall[V]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = {
         val VirtualFunctionCall(_, dc, _, name, desc, receiver, _) = callSite
 
         val value = receiver.asVar.value.asDomainReferenceValue
@@ -328,7 +338,12 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * @return false if the return value may still be fresh, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleConcreteCall(callee: opalj.Result[Method])(implicit state: ReturnValueFreshnessState): Boolean = {
+    def handleConcreteCall(
+        callee: org.opalj.Result[Method]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = {
         if (callee.isEmpty) // Unknown method, not found in the scope of the current project
             return true;
 
@@ -346,7 +361,12 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * @return false if the return value may still be fresh, true otherwise.
      * @note (Re-)Adds dependees as necessary.
      */
-    def handleEscapeProperty(ep: EOptionP[DefinitionSite, EscapeProperty])(implicit state: ReturnValueFreshnessState): Boolean = ep match {
+    def handleEscapeProperty(
+        ep: EOptionP[DefinitionSite, EscapeProperty]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = ep match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
@@ -378,7 +398,12 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
      * @return false if the return value may still be fresh, true otherwise.
      * @note (Re-)Adds dependees as necessary.
      */
-    def handleFieldLocalityProperty(ep: EOptionP[Field, FieldLocality])(implicit state: ReturnValueFreshnessState): Boolean = ep match {
+    def handleFieldLocalityProperty(
+        ep: EOptionP[Field, FieldLocality]
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): Boolean = ep match {
         case FinalEP(_, LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             false
@@ -486,14 +511,19 @@ class ReturnValueFreshnessAnalysis private[analyses] ( final val project: SomePr
     }
 }
 
-trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+
     override def derives: Set[PropertyKind] = Set(ReturnValueFreshness)
 
-    override def uses: Set[PropertyKind] =
+    override def uses: Set[PropertyKind] = {
         Set(EscapeProperty, VirtualMethodReturnValueFreshness, FieldLocality)
+    }
 }
 
-object EagerReturnValueFreshnessAnalysis extends ReturnValueFreshnessAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerReturnValueFreshnessAnalysis
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
+
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new ReturnValueFreshnessAnalysis(project)
@@ -502,7 +532,10 @@ object EagerReturnValueFreshnessAnalysis extends ReturnValueFreshnessAnalysisSch
     }
 }
 
-object LazyReturnValueFreshnessAnalysis extends ReturnValueFreshnessAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyReturnValueFreshnessAnalysis
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

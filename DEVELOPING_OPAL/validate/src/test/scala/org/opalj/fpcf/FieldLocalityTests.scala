@@ -35,6 +35,7 @@ import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 class FieldLocalityTests extends PropertiesTest {
+
     val lazyAnalysisScheduler = Set(
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,

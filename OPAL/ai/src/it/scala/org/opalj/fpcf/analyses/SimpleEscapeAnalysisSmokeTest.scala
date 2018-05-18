@@ -27,20 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package fpcf
+package analyses
 
-import org.opalj.br.Method
-import org.opalj.collection.immutable.IntTrieSet
+import org.junit.runner.RunWith
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitRunner
+
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Nanoseconds
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.TestSupport.createJREProject
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.fpcf.properties.EscapeProperty
 
 /**
- * Identifies a definition site object in a method in the bytecode using its program counter and
- * the corresponding use-sites.
- * It acts as entity for the [[org.opalj.fpcf.properties.EscapeProperty]] and the computing
- * analyses.
- * A definition-site can be for example an allocation, the result of a function call, or the result
- * of a field-retrieval.
+ * Tests that the [[EagerSimpleEscapeAnalysis]] does not throw exceptions.
  *
- * @author Dominik Helm
- * @author Florian Kuebler
+ * @author Florian Kübler
  */
-case class DefinitionSite(method: Method, pc: Int, usedBy: IntTrieSet) extends DefinitionSiteLike
+@RunWith(classOf[JUnitRunner])
+class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
+
+    def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
+
+    def checkProject(p: SomeProject): Unit = {
+        val ps = p.get(PropertyStoreKey)
+        ps.setupPhase(Set(EscapeProperty), Set.empty)
+        EagerSimpleEscapeAnalysis.start(p)
+        ps.waitOnPhaseCompletion()
+    }
+
+    describe(s"executing the simple escape analysis should not fail") {
+
+        allBIProjects() foreach { biProject ⇒
+            val (name, projectFactory) = biProject
+            it(s"for $name") {
+                val p = projectFactory()
+                time { checkProject(p) } { reportAnalysisTime }
+            }
+        }
+
+        it(s"for the JDK") {
+            val p = createJREProject()
+            time { checkProject(p) } { reportAnalysisTime }
+        }
+    }
+}

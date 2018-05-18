@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+package purity
 
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse

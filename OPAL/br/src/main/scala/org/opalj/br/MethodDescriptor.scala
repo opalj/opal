@@ -137,7 +137,7 @@ sealed abstract class MethodDescriptor
 
     def toUMLNotation: String = {
         "("+{
-            if (parameterTypes.size == 0)
+            if (parameterTypes.isEmpty)
                 ""
             else
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
@@ -216,7 +216,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
 
 private final class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
 
-    override def parameterTypes = IndexedSeq.empty
+    override def parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty
 
     override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 

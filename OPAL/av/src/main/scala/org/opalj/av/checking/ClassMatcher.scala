@@ -81,13 +81,13 @@ case class DefaultClassMatcher(
         annotationsPredicate:     AnnotationsPredicate = AnyAnnotations,
         matchSubclasses:          Boolean              = false,
         matchImplementingclasses: Boolean              = false,
-        val matchMethods:         Boolean              = true,
-        val matchFields:          Boolean              = true
+        matchMethods:             Boolean              = true,
+        matchFields:              Boolean              = true
 ) extends ClassMatcher {
 
     def isSubClass(classFile: ClassFile, project: SomeProject): Boolean = {
         var sourceClassFile: ClassFile = classFile
-        while (!sourceClassFile.superclassType.isEmpty) {
+        while (sourceClassFile.superclassType.nonEmpty) {
             if (namePredicate(sourceClassFile.superclassType.get.fqn))
                 return true;
 

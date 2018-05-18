@@ -61,6 +61,7 @@ import org.opalj.tac.NonVirtualMethodCall
  * @author Florian Kuebler
  */
 trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
+
     override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
 
     abstract protected[this] override def handleThisLocalOfConstructor(

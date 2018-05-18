@@ -58,14 +58,94 @@ import org.opalj.da.Constant_Pool_Entry
  *
  * @author Michael Reif
  */
-object FanInFanOut extends FeatureQuery {
+class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
+
+    /// Configuration Keys
+    final val FanInFanOutConfigPrefix = "org.opalj.hermes.queries.FanInFanOut"
+
+    ///// ###############################################################
+    ///// ############### Config Parsing Data Structures ################
+    ///// ###############################################################
+
+    case class FeatureConfiguration(
+            featureName:   String,
+            numCategories: Int,
+            categorySize:  Double,
+            offset:        Int
+    ) {
+
+        private[this] lazy val _maxFeatureIndex = numCategories - 1
+
+        def featureIndex(value: Int): Int = {
+            Math.min(value / categorySize.toInt, _maxFeatureIndex) + offset
+        }
+
+        def featureIndex(value: Double): Int = {
+            Math.min((value / numCategories).toInt, _maxFeatureIndex) + offset
+        }
+    }
+
+    object FeatureConfiguration {
+
+        implicit def logContext: LogContext = GlobalLogContext
+
+        final val logCategory = "Hermes - fan-in/fan-out query"
+
+        def apply(
+            featureName:         String,
+            categoriesKey:       String,
+            categorySizeKey:     String,
+            categoriesDefault:   Int,
+            categorySizeDefault: Double,
+            offset:              Int
+        ): FeatureConfiguration = {
+            implicit val config = hermes.Config.getConfig(FanInFanOutConfigPrefix)
+            val numCategories = parseNumCategories(categoriesKey).getOrElse(categoriesDefault)
+            val categorySize = parseCategorySize(categorySizeKey).getOrElse(categorySizeDefault)
+
+            FeatureConfiguration(featureName, numCategories, categorySize, offset)
+        }
+
+        private[this] def parseNumCategories(
+            categoriesKey: String
+        )(
+            implicit
+            config: Config
+        ): Option[Int] = {
+            val numCategories = config.getInt(categoriesKey)
+            if (numCategories > 0)
+                Some(numCategories)
+            else {
+                val message =
+                    FanInFanOutConfigPrefix + categoriesKey+
+                        " setting invalid - value <= 0; category size has been set to default"
+                OPALLogger.warn(logCategory, message)
+                None
+            }
+        }
+
+        private[this] def parseCategorySize(
+            categorySizeKey: String
+        )(
+            implicit
+            config: Config
+        ): Option[Double] = {
+            val categorySize = config.getDouble(categorySizeKey)
+            if (categorySize > 0) {
+                Some(categorySize)
+            } else {
+                val message =
+                    FanInFanOutConfigPrefix + categorySizeKey+
+                        " setting invalid - value <= 0; category size has been set to default"
+                OPALLogger.warn(logCategory, message)
+                None
+            }
+        }
+    }
 
     ///// ###############################################################
     ///// ####################### CONFIGURATION #########################
     ///// ###############################################################
-
-    /// Configuration Keys
-    val configPrefix = "org.opalj.hermes.queries.FanInFanOut"
 
     val fanoutFeatureName = "FanOut"
     val fanoutCategories = "fanout.categories"
@@ -247,82 +327,3 @@ object FanInFanOut extends FeatureQuery {
     }
 }
 
-///// ###############################################################
-///// ############### Config Parsing Data Structures ################
-///// ###############################################################
-
-case class FeatureConfiguration(
-        featureName:   String,
-        numCategories: Int,
-        categorySize:  Double,
-        offset:        Int
-) {
-
-    private[this] lazy val _maxFeatureIndex = numCategories - 1
-
-    def featureIndex(value: Int): Int = {
-        Math.min(value / categorySize.toInt, _maxFeatureIndex) + offset
-    }
-
-    def featureIndex(value: Double): Int = {
-        Math.min((value / numCategories).toInt, _maxFeatureIndex) + offset
-    }
-}
-
-object FeatureConfiguration {
-
-    implicit def logContext: LogContext = GlobalLogContext
-
-    final val logCategory = "Hermes - fan-in/fan-out query"
-
-    def apply(
-        featureName:         String,
-        categoriesKey:       String,
-        categorySizeKey:     String,
-        categoriesDefault:   Int,
-        categorySizeDefault: Double,
-        offset:              Int
-    ): FeatureConfiguration = {
-        implicit val config = Globals.Config.getConfig(FanInFanOut.configPrefix)
-        val numCategories = parseNumCategories(categoriesKey).getOrElse(categoriesDefault)
-        val categorySize = parseCategorySize(categorySizeKey).getOrElse(categorySizeDefault)
-
-        FeatureConfiguration(featureName, numCategories, categorySize, offset)
-    }
-
-    private[this] def parseNumCategories(
-        categoriesKey: String
-    )(
-        implicit
-        config: Config
-    ): Option[Int] = {
-        val numCategories = config.getInt(categoriesKey)
-        if (numCategories > 0)
-            Some(numCategories)
-        else {
-            val message =
-                FanInFanOut.configPrefix + categoriesKey+
-                    " setting invalid - value <= 0; category size has been set to default"
-            OPALLogger.warn(logCategory, message)
-            None
-        }
-    }
-
-    private[this] def parseCategorySize(
-        categorySizeKey: String
-    )(
-        implicit
-        config: Config
-    ): Option[Double] = {
-        val categorySize = config.getDouble(categorySizeKey)
-        if (categorySize > 0) {
-            Some(categorySize)
-        } else {
-            val message =
-                FanInFanOut.configPrefix + categorySizeKey+
-                    " setting invalid - value <= 0; category size has been set to default"
-            OPALLogger.warn(logCategory, message)
-            None
-        }
-    }
-}

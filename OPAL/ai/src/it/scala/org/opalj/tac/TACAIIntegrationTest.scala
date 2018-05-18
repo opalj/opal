@@ -82,7 +82,10 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                     val (stmt, index) = stmtIndex
                     val bb = cfg.bb(index)
                     if (bb.endPC == index && bb.mayThrowException && stmt.isSideEffectFree) {
-                        fail(s"the statement: $stmt is side effect free but the basic block has a catch node/abnormal exit node as a successor")
+                        fail(
+                            s"$stmt is side effect free "+
+                                "but the basic block has a catch node/abnormal exit node as a successor"
+                        )
                     }
                 }
 
@@ -140,16 +143,15 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
 
     describe(s"creating the 3-address code") {
 
-        TestSupport.allBIProjects().foreach { biProject ⇒
+        TestSupport.allBIProjects() foreach { biProject ⇒
             val (name, projectFactory) = biProject
-
             it(s"for $name") {
                 var p = projectFactory()
                 domainFactories foreach { domainInformation ⇒
                     val (domainName, domainFactory) = domainInformation
                     time {
                         checkProject(p, domainFactory)
-                    } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                    } { t ⇒ info(s"using $domainName the conversion took ${t.toSeconds}") }
                     p = p.recreate()
                 }
             }
@@ -161,7 +163,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                 val (domainName, domainFactory) = domainInformation
                 time {
                     checkProject(p, domainFactory)
-                } { t ⇒ info(s"using $domainName conversion took ${t.toSeconds}") }
+                } { t ⇒ info(s"using $domainName the conversion took ${t.toSeconds}") }
                 p = p.recreate()
             }
         }

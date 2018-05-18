@@ -33,7 +33,7 @@ package analyses
 import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.ai.DefinitionSite
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.DefinedMethod

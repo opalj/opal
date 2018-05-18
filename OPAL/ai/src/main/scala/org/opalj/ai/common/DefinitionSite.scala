@@ -27,49 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analyses
+package ai
+package common
 
-import org.junit.runner.RunWith
-
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
-
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.TestSupport.createJREProject
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.br.Method
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
- * Let the [[EagerSimpleEscapeAnalysis]] run against all BI projects and the JDK.
+ * Identifies a definition site object in a method in the bytecode using its program counter and
+ * the corresponding use-sites.
+ * It acts as entity for the [[org.opalj.fpcf.properties.EscapeProperty]] and the computing
+ * analyses.
+ * A definition-site can be for example an allocation, the result of a function call, or the result
+ * of a field-retrieval.
  *
- * @author Florian Kübler
+ * @author Dominik Helm
+ * @author Florian Kuebler
  */
-@RunWith(classOf[JUnitRunner])
-class SimpleEscapeAnalysisIntegrationTest extends FunSpec with Matchers {
-
-    def checkProject(p: SomeProject): Unit = {
-        val ps = p.get(PropertyStoreKey)
-        ps.setupPhase(Set(EscapeProperty), Set.empty)
-        EagerSimpleEscapeAnalysis.start(p)
-        ps.waitOnPhaseCompletion()
-    }
-
-    allBIProjects() foreach { biProject ⇒
-        val (name, projectFactory) = biProject
-        it(s"it should be able to analyze $name") {
-            time {
-                checkProject(projectFactory())
-            } { t ⇒
-                info(s"the analysis took ${t.toSeconds}")
-            }
-        }
-    }
-
-    it(s"it should be able to analyze the JDK") {
-        time { checkProject(createJREProject()) } { t ⇒ info(s"the analysis took ${t.toSeconds}") }
-    }
-}
+case class DefinitionSite(method: Method, pc: Int, usedBy: IntTrieSet) extends DefinitionSiteLike

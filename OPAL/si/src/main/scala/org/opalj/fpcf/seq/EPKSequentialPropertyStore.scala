@@ -197,11 +197,18 @@ final class EPKSequentialPropertyStore private (
 
     // Triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        apply(EPK(e, pk))
+        apply(EPK(e, pk), false)
     }
 
     // Triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
+        apply(epk, false)
+    }
+
+    private[this] def apply[E <: Entity, P <: Property](
+        epk:   EPK[E, P],
+        force: Boolean
+    ): EOptionP[E, P] = {
         val e = epk.e
         val pk = epk.pk
         val pkIdInt = pk.id
@@ -228,7 +235,9 @@ final class EPKSequentialPropertyStore private (
                             delayedPropertyKinds.contains(pkIdInt)) {
                             epk
                         } else {
-                            FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
+                            val p = PropertyKey.fallbackProperty(this, e, pk)
+                            if (force) { set(e, p) }
+                            FinalEP(e, p)
                         }
                 }
 
@@ -284,7 +293,7 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply(e, pk)
+    def force(e: Entity, pk: SomePropertyKey): Unit = apply(EPK(e, pk), true)
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
@@ -714,11 +723,13 @@ final class EPKSequentialPropertyStore private (
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
-                        info(
-                            "analysis progress",
-                            s"used fallback $fallbackProperty for $e "+
-                                "(though an analysis was supposedly scheduled)"
-                        )
+                        if (traceFallbacks) {
+                            info(
+                                "analysis progress",
+                                s"used fallback $fallbackProperty for $e "+
+                                    "(though an analysis was supposedly scheduled)"
+                            )
+                        }
                         handleResult(fallbackResult)
 
                         continueComputation = true
@@ -763,10 +774,12 @@ final class EPKSequentialPropertyStore private (
                                 cSCC.take(10).mkString("", ",", "...")
                             else
                                 cSCC.mkString(",")
-                        info(
-                            "analysis progress",
-                            s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
-                        )
+                        if (traceCycleResolutions) {
+                            info(
+                                "analysis progress",
+                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                            )
+                        }
                         update(newEP.e, newEP.p, newEP.p, Nil)
                         continueComputation = true
                     }

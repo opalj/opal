@@ -44,7 +44,7 @@ import org.opalj.da.ClassFile
  *
  * @author Michael Reif
  */
-object GUIAPIUsage extends FeatureQuery {
+class GUIAPIUsage(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: List[String] = {
         List(

@@ -28,25 +28,37 @@
  */
 package org.opalj
 package fpcf
-package properties
 
-import org.opalj.br.ClassFile
+import org.opalj.collection.immutable.Chain
 
-sealed trait TypeEscapePropertyMetaInformation extends PropertyMetaInformation {
+/**
+ * Encapsulates a computed schedule and enables the execution of it.
+ *
+ * @param batches The representation of the computed schedule.
+ *
+ * @author Michael Eichberg
+ */
+case class Schedule(
+        batches: Chain[Chain[ComputationSpecification]]
+) extends ((PropertyStore) ⇒ Unit) {
 
-    final type Self = TypeEscapeProperty
+    def apply(ps: PropertyStore): Unit = {
+        batches foreach { batch ⇒
+            val computedProperties =
+                batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
+            val openProperties =
+                batches.dropWhile(_ ne batch).tail. // collect properties derived in the future
+                    map(batch ⇒ batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)).
+                    reduceOption((l, r) ⇒ l ++ r).
+                    getOrElse(Set.empty)
+            ps.setupPhase(computedProperties, openProperties)
+            batch.foreach { fpc ⇒ fpc.schedule(ps) }
+            ps.waitOnPhaseCompletion()
+        }
+    }
+
+    override def toString: String = {
+        batches.map(_.map(_.name).mkString("{", ", ", "}")).mkString("Schedule(\n\t", "\n\t", "\n)")
+    }
+
 }
-
-sealed abstract class TypeEscapeProperty extends Property with TypeEscapePropertyMetaInformation {
-
-    final def key: PropertyKey[TypeEscapeProperty] = TypeEscapeProperty.key
-}
-
-object TypeEscapeProperty extends TypeEscapePropertyMetaInformation {
-
-    final val key = PropertyKey.create[ClassFile, TypeEscapeProperty]("TypeEscapeProperty", MaybePackageLocalType)
-}
-
-case object GlobalType extends TypeEscapeProperty
-case object PackageLocalType extends TypeEscapeProperty
-case object MaybePackageLocalType extends TypeEscapeProperty

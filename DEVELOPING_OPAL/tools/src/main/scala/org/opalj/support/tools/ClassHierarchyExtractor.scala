@@ -76,22 +76,30 @@ object ClassHierarchyExtractor {
         import Console.err
         import org.opalj.br.reader.Java8Framework.ClassFiles
 
-        if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
-            println("Usage:     java …ClassHierarchy supertype filterprefix <JAR file>+")
+        if (args.length < 3 ||
+            !args.drop(2).forall(arg ⇒ arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
+            println("Usage:     java …ClassHierarchy supertype filterprefix <JAR|JMOD file>+")
             println("Example:   … java.lang.Enum \"\" .../rt.jar")
             println("           lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter.")
-            println("Copyright: 2015 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            println("Copyright: 2015, 2018 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
         val supertypeName = args(0).replace('.', '/')
         val filterPrefix = args(1).replace('.', '/')
 
-        val classFiles =
-            (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                cfs ++ ClassFiles(new File(filename))
+        val classFiles = args.foldLeft(Nil: List[ClassFile]) { (classFiles, filename) ⇒
+            classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
+        }
+        implicit val classHierarchy =
+            if (classFiles.forall(cf ⇒ cf.thisType != ObjectType.Object)) {
+                println("the class files do not contain java.lang.Object; adding default type hierarchy")
+                // load pre-configured class hierarchy...
+                ClassHierarchy(classFiles)(GlobalLogContext)
+            } else {
+                ClassHierarchy(classFiles, Seq.empty)(GlobalLogContext)
             }
-        implicit val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
+
         val supertype = ObjectType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {
             err.println(s"The type: $supertypeName is not defined in the specified jar(s).")

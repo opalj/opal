@@ -83,9 +83,10 @@ import org.opalj.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
 import org.opalj.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
 import org.opalj.fpcf.properties.ThrownExceptions.SomeException
+
 /**
- * Transitive analysis of thrown exceptions
- * [[org.opalj.fpcf.properties.ThrownExceptions]] property.
+ * Analysis of thrown exceptions; computes the [[org.opalj.fpcf.properties.ThrownExceptions]]
+ * property.
  *
  * @author Andreas Muttscheller
  */
@@ -147,6 +148,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                 case ATHROW.opcode ⇒
                     result = UnknownExceptionIsThrown
                     false
+
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒
                     val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
                         instruction
@@ -175,6 +177,10 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                                                 result = MethodCalledThrowsUnknownExceptions
                                                 false
                                             case eps: EPS[Entity, Property] ⇒
+                                                // Copy the concrete exception types to our initial
+                                                // exceptions set. Upper type bounds are only used
+                                                // for `SomeExecption`, which are handled above, and
+                                                // don't have to be added to this set.
                                                 initialExceptions ++= eps.ub.types.concreteTypes
                                                 if (eps.isRefinable) {
                                                     dependees += eps
@@ -199,26 +205,36 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    val callerPackage = m.classFile.thisType.packageName
-                    val callees = instruction match {
-                        case iv: INVOKEVIRTUAL   ⇒ project.virtualCall(callerPackage, iv)
-                        case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
-                        case _                   ⇒ Set.empty[Method]
+                    // ThrownExceptionsByOverridingMethods checks if the method is overridable and
+                    // returns `SomeException` if that is the case. Otherwise the concrete set of
+                    // exceptions is returned.
+                    val calleeOption = instruction match {
+                        case iv: INVOKEVIRTUAL   ⇒ project.resolveMethodReference(iv)
+                        case ii: INVOKEINTERFACE ⇒ project.resolveInterfaceMethodReference(ii)
+                        case _                   ⇒ None
                     }
-                    callees.foreach { callee ⇒
-                        // Check the classhierarchy for thrown exceptions
-                        ps(callee, ThrownExceptionsByOverridingMethods.key) match {
-                            case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
-                                result = MethodCalledThrowsUnknownExceptions
-                            case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
-                                result = MethodCalledThrowsUnknownExceptions
-                            case eps: EPS[Entity, Property] ⇒
-                                initialExceptions ++= eps.ub.exceptions.concreteTypes
-                                if (eps.isRefinable) {
-                                    dependees += eps
-                                }
-                            case epk ⇒ dependees += epk
-                        }
+                    calleeOption match {
+                        case Some(callee) ⇒
+                            // Check the class hierarchy for thrown exceptions
+                            ps(callee, ThrownExceptionsByOverridingMethods.key) match {
+                                case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
+                                    result = MethodCalledThrowsUnknownExceptions
+                                case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
+                                    result = MethodCalledThrowsUnknownExceptions
+                                case eps: EPS[Entity, Property] ⇒
+                                    // Copy the concrete exception types to our initial
+                                    // exceptions set. Upper type bounds are only used
+                                    // for `SomeExecption`, which are handled above, and
+                                    // don't have to be added to this set.
+                                    initialExceptions ++= eps.ub.exceptions.concreteTypes
+                                    if (eps.isRefinable) {
+                                        dependees += eps
+                                    }
+                                case epk ⇒ dependees += epk
+                            }
+                        case None ⇒
+                            // We have no information about this method.
+                            result = AnalysisLimitation
                     }
                     result == null
 
@@ -322,7 +338,10 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         val areAllExceptionsCollected = code.forall(collectAllExceptions)
 
         if (!areAllExceptionsCollected) {
-            assert(result ne null, "!areAllExceptionsCollected without result")
+            assert(
+                result ne null,
+                "all exceptions are exepcted to be collected but the set is null"
+            )
             return Result(m, result);
         }
         if (fieldAccessMayThrowNullPointerException ||

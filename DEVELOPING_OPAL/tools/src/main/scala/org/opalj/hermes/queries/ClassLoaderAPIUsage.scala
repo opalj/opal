@@ -46,7 +46,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  *
  * @author Michael Reif
  */
-object ClassLoaderAPIUsage extends APIFeatureQuery {
+class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: Chain[APIFeature] = {
 

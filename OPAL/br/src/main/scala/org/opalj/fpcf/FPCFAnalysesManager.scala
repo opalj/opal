@@ -29,76 +29,80 @@
 package org.opalj
 package fpcf
 
-import scala.collection.mutable
-
-import net.ceedubs.ficus.Ficus._
+import com.typesafe.config.Config
 
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.{debug ⇒ trace}
+import org.opalj.log.OPALLogger.debug
 import org.opalj.log.OPALLogger.error
+import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
 
 /**
+ * Manages the execution of a set of analyses.
+ *
+ * To get an instance use the respective `FPCFAnalysesManagerKey`.
+ *
  * @author Michael Reif
  * @author Michael Eichberg
  */
-class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
+class FPCFAnalysesManager private[fpcf] (
+        val project: SomeProject
+) {
 
-    implicit def logContext: LogContext = project.logContext
-
-    val propertyStore = project.get(PropertyStoreKey)
-    //  private[this] def propertyStore = project.get(PropertyStoreKey)
-
-    final val debug = {
-        project.config.as[Option[Boolean]](FPCFAnalysesManager.ConfigKey).getOrElse(false)
-    }
+    // caching (by means of using local fields) is not necessary
+    private[this] implicit final def logContext: LogContext = project.logContext
+    private[this] final def config: Config = project.config
+    private[this] final def propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    private[this] final def trace: Boolean = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
 
     // Accesses to this field have to be synchronized
-    private[this] final val derivedProperties = mutable.Set.empty[Int]
-
-    private[this] def registerProperties(
-        analysisRunner: FPCFEagerAnalysisScheduler
-    ): Unit = derivedProperties.synchronized {
-        assert(
-            !analysisRunner.derives.exists(pKind ⇒ derivedProperties.contains(pKind.id)),
-            s"FPCFAnalysisManager: a property has already been derived ${analysisRunner.derives}"
-        )
-        derivedProperties ++= analysisRunner.derives.map(_.id)
+    private[this] final val derivedProperties: Array[Boolean] = {
+        new Array[Boolean](PropertyKind.SupportedPropertyKinds)
     }
 
-    final def runAll(analyses: FPCFEagerAnalysisScheduler*): Unit = runAll(analyses)
+    final def runAll(analyses: ComputationSpecification*): PropertyStore = runAll(analyses.toSet)
 
-    final def runAll(analyses: Traversable[FPCFEagerAnalysisScheduler]): Unit = {
-        analyses.foreach(run)
-        propertyStore.waitOnPhaseCompletion()
-    }
-
-    private[this] def run(analysisRunner: FPCFEagerAnalysisScheduler): Unit = this.synchronized {
-        if (!isDerived(analysisRunner.derives)) {
-            if (debug) {
-                trace("analysis configuration", s"scheduling the analysis ${analysisRunner.name}")
+    final def runAll(analyses: Set[ComputationSpecification]): PropertyStore = this.synchronized {
+        val scenario = AnalysisScenario(analyses)
+        val properties = scenario.allProperties
+        if (properties exists { p ⇒
+            if (derivedProperties(p.id)) {
+                error(
+                    "analysis progress",
+                    s"$p was computed in a previous run; no analyses were executed"
+                )
+                true // <=> previously executed
+            } else {
+                false // <=> not previously executed
             }
-
-            registerProperties(analysisRunner)
-            analysisRunner.start(project, propertyStore)
-
-        } else {
-            val runner = analysisRunner.name
-            error("analysis configuration", s"$runner is running/was executed for this project")
+        }) {
+            // ... some property (kind) was already computed/scheduled
+            return propertyStore;
         }
-    }
+        properties foreach { p ⇒ derivedProperties(p.id) = true }
 
-    def isDerived(pKind: PropertyKind): Boolean = derivedProperties.synchronized {
-        derivedProperties contains pKind.id
-    }
+        val schedule = scenario.computeSchedule
 
-    def isDerived(pKinds: Set[PropertyKind]): Boolean = {
-        pKinds exists (pKind ⇒ isDerived(pKind))
+        if (trace) { debug("analysis progress", "executing "+schedule) }
+        time {
+            schedule(propertyStore)
+        } { t ⇒
+            if (trace) debug("analysis progress", s"execution took ${t.toSeconds}")
+        }
+        if (trace) {
+            debug(
+                "analysis progress",
+                properties.map(p ⇒ PropertyKey.name(p.id)).mkString(
+                    "used and derived properties = {", ", ", "}"
+                )
+            )
+        }
+        propertyStore
     }
-
 }
 
 object FPCFAnalysesManager {
 
-    final val ConfigKey = "org.opalj.fcpf.analyses.manager.debug"
+    final val TraceConfigKey = "org.opalj.debug.fcpf.analyses.FPCFAnalysesManager.trace"
+
 }

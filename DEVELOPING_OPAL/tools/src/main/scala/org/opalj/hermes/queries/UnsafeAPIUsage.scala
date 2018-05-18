@@ -48,7 +48,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  *
  * @author Michael Reif
  */
-object UnsafeAPIUsage extends APIFeatureQuery {
+class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: Chain[APIFeature] = {
 

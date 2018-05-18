@@ -134,37 +134,37 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
     describe("an AnalysisScenario") {
         it("should be possible to see the dependencies between the computations") {
-            (new AnalysisScenario(Set(c6, c7, c8))).propertyComputationsDependencies
+            (AnalysisScenario(Set(c6, c7, c8))).propertyComputationsDependencies
         }
     }
 
     describe("the scheduling of property computations") {
 
         it("should be possible to create an empty schedule") {
-            val batches = (new AnalysisScenario(Set())).computeSchedule.batches
+            val batches = (AnalysisScenario(Set())).computeSchedule.batches
             batches should be('empty)
         }
 
         it("should be possible to create a schedule where a property is computed by multiple computations") {
-            val batches = (new AnalysisScenario(Set(c9, c10))).computeSchedule.batches
+            val batches = (AnalysisScenario(Set(c9, c10))).computeSchedule.batches
             batches.size should be(2)
         }
 
         it("should be possible to create a schedule with one computation") {
-            val batches = (new AnalysisScenario(Set(c1))).computeSchedule.batches
+            val batches = (AnalysisScenario(Set(c1))).computeSchedule.batches
             batches.size should be(1)
             batches.head.head should be(c1)
         }
 
         it("should be possible to create a schedule with two independent computations") {
-            val batches = (new AnalysisScenario(Set(c1, c3))).computeSchedule.batches
+            val batches = (AnalysisScenario(Set(c1, c3))).computeSchedule.batches
             batches.size should be(2)
             batches.foreach(_.size should be(1))
             batches.flatMap(batch ⇒ batch).toSet should be(Set(c1, c3))
         }
 
         it("should be possible to create a schedule where not all properties are explicitly derived") {
-            val batches = (new AnalysisScenario(Set(c1, c2))).computeSchedule.batches
+            val batches = (AnalysisScenario(Set(c1, c2))).computeSchedule.batches
             batches.size should be(2)
             batches.foreach(_.size should be(1))
             batches.head.head should be(c1)
@@ -172,13 +172,13 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         }
 
         it("should be possible to create a schedule where all computations depend on each other") {
-            val batches = (new AnalysisScenario(Set(c6, c7, c8))).computeSchedule.batches
+            val batches = (AnalysisScenario(Set(c6, c7, c8))).computeSchedule.batches
             batches.size should be(1)
             batches.head.toSet should be(Set(c6, c7, c8))
         }
 
         it("should be possible to create a complex schedule") {
-            val schedule = (new AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7, c8, c9))).computeSchedule
+            val schedule = (AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7, c8, c9))).computeSchedule
             schedule.batches.take(5).flatMap(batch ⇒ batch).toSet should be(Set(c1, c2, c3, c4, c5))
             schedule.batches.drop(5).head.toSet should be(Set(c6, c7, c8))
         }

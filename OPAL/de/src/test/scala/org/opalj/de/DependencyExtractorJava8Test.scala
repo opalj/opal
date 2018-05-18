@@ -62,7 +62,7 @@ class DependencyExtractorJava8Test extends FunSuite {
 
             dependencies.get(key) match {
                 case Some(0) ⇒
-                    fail("The dependency "+key+" was not extracted the expected number of times.")
+                    fail("the dependency "+key+" was not extracted the expected number of times")
                 case Some(x) ⇒
                     dependencies = dependencies.updated(key, x - 1)
                 case None ⇒
@@ -72,7 +72,7 @@ class DependencyExtractorJava8Test extends FunSuite {
                             "\n\t",
                             "\n"
                         )
-                    fail("The dependency "+key+" was not extracted.\n"+remainigDependencies)
+                    fail("the dependency "+key+" was not extracted.\n"+remainigDependencies)
             }
         }
 

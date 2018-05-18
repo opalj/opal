@@ -32,7 +32,7 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.ai.DefinitionSite
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method

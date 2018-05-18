@@ -32,7 +32,6 @@ package fpcf
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -69,6 +68,7 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         val context: List[PropertyStoreContext[AnyRef]] = List(
             PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
         )
-        PKESequentialPropertyStore(context: _*)
+        seq.PKESequentialPropertyStore(context: _*)
+        // seq.EPKSequentialPropertyStore(context: _*)
     }
 }

@@ -41,7 +41,10 @@ import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.Info
 import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogMessage
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.instructions._
@@ -218,6 +221,15 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isGroovyInvokedynamic(invokedynamic)) {
+            if (logUnknownInvokeDynamics) {
+                OPALLogger.logOnce(StandardLogMessage(
+                    Info,
+                    Some("load-time transformation"),
+                    "Groovy's INVOKEDYNAMICs are not rewritten"
+                ))
+            }
+            updatedClassFile
         } else {
             if (logUnknownInvokeDynamics) {
                 val t = classFile.thisType.toJava
@@ -242,8 +254,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         pc:            PC,
         invokedynamic: INVOKEDYNAMIC
     ): ClassFile = {
-        // IMPROVE Rewrite the code such that we are not forced to use a constant pool entry in
-        // the range [0..255]
+        // IMPROVE Rewrite to avoid that we have to use a constant pool entry in the range [0..255]
         val INVOKEDYNAMIC(
             bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
             ) = invokedynamic
@@ -753,6 +764,14 @@ object LambdaExpressionsRewriting {
             case InvokeStaticMethodHandle(
                 ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
                 ) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
+    def isGroovyInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        invokedynamic.bootstrapMethod.handle match {
+            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
+                ismh.receiverType.asObjectType.packageName.startsWith("org/codehaus/groovy")
             case _ ⇒ false
         }
     }

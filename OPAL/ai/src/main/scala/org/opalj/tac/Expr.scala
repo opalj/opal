@@ -36,6 +36,7 @@ import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.Type
+import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.IntegerType
 import org.opalj.br.BaseType
@@ -723,15 +724,15 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
 case class VirtualFunctionCall[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ReferenceType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             PC,
+    declaringClass: ReferenceType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V]
-    with VirtualCall[V] {
+        with VirtualCall[V] {
 
     final override def asVirtualFunctionCall: this.type = this
     final override def astID: Int = VirtualFunctionCall.ASTID

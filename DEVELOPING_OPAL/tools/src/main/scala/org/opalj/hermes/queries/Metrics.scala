@@ -39,7 +39,7 @@ import org.opalj.br.cfg.CFGFactory
  *
  * @author Michael Reif
  */
-object Metrics extends FeatureQuery {
+class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
 
     /**
      * The unique ids of the extracted features.

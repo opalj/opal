@@ -35,7 +35,7 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
 }
 
 /**
- * The property describes, whether a method returns a value that is allocated in that method or its
+ * Describes whether a method returns a value that is allocated in that method or its
  * callees and only has escape state [[EscapeViaReturn]].
  *
  * Values are [[FreshReturnValue]] for always freshly allocated return values, [[Getter]] for
@@ -59,12 +59,14 @@ sealed abstract class ReturnValueFreshness extends Property
 }
 
 object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation {
-    final lazy val key: PropertyKey[ReturnValueFreshness] = PropertyKey.create(
+
+    final val key: PropertyKey[ReturnValueFreshness] = PropertyKey.create(
         // Name of the property
         "ReturnValueFreshness",
         // fallback value
         NoFreshReturnValue
     )
+
 }
 
 /**

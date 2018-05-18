@@ -42,7 +42,7 @@ import org.opalj.br.analyses.SomeProject
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
  *
- * @author DominikHelm
+ * @author Dominik Helm
  */
 class DeclaredMethods(
         val p:    SomeProject,

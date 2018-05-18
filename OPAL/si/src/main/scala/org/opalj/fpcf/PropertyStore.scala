@@ -158,10 +158,16 @@ abstract class PropertyStore {
      */
     final def debug: Boolean = PropertyStore.Debug
 
+    final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
+
+    final def traceCycleResolutions: Boolean = PropertyStore.TraceCycleResolutions
+
     /**
      * Returns a consistent snapshot of the stored properties.
      *
      * @note Some computations may still be running.
+     *
+     * @param printProperties If `true` prints the properties of all entities.
      */
     def toString(printProperties: Boolean): String
 
@@ -280,7 +286,8 @@ abstract class PropertyStore {
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
      * if the property is computed lazily and no "eager computation" requires the results
-     * anymore.
+     * anymore. Force also ensures that the property is stored in the store even if
+     * the fallback value is used.
      * Using `force` is in particular necessary in a case where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
      * but strictly required for some elements.
@@ -394,6 +401,9 @@ abstract class PropertyStore {
      * properties will be computed now and which are computed in a later phase. The later
      * information is used to decide when we use a fallback.
      *
+     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
+     *        this case both sets have to be empty.
+     *
      * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
      *
      * @param delayedPropertyKinds The set of property kinds which will (also) be computed
@@ -506,6 +516,57 @@ object PropertyStore {
                 true
             } else {
                 info("OPAL", s"$DebugKey: debugging support off")
+                false
+            }
+    }
+
+    //
+    // The following settings are primarily about comprehending analysis results than
+    // about debugging analyses.
+    //
+
+    final val TraceFallbacksKey = "org.opalj.debug.fpcf.PropertyStore.TraceFallbacks"
+
+    private[this] var traceFallbacks: Boolean = {
+        val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
+        updateTraceFallbacks(initialTraceFallbacks)
+        initialTraceFallbacks
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def TraceFallbacks: Boolean = traceFallbacks
+
+    def updateTraceFallbacks(newTraceFallbacks: Boolean): Unit = {
+        implicit val logContext = GlobalLogContext
+        traceFallbacks =
+            if (newTraceFallbacks) {
+                info("OPAL", s"$TraceFallbacksKey: usages of fallbacks are reported")
+                true
+            } else {
+                info("OPAL", s"$TraceFallbacksKey: fallbacks are not reported")
+                false
+            }
+    }
+
+    final val TraceCycleResolutionsKey = "org.opalj.debug.fpcf.PropertyStore.TraceCycleResolutions"
+
+    private[this] var traceCycleResolutions: Boolean = {
+        val initialTraceCycleResolutions = BaseConfig.getBoolean(TraceCycleResolutionsKey)
+        updateTraceCycleResolutions(initialTraceCycleResolutions)
+        initialTraceCycleResolutions
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def TraceCycleResolutions: Boolean = traceCycleResolutions
+
+    def updateTraceCycleResolutions(newTraceCycleResolutions: Boolean): Unit = {
+        implicit val logContext = GlobalLogContext
+        traceCycleResolutions =
+            if (newTraceCycleResolutions) {
+                info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are reported")
+                true
+            } else {
+                info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are not reported")
                 false
             }
     }

@@ -60,7 +60,7 @@ import org.opalj.br.LongType
  *
  * @author Leonid Glanz
  */
-object MicroPatterns extends FeatureQuery {
+class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: List[String] = {
         List(

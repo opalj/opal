@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
-package analyses
+package support
+package info
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -42,7 +42,12 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.DeclaredMethods
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.DeclaredMethodsKey
+import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.LBSideEffectFree
@@ -66,7 +71,7 @@ import scala.collection.JavaConverters._
  *
  * @author Dominik Helm
  */
-object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
+object UnusedResults extends DefaultOneStepAnalysis {
 
     /** The type of the TAC domain. */
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
@@ -89,7 +94,9 @@ object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
 
         project.parForeachMethodWithBody() { methodInfo ⇒
             val method = methodInfo.method
-            issues.addAll(analyzeMethod(project, propertyStore, tacai, declaredMethods, method).asJava)
+            issues.addAll(
+                analyzeMethod(project, propertyStore, tacai, declaredMethods, method).asJava
+            )
         }
 
         BasicReport(issues.asScala)
@@ -107,19 +114,21 @@ object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
         val issues = code collect {
             case ExprStmt(_, call @ StaticFunctionCall(_, declClass, isInterface, name, descr, _)) ⇒
                 val callee = project.staticCall(declClass, isInterface, name, descr)
-                if (callee.hasValue) propertyStore(declaredMethods(callee.value), Purity.key) match {
-                    case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
-                        createIssue(method, callee.value, call.pc)
-                    case _ ⇒ None
-                }
+                if (callee.hasValue)
+                    propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
+                        case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
+                            createIssue(method, callee.value, call.pc)
+                        case _ ⇒ None
+                    }
                 else None
             case ExprStmt(_, call @ NonVirtualFunctionCall(_, declClass, isInterface, name, descr, _, _)) ⇒
                 val callee = project.specialCall(declClass, isInterface, name, descr)
-                if (callee.hasValue) propertyStore(declaredMethods(callee.value), Purity.key) match {
-                    case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
-                        createIssue(method, callee.value, call.pc)
-                    case _ ⇒ None
-                }
+                if (callee.hasValue)
+                    propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
+                        case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
+                            createIssue(method, callee.value, call.pc)
+                        case _ ⇒ None
+                    }
                 else None
             case ExprStmt(_, call @ VirtualFunctionCall(_, declClass, isInterface, name, descr, receiver, _)) ⇒
                 val receiverType =
@@ -130,9 +139,11 @@ object UnusedResultsAnalysis extends DefaultOneStepAnalysis {
                     } else {
                         declClass
                     }
-                val methodO = project.instanceCall(declClass.asObjectType, receiverType, name, descr)
+                val methodO =
+                    project.instanceCall(declClass.asObjectType, receiverType, name, descr)
                 if (methodO.hasValue) {
-                    propertyStore(declaredMethods(DefinedMethod(receiverType, methodO.value)), VirtualMethodPurity.key) match {
+                    val declaredMethod = declaredMethods(DefinedMethod(receiverType, methodO.value))
+                    propertyStore(declaredMethod, VirtualMethodPurity.key) match {
                         case FinalEP(_, VCompileTimePure | VLBPure | VLBSideEffectFree) ⇒
                             createIssue(method, methodO.value, call.pc)
                         case _ ⇒ None

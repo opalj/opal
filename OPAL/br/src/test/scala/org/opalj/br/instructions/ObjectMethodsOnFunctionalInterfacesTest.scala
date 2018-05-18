@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import java.io.File
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
@@ -38,7 +37,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.bytecode.JRELibraryFolder
 
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
@@ -56,7 +54,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
     val project: SomeProject = {
         val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature", "bi")
         val projectClasses = Java8Framework.ClassFiles(testResources)
-        val libraryClasses = Java8LibraryFramework.ClassFiles(new File(JRELibraryFolder, "rt.jar"))
+        val libraryClasses = Java8LibraryFramework.ClassFiles(org.opalj.bytecode.RTJar)
         Project(projectClasses, libraryClasses, true)
     }
 
