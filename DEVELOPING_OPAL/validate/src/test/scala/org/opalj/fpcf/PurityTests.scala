@@ -47,6 +47,7 @@ import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
@@ -64,6 +65,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL0PurityAnalysis),
             Set(
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL0FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis
@@ -77,6 +79,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL1PurityAnalysis),
             Set(
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
@@ -91,6 +94,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL2PurityAnalysis),
             Set(
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyVirtualMethodStaticDataUsageAnalysis,

@@ -116,11 +116,11 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     final val isMethodOverridable = project.get(IsOverridableMethodKey)
 
     case class State(
-        field:                       Field,
-        var fieldMutability:         FieldMutability,
-        var prematurelyReadDependee: Option[EOptionP[Entity, Property]],
-        var purityDependee:          Option[EOptionP[Entity, Property]],
-        var fieldMutabilityDependee: Option[EOptionP[Entity, Property]]
+            field:                       Field,
+            var fieldMutability:         FieldMutability,
+            var prematurelyReadDependee: Option[EOptionP[Entity, Property]],
+            var purityDependee:          Option[EOptionP[Entity, Property]],
+            var fieldMutabilityDependee: Option[EOptionP[Entity, Property]]
     )
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = entity match {
@@ -971,8 +971,8 @@ trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
  * Executor for the field mutability analysis.
  */
 object EagerL1FieldMutabilityAnalysis
-        extends L1FieldMutabilityAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends L1FieldMutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(project)
@@ -988,8 +988,8 @@ object EagerL1FieldMutabilityAnalysis
  * Executor for the lazy field mutability analysis.
  */
 object LazyL1FieldMutabilityAnalysis
-        extends L1FieldMutabilityAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends L1FieldMutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(project)

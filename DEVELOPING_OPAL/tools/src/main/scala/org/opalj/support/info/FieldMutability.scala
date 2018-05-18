@@ -37,7 +37,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL2PurityAnalysis
+import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.properties.VirtualMethodPurity

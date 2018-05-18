@@ -32,7 +32,7 @@ package fpcf
 import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.fpcf.analyses.LazyL2PurityAnalysis
+import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of

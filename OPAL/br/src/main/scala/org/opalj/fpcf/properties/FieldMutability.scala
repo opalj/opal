@@ -108,7 +108,7 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
                 if (f.isStatic) {
                     if (f.isFinal) DeclaredFinalField else NonFinalFieldByLackOfInformation
                 } else if (f.isFinal) {
-                    if(FieldPrematurelyRead.isPrematurelyReadFallback(ps.context[SomeProject], f))
+                    if (FieldPrematurelyRead.isPrematurelyReadFallback(ps.context[SomeProject], f))
                         NonFinalFieldByAnalysis
                     else
                         DeclaredFinalField

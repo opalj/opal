@@ -39,6 +39,9 @@ import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.fpcf.properties.DeclaredFinalField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.NonFinalFieldByLackOfInformation
+import org.opalj.fpcf.properties.FieldPrematurelyRead
+import org.opalj.fpcf.properties.PrematurelyReadField
+import org.opalj.fpcf.properties.NotPrematurelyReadField
 
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
@@ -118,10 +121,23 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         Result(field, EffectivelyFinalField)
     }
+
+    def createResult(field: Field, result: FieldMutability): PropertyComputationResult = {
+        def c(eop: EOptionP[Entity, Property]): PropertyComputationResult = eop match {
+            case EPS(_, NotPrematurelyReadField, _) ⇒
+                Result(field, result)
+            case EPS(_, _, PrematurelyReadField) ⇒
+                Result(field, NonFinalFieldByAnalysis)
+            case _ ⇒
+                IntermediateResult(field, NonFinalFieldByAnalysis, result, Seq(eop), c)
+        }
+
+        c(propertyStore(field, FieldPrematurelyRead.key))
+    }
 }
 
 trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
-    def uses: Set[PropertyKind] = Set.empty
+    def uses: Set[PropertyKind] = Set(FieldPrematurelyRead)
 
     def derives: Set[PropertyKind] = Set(FieldMutability)
 }
