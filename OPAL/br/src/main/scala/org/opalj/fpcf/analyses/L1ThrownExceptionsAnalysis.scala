@@ -177,7 +177,10 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                                                 result = MethodCalledThrowsUnknownExceptions
                                                 false
                                             case eps: EPS[Entity, Property] ⇒
-                                                // TODO FIXME Describe or fix handling of upper type bound.
+                                                // Copy the concrete exception types to our initial
+                                                // exceptions set. Upper type bounds are only used
+                                                // for `SomeExecption`, which are handled above, and
+                                                // don't have to be added to this set.
                                                 initialExceptions ++= eps.ub.types.concreteTypes
                                                 if (eps.isRefinable) {
                                                     dependees += eps
@@ -202,29 +205,36 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     false
 
                 case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    // TODO FIXME Check that the set of callees is closed! (use the respective keys!)
-                    val callerPackage = m.classFile.thisType.packageName
-                    val callees = instruction match {
-                        case iv: INVOKEVIRTUAL   ⇒ project.virtualCall(callerPackage, iv)
-                        case ii: INVOKEINTERFACE ⇒ project.interfaceCall(ii)
-                        case _                   ⇒ Set.empty[Method]
+                    // ThrownExceptionsByOverridingMethods checks if the method is overridable and
+                    // returns `SomeException` if that is the case. Otherwise the concrete set of
+                    // exceptions is returned.
+                    val calleeOption = instruction match {
+                        case iv: INVOKEVIRTUAL   ⇒ project.resolveMethodReference(iv)
+                        case ii: INVOKEINTERFACE ⇒ project.resolveInterfaceMethodReference(ii)
+                        case _                   ⇒ None
                     }
-                    callees foreach { callee ⇒
-                        // Check the classhierarchy for thrown exceptions
-                        // TODO FIXME It is non-obvious why you use the ThrownExceptionsByOverridingMethods when your already iterate over all callees.
-                        ps(callee, ThrownExceptionsByOverridingMethods.key) match {
-                            case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
-                                result = MethodCalledThrowsUnknownExceptions
-                            case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
-                                result = MethodCalledThrowsUnknownExceptions
-                            case eps: EPS[Entity, Property] ⇒
-                                // TODO FIXME Describe or fix handling of upper type bound.
-                                initialExceptions ++= eps.ub.exceptions.concreteTypes
-                                if (eps.isRefinable) {
-                                    dependees += eps
-                                }
-                            case epk ⇒ dependees += epk
-                        }
+                    calleeOption match {
+                        case Some(callee) ⇒
+                            // Check the class hierarchy for thrown exceptions
+                            ps(callee, ThrownExceptionsByOverridingMethods.key) match {
+                                case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
+                                    result = MethodCalledThrowsUnknownExceptions
+                                case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
+                                    result = MethodCalledThrowsUnknownExceptions
+                                case eps: EPS[Entity, Property] ⇒
+                                    // Copy the concrete exception types to our initial
+                                    // exceptions set. Upper type bounds are only used
+                                    // for `SomeExecption`, which are handled above, and
+                                    // don't have to be added to this set.
+                                    initialExceptions ++= eps.ub.exceptions.concreteTypes
+                                    if (eps.isRefinable) {
+                                        dependees += eps
+                                    }
+                                case epk ⇒ dependees += epk
+                            }
+                        case None ⇒
+                            // We have no information about this method.
+                            result = AnalysisLimitation
                     }
                     result == null
 
