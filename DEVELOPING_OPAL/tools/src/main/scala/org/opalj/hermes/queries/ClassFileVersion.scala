@@ -43,7 +43,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-object ClassFileVersion extends FeatureQuery {
+class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
 
     def featureId(majorVersion: Int) = s"Class File\n${jdkVersion(majorVersion)}"
 

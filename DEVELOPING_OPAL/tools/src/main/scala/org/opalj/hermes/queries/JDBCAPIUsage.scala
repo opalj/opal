@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.hermes.queries
+package org.opalj.hermes
+package queries
 
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
@@ -41,7 +42,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  *
  * @author Michael Reif
  */
-object JDBCAPIUsage extends APIFeatureQuery {
+class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: Chain[APIFeature] = {
         val DriverManager = ObjectType("java/sql/DriverManager")

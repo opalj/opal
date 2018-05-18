@@ -135,7 +135,7 @@ object Hermes extends JFXApp with HermesCore {
 
     // We use standard preferences for saving the application state; not for
     // permanent configuration settings!
-    val preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
+    val preferences: Preferences = Preferences.userRoot().node("org.opalj.hermes.Hermes")
 
     override def updateProjectData(f: ⇒ Unit): Unit = Platform.runLater {
         // We have to ensure that we are not calling this too often to avoid that the
@@ -145,7 +145,7 @@ object Hermes extends JFXApp with HermesCore {
 
     override def reportProgress(f: ⇒ Double): Unit = Platform.runLater {
         val progress = f
-        if (progress >= 1.0d) rootPane.getChildren().remove(progressBar)
+        if (progress >= 1.0d) rootPane.getChildren.remove(progressBar)
     }
 
     // Must only be called after all features were computed.
@@ -291,7 +291,7 @@ object Hermes extends JFXApp with HermesCore {
         }
     }
 
-    val onlyShowNotAvailableFeatures = new CheckBox("Only Show Not Available Features") {
+    private val onlyShowNotAvailableFeatures = new CheckBox("Only Show Not Available Features") {
         padding = Insets(5, 5, 5, 5)
         hgrow = Priority.ALWAYS
         maxWidth = Double.MaxValue
@@ -479,7 +479,7 @@ object Hermes extends JFXApp with HermesCore {
     mainPane.setContent(featuresTableView);
     mainPane.setRight(
         new VBox(
-            new Label(s"Locations (at most ${Globals.MaxLocations} are shown)") {
+            new Label(s"Locations (at most ${MaxLocations} are shown)") {
                 padding = Insets(5, 5, 5, 5)
                 hgrow = Priority.ALWAYS
                 maxWidth = Double.MaxValue
@@ -515,7 +515,7 @@ object Hermes extends JFXApp with HermesCore {
 
         val showConfig = new MenuItem("Show Config...") {
             onAction = handle {
-                val configurationDetails = new TextArea(Globals.renderConfig) {
+                val configurationDetails = new TextArea(renderConfig) {
                     editable = false
                     prefHeight = 600d
                 }

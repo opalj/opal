@@ -67,7 +67,7 @@ import org.opalj.da.ClassFile
  *
  * @author Michael Reif
  */
-trait APIFeatureQuery extends FeatureQuery {
+abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQuery {
 
     def apiFeatures: Chain[APIFeature]
 

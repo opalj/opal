@@ -29,7 +29,6 @@
 package org.opalj
 package hermes
 
-import scala.reflect.runtime.universe
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 
@@ -42,21 +41,29 @@ import org.opalj.log.GlobalLogContext
  *
  * @author Michael Eichberg
  */
-case class Query(query: String, activate: Boolean = true) {
+class Query(val query: String, private[this] var activate: Boolean = true) {
 
     def isEnabled: Boolean = activate
 
-    lazy val reify: Option[FeatureQuery] = {
-        try {
-            val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = runtimeMirror.staticModule(query)
-            val companionObject = runtimeMirror.reflectModule(module)
-            Some(companionObject.instance.asInstanceOf[FeatureQuery])
-        } catch {
-            case t: Throwable ⇒
-                error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
-                None
+    private[this] var reifiedQuery: Option[FeatureQuery] = null
+
+    def reify(implicit hermes: HermesConfig): Option[FeatureQuery] = this.synchronized {
+        if (reifiedQuery ne null) {
+            return reifiedQuery;
         }
+
+        reifiedQuery =
+            try {
+                val queryClass = Class.forName(query, false, getClass.getClassLoader)
+                val queryClassConstructor = queryClass.getDeclaredConstructor(classOf[HermesConfig])
+                Some(queryClassConstructor.newInstance(hermes).asInstanceOf[FeatureQuery])
+            } catch {
+                case t: Throwable ⇒
+                    error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
+                    activate = false
+                    None
+            }
+        reifiedQuery
     }
 
 }

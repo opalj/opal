@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.hermes.queries
+package org.opalj.hermes
+package queries
 
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
@@ -41,7 +42,7 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
  *
  * @author Michael Reif
  */
-object BytecodeInstrumentationAPIUsage extends APIFeatureQuery {
+class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override def apiFeatures: Chain[APIFeature] = {
         val Instrumentation = ObjectType("java/lang/instrument/Instrumentation")

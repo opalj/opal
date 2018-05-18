@@ -40,7 +40,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-object RecursiveDataStructures extends FeatureQuery {
+class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override def featureIDs: IndexedSeq[String] = {
         IndexedSeq(
