@@ -98,8 +98,8 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project)
-            EagerInterProceduralEscapeAnalysis.start(project)
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(LazyVirtualCallAggregatingEscapeAnalysis, EagerInterProceduralEscapeAnalysis)
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
