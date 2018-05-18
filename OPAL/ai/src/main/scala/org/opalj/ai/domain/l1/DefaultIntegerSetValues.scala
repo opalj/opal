@@ -34,10 +34,11 @@ package l1
 import java.lang.Math.min
 import java.lang.Math.max
 
-import org.opalj.br.CTIntType
-
 import scala.collection.immutable.SortedSet
 import scala.reflect.ClassTag
+
+import org.opalj.br.CTIntType
+import org.opalj.value.IsIntegerValue
 
 /**
  * This domain implements the tracking of integer values using sets.
@@ -56,7 +57,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            other.isInstanceOf[IsIntegerValue[_]]
+            other.isInstanceOf[IsIntegerValue]
         }
 
         override def summarize(pc: Int): DomainValue = this

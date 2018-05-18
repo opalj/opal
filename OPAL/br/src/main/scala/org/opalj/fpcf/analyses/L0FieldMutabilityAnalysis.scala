@@ -31,21 +31,43 @@ package fpcf
 package analyses
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
+import org.opalj.br.Field
+import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.fpcf.properties.DeclaredFinalField
 import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.NonFinalFieldByLackOfInformation
 
 /**
- * Determines if a private static non-final field is always initialized at most once or
+ * Determines if a private, static, non-final field is always initialized at most once or
  * if a field is or can be mutated after (lazy) initialization. Field read and writes at
  * initialization time (e.g., if the current class object is registered in some publically
  * available data-store) are not considered. This is in-line with the semantics of final,
  * which also does not prevent reads of partially initialized objects.
  */
-class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFAnalysis {
+class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+
+    final val fieldAccessInformation = project.get(FieldAccessInformationKey)
+
+    /**
+     * Invoked for in the lazy computation case.
+     * Final fields are considered [[org.opalj.fpcf.properties.DeclaredFinalField]], non-final and
+     * non-private fields or fields of library classes whose method bodies are not available are
+     * considered [[org.opalj.fpcf.properties.NonFinalFieldByAnalysis]].
+     * For all other cases the call is delegated to [[determineFieldMutability]].
+     */
+    def determineFieldMutabilityLazy(e: Entity): PropertyComputationResult = {
+        e match {
+            case field: Field ⇒
+                determineFieldMutability(field)
+
+            case _ ⇒
+                val m = e.getClass.getSimpleName+" is not an org.opalj.br.Field"
+                throw new IllegalArgumentException(m)
+        }
+    }
 
     /**
      * Analyzes the mutability of private static non-final fields.
@@ -55,68 +77,61 @@ class L0FieldMutabilityAnalysis private (val project: SomeProject) extends FPCFA
      * (If the analysis is scheduled using its companion object all class files with
      * native methods are filtered.)
      *
-     * @param classFile A ClassFile without native methods and where the method body of all
+     * @param field A field without native methods and where the method body of all
      *                  non-abstract methods is available.
      */
-    def determineFieldMutabilities(classFile: ClassFile): PropertyComputationResult = {
+    def determineFieldMutability(field: Field): PropertyComputationResult = {
+        if (field.isFinal)
+            return Result(field, DeclaredFinalField)
+
+        if (!field.isPrivate)
+            return Result(field, NonFinalFieldByLackOfInformation)
+
+        if (!field.isStatic)
+            return Result(field, NonFinalFieldByLackOfInformation)
+
+        if (field.classFile.methods.exists(_.isNative))
+            return Result(field, NonFinalFieldByLackOfInformation)
+
+        val classFile = field.classFile
         val thisType = classFile.thisType
-        val fields = classFile.fields
-        // IMPROVE Use access flags matcher instead of querying the access flags one after another.
-        val psnfFields = fields.filter(f ⇒ f.isPrivate && f.isStatic && !f.isFinal).toSet
-        if (psnfFields.isEmpty)
-            return NoResult;
 
-        val finalFields = fields.collect { case f if f.isFinal ⇒ EP(f, DeclaredFinalField) }
+        for {
+            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
+            if !method.isStaticInitializer
+            pc ← pcs
+        } {
+            method.body.get.instructions(pc) match {
+                case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
+                    // We don't need to lookup the field in the class
+                    // hierarchy since we are only concerned about private
+                    // fields so far... so we don't have to do a full
+                    // resolution of the field reference.
+                    val field = classFile.findField(fieldName, fieldType)
+                    if (field.isDefined) {
+                        return Result(field.get, NonFinalFieldByAnalysis);
+                    }
 
-        var effectivelyFinalFields = psnfFields
-        val allMethodsIterator = classFile.methods.iterator
-        val methodsIterator =
-            allMethodsIterator.filter(m ⇒ !m.isStaticInitializer && !m.isAbstract)
-
-        var continue: Boolean = true
-        while (methodsIterator.hasNext && continue) {
-            val m = methodsIterator.next
-            val code = m.body.get
-            val allFieldsNonFinal = code.exists { (pc, instruction) ⇒
-                instruction match {
-
-                    case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
-                        // We don't need to lookup the field in the class
-                        // hierarchy since we are only concerned about private
-                        // fields so far... so we don't have to do a full
-                        // resolution of the field reference.
-                        val field = classFile.findField(fieldName, fieldType)
-                        if (field.isDefined) {
-                            effectivelyFinalFields -= field.get
-                            effectivelyFinalFields.isEmpty // <=> true aborts the analysis
-                        } else {
-                            false
-                        }
-
-                    case _ ⇒
-                        false /*Nothing to do*/
-                }
+                case _ ⇒
             }
-            continue = !allFieldsNonFinal
         }
 
-        val psnfFieldsAnalysisResult = psnfFields map { f ⇒
-            if (effectivelyFinalFields.contains(f))
-                EP(f, EffectivelyFinalField)
-            else
-                EP(f, NonFinalFieldByAnalysis)
-        }
-
-        MultiResult(psnfFieldsAnalysisResult ++ finalFields)
+        Result(field, EffectivelyFinalField)
     }
+}
+
+trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
+    def uses: Set[PropertyKind] = Set.empty
+
+    def derives: Set[PropertyKind] = Set(FieldMutability)
 }
 
 /**
  * Factory object to create instances of the FieldMutabilityAnalysis.
  */
-object L0FieldMutabilityAnalysis extends FPCFEagerAnalysisScheduler {
-
-    def derivedProperties: Set[PropertyKind] = Set(FieldMutability)
+object EagerL0FieldMutabilityAnalysis
+    extends L0FieldMutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0FieldMutabilityAnalysis(project)
@@ -126,9 +141,26 @@ object L0FieldMutabilityAnalysis extends FPCFEagerAnalysisScheduler {
             else
                 project.allClassFiles
 
-        val classFiles = classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative))
+        val fields = {
+            classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
+        }
 
-        propertyStore.scheduleForEntities(classFiles)(analysis.determineFieldMutabilities)
+        propertyStore.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
+}
+
+object LazyL0FieldMutabilityAnalysis
+    extends L0FieldMutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
+    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new L0FieldMutabilityAnalysis(project)
+        propertyStore.registerLazyPropertyComputation(
+            FieldMutability.key,
+            (field: Field) ⇒ analysis.determineFieldMutabilityLazy(field)
+        )
+        analysis
+    }
+
 }

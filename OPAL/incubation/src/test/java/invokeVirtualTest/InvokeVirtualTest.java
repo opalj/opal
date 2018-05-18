@@ -34,6 +34,7 @@ package invokeVirtualTest;
  * 
  * @author Lars Schulte
  */
+@SuppressWarnings("deprecated")
 class InvokeVirtualTest extends InvokeVirtualHelper {
 
 	public Object method1(String s) {

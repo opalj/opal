@@ -74,7 +74,7 @@ object EntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
         project.analysisMode match {
             case DesktopApplication ⇒
                 val analysis = new EntryPointsAnalysis(project)
-                propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
+                propertyStore.scheduleEagerComputationsForEntities(ms)(analysis.determineEntrypoints)
                 analysis
             case _ ⇒
                 // In all other cases we simply fallback to treat the code base as a "library"
@@ -86,7 +86,7 @@ object EntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
                 propertyStore.waitOnPropertyComputationCompletion(true, true)
                 // STRICTLY REQUIRED OVER HERE - THE FOLLOWING ANALYSIS REQUIRES IT!
                 val analysis = new LibraryEntryPointsAnalysis(project)
-                propertyStore.scheduleForEntities(ms)(analysis.determineEntrypoints)
+                propertyStore.scheduleEagerComputationsForEntities(ms)(analysis.determineEntrypoints)
                 analysis
         }
     }

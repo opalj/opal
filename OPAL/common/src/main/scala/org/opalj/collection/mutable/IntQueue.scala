@@ -31,7 +31,7 @@ package collection
 package mutable
 
 /**
- * A lightweight linked-list based implementation of a mutable queue of int values.
+ * A lightweight, linked-list based implementation of a mutable queue of int values.
  *
  * @note   This data-structure is only intended to be used by OPAL.
  * @note   This data structure is not thread safe.

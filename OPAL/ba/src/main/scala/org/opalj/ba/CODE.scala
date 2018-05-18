@@ -442,10 +442,9 @@ object CODE {
                     newCodeElements += codeElements(index)
                 }
             }
-
+            // if we have removed a try block we now have to remove the handler's code...
             // DEBUG: println(codeElements.zipWithIndex.map(_.swap).mkString("old\n\t", "\n\t", "\n"))
             // DEBUG: println(newCodeElements.zipWithIndex.map(_.swap).mkString("new:\n\t", "\n\t", "\n\n"))
-
             removeDeadCode(newCodeElements) // tail-recursive call...
         } else {
             codeElements

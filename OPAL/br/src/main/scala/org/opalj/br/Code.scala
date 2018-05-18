@@ -50,11 +50,11 @@ import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.mutable.IntQueue
-import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntPair
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -167,7 +167,7 @@ final class Code private (
             bf: CanBuildFrom[Nothing, B, That]
         ): That = {
             val that = bf()
-            code foreach { (instructionLocation: PCAndInstruction) ⇒
+            code foreach { instructionLocation: PCAndInstruction ⇒
                 if (p(instructionLocation)) {
                     f(instructionLocation) foreach { v ⇒ that += v }
                 }
@@ -176,7 +176,7 @@ final class Code private (
         }
 
         def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
-            code.foreach { (instructionLocation: PCAndInstruction) ⇒
+            code foreach { instructionLocation: PCAndInstruction ⇒
                 if (p(instructionLocation)) f(instructionLocation)
             }
         }
@@ -208,9 +208,7 @@ final class Code private (
         bf: CanBuildFrom[Nothing, B, That]
     ): That = {
         val that = bf()
-        code.foreach { instructionLocation ⇒
-            f(instructionLocation) foreach { v ⇒ that += v }
-        }
+        code foreach { instructionLocation ⇒ f(instructionLocation).foreach(that += _) }
         that.result
     }
 
@@ -226,15 +224,15 @@ final class Code private (
      */
     def programCounters: IntIterator = {
         new IntIterator {
-            var pc = 0 // there is always at least one instruction
+            var nextPC = 0 // there is always at least one instruction
 
             def next(): Int = {
-                val next = pc
-                pc = pcOfNextInstruction(pc)
-                next
+                val pc = nextPC
+                nextPC = pcOfNextInstruction(nextPC)
+                pc
             }
 
-            def hasNext: Boolean = pc < instructions.length
+            def hasNext: Boolean = nextPC < instructions.length
         }
     }
 
@@ -256,8 +254,8 @@ final class Code private (
     }
 
     /**
-     * Calculates for each instruction to which subroutine the respective instruction
-     * belongs to – if any. This information is required to, e.g., identify the subroutine
+     * Calculates for each instruction the subroutine to which it belongs to – if any.
+     * This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
      *
      * @note   Calling this method only makes sense for Java bytecode that actually contains
@@ -349,9 +347,8 @@ final class Code private (
             remainingExceptionHandlers =
                 for {
                     eh ← remainingExceptionHandlers
-                    ExceptionHandler(startPC, endPC, handlerPC, _) = eh
-                    if subroutineIds(handlerPC) == -1 // we did not already analyze the handler
-                    if !belongsToCurrentSubroutine(startPC, endPC, handlerPC)
+                    if subroutineIds(eh.handlerPC) == -1 // we did not already analyze the handler
+                    if !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
                 } yield {
                     eh
                 }
@@ -449,10 +446,10 @@ final class Code private (
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        var cfJoins = IntTrieSet.empty
+        var cfJoins: IntTrieSet = EmptyIntTrieSet
 
-        val isReached = FixedSizeBitSet.create(instructionsLength)
-        isReached += 0 // the first instruction is always reached!
+        val isReached = new Array[Boolean](instructionsLength)
+        isReached(0) = true // the first instruction is always reached!
 
         var pc = 0
         while (pc < instructionsLength) {
@@ -460,10 +457,10 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
-                if (isReached.contains(pc))
+                if (isReached(pc))
                     cfJoins += pc
                 else
-                    isReached += pc
+                    isReached(pc) = true
             }
 
             (instruction.opcode: @switch) match {
@@ -491,29 +488,31 @@ final class Code private (
      *
      * @return  (1) An array which contains for each instruction the set of all predecessors,
      *          (2) the set of all instructions which have only predecessors; i.e., no successors
-     *          and (3) also the set of all instructions where multiple paths join.
-     *          ´(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, BitSet/*CF_JOINS*/)´.
+     *          and (3) the set of all instructions where multiple paths join.
+     *          ´(Array[PCs]/*PREDECESSOR_PCs*/, PCs/*FINAL_PCs*/, PCs/*CF_JOINS*/)´.
      *
      * Note, that in case of completely broken code, set 2 may contain other
      * instructions than `return` and `athrow` instructions.
      * If the code contains jsr/ret instructions the full blown CFG is computed.
      */
-    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, IntTrieSet) = {
+    def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
+        implicit val code = this
+
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
         val allPredecessorPCs = new Array[PCs](instructionsLength)
-        allPredecessorPCs(0) = IntTrieSet.empty // initialization for the start node
-        var exitPCs = IntTrieSet.empty
+        allPredecessorPCs(0) = EmptyIntTrieSet // initialization for the start node
+        var exitPCs: IntTrieSet = EmptyIntTrieSet
 
-        var cfJoins = IntTrieSet.empty
-        val isReached = FixedSizeBitSet.create(instructionsLength)
-        isReached += 0 // the first instruction is always reached!
+        var cfJoins: IntTrieSet = EmptyIntTrieSet
+        val isReached = new Array[Boolean](instructionsLength)
+        isReached(0) = true // the first instruction is always reached!
         @inline def runtimeSuccessor(successorPC: Int): Unit = {
-            if (isReached.contains(successorPC))
+            if (isReached(successorPC))
                 cfJoins += successorPC
             else
-                isReached += successorPC
+                isReached(successorPC) = true
         }
 
         lazy val cfg = CFGFactory(code, classHierarchy) // fallback if we analyze pre Java 5 code...
@@ -522,9 +521,9 @@ final class Code private (
             val i = instructions(pc)
             val nextPCs =
                 if (i.opcode == RET.opcode)
-                    i.asInstanceOf[RET].nextInstructions(pc, () ⇒ cfg)(this)
+                    i.asInstanceOf[RET].nextInstructions(pc, () ⇒ cfg)
                 else
-                    i.nextInstructions(pc, false)(this, classHierarchy)
+                    i.nextInstructions(pc, regularSuccessorsOnly = false)
             if (nextPCs.isEmpty) {
                 exitPCs += pc
             } else {
@@ -540,7 +539,7 @@ final class Code private (
                             allPredecessorPCs(nextPC) = predecessorPCs + pc
                         }
                     } else {
-                        // this handles cases where we have totally broken code; e.g.,
+                        // This handles cases where we have totally broken code; e.g.,
                         // compile-time dead code at the end of the method where the
                         // very last instruction is not even a ret/jsr/goto/return/atrow
                         // instruction (e.g., a NOP instruction as in case of jPython
@@ -549,7 +548,7 @@ final class Code private (
                     }
                 }
             }
-            pc = i.indexOfNextInstruction(pc)(this)
+            pc = i.indexOfNextInstruction(pc)
         }
 
         (allPredecessorPCs, exitPCs, cfJoins)
@@ -577,8 +576,9 @@ final class Code private (
     def liveVariables(
         predecessorPCs: Array[PCs],
         finalPCs:       PCs,
-        cfJoins:        IntTrieSet
+        cfJoins:        PCs
     ): LiveVariables = {
+        // IMPROVE Use StackMapTable (if available) to preinitialize the live variable information
         val instructions = this.instructions
         val instructionsLength = instructions.length
         val liveVariables = new Array[BitArraySet](instructionsLength)
@@ -591,8 +591,8 @@ final class Code private (
             var liveVariableInfo = AllDead
             if (instruction.readsLocal) {
                 // This instruction is by construction "not a final instruction"
-                // because these instructions never throw any(!) exceptions and
-                // also never "return" instructions.
+                // because this instruction never throws any(!) exceptions and it
+                // also never "returns" instructions.
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
@@ -670,16 +670,16 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (IntTrieSet /*joins*/ , IntTrieSet /*forks*/ , IntMap[IntTrieSet] /*forkTargetPCs*/ ) = {
+    ): (PCs /*joins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
-        var cfJoins = IntTrieSet.empty
-        var cfForks = IntTrieSet.empty
+        var cfJoins: IntTrieSet = EmptyIntTrieSet
+        var cfForks: IntTrieSet = EmptyIntTrieSet
         var cfForkTargets = IntMap.empty[IntTrieSet]
 
-        val isReached = FixedSizeBitSet.create(instructionsLength)
-        isReached += 0 // the first instruction is always reached!
+        val isReached = new Array[Boolean](instructionsLength)
+        isReached(0) = true // the first instruction is always reached!
 
         lazy val cfg = CFGFactory(this, classHierarchy)
 
@@ -689,13 +689,13 @@ final class Code private (
             val nextPC = pcOfNextInstruction(pc)
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
-                if (isReached.contains(pc))
+                if (isReached(pc))
                     cfJoins += pc
                 else
-                    isReached += pc
+                    isReached(pc) = true
             }
 
-            (instruction.opcode: @scala.annotation.switch) match {
+            (instruction.opcode: @switch) match {
                 case RET.opcode ⇒
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.

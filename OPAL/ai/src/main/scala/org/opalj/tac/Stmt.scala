@@ -181,7 +181,7 @@ object Goto {
 }
 
 /**
- * Return from subroutine; only to be used in combination with JSR instructions.
+ * Return from subroutine; only to be used in combination with JSR instructions (Java 6 and earlier).
  *
  * @param returnAddresses The set of return addresses. Based on the return addresses it is
  *                        immediately possible to determine the original JSR instruction that led

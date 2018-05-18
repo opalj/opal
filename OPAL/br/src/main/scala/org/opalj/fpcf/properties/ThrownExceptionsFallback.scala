@@ -37,7 +37,44 @@ import org.opalj.br.BooleanType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.ISTORE_0
+import org.opalj.br.instructions.LSTORE_0
+import org.opalj.br.instructions.FSTORE_0
+import org.opalj.br.instructions.DSTORE_0
+import org.opalj.br.instructions.ASTORE_0
+import org.opalj.br.instructions.ISTORE
+import org.opalj.br.instructions.FSTORE
+import org.opalj.br.instructions.LSTORE
+import org.opalj.br.instructions.DSTORE
+import org.opalj.br.instructions.ASTORE
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.br.instructions.MONITOREXIT
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.DRETURN
+import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.FRETURN
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.IREM
+import org.opalj.br.instructions.IDIV
+import org.opalj.br.instructions.LDCInt
+import org.opalj.br.instructions.LDIV
+import org.opalj.br.instructions.LoadLong
+import org.opalj.br.instructions.LREM
+import org.opalj.fpcf.properties.ThrownExceptions.MethodIsNative
+import org.opalj.fpcf.properties.ThrownExceptions.NoExceptions
+import org.opalj.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -66,12 +103,12 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
 
     def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
         if (m.isNative)
-            return ThrownExceptionsAreUnknown.MethodIsNative;
+            return MethodIsNative;
         if (m.isAbstract)
-            return NoExceptionsAreThrown.MethodIsAbstract;
+            return NoExceptions; // Method is abstract...
         val body = m.body
         if (body.isEmpty)
-            return ThrownExceptionsAreUnknown.MethodBodyIsNotAvailable;
+            return MethodBodyIsNotAvailable;
 
         //
         //... when we reach this point the method is non-empty
@@ -83,7 +120,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
 
         val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
 
-        var result: ThrownExceptionsAreUnknown = null
+        var result: ThrownExceptions = null
 
         var isSynchronizationUsed = false
 
@@ -99,7 +136,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
             instruction.opcode match {
 
                 case ATHROW.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.UnknownExceptionIsThrown
+                    result = ThrownExceptions.UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode ⇒
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
@@ -111,16 +148,17 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
                     )) {
                         true
                     } else {
-                        result = ThrownExceptionsAreUnknown.AnalysisLimitation
+                        result = ThrownExceptions.AnalysisLimitation
                         false
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.UnresolvedInvokeDynamic
-                    false
+                    // if the bytecode is valid, the creation of the call site object should
+                    // succeed...
+                    true
 
                 case INVOKESTATIC.opcode | INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
-                    result = ThrownExceptionsAreUnknown.AnalysisLimitation
+                    result = ThrownExceptions.AnalysisLimitation
                     false
 
                 // let's determine if the register 0 is updated (i.e., if the register which
@@ -148,22 +186,24 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
 
                 case PUTFIELD.opcode ⇒
                     isFieldAccessed = true
-                    fieldAccessMayThrowNullPointerException = fieldAccessMayThrowNullPointerException ||
-                        isStaticMethod || // <= the receiver is some object
-                        isLocalVariable0Updated || // <= we don't know the receiver object at all
-                        cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                        {
-                            val predecessorPC = code.pcOfPreviousInstruction(pc)
-                            val predecessorOfPredecessorPC = code.pcOfPreviousInstruction(predecessorPC)
-                            val valueInstruction = instructions(predecessorPC)
+                    fieldAccessMayThrowNullPointerException =
+                        fieldAccessMayThrowNullPointerException ||
+                            isStaticMethod || // <= the receiver is some object
+                            isLocalVariable0Updated || // <= we don't know the receiver object at all
+                            cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
+                            {
+                                val predecessorPC = code.pcOfPreviousInstruction(pc)
+                                val predecessorOfPredecessorPC =
+                                    code.pcOfPreviousInstruction(predecessorPC)
+                                val valueInstruction = instructions(predecessorPC)
 
-                            instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
-                                valueInstruction.isInstanceOf[StackManagementInstruction] ||
-                                // we have to ensure that our "this" reference is not used for something else... =>
-                                valueInstruction.numberOfPoppedOperands(NotRequired) > 0
-                            // the number of pushed operands is always equal or smaller than 1
-                            // except of the stack management instructions
-                        }
+                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
+                                    valueInstruction.isInstanceOf[StackManagementInstruction] ||
+                                    // we have to ensure that our "this" reference is not used for something else... =>
+                                    valueInstruction.numberOfPoppedOperands(NotRequired) > 0
+                                // the number of pushed operands is always equal or smaller than 1
+                                // except of the stack management instructions
+                            }
                     true
 
                 case MONITORENTER.opcode | MONITOREXIT.opcode ⇒
@@ -182,7 +222,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Int] @unchecked) if i.value != 0 ⇒
+                            case LDCInt(value) if value != 0 ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -199,7 +239,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
                         val predecessorPC = code.pcOfPreviousInstruction(pc)
                         val valueInstruction = instructions(predecessorPC)
                         valueInstruction match {
-                            case (i: LoadConstantInstruction[Long] @unchecked) if i.value != 0L ⇒
+                            case LoadLong(value) if value != 0L ⇒
                                 // there will be no arithmetic exception
                                 true
                             case _ ⇒
@@ -230,9 +270,9 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
         }
 
         if (exceptions.isEmpty)
-            NoExceptionsAreThrown.NoInstructionThrowsExceptions
+            NoExceptions
         else
-            new AllThrownExceptions(exceptions, false)
+            ThrownExceptions(exceptions)
     }
 
 }

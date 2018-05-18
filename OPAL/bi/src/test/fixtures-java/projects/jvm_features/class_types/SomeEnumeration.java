@@ -29,7 +29,7 @@
 package class_types;
 
 /**
- * Defines a simple marker annotation.
+ * Defines a simple enum.
  *
  * NOTE<br />
  * This class is only meant to be (automatically) compiled by OPAL's build script.

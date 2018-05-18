@@ -255,12 +255,17 @@ object ACC_ENUM extends AccessFlag {
  *      The name of the class has to be "/module-info".
  * @note '''super_class, interfaces_count, fields_count, methods_count: zero. I.e.,
  *      a module does not have a super class.'''
- * @note Only used in combination with Java 9 modules.
  */
 object ACC_MODULE extends AccessFlag {
     final override val javaName: None.type = None
     final override val mask = 0x8000 // SAME AS ACC_MANDATED (!)
     override def toString: String = "MODULE"
+}
+
+object ACC_OPEN extends AccessFlag {
+    final val javaName = Some("open")
+    final val mask = 0x0020
+    override def toString: String = "OPEN"
 }
 
 object ACC_MANDATED extends AccessFlag {
@@ -270,37 +275,24 @@ object ACC_MANDATED extends AccessFlag {
 }
 
 /**
- * Indicates that any module which depends on the current module, implicitly declares a
- * dependence on the module indicated by this entry.
+ * @note From the JVM 9 specification: "Indicates that any module which depends on the current
+ *       module, implicitly declares a dependence on the module indicated by this entry."
+ * @note Only used in combination with Java 9 modules.
  */
 object ACC_TRANSITIVE extends AccessFlag {
-    final override val javaName = Some("public") // IMPROVE [JDK9] Check if the name "public <-> transitive" is chosen
+    final override val javaName = Some("transitive")
     final override val mask = 0x0010
     override def toString: String = "TRANSITIVE"
 }
 
 /**
- *
  * @note From the JVM 9 specification: "Indicates that this [inter-module] dependence is
- *      mandatory in the static phase, i.e., at compile time, but is optional in the
- *      dynamic phase, i.e., at run time."
+ *       mandatory in the static phase, i.e., at compile time, but is optional in the
+ *       dynamic phase, i.e., at run time."
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_STATIC_PHASE extends AccessFlag {
     final override val javaName = Some("static")
-    final override val mask = 0x0020
-    override def toString: String = "STATIC_PHASE"
-}
-
-/**
- *
- * @note From the JVM 9 specification: "Indicates that the package is concealed in the
- *      static phase, i.e., at compile time, but is exported in the dynamic phase, i.e.,
- *      at run time."
- * @note Only used in combination with Java 9 modules.
- */
-object ACC_DYNAMIC_PHASE extends AccessFlag {
-    final override val javaName = Some("dynamic")
     final override val mask = 0x0040
-    override def toString: String = "DYNAMIC_PHASE"
+    override def toString: String = "STATIC_PHASE"
 }

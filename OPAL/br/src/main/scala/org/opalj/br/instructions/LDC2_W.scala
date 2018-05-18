@@ -81,6 +81,16 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
         )
     }
 
+    override def equals(other: Any): Boolean = {
+        other match {
+            case LoadDouble(thatValue) ⇒
+                thatValue == this.value || (thatValue.isNaN && this.value.isNaN)
+            case _ ⇒ false
+        }
+    }
+
+    // HashCode of "value.NaN" is stable and 0
+
 }
 
 /**

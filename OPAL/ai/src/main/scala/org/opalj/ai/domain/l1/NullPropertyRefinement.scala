@@ -33,6 +33,7 @@ package l1
 
 import scala.annotation.switch
 
+import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction

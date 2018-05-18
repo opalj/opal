@@ -35,7 +35,6 @@ import java.util.IdentityHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
-import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
@@ -77,7 +76,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         private val basicBlocks: Array[BasicBlock]
 ) { cfg ⇒
 
-    if (CFG.CheckConsistency) {
+    if (CFG.Validate) {
         val allBBs = basicBlocks.filter(_ != null)
         val allBBsSet = allBBs.toSet
         // 1. Check that each basic block has a lower start pc than the end pc
@@ -142,10 +141,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 flatMap(bb ⇒ bb.successors.collect { case cn: CatchNode ⇒ cn }).
                 forall(catchBB ⇒ catchNodes.contains(catchBB)),
             catchNodes.mkString("the set of catch nodes {", ", ", "} is incomplete:\n") +
-                (allBBs.collect {
+                allBBs.collect {
                     case bb if bb.successors.exists(succBB ⇒ succBB.isCatchNode && !catchNodes.contains(succBB)) ⇒
                         s"$bb => ${bb.successors.collect { case cn: CatchNode ⇒ cn }.mkString(", ")}"
-                }).mkString("\n")
+                }.mkString("\n")
         )
 
         // 5.   Check that predecessors and successors are consistent.
@@ -473,7 +472,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             Arrays.fill(newBasicBlocksArray, 0, secondBB._endPC + 1 /* (exclusive)*/ , newFirstBB)
         }
 
-        CFG(newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks)
+        CFG[NewI, NewC](
+            newCode, newNormalReturnNode, newAbnormalReturnNode, newCatchNodes, newBasicBlocks
+        )
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -552,17 +553,27 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
-    final val CheckConsistencyKey = "org.opalj.br.debug.cfg.CFG.consistency"
+    final val ValidateKey = "org.opalj.debug.br.cfg.CFG.Validate"
 
-    final val CheckConsistency: Boolean = {
+    private[this] var validate: Boolean = {
+        val initialValidate = BaseConfig.getBoolean(ValidateKey)
+        updateValidate(initialValidate)
+        initialValidate
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def Validate: Boolean = validate
+
+    def updateValidate(newValidate: Boolean): Unit = {
         implicit val logContext = GlobalLogContext
-        if (BaseConfig.as[Option[Boolean]](CheckConsistencyKey).getOrElse(false)) {
-            info("OPAL", s"org.opalj.br.cfg.CFG: validation on (setting: $CheckConsistencyKey)")
-            true
-        } else {
-            info("OPAL", s"org.opalj.br.cfg.CFG: validation off (setting: $CheckConsistencyKey)")
-            false
-        }
+        validate =
+            if (newValidate) {
+                info("OPAL", s"$ValidateKey: validation on")
+                true
+            } else {
+                info("OPAL", s"$ValidateKey: validation off")
+                false
+            }
     }
 
 }

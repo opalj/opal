@@ -31,91 +31,63 @@ package fpcf
 package properties
 
 import org.opalj.br.collection.{TypesSet ⇒ BRTypesSet}
-import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
-import org.opalj.br.analyses.SomeProject
+
+sealed trait ThrownExceptionsByOverridingMethodsPropertyMetaInformation
+    extends PropertyMetaInformation {
+
+    final type Self = ThrownExceptionsByOverridingMethods
+
+}
 
 /**
- * This property stores information about the exceptions a certain method throw, including
- * the exceptions a possible overridden method in a subclass throws.
- * It uses the ThrownExceptions property to gather information about the exceptions thrown in a
- * particular method. It also includes the thrown exceptions of the respective method in all
- * subclasses.
+ * The set of exceptions thrown by a method, including the exceptions thrown by overriding methods.
+ * If the type hierarchy is extensible then the set is generally unbounded.
  *
- * Results can either be `AllThrownExceptionsByOverridingMethods`, which contains a set of possible
- * exceptions thrown in the current classes method or its subclasses. If we aren't able to collect
- * all exceptions, `UnknownThrownExceptionsByOverridingMethods` will be returned. This is the case
- * if the analysis encounters a ATHROW instruction for example.
+ * Information about `ThrownExceptionsByOverridingMethods` is generally associated with
+ * `DeclaredMethods`. I.e., the information is not attached to `Method` objects!
  *
- * The cycle resolution collects the properties from the given entities and constructs a final
- * result. Possible properties can be `ThrownExceptionsByOverridingMethods` as well as
- * `ThrownExceptions`. The result will be saved in the PropertyStore and propagated to the dependees.
+ * @author Andreas Muttscheller
+ * @author Michael Eichberg
  */
-object ThrownExceptionsByOverridingMethods {
+object ThrownExceptionsByOverridingMethods
+    extends ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
+    def apply(exceptions: BRTypesSet = BRTypesSet.empty): ThrownExceptionsByOverridingMethods =
+        new ThrownExceptionsByOverridingMethods(exceptions)
 
-    private[this] final val cycleResolutionStrategy = (
+    def fallbackPropertyComputation(
         ps: PropertyStore,
-        epks: Iterable[SomeEPK]
-    ) ⇒ {
-        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
-        var hasUnknownExceptions = false
-        epks.foreach {
-            case EPK(e, Key) ⇒
-                ps(e, Key).p match {
-                    case c: AllThrownExceptionsByOverridingMethods ⇒
-                        exceptions ++= c.exceptions.concreteTypes
-                    case UnknownThrownExceptionsByOverridingMethods ⇒
-                        hasUnknownExceptions = true
-                    case _ ⇒ throw new UnknownError(s"Cycle involving unknown keys: $e")
-                }
-
-            case EPK(e, ThrownExceptions.Key) ⇒
-                ps(e, ThrownExceptions.Key).p match {
-                    case _: ThrownExceptionsAreUnknown ⇒ hasUnknownExceptions = true
-                    case t: AllThrownExceptions        ⇒ exceptions ++= t.types.concreteTypes
-                }
+        m:  br.Method
+    ): ThrownExceptionsByOverridingMethods = {
+        if (m.isFinal || m.isStatic || m.isInitializer || m.isPrivate) {
+            new ThrownExceptionsByOverridingMethods(ThrownExceptionsFallback(ps, m).types)
+        } else {
+            SomeException
         }
-        val entity = epks.find(_.pk == Key).get.e
-        val p = if (hasUnknownExceptions)
-            UnknownThrownExceptionsByOverridingMethods
-        else
-            AllThrownExceptionsByOverridingMethods(exceptions)
-
-        Iterable(Result(entity, p))
     }
 
-    final val Key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
-        PropertyKey.create[ThrownExceptionsByOverridingMethods](
-            "ThrownExceptionsByOverridingMethodsProperty",
-            AllThrownExceptionsByOverridingMethods(),
-            cycleResolutionStrategy
+    final val key: PropertyKey[ThrownExceptionsByOverridingMethods] = {
+        PropertyKey.create[br.Method, ThrownExceptionsByOverridingMethods](
+            name = "ThrownExceptionsByOverridingMethods",
+            fallbackPropertyComputation _,
+            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒
+                eps.toUBEP
         )
     }
+
+    final val NoExceptions = new ThrownExceptionsByOverridingMethods()
+
+    final val SomeException = new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
+
+    final val MethodIsOverridable =
+        new ThrownExceptionsByOverridingMethods(BRTypesSet.SomeException)
 }
 
-sealed abstract class ThrownExceptionsByOverridingMethods extends Property {
-    final type Self = ThrownExceptionsByOverridingMethods
-    final def key = ThrownExceptionsByOverridingMethods.Key
+case class ThrownExceptionsByOverridingMethods(
+        exceptions: BRTypesSet = BRTypesSet.empty
+) extends Property with ThrownExceptionsByOverridingMethodsPropertyMetaInformation {
+
+    final def key = ThrownExceptionsByOverridingMethods.key
+
+    override def toString: String = s"ThrownExceptionsByOverridingMethods(${exceptions.toString})"
 }
 
-case class AllThrownExceptionsByOverridingMethods(
-        exceptions:  BRTypesSet = BRTypesSet.empty,
-        isRefinable: Boolean    = false
-) extends ThrownExceptionsByOverridingMethods {
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: AllThrownExceptionsByOverridingMethods ⇒
-                this.isRefinable == that.isRefinable &&
-                    this.exceptions == that.exceptions
-            case _ ⇒ false
-        }
-    }
-
-    override def hashCode: Int = 13 * exceptions.hashCode +
-        (if (isRefinable) 41 else 53)
-}
-
-case object UnknownThrownExceptionsByOverridingMethods
-    extends ThrownExceptionsByOverridingMethods {
-    final val isRefinable = false
-}

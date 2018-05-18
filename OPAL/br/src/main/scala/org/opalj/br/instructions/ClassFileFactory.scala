@@ -364,7 +364,7 @@ object ClassFileFactory {
             40  |     areturn
             */
         // val a = new ArrayBuffer[Object](100)
-        var buildMethodType: Array[Instruction] = Array() // IMPROVE: Use ArrayBuffer
+        var buildMethodType: Array[Instruction] = Array() // IMPROVE [L10] Use ArrayBuffer
 
         bootstrapArguments.iterator.zipWithIndex.foreach { ia ⇒
             val (arg, idx) = ia

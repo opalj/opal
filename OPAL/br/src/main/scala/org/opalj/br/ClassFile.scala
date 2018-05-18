@@ -83,11 +83,9 @@ import org.opalj.bi.VisibilityModifier
  *           - ''RuntimeInvisibleAnnotations''
  *          In case of Java 9 ([[org.opalj.br.reader.Java9Framework]]) the following
  *          attributes are added:
- *           - ''Module_attribute''
- *           - TODO ''ConcealedPackages_attribute''
- *           - TODO ''Version_attribute''
- *           - TODO ''MainClass_attribute''
- *           - TODO ''TargetPlatform_attribute''
+ *           - ''Module''
+ *           - ''ModuleMainClass''
+ *           - ''ModulePackages''
  *
  *          The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
  *          may, however, be resolved and is then no longer part of the attributes table of
@@ -106,7 +104,7 @@ final class ClassFile private (
         val accessFlags:    Int,
         val thisType:       ObjectType,
         val superclassType: Option[ObjectType],
-        val interfaceTypes: Seq[ObjectType], // IMPROVE Use a UIDSet over here and in the class hierarchy!
+        val interfaceTypes: Seq[ObjectType], // IMPROVE [L4] Use a UIDSet over here and in the class hierarchy!
         val fields:         Fields,
         val methods:        Methods,
         val attributes:     Attributes

@@ -34,6 +34,7 @@ package instance
 import java.io.File
 import org.opalj.io.process
 import org.opalj.bi.AccessFlagsMatcher._
+import org.opalj.value.IsReferenceValue
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.ai.dataflow.spec._

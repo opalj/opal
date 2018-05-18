@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package dataflow
 
+import org.opalj.value.ValueInformation
+
 /**
  * Implements the infrastructure for solving a data-flow problem.
  *
@@ -45,7 +47,7 @@ trait DataFlowProblemSolver[Source, Params] extends DataFlowProblem[Source, Para
             override val domainValue: DomainValue
     ) extends super.TaintedValue with TaintInformation {
 
-        def typeInformation: TypeInformation = theDomain.typeOfValue(domainValue)
+        def valueInformation: ValueInformation = theDomain.typeOfValue(domainValue)
 
     }
 
@@ -53,4 +55,3 @@ trait DataFlowProblemSolver[Source, Params] extends DataFlowProblem[Source, Para
         (value: DomainValue) ⇒ new TaintedValue(value)
 
 }
-

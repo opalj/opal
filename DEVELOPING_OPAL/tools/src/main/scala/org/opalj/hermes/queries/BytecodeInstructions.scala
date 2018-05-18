@@ -40,7 +40,7 @@ import org.opalj.br.MethodWithBody
  *
  * @author Michael Eichberg
  */
-object BytecodeInstructions extends FeatureQuery {
+class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
     // Let's do some caching...
     final val JVMInstructions: List[(Int, String)] = bytecode.JVMInstructions

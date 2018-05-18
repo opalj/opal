@@ -31,6 +31,8 @@ package ai
 package domain
 package l0
 
+import org.opalj.value.IsLongValue
+
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.LongType
@@ -57,8 +59,10 @@ trait TypeLevelLongValues extends LongValuesDomain {
     /**
      * Common supertrait of all `DomainValue`s that represent long values.
      */
-    trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
+    trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] ⇒
+
+        final override def valueType: Option[LongType] = Some(LongType)
 
         final override def computationalType: ComputationalType = ComputationalTypeLong
 

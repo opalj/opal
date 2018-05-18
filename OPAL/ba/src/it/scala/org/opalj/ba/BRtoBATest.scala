@@ -30,11 +30,9 @@ package org.opalj
 package ba
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import java.lang.{Boolean ⇒ JBoolean}
 import java.io.File
 import java.io.DataInputStream
@@ -45,6 +43,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithCaching
@@ -81,7 +80,7 @@ class BRtoBATest extends FlatSpec with Matchers {
 
             try {
                 // PART 1... just serialize the file...
-                // this may have - in comparison with the original class file:
+                // this may have - in comparison with the original class file -
                 //  - a new (optimal) constant pool,
                 //  - reordered fields,
                 //  - reordered methods
@@ -98,13 +97,15 @@ class BRtoBATest extends FlatSpec with Matchers {
                 entriesCount.incrementAndGet()
             } catch {
                 case e: Exception ⇒
-                    println(s"reading/writing of $url -> failed: ${e.getMessage}")
                     Lock.synchronized {
-                        val details = e.getMessage + e.getClass.getSimpleName
-                        val message = s"failed: $url(${brClassFile1.thisType}); message:"+details
+                        Console.err.println(s"reading/writing of $url -> failed: ${e.getMessage}\n")
+                        e.printStackTrace(Console.err)
+                        val details = e.getMessage+"; "+e.getClass.getSimpleName
+                        val message = s"$url(${brClassFile1.thisType.toJava}): "+details
                         val newException = new RuntimeException(message, e)
                         exceptions = newException :: exceptions
                     }
+
             }
         }
 
@@ -112,20 +113,25 @@ class BRtoBATest extends FlatSpec with Matchers {
             val succeededCount = entriesCount.get
             val message =
                 exceptions.mkString(
-                    s"generating the naive representation failed for :\n",
+                    s"generating the naive representation failed ${exceptions.size} times:\n",
                     "\n",
-                    s"\n${exceptions.size} class files (and succeeded for: $succeededCount)\n"
+                    s"\n(successfully processed: $succeededCount class files)\n"
                 )
             fail(message)
         } else {
-            info(s"sucessfully transformed ${entriesCount.get} class files")
+            info(s"successfully transformed ${entriesCount.get} class files")
         }
     }
 
+    val jmodsFile = locateTestResources("classfiles/Java9-selected-jmod-module-info.classes.zip", "bi")
     for {
-        file ← JRELibraryFolder.listFiles() ++ allBITestJARs()
-        if file.isFile && file.canRead && file.getName.endsWith(".jar") && file.length() > 0
+        file ← JRELibraryFolder.listFiles() ++ allBITestJARs() ++ List(jmodsFile)
+        if file.isFile
+        if file.canRead
+        if file.length() > 0
+        fileName = file.getName
+        if fileName.endsWith(".jar") || fileName.endsWith(".zip") || fileName.endsWith(".jmod")
     } {
-        it should (s"be able to process every class of $file") in { process(file) }
+        it should s"be able to convert every class of $file from br to ba" in { process(file) }
     }
 }

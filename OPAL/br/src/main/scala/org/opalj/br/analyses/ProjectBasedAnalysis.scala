@@ -46,9 +46,9 @@ trait ProjectBasedAnalysis {
     implicit val project: SomeProject
     final def p = project
 
-    final implicit val classHierarchy = project.classHierarchy
+    implicit final def classHierarchy = project.classHierarchy
     final def ch = classHierarchy
 
-    final implicit val logContext: LogContext = project.logContext
+    implicit final def logContext: LogContext = project.logContext
 
 }

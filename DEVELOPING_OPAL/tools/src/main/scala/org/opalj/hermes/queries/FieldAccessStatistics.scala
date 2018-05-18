@@ -42,7 +42,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
  *
  * @author Michael Eichberg
  */
-object FieldAccessStatistics extends DefaultFeatureQuery {
+class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     override def featureIDs: List[String] = {
         List(

@@ -36,6 +36,7 @@ import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.LongType
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.LongVariableInfo
+import org.opalj.value.IsLongValue
 
 /**
  * Foundation for domains that trace specific long values.
@@ -58,8 +59,10 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     /**
      * Abstracts over all values with computational type `long`.
      */
-    sealed trait LongValue extends TypedValue[LongType] with IsLongValue[LongValue] {
+    sealed trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] ⇒
+
+        final override def valueType: Option[LongType] = Some(LongType)
 
         final override def computationalType: ComputationalType = ComputationalTypeLong
 

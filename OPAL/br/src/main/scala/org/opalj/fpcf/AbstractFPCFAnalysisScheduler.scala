@@ -38,13 +38,13 @@ import java.util.concurrent.atomic.AtomicInteger
  * I.e., this trait is typically implemented by the singleton object that facilitates
  * the creation of analyses.
  *
- * @note It is possible to use an analysis that directly uses the property store and
- *      an analysis that uses this factory infrastructure at the same time.
+ * @note   It is possible to use an analysis that directly uses the property store and
+ *         an analysis that uses this factory infrastructure at the same time.
  *
  * @author Michael Reif
  * @author Michael Eichberg
  */
-private[fpcf] trait AbstractFPCFAnalysisScheduler {
+private[fpcf] trait AbstractFPCFAnalysisScheduler extends ComputationSpecification {
 
     /**
      * The unique id of this factory.
@@ -53,43 +53,10 @@ private[fpcf] trait AbstractFPCFAnalysisScheduler {
      */
     final val uniqueId: Int = AbstractFPCFAnalysisScheduler.nextId
 
-    /**
-     * Returns a short descriptive name of the analysis for which this is the factory.
-     *
-     * The default name is the name of this class.
-     *
-     * '''This method should be overridden.'''
-     */
-    def name: String = {
-        val nameCandidate = this.getClass.getSimpleName
-        if (nameCandidate.endsWith("$"))
-            nameCandidate.substring(0, nameCandidate.length() - 1)
-        else
-            nameCandidate
-    }
-
-    /**
-     * Returns a set of integers that contains the id of every [[Property]] that is derived by
-     * the underlying analysis which is described by this `AbstractFPCFAnalysisScheduler`.
-     *
-     * This method has to be overridden in every subclass since it is used by the
-     * [[FPCFAnalysesManager]] to guarantee the save execution of all FPCFAnalysis.
-     */
-    def derivedProperties: Set[PropertyKind]
-
-    /**
-     * Returns the kinds of properties which are queried by this analysis.
-     *
-     * @note   This set consists only of property kinds which are directly used by the analysis.
-     *
-     * @note   Self usages don't have to be documented since the analysis will derive this
-     *         property during the computation.
-     */
-    def usedProperties: Set[PropertyKind] = Set.empty
 }
 
 /**
- * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines interal helper functions and
+ * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines internal helper functions and
  * values.
  *
  * @author Michael Reif

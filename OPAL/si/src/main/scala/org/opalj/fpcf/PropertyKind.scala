@@ -40,3 +40,12 @@ trait PropertyKind extends Any /* we now have a universal trait */ {
     def id: Int
 }
 
+object PropertyKind {
+
+    /**
+     * The maximum number of Property Kinds that is (currently!) supported. Increasing this
+     * number is necessary iff a related exception is thrown.
+     */
+    private[fpcf] final val SupportedPropertyKinds /*: Int*/ = 96
+
+}

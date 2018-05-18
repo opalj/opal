@@ -30,60 +30,65 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.properties.PureWithoutAllocations
+import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.CPureWithoutAllocations
-import org.opalj.fpcf.properties.ClassifiedImpure
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VLBImpure
 
 /**
  * Determines the aggregated purity for virtual methods.
  *
  * @author Dominik Helm
  */
-class VirtualMethodPurityAnalysis private ( final val project: SomeProject) extends FPCFAnalysis {
-
-    val declaredMethods = project.get(DeclaredMethodsKey)
+class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determinePurity(dm: DefinedMethod): PropertyComputationResult = {
         val m = dm.definedMethod
-        var maxPurity: Purity = PureWithoutAllocations
-        var dependees: Set[EOptionP[DefinedMethod, Purity]] = Set.empty
+        var maxPurity: Purity = CompileTimePure
+        var dependees: Set[EOptionP[DeclaredMethod, Purity]] = Set.empty
 
-        val methods = project.virtualCall(
-            m.classFile.thisType.packageName, dm.declaringClassType, m.name, m.descriptor
-        )
+        val cfo = if (dm.declaringClassType.isArrayType) project.ObjectClassFile
+        else project.classFile(dm.declaringClassType.asObjectType)
+        val methods =
+            if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
+                project.interfaceCall(dm.declaringClassType.asObjectType, m.name, m.descriptor)
+            else
+                project.virtualCall(
+                    m.classFile.thisType.packageName, dm.declaringClassType, m.name, m.descriptor
+                )
+
         for (method ← methods) {
             propertyStore(declaredMethods(method), Purity.key) match {
-                case ep @ EP(_, p) ⇒
-                    maxPurity = maxPurity combine p
-                    if (p.isConditional) dependees += ep
+                case eps @ EPS(_, _, ub) ⇒
+                    maxPurity = maxPurity meet ub
+                    if (eps.isRefinable) dependees += eps
                 case epk ⇒ dependees += epk
             }
         }
 
-        def c(e: Entity, p: Property, ut: UpdateType): PropertyComputationResult = {
-            dependees = dependees.filter { _.e ne e }
-            maxPurity = maxPurity combine p.asInstanceOf[Purity]
-            if (p.asInstanceOf[Purity].isConditional) {
-                assert(!ut.isFinalUpdate)
-                dependees += EP(e.asInstanceOf[DefinedMethod], p.asInstanceOf[Purity])
+        def c(eps: SomeEPS): PropertyComputationResult = {
+            dependees = dependees.filter { _.e ne eps.e }
+            maxPurity = maxPurity meet eps.ub.asInstanceOf[Purity]
+            if (eps.isRefinable) {
+                dependees += eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
             }
 
             if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
-                Result(dm, VirtualMethodPurity(maxPurity.unconditional))
+                Result(dm, maxPurity.aggregatedProperty)
             } else {
-                IntermediateResult(dm, VirtualMethodPurity(maxPurity), dependees, c)
+                IntermediateResult(dm, VLBImpure, maxPurity.aggregatedProperty, dependees, c)
             }
         }
 
         if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
-            Result(dm, VirtualMethodPurity(maxPurity.unconditional))
+            Result(dm, maxPurity.aggregatedProperty)
         } else {
-            maxPurity = maxPurity combine CPureWithoutAllocations
-            IntermediateResult(dm, VirtualMethodPurity(maxPurity), dependees, c)
+            IntermediateResult(dm, VLBImpure, maxPurity.aggregatedProperty, dependees, c)
         }
     }
 
@@ -91,7 +96,7 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
             case m: DefinedMethod ⇒ determinePurity(m)
-            case e ⇒ throw new UnknownError(
+            case _ ⇒ throw new UnknownError(
                 "virtual method purity is only defined for defined methods"
             )
         }
@@ -99,22 +104,31 @@ class VirtualMethodPurityAnalysis private ( final val project: SomeProject) exte
 
 }
 
-object VirtualMethodPurityAnalysis extends FPCFAnalysisScheduler {
+trait VirtualMethodPurityAnalysisScheduler extends ComputationSpecification {
+    override def derives: Set[PropertyKind] = Set(VirtualMethodPurity)
 
-    override def derivedProperties: Set[PropertyKind] = Set(VirtualMethodPurity)
+    override def uses: Set[PropertyKind] = Set(Purity)
+}
 
-    override def usedProperties: Set[PropertyKind] = Set(Purity)
+object EagerVirtualMethodPurityAnalysis extends VirtualMethodPurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(project)
         val vms = project.get(DeclaredMethodsKey)
-        propertyStore.scheduleForEntities(vms.declaredMethods)(analysis.doDeterminePurity)
+        val configuredPurity = project.get(ConfiguredPurityKey)
+        propertyStore.scheduleEagerComputationsForEntities(
+            vms.declaredMethods.filter { dm ⇒
+                !configuredPurity.wasSet(dm) && dm.isInstanceOf[DefinedMethod]
+            }.map(_.asInstanceOf[DefinedMethod])
+        )(analysis.determinePurity)
         analysis
     }
+}
 
+object LazyVirtualMethodPurityAnalysis extends VirtualMethodPurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
     def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(p)
-        ps.scheduleLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
+        ps.registerLazyPropertyComputation(VirtualMethodPurity.key, analysis.doDeterminePurity)
         analysis
     }
 }

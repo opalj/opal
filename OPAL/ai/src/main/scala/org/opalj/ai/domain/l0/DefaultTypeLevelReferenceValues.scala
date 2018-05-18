@@ -36,6 +36,8 @@ import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.value.IsPrimitiveValue
+import org.opalj.value.TypeOfReferenceValue
 
 /**
  * Default implementation for handling reference values.
@@ -109,7 +111,7 @@ trait DefaultTypeLevelReferenceValues
         override def isAssignable(value: DomainValue): Answer = {
 
             // TODO Get rid of "typeOfValue" call; the value is now always typed!
-            typeOfValue(value) match {
+            (typeOfValue(value): @unchecked) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
                     // The following is an over approximation that makes it theoretically

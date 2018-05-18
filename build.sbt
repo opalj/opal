@@ -25,8 +25,6 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 scalaVersion  in ThisBuild := "2.12.6"
 
 ScalacConfiguration.globalScalacOptions
-scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
-scalacOptions in(ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
 resolvers in ThisBuild += Resolver.jcenterRepo
 resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
@@ -253,7 +251,7 @@ lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG  ANALYSIS AGAIN!
+/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
 lazy val bp = `BugPicker`
 lazy val `BugPicker` = (project in file("OPAL/bp"))
   .settings(buildSettings: _*)

@@ -30,9 +30,10 @@ package org.opalj
 package br
 
 /**
- * A sequence of instructions; common super trait of (...TACode) and (...br.Code)
+ * A sequence of instructions; (currently) the common super trait of
+ * [[org.opalj.tac.TACStmts]] and [[org.opalj.br.Code]])
  *
- * @tparam I The type of instructions.
+ * @tparam Instruction The type of instructions.
  *
  * @author Michael Eichberg
  */

@@ -59,11 +59,10 @@ case class MethodMatcher(
 
     def extension(implicit project: SomeProject): Set[VirtualSourceElement] = {
         val allMatchedMethods = project.allClassFiles collect {
-            case classFile if doesClassFileMatch(classFile) ⇒ {
+            case classFile if doesClassFileMatch(classFile) ⇒
                 classFile.methods collect {
                     case m if doesMethodMatch(m) ⇒ m.asVirtualMethod(classFile.thisType)
                 }
-            }
         }
         allMatchedMethods.flatten.toSet
     }

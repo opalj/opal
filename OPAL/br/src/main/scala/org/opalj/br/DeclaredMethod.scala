@@ -74,7 +74,7 @@ sealed abstract class DeclaredMethod {
 
 /**
  * Represents a method belonging to the API of the specified class type, where the original
- * method definition is not available (in the context of the current analysis.)
+ * method definition is not available (in the context of the current analysis).
  */
 final case class VirtualDeclaredMethod(
         declaringClassType: ReferenceType,
@@ -103,7 +103,7 @@ final case class VirtualDeclaredMethod(
 }
 
 /**
- * Represents a declared method; i.e., a method which belongs to the (public and privage) API of a
+ * Represents a declared method; i.e., a method which belongs to the (public and private) API of a
  * class along with a reference to the original declaration.
  */
 final case class DefinedMethod(

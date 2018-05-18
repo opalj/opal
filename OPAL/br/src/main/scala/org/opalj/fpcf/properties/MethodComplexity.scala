@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.Method
+
 sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = MethodComplexity
 }
@@ -56,8 +58,8 @@ sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInforma
  *  }
  * }}}
  *
- * In general, the control flow graph is analyzed to compute an upper bound for the
- * the number of instructions; as far as (easily) possible, loops are conceptually unrolled. If
+ * In general, the control flow graph is analyzed to compute an upper bound for the number
+ * of evaluated instructions; as far as (easily) possible, loops are conceptually unrolled. If
  * the uppper bound could not be determined, the method is rated as being maximally complex.
  *
  * The complexity of called methods is generally not taken into account. However, invoke
@@ -67,7 +69,7 @@ sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInforma
  * If an upper bound of a method's complexity cannot be estimated, the method will have
  * `Int.MaxValue` complexity.
  *
- * @param value The estimated complexity of a specific method ([0...`Int.MaxMavlue`]])
+ * @param value The estimated complexity of a specific method ([0...`Int.MaxMavlue`])
  *
  * @author Michael Eichberg
  */
@@ -77,9 +79,7 @@ case class MethodComplexity(
 
     assert(value >= 0)
 
-    final def key = MethodComplexity.key // All instances have to share the SAME key!
-
-    final val isRefinable = false
+    final def key = MethodComplexity.key
 
 }
 
@@ -87,6 +87,6 @@ object MethodComplexity extends MethodComplexityPropertyMetaInformation {
 
     final val TooComplex = MethodComplexity(Int.MaxValue)
 
-    final val key = PropertyKey.create[MethodComplexity]("MethodComplexity", TooComplex)
+    final val key = PropertyKey.create[Method, MethodComplexity]("MethodComplexity", TooComplex)
 
 }

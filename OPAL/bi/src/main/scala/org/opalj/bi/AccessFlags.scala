@@ -49,7 +49,7 @@ object AccessFlags {
      */
     def toStrings(accessFlags: Int, ctx: AccessFlagsContext): Iterator[String] = {
         AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
-            accessFlag.javaName.getOrElse("["+accessFlag.toString+"]")
+            accessFlag.javaName.getOrElse("/*"+accessFlag.toString+"*/")
         }
     }
 
@@ -60,6 +60,10 @@ object AccessFlags {
     def classFlagsToJava(accessFlags: Int): String = {
         // ACC_PUBLIC,ACC_FINAL,ACC_SUPER,ACC_INTERFACE,ACC_ABSTRACT,
         // ACC_SYNTHETIC,ACC_ANNOTATION,ACC_ENUM,ACC_MODULE
+
+        if (ACC_MODULE.unapply(accessFlags))
+            return "module";
+
         var flags = List.empty[String]
 
         if (ACC_SYNTHETIC.unapply(accessFlags)) {
@@ -92,8 +96,6 @@ object AccessFlags {
 
         if (ACC_ENUM.unapply(accessFlags))
             flags ::= "enum"
-        else if (ACC_MODULE.unapply(accessFlags))
-            flags ::= "module"
         else if (!ACC_INTERFACE.unapply(accessFlags))
             flags ::= "class"
 

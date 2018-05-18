@@ -47,7 +47,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-trait FeatureQuery {
+abstract class FeatureQuery(implicit hermes: HermesConfig) {
 
     /**
      * Queries should regularly check if they are interrupted using this method.
@@ -136,7 +136,10 @@ trait FeatureQuery {
 
 }
 
-abstract class DefaultFeatureQuery extends FeatureQuery {
+abstract class DefaultFeatureQuery(
+        implicit
+        hermes: HermesConfig
+) extends FeatureQuery {
 
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
@@ -156,7 +159,10 @@ abstract class DefaultFeatureQuery extends FeatureQuery {
     }
 }
 
-abstract class DefaultGroupedFeaturesQuery extends DefaultFeatureQuery {
+abstract class DefaultGroupedFeaturesQuery(
+        implicit
+        hermes: HermesConfig
+) extends DefaultFeatureQuery {
 
     def groupedFeatureIDs: Seq[Seq[String]]
 

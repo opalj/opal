@@ -29,11 +29,13 @@
 package org.opalj.fpcf
 
 /**
- * An information associated with an entity. Each property belongs to exactly one
- * property kind specified by the [[PropertyKey]]. Furthermore, each property
- * is associated with at most one property per property kind.
+ * An ''immutable information'' associated with an entity. Each property belongs to exactly one
+ * property kind specified by the [[PropertyKey]]. For details regarding the semantics of
+ * a property see [[EOptionP#ub]].
  *
  * ==Implementation Requirements==
+ * Properties have to be (effectively) immutable when passed to the framework. If a property
+ * is mutable and (by some analysis) mutated the overall results are no longer deterministic!
  *
  * ===Structural Equality===
  * Each implementation of the property trait has to implement an `equals` method that
@@ -44,46 +46,33 @@ package org.opalj.fpcf
 trait Property extends PropertyMetaInformation {
 
     /**
-     * Returns `true` if the current property may be refined in the future and it is therefore
-     * necessary to wait for updates.
-     *
-     * @note isRefinable is only used for consistency checks and debugging purposes.
-     *        The property store relies on the type of the result to determine if a property
-     *        is final or not.
-     */
-    // TOOD Remove - we now have three types of results to signify the results and the continuation function gets the update type anyway!
-    def isRefinable: Boolean
-
-    /**
-     *  Returns `true` if this property is always final and no refinement is possible.
-     */
-    // TOOD Remove - we now have three types of results to signify the results and the continuation function gets the update type anyway!
-    final def isFinal: Boolean = !isRefinable
-
-    /**
-     * Equality of Properties has to be based on structural equality!
+     * Equality of properties has to be based on structural equality!
      */
     override def equals(other: Any): Boolean
 
+    //
+    //
+    // IMPLEMENTATION PRIVATE METHODS
+    //
+    //
+
     /**
-     * Returns true if this property is currently computed or if its computation is already
+     * Returns `true` if this property is currently computed or if its computation is already
      * scheduled.
      */
     private[fpcf] def isBeingComputed: Boolean = false
 
     /**
-     * Returns true if this property inherits from [[OrderedProperty]].
+     * Returns `true` if this property inherits from [[OrderedProperty]].
      */
-    private[fpcf] def isOrdered: Boolean = false
+    final def isOrderedProperty: Boolean = this.isInstanceOf[OrderedProperty]
 
     /**
      * Returns `this` if this property inherits from [[OrderedProperty]].
      *
-     * Used by the framework for debugging purposes only!
+     * Used, e.g., by the framework to support debugging analyses.
      */
-    private[fpcf] def asOrderedProperty: OrderedProperty = {
-        throw new ClassCastException(s"$this is not an OrderedProperty")
-    }
+    final def asOrderedProperty: OrderedProperty = this.asInstanceOf[OrderedProperty]
 
 }
 
@@ -98,13 +87,7 @@ private[fpcf] case object PropertyIsLazilyComputed extends Property {
     type Self = PropertyIsLazilyComputed.type
 
     final override def key: Nothing = throw new UnsupportedOperationException
-    final override def isRefinable: Nothing = throw new UnsupportedOperationException
+
     final override private[fpcf] def isBeingComputed: Boolean = true
-
-}
-
-private[fpcf] object PropertyIsBeingComputed {
-
-    def unapply(p: Property): Boolean = (p ne null) && p.isBeingComputed
 
 }

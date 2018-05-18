@@ -281,7 +281,7 @@ object LabeledCode {
         // Transform the current code to use labels; this approach handles cases such as
         // switches which now require more/less bytes very elegantly.
         code.iterate { (pc, i) ⇒
-            // IMPROVE use while loop
+            // IMPROVE [L1] use while loop
             code.exceptionHandlers.iterator.zipWithIndex.foreach { (ehIndex) ⇒
                 val (eh, index) = ehIndex
                 // Recall that endPC is exclusive while TRYEND is inclusive... Hence,

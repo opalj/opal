@@ -39,7 +39,7 @@ import org.opalj.br.cfg.CFGFactory
  *
  * @author Michael Reif
  */
-object Metrics extends FeatureQuery {
+class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
 
     /**
      * The unique ids of the extracted features.
@@ -107,8 +107,8 @@ object Metrics extends FeatureQuery {
             packageInfo.classesCount += 1
 
             // McCabe
-            classFile.methods.foreach { method ⇒
-                CFGFactory(method, project.classHierarchy).foreach { cfg ⇒
+            classFile.methods foreach { method ⇒
+                CFGFactory(method, project.classHierarchy) foreach { cfg ⇒
                     val methodLocation = MethodLocation(classLocation, method)
                     val bbs = cfg.reachableBBs
                     val edges = bbs.foldLeft(0) { (res, node) ⇒
@@ -125,7 +125,7 @@ object Metrics extends FeatureQuery {
             }
         }
 
-        packagesInfo.values.foreach { pi ⇒
+        packagesInfo.values foreach { pi ⇒
             pi.classesCount match {
                 case x if x <= 3  ⇒ classLocations(8) += pi.location
                 case x if x <= 10 ⇒ classLocations(9) += pi.location

@@ -108,7 +108,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * to the same object at runtime (must-alias).
      *
      * The refid enables us to distinguish two values created/returned by the same
-     * instruction - two values with the same origin - but at a different point in time.
+     * instruction but at a different point in time (recall, both values have the same origin).
      * Such values may or may not be different; i.e., those values may or may not refer
      * to the same object on the heap/stack.
      *
@@ -160,9 +160,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     /**
-     * Computes the efective upper-type bound which is the (single) final type in the utb
+     * Computes the '''effective upper-type bound''' which is the (single) final type in the utb
      * if it contains one. In this case the other types have to be in a super-/subtype
      * relation and were added "just" as a result of explicit CHECKCAST instructions.
+     *
+     * Note that this method is generally only useful when we have to handle incomplete
+     * type hierarchies.
      */
     protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
         val it = utb.iterator
@@ -180,7 +183,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     /**
      * Determines if the runtime object type referred to by the given `values` is always
      * the same. I.e., it determines if all values are precise and have the same `upperTypeBound`.
-     * `Null` values are ignored when determining the precision.
+     *
+     * `Null` values are ignored when determining the precision; i.e., if all values represent
+     * `Null` `true` will be returned.
      */
     protected def isPrecise(values: Iterable[AReferenceValue]): Boolean = {
         val vIt = values.iterator
@@ -210,7 +215,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     /**
      * Calculates the most specific common upper type bound of the upper type bounds of
-     * all values. `NullValue`s are ignored.
+     * all values. `NullValue`s are ignored unless all values are representing `Null`.
      */
     def upperTypeBound(
         theValues: UIDSet[DomainSingleOriginReferenceValue]

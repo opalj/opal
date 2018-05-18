@@ -707,4 +707,70 @@ class IntTrieSetTest extends FunSpec with Matchers {
         assert(is2.map(i ⇒ i) eq is2)
         assert(is3.map(i ⇒ i) eq is3)
     }
+
+    describe("map using array") {
+        it("should be able to map IntTrieSets where the values are shifted (partial overlap)") {
+            for (length ← 0 to 50) {
+                val isb = new IntTrieSetBuilder
+                val a = new Array[Int](length + 5)
+                for (index ← 0 until length) {
+                    a(index) = index + 5
+                    isb += index
+                }
+                val newI = isb.result()
+                val newIMapped = newI.map(a)
+                assert(newIMapped.size == length, s"$newI;length=$length")
+                if (length > 0) {
+                    assert(
+                        (IntArraySet.empty ++ newIMapped.intIterator).head == 5,
+                        s"$newI => $newIMapped;length=$length"
+                    )
+                    assert(
+                        (IntArraySet.empty ++ newIMapped.intIterator).last == length - 1 + 5,
+                        s"$newI;length=$length"
+                    )
+                }
+
+            }
+        }
+
+        it("should be able to map IntTrieSets to the same values (identity mapping)") {
+            for (length ← 0 to 50) {
+                val isb = new IntTrieSetBuilder
+                val a = new Array[Int](length + 5)
+                for (index ← 0 to length) {
+                    a(index) = index
+                    isb += index
+                }
+                val newI = isb.result()
+                val newIMapped = newI.map(a)
+                assert(newI == newIMapped)
+                assert(newI.forall(newIMapped.contains))
+            }
+        }
+
+        it("should be able to map IntTrieSets to new values ") {
+            for (length ← 0 to 15) {
+                val isb = new IntTrieSetBuilder
+                val a = new Array[Int](length + 50)
+                for (index ← 0 until length) {
+                    a(index) = index + 20
+                    isb += index
+                }
+                val newI = isb.result()
+                val newIMapped = newI.map(a)
+                assert(newIMapped.size == length, s"$newI;length=$length")
+                if (length > 0) {
+                    assert(
+                        (IntArraySet.empty ++ newIMapped.intIterator).head == 20,
+                        s"$newI => $newIMapped;length=$length"
+                    )
+                    assert(
+                        (IntArraySet.empty ++ newIMapped.intIterator).last == length - 1 + 20,
+                        s"$newI;length=$length"
+                    )
+                }
+            }
+        }
+    }
 }

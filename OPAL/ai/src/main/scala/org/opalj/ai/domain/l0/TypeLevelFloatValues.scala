@@ -31,6 +31,7 @@ package ai
 package domain
 package l0
 
+import org.opalj.value.IsFloatValue
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.FloatType
@@ -58,8 +59,10 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait FloatValue extends TypedValue[FloatType] with IsFloatValue[FloatValue] {
+    trait FloatValue extends TypedValue[FloatType] with IsFloatValue {
         this: DomainTypedValue[FloatType] ⇒
+
+        final override def valueType: Option[FloatType] = Some(FloatType)
 
         final override def computationalType: ComputationalType = ComputationalTypeFloat
 

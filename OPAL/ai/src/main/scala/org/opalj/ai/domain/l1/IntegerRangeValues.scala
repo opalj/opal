@@ -33,6 +33,9 @@ package l1
 
 import scala.Int.{MinValue ⇒ MinInt}
 import scala.Int.{MaxValue ⇒ MaxInt}
+
+import org.opalj.value.IsIntegerValue
+
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
@@ -146,8 +149,10 @@ trait IntegerRangeValues
      */
     sealed trait IntegerLikeValue
         extends TypedValue[CTIntType]
-        with IsIntegerValue[IntegerLikeValue] {
+        with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
+
+        final override def valueType: Option[CTIntType] = Some(CTIntType)
 
         final override def computationalType: ComputationalType = ComputationalTypeInt
 

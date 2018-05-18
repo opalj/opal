@@ -39,18 +39,23 @@ import org.opalj.br.analyses.SomeProject
  */
 trait FPCFLazyAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
+    final override def isLazy: Boolean = true
+
+    final override def schedule(ps: PropertyStore): Unit = {
+        startLazily(ps.context[SomeProject], ps)
+    }
+
     /**
-     * Registers the analysis as a lazy property computation.
+     * Starts
      */
-    final protected[fpcf] def startLazily(project: SomeProject): FPCFAnalysis = {
+    final def startLazily(project: SomeProject): FPCFAnalysis = {
         startLazily(project, project.get(PropertyStoreKey))
     }
 
     /**
-     * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
+     * Starts the analysis lazily.
      */
-    protected[fpcf] def startLazily(
+    def startLazily(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): FPCFAnalysis

@@ -77,6 +77,7 @@ case object EmptyIntArraySet extends IntArraySet {
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
     override def withFilter(p: (Int) ⇒ Boolean): IntArraySet = this
     override def map(f: Int ⇒ Int): IntArraySet = this
+    override def map(map: Array[Int]): IntArraySet = this
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = this
     override def -(i: Int): this.type = this
     override def subsetOf(other: IntArraySet): Boolean = true
@@ -120,6 +121,13 @@ case class IntArraySet1(i: Int) extends IntArraySet {
             new IntArraySet1(newI)
         else
             this
+    }
+    override def map(map: Array[Int]): IntArraySet = {
+        val mappedI = map(i)
+        if (mappedI == i)
+            this
+        else
+            new IntArraySet1(mappedI)
     }
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i)
     override def -(i: Int): IntArraySet = if (this.i != i) this else EmptyIntArraySet
@@ -221,6 +229,9 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
             IntArraySet(newI1, newI2) // ensures invariant
         else
             this
+    }
+    override def map(map: Array[Int]): IntArraySet = {
+        IntArraySet2(map(i1), map(i2))
     }
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i1) ++ f(i2)
     override def -(i: Int): IntArraySet = {
@@ -345,6 +356,9 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
         else
             this
     }
+    override def map(map: Array[Int]): IntArraySet = {
+        IntArraySet3(map(i1), map(i2), map(i3))
+    }
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = f(i1) ++ f(i2) ++ f(i3)
 
     override def -(i: Int): IntArraySet = {
@@ -430,6 +444,7 @@ case class IntArraySetN private[immutable] (
 
     override def map(f: Int ⇒ Int): IntArraySet = {
         // let's check if all values are mapped to their original values; if so return "this"
+        val is = this.is
         val max = is.length
         var i = 0
         var f_is_i: Int = 0 // the initial value is never used!
@@ -441,11 +456,22 @@ case class IntArraySetN private[immutable] (
         if (i == max)
             return this;
 
-        val isb = new IntArraySetBuilder
+        val isb = new IntArraySetBuilder(max)
         var l = 0
         while (l < i) { isb += is(l) /*the values were unchanged*/ ; l += 1 }
         while (i < max) {
             isb += f(is(i))
+            i += 1
+        }
+        isb.result()
+    }
+    override def map(map: Array[Int]): IntArraySet = {
+        val is = this.is
+        val max = is.length
+        val isb = new IntArraySetBuilder(max)
+        var i = 0
+        while (i < max) {
+            isb += map(is(i))
             i += 1
         }
         isb.result()
@@ -655,6 +681,7 @@ private[immutable] class FilteredIntArraySet(
     override def min: Int = getFiltered.min
     override def max: Int = getFiltered.max
     override def map(f: Int ⇒ Int): IntArraySet = getFiltered.map(f)
+    override def map(map: Array[Int]): IntArraySet = getFiltered.map(map)
     override def flatMap(f: Int ⇒ IntArraySet): IntArraySet = getFiltered.flatMap(f)
     override def -(i: Int): IntArraySet = getFiltered - i
     override def +(i: Int): IntArraySet = getFiltered + 1

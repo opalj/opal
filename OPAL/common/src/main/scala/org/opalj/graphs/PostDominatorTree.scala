@@ -36,8 +36,8 @@ import java.util.function.IntFunction
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
- * The post-dominator tree (see [[PostDominatorTree$#apply*]] for details regarding
- * the properties).
+ * A representation of a post-dominator tree (see [[PostDominatorTree$#apply*]]
+ * for details regarding the properties).
  *
  * For information regarding issues related to using post-dominator trees for computing
  * control dependence information see "A New Foundation for Control Dependence and Slicing for
@@ -85,7 +85,7 @@ object PostDominatorTree {
      * conceptually every loop is expected to eventually terminate.
      * Hence, an instruction following the loop will not depend on the `if` related
      * to evaluating the loop condition. However, non-handled exceptions (i.e., if we have
-     * multiple exit nodes, may destroy this illusion!) For details see:
+     * multiple exit nodes), may destroy this illusion! For details see:
      * <pre>
      * A New Foundation for Control Dependence and Slicing for Modern Program Structures
      * 2007, Journal Version appeared in ACM TOPLAS

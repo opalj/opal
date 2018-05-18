@@ -686,6 +686,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         case FloatType        ⇒ FRETURN
                         case DoubleType       ⇒ DRETURN
                         case _: ReferenceType ⇒ ARETURN
+                        case CTIntType        ⇒ throw new UnknownError("unexpected type")
                     })
                 }
                 for {

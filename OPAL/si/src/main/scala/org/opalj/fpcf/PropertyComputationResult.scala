@@ -30,6 +30,8 @@ package org.opalj.fpcf
 
 /**
  * Encapsulates the result of the computation of a property.
+ *
+ * @author Michael Eichberg
  */
 sealed abstract class PropertyComputationResult {
 
@@ -39,21 +41,21 @@ sealed abstract class PropertyComputationResult {
 
 /**
  * Encapsulates the final result of the computation of a property. I.e., the analysis
- * determined that the computed property will not be updated because there is no further chance
- * to do so.
+ * determined that the computed property will not be updated because there is no further
+ * chance to do so.
  *
  * A final result is only to be used if no further refinement is possible or may happen.
  *
  * @note The framework will invoke and deregister all dependent computations (observers). If –
- *      after having a result another result w.r.t. the given entity and property is given to
- *      the property store – the behavior is undefined and may/will result in immediate but
- *      also deferred arbitrary failures!
+ *      after having a result - another result w.r.t. the given entity and property is given to
+ *      the property store the behavior is undefined and may/will result in immediate and/or
+ *      deferred failures!
  */
 sealed abstract class FinalPropertyComputationResult extends PropertyComputationResult
 
 /**
  * Encapsulates the '''final result''' of the computation of the property `p` for the given
- * entity `e`.
+ * entity `e`. See [[EOptionP#ub]] for a discussion related to properties.
  *
  * @see [[FinalPropertyComputationResult]] for further information.
  */
@@ -80,6 +82,9 @@ private[fpcf] object MultiResult { private[fpcf] final val id = 1 }
 
 /**
  * Used if the analysis found no entities for which a property could be computed.
+ *
+ * In some cases it makes sense to do, e.g., an analysis per class to compute the properties
+ * for some fields.
  */
 object NoResult extends PropertyComputationResult {
     private[fpcf] final val id = 5
@@ -88,58 +93,72 @@ object NoResult extends PropertyComputationResult {
 /**
  * Encapsulates an intermediate result of the computation of a property.
  *
- * Intermediate results are to be used if further refinements are possible and may happen.
+ * Intermediate results are to be used if further refinements are possible.
  * Hence, if a property of any of the dependees changes (outgoing dependencies),
  * the given continuation `c` is invoked.
  *
  * All current computations that depend on the property of the entity will be invoked.
  *
- * @param dependees A traversable of entity/property (kind) pairs the analysis depends on. Each
- *      entity/property kind must occur at most once in the list, the current entity/propertykind
- *      must not occur; i.e., self-reference are forbidden!
+ * @param dependees The entity/property (kind) pairs the analysis depends on. Each
+ *      `entity`/`property kind` pair must occur at most once in the list, the current
+ *      entity/property kind (`ep`) must not occur; i.e., self-reference are forbidden!
+ *      A dependee must have been queried using `PropertyStore.apply(...)`; directly
+ *      returning a dependee without a prior querying of the property store can lead to
+ *      unexpected results. A dependee must NEVER be less precise than the value returned by
+ *      the query.
+ *
+ *      In general, the set of dependees is expected to shrink over time and the result should
+ *      capture the effect of all properties. However, it is possible to first wait on specific
+ *      properties of specific entities, if these properties ultimately determine the overall
+ *      result. Hence, it is possible to partition the set of entity / properties and to query
+ *      each group one after another.
+ *
+ *      An `IntermediateResult` returned by an `OnUpdateContinuation` must contain the EPS given
+ *      to the continuation function or a newer EPS (i.e., an onUpdateContinuation is allowed
+ *      to query the store again).
+ *
+ *      ''The given set of dependees must not be mutated; it is used internally and if the
+ *      set is mutated, propagation of changes no longer works reliably.''
  *
  * @param c
  *      The function which is called if a property of any of the dependees is updated.
  *      `c` does not have to be thread safe unless the same instance of `c` is returned multiple
- *      times for different entities (`e`) which should be avoided.
+ *      times for different entities (`e`) which should be avoided and is generally not necessary.
+ *      I.e., it is recommended to think about `c` as the function that completes the
+ *      computation of the property `p` for the entity `e` identified by `ep`.
+ *      In general, `c` can have (mutual) state encapsulates
+ *      (temporary) information required to compute the final property.
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  *      before (using one of the `apply` functions of the property store.)
  */
-case class IntermediateResult(
-        ep:        SomeEP,
+case class IntermediateResult[P <: Property](
+        e:         Entity,
+        lb:        P,
+        ub:        P,
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
 
-    assert(ep.p.isRefinable, s"intermediate result $this used to store final property")
-    assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
+    assert(e ne null)
+    assert(lb ne null)
+    assert(ub ne null)
     assert(c ne null, "onUpdateContinuation is null")
-
-    // TODO Make it possible to activate the assertions!
-    //    // End-User oriented assertion:
-    //    assert(
-    //        dependees.map(eOptP ⇒ eOptP.toEPK).toSet.size == dependees.size,
-    //        s"the intermediate result's dependees list ${dependees.mkString("(", ",", ")")} "+
-    //            "contains duplicate entries (E - PK pairs)!"
-    //    )
-    //
-    //    // End-User oriented assertion:
-    //    assert(
-    //        { val dependerEPK = EPK(e, p.key); !dependees.exists(_ == dependerEPK) },
-    //        s"the computation of ${EPK(e, p.key)} depends on its own: ${dependees.find(_ == EPK(e, p.key))}"
-    //    )
+    assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
+    assert(lb ne ub, s"intermediate result $this with same lower and upper bound")
 
     private[fpcf] final def id = IntermediateResult.id
 
-    override def hashCode: Int = ep.hashCode * 17 + dependees.hashCode
+    override def hashCode: Int = e.hashCode * 17 + dependees.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(`ep`, otherDependeeEs, _) ⇒
+            case IntermediateResult(e, lb, ub, otherDependees, _) if (
+                (this.e eq e) && this.lb == lb && this.ub == ub
+            ) ⇒
                 val dependees = this.dependees
-                dependees.size == otherDependeeEs.size &&
-                    dependees.forall(thisDependee ⇒ otherDependeeEs.exists(_ == thisDependee))
+                dependees.size == otherDependees.size &&
+                    dependees.forall(thisDependee ⇒ otherDependees.exists(_ == thisDependee))
 
             case _ ⇒
                 false
@@ -147,21 +166,11 @@ case class IntermediateResult(
     }
 
     override def toString: String = {
-        s"IntermediateResult($ep,dependees=${dependees.mkString("{", ",", "}")})"
+        s"IntermediateResult($e,lb=$lb,ub=$ub,dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
 private[fpcf] object IntermediateResult {
     private[fpcf] final val id = 6
-
-    def apply(
-        e:         Entity,
-        p:         Property,
-        dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
-    ): IntermediateResult = {
-        new IntermediateResult(EP(e, p), dependees, c)
-    }
-
 }
 
 /**
@@ -189,28 +198,6 @@ case class IncrementalResult[E <: Entity](
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 7 }
 
 /**
- * If an analysis is finished and will not return more precise results, but a subsequent
- * analysis (scheduled in a subsequent phase) may refine the results, a ```PhaseResult```
- * has to be used.
- *
- * @note If the given property is not refinable a (Immediate)Result has to be used.
- * @note `PhaseResults` will never lead to cycles as we have no more outgoing dependencies.
- *      TODO The property store can be configured to know which properties are collaboratively
- *      computed in multiple phases; if no subsequent analysis is scheduled the `PropertyStore`
- *      will commit a `PhaseResult` directly as a final result.
- *
- */
-// TODO Rename "PhaseResult"
-case class RefinableResult(e: Entity, p: Property) extends PropertyComputationResult {
-
-    assert(p.isRefinable)
-
-    private[fpcf] final def id = RefinableResult.id
-
-}
-private[fpcf] object RefinableResult { private[fpcf] final val id = 10 }
-
-/**
  * Just a collection of multiple results.
  *
  * @param results
@@ -231,3 +218,34 @@ private[fpcf] object Results {
 
 }
 
+/**
+ * PartialResults are used for properties of entities which are computed collaboratively/in
+ * a piecewise fashion. PartialResults cannot be used for properties which are (also) computed
+ * by lazy property computations.
+ *
+ * For example, let's assume that we have an entity `CFG` which has the property to store
+ * the types which are instantiated and which is updated whenever an analysis of a method
+ * detects the instantiation of a type. In this case, the analysis of the method could return
+ * a MultiResult which contains the (Intermediate)Result for the analysis of the method as
+ * such and a PartialResult which will update the information about the overall set of
+ * instantiated types.
+ *
+ * @param e The entity for which we have a partial result.
+ * @param pk The kind of the property for which we have a partial result.
+ * @param u The function which is given the current property (if any) and which computes the
+ *          new property. `u` has to return `None` if the update does not change the property
+ *          and `Some(NewProperty)` otherwise.
+ * @tparam P The type of the property.
+ */
+case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
+        e:  E,
+        pk: PropertyKey[P],
+        u:  EOptionP[E, P] ⇒ Option[EPS[E, P]]
+) extends PropertyComputationResult {
+
+    private[fpcf] final def id = PartialResult.id
+
+}
+private[fpcf] object PartialResult { private[fpcf] final val id = 9 }
+
+case class PropertyBounds[P <: Property](lb: P, ub: P)

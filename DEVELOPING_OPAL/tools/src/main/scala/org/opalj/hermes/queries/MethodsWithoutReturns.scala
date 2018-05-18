@@ -39,7 +39,7 @@ import org.opalj.br.cfg.CFGFactory
  *
  * @author Michael Eichberg
  */
-object MethodsWithoutReturns extends FeatureQuery {
+class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery {
 
     final val AlwaysThrowsExceptionMethodsFeatureId = "Never Returns Normally"
     final val InfiniteLoopMethodsFeatureId = "Method with Infinite Loop"

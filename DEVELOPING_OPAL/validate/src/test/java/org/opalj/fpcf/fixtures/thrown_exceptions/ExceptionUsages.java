@@ -31,7 +31,8 @@ package org.opalj.fpcf.fixtures.thrown_exceptions;
 import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
-import org.opalj.fpcf.properties.thrown_exceptions.ThrownExceptionsAreUnknown;
+import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptionsByOverridingMethods;
+import org.opalj.fpcf.properties.thrown_exceptions.Types;
 
 /**
  * Test methods for the thrown exceptions analysis.
@@ -42,7 +43,7 @@ import org.opalj.fpcf.properties.thrown_exceptions.ThrownExceptionsAreUnknown;
 public class ExceptionUsages {
 
     //
-    // CASES RELATED TO NOW EXCEPTIONS
+    // CASES RELATED TO NO EXCEPTIONS
     //
 
     @DoesNotThrowException(reason="just returns constant", requires={})
@@ -75,18 +76,16 @@ public class ExceptionUsages {
         return 2;
     }
 
-    @ThrownExceptionsAreUnknown(
-            reason = "callee does not throw exception, but method may be overridden",
-            requires = {}
+    @ExpectedExceptionsByOverridingMethods(
+            reason = "callee does not throw exception, but method may be overridden"
     )
     public int callDoesNotThrowException() {
         return doesNotThrowException();
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptionsByOverridingMethods(
             reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)," +
-                    " may be overridden",
-            requires = {}
+                    " may be overridden"
     )
     public int selfRecursiveMethod(boolean b) {
         if (b) {
@@ -96,10 +95,9 @@ public class ExceptionUsages {
         }
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptionsByOverridingMethods(
             reason = "mutual recursive method calls which throw no exception, call may be " +
-                    "overridden",
-            requires = {}
+                    "overridden"
     )
     public int cycleA(boolean b) {
         if (b) {
@@ -108,10 +106,9 @@ public class ExceptionUsages {
         return 42;
     }
 
-    @ThrownExceptionsAreUnknown(
+    @ExpectedExceptionsByOverridingMethods(
             reason = "mutual recursive method calls which throw no exception, call may be " +
-                    "overridden",
-            requires = {}
+                    "overridden"
     )
     public int cycleB() {
         cycleA(false);
@@ -127,6 +124,12 @@ public class ExceptionUsages {
         throw new NullPointerException();
     }
 
+    @ExpectedExceptions(
+            @Types(concrete = {ArithmeticException.class})
+    )
+    public static int divByZero() {
+        return 2/0;
+    }
 
     @ExpectedExceptions()
     public static int staticCallThrowsException() {
@@ -139,23 +142,25 @@ public class ExceptionUsages {
         throw new NullPointerException();
     }
 
-
     @ExpectedExceptions()
     public static final int staticFinalCallThrowsException() {
         staticThrowsException();
         return 42;
     }
 
+    @ExpectedExceptions()
+    public int throwExceptionFromParameter(RuntimeException re) {
+        re.printStackTrace();
+        throw re;
+    }
 
     @ExpectedExceptions()
     public int throwException() {
         throw new NullPointerException();
     }
 
-
-    @ThrownExceptionsAreUnknown(
-            reason="method call, may be overridden by unknown class",
-            requires={}
+    @ExpectedExceptionsByOverridingMethods(
+            reason="method call, may be overridden by unknown class"
     )
     public int callThrowException() {
         return throwException();
@@ -202,7 +207,7 @@ public class ExceptionUsages {
     private final static class FooBar extends Foo {
         @Override
         @DoesNotThrowException(
-            reason="just returns constant, class is final and private, may not be overridden",
+            reason="just returns constant, class is final, may not be overridden",
             requires={}
         )
         public int baz() {
@@ -218,9 +223,8 @@ public class ExceptionUsages {
 
     public static class PublicFooBar extends Foo {
         @Override
-        @ThrownExceptionsAreUnknown(
-            reason = "just returns constant, is not final, class is public and not final",
-            requires = {}
+        @ExpectedExceptionsByOverridingMethods(
+            reason = "just returns constant, is not final, class is public and not final"
         )
         public int baz() {
             return 42;
@@ -258,9 +262,8 @@ public class ExceptionUsages {
         }
     }
 
-    @ThrownExceptionsAreUnknown(
-        reason="just calls empty default constructor and \"empty\" method of final class",
-        requires={L1ThrownExceptionsAnalysis.class}
+    @ExpectedExceptions(
+        reason="allocates new object => may raise OutOfMemoryException"
     )
     public int noSubclasses() {
         FooBar foobar = new FooBar();

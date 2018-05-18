@@ -46,7 +46,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  * @author Michael Reif
  * @author Michael Eichberg
  */
-object TrivialReflectionUsage extends FeatureQuery {
+class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery {
 
     final val TrivialForNameUsage = "Trivial Class.forName Usage"
     final val NonTrivialForNameUsage = "Nontrivial Class.forName Usage"

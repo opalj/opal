@@ -28,8 +28,9 @@
  */
 package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
+import org.opalj.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
+import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
+import org.opalj.fpcf.properties.ThrownExceptions
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -40,24 +41,56 @@ import org.opalj.fpcf.analyses.ThrownExceptionsByOverridingMethodsAnalysis
  */
 class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
-    describe("no analysis is scheduled") {
+    object DummyProperty {
+        final val Key: PropertyKey[DummyProperty] =
+            PropertyKey.create[Entity, DummyProperty](
+                "DummyProperty",
+                new DummyProperty
+            )
+    }
+
+    sealed class DummyProperty extends Property {
+        override type Self = DummyProperty
+
+        override def key = DummyProperty.Key
+    }
+
+    describe("no analysis is scheduled and fallback is used") {
         val as = executeAnalyses(Set.empty)
+        val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+        val (p, ps, _) = as
+        for {
+            (e, _, annotations) ← methodsWithAnnotations
+            if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
+        } {
+            val epk = EPK(e, ThrownExceptions.key)
+            ps.scheduleEagerComputationForEntity(e) { e ⇒
+                IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), _ ⇒ NoResult)
+            }
+        }
+
+        ps.waitOnPhaseCompletion()
+
         validateProperties(
             as,
             methodsWithAnnotations,
-            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+            pk
         )
     }
 
-    describe("L1ThrownExceptionsAnalysis and ThrownExceptionsByOverridingMethodsAnalysis are executed") {
+    describe("L1ThrownExceptionsAnalysis and EagerVirtualMethodAllocationFreenessAnalysis are executed") {
         val as = executeAnalyses(Set(
-            ThrownExceptionsByOverridingMethodsAnalysis,
-            L1ThrownExceptionsAnalysis
+            EagerVirtualMethodAllocationFreenessAnalysis,
+            EagerL1ThrownExceptionsAnalysis
         ))
         validateProperties(
             as,
             methodsWithAnnotations,
-            Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+            Set(
+                "ExpectedExceptions",
+                "ExpectedExceptionsByOverridingMethods",
+                "ThrownExceptionsAreUnknown"
+            )
         )
     }
 

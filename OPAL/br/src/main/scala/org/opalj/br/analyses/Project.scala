@@ -99,8 +99,7 @@ import org.opalj.concurrent.ConcurrentExceptions
  * Projects can easily be created and queried using the Scala `REPL`. For example,
  * to create a project, you can use:
  * {{{
- * val JRE = "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home/jre/lib"
- * val project = org.opalj.br.analyses.Project(new java.io.File(JRE))
+ * val project = org.opalj.br.analyses.Project(org.opalj.bytecode.JRELibraryFolder)
  * }}}
  * Now, to determine the number of methods that have at least one parameter of type
  * `int`, you can use:
@@ -120,8 +119,8 @@ import org.opalj.concurrent.ConcurrentExceptions
  *         possible.
  *
  * @param classFilesCount The number of classes (including inner and annoymous classes as
- *                        well as interfaces, annotations, etc.) defined in libraries and in
- *                        the analyzed project.
+ *         well as interfaces, annotations, etc.) defined in libraries and in
+ *         the analyzed project.
  *
  * @param methodsCount The number of methods defined in libraries and in the analyzed project.
  *
@@ -135,21 +134,23 @@ import org.opalj.concurrent.ConcurrentExceptions
  *                         source elements consists of (in this order): all methods + all fields
  *                         + all class files.
  *
- * @param  libraryClassFilesAreInterfacesOnly If `true` then only the public interface
+ * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
  *         of the methods of the library's classes is available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
  */
 class Project[Source] private (
-        private[this] val projectClassFiles:          Array[ClassFile],
+        private[this] val projectModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
+        private[this] val projectClassFiles:          Array[ClassFile], // contains no "module-info" class files
+        private[this] val libraryModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
         private[this] val libraryClassFiles:          Array[ClassFile],
         final val libraryClassFilesAreInterfacesOnly: Boolean,
         private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
         private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
         private[this] val projectTypes:               Set[ObjectType], // the types defined by the class files belonging to the project's code
-        private[this] val objectTypeToClassFile:      OpenHashMap[ObjectType, ClassFile],
-        private[this] val sources:                    OpenHashMap[ObjectType, Source],
+        private[this] val objectTypeToClassFile:      Map[ObjectType, ClassFile],
+        private[this] val sources:                    Map[ObjectType, Source],
         final val projectClassFilesCount:             Int,
         final val projectMethodsCount:                Int,
         final val projectFieldsCount:                 Int,
@@ -186,7 +187,9 @@ class Project[Source] private (
         val newLogContext = logContext.successor
         val newClassHierarchy = classHierarchy.updatedLogContext(newLogContext)
         new Project(
+            projectModules,
             projectClassFiles,
+            libraryModules,
             libraryClassFiles,
             libraryClassFilesAreInterfacesOnly,
             methodsWithBody,
@@ -539,7 +542,7 @@ class Project[Source] private (
                 } else {
                     val newLength = Math.max(projectInformation.length * 2, pikUId * 2)
                     val newProjectInformation = new AtomicReferenceArray[AnyRef](newLength)
-                    for (i ← 0 until projectInformation.length()) {
+                    org.opalj.control.iterateUntil(0, projectInformation.length()) { i ⇒
                         newProjectInformation.set(i, projectInformation.get(i))
                     }
                     this.projectInformation = newProjectInformation
@@ -975,7 +978,9 @@ class Project[Source] private (
         OPALLogger.debug("project", "finalized ("+logContext+")")
         if (logContext != GlobalLogContext) { OPALLogger.unregister(logContext) }
 
-        super.finalize()
+        // DEPRECATED: super.finalize()
+        // The "correct" solution requires Java 9 (Cleaner) - we want to remain compatible
+        // Java 8 for the time being; hence, we will keep it as it is for the time being.
     }
 }
 
@@ -1660,12 +1665,14 @@ object Project {
                 }
             }(ScalaExecutionContext)
 
+            val projectModules = AnyRefMap.empty[String, ModuleDefinition[Source]]
             var projectClassFiles = List.empty[ClassFile]
             val projectTypes = Set.empty[ObjectType]
             var projectClassFilesCount: Int = 0
             var projectMethodsCount: Int = 0
             var projectFieldsCount: Int = 0
 
+            val libraryModules = AnyRefMap.empty[String, ModuleDefinition[Source]]
             var libraryClassFiles = List.empty[ClassFile]
             var libraryClassFilesCount: Int = 0
             var libraryMethodsCount: Int = 0
@@ -1676,9 +1683,42 @@ object Project {
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
             val sources = OpenHashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
 
+            def processModule(
+                classFile:        ClassFile,
+                source:           Option[Source],
+                modulesContainer: AnyRefMap[String, ModuleDefinition[Source]]
+            ): Unit = {
+                val moduleName = classFile.module.get.name
+                if (projectModules.contains(moduleName)) {
+                    handleInconsistentProject(
+                        logContext,
+                        InconsistentProjectException(
+                            s"the module $moduleName is defined as part of the project:\n\t"+
+                                projectModules(moduleName).source.getOrElse("<VIRTUAL>")+" and\n\t"+
+                                source.map(_.toString).getOrElse("<VIRTUAL>")+
+                                "\n\tkeeping the first one."
+                        )
+                    )
+                } else if (libraryModules.contains(moduleName)) {
+                    handleInconsistentProject(
+                        logContext,
+                        InconsistentProjectException(
+                            s"the module $moduleName is defined as part of the libraries:\n\t"+
+                                libraryModules(moduleName).source.getOrElse("<VIRTUAL>")+" and\n\t"+
+                                source.map(_.toString).getOrElse("<VIRTUAL>")+
+                                "\n\tkeeping the first one."
+                        )
+                    )
+                } else {
+                    modulesContainer += ((moduleName, ModuleDefinition(classFile, source)))
+                }
+            }
+
             def processProjectClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
                 val projectType = classFile.thisType
-                if (projectTypes.contains(projectType)) {
+                if (classFile.isModuleDeclaration) {
+                    processModule(classFile, source, projectModules)
+                } else if (projectTypes.contains(projectType)) {
                     handleInconsistentProject(
                         logContext,
                         InconsistentProjectException(
@@ -1715,7 +1755,11 @@ object Project {
             val libraryTypes = Set.empty[ObjectType]
             for ((libClassFile, source) ← libraryClassFilesWithSources) {
                 val libraryType = libClassFile.thisType
-                if (projectTypes.contains(libClassFile.thisType)) {
+
+                if (libClassFile.isModuleDeclaration) {
+                    processModule(libClassFile, Some(source), libraryModules)
+
+                } else if (projectTypes.contains(libClassFile.thisType)) {
                     val libraryTypeQualifier =
                         if (libClassFile.isInterfaceDeclaration) "interface" else "class"
                     val projectTypeQualifier = {
@@ -1833,7 +1877,9 @@ object Project {
             val allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
 
             val project = new Project(
+                projectModules,
                 projectClassFilesArray,
+                libraryModules,
                 libraryClassFilesArray,
                 libraryClassFilesAreInterfacesOnly,
                 methodsWithBodySortedBySize,
@@ -1891,3 +1937,5 @@ object Project {
     }
 
 }
+
+case class ModuleDefinition[Source](module: ClassFile, source: Option[Source])

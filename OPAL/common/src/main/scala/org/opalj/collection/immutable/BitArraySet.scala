@@ -31,7 +31,9 @@ package collection
 package immutable
 
 /**
- * An immutable bit set which uses an array to store the underlying values.
+ * An immutable bit set for storing positive int values. An array is used to store
+ * the underlying values. The empty bit set and sets where the maximum value is 64
+ * use optimized representations.
  *
  * @author Michael Eichberg
  */
@@ -46,6 +48,13 @@ sealed abstract class BitArraySet extends BitSet { thisSet ⇒
     def -(i: Int): BitArraySet
 
     final def |(that: BitArraySet): BitArraySet = this ++ that
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BitArraySet ⇒ this.intIterator.sameValues(that.intIterator)
+            case _                 ⇒ false
+        }
+    }
 
     final override def toString: String = mkString("BitArraySet(", ",", ")")
 
@@ -64,6 +73,13 @@ private[immutable] final object EmptyBitArraySet extends BitArraySet { thisSet �
     override def contains(i: Int): Boolean = false
 
     override def intIterator: IntIterator = IntIterator.empty
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BitArraySet ⇒ that.isEmpty
+            case _                 ⇒ false
+        }
+    }
 
     override def hashCode: Int = 1 // from j.u.Arrays.hashCode
 }
@@ -141,8 +157,8 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySet64 ⇒ this.set == that.set
             case EmptyBitArraySet    ⇒ false // this set is never empty!
+            case that: BitArraySet64 ⇒ this.set == that.set
             case _                   ⇒ super.equals(other)
         }
     }
@@ -191,7 +207,9 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
         if (newBucketValue == 0 && bucket == lastBucket) {
             // check how many buckets can be deleted....
             var emptyBuckets = 1
-            while (emptyBuckets < setLength && set(lastBucket - emptyBuckets) == 0) { emptyBuckets += 1 }
+            while (emptyBuckets < setLength && set(lastBucket - emptyBuckets) == 0) {
+                emptyBuckets += 1
+            }
             (setLength - emptyBuckets) match {
                 case 0 ⇒ EmptyBitArraySet
                 case 1 ⇒ new BitArraySet64(set(0))

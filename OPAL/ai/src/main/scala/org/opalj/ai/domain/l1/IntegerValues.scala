@@ -36,6 +36,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.IntegerVariableInfo
+import org.opalj.value.IsIntegerValue
 
 /**
  * This domain enables the tracking of an integer value (a constant);
@@ -65,8 +66,10 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      */
     sealed trait IntegerLikeValue
         extends TypedValue[CTIntType]
-        with IsIntegerValue[IntegerLikeValue] {
+        with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
+
+        final override def valueType: Option[CTIntType] = Some(CTIntType)
 
         final override def computationalType: ComputationalType = ComputationalTypeInt
 

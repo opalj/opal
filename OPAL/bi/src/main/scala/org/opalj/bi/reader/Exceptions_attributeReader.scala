@@ -44,6 +44,8 @@ trait Exceptions_attributeReader extends AttributeReader {
     type Exceptions_attribute >: Null <: Attribute
     implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
 
+    type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
+
     def Exceptions_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
@@ -53,8 +55,6 @@ trait Exceptions_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
 
     /* From The Specification
      *

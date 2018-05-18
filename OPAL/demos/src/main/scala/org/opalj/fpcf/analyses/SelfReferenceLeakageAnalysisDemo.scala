@@ -64,16 +64,17 @@ object SelfReferenceLeakageAnalysisDemo extends DefaultOneStepAnalysis {
 
         var analysisTime = Seconds.None
         time {
-            SelfReferenceLeakageAnalysis.analyze(project)
-            projectStore.waitOnPropertyComputationCompletion( /*default: true*/ )
+            projectStore.setupPhase(Set(SelfReferenceLeakage.Key))
+            L0SelfReferenceLeakageAnalysis.start(project)
+            projectStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
 
-        val notLeakingEntities: Traversable[EP[Entity, SelfReferenceLeakage]] =
-            projectStore.entities(SelfReferenceLeakage.Key) filter { ep ⇒
-                ep.p == DoesNotLeakSelfReference
+        val notLeakingEntities: Iterator[EPS[Entity, SelfReferenceLeakage]] =
+            projectStore.entities(SelfReferenceLeakage.Key) filter { eps ⇒
+                eps.lb == DoesNotLeakSelfReference
             }
-        val notLeakingClasses = notLeakingEntities.map { ep ⇒
-            val classFile = ep.e.asInstanceOf[ClassFile]
+        val notLeakingClasses = notLeakingEntities map { eps ⇒
+            val classFile = eps.e.asInstanceOf[ClassFile]
             val classType = classFile.thisType
             val className = classFile.thisType.toJava
             if (project.classHierarchy.isInterface(classType).isYes)
