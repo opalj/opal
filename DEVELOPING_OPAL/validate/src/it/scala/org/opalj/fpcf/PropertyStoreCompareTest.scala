@@ -79,7 +79,7 @@ class PsThrownExceptionsAnalysisTest extends PropertyStoreCompareTester {
         )
 
         EagerL1ThrownExceptionsAnalysis.start(fixtureProject, ps)
-        EagerVirtualMethodAllocationFreenessAnalysis.start(fixtureProject, ps)
+        EagerVirtualMethodThrownExceptionsAnalysis.start(fixtureProject, ps)
 
         ps.waitOnPhaseCompletion()
     }

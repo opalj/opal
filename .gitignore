@@ -51,3 +51,6 @@ scalac.options.local
 # settings from the build file
 local.sbt
 /OPAL/bi/src/test/fixtures-java/rt-jar-stubs-1.8.0-works.jar
+
+# sbt-perf timings
+.perf
