@@ -2727,25 +2727,46 @@ object ClassHierarchy {
             }
         }
 
+        val processedTypeDeclaration: Array[Boolean] = new Array[Boolean](objectTypesCount)
+        var duplicateTypeDeclarations: Set[String] = Set.empty
         typeDeclarations.seq foreach { typeDeclaration ⇒
             val objectType = typeDeclaration.objectType
-            if (!processedClassType(objectType.id)) {
-                processedClassType(objectType.id) = true
-                process(
-                    objectType,
-                    typeDeclaration.isInterfaceType,
-                    isFinal = false,
-                    typeDeclaration.theSuperclassType,
-                    typeDeclaration.theSuperinterfaceTypes
-                )
+            val oid = objectType.id
+            if (processedTypeDeclaration(oid)) {
+                duplicateTypeDeclarations += objectType.toJava
             } else {
-                OPALLogger.warn(
-                    "project configuration",
-                    s"the type declaration for ${objectType.toJava} is ignored; "+
-                        "class is already defined in the code base "+
-                        "or defined multiple times in the configured type hierarchy"
-                )
+                processedTypeDeclaration(oid) = true
+                // We generally don't want to use pre-configured type hierarchy information;
+                // but we want to extend the information if it is obviously incomplete...
+                if (!processedClassType(oid) ||
+                    // processed - but complete?
+                    ((oid != ObjectType.ObjectId) && superclassTypeMap(oid) == null)) {
+                    processedClassType(objectType.id) = true
+                    process(
+                        objectType,
+                        typeDeclaration.isInterfaceType,
+                        isFinal = false,
+                        typeDeclaration.theSuperclassType,
+                        typeDeclaration.theSuperinterfaceTypes
+                    )
+                } else {
+                    OPALLogger.warn(
+                        "project configuration",
+                        s"the type declaration for ${objectType.toJava} is ignored; "+
+                            "class is already defined in the code base "+
+                            s"with superclassType ${superclassTypeMap(oid).toJava}"+
+                            "or defined multiple times in the configured type hierarchy"
+                    )
+                }
             }
+        }
+        if (duplicateTypeDeclarations.nonEmpty) {
+            OPALLogger.info(
+                "project configuration",
+                duplicateTypeDeclarations.mkString(
+                    "ignored duplicate type declarations for: {", ",", "}"
+                )
+            )
         }
 
         // _____________________________________________________________________________________
