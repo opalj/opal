@@ -104,7 +104,7 @@ object Purity {
     def usage: String = {
         "Usage: java …PurityAnalysisEvaluation \n"+
             "-cp <JAR file/Folder containing class files> OR -JDK\n"+
-            "[-analysis <L0|L1|L2>]\n"+
+            "[-analysis <L0|L1|L2> (Default: L2)]\n"+
             "[-domain <class name of the domain>]\n"+
             "[-rater <class name of the rater>]\n"+
             "[-noJDK] (do not analyze any JDK methods)\n"+
@@ -369,6 +369,7 @@ object Purity {
             if (i < args.length) {
                 args(i)
             } else {
+                Console.println(usage)
                 throw new IllegalArgumentException(s"missing argument: ${args(i - 1)}")
             }
         }
@@ -384,24 +385,29 @@ object Purity {
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-noJDK"       ⇒ withoutJDK = true
-                case "-JDK" ⇒
-                    cp = JRELibraryFolder; withoutJDK = true
+                case "-JDK"         ⇒ { cp = JRELibraryFolder; withoutJDK = true }
+
                 case unknown ⇒
+                    Console.println(usage)
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
             i += 1
         }
 
         if (cp eq null) {
+            Console.println(usage)
             throw new IllegalArgumentException(s"no classpath given (use -cp <classpath> or -JDK)")
         }
 
         val analysis = analysisName match {
-            case Some("L0") ⇒ LazyL0PurityAnalysis
-            case Some("L1") ⇒ LazyL1PurityAnalysis
-            case Some("L2") ⇒ LazyL2PurityAnalysis
-            case Some(a)    ⇒ throw new IllegalArgumentException(s"unknown analysis: $a")
-            case None       ⇒ LazyL2PurityAnalysis
+            case Some("L0")        ⇒ LazyL0PurityAnalysis
+            case Some("L1")        ⇒ LazyL1PurityAnalysis
+            case None | Some("L2") ⇒ LazyL2PurityAnalysis
+
+            case Some(a) ⇒
+                Console.println(usage)
+                throw new IllegalArgumentException(s"unknown analysis: $a")
+
         }
 
         val d = (p: SomeProject) ⇒ (m: Method) ⇒
@@ -429,23 +435,25 @@ object Purity {
         val begin = Calendar.getInstance()
         println(begin.getTime)
 
-        if (multiProjects) {
-            for (subp ← cp.listFiles().filter(_.isDirectory)) {
-                println(subp.getName)
-                evaluate(
-                    subp,
-                    analysis,
-                    d,
-                    rater,
-                    withoutJDK,
-                    individual,
-                    cwa,
-                    evaluationDir
-                )
+        time {
+            if (multiProjects) {
+                for (subp ← cp.listFiles().filter(_.isDirectory)) {
+                    println(subp.getName)
+                    evaluate(
+                        subp,
+                        analysis,
+                        d,
+                        rater,
+                        withoutJDK,
+                        individual,
+                        cwa,
+                        evaluationDir
+                    )
+                }
+            } else {
+                evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir)
             }
-        } else {
-            evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir)
-        }
+        }(t ⇒ Console.out.println("evaluation time: "+t.toSeconds))
 
         val end = Calendar.getInstance()
         println(end.getTime)
