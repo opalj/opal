@@ -29,7 +29,7 @@
 package org.opalj
 
 /**
- * Defines helper values and methods related modeling constraints.
+ * Defines helper values and methods related to modeling constraints.
  *
  * @author Michael Eichberg
  */
