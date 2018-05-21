@@ -43,6 +43,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Prints out the information about the exceptions thrown by methods.
@@ -81,7 +83,9 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps: PropertyStore =
+        var executionTime: Nanoseconds = Nanoseconds.None
+        val ps: PropertyStore = time {
+
             if (parameters.contains(AnalysisLevelL0)) {
                 // We are relying on/using the "FallbackAnalysis":
                 val ps = project.get(PropertyStoreKey)
@@ -98,6 +102,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                     EagerL1ThrownExceptionsAnalysis
                 )
             }
+        } { t ⇒ executionTime = t }
 
         val allMethods = ps.entities(ThrownExceptionsProperty.key).toIterable
         val (epsNotThrowingExceptions, otherEPS) =
@@ -123,6 +128,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 perMethodsReport+"\n"+
                 ps.toString(printProperties = false)+
                 "\nStatistics:\n"+
+                "execution time: "+executionTime.toSeconds+"\n"+
                 "#methods with a thrown exceptions property: "+
                 s"${allMethods.size} (${project.methodsCount})\n"+
                 "#methods with exceptions information more precise than _ <: Throwable: "+
