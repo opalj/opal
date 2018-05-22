@@ -52,7 +52,7 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
     override def title: String = "Pure Void Methods Analysis"
 
     override def description: String = {
-        "find pure/side effect free methods with a void return type"
+        "finds useless methods because they are side effect free and do not return a value (void)"
     }
 
     override def doAnalyze(
@@ -61,17 +61,24 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
 
         val propertyStore = project.get(PropertyStoreKey)
 
+        // TODO @Dominik: We should execute some analysis, don't we?
+
         val entities = propertyStore.entities(fpcf.properties.Purity.key)
 
         val voidReturn = entities.collect {
-            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | LBPure | LBSideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
-            // Emtpy methods still have a return instruction and therefore a body size of 1
+            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | LBPure | LBSideEffectFree))
+                // Do not report empty methods, they are e.g. used for base implementations of listeners
+            // Empty methods still have a return instruction and therefore a body size of 1
             if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
                 m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.size != 1 ⇒
                 (m, p)
         }
 
-        BasicReport(voidReturn.toIterable.map(mp ⇒
-            s"${mp._1.toJava} has a void return type but it is ${mp._2}"))
+        BasicReport(
+            voidReturn.toIterable map {mp ⇒
+                val (m,p) = mp
+            s"${m.toJava} has a void return type but it is $p"
+            }
+        )
     }
 }
