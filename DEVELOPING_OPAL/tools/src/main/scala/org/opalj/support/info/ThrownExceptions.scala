@@ -42,7 +42,8 @@ import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
-import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
+import org.opalj.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}
+import org.opalj.log.OPALLogger
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -102,7 +103,9 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                     EagerL1ThrownExceptionsAnalysis
                 )
             }
-        } { t ⇒ executionTime = t }
+        } { t ⇒
+           OPALLogger.info("analysis progress", "execution time: "+t.toSeconds)
+        }
 
         val allMethods = ps.entities(ThrownExceptionsProperty.key).toIterable
         val (epsNotThrowingExceptions, otherEPS) =
@@ -128,7 +131,6 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 perMethodsReport+"\n"+
                 ps.toString(printProperties = false)+
                 "\nStatistics:\n"+
-                "execution time: "+executionTime.toSeconds+"\n"+
                 "#methods with a thrown exceptions property: "+
                 s"${allMethods.size} (${project.methodsCount})\n"+
                 "#methods with exceptions information more precise than _ <: Throwable: "+
