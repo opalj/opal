@@ -1,0 +1,21 @@
+/* PARAMETERS:
+   param1: useSites={0,4,5,3} (origin=-2)
+*/
+0:/*pc=1:*/ /*expression value is ignored:*/{param1}/*java.lang.Object*/.toString()
+// ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.NullPointerException → 2
+
+// 0 →
+1:/*pc=5:*/ goto 4
+
+// java.lang.NullPointerException →
+2:/*pc=8:*/ caught java.lang.NullPointerException /* <= {exception@0}*/
+3:/*pc=10:*/ {param1}/*java.lang.Object*/.wait()
+// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ <uncaught exception ⇒ abnormal return>
+// WRONG: The NPE may originate from .toString, so param1 may not be null!
+
+// 1 →
+4:/*pc=16:*/ /*expression value is ignored:*/{param1}/*java.lang.Object*/.toString()
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 4 →
+5:/*pc=21:*/ return {param1}

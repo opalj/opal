@@ -190,6 +190,17 @@ public class MethodsWithExceptions {
         return o; // not-null
     }
 
+    public static Object exceptionsWithMultipleReasonsForNull(Object o) throws Exception {
+        try {
+            o.toString();
+        } catch (NullPointerException npe) {
+            o.wait();
+            return o; // null or a NullPointerException thrown by toString...
+        }
+        o.toString();
+        return o; // not-null
+    }
+
     public static int exceptionsAndNull(Object[] o) throws Exception {
         int r = 0;
         try {
