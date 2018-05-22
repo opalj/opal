@@ -480,8 +480,8 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
  * @author Michael Eichberg
  */
 object EagerClassImmutabilityAnalysis
-        extends ClassImmutabilityAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends ClassImmutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
 
@@ -504,8 +504,8 @@ object EagerClassImmutabilityAnalysis
  * @author Michael Eichberg
  */
 object LazyClassImmutabilityAnalysis
-        extends ClassImmutabilityAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends ClassImmutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     override def startLazily(
         project: SomeProject, propertyStore: PropertyStore
