@@ -44,7 +44,6 @@ import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
 import org.opalj.log.OPALLogger.info
-import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
