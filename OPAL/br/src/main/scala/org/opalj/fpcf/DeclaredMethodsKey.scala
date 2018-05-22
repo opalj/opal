@@ -61,10 +61,12 @@ class DeclaredMethods(
         declaringClassType: ObjectType,
         name:               String,
         descriptor:         MethodDescriptor
+    // todo caller package
     ): DeclaredMethod = {
         val cfo = p.classFile(declaringClassType)
         val mo = cfo.flatMap(_.findMethod(name, descriptor))
 
+        // TODO handling for sig. polymorphic methods
         mo match {
             case Some(method) ⇒ apply(method)
             case None         ⇒ apply(VirtualDeclaredMethod(declaringClassType, name, descriptor))
@@ -107,24 +109,32 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      */
     override protected def compute(p: SomeProject): DeclaredMethods = {
         // Note that this analysis is not parallelized; the synchronization etc. overhead
-        // outweighs the benefits even on systems with 4 or so cores..
+        // outweighs the benefits even on systems with 4 or so cores.
+        // We use a concurrent hash map, as later on analyses may add VirtualDeclaredMethods
+        // to this map concurrently.
+        // todo change map Type -> Set[DeclaredMethods]
         val declaredMethods: ConcurrentHashMap[DeclaredMethod, DeclaredMethod] =
             new ConcurrentHashMap
 
+        // TODO test method
         p.allClassFiles.foreach { cf ⇒
             val classType = cf.thisType
             for {
                 // all methods present in the current class file, excluding methods derived
-                // from any supertype that are not overriden by this type.
+                // from any supertype that are not overridden by this type.
                 m ← cf.methods
                 if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
             } {
+                if (m.isAbstract) {
+                    // todo p.classHierarchy.processSubtypes()
+                    // TODO for each subclass and refactor me
+                }
                 val vm = DefinedMethod(classType, m)
                 declaredMethods.put(vm, vm)
             }
             for {
                 // all non-private, non-abstract instance methods present in the current class file,
-                // including methods derived from any supertype that are not overriden by this type.
+                // including methods derived from any supertype that are not overridden by this type.
                 mc ← p.instanceMethods(classType)
             } {
                 val vm = DefinedMethod(classType, mc.method)
