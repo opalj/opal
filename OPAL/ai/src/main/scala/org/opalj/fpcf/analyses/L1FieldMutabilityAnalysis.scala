@@ -35,7 +35,6 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.Field
-import org.opalj.br.DefinedMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
@@ -886,8 +885,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         parameters: Seq[Expr[V]]
     )(implicit state: State): Boolean = target match {
         case Success(callee) ⇒
-            if (!parameters.forall(_.asVar.definedBy forall { defSite ⇒
-                defSite >= 0 && code(defSite).asAssignment.expr.isConst
+            if (parameters.exists(_.asVar.definedBy exists { defSite ⇒
+                defSite < 0 || !code(defSite).asAssignment.expr.isConst
             }))
                 false
             else isDeterministic(propertyStore(declaredMethods(callee), Purity.key))
@@ -907,56 +906,33 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         params:    Seq[Expr[V]],
         descr:     MethodDescriptor
     )(implicit state: State): Boolean = {
-        if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes)
-            // IMPROVE Just use the CFG to check if we have a normal successor
-            return true; // We don't have to examine calls that will result in an NPE
 
-        val rcvrTypeBound =
-            if (receiver.isVar) {
-                project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                    receiver.asVar.value.asDomainReferenceValue.upperTypeBound
-                )
-            } else {
-                rcvrType
-            }
-        val receiverType =
-            if (rcvrTypeBound.isArrayType) ObjectType.Object
-            else rcvrTypeBound.asObjectType
+        val typeBound =
+            project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                receiver.asVar.value.asDomainReferenceValue.upperTypeBound
+            )
 
-        //TODO Is this correct now?
-        val callee = project.instanceCall(declClass, receiverType, name, descr)
-        val calleeR =
-            if (callee.hasValue) callee
-            else project.classFile(receiverType) match {
-                case Some(cf) if cf.isInterfaceDeclaration ⇒
-                    org.opalj.Result(
-                        project.resolveInterfaceMethodReference(receiverType, name, descr)
-                    )
-                case Some(_) ⇒ project.resolveClassMethodReference(receiverType, name, descr)
-                case _       ⇒ Failure
-            }
-
-        if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise ||
-            rcvrTypeBound.isArrayType) {
-            // The receiver could refer to further expressions in a non-flat representation.
-            // To avoid special handling, we just fallback to the general case of virtual/interface
-            // calls here as the analysis is intended to be used on flat representations anyway.
-            handleCall(calleeR, code, params)
+        if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes) {
+            true // We don't have to examine calls that will result in an NPE
+        } else if (typeBound.isArrayType) {
+            val callee = project.instanceCall(declClass, ObjectType.Object, name, descr)
+            handleCall(callee, code, params)
+        } else if (receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+            val preciseType = receiver.asVar.value.asDomainReferenceValue.valueType.get
+            val callee = project.instanceCall(declClass, preciseType, name, descr)
+            handleCall(callee, code, params)
         } else {
-            /*val cfo = if (rcvrTypeBound.isArrayType) project.ObjectClassFile
-            else project.classFile(rcvrTypeBound.asObjectType)
-            val methodO = cfo.flatMap(_.findMethod(name, descr))*/
-            if (calleeR.isEmpty || isMethodOverridable(calleeR.value).isNotNo) {
+            val callee =
+                declaredMethods(declClass.packageName, typeBound.asObjectType, name, descr)
+
+            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
                 false // We don't know all overrides
             } else {
-                // Get the DefinedMethod for this call site
-                val dm = declaredMethods(DefinedMethod(receiverType, calleeR.value))
-
-                if (!params.forall(_.asVar.definedBy forall { defSite ⇒
-                    defSite >= 0 && code(defSite).asAssignment.expr.isConst
+                if (params.exists(_.asVar.definedBy exists { defSite ⇒
+                    defSite < 0 || !code(defSite).asAssignment.expr.isConst
                 }))
                     false
-                else isDeterministic(propertyStore(dm, VirtualMethodPurity.key))
+                else isDeterministic(propertyStore(callee, VirtualMethodPurity.key))
             }
         }
     }
