@@ -245,9 +245,9 @@ class ConstantsBuffer private (
     /**
      * Converts this constant pool buffer to an array and also returns an immutable view of the
      * current state of the constants pool. This in particular enables the creation of the
-     * `BootstrapMethodTable` attribute - iff the table is not empty! If the table is empty
+     * `BootstrapMethodTable` attribute - iff the table is not empty! If the table is empty, 
      * it is not guaranteed that the name of the `BootstrapMethodTable` attribute is defined by
-     * the constant poo, but there is also no need to add the attribute.
+     * the constant pool, but there is also no need to add the attribute.
      */
     def build: (Array[Constant_Pool_Entry], ConstantsPool) = {
         val cp = new Array[Constant_Pool_Entry](nextIndex)
@@ -328,7 +328,7 @@ object ConstantsBuffer {
         referenced entries. After that, nextIndex is set to 1 and all LDC related entries
         are created.
 
-        The only exception are the CPClass entries they strictly need to be processed first
+        The only exception are the CPClass entries: they strictly need to be processed first
         to ensure that – indirect references (e.g., due to a method handle) - never lead to invalid
         indexes!
         */

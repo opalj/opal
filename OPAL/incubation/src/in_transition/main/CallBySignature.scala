@@ -41,10 +41,10 @@ import AnalysisModes._
  * to compute this property when a closed-world program/whole application is analyzed.
  *
  * When an incomplete application or library is analyzed the unknown code could contain subtypes that introduce valid
- * call edges within the known code base. This is in particular the case when it exists an interface and a - from the
- * interface independent - class within the codebase which share a method with the same signature. The unknown codebase
+ * call edges within the known code base. This is in particular the case when an interface and a - from the
+ * interface independent - class within the codebase exist which share a method with the same signature. The unknown codebase
  * could contain a subtype which extends both the class and the interface but does not override the method. If there
- * exists a call on an interface method which fulfills the previously described scenario the method of the class
+ * exists a call on an interface method which fulfills the previously described scenario, the method of the class
  * becomes a possible call target even if it does not implement the interface.
  * The following example illustrates this case:
  *
@@ -70,16 +70,16 @@ import AnalysisModes._
  * == Fallback ==
  *
  * The [[CallBySignature]] property has only a save fallback in the closed-world application scenario where the codebase
- * can not be extended. Hence, in this case it is save to yield [[NoCBSTargets]] as fallback.
+ * cannot be extended. Hence, in this case it is save to yield [[NoCBSTargets]] as fallback.
  * In any other case there is no save fallback. Due to the unavailability of a save fallhback a very simple computation
  * is triggered that returns either [[NoCBSTargets]] if no call-by-signature targets could be found and [[CBSTargets]]
  * if a sound approximation of possible call-by-signature targets could be found. This computation returns all possible
  * call targets that fulfill the following criteria:
  *   - the respective method has to be concrete
- *   - the respective method need the access flag public
+ *   - the respective method needs the access flag to be public
  *   - the declaring class of the respective method allows inheritance (it is not (effectively) final)
- *   - the declaring class of the respective method does not implement interface where the given method is defined
- *   - if it can not be determined whether the declaring class is a subtype of the interface, the respective method
+ *   - the declaring class of the respective method does not implement an interface where the given method is defined
+ *   - if it cannot be determined whether the declaring class is a subtype of the interface, the respective method
  *     is included in the set of potential call-by-signature targets
  *
  * == Cycle Resolution Strategy ==

@@ -1,6 +1,6 @@
 # Major Changes
 
-## Upcomming
+## Upcoming
  - Added support for instrumenting class files
  - support for Java 9
  - Hermes now has extended visualization capabilities to make it even easiere to comprehend the differences between projects
@@ -37,7 +37,7 @@
  - renamed packages called "analysis" to "analyses"
 
 **Bytecode Representation Subproject**
- - `Method` and `Field` now have a back-link to their respective defining class files. The previous mechanisms provided by the `Project` are now longer available.
+ - `Method` and `Field` now have a back-link to their respective defining class files. The previous mechanisms provided by the `Project` are no longer available.
  - added explicit support for new code *entities* to better support Escape/Points-to analyses: `(Object/Array)AllocationSite` and `FormalParameter`
  - `ProjectInformationKey`s can now be initialized using project specific initialization information
    (See `Project.getOrCreateProjektInformationKeyInitializationData` for further information.)
@@ -67,7 +67,7 @@
  - IntSet is now called IntArraySet
 
 ## 0.8.14
- - OPAL now has a very advanced 3-address code representation; go to wwww.opal-project.de to read about the 3-address code
+ - OPAL now has a very advanced 3-address code representation; go to www.opal-project.de to read about the 3-address code
  - fixed all known bugs when rewriting INVOKEDYNAMIC instruction (contributed by Andreas Muttscheller)
  - improved the public API of the `Abstract Interpretation Framework` to facilitate analyses using the 3-address representation
  - the build script is now free of deprecation warnings (contributed by Simon Leischnig)
@@ -86,7 +86,7 @@
 
 ## 0.8.11
  - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
- - added a simple live variables analysis to `br.Code.liveVariables` which computes liveness information for a code's locals (operand stack values are not considered because standard compiler generally don't create "dead operands" and the intended usage are performance and precision improvements)
+ - added a simple live variables analysis to `br.Code.liveVariables` which computes liveness information for a code's locals (operand stack values are not considered because standard compilers generally don't create "dead operands" and the intended usage are performance and precision improvements)
  - refined the implementations of Graphs
  - added efficient implementatin of Tarjan's algorithm for finding strongly connected components (the implementation can easily handle graphs with millions of nodes)
  - added support for converting dot files to SVG using vis-js.com

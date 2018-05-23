@@ -33,9 +33,9 @@ package br
  * The optional enclosing method attribute of a class.
  *
  * @param     name The name of the enclosing method.
- *            The name is optional, but if defined the descriptor also has to be defined.
+ *            The name is optional, but if defined, the descriptor also has to be defined.
  * @param     descriptor The method descriptor of the enclosing method.
- *            The descriptor is optional, but if defined the name also has to be defined.
+ *            The descriptor is optional, but if defined, the name also has to be defined.
  *
  * @author Michael Eichberg
  */

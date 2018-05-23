@@ -34,7 +34,7 @@ import org.opalj.bi.AccessFlagsContexts
 import org.opalj.br.reader.Java9Framework.{ClassFile ⇒ ClassFileReader}
 
 /**
- * Loads class files form a JAR archive and prints the signature and module related
+ * Loads class files from a JAR archive and prints the signature and module related
  * information of the classes.
  *
  * @author Michael Eichberg

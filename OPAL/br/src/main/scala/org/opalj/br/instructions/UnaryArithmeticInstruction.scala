@@ -32,7 +32,7 @@ package instructions
 
 /**
  * Implemented by all arithmetic instructions that have one (runtime-dependent) operand;
- * i.e. the [[NegateInstruction]]s.
+ * i.e., the [[NegateInstruction]]s.
  *
  * @author Michael Eichberg
  */

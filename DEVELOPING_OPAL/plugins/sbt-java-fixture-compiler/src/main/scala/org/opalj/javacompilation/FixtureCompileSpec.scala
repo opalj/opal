@@ -54,7 +54,7 @@ object FixtureCompileSpec {
     }
 
     /**
-     * Represents the result of packaing a test fixture.
+     * Represents the result of packaging a test fixture.
      * The [[generatedFiles]] method returns a sequence of generated class files and
      * the JAR file.
      */

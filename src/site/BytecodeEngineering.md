@@ -19,7 +19,7 @@ The following is a first example, where we create a class called `Test` which de
         methods = METHODS(
             METHOD(PUBLIC, "<init>", "()V", CODE(
                 // The following instruction is annotated with some meta information
-                // which can later be used; e.g., to check that some static analyis
+                // which can later be used; e.g., to check that some static analysis
                 // produced an expected result when this instruction is reached.
                 ALOAD_0 → "MarkerAnnotation1",
                 INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),

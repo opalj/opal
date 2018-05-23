@@ -43,7 +43,7 @@ body {
 	<code>maxCardinalityOfLongSets</code>=&lt;IntValue [1,1024]=2&gt; basically determines for each long
                value how long the value is "precisely" tracked.
                <p>The maximum size/cardinality of this set is controlled by this setting. If
-               the set's size is tool large the precise tracking of the respective value is
+               the set's size is too large, the precise tracking of the respective value is
                terminated.
                Increasing this value may significantly increase the analysis time and
                may require the increase of maxEvalFactor.</p>
@@ -52,9 +52,9 @@ body {
 	<code>maxCallChainLength</code>=&lt;IntValue [0..9]=1&gt;
 	 determines the maximum length of the call chain
                that is analyzed.
-               <p>If you increase this value by one it is typically also necessary
-              to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
+               <p>If you increase this value by one, it is typically also necessary
+              to increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
                may happen that many analyses are aborted because the evaluation time
-               is exhausted and – overall – the analysis reports less issues!</p>
+               is exhausted and - overall - the analysis reports less issues!</p>
 </body>
 </html>

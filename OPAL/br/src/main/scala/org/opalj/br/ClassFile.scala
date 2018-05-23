@@ -119,7 +119,7 @@ final class ClassFile private (
      * For example, the precise structure of the constant pool is completely irrelevant.
      * Additionally, some variance in the bytecode (e.g., `bipush(2)` vs `iconst_2`) is generally
      * irrelevant and also the order in which [[Attribute]]s are found.
-     * However, the order in which methods/fields is visible in Java programs and
+     * However, the order in which methods/fields are visible in Java programs and
      * therefore, in general, runtime relevant.
      *
      * The degree to which the two class files have to be similar can be configured using
@@ -466,7 +466,7 @@ final class ClassFile private (
                         !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains(_))) {
                         // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
-                        // e.g. we might have the following situation:
+                        // e.g., we might have the following situation:
                         // class X {
                         //  class Y {                                // X$Y
                         //      void m(){

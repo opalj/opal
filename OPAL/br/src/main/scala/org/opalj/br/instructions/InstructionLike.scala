@@ -193,7 +193,7 @@ trait InstructionLike {
     /**
      * Returns the location – [[Stack]], [[Register]] or [[NoExpression]] – where the value
      * computed by this instruction is stored. In this case an instruction is only considered
-     * to be an expression if a puts a value on the stack or in a register that is the result of
+     * to be an expression if it puts a value on the stack or in a register that is the result of
      * some kind of computation; i.e., just copying, duplicating or moving a value between the
      * stack and the registers is not considered to be an expression.
      *
@@ -204,7 +204,7 @@ trait InstructionLike {
 
     /**
      * Returns a string representation of this instruction. If this instruction is a
-     * (conditional) jump instruction then the PCs of the target instructions are
+     * (conditional) jump instruction, then the PCs of the target instructions are
      * given absolute address.
      *
      * @param   currentPC The program counter of this instruction. Used to resolve relative

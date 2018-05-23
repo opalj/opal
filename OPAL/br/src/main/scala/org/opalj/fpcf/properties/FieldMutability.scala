@@ -45,7 +45,7 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
  * As in case of `final` fields, field writes done by (static) initializers w.r.t. the currently
  * constructed (class) object generally do not prevent the field from being effectively final.
  *
- * Hence, a user of the respective class/object will always see the same value, It is
+ * Hence, a user of the respective class/object will always see the same value. It is
  * also possible that the initializing field write is not done by the class itself but done by
  * a specific caller that is guaranteed to be always executed before the field is (read)
  * accessed elsewhere.
@@ -78,7 +78,7 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
  *
  * - non-final
  *   - a field is non final if non of the the previous cases holds
- *   - e.g. not all reads and writes of the field are known
+ *   - e.g., not all reads and writes of the field are known
  *
  * @note A field's mutability is unrelated to the immutability of the referenced objects!
  *

@@ -74,7 +74,7 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      *
      * This analysis is only ''defined and soundy'' if the class file does not contain native
      * methods and the method body of all non-abstract methods is available.
-     * (If the analysis is scheduled using its companion object all class files with
+     * (If the analysis is scheduled using its companion object, all class files with
      * native methods are filtered.)
      *
      * @param field A field without native methods and where the method body of all
