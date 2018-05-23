@@ -284,6 +284,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             case None ⇒
                 if (MethodHandleSubtypes.contains(receiverType) && (
                     // we have to avoid endless recursion if we can't find the target method
+                    // TODO FIXME [Java9+] use "isSignaturePolymorphic" to support VarHandles
                     receiverType != ObjectType.MethodHandle ||
                     descriptor != SignaturePolymorphicMethodDescriptor
                 )) {
@@ -597,6 +598,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 // - It has a single formal parameter of type Object[].
                 // - It has a return type of Object.
                 // - It has the ACC_VARARGS and ACC_NATIVE flags set.
+                // TODO [Java9+] Document or fix if VarHandle needs/does not need support
                 val isPotentiallySignaturePolymorphicCall = receiverType eq ObjectType.MethodHandle
 
                 if (isPotentiallySignaturePolymorphicCall) {
@@ -604,7 +606,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     if (methods.isSingletonList) {
                         val method = methods.head
                         if (method.isNativeAndVarargs &&
-                            method.descriptor == MethodDescriptor.SignaturePolymorphicMethod)
+                            method.descriptor == SignaturePolymorphicMethodDescriptor)
                             Success(method) // the resolved method is signature polymorphic
                         else if (method.descriptor == descriptor)
                             Success(method) // "normal" resolution of a method
