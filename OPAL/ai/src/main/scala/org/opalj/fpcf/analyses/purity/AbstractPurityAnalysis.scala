@@ -32,10 +32,9 @@ package analyses
 package purity
 
 import scala.annotation.switch
-
 import org.opalj.ai.Domain
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
@@ -193,11 +192,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * exception or if the VM instantiated the exception. Here, we are only concerned about the
      * exceptions thrown by the instructions not about exceptions that are transitively thrown;
      * e.g. if a method is called.
+     * TODO We need this method because currently, for exceptions that terminate the method, no
+     * definitions are recorded. Once this is done, use that information instead to determine
+     * whether it may be an immediate exception or not.
      */
-    def isImmediateVMException(origin: ValueOrigin)(implicit state: StateType): Boolean = {
-        // TODO @Dominik Check if using isVMLevelVAlue/isMethodExternalValue is better/is more correct
-        if (ImmediateVMExceptionsOriginOffset < origin && origin < 0)
-            return false; // Parameters aren't implicit exceptions
+    def isSourceOfImmediateException(origin: ValueOrigin)(implicit state: StateType): Boolean = {
 
         def evaluationMayCauseVMLevelException(expr: Expr[V]): Boolean = {
             (expr.astID: @switch) match {
@@ -212,8 +211,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val pc = ai.underlyingPC(origin) // TODO @Dominik Check if change is correct. OLD: if (isVMLevelValue(origin)) pcOfVMLevelValue(origin) else origin
-        val stmt = state.code(pc)
+        val stmt = state.code(origin)
         (stmt.astID: @switch) match {
             case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
 
@@ -312,10 +310,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // but it may be ignored as domain-specific
             case CaughtException.ASTID ⇒
                 for {
-                    pc /*TODO rename to "origin", or?*/ ← stmt.asCaughtException.origins
-                    if isImmediateVMException(pc) // TODO @Dominik Check if correct.
+                    origin ← stmt.asCaughtException.origins
+                    if isImmediateVMException(origin)
                 } {
-                    val baseOrigin = state.code(ai.underlyingPC(pc) /* TODO @Dominik Check if correct. old: if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc*/ )
+                    val baseOrigin = state.code(ai.underlyingPC(origin))
                     val ratedResult = rater.handleException(baseOrigin)
                     if (ratedResult.isDefined) atMost(ratedResult.get)
                     else atMost(LBSideEffectFree)
@@ -325,7 +323,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // Reference comparisons may have different results for structurally equal values
             case If.ASTID ⇒
                 val If(_, left, _, right, _) = stmt
-                if ((left.cTpe eq ComputationalTypeReference))
+                if (left.cTpe eq ComputationalTypeReference)
                     if (!(isLocal(left, CompileTimePure) || isLocal(right, CompileTimePure)))
                         atMost(LBSideEffectFree)
                 true

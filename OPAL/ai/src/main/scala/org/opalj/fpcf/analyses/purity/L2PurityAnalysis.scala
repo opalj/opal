@@ -32,7 +32,7 @@ package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.pcOfImmediateVMException
+import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -390,7 +390,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         defSites:           IntTrieSet,
         excludedDefSites:   IntTrieSet
     )(implicit state: State): Boolean = {
-        // TODO @Dominik Check what needs to be done in case of Method External values.
         if (isImmediateVMException(defSite))
             return true; // VMLevelValues are freshly created
 
@@ -736,21 +735,21 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var newFieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.fieldLocalityDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, ((eop, newData))))
+            if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, (eop, newData)))
         }
         state.fieldLocalityDependees = newFieldLocalityDependees
 
         var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.rvfDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newRVFDependees += ((dependee, ((eop, newData))))
+            if (newData.nonEmpty) newRVFDependees += ((dependee, (eop, newData)))
         }
         state.rvfDependees = newRVFDependees
 
         var newVRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.virtualRVFDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newVRVFDependees += ((dependee, ((eop, newData))))
+            if (newData.nonEmpty) newVRVFDependees += ((dependee, (eop, newData)))
         }
         state.virtualRVFDependees = newVRVFDependees
 
@@ -968,12 +967,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for {
             bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
-            // TODO FIXME @Dominik The following test seems to be useless... the endPC of a bb is never an immediateVMException
-            if isImmediateVMException(pc)
+            if isSourceOfImmediateException(pc)
         } {
-            // TODO @Dominik Check what needs to be done in case of MethodExternalValues
-            val origin = state.code(if (isImmediateVMException(pc)) pcOfImmediateVMException(pc) else pc)
-            val ratedResult = rater.handleException(origin)
+            val throwingStmt = state.code(pc)
+            val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(LBSideEffectFree)
         }

@@ -32,6 +32,7 @@ package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
+import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -102,13 +103,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var lbPurity:      Purity,
-            var ubPurity:      Purity,
-            var dependees:     Set[EOptionP[Entity, Property]],
-            val method:        Method,
-            val definedMethod: DeclaredMethod,
-            val declClass:     ObjectType,
-            val code:          Array[Stmt[V]]
+        var lbPurity:      Purity,
+        var ubPurity:      Purity,
+        var dependees:     Set[EOptionP[Entity, Property]],
+        val method:        Method,
+        val definedMethod: DeclaredMethod,
+        val declClass:     ObjectType,
+        val code:          Array[Stmt[V]]
     ) extends AnalysisState
 
     override type StateType = State
@@ -153,8 +154,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         }
                     }
                 } else if (isImmediateVMException(defSite)) {
-                    // TODO @Dominik Check what needs to be done in case of MethodExternalValues
-                    true // VMLevelValues are freshly created
+                    true // immediate VM exceptions are freshly created
                 } else {
                     // In initializers the self reference (this) is local
                     state.method.isConstructor && defSite == OriginOfThis
@@ -344,12 +344,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for {
             bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
-            // TODO FIXME @Dominik The following test seems to be useless... the endPC of a bb is never an immediateVMException
-            if isImmediateVMException(pc) // TODO @Dominik what needs to be done in case of method external values.
+            if isSourceOfImmediateException(pc)
         } {
-            // TODO @Dominik Check if underlyingPC is what is needed
-            val origin = state.code(ai.underlyingPC(pc) /*if (isImmediateVMException(pc)) pcOfImmediateVMException(pc) else pc*/ )
-            val ratedResult = rater.handleException(origin)
+            val throwingStmt = state.code(pc)
+            val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(LBSideEffectFree)
         }
