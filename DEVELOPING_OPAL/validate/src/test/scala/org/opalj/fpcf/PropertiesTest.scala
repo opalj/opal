@@ -82,7 +82,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
             val (cf, _) = cfSrc
-            cf.thisType.packageName.startsWith("org/opalj/fpcf/fixture")
+            cf.thisType.packageName.startsWith("org/opalj/fpcf/fixtures")
         }
 
         val propertiesClassFiles = fixtureClassFiles.filter { cfSrc ⇒
