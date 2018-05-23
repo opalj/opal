@@ -31,11 +31,11 @@
 // ⚡️ java.lang.IllegalArgumentException → 13, ⚡️ java.lang.NullPointerException → 9, ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.ClassCastException → 11, ⚡️ java.lang.ArithmeticException → 15
 
 // java.lang.NullPointerException →
-9:/*pc=26:*/ caught java.lang.NullPointerException /* <= {exception@0,param1,exception@5}*/
+9:/*pc=26:*/ caught java.lang.NullPointerException /* <= {exception@0,exception[VM]@0,param1,exception@5}*/
 10:/*pc=29:*/ goto 18
 
 // java.lang.ClassCastException →
-11:/*pc=32:*/ caught java.lang.ClassCastException /* <= {exception@0,param1,exception@7,exception@5}*/
+11:/*pc=32:*/ caught java.lang.ClassCastException /* <= {exception@0,param1,exception[VM]@7,exception@5}*/
 12:/*pc=35:*/ goto 18
 
 // java.lang.IllegalArgumentException →
@@ -43,7 +43,7 @@
 14:/*pc=41:*/ goto 18
 
 // java.lang.ArithmeticException →
-15:/*pc=44:*/ caught java.lang.ArithmeticException /* <= {exception@0,param1,exception@5,exception@1}*/
+15:/*pc=44:*/ caught java.lang.ArithmeticException /* <= {exception@0,param1,exception@5,exception[VM]@1}*/
 16:/*pc=45:*/ lv10 = 0
 17:/*pc=46:*/ return {lv10}
 
@@ -55,7 +55,7 @@
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 21 →
-22:/*pc=60:*/ lv16 = {lv13}/*java.lang.StringBuilder*/.append({exception@0, param1, exception@7, exception@5})
+22:/*pc=60:*/ lv16 = {lv13}/*java.lang.StringBuilder*/.append({exception@0, exception[VM]@, param1, exception[VM]@7, exception@5})
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 22 →
