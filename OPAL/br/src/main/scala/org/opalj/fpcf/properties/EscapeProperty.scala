@@ -672,7 +672,7 @@ trait GlobalEscape extends EscapeProperty {
 }
 
 /**
- * The object escapes globally but the reason for this is not further specified, e.g., because it
+ * The object escapes globally but the reason for this is not further specified, e.g. because it
  * escapes via static field and a heap object.
  */
 case object GlobalEscape extends GlobalEscape {
