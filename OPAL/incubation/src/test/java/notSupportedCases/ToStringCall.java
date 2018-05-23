@@ -33,7 +33,7 @@ package notSupportedCases;
  * Class.forName() and returns it to the user.
  * 
  * JDKTaintAnalysis is not able to detect if a String is passed as Object and
- * later on performs a toString call
+ * later on performs a toString call.
  * 
  * @author Lars Schulte
  */

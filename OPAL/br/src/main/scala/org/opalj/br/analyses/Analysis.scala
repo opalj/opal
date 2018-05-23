@@ -54,7 +54,7 @@ trait Analysis[Source, +AnalysisResult] {
      * @param initProgressManagement A function to get a
      *      [[org.opalj.br.analyses.ProgressManagement]] object.
      *      The function is called by the analysis for each major analysis with the
-     *      number of steps (Int) that will be performed . The analysis will subsequently
+     *      number of steps (Int) that will be performed. The analysis will subsequently
      *      use that object to report status information (related to that part of the analysis)
      *      and to check the interrupted status.
      *      The number of steps is at least 1.
@@ -80,7 +80,7 @@ trait Analysis[Source, +AnalysisResult] {
      *      pouter.progress(2,End,None)
      *      }}}
      *
-     * @return The analysis' result. If the analysis was aborted/killed the analysis
+     * @return The analysis' result. If the analysis was aborted/killed, the analysis
      *      should return an appropriate result (which might be `null`) and this
      *      has to be specified/documented by the analysis.
      */

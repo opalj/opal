@@ -74,6 +74,13 @@ private[seq] sealed abstract class PropertyValue {
             Some(EPS(e, lb, ub))
     }
 
+    private[seq] def toEPSUnsafe[E <: Entity, P <: Property](e: E): Option[EPS[E, P]] = {
+        if (ub == null || ub == PropertyIsLazilyComputed)
+            None
+        else
+            Some(EPS[E, P](e, lb.asInstanceOf[P], ub.asInstanceOf[P]))
+    }
+
     override def toString: String = {
         (if (isFinal) "Final" else "Intermediate")+
             "PropertyValue("+

@@ -116,7 +116,7 @@ object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
                     ai.initialOperands(method, domain1), ai.initialLocals(method, domain1)(None)
                 )
 
-                // 1. Interpretation under the assumption that all values are non-null
+                // 2. Interpretation under the assumption that all values are non-null
                 val domain2 =
                     new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(method, domain2)(None))

@@ -53,7 +53,7 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      *          instruction is found in a method's byte code.
      *
      * ==Overriding this Method==
-     * To perform additional analyses on `invokedynamic` instructions, e.g. to
+     * To perform additional analyses on `invokedynamic` instructions, e.g., to
      * fully resolve the call target, a subclass may override this method to do so.
      * When you override this method, you should call this method
      * (`super.deferredResolveInvokedynamicInstruction`) to ensure that the default resolution

@@ -48,7 +48,7 @@ import org.opalj.da.Code_attribute
 import org.opalj.da.Code
 
 /**
- * Generates an main class which invokes a static method defined
+ * Generates a main class which invokes a static method defined
  * by a superclass using the declared type of the subclass.
  *
  * @see For further details see: `Readme.md`.

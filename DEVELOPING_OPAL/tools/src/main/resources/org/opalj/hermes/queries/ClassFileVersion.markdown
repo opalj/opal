@@ -10,7 +10,7 @@ Class files using Java 1.0 and 1.1. are grouped together because they use the sa
 Generally, don't have *jsr*/*ret* instructions anymore, because Java stopped generating them. However, technically they are still allowed and were only forbidden with version 51 (*cf. Java Virtual Machine Specification - Constraints on Java Virtual Machine code - Static Constraints*)
 
 ### Java 7 and newer
-May have *invokedynamic* instructions; however Java only started using *invokedynamic* with Java 8 and all other languages (e.g., Clojure, Groovy, Scala) also did not starte using them right away.
+May have *invokedynamic* instructions; however, Java only started using *invokedynamic* with Java 8 and all other languages (e.g., Clojure, Groovy, Scala) also did not starte using them right away.
 
 ### Java 8 and newer
  - usually have *invokedynamic* instructions because Java started using it

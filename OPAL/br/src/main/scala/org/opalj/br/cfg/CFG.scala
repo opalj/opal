@@ -54,7 +54,7 @@ import org.opalj.graphs.Node
  *
  * @param   code The code for which the CFG was build.
  * @param   normalReturnNode The unique exit node of the control flow graph if the
- *          method returns normally. If the method always throws an exception this
+ *          method returns normally. If the method always throws an exception, this
  *          node will not have any predecessors.
  * @param   abnormalReturnNode The unique exit node of the control flow graph if the
  *          method returns abnormally (throws an exception). If the method is guaranteed
@@ -177,7 +177,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * Returns the basic block to which the instruction with the given `pc` belongs.
      *
      * @param pc A valid pc.
-     * @return The basic block associated with the given `pc`. If the `pc` is not valid
+     * @return The basic block associated with the given `pc`. If the `pc` is not valid,
      *         `null` is returned or an index out of bounds exception is thrown.
      */
     def bb(pc: Int): BasicBlock = basicBlocks(pc)
@@ -224,7 +224,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * instruction that always causes an exception to be thrown that is not handled by
      * a handler of the respective method.
      *
-     * @note   If possible the function `foreachSuccessor` should be used as it does not have
+     * @note   If possible, the function `foreachSuccessor` should be used as it does not have
      *         to create comparatively expensive intermediate data structures.
      *
      * @param pc A valid pc of an instruction of the code block from which this cfg was derived.

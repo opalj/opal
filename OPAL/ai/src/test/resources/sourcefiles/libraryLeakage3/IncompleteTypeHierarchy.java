@@ -36,7 +36,7 @@ import org.opalj.fpcf.test.annotations.CallabilityProperty;
  * This class is for test purpose only. It shall reflect the case of an
  * incomplete type hierarchy. (together with LaterDeletedSuperClass)
  * 
- * IMPORTANT: This class's superclass is deleted after the compilation process.
+ * IMPORTANT: This class' superclass is deleted after the compilation process.
  * 
  * 
  * @note The method names refer to the closed packages assumption.

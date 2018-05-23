@@ -45,7 +45,7 @@ trait Java7LibraryFramework
     with MethodsBinding
     with ClassFileBinding
     with AttributesReader
-    /* If you want unknown attributes to be represented uncomment the following: */
+    /* If you want unknown attributes to be represented, uncomment the following: */
     // with Unknown_attributeBinding
     /* and comment out the following line: */
     with SkipUnknown_attributeReader

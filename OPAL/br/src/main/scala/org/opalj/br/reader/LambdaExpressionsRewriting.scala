@@ -388,7 +388,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             tempImplMethod: MethodCallMethodHandle, // the MethodHandle providing the implementation
             instantiatedMethodType: MethodDescriptor, // allowing restrictions on invocation
             // The available information depends on the metafactory:
-            // (e.g. about bridges or markers)
+            // (e.g., about bridges or markers)
             altMetafactoryArgs @ _*
             ) = bootstrapArguments
         var implMethod = tempImplMethod
@@ -479,13 +479,13 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         This is wrong for INVOKEVIRTUAL and INVOKEINTERFACE. The call to the proxy class
         is done with the actual class, not the class where the method is implemented.
         Therefore, the receiverType must be the class from the caller, not where the to-
-        be-called method is implemented. E.g. LinkedHashSet.contains() is implemented in
+        be-called method is implemented. E.g., LinkedHashSet.contains() is implemented in
         HashSet, but the receiverType and constructor parameter must be LinkedHashSet
         instead of HashSet.
 
         *** INVOKEVIRTUAL ***
         An INVOKEVIRTUAL is used when the method is defined by a class type
-        (not an interface type). (e.g. LinkedHashSet.addAll()).
+        (not an interface type). (e.g., LinkedHashSet.addAll()).
         This instruction requires a receiver object when the method reference uses a
         non-null object as a receiver.
         E.g.: LinkedHashSet<T> lhs = new LinkedHashSet<>();
@@ -504,7 +504,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         *** INVOKESPECIAL ***
         INVOKESPECIAL is used for:
-        - instance initialization methods (i.e. constructors) -> Method is implemented
+        - instance initialization methods (i.e., constructors) -> Method is implemented
           in called class -> no rewrite necessary
         - private method invocation: The private method must be in the same class as
           the callee -> no rewrite needed

@@ -59,7 +59,7 @@ trait ControlTransferInstruction extends Instruction with ControlTransferInstruc
      * @return All instructions to which this instruction explicitly jumps to. (The instruction to
      *         which an if-instruction i potentially falls through, is not a jump target
      *         w.r.t. i; it may still be a jump target w.r.t. some other control transfer
-     *         instruction).
+     *         instruction.)
      */
     def jumpTargets(
         currentPC: Int
