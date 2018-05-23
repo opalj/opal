@@ -26,30 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf.properties.compile_time_constancy;
 
-import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.fpcf.properties.allocation_freeness.AllocationFreeMethodMatcher;
 
-class FieldLocalityTests extends PropertiesTest {
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-    val lazyAnalysisScheduler = Set(
-        LazyInterProceduralEscapeAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis,
-        LazyVirtualReturnValueFreshnessAnalysis,
-        LazyReturnValueFreshnessAnalysis
-    )
+/**
+ * Annotation to state that a field is a compile time constant.
+ *
+ * @author Dominik Helm
+ */
+@PropertyValidator(key = "CompileTimeConstancy", validator = CompileTimeConstantMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface CompileTimeConstant {
 
-    describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
-        validateProperties(
-            as,
-            fieldsWithAnnotations(as._1),
-            Set("FieldLocality")
-        )
-    }
+    /**
+     * A short reasoning of this property.
+     */
+    String value(); // default = "N/A";
 }

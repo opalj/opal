@@ -26,30 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package fpcf
+package org.opalj.fpcf.properties.static_data_usage;
 
-import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.properties.PropertyValidator;
 
-class FieldLocalityTests extends PropertiesTest {
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-    val lazyAnalysisScheduler = Set(
-        LazyInterProceduralEscapeAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis,
-        LazyVirtualReturnValueFreshnessAnalysis,
-        LazyReturnValueFreshnessAnalysis
-    )
+/**
+ * Annotation to state that a method uses only compile-time constant static data.
+ *
+ * @author Dominik Helm
+ */
+@PropertyValidator(key = "StaticDataUsage", validator = UsesConstantDataOnlyMatcher.class)
+@Documented
+@Retention(RetentionPolicy.CLASS)
+public @interface UsesConstantDataOnly {
 
-    describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
-        validateProperties(
-            as,
-            fieldsWithAnnotations(as._1),
-            Set("FieldLocality")
-        )
-    }
+    /**
+     * A short reasoning of this property.
+     */
+    String value(); // default = "N/A";
 }

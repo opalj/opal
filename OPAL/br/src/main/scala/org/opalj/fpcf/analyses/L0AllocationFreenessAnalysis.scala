@@ -88,16 +88,27 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         if (declaringClassType ne definedMethod.declaringClassType)
             return baseMethodAllocationFreeness(definedMethod.asDefinedMethod);
 
+        // Synchronized methods may raise IllegalMonitorStateExceptions when invoked.
+        if (method.isSynchronized)
+            return Result(definedMethod, MethodWithAllocations);
+
         val methodDescriptor = method.descriptor
         val methodName = method.name
         val body = method.body.get
         val instructions = body.instructions
         val maxPC = instructions.length
 
+        if (methodName == "setField")
+            println()
+
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
         var overwritesSelf = false
         var mayOverwriteSelf = true
+
+        def prevPC(pc: Int): Int = {
+            body.pcOfPreviousInstruction(pc)
+        }
 
         var currentPC = 0
         while (currentPC < maxPC) {
@@ -146,10 +157,18 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                     else // A PUTFIELD may result in a NPE raised (and therefore allocated)
                         return Result(definedMethod, MethodWithAllocations)
 
-                case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
+                case GETFIELD.opcode ⇒ // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)
                         return Result(definedMethod, MethodWithAllocations);
-                    else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
+                    else if (instructions(prevPC(currentPC)).opcode !=
+                        ALOAD_0.opcode)
+                        return Result(definedMethod, MethodWithAllocations);
+                    else mayOverwriteSelf = false
+
+                case PUTFIELD.opcode ⇒ // may allocate NPE (but not on `this`)
+                    if (method.isStatic || overwritesSelf)
+                        return Result(definedMethod, MethodWithAllocations);
+                    else if (instructions(prevPC(prevPC(currentPC))).opcode !=
                         ALOAD_0.opcode)
                         return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
@@ -157,6 +176,11 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     // We don't handle these calls here, just treat them as having allocations
                     return Result(definedMethod, MethodWithAllocations);
+
+                case ARETURN.opcode | IRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
+                    LRETURN.opcode | RETURN.opcode ⇒
+                // if we have a monitor instruction the method has allocations anyway..
+                // hence, we can ignore the monitor related implicit exception
 
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) allocate no objects

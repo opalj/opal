@@ -148,92 +148,88 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.CompileTimePure]].
  */
-class CompileTimePureMatcher extends PurityMatcher(org.opalj.fpcf.properties.CompileTimePure)
+class CompileTimePureMatcher extends PurityMatcher(properties.CompileTimePure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBPure]].
  */
-class PureMatcher extends PurityMatcher(org.opalj.fpcf.properties.LBPure)
+class PureMatcher extends PurityMatcher(properties.LBPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBSideEffectFree]].
  */
-class SideEffectFreeMatcher extends PurityMatcher(org.opalj.fpcf.properties.LBSideEffectFree)
+class SideEffectFreeMatcher extends PurityMatcher(properties.LBSideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBExternallyPure]].
  */
-class ExternallyPureMatcher extends PurityMatcher(org.opalj.fpcf.properties.LBExternallyPure)
+class ExternallyPureMatcher extends PurityMatcher(properties.LBExternallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBExternallySideEffectFree]].
  */
-class ExternallySideEffectFreeMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBExternallySideEffectFree)
+class ExternallySideEffectFreeMatcher extends PurityMatcher(properties.LBExternallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBContextuallyPure]].
  */
-class ContextuallyPureMatcher extends PurityMatcher(org.opalj.fpcf.properties.LBContextuallyPure)
+class ContextuallyPureMatcher extends PurityMatcher(properties.LBContextuallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBContextuallySideEffectFree]].
  */
 class ContextuallySideEffectFreeMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBContextuallySideEffectFree)
+    extends PurityMatcher(properties.LBContextuallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBDPure]].
  */
-class DomainSpecificPureMatcher extends PurityMatcher(org.opalj.fpcf.properties.LBDPure)
+class DomainSpecificPureMatcher extends PurityMatcher(properties.LBDPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBDSideEffectFree]].
  */
-class DomainSpecificSideEffectFreeMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBDSideEffectFree)
+class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(properties.LBDSideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBDExternallyPure]].
  */
-class DomainSpecificExternallyPureMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBDExternallyPure)
+class DomainSpecificExternallyPureMatcher extends PurityMatcher(properties.LBDExternallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBDExternallySideEffectFree]].
  */
 class DomainSpecificExternallySideEffectFreeMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBDExternallySideEffectFree)
+    extends PurityMatcher(properties.LBDExternallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBDContextuallyPure]].
  */
-class DomainSpecificContextuallyPureMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBDContextuallyPure)
+class DomainSpecificContextuallyPureMatcher extends PurityMatcher(properties.LBDContextuallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.LBDContextuallySideEffectFree]].
  */
 class DomainSpecificContextuallySideEffectFreeMatcher
-    extends PurityMatcher(org.opalj.fpcf.properties.LBDContextuallySideEffectFree)
+    extends PurityMatcher(properties.LBDContextuallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the property is an instance of
  * [[org.opalj.fpcf.properties.ClassifiedImpure]].
  */
-class ImpureMatcher extends PurityMatcher(org.opalj.fpcf.properties.Impure) {
+class ImpureMatcher extends PurityMatcher(properties.Impure) {
 
     override def validateProperty(
         p:          SomeProject,

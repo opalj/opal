@@ -29,27 +29,22 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.EagerL0AllocationFreenessAnalysis
 
-class FieldLocalityTests extends PropertiesTest {
+/**
+ * Tests if the properties specified in the test project (the classes in the (sub-)package of
+ * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
+ * PropertyMatchers to facilitate matching arbitrary complex property specifications.
+ *
+ * @author Dominik Helm
+ */
+class AllocationFreenessTests extends PropertiesTest {
 
-    val lazyAnalysisScheduler = Set(
-        LazyInterProceduralEscapeAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis,
-        LazyVirtualReturnValueFreshnessAnalysis,
-        LazyReturnValueFreshnessAnalysis
-    )
-
-    describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
-        validateProperties(
-            as,
-            fieldsWithAnnotations(as._1),
-            Set("FieldLocality")
+    describe("the org.opalj.fpcf.analyses.L0AllocationFreenessAnalysis is executed") {
+        val as = executeAnalyses(
+            Set(EagerL0AllocationFreenessAnalysis)
         )
+        validateProperties(as, declaredMethodsWithAnnotations(as._1), Set("AllocationFreeness"))
     }
+
 }

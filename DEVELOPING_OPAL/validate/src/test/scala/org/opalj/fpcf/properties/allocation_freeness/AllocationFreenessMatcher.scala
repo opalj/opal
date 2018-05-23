@@ -28,28 +28,49 @@
  */
 package org.opalj
 package fpcf
+package properties
+package allocation_freeness
 
-import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 
-class FieldLocalityTests extends PropertiesTest {
+/**
+ * Base trait for matchers that match a method's `AllocationFreeness` property.
+ *
+ * @author Dominik Helm
+ */
+sealed abstract class AllocationFreenessMatcher(val property: AllocationFreeness)
+    extends AbstractPropertyMatcher {
 
-    val lazyAnalysisScheduler = Set(
-        LazyInterProceduralEscapeAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis,
-        LazyVirtualReturnValueFreshnessAnalysis,
-        LazyReturnValueFreshnessAnalysis
-    )
-
-    describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
-        validateProperties(
-            as,
-            fieldsWithAnnotations(as._1),
-            Set("FieldLocality")
-        )
+    def validateProperty(
+        p:          SomeProject,
+        as:         Set[ObjectType],
+        entity:     Entity,
+        a:          AnnotationLike,
+        properties: Traversable[Property]
+    ): Option[String] = {
+        if (!properties.exists(_ match {
+            case `property` ⇒ true
+            case _          ⇒ false
+        })) {
+            // ... when we reach this point the expected property was not found.
+            Some(a.elementValuePairs.head.value.asStringValue.value)
+        } else {
+            None
+        }
     }
 }
+
+/**
+ * Matches a method's `AllocationFreeness` property. The match is successful if the method has the
+ * property [[org.opalj.fpcf.properties.AllocationFreeMethod]].
+ */
+class AllocationFreeMethodMatcher extends AllocationFreenessMatcher(properties.AllocationFreeMethod)
+
+/**
+ * Matches a method's `AllocationFreeness` property. The match is successful if the method has the
+ * property [[org.opalj.fpcf.properties.MethodWithAllocations]].
+ */
+class MethodWithAllocationsMatcher
+    extends AllocationFreenessMatcher(properties.MethodWithAllocations)
