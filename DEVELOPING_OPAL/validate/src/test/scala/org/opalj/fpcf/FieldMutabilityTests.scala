@@ -45,7 +45,7 @@ class FieldMutabilityTests extends PropertiesTest {
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
+        validateProperties(as, fieldsWithAnnotations(as._1), Set("FieldMutability"))
     }
 
     describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
@@ -53,7 +53,7 @@ class FieldMutabilityTests extends PropertiesTest {
             Set(EagerL0FieldMutabilityAnalysis),
             Set(LazyUnsoundPrematurelyReadFieldsAnalysis)
         )
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
+        validateProperties(as, fieldsWithAnnotations(as._1), Set("FieldMutability"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
@@ -61,7 +61,7 @@ class FieldMutabilityTests extends PropertiesTest {
             Set(EagerL1FieldMutabilityAnalysis),
             Set(LazyUnsoundPrematurelyReadFieldsAnalysis, LazyL2PurityAnalysis)
         )
-        validateProperties(as, fieldsWithAnnotations, Set("FieldMutability"))
+        validateProperties(as, fieldsWithAnnotations(as._1), Set("FieldMutability"))
     }
 
 }

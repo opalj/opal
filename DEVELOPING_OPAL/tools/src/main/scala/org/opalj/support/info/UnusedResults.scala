@@ -38,15 +38,30 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
-import org.opalj.br.DefinedMethod
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.DeclaredMethods
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.DeclaredMethodsKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.EagerVirtualMethodPurityAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.VirtualMethodPurity
@@ -88,14 +103,32 @@ object UnusedResults extends DefaultOneStepAnalysis {
 
         val issues = new ConcurrentLinkedQueue[String]
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
-        val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val p: SomeProject = project
+        implicit val propertyStore = project.get(PropertyStoreKey)
+        implicit val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+
+        project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyVirtualMethodStaticDataUsageAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyVirtualCallAggregatingEscapeAnalysis,
+            LazyReturnValueFreshnessAnalysis,
+            LazyVirtualReturnValueFreshnessAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            EagerVirtualMethodPurityAnalysis,
+            EagerL2PurityAnalysis
+        )
 
         project.parForeachMethodWithBody() { methodInfo ⇒
             val method = methodInfo.method
             issues.addAll(
-                analyzeMethod(project, propertyStore, tacai, declaredMethods, method).asJava
+                analyzeMethod(method).asJava
             )
         }
 
@@ -103,55 +136,90 @@ object UnusedResults extends DefaultOneStepAnalysis {
     }
 
     def analyzeMethod(
-        project:         SomeProject,
-        propertyStore:   PropertyStore,
-        tacai:           Method ⇒ TACode[TACMethodParameter, V],
-        declaredMethods: DeclaredMethods,
-        method:          Method
+        method: Method
+    )(implicit
+        project: SomeProject,
+      propertyStore:       PropertyStore,
+      tacai:               Method ⇒ TACode[_, V],
+      declaredMethods:     DeclaredMethods,
+      isMethodOverridable: Method ⇒ Answer
     ): Seq[String] = {
         val code = tacai(method).stmts
 
         val issues = code collect {
-            case ExprStmt(_, call @ StaticFunctionCall(_, declClass, isInterface, name, descr, _)) ⇒
-                val callee = project.staticCall(declClass, isInterface, name, descr)
-                if (callee.hasValue)
-                    propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                        case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
-                            createIssue(method, callee.value, call.pc)
-                        case _ ⇒ None
-                    }
-                else None
-            case ExprStmt(_, call @ NonVirtualFunctionCall(_, declClass, isInterface, name, descr, _, _)) ⇒
-                val callee = project.specialCall(declClass, isInterface, name, descr)
-                if (callee.hasValue)
-                    propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                        case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
-                            createIssue(method, callee.value, call.pc)
-                        case _ ⇒ None
-                    }
-                else None
-            case ExprStmt(_, call @ VirtualFunctionCall(_, declClass, isInterface, name, descr, receiver, _)) ⇒
-                val receiverType =
-                    if (receiver.isVar) {
-                        project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                            receiver.asVar.value.asDomainReferenceValue.upperTypeBound
-                        )
-                    } else {
-                        declClass
-                    }
-                val methodO =
-                    project.instanceCall(declClass.asObjectType, receiverType, name, descr)
-                if (methodO.hasValue) {
-                    val declaredMethod = declaredMethods(DefinedMethod(receiverType, methodO.value))
-                    propertyStore(declaredMethod, VirtualMethodPurity.key) match {
-                        case FinalEP(_, VCompileTimePure | VLBPure | VLBSideEffectFree) ⇒
-                            createIssue(method, methodO.value, call.pc)
-                        case _ ⇒ None
-                    }
-                } else None
+            case ExprStmt(_, call: StaticFunctionCall[V]) ⇒
+                val callee = call.resolveCallTarget
+                handleCall(method, callee, call.pc)
+            case ExprStmt(_, call: NonVirtualFunctionCall[V]) ⇒
+                val callee = call.resolveCallTarget
+                handleCall(method, callee, call.pc)
+            case ExprStmt(_, call: VirtualFunctionCall[V]) ⇒
+                handleVirtualCall(call, method)
         }
 
         issues collect { case Some(issue) ⇒ issue }
+    }
+
+    def handleCall(
+        method: Method,
+        callee: Result[Method],
+        pc:     Int
+    )(implicit
+        propertyStore: PropertyStore,
+      declaredMethods: DeclaredMethods
+    ): Option[String] = {
+        if (callee.hasValue) {
+            propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
+                case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
+                    createIssue(method, callee.value, pc)
+                case _ ⇒ None
+            }
+        } else {
+            None
+        }
+    }
+
+    def handleVirtualCall(
+        call:   VirtualFunctionCall[V],
+        method: Method
+    )(implicit
+        project: SomeProject,
+      propertyStore:       PropertyStore,
+      declaredMethods:     DeclaredMethods,
+      isMethodOverridable: Method ⇒ Answer
+    ): Option[String] = {
+
+        val callerType = method.classFile.thisType
+        val VirtualFunctionCall(_, declClass, isInterface, name, descr, receiver, _) = call
+
+        val typeBound =
+            project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                receiver.asVar.value.asDomainReferenceValue.upperTypeBound
+            )
+
+        if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes) {
+            None
+        } else if (typeBound.isArrayType) {
+            val callee = project.instanceCall(callerType, ObjectType.Object, name, descr)
+            handleCall(method, callee, call.pc)
+        } else if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+            val preciseType = receiver.asVar.value.asDomainReferenceValue.valueType.get
+            val callee = project.instanceCall(callerType, preciseType, name, descr)
+            handleCall(method, callee, call.pc)
+        } else {
+            val callee =
+                declaredMethods(callerType.packageName, typeBound.asObjectType, name, descr)
+
+            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
+                None // We don't know all overrides, ignore the call (it may be impure)
+            } else {
+                propertyStore(callee, VirtualMethodPurity.key) match {
+                    case FinalEP(_, VCompileTimePure | VLBPure | VLBSideEffectFree) ⇒
+                        createIssue(method, callee.methodDefinition, call.pc)
+                    case _ ⇒ None
+                }
+            }
+        }
     }
 
     private def createIssue(

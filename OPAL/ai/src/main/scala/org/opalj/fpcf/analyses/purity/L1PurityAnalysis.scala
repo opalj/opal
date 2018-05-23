@@ -407,7 +407,7 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification {
 object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
     def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
-        val dms = p.get(DeclaredMethodsKey).declaredMethods
+        val dms = p.get(DeclaredMethodsKey).declaredMethods.toList
         val methodsWithBody = dms.collect {
             case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
         }

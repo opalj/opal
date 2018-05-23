@@ -368,51 +368,38 @@ class FieldLocalityAnalysis private[analyses] (
 
             case Assignment(_, _, VirtualFunctionCall(_, _, _, name, desc, receiver, _)) ⇒
                 val value = receiver.asVar.value.asDomainReferenceValue
-
-                if (value.isNull.isNotYes) {
-                    val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                val receiverType =
+                    project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                         value.upperTypeBound
                     )
 
-                    if (receiverType.isArrayType) {
-                        val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                        handleConcreteCall(callee)
-
-                    } else if (value.isPrecise) {
-                        val preciseType = value.valueType.get
-                        val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
-                        handleConcreteCall(callee)
-
-                    } else {
-                        var callee = project.instanceCall(method.classFile.thisType, receiverType, name, desc)
-
-                        // handle abstract method
-                        if (callee.isEmpty) {
-                            project.classFile(receiverType.asObjectType) match {
-                                case Some(cf) ⇒
-                                    callee = if (cf.isInterfaceDeclaration) {
-                                        org.opalj.Result(
-                                            project.resolveInterfaceMethodReference(receiverType.asObjectType, name, desc)
-                                        )
-                                    } else {
-                                        project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
-                                    }
-                                case None ⇒
-                                    return true;
-                            }
-                        }
-
-                        if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
-                            true
-                        else {
-                            val dm = declaredMethods(callee.value)
-                            val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
-                            handleReturnValueFreshness(rvf)
-                        }
-                    }
-                } else {
+                if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes) {
                     false
+                } else if (receiverType.isArrayType) {
+                    val callee =
+                        project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                    handleConcreteCall(callee)
+
+                } else if (value.isPrecise) {
+                    val preciseType = value.valueType.get
+                    val callee =
+                        project.instanceCall(method.classFile.thisType, preciseType, name, desc)
+                    handleConcreteCall(callee)
+
+                } else {
+                    val packageName = method.classFile.thisType.packageName
+                    val callee =
+                        declaredMethods(packageName, receiverType.asObjectType, name, desc)
+
+                    if (!callee.hasDefinition ||
+                        isOverridableMethod(callee.methodDefinition).isNotNo) {
+                        return true; // We don't know all overrides
+                    } else {
+                        val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
+                        handleReturnValueFreshness(rvf)
+                    }
                 }
+
             case Assignment(_, _, _: Const) ⇒
                 false
 

@@ -279,57 +279,33 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         val value = receiver.asVar.value.asDomainReferenceValue
         val dm = state.dm
         val m = dm.methodDefinition
+        val thisType = m.classFile.thisType
 
-        if (value.isNull.isNoOrUnknown) {
-            val receiverType =
-                project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                    value.upperTypeBound
-                )
+        val typeBound =
+            project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                value.upperTypeBound
+            )
 
-            if (receiverType.isArrayType) {
-                val callee = project.instanceCall(
-                    ObjectType.Object, ObjectType.Object, name, desc
-                )
-                handleConcreteCall(callee)
-            } else if (value.isPrecise) {
-                val preciseType = value.valueType.get
-                val callee = project.instanceCall(
-                    m.classFile.thisType, preciseType, name, desc
-                )
-                handleConcreteCall(callee)
-            } else {
-                var callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
-
-                // check if the method is abstract?
-                if (callee.isEmpty) {
-                    project.classFile(receiverType.asObjectType) match {
-                        case Some(cf) ⇒
-                            callee = if (cf.isInterfaceDeclaration) {
-                                org.opalj.Result(
-                                    project.resolveInterfaceMethodReference(
-                                        receiverType.asObjectType, name, desc
-                                    )
-                                )
-                            } else {
-                                project.resolveClassMethodReference(
-                                    receiverType.asObjectType, name, desc
-                                )
-                            }
-                        case None ⇒
-                            return true;
-                    }
-                }
-
-                // unkown method
-                if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
-                    return true;
-
-                val dmCallee = declaredMethods(callee.value)
-                val rvf = propertyStore(dmCallee, VirtualMethodReturnValueFreshness.key)
-                handleReturnValueFreshness(rvf)
-            }
-        } else {
+        if (value.isNull.isYes) {
             false
+        } else if (typeBound.isArrayType) {
+            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+            handleConcreteCall(callee)
+        } else if (value.isPrecise) {
+            val preciseType = value.valueType.get
+            val callee = project.instanceCall(thisType, preciseType, name, desc)
+            handleConcreteCall(callee)
+        } else {
+
+            val callee = declaredMethods(thisType.packageName, typeBound.asObjectType, name, desc)
+
+            // unkown method
+            if (!callee.hasDefinition ||
+                isOverridableMethod(callee.methodDefinition).isYesOrUnknown)
+                return true;
+
+            val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
+            handleReturnValueFreshness(rvf)
         }
     }
 
