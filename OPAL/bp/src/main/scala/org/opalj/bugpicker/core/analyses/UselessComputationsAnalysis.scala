@@ -59,7 +59,7 @@ import org.opalj.issues.Operands
 
 /**
  * Identifies computations that are useless (i.e., computations that could be done
- * in the source code.)
+ * in the source code).
  *
  * @author Michael Eichberg
  */

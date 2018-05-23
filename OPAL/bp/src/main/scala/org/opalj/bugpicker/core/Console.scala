@@ -109,8 +109,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               may require the increase of maxEvalFactor.]            |
             |[-maxCallChainLength=<IntValue [0..9]=1> determines the maximum length of the call chain
             |               that is analyzed.
-            |               If you increase this value by one it is typically also necessary
-            |               to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
+            |               If you increase this value by one, it is typically also necessary
+            |               to increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
             |               may happen that many analyses are aborted because the evaluation time
             |               is exhausted and – overall – the analysis reports less issues!]
             |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.]

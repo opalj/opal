@@ -53,7 +53,7 @@ sealed abstract class VirtualSourceElement
 
     /**
      * Returns the declared/declaring class type of this `VirtualSourceElement`.
-     * If this `VirtualSourceElement` is a [[VirtualClass]] the returned type is the
+     * If this `VirtualSourceElement` is a [[VirtualClass]], the returned type is the
      * declared class else it is the declaring class.
      */
     def classType: ReferenceType

@@ -105,7 +105,7 @@ import org.opalj.br.ObjectType.Object
  *
  * @param   rootTypes  The set of ''all types'' which have no supertypes or for which we have
  *          no further supertype information because of an incomplete project.
- *          If the class hierarchy is complete then this set contains exactly one element and
+ *          If the class hierarchy is complete, then this set contains exactly one element and
  *          that element must identify `java.lang.Object`.
  *
  *          If we load an application and all the jars used to implement it or a library
@@ -181,7 +181,7 @@ class ClassHierarchy private (
     /**
      * The set of ''all class types'' (excluding interfaces) which have no super type or
      * for which the supertype information is incomplete; that is all (pseudo) root types.
-     * If the class hierarchy is complete then this set contains exactly one element and
+     * If the class hierarchy is complete, then this set contains exactly one element and
      * that element must identify `java.lang.Object`.
      *
      * @note    `rootClassTypes` is not necessarily a subset of `rootTypes`. A class which
@@ -190,7 +190,7 @@ class ClassHierarchy private (
      *          some supertype information exists!
      *
      * @note    If we load an application and all the jars used to implement it or a library
-     *          and all the library it depends on then the class hierarchy '''should not'''
+     *          and all the library it depends on, then the class hierarchy '''should not'''
      *          contain multiple root types. However, the (complete) JDK contains some references
      *          to Eclipse classes which are not part of the JDK.
      */
@@ -205,7 +205,7 @@ class ClassHierarchy private (
 
     /**
      * Iterates over all interfaces which only inherit from `java.lang.Object` and adds the
-     * types to the given `Growable` collection. I.e.,iterates
+     * types to the given `Growable` collection. I.e., iterates
      * over all interfaces which are at the top of the interface inheritance hierarchy.
      */
     def rootInterfaceTypes(coll: Growable[ObjectType]): coll.type = {
@@ -503,7 +503,7 @@ class ClassHierarchy private (
      * @note    No explicit `isKnown` check is required; if the type is unknown the
      *          returned set will be empty.
      * @note    If you don't need the set, it is more efficient to use `foreachSubtype`.
-     * @note    If the type hierarchy is not complete the answer may also be incomplete.
+     * @note    If the type hierarchy is not complete, the answer may also be incomplete.
      *          E.g., if x inherits from y and y inherits from z, but y is not known to the
      *          class hierarchy then x will not be in the set of all (known) subtypes of z.
      *
@@ -725,7 +725,7 @@ class ClassHierarchy private (
     /**
      * Returns all (direct and indirect) subclasses of the given class type.
      *
-     * @note    No explicit `isKnown` check is required; if the type is unknown an empty
+     * @note    No explicit `isKnown` check is required; if the type is unknown, an empty
      *          iterator is returned.
      */
     def allSubclassTypes(objectType: ObjectType, reflexive: Boolean): Iterator[ObjectType] = {
@@ -896,7 +896,7 @@ class ClassHierarchy private (
      * I.e., it will return the top level super class first - i.e., `java.lang.Object`
      * and then all sub class types.
      *
-     * If the given type is `java.lang.Object` the empty list is returned.
+     * If the given type is `java.lang.Object`, the empty list is returned.
      *
      * Interfaces are not further considered, because they generally don't need any instance
      * initialization. If the given type is an interface type, the returned list will hence only
@@ -957,7 +957,7 @@ class ClassHierarchy private (
      * @note  Whenever possible, one of the higher-order functions should be used to avoid the
      *        creation of intermediate data-structures.
      *
-     * @param reflexive If `true` the returned set will also contain the given type.
+     * @param reflexive If `true`, the returned set will also contain the given type.
      */
     def allSupertypes(objectType: ObjectType, reflexive: Boolean = false): UIDSet[ObjectType] = {
         if (isUnknown(objectType))
@@ -1034,7 +1034,7 @@ class ClassHierarchy private (
 
     /**
      * Returns `Some(<SUPERTYPES>)` if this type is known and information about the
-     * supertypes is available. I.e., if this type is not known `None` is returned;
+     * supertypes is available. I.e., if this type is not known, `None` is returned;
      * if the given type's superinterfaces are known (even if this class does not
      * implement (directly or indirectly) any interface) `Some(UIDSet(<OBJECTTYPES>))` is
      * returned.
@@ -1148,7 +1148,7 @@ class ClassHierarchy private (
 
     /**
      * Determines if a value of type `elementValueType` can be stored in an array of
-     * type `arrayType`. E.g. a value of type `IntegerType` can be stored in an
+     * type `arrayType`. E.g., a value of type `IntegerType` can be stored in an
      * array (one-dimensional) of type `ArrayType(IntegerType)`. This method takes
      * the fact that a type may just model an upper type bound into account.
      *
@@ -1157,7 +1157,7 @@ class ClassHierarchy private (
      * @param   elementValueTypeIsPrecise Specifies if the type information is precise;
      *          i.e., whether `elementValueType` models the precise runtime type (`true`)
      *          or just an upper bound (`false`). If the `elementValueType` is a base/
-     *          primitive type then this value should be `true`; but actually it is
+     *          primitive type, then this value should be `true`; but actually it is
      *          ignored.
      * @param   arrayType The type of the array.
      * @param   arrayTypeIsPrecise Specifies if the type information is precise;
@@ -1498,9 +1498,9 @@ class ClassHierarchy private (
 
     /**
      * Computes the set of types which are subtypes (reflexive) of all types identified by the
-     * given `upper type bound`. E.g.,  the class X which implements I and J,
+     * given `upper type bound`. E.g., the class X which implements I and J,
      * would be a direct subtype of the upper type bound consisting of I and J.
-     * If the bound consists of only one type then the bound is returned.
+     * If the bound consists of only one type, then the bound is returned.
      *
      * @param   upperTypeBound A set of types that are in no inheritance relationship.
      *          `upperTypeBound` must not be empty.
@@ -1512,7 +1512,7 @@ class ClassHierarchy private (
         val firstType = upperTypeBound.head
         val remainingTypeBounds = upperTypeBound.tail
 
-        // Basic Idea: let's do a breadth-first search and for every candidate type
+        // Basic Idea: Let's do a breadth-first search and for every candidate type
         // we check whether the type is a subtype of all types in the bound.
         // If so, the type is added to the result set and the search terminates
         // for this particular type.
@@ -2009,7 +2009,7 @@ class ClassHierarchy private (
 
     /**
      * Selects all types of the given set of types that '''do not have any subtype
-     * in the given set'''. If the given set is empty a set containing `java.lang.Object`
+     * in the given set'''. If the given set is empty, a set containing `java.lang.Object`
      * is returned. A set which contains only one type will directly be returned.
      *
      * @param   types A set of types that contains '''for each type stored in the
@@ -2428,7 +2428,7 @@ class ClassHierarchy private (
             return upperTypeBound.head;
 
         // Note that the upper type bound must never consist of more than one array type;
-        // and that the type hierarchy related to arrays is "hard coded"
+        // and that the type hierarchy related to arrays is "hardcoded"
         // ... (here) type erasure also has its benefits ...
         joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
     }

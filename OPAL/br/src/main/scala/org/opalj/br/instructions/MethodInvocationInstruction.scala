@@ -32,7 +32,7 @@ package instructions
 
 /**
  * An instruction that invokes another method (does not consider invokedynamic
- * instructions.)
+ * instructions).
  *
  * @author Michael Eichberg
  */

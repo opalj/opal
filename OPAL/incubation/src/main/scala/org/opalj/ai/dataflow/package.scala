@@ -46,7 +46,7 @@ import br.Method
  *  - We want to avoid that information is stored in the database/processed by the
  *      backend without being sanitized.
  *  -  We want to specify that certain information is not allowed to flow from
- *      ''one module'' to ''another'' module
+ *      ''one module'' to ''another'' module.
  *
  * =Concept=
  *

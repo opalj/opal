@@ -43,7 +43,7 @@ public class SubclassAccessedBySuperclassBeforeInit extends
 
     /**
      * This method is called from the parent's constructor, but at that point, this child
-     * class's i field hasn't been initialized yet.
+     * class' i field hasn't been initialized yet.
      */
     @Override
     void f() {

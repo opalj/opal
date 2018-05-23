@@ -46,7 +46,7 @@ import br.instructions._
  *
  * If a clone() method does not rely on `Object.clone()` to create the new object, but
  * instead invokes a constructor of some class, it will always return an object of that
- * class, regardless of whether it was actually called on a object of that type.
+ * class, regardless of whether it was actually called on an object of that type.
  *
  * This can cause problems if this `clone()` is inherited by a subclass, because then
  * calling `clone()` on the subclass returns an instance of the superclass, instead of
@@ -69,7 +69,7 @@ import br.instructions._
  *   - or if the class is `final` so that there can be no subclasses,
  *   - or if all subclasses implement clone() themselves without calling super.clone(),
  *     i.e. the subclasses themselves take care of creating the proper object, so the
- *     superclass's clone() doesn't need to make sure to eventually call Object.clone() by
+ *     superclass' clone() doesn't need to make sure to eventually call Object.clone() by
  *     calling super.clone().
  *
  * @author Ralf Mitschke

@@ -1,7 +1,7 @@
 # Unsafe API Usage
 
 Extracts calls of methods which use `sun.misc.Unsafe`. Closely related methods are grouped according to the mapping given in the paper:
-[Use at Your Own Risk: The Java Unsafe API in the Wild][1] **by Lues Mastrangelo et al.**. As described in the paper, the analysis supports the following categories:
+[Use at Your Own Risk: The Java Unsafe API in the Wild][1] **by Lues Mastrangelo et al.** As described in the paper, the analysis supports the following categories:
 
 ## Alloc
   The *Alloc* group contains only the `allocateInstance`
@@ -18,7 +18,7 @@ Extracts calls of methods which use `sun.misc.Unsafe`. Closely related methods a
       group.
 
 ## CompareAndSwap
-  The *CAS* group contains methods to atomically compareand-swap
+  The *CAS* group contains methods to atomically compare-and-swap
       a Java variable. These operations are implemented
       using processor-specific atomic instructions. For
       instance, on x86 architectures, compareAndSwapInt is
@@ -77,7 +77,7 @@ Extracts calls of methods which use `sun.misc.Unsafe`. Closely related methods a
 ## Park
   The park and unpark methods are contained in the *Park*
       group. With them, it is possible to block and unblock a
-      thread’s execution.
+      thread's execution.
 
 ## Throw
   The throwException method is contained in the *Throw*
@@ -85,7 +85,7 @@ Extracts calls of methods which use `sun.misc.Unsafe`. Closely related methods a
       declaring them in the throws clause.
 
 ## Volatile Get & Put
-  the *Volatile Get and Volatile Put* groups allow
+  The *Volatile Get and Volatile Put* groups allow
       the developer to store a value in a Java variable with
       volatile semantics.
 

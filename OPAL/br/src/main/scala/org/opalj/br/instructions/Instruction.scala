@@ -57,7 +57,7 @@ trait Instruction extends InstructionLike {
      * the first instruction of the handler. The chain may contain duplicates, iff the state
      * is potentially different when the target instruction is reached.
      *
-     * @param   regularSuccessorsOnly If `true` only those instructions are returned
+     * @param   regularSuccessorsOnly If `true`, only those instructions are returned
      *          which are not related to an exception thrown by this instruction.
      * @return  The absolute addresses of '''all instructions''' that may be executed next
      *          at runtime.

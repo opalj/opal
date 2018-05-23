@@ -116,7 +116,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * is [[GlobalEscape]].
  * A dot graph of the lattice can be found under br/src/main/resources/org/opalj/fpcf/properties.
  *
- * Algorithms are free to over approximate this property, i.e. for object
+ * Algorithms are free to over approximate this property, i.e., for object
  * instance O with actual property P it is okay to say O has property P' if P > P' (or in other
  * words, P' is less restrictive than P).
  *
@@ -651,7 +651,7 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProp
  * }}}
  * An analysis is only expected to return [[EscapeViaStaticField]] for the object o
  * instantiated in m, if the analyses ''knows'' that m is called and the parameter b is
- * potentially `true`. If the above code is found in a library it may very well be the case that
+ * potentially `true`. If the above code is found in a library, it may very well be the case that
  * certain parameter values/combinations will never be used in a certain setting and – therefore –
  * o does not escape.
  *

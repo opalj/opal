@@ -32,7 +32,7 @@ package br
 import org.opalj.collection.immutable.UShortPair
 
 /**
- * Given a class files's main elements the attribute is build.
+ * Given a class files' main elements the attribute is build.
  *
  * @see The ''BytecodeAssember framework'' for an example usage.
  *

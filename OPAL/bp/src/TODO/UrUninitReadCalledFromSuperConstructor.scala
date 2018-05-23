@@ -35,12 +35,12 @@ import br.analyses._
 import br.instructions._
 
 /**
- * This analysis reports methods which access their class's fields and are called by
- * their superclass's constructor.
+ * This analysis reports methods which access their class' fields and are called by
+ * their superclass' constructor.
  *
- * This is a bug, because while the super constructor is running, the derived class's
- * constructor hasn't run yet, and the derived class's fields aren't initialized yet.
- * Thus it's not safe to access them, and it's not safe for the superclass's constructor
+ * This is a bug, because while the super constructor is running, the derived class'
+ * constructor hasn't run yet, and the derived class' fields aren't initialized yet.
+ * Thus it's not safe to access them, and it's not safe for the superclass' constructor
  * to call a method in the subclass which does that.
  *
  * TODO: Ideas for improvement:

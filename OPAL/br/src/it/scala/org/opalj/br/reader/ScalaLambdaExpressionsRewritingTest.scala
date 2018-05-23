@@ -32,7 +32,7 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
- * This test loads all classes found in the Sala 2.12.4 libraries and verifies that all
+ * This test loads all classes found in the Scala 2.12.4 libraries and verifies that all
  * suported [[INVOKEDYNAMIC]] instructions can be resolved.
  *
  * @author Arne Lottmann

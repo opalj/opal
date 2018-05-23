@@ -365,7 +365,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         javaLangCH.leafTypes(supertypesOfString) should be(UIDSet(ObjectType.String))
     }
 
-    it should "correctly return a class's direct supertypes if we give it all types the class inherits from" in {
+    it should "correctly return a class' direct supertypes if we give it all types the class inherits from" in {
         val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, false)
 
         javaLangCH.leafTypes(supertypesOfString) should be(

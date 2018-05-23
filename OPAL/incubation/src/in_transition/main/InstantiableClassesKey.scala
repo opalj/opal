@@ -204,7 +204,7 @@ class SimpleInstantiabilityAnalysis private (val project: SomeProject) extends P
                     (notFinal && cons.isProtected)
                 //If the class not final and public or we analyze an open library we have
                 //to assume that a subclass is created and instantiated later on.
-                //Hence, every time a subclass is instantiated all superclass's have to be
+                //Hence, every time a subclass is instantiated all superclass' have to be
                 //considered instantiated as well.
             })
                 return EP(classFile, Instantiable);

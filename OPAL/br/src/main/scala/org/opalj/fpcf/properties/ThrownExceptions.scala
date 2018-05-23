@@ -51,7 +51,7 @@ sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInforma
  * This is generally the case if those calls are all done in a try block but the catch/finally
  * blocks only calls known methods - if any.
  * An example is shown next and even if we assume that we don't know
- * the exceptions potentially thrown by `Class.forName` we could still determine that this method
+ * the exceptions potentially thrown by `Class.forName`, we could still determine that this method
  * will never throw an exception.
  * {{{
  * object Validator {

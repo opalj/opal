@@ -62,7 +62,7 @@ sealed abstract class TypeHierarchyInformation {
     }
 
     /**
-     * The set of all supertypes. The set is computed on demand and NOT cached; in generally
+     * The set of all supertypes. The set is computed on demand and NOT cached; in general,
      * the higher-order methods should be used!
      */
     def all: UIDSet[ObjectType]
