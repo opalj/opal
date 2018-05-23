@@ -84,12 +84,12 @@ import org.opalj.br.instructions.JSR_W
  *  - useless switches are replaced
  *    (the CFG may contain less basic blocks afterwards)
  *
- * The target array has the same size as the source array to make sure that branch offsets/ line-
+ * The target array has the same size as the source array to make sure that branch offsets/line-
  * numbers etc. point to the correct instruction. Furthermore, we try to avoid the introduction
  * of dead code.
  *
  * @note All transformation always only reduce the number of basic blocks and never create new
- *       basic blocks. There existing stack map table attributes are never effect and remain
+ *       basic blocks. The existing stack map table attributes are never effect and remain
  *       valid!
  *
  * @author Michael Eichberg

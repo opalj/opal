@@ -42,7 +42,7 @@ trait Attribute {
 
     /**
      * Returns the unique ID that identifies this kind of attribute (Signature,
-     * LineNumberTable,...)
+     * LineNumberTable, ...)
      *
      * This id can then be used in a switch statement to efficiently identify the
      * attribute.

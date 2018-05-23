@@ -20,7 +20,7 @@ The latest release is always found on [Maven Central](https://search.maven.org/#
 OPAL consists of multiple sub projects and tools which are described in the following.
 
 ### Common
-Contains general datastructure and algorithms particular useful in the context of static analyis. E.g., graph algorithms, such as
+Contains general datastructures and algorithms particular useful in the context of static analysis. E.g., graph algorithms, such as
 an implementation of Tarjan's algorithm for finding strongly connected components. The implementations are designed with scalability in mind and should be able to process millions of nodes.
 
     libraryDependencies += "de.opal-project" % "common_2.12" % "1.0.0"

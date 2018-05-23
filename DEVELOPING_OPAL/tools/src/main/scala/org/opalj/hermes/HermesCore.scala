@@ -46,7 +46,7 @@ import scalafx.beans.property.LongProperty
 import org.opalj.br.analyses.Project
 
 /**
- * Implements the core functionality to evaluate a sef of feature queries against a set of
+ * Implements the core functionality to evaluate a set of feature queries against a set of
  * projects; does not provide any UI. The GUI is implemented by the class [[Hermes]] and the
  * command-line interface is implemented by the class [[HermesCLI]].
  *

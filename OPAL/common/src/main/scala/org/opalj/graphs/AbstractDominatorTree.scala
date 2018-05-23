@@ -115,7 +115,7 @@ abstract class AbstractDominatorTree {
     }
 
     /**
-     * Iterates over all dominator nodes of the given node and calls the given function f each
+     * Iterates over all dominator nodes of the given node and calls the given function f for each
      * dominator node.
      * Iteration starts with the immediate dominator of the given node if reflexive is `false` and
      * starts with the node itself if reflexive is `true`.

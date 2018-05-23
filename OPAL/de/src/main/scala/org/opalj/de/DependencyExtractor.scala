@@ -56,12 +56,12 @@ import org.opalj.br.instructions._
  * is used by multiple threads concurrently, the [[DependencyProcessor]] has to be
  * thread-safe.
  *
- * @note By default, self dependencies will be reported (e.g. a method that calls
+ * @note By default, self dependencies will be reported (e.g., a method that calls
  *      itself, a class that defines a field with the same type). If necessary or
  *      undesired, self dependencies can easily be filtered by a
  *      [[DependencyProcessor]]'s `processDependency` method.
  *
- * @note If the DependencyExtractor is extended it is important to delegate all
+ * @note If the DependencyExtractor is extended, it is important to delegate all
  *      creations of `VirtualSourceElements` to the [[DependencyProcessor]] to make
  *      sure that the dependency processor can perform, e.g., some ''internalization''.
  *
@@ -75,7 +75,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     /**
      * Extracts all inter source element dependencies of the given class file
      * (including all fields, methods, annotations,... declared by it).
-     * I.e. it extracts all source code dependencies that start from the given
+     * I.e., it extracts all source code dependencies that start from the given
      * class file, its fields or methods, respectively.
      *
      * For each extracted dependency the respective dependencyProcessor is called.
@@ -421,7 +421,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         /*
          * Processes the given formal type parameter list.
          * Since they are always part of a type parameter, all types that
-         * are found will be extracted, i.e. dependencies to them will be
+         * are found will be extracted, i.e., dependencies to them will be
          * added.
          *
          * Calls the outer `processSignature` method for each
@@ -457,7 +457,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         /*
          * Processes the given option of a type argument list.
          * Since they are always part of a type parameter, all types that
-         * are found will be extracted, i.e. dependencies to them will be
+         * are found will be extracted, i.e., dependencies to them will be
          * added.
          *
          * Calls the outer `processSignature` method for each
@@ -813,7 +813,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
     /**
      * Default implementation for handling `Invokedynamic` instructions that only
-     * extracts dependencies on the runtime infrastructure (e.g. the bootstrap method
+     * extracts dependencies on the runtime infrastructure (e.g., the bootstrap method
      * and its surrounding class, the types of its arguments and its return type).
      *
      * To gain more information about invokedynamic instructions, a special subclass of

@@ -72,7 +72,7 @@ case object NotInstantiable extends Instantiability { final val isRefinable: Boo
 case object Instantiable extends Instantiability { final val isRefinable: Boolean = false }
 
 /**
- * Classes that are MaybeInstantiable lack of information. E.g. we don't know whether it is
+ * Classes that are MaybeInstantiable lack of information. E.g., we don't know whether it is
  * instantiable or not.
  */
 case object MaybeInstantiable extends Instantiability { final val isRefinable: Boolean = true }

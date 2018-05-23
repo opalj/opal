@@ -44,7 +44,7 @@ class Java8FrameworkWithCaching(
 ) extends Java8LibraryFramework
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
-    // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
+    // THOUGH THE BOOTSTRAPMETHODS ATTRIBUTE IS A CLASS-LEVEL ATTRIBUTE
     // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
     with BootstrapMethods_attributeBinding
     with StackMapTable_attributeBinding

@@ -86,7 +86,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *      '''Hence, using true constants (e.g., Math.e) is not a problem as well as creating
  *      intermediate (mutable) data structures.
  *      More precisely, methods are pure if the values they refer to always (even across program
- *      runs) have an identical shape and the precise location in the heap is not relevant (e.g.
+ *      runs) have an identical shape and the precise location in the heap is not relevant (e.g., 
  *      java.lang.Object.hashCode() and ...toString() are not pure).'''
  *
  *  -   Evaluation of the result does not cause any semantically observable side effect or output,
