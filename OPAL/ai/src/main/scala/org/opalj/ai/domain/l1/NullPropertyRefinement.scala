@@ -88,21 +88,20 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
 
         def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
             if (refIsNull(pc, objectRef).isUnknown) {
-                if (isExceptionalControlFlow
-                    // && the NullPointerException was created by the JVM, because
+                if (isExceptionalControlFlow && {
+                    // the NullPointerException was created by the JVM, because
                     // the objectRef is (assumed to be) null
-                    && {
-                        val exception = newOperands.head
-                        val TypeOfReferenceValue(utb) = exception
-                        (utb.head eq ObjectType.NullPointerException) && {
-                            val origins = originsIterator(exception)
-                            origins.nonEmpty && {
-                                val origin = origins.next
-                                isVMLevelValue(origin) && pcOfVMLevelValue(origin) == pc &&
-                                    !origins.hasNext
-                            }
+                    val exception = newOperands.head
+                    val TypeOfReferenceValue(utb) = exception
+                    (utb.head eq ObjectType.NullPointerException) && {
+                        val origins = originsIterator(exception)
+                        origins.nonEmpty && {
+                            val origin = origins.next
+                            isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
+                                !origins.hasNext
                         }
-                    }) {
+                    }
+                }) {
                     val (operands2, locals2) =
                         refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
@@ -163,8 +162,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 val objectRef = oldOperands.tail.head
                 establishNullProperty(objectRef)
 
-            // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS
-            // IRRELEVANT!
+            // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS IRRELEVANT!
             case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                 val invoke = instruction.asInstanceOf[VirtualMethodInvocationInstruction]
                 val receiver = oldOperands(invoke.methodDescriptor.parametersCount)

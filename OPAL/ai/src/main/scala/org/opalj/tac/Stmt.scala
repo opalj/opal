@@ -815,15 +815,7 @@ case class CaughtException[+V <: Var[V]](
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
-        throwingStmts = throwingStmts map { stmt ⇒
-            if (ai.isVMLevelValue(stmt))
-                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
-            else if (stmt < 0)
-                stmt
-            else
-                pcToIndex(stmt)
-
-        }
+        throwingStmts = throwingStmts map { pc ⇒ ai.remapPC(pcToIndex)(pc) }
     }
 
     /**
@@ -833,9 +825,9 @@ case class CaughtException[+V <: Var[V]](
      *    same method, then the origin identifies a normal variable definition site.
      *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
      *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
-     *    origin is smaller or equal to [[org.opalj.ai.VMLevelValuesOriginOffset]] and can be
+     *    origin is smaller or equal to [[org.opalj.ai.ImmediateVMExceptionsOriginOffset]] and can be
      *    tranformed to the index of the responsible instruction using
-     *    [[org.opalj.ai#pcOfVMLevelValue]].
+     *    [[org.opalj.ai#pcOfImmediateVMException]].
      */
     def origins: IntTrieSet = throwingStmts
 
@@ -849,8 +841,10 @@ case class CaughtException[+V <: Var[V]](
     final def exceptionLocations: Iterator[String] = {
         throwingStmts.iterator.map { defSite ⇒
             if (defSite < 0) {
-                if (ai.isVMLevelValue(defSite))
-                    "exception@"+ai.pcOfVMLevelValue(defSite)
+                if (ai.isImmediateVMException(defSite))
+                    "exception[VM]@"+ai.pcOfImmediateVMException(defSite)
+                else if (ai.isMethodExternalValueOrigin(defSite))
+                    "exception@"+ai.pcOfMethodExternalException(defSite)
                 else
                     "param"+(-defSite - 1).toHexString
             } else {

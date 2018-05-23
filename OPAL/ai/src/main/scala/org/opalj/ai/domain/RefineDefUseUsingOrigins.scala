@@ -52,4 +52,11 @@ trait RefineDefUseUsingOrigins extends RecordDefUse {
         }
     }
 
+    override protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = {
+        domainValue match {
+            case vo: ValueWithOriginInformation ⇒ Some(vo.origins)
+            case _                              ⇒ None
+        }
+    }
+
 }

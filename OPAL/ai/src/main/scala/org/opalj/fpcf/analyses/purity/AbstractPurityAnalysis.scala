@@ -34,11 +34,9 @@ package purity
 import scala.annotation.switch
 
 import org.opalj.ai.Domain
-import org.opalj.ai.VMLevelValuesOriginOffset
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -197,7 +195,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * e.g. if a method is called.
      */
     def isImmediateVMException(origin: ValueOrigin)(implicit state: StateType): Boolean = {
-        if (VMLevelValuesOriginOffset < origin && origin < 0)
+        // TODO @Dominik Check if using isVMLevelVAlue/isMethodExternalValue is better/is more correct
+        if (ImmediateVMExceptionsOriginOffset < origin && origin < 0)
             return false; // Parameters aren't implicit exceptions
 
         def evaluationMayCauseVMLevelException(expr: Expr[V]): Boolean = {
@@ -213,7 +212,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val pc = if (isVMLevelValue(origin)) pcOfVMLevelValue(origin) else origin
+        val pc = ai.underlyingPC(origin) // TODO @Dominik Check if change is correct. OLD: if (isVMLevelValue(origin)) pcOfVMLevelValue(origin) else origin
         val stmt = state.code(pc)
         (stmt.astID: @switch) match {
             case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
@@ -313,11 +312,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // but it may be ignored as domain-specific
             case CaughtException.ASTID ⇒
                 for {
-                    pc ← stmt.asCaughtException.origins
-                    if isImmediateVMException(pc)
+                    pc /*TODO rename to "origin", or?*/ ← stmt.asCaughtException.origins
+                    if isImmediateVMException(pc) // TODO @Dominik Check if correct.
                 } {
-                    val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
-                    val ratedResult = rater.handleException(origin)
+                    val baseOrigin = state.code(ai.underlyingPC(pc) /* TODO @Dominik Check if correct. old: if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc*/ )
+                    val ratedResult = rater.handleException(baseOrigin)
                     if (ratedResult.isDefined) atMost(ratedResult.get)
                     else atMost(LBSideEffectFree)
                 }

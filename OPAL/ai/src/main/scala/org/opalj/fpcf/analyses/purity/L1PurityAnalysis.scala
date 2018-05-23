@@ -32,8 +32,6 @@ package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -154,7 +152,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                             case _ ⇒ false
                         }
                     }
-                } else if (isVMLevelValue(defSite)) {
+                } else if (isImmediateVMException(defSite)) {
+                    // TODO @Dominik Check what needs to be done in case of MethodExternalValues
                     true // VMLevelValues are freshly created
                 } else {
                     // In initializers the self reference (this) is local
@@ -339,16 +338,17 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             }
 
-        // Creating implicit except
-        // ions is side-effect free (because of fillInStackTrace)
+        // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         for {
             bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
-            if isImmediateVMException(pc)
+            // TODO FIXME @Dominik The following test seems to be useless... the endPC of a bb is never an immediateVMException
+            if isImmediateVMException(pc) // TODO @Dominik what needs to be done in case of method external values.
         } {
-            val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
+            // TODO @Dominik Check if underlyingPC is what is needed
+            val origin = state.code(ai.underlyingPC(pc) /*if (isImmediateVMException(pc)) pcOfImmediateVMException(pc) else pc*/ )
             val ratedResult = rater.handleException(origin)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(LBSideEffectFree)

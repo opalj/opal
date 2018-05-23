@@ -32,8 +32,7 @@ package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
+import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -391,7 +390,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         defSites:           IntTrieSet,
         excludedDefSites:   IntTrieSet
     )(implicit state: State): Boolean = {
-        if (isVMLevelValue(defSite))
+        // TODO @Dominik Check what needs to be done in case of Method External values.
+        if (isImmediateVMException(defSite))
             return true; // VMLevelValues are freshly created
 
         if (defSite == OriginOfThis) {
@@ -968,9 +968,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for {
             bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
+            // TODO FIXME @Dominik The following test seems to be useless... the endPC of a bb is never an immediateVMException
             if isImmediateVMException(pc)
         } {
-            val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
+            // TODO @Dominik Check what needs to be done in case of MethodExternalValues
+            val origin = state.code(if (isImmediateVMException(pc)) pcOfImmediateVMException(pc) else pc)
             val ratedResult = rater.handleException(origin)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(LBSideEffectFree)

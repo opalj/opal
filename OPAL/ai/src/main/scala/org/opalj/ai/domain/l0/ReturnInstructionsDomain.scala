@@ -46,7 +46,7 @@ trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain with MonitorI
      */
     protected[this] def handleReturn(pc: Int): Computation[Nothing, ExceptionValue] = {
         if (isMonitorInstructionUsed && throwIllegalMonitorStateException) {
-            val exception = IllegalMonitorStateException(ValueOriginForVMLevelValue(pc))
+            val exception = IllegalMonitorStateException(ValueOriginForImmediateVMException(pc))
             ComputationWithSideEffectOrException(exception)
         } else {
             ComputationWithSideEffectOnly

@@ -55,7 +55,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFG
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.VMLevelValuesOriginOffset
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
@@ -205,7 +205,7 @@ object TACAI {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
                     aiVOs.map { aiVO ⇒
-                        if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
+                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
@@ -215,7 +215,7 @@ object TACAI {
                         IntTrieSet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                            if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
                                 aiVO
                             else
                                 aiVOToTACVo(-aiVO - 1)
@@ -959,7 +959,7 @@ object TACAI {
                     } else {
                         statements(defSiteIndex) = ExprStmt(pc, expr)
                     }
-                } else if (defSite > VMLevelValuesOriginOffset /*&& < 0*/ ) {
+                } else if (ImmediateVMExceptionsOriginOffset < defSite /*&& < 0*/ ) {
                     // We have an obsolete parameter usage; recall that the def-sites are
                     // already "normalized"!
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)

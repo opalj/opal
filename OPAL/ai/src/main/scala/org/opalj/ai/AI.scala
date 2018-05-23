@@ -1590,9 +1590,9 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     case _ ⇒ /*Unknown*/
                                         // In general, we have to abort the exception handling...
                                         // otherwise we may end up executing a compile-time
-                                        // impossible handler which potentially results in an
+                                        // impossible handler which potentially results in a
                                         // fatally failing analysis.
-                                        // I.e., we have to ensure to never folllow paths the
+                                        // I.e., we have to ensure to never follow paths the
                                         // bytecode verifier would not follow!
                                         // However, previously identified handlers remain valid and
                                         // in case of called methods/athrow we can still continue,
@@ -1667,14 +1667,15 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     val npeHandlerPC =
                                         if (theDomain.throwNullPointerExceptionOnThrow) {
                                             val npe = theDomain.VMNullPointerException(pc)
-                                            doHandleTheException(npe, false)
+                                            doHandleTheException(npe, establishNonNull = false)
                                         } else {
                                             IntTrieSet.empty
                                         }
-                                    npeHandlerPC ++ doHandleTheException(exceptionValue, true)
+                                    npeHandlerPC ++
+                                        doHandleTheException(exceptionValue, establishNonNull = true)
                                 case Yes ⇒
                                     val npe = theDomain.VMNullPointerException(pc)
-                                    doHandleTheException(npe, false)
+                                    doHandleTheException(npe, establishNonNull = false)
                             }
                         } else {
                             // The exception is either VM generated or is thrown in the
