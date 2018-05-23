@@ -323,7 +323,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case EPS(_, _: MutableObject, ImmutableObject) ⇒ // No information about superclass
 
-                // Properties related to the type of the class's fields.
+                // Properties related to the type of the class' fields.
                 //
                 case EPS(_, _, ImmutableContainerType | MutableType) ⇒
                     maxLocalImmutability = ImmutableContainer

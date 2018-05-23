@@ -37,7 +37,7 @@ package analyses
  * This class is thread safe.
  *
  * ==Implementation Note==
- * If you extend this class, make sure that all access to this class's (mutable) fields/
+ * If you extend this class, make sure that all access to this class' (mutable) fields/
  * mutable data structures is synchronized on `this`.
  *
  * @author Michael Eichberg

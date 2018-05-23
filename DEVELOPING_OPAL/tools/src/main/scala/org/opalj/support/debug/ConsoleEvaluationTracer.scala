@@ -46,7 +46,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * you should call the `reset` method between two calls.
  *
  * ==Thread Safety==
- * This tracer has an internal state that is dependent on the state of the evaluation.
+ * This tracer has internal state that is dependent on the state of the evaluation.
  * Hence, '''this class is not thread safe and a new `AI` instance should be used per
  * method that is analyzed'''.
  *

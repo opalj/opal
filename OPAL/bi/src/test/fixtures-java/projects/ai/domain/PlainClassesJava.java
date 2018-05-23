@@ -29,7 +29,7 @@
 package ai.domain;
 
 /**
- * This class's methods contain do computations related to Class objects to test the
+ * This class' methods contain do computations related to Class objects to test the
  * ClassValues resolution.
  *
  * @author Arne Lottmann

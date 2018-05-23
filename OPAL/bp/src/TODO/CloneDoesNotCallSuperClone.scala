@@ -69,7 +69,7 @@ import br.instructions._
  *   - or if the class is `final` so that there can be no subclasses,
  *   - or if all subclasses implement clone() themselves without calling super.clone(),
  *     i.e. the subclasses themselves take care of creating the proper object, so the
- *     superclass's clone() doesn't need to make sure to eventually call Object.clone() by
+ *     superclass' clone() doesn't need to make sure to eventually call Object.clone() by
  *     calling super.clone().
  *
  * @author Ralf Mitschke

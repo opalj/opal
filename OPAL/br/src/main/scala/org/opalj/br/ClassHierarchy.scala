@@ -2428,7 +2428,7 @@ class ClassHierarchy private (
             return upperTypeBound.head;
 
         // Note that the upper type bound must never consist of more than one array type;
-        // and that the type hierarchy related to arrays is "hard coded"
+        // and that the type hierarchy related to arrays is "hardcoded"
         // ... (here) type erasure also has its benefits ...
         joinObjectTypesUntilSingleUpperBound(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
     }

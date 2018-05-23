@@ -4,10 +4,10 @@ This sbt plug-in compiles the Java projects that are used as test fixtures when 
 
 ## Background
 
-OPAL is a Java Bytecode library/static analysis framework and therefore – for testing purposes – requires stable Java class files with very specific properties. I.e., when the class files are (re-)compiled the generated files should be identical to the very last byte. By compiling specific Java test projects – in the following referred to as test fixtures; or just fixtures – using a well-defined, hard coded Java compiler the required property can be guaranteed.   
+OPAL is a Java Bytecode library/static analysis framework and therefore – for testing purposes – requires stable Java class files with very specific properties. I.e., when the class files are (re-)compiled the generated files should be identical to the very last byte. By compiling specific Java test projects – in the following referred to as test fixtures; or just fixtures – using a well-defined, hardcoded Java compiler the required property can be guaranteed.   
 Further documentation can be found in the project markdown file `OPAL/bi/src/test/fixtures-java/Readme.md`
 
-To compile the fixtures OPAL uses the Eclipse JDT compiler which is hard coded in this plugin as a dependency. The plugin takes this compiler, and offers an SBT task to discover and compile the Java fixtures based on the plugin's configuration
+To compile the fixtures OPAL uses the Eclipse JDT compiler which is hardcoded in this plugin as a dependency. The plugin takes this compiler, and offers an SBT task to discover and compile the Java fixtures based on the plugin's configuration
 
 ## Configuration of the plugin
 

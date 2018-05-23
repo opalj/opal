@@ -104,7 +104,7 @@ object AnonymousInnerClassShouldBeStatic {
      * by checking if its name starts with "this".
      *
      * @param field The field to check.
-     * @return Whether the field is the inner class's reference to the parent object.
+     * @return Whether the field is the inner class' reference to the parent object.
      */
     private def isOuterThisField(field: Field): Boolean = {
         field.name.startsWith("this$") || field.name.startsWith("this+")
