@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2017
  * Software Technology Group
  * Department of Computer Science
- * Technische Universit√§t Darmstadt
+ * Technische Universit‰t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,9 @@ package reader
  */
 trait Java9LibraryFramework
     extends Java8LibraryFramework
-    with Module_attributeBinding
-// IMPROVE [JDK9] Add support for the other meta information attributes (e.g., Version Attribute)
+    // with Module_attributeBinding ALREADY MIXED IN (see Java7Framework for details!)
+    with ModuleMainClass_attributeBinding
+    with ModulePackages_attributeBinding
 
 object Java9LibraryFramework extends Java9LibraryFramework {
 
