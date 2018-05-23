@@ -162,7 +162,7 @@ package object ai {
      * created by the VM due to an exception while evaluating an instruction.
      *
      * @see [[isImmediateVMException]], [[ValueOriginForImmediateVMException]], [[pcOfImmediateVMException]],
-     *      [[isMethodExternalValueOrigin]], [[ValueOriginForMethodExternalException]],
+     *      [[isMethodExternalExceptionOrigin]], [[ValueOriginForMethodExternalException]],
      *      [[pcOfMethodExternalException]]
      */
     final type ValueOrigins = IntTrieSet
@@ -290,7 +290,7 @@ package object ai {
      *
      * @see [[MethodExternalExceptionsOriginOffset]] for further information.
      */
-    final def isMethodExternalValueOrigin(origin: ValueOrigin): Boolean = {
+    final def isMethodExternalExceptionOrigin(origin: ValueOrigin): Boolean = {
         origin > SpecialValuesOriginOffset && origin <= MethodExternalExceptionsOriginOffset
     }
 

@@ -33,7 +33,7 @@ import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
-import org.opalj.ai.isMethodExternalValueOrigin
+import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.collection.immutable.IntTrieSet
@@ -224,7 +224,7 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
                 val n =
                     if (isImmediateVMException(defSite))
                         "exception[VM]@"+pcOfImmediateVMException(defSite)
-                    else if (isMethodExternalValueOrigin(defSite))
+                    else if (isMethodExternalExceptionOrigin(defSite))
                         "exception@"+pcOfMethodExternalException(defSite)
                     else if (defSite < 0) {
                         "param"+(-defSite - 1).toHexString

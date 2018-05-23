@@ -843,7 +843,7 @@ case class CaughtException[+V <: Var[V]](
             if (defSite < 0) {
                 if (ai.isImmediateVMException(defSite))
                     "exception[VM]@"+ai.pcOfImmediateVMException(defSite)
-                else if (ai.isMethodExternalValueOrigin(defSite))
+                else if (ai.isMethodExternalExceptionOrigin(defSite))
                     "exception@"+ai.pcOfMethodExternalException(defSite)
                 else
                     "param"+(-defSite - 1).toHexString
