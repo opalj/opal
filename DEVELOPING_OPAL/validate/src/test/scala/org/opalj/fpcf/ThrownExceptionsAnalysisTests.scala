@@ -60,7 +60,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
         val (p, ps, _) = as
         for {
-            (e, _, annotations) ← methodsWithAnnotations
+            (e, _, annotations) ← methodsWithAnnotations(as._1)
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
         } {
             val epk = EPK(e, ThrownExceptions.key)
@@ -73,7 +73,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
         validateProperties(
             as,
-            methodsWithAnnotations,
+            methodsWithAnnotations(as._1),
             pk
         )
     }
@@ -85,7 +85,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         ))
         validateProperties(
             as,
-            methodsWithAnnotations,
+            methodsWithAnnotations(as._1),
             Set(
                 "ExpectedExceptions",
                 "ExpectedExceptionsByOverridingMethods",

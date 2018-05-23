@@ -426,61 +426,46 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def onVirtualMethod(
-        rcvrType:   ReferenceType,
-        interface:  Boolean,
-        name:       String,
-        receiver:   Expr[V],
-        params:     Seq[Expr[V]],
-        descr:      MethodDescriptor,
-        onPrecise:  org.opalj.Result[Method] ⇒ Boolean,
-        onMultiple: DeclaredMethod ⇒ Boolean,
-        onUnknown:  () ⇒ Boolean
+        receiverType: ReferenceType,
+        interface:    Boolean,
+        name:         String,
+        receiver:     Expr[V],
+        params:       Seq[Expr[V]],
+        descr:        MethodDescriptor,
+        onPrecise:    org.opalj.Result[Method] ⇒ Boolean,
+        onMultiple:   DeclaredMethod ⇒ Boolean,
+        onUnknown:    () ⇒ Boolean
     )(implicit state: StateType): Boolean = {
-        if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes)
-            // IMPROVE Just use the CFG to check if we have a normal successor
-            return true // We don't have to examine calls that will result in an NPE
-
-        val rcvrTypeBound =
+        val typeBound =
             if (receiver.isVar) {
                 project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                     receiver.asVar.value.asDomainReferenceValue.upperTypeBound
                 )
             } else {
-                rcvrType
-            }
-        val receiverType =
-            if (rcvrTypeBound.isArrayType) ObjectType.Object
-            else rcvrTypeBound.asObjectType
-
-        //TODO Use declared methods correctly
-        val callee = project.instanceCall(state.declClass, receiverType, name, descr)
-        val calleeR =
-            if (callee.hasValue) callee
-            else project.classFile(receiverType) match {
-                case Some(cf) if cf.isInterfaceDeclaration ⇒
-                    org.opalj.Result(
-                        project.resolveInterfaceMethodReference(receiverType, name, descr)
-                    )
-                case Some(_) ⇒ project.resolveClassMethodReference(receiverType, name, descr)
-                case _       ⇒ Failure
+                receiverType
             }
 
-        if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise ||
-            rcvrTypeBound.isArrayType) {
+        if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes) {
+            // IMPROVE Just use the CFG to check if we have a normal successor
+            true // We don't have to examine calls that will result in an NPE
+        } else if (typeBound.isArrayType) {
+            val callee = project.instanceCall(state.declClass, ObjectType.Object, name, descr)
+            onPrecise(callee)
+        } else if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise) {
             // The receiver could refer to further expressions in a non-flat representation.
             // To avoid special handling, we just fallback to the general case of virtual/interface
             // calls here as the analysis is intended to be used on flat representations anyway.
-            onPrecise(calleeR)
+            val preciseType = receiver.asVar.value.asDomainReferenceValue.valueType.get
+            val callee = project.instanceCall(state.declClass, preciseType, name, descr)
+            onPrecise(callee)
         } else {
-            /*val cfo = if (rcvrTypeBound.isArrayType) project.ObjectClassFile
-            else project.classFile(rcvrTypeBound.asObjectType)
-            val methodO = cfo.flatMap(_.findMethod(name, descr))*/
-            if (calleeR.isEmpty || isMethodOverridable(calleeR.value).isNotNo) {
+            val callee =
+                declaredMethods(state.declClass.packageName, typeBound.asObjectType, name, descr)
+
+            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
                 onUnknown() // We don't know all overrides
             } else {
-                // Get the DefinedMethod for this call site
-                val dm = declaredMethods(DefinedMethod(receiverType, calleeR.value))
-                onMultiple(dm)
+                onMultiple(callee)
             }
         }
     }
@@ -504,7 +489,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case Success(callee) if callee eq state.method ⇒
                 return true; // Self-recursive calls don't need to be checked
             case Success(callee) ⇒ declaredMethods(callee)
-            case _               ⇒ declaredMethods(receiverType, name, descriptor)
+            case _ ⇒
+                declaredMethods(state.declClass.packageName, receiverType, name, descriptor)
         }
         val calleePurity = propertyStore(dm, Purity.key)
         checkMethodPurity(calleePurity, (receiver, params))

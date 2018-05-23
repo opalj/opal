@@ -38,6 +38,20 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.LBSideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
@@ -61,7 +75,21 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
 
         val propertyStore = project.get(PropertyStoreKey)
 
-        // TODO @Dominik: We should execute some analysis, don't we?
+        project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyVirtualMethodStaticDataUsageAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyVirtualCallAggregatingEscapeAnalysis,
+            LazyReturnValueFreshnessAnalysis,
+            LazyVirtualReturnValueFreshnessAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyVirtualMethodPurityAnalysis,
+            EagerL2PurityAnalysis
+        )
 
         val entities = propertyStore.entities(fpcf.properties.Purity.key)
 

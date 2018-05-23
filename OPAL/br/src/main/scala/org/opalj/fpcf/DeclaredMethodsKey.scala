@@ -36,8 +36,10 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -46,42 +48,74 @@ import org.opalj.br.analyses.SomeProject
  */
 class DeclaredMethods(
         val p:    SomeProject,
-        var data: ConcurrentHashMap[DeclaredMethod, DeclaredMethod]
+        var data: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[DeclaredMethod, DeclaredMethod]]
 ) {
 
-    /**
-     * Returns the canonical object representing a specific [[org.opalj.br.DeclaredMethod]].
-     */
-    def apply(dm: DeclaredMethod): DeclaredMethod = {
-        val prev = data.putIfAbsent(dm, dm)
-        if (prev == null) dm else prev
-    }
-
     def apply(
-        declaringClassType: ObjectType,
-        name:               String,
-        descriptor:         MethodDescriptor
-    // todo caller package
+        packageName: String,
+        classType:   ObjectType,
+        name:        String,
+        descriptor:  MethodDescriptor
     ): DeclaredMethod = {
-        val cfo = p.classFile(declaringClassType)
-        val mo = cfo.flatMap(_.findMethod(name, descriptor))
+        val newSet: ConcurrentHashMap[DeclaredMethod, DeclaredMethod] = new ConcurrentHashMap
+        val prev = data.putIfAbsent(classType, newSet)
 
-        // TODO handling for sig. polymorphic methods
-        mo match {
-            case Some(method) ⇒ apply(method)
-            case None         ⇒ apply(VirtualDeclaredMethod(declaringClassType, name, descriptor))
+        val dmSet = if (prev == null) newSet else data.get(classType)
+
+        val dms = dmSet.keys()
+
+        // Find methods with matching name
+        var matchingMethods: List[DeclaredMethod] = Nil
+        while (dms.hasMoreElements) {
+            val dm = dms.nextElement()
+            if (dm.name == name) matchingMethods ::= dm
+        }
+
+        if (matchingMethods.size == 1 &&
+            ((classType eq ObjectType.MethodHandle) || (classType eq ObjectType.VarHandle)) &&
+            matchingMethods.head.hasDefinition &&
+            matchingMethods.head.methodDefinition.isNativeAndVarargs &&
+            descriptor == MethodDescriptor.SignaturePolymorphicMethod) {
+            // Signature polymorphic method
+        } else {
+            // Find methods with matching package
+            matchingMethods = matchingMethods.filter(_.descriptor == descriptor)
+
+            // There may be more than one package private method with the same name and descriptor
+            if (matchingMethods.size > 1) {
+                matchingMethods = matchingMethods.filter { dm ⇒
+                    dm.hasDefinition &&
+                        dm.methodDefinition.classFile.thisType.packageName == packageName
+                }
+            }
+        }
+
+        assert(matchingMethods.size < 2)
+
+        if (matchingMethods.isEmpty) {
+            // No matching declared method found, construct a virtual declared method
+            val vdm = VirtualDeclaredMethod(classType, name, descriptor)
+
+            // A concurrent execution of this method may have put the virtual declared method
+            // into the set already already
+            val prev = dmSet.putIfAbsent(vdm, vdm)
+            if (prev == null) vdm else prev
+        } else {
+            matchingMethods.head
         }
     }
 
     def apply(method: Method): DefinedMethod = {
-        data.get(
-            DefinedMethod(method.classFile.thisType, method)
-        ).asInstanceOf[DefinedMethod]
+        val classType = method.classFile.thisType
+        data.get(classType).get(DefinedMethod(classType, method)).asInstanceOf[DefinedMethod]
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {
+        import scala.collection.JavaConverters.collectionAsScalaIterable
         import scala.collection.JavaConverters.enumerationAsScalaIterator
-        enumerationAsScalaIterator(data.keys)
+        collectionAsScalaIterable(data.values()).iterator.flatMap { dmSet ⇒
+            enumerationAsScalaIterator(dmSet.keys())
+        }
     }
 }
 
@@ -112,13 +146,23 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         // outweighs the benefits even on systems with 4 or so cores.
         // We use a concurrent hash map, as later on analyses may add VirtualDeclaredMethods
         // to this map concurrently.
-        // todo change map Type -> Set[DeclaredMethods]
-        val declaredMethods: ConcurrentHashMap[DeclaredMethod, DeclaredMethod] =
+        // The inner ConcurrentHashMap is used for the set of declared methods for a type.
+        val result: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[DeclaredMethod, DeclaredMethod]] =
             new ConcurrentHashMap
+
+        def getOrInsertDMSet(t: ObjectType): ConcurrentHashMap[DeclaredMethod, DeclaredMethod] = {
+            val newSet: ConcurrentHashMap[DeclaredMethod, DeclaredMethod] = new ConcurrentHashMap
+            val prev = result.putIfAbsent(t, newSet)
+            if (prev eq null) newSet else prev
+        }
 
         // TODO test method
         p.allClassFiles.foreach { cf ⇒
             val classType = cf.thisType
+
+            // The set to add the methods for this class to
+            val dms = getOrInsertDMSet(classType)
+
             for {
                 // all methods present in the current class file, excluding methods derived
                 // from any supertype that are not overridden by this type.
@@ -126,23 +170,44 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
             } {
                 if (m.isAbstract) {
-                    // todo p.classHierarchy.processSubtypes()
-                    // TODO for each subclass and refactor me
+                    // Abstract methods can be inherited, but will not appear as instance methods
+                    // for subtypes, so we have to add them manually for all subtypes that don't
+                    // override/implement them here
+                    p.classHierarchy.processSubtypes(classType)(null) {
+                        (t: Null, subtype: ObjectType) ⇒
+                            val subClassFile = p.classFile(subtype).get
+                            if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
+                                val method = if (subClassFile.isInterfaceDeclaration)
+                                    p.resolveInterfaceMethodReference(subtype, m.name, m.descriptor).get
+                                else
+                                    p.resolveMethodReference(subtype, m.name, m.descriptor) getOrElse {
+                                        p.findMaximallySpecificSuperinterfaceMethods(p
+                                            .classHierarchy.allSuperinterfacetypes(subtype), m.name,
+                                            m.descriptor, UIDSet.empty[ObjectType])._2.headOption.get
+                                    }
+                                val subtypeDms = getOrInsertDMSet(subtype)
+                                val vm = DefinedMethod(subtype, method)
+                                subtypeDms.put(vm, vm)
+                                (null, false, false) // Continue traversal on non-overridden method
+                            } else {
+                                (null, true, false) // Stop traversal on overridden method
+                            }
+                    }
                 }
                 val vm = DefinedMethod(classType, m)
-                declaredMethods.put(vm, vm)
+                dms.put(vm, vm)
             }
             for {
                 // all non-private, non-abstract instance methods present in the current class file,
-                // including methods derived from any supertype that are not overridden by this type.
+                // including methods derived from any supertype that are not overridden by this type
                 mc ← p.instanceMethods(classType)
             } {
                 val vm = DefinedMethod(classType, mc.method)
-                declaredMethods.put(vm, vm)
+                dms.put(vm, vm)
             }
         }
 
-        new DeclaredMethods(p, declaredMethods)
+        new DeclaredMethods(p, result)
     }
 
 }

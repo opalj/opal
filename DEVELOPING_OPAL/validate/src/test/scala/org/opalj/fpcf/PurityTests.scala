@@ -69,7 +69,7 @@ class PurityTests extends PropertiesTest {
                 LazyTypeImmutabilityAnalysis
             )
         )
-        validateProperties(as, declaredMethodsWithAnnotations, Set("Purity"))
+        validateProperties(as, declaredMethodsWithAnnotations(as._1), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
@@ -83,7 +83,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
-        validateProperties(as, declaredMethodsWithAnnotations, Set("Purity"))
+        validateProperties(as, declaredMethodsWithAnnotations(as._1), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
@@ -105,7 +105,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
-        validateProperties(as, declaredMethodsWithAnnotations, Set("Purity"))
+        validateProperties(as, declaredMethodsWithAnnotations(as._1), Set("Purity"))
     }
 
 }

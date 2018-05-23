@@ -80,10 +80,13 @@ class ConfiguredPurity(
                     m.name == methodName && mdo.forall(_ == m.descriptor)
                 }.map(declaredMethods(_))
             } else {
-                val cfo = project.classFile(ObjectType(className))
+                val classType = ObjectType(className)
+                val cfo = project.classFile(classType)
 
                 mdo match {
-                    case Some(md) ⇒ Seq(declaredMethods(ObjectType(className), methodName, md))
+                    case Some(md) ⇒ Seq(
+                        declaredMethods(classType.packageName, classType, methodName, md)
+                    )
                     case None ⇒ cfo.map { cf ⇒
                         cf.findMethod(methodName).map(declaredMethods(_)).toIterable
                     }.getOrElse(Seq.empty)

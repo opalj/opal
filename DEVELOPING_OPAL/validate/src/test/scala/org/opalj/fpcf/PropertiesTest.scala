@@ -189,9 +189,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     // CONVENIENCE METHODS
     //
 
-    def fieldsWithAnnotations: Traversable[(Field, String ⇒ String, Annotations)] = {
+    def fieldsWithAnnotations(p: SomeProject): Traversable[(Field, String ⇒ String, Annotations)] = {
         for {
-            f ← FixtureProject.allFields // cannot be parallelized; "it" is not thread safe
+            f ← p.allFields // cannot be parallelized; "it" is not thread safe
             annotations = f.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -199,9 +199,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def methodsWithAnnotations: Traversable[(Method, String ⇒ String, Annotations)] = {
+    def methodsWithAnnotations(p: SomeProject): Traversable[(Method, String ⇒ String, Annotations)] = {
         for {
-            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            m ← p.allMethods // cannot be parallelized; "it" is not thread safe
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -209,10 +209,10 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def declaredMethodsWithAnnotations: Traversable[(DefinedMethod, String ⇒ String, Annotations)] = {
-        val declaredMethods = FixtureProject.get(DeclaredMethodsKey)
+    def declaredMethodsWithAnnotations(p: SomeProject): Traversable[(DefinedMethod, String ⇒ String, Annotations)] = {
+        val declaredMethods = p.get(DeclaredMethodsKey)
         for {
-            m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            m ← p.allMethods // cannot be parallelized; "it" is not thread safe
             dm = declaredMethods(m)
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
@@ -221,9 +221,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def classFilesWithAnnotations: Traversable[(ClassFile, String ⇒ String, Annotations)] = {
+    def classFilesWithAnnotations(p: SomeProject): Traversable[(ClassFile, String ⇒ String, Annotations)] = {
         for {
-            cf ← FixtureProject.allClassFiles // cannot be parallelized; "it" is not thread safe
+            cf ← p.allClassFiles // cannot be parallelized; "it" is not thread safe
             annotations = cf.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -242,7 +242,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
-            dm = declaredMethods(DefinedMethod(m.classFile.thisType, m))
+            dm = declaredMethods(m)
         } yield {
             val fp = formalParameters(dm)(i + 1)
             (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)
