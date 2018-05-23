@@ -310,7 +310,7 @@ package object ai {
                 s"origin($origin) > "+
                 s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
         )
-        assert(origin > MethodExternalExceptionsOriginOffset)
+        assert(SpecialValuesOriginOffset < origin)
         origin
     }
 
