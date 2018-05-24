@@ -1,4 +1,4 @@
-package org.opalj.fpcf.properties.declared_methods;
+package org.opalj.br.analyses.properties.declared_methods;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

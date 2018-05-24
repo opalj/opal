@@ -33,6 +33,7 @@ package analyses
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties.StaticDataUsage
 import org.opalj.fpcf.properties.CompileTimeConstancy

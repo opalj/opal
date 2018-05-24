@@ -1,8 +1,8 @@
-package org.opalj.fpcf.fixtures.declared_methods.sub;
+package org.opalj.br.analyses.fixtures.declared_methods.sub;
 
-import org.opalj.fpcf.fixtures.declared_methods.base.BaseClass;
-import org.opalj.fpcf.fixtures.declared_methods.base.AnInterface;
-import org.opalj.fpcf.properties.declared_methods.DeclaredMethod;
+import org.opalj.br.analyses.fixtures.declared_methods.base.BaseClass;
+import org.opalj.br.analyses.fixtures.declared_methods.base.AnInterface;
+import org.opalj.br.analyses.properties.declared_methods.DeclaredMethod;
 
 /**
  * A subclass in a different package that its super class with a package private method shadowing

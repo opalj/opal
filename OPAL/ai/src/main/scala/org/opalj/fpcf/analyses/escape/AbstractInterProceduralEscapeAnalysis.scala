@@ -144,36 +144,33 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(receiver.isVar)
         val targetMethod = context.targetMethod
-        val thisType = targetMethod.classFile.thisType
+        val callerType = targetMethod.classFile.thisType
         val value = receiver.asVar.value.asDomainReferenceValue
 
-        val typeBound =
-            project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                receiver.asVar.value.asDomainReferenceValue.upperTypeBound
-            )
+        val receiverType = value.valueType
 
-        if (value.isNull.isYes) {
+        if (receiverType.isEmpty) {
             // Nothing to do
             // the receiver is null, the method is not invoked and the object does not escape
-        } else if (typeBound.isArrayType) {
+        } else if (receiverType.get.isArrayType) {
 
             // for arrays we know the concrete method which is defined by java.lang.Object
-            val methodO = project.instanceCall(thisType, ObjectType.Object, name, descr)
+            val methodO = project.instanceCall(callerType, ObjectType.Object, name, descr)
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
                 handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else if (value.isPrecise) {
 
             // if the receiver type is precisely known, we can handle the concrete method
-            val valueType = value.valueType.get
-            val methodO = project.instanceCall(thisType, valueType, name, descr)
+            val methodO = project.instanceCall(callerType, receiverType.get, name, descr)
 
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
                 handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else /* non-null, not precise object type */ {
 
-            val callee = declaredMethods(thisType.packageName, typeBound.asObjectType, name, descr)
+            val callee =
+                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
 
             if (!callee.hasDefinition ||
                 context.isMethodOverridable(callee.methodDefinition).isNotNo) {

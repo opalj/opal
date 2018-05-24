@@ -43,20 +43,20 @@ import org.opalj.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.fpcf.properties.Purity.PureFlags
 import org.opalj.fpcf.properties.Purity.SideEffectFreeFlags
 import org.opalj.fpcf.properties.Purity.NotCompileTimePure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VImpure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBContextuallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBContextuallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBDContextuallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBDContextuallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBDExternallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBDExternallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBDPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBDSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBExternallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBExternallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBImpure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBSideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
+import org.opalj.fpcf.properties.VirtualMethodPurity.VContextuallyPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VContextuallySideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VDContextuallyPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VDContextuallySideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VDExternallyPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VDExternallySideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VDPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VDSideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VExternallyPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VExternallySideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
+import org.opalj.fpcf.properties.VirtualMethodPurity.VPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 
 import scala.annotation.switch
@@ -106,14 +106,14 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *  - D = The method is &lt;PURITY_LEVEL&GT; if certain '''Domain-specific''' (non-pure) operations
  *    are ignored.
  *
- * [[Impure]] methods have no constraints on their behavior. They may have side effect and
+ * [[ImpureByLackOfInformation]] methods have no constraints on their behavior. They may have side effect and
  * depend on all accessible (global) state. Analyses can always return `(LB)Impure` as a safe
  * default value - even if they are not able to prove that a method is indeed impure; however,
- * in the latter case using [[LBImpure]] is recommended as this enables subsequent analyses
- * to refine the property. There are several implementations of [[LBImpure]] which give additional
+ * in the latter case using [[ImpureByAnalysis]] is recommended as this enables subsequent analyses
+ * to refine the property. There are several implementations of [[ImpureByAnalysis]] which give additional
  * reasoning why the analysis classified a method as impure.
  *
- * [[LBSideEffectFree]] methods may depend on all accessible (and mutable) state, but may not have
+ * [[SideEffectFree]] methods may depend on all accessible (and mutable) state, but may not have
  * any side effects.
  * In single-threaded execution, this means that the object graph of the program may not
  * have changed between invocation of the method and its return, except for potentially additional
@@ -124,11 +124,11 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * processor time) on methods executing concurrently, in particular it may not acquire any locks on
  * objects that concurrent methods could also try to acquire.
  *
- * Analyses may return [[LBSideEffectFree]] as a safe default value if they are unable to guarantee
- * that a method is [[LBPure]], even if it is. However, to return `SideEffectFree` the analysis has
+ * Analyses may return [[SideEffectFree]] as a safe default value if they are unable to guarantee
+ * that a method is [[Pure]], even if it is. However, to return `SideEffectFree` the analysis has
  * to guarantee that the method does not have any side effects.
  *
- * [[LBPure]] methods must be side effect free as described above and their result may only
+ * [[Pure]] methods must be side effect free as described above and their result may only
  * depend on their parameters (including the receiver object) and global constants. In particular,
  * the result of a pure method must be structurally identical each time the method is invoked with
  * structurally identical parameters.
@@ -144,7 +144,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * In multi-threaded execution, pure methods can not depend on any mutable state of their
  * parameters if that state might be mutated by concurrently executing methods.
  *
- * Analyses may return [[LBPure]] only if they are able to guarantee that a method fulfills these
+ * Analyses may return [[Pure]] only if they are able to guarantee that a method fulfills these
  * requirements.
  *
  * [[CompileTimePure]] methods additionally may only use global state that is compile-time constant
@@ -152,27 +152,27 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * their return value is of a reference type, they must return the same reference each time they are
  * invoked with identical parameters.
  *
- * [[LBExternallySideEffectFree]] and [[LBExternallyPure]] methods are also similar to
- * [[LBSideEffectFree]] and [[LBPure]] methods, respectively, but may modify their receiver object.
+ * [[ExternallySideEffectFree]] and [[ExternallyPure]] methods are also similar to
+ * [[SideEffectFree]] and [[Pure]] methods, respectively, but may modify their receiver object.
  * These properties may be used to detect changes that are confined because the receiver object is
  * under the control of the caller.
  *
- * [[LBContextuallySideEffectFree]] and [[LBContextuallyPure]] methods may modifiy not only their
+ * [[ContextuallySideEffectFree]] and [[ContextuallyPure]] methods may modifiy not only their
  * receiver object but all of their parameters. Therefore, these properties can be used to detect
  * confined changes because all parameters are under the control of the caller.
  *
- * [[LBDSideEffectFree]] and [[LBDPure]] methods may perform actions that are
+ * [[DSideEffectFree]] and [[DPure]] methods may perform actions that are
  * generally considered impure (or non-deterministic in the case of `DPure`), but that
  * some clients may want to treat as pure. Such actions include, e.g. logging. A `Rater` is used to
  * identify such actions and the properties contain a set of reasons assigned by the Rater.
  *
- * [[LBDExternallySideEffectFree]] and [[LBDExternallyPure]] methods are similar, but may again
- * modify their receiver, while [[LBDContextuallySideEffectFree]] and [[LBDContextuallyPure]]
+ * [[DExternallySideEffectFree]] and [[DExternallyPure]] methods are similar, but may again
+ * modify their receiver, while [[DContextuallySideEffectFree]] and [[DContextuallyPure]]
  * methods may modify their parameters.
  *
- * [[Impure]] is (also) used as the fallback value if no purity information could be
+ * [[ImpureByLackOfInformation]] is (also) used as the fallback value if no purity information could be
  * computed for a method (no analysis is scheduled). Conceptually, clients must treat this in the
- * same way as [[LBImpure]] except that a future refinement may be possible in case of [[LBImpure]].
+ * same way as [[ImpureByAnalysis]] except that a future refinement may be possible in case of [[ImpureByAnalysis]].
  *
  * @author Michael Eichberg
  * @author Dominik Helm
@@ -227,7 +227,7 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", Impure)
+    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", ImpureByLackOfInformation)
 
     final val NotCompileTimePure = 0x1
     final val IsNonDeterministic = 0x2
@@ -251,41 +251,41 @@ object Purity extends PurityPropertyMetaInformation {
      */
     private def apply(flags: Int): Purity = (flags: @switch) match {
         case CompileTimePure.flags ⇒ CompileTimePure
-        case LBPure.flags          ⇒ LBPure
+        case Pure.flags            ⇒ Pure
         // For non-pure levels, we don't have compile-time purity anymore
         case _ ⇒ (flags | NotCompileTimePure: @switch) match {
-            case LBSideEffectFree.flags            ⇒ LBSideEffectFree
-            case LBExternallyPure.flags            ⇒ LBExternallyPure
-            case LBExternallySideEffectFree.flags  ⇒ LBExternallySideEffectFree
-            case LBDPure.flags                     ⇒ LBDPure
-            case LBDSideEffectFree.flags           ⇒ LBDSideEffectFree
-            case LBDExternallyPure.flags           ⇒ LBDExternallyPure
-            case LBDExternallySideEffectFree.flags ⇒ LBDExternallySideEffectFree
+            case SideEffectFree.flags            ⇒ SideEffectFree
+            case ExternallyPure.flags            ⇒ ExternallyPure
+            case ExternallySideEffectFree.flags  ⇒ ExternallySideEffectFree
+            case DPure.flags                     ⇒ DPure
+            case DSideEffectFree.flags           ⇒ DSideEffectFree
+            case DExternallyPure.flags           ⇒ DExternallyPure
+            case DExternallySideEffectFree.flags ⇒ DExternallySideEffectFree
             // `ModifiesParameters` includes `ModifiesReceiver`
             case _ ⇒ (flags | NotCompileTimePure | ModifiesReceiver: @switch) match {
-                case LBContextuallyPure.flags            ⇒ LBContextuallyPure
-                case LBContextuallySideEffectFree.flags  ⇒ LBContextuallySideEffectFree
-                case LBDContextuallyPure.flags           ⇒ LBDContextuallyPure
-                case LBDContextuallySideEffectFree.flags ⇒ LBDContextuallySideEffectFree
+                case ContextuallyPure.flags            ⇒ ContextuallyPure
+                case ContextuallySideEffectFree.flags  ⇒ ContextuallySideEffectFree
+                case DContextuallyPure.flags           ⇒ DContextuallyPure
+                case DContextuallySideEffectFree.flags ⇒ DContextuallySideEffectFree
             }
         }
     }
 
     def apply(name: String): Option[Purity] = name match {
-        case "CompileTimePure"               ⇒ Some(CompileTimePure)
-        case "LBPure"                        ⇒ Some(LBPure)
-        case "LBSideEffectFree"              ⇒ Some(LBSideEffectFree)
-        case "LBExternallyPure"              ⇒ Some(LBExternallyPure)
-        case "LBExternallySideEffectFree"    ⇒ Some(LBExternallySideEffectFree)
-        case "LBContextuallyPure"            ⇒ Some(LBContextuallyPure)
-        case "LBContextuallySideEffectFree"  ⇒ Some(LBContextuallySideEffectFree)
-        case "LBDPure"                       ⇒ Some(LBDPure)
-        case "LBDSideEffectFree"             ⇒ Some(LBDSideEffectFree)
-        case "LBDExternallyPure"             ⇒ Some(LBDExternallyPure)
-        case "LBDExternallySideEffectFree"   ⇒ Some(LBDExternallySideEffectFree)
-        case "LBDContextuallyPure"           ⇒ Some(LBDContextuallyPure)
-        case "LBDContextuallySideEffectFree" ⇒ Some(LBDContextuallySideEffectFree)
-        case _                               ⇒ None
+        case "CompileTimePure"             ⇒ Some(CompileTimePure)
+        case "Pure"                        ⇒ Some(Pure)
+        case "SideEffectFree"              ⇒ Some(SideEffectFree)
+        case "ExternallyPure"              ⇒ Some(ExternallyPure)
+        case "ExternallySideEffectFree"    ⇒ Some(ExternallySideEffectFree)
+        case "ContextuallyPure"            ⇒ Some(ContextuallyPure)
+        case "ContextuallySideEffectFree"  ⇒ Some(ContextuallySideEffectFree)
+        case "DPure"                       ⇒ Some(DPure)
+        case "DSideEffectFree"             ⇒ Some(DSideEffectFree)
+        case "DExternallyPure"             ⇒ Some(DExternallyPure)
+        case "DExternallySideEffectFree"   ⇒ Some(DExternallySideEffectFree)
+        case "DContextuallyPure"           ⇒ Some(DContextuallyPure)
+        case "DContextuallySideEffectFree" ⇒ Some(DContextuallySideEffectFree)
+        case _                             ⇒ None
     }
 }
 
@@ -309,10 +309,10 @@ case object CompileTimePure extends Purity {
  *
  *  @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBPure extends Purity {
+case object Pure extends Purity {
     final val flags = PureFlags
 
-    final lazy val aggregatedProperty = VLBPure
+    final lazy val aggregatedProperty = VPure
 }
 
 /**
@@ -321,10 +321,10 @@ case object LBPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBSideEffectFree extends Purity {
+case object SideEffectFree extends Purity {
     final val flags = SideEffectFreeFlags
 
-    final lazy val aggregatedProperty = VLBSideEffectFree
+    final lazy val aggregatedProperty = VSideEffectFree
 }
 
 /**
@@ -335,10 +335,10 @@ case object LBSideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBExternallyPure extends Purity {
+case object ExternallyPure extends Purity {
     final val flags = ExternallyPureFlags
 
-    final lazy val aggregatedProperty = VLBExternallyPure
+    final lazy val aggregatedProperty = VExternallyPure
 }
 
 /**
@@ -350,10 +350,10 @@ case object LBExternallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBExternallySideEffectFree extends Purity {
+case object ExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags
 
-    final lazy val aggregatedProperty = VLBExternallySideEffectFree
+    final lazy val aggregatedProperty = VExternallySideEffectFree
 }
 
 /**
@@ -364,10 +364,10 @@ case object LBExternallySideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBContextuallyPure extends Purity {
+case object ContextuallyPure extends Purity {
     final val flags = ContextuallyPureFlags
 
-    final lazy val aggregatedProperty = VLBContextuallyPure
+    final lazy val aggregatedProperty = VContextuallyPure
 }
 
 /**
@@ -379,10 +379,10 @@ case object LBContextuallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBContextuallySideEffectFree extends Purity {
+case object ContextuallySideEffectFree extends Purity {
     final val flags = ContextuallySideEffectFreeFlags
 
-    final lazy val aggregatedProperty = VLBContextuallySideEffectFree
+    final lazy val aggregatedProperty = VContextuallySideEffectFree
 }
 
 /**
@@ -391,10 +391,10 @@ case object LBContextuallySideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDPure extends Purity {
+case object DPure extends Purity {
     final val flags = PureFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VLBDPure
+    final lazy val aggregatedProperty = VDPure
 }
 
 /**
@@ -403,10 +403,10 @@ case object LBDPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDSideEffectFree extends Purity {
+case object DSideEffectFree extends Purity {
     final val flags = SideEffectFreeFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VLBDSideEffectFree
+    final lazy val aggregatedProperty = VDSideEffectFree
 }
 
 /**
@@ -416,10 +416,10 @@ case object LBDSideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDExternallyPure extends Purity {
+case object DExternallyPure extends Purity {
     final val flags = ExternallyPureFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VLBDExternallyPure
+    final lazy val aggregatedProperty = VDExternallyPure
 }
 
 /**
@@ -428,10 +428,10 @@ case object LBDExternallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDExternallySideEffectFree extends Purity {
+case object DExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VLBDExternallySideEffectFree
+    final lazy val aggregatedProperty = VDExternallySideEffectFree
 }
 
 /**
@@ -441,10 +441,10 @@ case object LBDExternallySideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDContextuallyPure extends Purity {
+case object DContextuallyPure extends Purity {
     final val flags = ContextuallyPureFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VLBDContextuallyPure
+    final lazy val aggregatedProperty = VDContextuallyPure
 }
 
 /**
@@ -453,10 +453,10 @@ case object LBDContextuallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object LBDContextuallySideEffectFree extends Purity {
+case object DContextuallySideEffectFree extends Purity {
     final val flags = ContextuallySideEffectFreeFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VLBDContextuallySideEffectFree
+    final lazy val aggregatedProperty = VDContextuallySideEffectFree
 }
 
 /**
@@ -473,20 +473,20 @@ sealed abstract class ClassifiedImpure extends Purity {
  * The method needs to be treated as impure for the time being. However, the current
  * analysis is not able to derive a more precise result; no more dependency exist.
  */
-case object LBImpure extends ClassifiedImpure {
-    final lazy val aggregatedProperty = VLBImpure
+case object ImpureByAnalysis extends ClassifiedImpure {
+    final lazy val aggregatedProperty = VImpureByAnalysis
 
     override def meet(other: Purity): Purity = {
         other match {
-            case Impure ⇒ Impure
-            case _      ⇒ this
+            case ImpureByLackOfInformation ⇒ ImpureByLackOfInformation
+            case _                         ⇒ this
         }
     }
 }
 
 /** The method is (finally classified as) impure; this also models the fallback. */
-case object Impure extends ClassifiedImpure {
-    final lazy val aggregatedProperty = VImpure
+case object ImpureByLackOfInformation extends ClassifiedImpure {
+    final lazy val aggregatedProperty = VImpureByLackOfInformation
 
     override def meet(other: Purity): Purity = this
 }

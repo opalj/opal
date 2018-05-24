@@ -46,6 +46,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.fpcf.PropertyMetaInformation
@@ -53,7 +54,6 @@ import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
@@ -74,20 +74,20 @@ import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.Impure
-import org.opalj.fpcf.properties.LBContextuallyPure
-import org.opalj.fpcf.properties.LBContextuallySideEffectFree
-import org.opalj.fpcf.properties.LBDContextuallyPure
-import org.opalj.fpcf.properties.LBDContextuallySideEffectFree
-import org.opalj.fpcf.properties.LBDExternallyPure
-import org.opalj.fpcf.properties.LBDExternallySideEffectFree
-import org.opalj.fpcf.properties.LBDPure
-import org.opalj.fpcf.properties.LBDSideEffectFree
-import org.opalj.fpcf.properties.LBExternallyPure
-import org.opalj.fpcf.properties.LBExternallySideEffectFree
-import org.opalj.fpcf.properties.LBImpure
-import org.opalj.fpcf.properties.LBPure
-import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.fpcf.properties.ContextuallyPure
+import org.opalj.fpcf.properties.ContextuallySideEffectFree
+import org.opalj.fpcf.properties.DContextuallyPure
+import org.opalj.fpcf.properties.DContextuallySideEffectFree
+import org.opalj.fpcf.properties.DExternallyPure
+import org.opalj.fpcf.properties.DExternallySideEffectFree
+import org.opalj.fpcf.properties.DPure
+import org.opalj.fpcf.properties.DSideEffectFree
+import org.opalj.fpcf.properties.ExternallyPure
+import org.opalj.fpcf.properties.ExternallySideEffectFree
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.tac.DefaultTACAIKey
@@ -239,24 +239,24 @@ object Purity {
         }
 
         val purityEs = propertyStore(projMethods, fpcf.properties.Purity.key).filter {
-            case FinalEP(_, p) ⇒ p ne Impure
+            case FinalEP(_, p) ⇒ p ne ImpureByLackOfInformation
             case ep            ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
 
         val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
-        val pure = purityEs.collect { case FinalEP(m: DefinedMethod, LBPure) ⇒ m }
-        val sideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBSideEffectFree) ⇒ m }
-        val externallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, LBExternallyPure) ⇒ m }
-        val externallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBExternallySideEffectFree) ⇒ m }
-        val contextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, LBContextuallyPure) ⇒ m }
-        val contextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBContextuallySideEffectFree) ⇒ m }
-        val dPure = purityEs.collect { case FinalEP(m: DefinedMethod, LBDPure) ⇒ m }
-        val dSideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBDSideEffectFree) ⇒ m }
-        val dExternallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, LBDExternallyPure) ⇒ m }
-        val dExternallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBDExternallySideEffectFree) ⇒ m }
-        val dContextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, LBDContextuallyPure) ⇒ m }
-        val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, LBDContextuallySideEffectFree) ⇒ m }
-        val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, LBImpure) ⇒ m }
+        val pure = purityEs.collect { case FinalEP(m: DefinedMethod, Pure) ⇒ m }
+        val sideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, SideEffectFree) ⇒ m }
+        val externallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ExternallyPure) ⇒ m }
+        val externallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ExternallySideEffectFree) ⇒ m }
+        val contextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure) ⇒ m }
+        val contextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree) ⇒ m }
+        val dPure = purityEs.collect { case FinalEP(m: DefinedMethod, DPure) ⇒ m }
+        val dSideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) ⇒ m }
+        val dExternallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DExternallyPure) ⇒ m }
+        val dExternallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DExternallySideEffectFree) ⇒ m }
+        val dContextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure) ⇒ m }
+        val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree) ⇒ m }
+        val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
 
         if (projectDir.isDefined) {
             val results = new File(projectDir.get, "method-results.csv")

@@ -35,6 +35,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.GlobalEscape

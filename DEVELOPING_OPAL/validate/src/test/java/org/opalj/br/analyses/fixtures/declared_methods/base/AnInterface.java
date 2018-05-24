@@ -1,6 +1,6 @@
-package org.opalj.fpcf.fixtures.declared_methods.base;
+package org.opalj.br.analyses.fixtures.declared_methods.base;
 
-import org.opalj.fpcf.properties.declared_methods.DeclaredMethod;
+import org.opalj.br.analyses.properties.declared_methods.DeclaredMethod;
 
 /**
  * Two interfaces declaring the same method.

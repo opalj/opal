@@ -32,7 +32,6 @@ package analyses
 
 import scala.collection.mutable.OpenHashMap
 import org.opalj.collection.immutable.ConstArray
-import org.opalj.fpcf.DeclaredMethodsKey
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -90,6 +89,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
 
         for {
             dm ← p.get(DeclaredMethodsKey).declaredMethods
+            if (dm.hasDefinition)
         } {
             val md = dm.descriptor
             val parametersCount = md.parametersCount

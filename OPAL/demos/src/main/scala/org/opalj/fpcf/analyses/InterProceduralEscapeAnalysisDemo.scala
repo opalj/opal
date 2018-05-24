@@ -99,8 +99,10 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(LazyVirtualCallAggregatingEscapeAnalysis, EagerInterProceduralEscapeAnalysis)
-            propertyStore.waitOnPhaseCompletion()
+            manager.runAll(
+                LazyVirtualCallAggregatingEscapeAnalysis,
+                EagerInterProceduralEscapeAnalysis
+            )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {
