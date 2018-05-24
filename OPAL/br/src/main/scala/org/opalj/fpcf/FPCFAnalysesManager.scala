@@ -82,6 +82,7 @@ class FPCFAnalysesManager private[fpcf] (
         properties foreach { p ⇒ derivedProperties(p.id) = true }
 
         val schedule = scenario.computeSchedule
+        // TODO Add schedule to Manager to make it available.
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
         time {
