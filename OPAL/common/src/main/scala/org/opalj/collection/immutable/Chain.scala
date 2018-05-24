@@ -570,7 +570,14 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def toIntTrieSet(implicit ev: T <:< Int): IntTrieSet = {
-        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        // foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        var set: IntTrieSet = EmptyIntTrieSet
+        var rest = this
+        while (rest ne Naught) {
+            set += rest.head
+            rest = rest.tail
+        }
+        set
     }
 
     def toStream: Stream[T] = toTraversable.toStream
