@@ -55,7 +55,7 @@
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 21 →
-22:/*pc=60:*/ lv16 = {lv13}/*java.lang.StringBuilder*/.append({exception@0, exception[VM]@, param1, exception[VM]@7, exception@5})
+22:/*pc=60:*/ lv16 = {lv13}/*java.lang.StringBuilder*/.append({exception@0, exception[VM]@0, param1, exception[VM]@7, exception@5})
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 22 →
