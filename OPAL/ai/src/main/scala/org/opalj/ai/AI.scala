@@ -1648,7 +1648,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  *        which tracks nullness this issue is probably already implicitly handled
                  *        by the domain;
                  *        if the domain does not track null-ness, this information is
-                 *        explicitly required otherwise the assumption would be made that the
+                 *        explicitly required, otherwise, the assumption would be made that the
                  *        exception value could be null – in all cases!
                  */
                 def handleException(
