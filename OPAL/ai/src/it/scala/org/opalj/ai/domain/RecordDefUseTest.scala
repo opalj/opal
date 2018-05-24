@@ -34,19 +34,18 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.junit.runner.RunWith
-
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
-
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.Method
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
+import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Tests if we are able to usefull self-consistent collect def/use information for the entire
@@ -89,7 +88,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
     protected[this] def analyzeDefUse(
         m:                Method,
         r:                AIResult { val domain: DefUseDomain },
-        identicalOrigins: AtomicLong
+        identicalOrigins: AtomicLong,
+        refinedDefUseInformation : Boolean
     ): Unit = {
         val d: r.domain.type = r.domain
         val dt = DominatorsPerformanceEvaluation.time('Dominators) { d.dominatorTree }
@@ -105,17 +105,19 @@ class RecordDefUseTest extends FunSpec with Matchers {
         val instructions = code.instructions
         val ehs = code.exceptionHandlers
 
-        // (2) TEST
-        // Tests if the def => use information is consistent; i.e., a use lists
-        // the def site
-        //
+
         for {
-            (ops, pc) ← r.operandsArray.zipWithIndex
+            (ops, pc) ← r.operandsArray.iterator.zipWithIndex
             if ops ne null // let's filter only the executed instructions
             instruction = instructions(pc)
             if !instruction.isStackManagementInstruction
         } {
             val usedOperands = instruction.numberOfPoppedOperands(NotRequired)
+
+            // (2) TEST
+            // Tests if the def => use information is consistent; i.e., a use lists
+            // the def site
+            //
 
             // An instruction which pushes a value, is not necessarily a "valid"
             // def-site which creates a new value.
@@ -137,14 +139,15 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     fail(s"use at $useSite has no def site $pc ($instruction)")
                 }
             }
-            val exceptionOrigin = ValueOriginForVMLevelValue(pc)
-            d.safeUsedBy(exceptionOrigin) foreach { useSite ⇒
+            d.safeExternalExceptionsUsedBy(pc) foreach { useSite ⇒
                 // let's see if we have a corresponding use...
                 val useInstruction = instructions(useSite)
                 val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
                 val hasDefSite =
                     (0 until poppedOperands).exists { poIndex ⇒
-                        d.operandOrigin(useSite, poIndex).contains(exceptionOrigin)
+                        val defSites = d.operandOrigin(useSite, poIndex)
+                            defSites.contains(ai.ValueOriginForMethodExternalException(pc))                        ||
+                                defSites.contains(ai.ValueOriginForImmediateVMException(pc))
                     } || {
                         useInstruction.readsLocal &&
                             d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
@@ -154,11 +157,11 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 }
             }
 
+            // (3) TEST
+            // Tests if the def/use information for reference values corresponds to the
+            // def/use information (implicitly) collected by the corresponding domain.
+            //
             for { (op, opIndex) ← ops.toIterator.zipWithIndex } {
-                // (3) TEST
-                // Tests if the def/use information for reference values corresponds to the
-                // def/use information (implicitly) collected by the corresponding domain.
-                //
                 val defUseOrigins =
                     try {
                         d.operandOrigin(pc, opIndex)
@@ -171,10 +174,13 @@ class RecordDefUseTest extends FunSpec with Matchers {
                         defUseOrigins.contains(o) ||
                         defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo))
                     )) {
+                        val instruction = code.instructions(pc)
+                        val isHandler = code.exceptionHandlers.exists(_.handlerPC == pc)
                         val message =
-                            s"{pc=$pc[operand=$opIndex] deviating def/use info: "+
+                            s"{pc=$pc:$instruction[isHandler=$isHandler][operand=$opIndex] "+
+                                s"deviating def/use info: "+
                                 s"domain=$domainOrigins vs defUse=$defUseOrigins}"
-                        fail(message)
+                        fail((if(refinedDefUseInformation)"[using domain.origin]" else "")+message)
                     }
                 }
                 identicalOrigins.incrementAndGet
@@ -208,27 +214,40 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         val identicalOrigins = new AtomicLong(0)
         val failures = new ConcurrentLinkedQueue[(String, Throwable)]
+    var concurrentExceptions : Array[Throwable] = null
+        try {
+            project.parForeachMethodWithBody() { methodInfo ⇒
+                val m = methodInfo.method
+                try {
+                    time {
+                        analyzeDefUse(
+                            m, BaseAI(m, new RefinedDefUseDomain(m, project)),
+                            identicalOrigins, refinedDefUseInformation = true
+                        )
+                    } { t ⇒
+                        val secs = t.toSeconds
+                        if (secs.timeSpan > 1d) {
+                            info(m.toJava("evaluation using RefinedDefUseDomain took: " + secs))
+                        }
+                    }
 
-        project.parForeachMethodWithBody() { methodInfo ⇒
-            val m = methodInfo.method
-            try {
-                time {
-                    analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
-                } { t ⇒
-                    if (t.toSeconds.timeSpan > 1d) {
-                        info(m.toJava("evaluation using DefUseDomain took: "+t.toSeconds))
+                    time {
+                        analyzeDefUse(
+                            m, BaseAI(m, new DefUseDomain(m, project)),
+                            identicalOrigins, refinedDefUseInformation = false
+                        )
+                    } { t ⇒
+                        val secs = t.toSeconds
+                        if (secs.timeSpan > 1d) {
+                            info(m.toJava("evaluation using DefUseDomain took: " + secs))
+                        }
                     }
+                } catch {
+                    case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
                 }
-                time {
-                    analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
-                } { t ⇒
-                    if (t.toSeconds.timeSpan > 1d) {
-                        info(m.toJava("evaluation using RefinedDefUseDomain took: "+t.toSeconds))
-                    }
-                }
-            } catch {
-                case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
             }
+        } catch {
+            case cex : ConcurrentExceptions =>  concurrentExceptions = cex.getSuppressed
         }
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
@@ -251,7 +270,9 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
             fail(failureMessages.mkString(errorMessageHeader, "\n", "\n"))
-        } else {
+        } else if(concurrentExceptions != null && concurrentExceptions.length > 0) {
+            fail(concurrentExceptions.mkString("concurrent exceptions:\n","\n","\n"))
+        }else {
             info(baseMessage)
         }
     }
