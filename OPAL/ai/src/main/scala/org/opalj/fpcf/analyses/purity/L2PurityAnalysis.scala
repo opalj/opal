@@ -404,8 +404,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         val stmt = state.code(defSite)
-        if (stmt.astID != Assignment.ASTID)
-            println()
         assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
 
         val rhs = stmt.asAssignment.expr
