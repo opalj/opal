@@ -90,7 +90,7 @@ public class MethodReferences {
         return t.apply(stringArray);
     }
 
-    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/List", name = "add", line = 96)
+    @InvokedMethod(resolution = DYNAMIC, receiverType = "java/util/List", name = "add", parameterTypes = { int.class, Object.class }, line = 96)
     public void partialBound(List<Object> someList) {
         // add(int index, E element)
         BiConsumer<Integer, Object> s = someList::add;
