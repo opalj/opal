@@ -75,6 +75,8 @@ sealed abstract class DeclaredMethod {
 /**
  * Represents a method belonging to the API of the specified class type, where the original
  * method definition is not available (in the context of the current analysis).
+ * Note that one VirtualDeclaredMethod may represent more than one actual method, because a class
+ * may have several package-private methods with the same signature.
  */
 final case class VirtualDeclaredMethod(
         declaringClassType: ReferenceType,

@@ -41,6 +41,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.ClassImmutability
@@ -52,10 +53,10 @@ import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
-import org.opalj.fpcf.properties.LBContextuallyPure
-import org.opalj.fpcf.properties.LBExternallyPure
-import org.opalj.fpcf.properties.LBImpure
-import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.properties.ContextuallyPure
+import org.opalj.fpcf.properties.ExternallyPure
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoFreshReturnValue
@@ -71,7 +72,7 @@ import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
-import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.StaticDataUsage
 import org.opalj.fpcf.properties.UsesNoStaticData
@@ -101,20 +102,17 @@ import scala.annotation.switch
  * @note This analysis is sound only up to the usual standards, i.e. it does not cope with
  *       VirtualMachineErrors, LinkageErrors and ReflectiveOperationExceptions and may be unsound in
  *       the presence of native code, reflection or `sun.misc.Unsafe`. Calls to native methods are
- *       handled soundly in general as they are considered [[org.opalj.fpcf.properties.LBImpure]],
+ *       handled soundly in general as they are considered [[org.opalj.fpcf.properties.ImpureByAnalysis]],
  *       but native methods may break soundness of this analysis by invalidating assumptions such as
  *       which fields are effectively final.
- *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
  *       types of expressions other than [[org.opalj.tac.Var]]s.
- *
  * @note This analysis derives all purity level. A configurable [[DomainSpecificRater]] is used to
  *       identify calls, expressions and exceptions that are `LBDPure` instead of `LBImpure` or any
  *       `SideEffectFree` purity level. Compared to `L1PurityAnaylsis` it identifies objects/arrays
  *       returned from pure callees that can be considered local. Synchronized methods are treated
  *       as `ExternallyPure`.
- *
  * @author Dominik Helm
  */
 class L2PurityAnalysis private[analyses] (val project: SomeProject) extends AbstractPurityAnalysis {
@@ -542,9 +540,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val objRef = stmt.asSynchronizationStmt.objRef
                 isLocalInternal(
                     objRef,
-                    LBImpure,
-                    LBExternallyPure,
-                    LBContextuallyPure,
+                    ImpureByAnalysis,
+                    ExternallyPure,
+                    ContextuallyPure,
                     treatThisAsFresh = true,
                     treatParamsAsFresh = true
                 ) && stmt.forallSubExpressions(checkPurityOfExpr)
@@ -554,9 +552,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val arrayRef = stmt.asArrayStore.arrayRef
                 isLocalInternal(
                     arrayRef,
-                    LBImpure,
-                    LBExternallyPure,
-                    LBContextuallyPure,
+                    ImpureByAnalysis,
+                    ExternallyPure,
+                    ContextuallyPure,
                     treatThisAsFresh = true,
                     treatParamsAsFresh = true
                 ) && stmt.forallSubExpressions(checkPurityOfExpr)
@@ -564,9 +562,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val objRef = stmt.asPutField.objRef
                 isLocalInternal(
                     objRef,
-                    LBImpure,
-                    LBExternallyPure,
-                    LBContextuallyPure,
+                    ImpureByAnalysis,
+                    ExternallyPure,
+                    ContextuallyPure,
                     treatThisAsFresh = true,
                     treatParamsAsFresh = true
                 ) && stmt.forallSubExpressions(checkPurityOfExpr)
@@ -584,7 +582,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         params: (Option[Expr[V]], Seq[Expr[V]])
     )(implicit state: State): Boolean = ep match {
         case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
-            atMost(LBImpure)
+            atMost(ImpureByAnalysis)
             false
         case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
             if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
@@ -602,7 +600,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 (params._2 ++ params._1.toList).forall {
                     isLocalInternal(
                         _,
-                        LBImpure,
+                        ImpureByAnalysis,
                         ub.withoutContextual,
                         ub,
                         treatThisAsFresh = true,
@@ -612,9 +610,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             else if (ub.modifiesReceiver && params._1.isDefined)
                 isLocalInternal(
                     params._1.get,
-                    LBImpure,
+                    ImpureByAnalysis,
                     ub,
-                    LBImpure,
+                    ImpureByAnalysis,
                     treatThisAsFresh = true,
                     treatParamsAsFresh = false
                 )
@@ -635,7 +633,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 (params._2 ++ params._1.toList).forall {
                     isLocalInternal(
                         _,
-                        LBImpure,
+                        ImpureByAnalysis,
                         ub.withoutContextual,
                         ub,
                         treatThisAsFresh = true,
@@ -645,15 +643,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             else if (ub.modifiesReceiver && params._1.isDefined)
                 isLocalInternal(
                     params._1.get,
-                    LBImpure,
+                    ImpureByAnalysis,
                     ub,
-                    LBImpure,
+                    ImpureByAnalysis,
                     treatThisAsFresh = true,
                     treatParamsAsFresh = false
                 )
             else true
         case EOptionP(_, pk) ⇒
-            reducePurityLB(LBImpure)
+            reducePurityLB(ImpureByAnalysis)
             if (pk == Purity.key)
                 state.addPurityDependee(
                     ep.e,
@@ -680,9 +678,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.updateStaticDataUsage(None)
             case EPS(_, _, UsesVaryingData) ⇒
                 state.updateStaticDataUsage(None)
-                atMost(LBPure)
+                atMost(Pure)
             case _ ⇒
-                reducePurityLB(LBPure)
+                reducePurityLB(Pure)
                 state.updateStaticDataUsage(Some(ep))
         }
     }
@@ -790,11 +788,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet LBPure
+        if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet Pure
 
         if (state.fieldMutabilityDependees.nonEmpty || state.classImmutabilityDependees.nonEmpty ||
             state.typeImmutabilityDependees.nonEmpty) {
-            newLowerBound = newLowerBound meet LBSideEffectFree
+            newLowerBound = newLowerBound meet SideEffectFree
         }
 
         for {
@@ -960,7 +958,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         /* Synchronized methods have a visible side effect on the receiver */
         if (method.isSynchronized)
-            atMost(LBExternallyPure)
+            atMost(ExternallyPure)
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
@@ -975,7 +973,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val origin = state.code(if (isImmediateVMException(pc)) pcOfImmediateVMException(pc) else pc)
             val ratedResult = rater.handleException(origin)
             if (ratedResult.isDefined) atMost(ratedResult.get)
-            else atMost(LBSideEffectFree)
+            else atMost(SideEffectFree)
         }
 
         val stmtCount = code.length

@@ -144,80 +144,51 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(receiver.isVar)
         val targetMethod = context.targetMethod
-
+        val callerType = targetMethod.classFile.thisType
         val value = receiver.asVar.value.asDomainReferenceValue
 
-        if (value.isNull.isYes) {
-            // the receiver is null, the method is not invoked and the object does not escape
-            return
-        }
+        val receiverType = value.valueType
 
-        val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-            value.upperTypeBound
-        )
-        if (receiverType.isArrayType) {
+        if (receiverType.isEmpty) {
+            // Nothing to do
+            // the receiver is null, the method is not invoked and the object does not escape
+        } else if (receiverType.get.isArrayType) {
 
             // for arrays we know the concrete method which is defined by java.lang.Object
-            val methodO = project.instanceCall(
-                targetMethod.classFile.thisType, ObjectType.Object, name, descr
-            )
+            val methodO = project.instanceCall(callerType, ObjectType.Object, name, descr)
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
                 handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else if (value.isPrecise) {
 
             // if the receiver type is precisely known, we can handle the concrete method
-            val valueType = value.valueType.get
-            var methodO = project.instanceCall(
-                targetMethod.classFile.thisType, valueType, name, descr
-            )
-
-            // check if the method is abstract?
-            if (methodO.isEmpty) {
-                project.classFile(receiverType.asObjectType) match {
-                    case Some(cf) ⇒
-                        methodO = if (cf.isInterfaceDeclaration) {
-                            org.opalj.Result(
-                                project.resolveInterfaceMethodReference(
-                                    valueType.asObjectType, name, descr
-                                )
-                            )
-                        } else {
-                            project.resolveClassMethodReference(valueType.asObjectType, name, descr)
-                        }
-                    case None ⇒
-                        state.meetMostRestrictive(AtMost(EscapeInCallee))
-                        return
-                }
-            }
+            val methodO = project.instanceCall(callerType, receiverType.get, name, descr)
 
             checkParams(methodO, params, hasAssignment)
             if (context.usesDefSite(receiver))
                 handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else /* non-null, not precise object type */ {
 
-            val target = project.instanceCall(
-                targetMethod.classFile.thisType, receiverType, name, descr
-            )
+            val callee =
+                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
 
-            // did we found a method and is this method not overridable?
-            if (target.isEmpty || context.isMethodOverridable(target.value).isNotNo) {
+            if (!callee.hasDefinition ||
+                context.isMethodOverridable(callee.methodDefinition).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
                 //
                 // to optimize performance, we do not let the analysis run against the existing methods
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val dm = DefinedMethod(receiverType, target.value)
-                assert(dm ne null)
-                if (project.isSignaturePolymorphic(dm.definedMethod.classFile.thisType, dm.definedMethod)) {
+                val method = callee.methodDefinition
+                if (project.isSignaturePolymorphic(method.classFile.thisType, method)) {
                     //IMPROVE
                     // check if this is to much (param contains def-site)
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     // handle the receiver
                     if (context.usesDefSite(receiver)) {
-                        val fp = context.virtualFormalParameters(dm)
+                        val fp = context.virtualFormalParameters(callee)
                         assert((fp ne null) && (fp(0) ne null))
                         handleEscapeState(fp(0), hasAssignment, isConcreteMethod = false)
 
@@ -226,13 +197,12 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     // handle the parameters
                     for (i ← params.indices) {
                         if (context.usesDefSite(params(i))) {
-                            val fp = context.virtualFormalParameters(dm)
+                            val fp = context.virtualFormalParameters(callee)
                             assert((fp ne null) && (fp(i + 1) ne null))
                             handleEscapeState(fp(i + 1), hasAssignment, isConcreteMethod = false)
                         }
                     }
                 }
-
             }
         }
     }

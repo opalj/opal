@@ -32,7 +32,6 @@ package analyses
 // TODO @Florian please fix package structure
 
 import scala.annotation.switch
-
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.Domain
 import org.opalj.ai.common.DefinitionSitesKey
@@ -44,6 +43,7 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
@@ -279,57 +279,29 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         val value = receiver.asVar.value.asDomainReferenceValue
         val dm = state.dm
         val m = dm.methodDefinition
+        val thisType = m.classFile.thisType
 
-        if (value.isNull.isNoOrUnknown) {
-            val receiverType =
-                project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                    value.upperTypeBound
-                )
+        val receiverType = value.valueType
 
-            if (receiverType.isArrayType) {
-                val callee = project.instanceCall(
-                    ObjectType.Object, ObjectType.Object, name, desc
-                )
-                handleConcreteCall(callee)
-            } else if (value.isPrecise) {
-                val preciseType = value.valueType.get
-                val callee = project.instanceCall(
-                    m.classFile.thisType, preciseType, name, desc
-                )
-                handleConcreteCall(callee)
-            } else {
-                var callee = project.instanceCall(m.classFile.thisType, dc, name, desc)
-
-                // check if the method is abstract?
-                if (callee.isEmpty) {
-                    project.classFile(receiverType.asObjectType) match {
-                        case Some(cf) ⇒
-                            callee = if (cf.isInterfaceDeclaration) {
-                                org.opalj.Result(
-                                    project.resolveInterfaceMethodReference(
-                                        receiverType.asObjectType, name, desc
-                                    )
-                                )
-                            } else {
-                                project.resolveClassMethodReference(
-                                    receiverType.asObjectType, name, desc
-                                )
-                            }
-                        case None ⇒
-                            return true;
-                    }
-                }
-
-                // unkown method
-                if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
-                    return true;
-
-                val dmCallee = declaredMethods(callee.value)
-                val rvf = propertyStore(dmCallee, VirtualMethodReturnValueFreshness.key)
-                handleReturnValueFreshness(rvf)
-            }
+        if (receiverType.isEmpty) {
+            false // Receiver is null, call will never be executed
+        } else if (receiverType.get.isArrayType) {
+            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+            handleConcreteCall(callee)
+        } else if (value.isPrecise) {
+            val callee = project.instanceCall(thisType, receiverType.get, name, desc)
+            handleConcreteCall(callee)
         } else {
-            false
+            val callee =
+                declaredMethods(thisType.packageName, receiverType.get.asObjectType, name, desc)
+
+            // unknown method
+            if (!callee.hasDefinition ||
+                isOverridableMethod(callee.methodDefinition).isYesOrUnknown)
+                return true;
+
+            val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
+            handleReturnValueFreshness(rvf)
         }
     }
 
@@ -525,7 +497,8 @@ object EagerReturnValueFreshnessAnalysis
     with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
+        val declaredMethods =
+            project.get(DeclaredMethodsKey).declaredMethods.filter(_.hasDefinition)
         val analysis = new ReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis

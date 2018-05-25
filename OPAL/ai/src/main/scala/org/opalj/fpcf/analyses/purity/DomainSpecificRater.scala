@@ -35,9 +35,9 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.properties.LBDPure
+import org.opalj.fpcf.properties.DPure
 import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.Pure
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
@@ -108,14 +108,14 @@ trait SystemOutErrRater extends DomainSpecificRater {
 
     abstract override def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
         if (receiver.isDefined && call.declaringClass == printStream && isOutErr(receiver.get))
-            Some(LBDPure)
+            Some(DPure)
         else super.handleCall(call, receiver)
     }
 
     abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
         val GetStatic(_, declaringClass, name, _) = expr
         if (declaringClass == ObjectType.System && (name == "out" || name == "err"))
-            Some(LBPure)
+            Some(Pure)
         else super.handleGetStatic(expr)
     }
 
@@ -163,7 +163,7 @@ trait LoggingRater extends DomainSpecificRater {
         if (call.declaringClass.isObjectType) {
             val declClass = call.declaringClass.asObjectType
             if (loggers.exists(declClass.isSubtypeOf(_)(project.classHierarchy).isYes))
-                Some(LBDPure)
+                Some(DPure)
             else super.handleCall(call, receiver)
         } else super.handleCall(call, receiver)
     }
@@ -171,7 +171,7 @@ trait LoggingRater extends DomainSpecificRater {
     abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
         val GetStatic(_, declaringClass, _, _) = expr
         if (logLevels.exists(declaringClass == _))
-            Some(LBDPure)
+            Some(DPure)
         else super.handleGetStatic(expr)
     }
 }
@@ -189,7 +189,7 @@ trait ExceptionRater extends DomainSpecificRater {
                 mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable
             })
-            Some(LBDPure)
+            Some(DPure)
         else super.handleCall(call, receiver)
     }
 
@@ -198,7 +198,7 @@ trait ExceptionRater extends DomainSpecificRater {
     }
 
     override def handleException(stmt: Stmt[V]): Option[Purity] = {
-        Some(LBDPure)
+        Some(DPure)
     }
 }
 
@@ -218,7 +218,7 @@ trait AssertionExceptionRater extends DomainSpecificRater {
         implicit val classHierarchy = project.classHierarchy;
         if (call.declaringClass.isObjectType && call.name == "<init>" &&
             exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf(_).isYes))
-            Some(LBDPure)
+            Some(DPure)
         else super.handleCall(call, receiver)
     }
 
