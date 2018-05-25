@@ -51,11 +51,11 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure("nothing done here")
     @Pure(value = "nothing done here",
             eps = @EP(cf = Object.class, method = "<init>()V", pk = "Purity",
-                    p = "LBPure", analyses = L0PurityAnalysis.class),
+                    p = "Pure", analyses = L0PurityAnalysis.class),
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     @Impure(value = "Object.init<> not recognized as pure",
             eps = @EP(cf = Object.class, method = "<init>()V", pk = "Purity",
-                    p = "LBPure"),
+                    p = "Pure"),
             negate = true, analyses = L0PurityAnalysis.class)
     private DependentCalls() {
         /* empty */
@@ -189,7 +189,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure(value = "calls compile-time pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbs(int i) {
@@ -199,7 +199,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure(value = "calls compile-time pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCallee(int i) {
@@ -209,7 +209,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure(value = "calls compile-time pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCallee1(int i) {
@@ -219,7 +219,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure(value = "calls compile-time pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCallee2(int i) {
@@ -229,7 +229,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure(value = "calls compile-time pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCalleeCallee(int i) {
@@ -239,7 +239,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure(value = "calls compile-time pure Math.abs",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "CompileTimePure"))
     @Pure(value = "calls pure Math.abs",
-            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "LBPure"))
+            eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
     static int cpureCallsAbsCalleeCalleeCalleCallee(int i) {

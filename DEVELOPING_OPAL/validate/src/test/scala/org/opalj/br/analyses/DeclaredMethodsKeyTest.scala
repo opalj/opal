@@ -27,18 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package fpcf
+package br
+package analyses
 
 import java.io.File
-
-import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Annotation
-import org.opalj.br.ElementValuePair
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -51,9 +45,9 @@ import org.scalatest.FunSpec
 class DeclaredMethodsKeyTest extends FunSpec with Matchers {
 
     val singleAnnotationType =
-        ObjectType("org/opalj/fpcf/properties/declared_methods/DeclaredMethod")
+        ObjectType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethod")
     val multiAnnotationType =
-        ObjectType("org/opalj/fpcf/properties/declared_methods/DeclaredMethods")
+        ObjectType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethods")
 
     /**
      * The representation of the fixture project.
@@ -68,14 +62,23 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
             val (cf, _) = cfSrc
-            cf.thisType.packageName.startsWith("org/opalj/fpcf/fixtures/declared_methods")
+            cf.thisType.packageName.startsWith("org/opalj/br/analyses/fixtures/declared_methods")
         }
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(projectClassFiles)
     }
 
-    var declaredMethods = FixtureProject.get(DeclaredMethodsKey).declaredMethods.toList
+    val declaredMethodsKey: DeclaredMethods = FixtureProject.get(DeclaredMethodsKey)
+    val numDeclaredMethods: Int = declaredMethodsKey.declaredMethods.size
+
+    val declaredMethods: Set[DeclaredMethod] = declaredMethodsKey.declaredMethods.toSet
+
+    it("should not have duplicate declared methods") {
+        assert(declaredMethods.size == numDeclaredMethods, "duplicate methods found")
+    }
+
+    var numAnnotated = 0
 
     for {
         cf ← FixtureProject.allProjectClassFiles
@@ -96,8 +99,12 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         }
     }
 
+    // The number of defined methods should be the same as the number of annotations processed, i.e.
+    // there may not be any additional defined method. There may be VirtualDeclaredMethods for
+    // predefined methods from the JDK, though.
     it("should not create excess declared methods") {
-        assert(declaredMethods.isEmpty)
+        val definedMethods = declaredMethods.filter(_.hasDefinition)
+        assert(definedMethods.size == numAnnotated, "found unexpected defined methods")
     }
 
     def checkDeclaredMethod(classType: ObjectType, annotation: Annotation): Unit = {
@@ -107,15 +114,16 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
 
         val method = FixtureProject.classFile(declaringClass).get.findMethod(name, descriptor).get
 
-        val (matching, newDMs) = declaredMethods.partition(_ == DefinedMethod(classType, method))
+        val expected = DefinedMethod(classType, method)
 
         it(s"${classType.simpleName}: ${declaringClass.simpleName}.$name$descriptor") {
-            assert(matching.size == 1)
+            assert(declaredMethods.contains(expected))
         }
-        declaredMethods = newDMs
+
+        numAnnotated += 1
     }
 
-    def getValue(a: Annotation, name: String) = {
+    def getValue(a: Annotation, name: String): ElementValue = {
         a.elementValuePairs.collectFirst { case ElementValuePair(`name`, value) ⇒ value }.get
     }
 }

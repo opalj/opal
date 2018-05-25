@@ -78,6 +78,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.PCs
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.FloatType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.FinalField

@@ -52,8 +52,8 @@ import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
-import org.opalj.fpcf.properties.LBPure
-import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
 
 /**
@@ -94,7 +94,7 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
         val entities = propertyStore.entities(fpcf.properties.Purity.key)
 
         val voidReturn = entities.collect {
-            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | LBPure | LBSideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
+            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
             // Empty methods still have a return instruction and therefore a body size of 1
             if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
                 m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.size != 1 ⇒
