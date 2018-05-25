@@ -1,0 +1,33 @@
+/* PARAMETERS:
+   param1: useSites={0,8,1,9,7} (origin=-2)
+*/
+0:/*pc=1:*/ if({param1} == null) goto 2
+
+// 0 →
+1:/*pc=5:*/ throw {param1}
+// ⚡️ <FINALLY> → 6
+
+// 0 →
+2:/*pc=6:*/ lv2 = java.lang.System.out
+3:/*pc=9:*/ lv3 = "Nothing happening"
+4:/*pc=11:*/ {lv2}/*java.io.PrintStream*/.println({lv3})
+// ⚡️ <FINALLY> → 6
+
+// 4 →
+5:/*pc=14:*/ goto 9
+
+// <FINALLY> →
+6:/*pc=17:*/ caught <ANY> /* <= {exception@4,exception[VM]@4,param1,exception[VM]@1}*/
+7:/*pc=19:*/ {param1}/*java.lang.Throwable*/.printStackTrace()
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 7 →
+8:/*pc=23:*/ throw {exception@4, param1, exception[VM]@1}
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 5 →
+9:/*pc=25:*/ {param1}/*java.lang.Throwable*/.printStackTrace()
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 9 →
+10:/*pc=28:*/ return
