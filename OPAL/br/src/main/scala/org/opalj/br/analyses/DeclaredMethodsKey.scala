@@ -182,6 +182,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                 val methodO = if (subClassFile.isInterfaceDeclaration)
                                     p.resolveInterfaceMethodReference(subtype, m.name, m.descriptor)
                                 else
+                                    // TODO Reconsider this code once issue #151 is resolved
                                     p.resolveMethodReference(subtype, m.name, m.descriptor) orElse {
                                         p.findMaximallySpecificSuperinterfaceMethods(
                                             p.classHierarchy.allSuperinterfacetypes(subtype),
