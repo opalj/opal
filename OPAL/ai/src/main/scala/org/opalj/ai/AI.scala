@@ -662,6 +662,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          *
          * In case of an abrupt termination of a subroutine the operands and locals
          * array of the catching method are also updated.
+         *
+         * @param forceJoin Needs to be true if we may have only one control-flow between
+         *        sourcePC and targetPC; i.e., the set of predecessor instructions for
+         *        targetPC only contains sourcePC, but we can have multiple data-flows _at the
+         *        same time_; in that case cfJoins would not contain targetPC.
+         *        This situation generally only arise in case of exceptional control-flows.
          */
         def gotoTarget(
             sourcePC:                 Int,
@@ -670,6 +676,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             sourceLocals:             Locals,
             targetPC:                 Int,
             isExceptionalControlFlow: Boolean,
+            forceJoin:                Boolean,
             newOperands:              Operands,
             newLocals:                Locals
         ): Unit = {
@@ -678,7 +685,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 theDomain.afterEvaluation(
                     sourcePC, sourceInstruction,
                     sourceOperands, sourceLocals,
-                    targetPC, isExceptionalControlFlow,
+                    targetPC, isExceptionalControlFlow, forceJoin,
                     newOperands, newLocals
                 )
 
@@ -871,7 +878,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     /* join: */ false
 
-                } else if (!cfJoins.contains(targetPC)) {
+                } else if (!forceJoin && !cfJoins.contains(targetPC)) {
                     assert(abruptSubroutineTerminationCount == 0)
 
                     // The instruction is not an instruction where multiple control-flow
@@ -1192,7 +1199,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         gotoTarget(
                             retPC, instructions(retPC),
                             operandsArray(retPC), localsArray(retPC),
-                            returnAddress, isExceptionalControlFlow = false,
+                            returnAddress,
+                            isExceptionalControlFlow = false, forceJoin = false,
                             operands, updatedLocals
                         )
                     }
@@ -1308,14 +1316,16 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                branchTargetPC, isExceptionalControlFlow = false,
+                                branchTargetPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case No ⇒
                             checkDefinitivePath(nextPC, branchTargetPC, "ifXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                nextPC, isExceptionalControlFlow = false,
+                                nextPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case Unknown ⇒
@@ -1351,23 +1361,27 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             if (branchTargetPC < pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                             } else {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                             }
@@ -1452,14 +1466,16 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                branchTargetPC, isExceptionalControlFlow = false,
+                                branchTargetPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case No ⇒
                             checkDefinitivePath(nextPC, branchTargetPC, "ifTcmpXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                nextPC, isExceptionalControlFlow = false,
+                                nextPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case Unknown ⇒
@@ -1490,23 +1506,27 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                             } else {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                             }
@@ -1530,7 +1550,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  */
                 def doHandleTheException(
                     exceptionValue:   ExceptionValue,
-                    establishNonNull: Boolean
+                    establishNonNull: Boolean,
+                    forceJoin:        Boolean
                 ): Unit = {
 
                     def gotoExceptionHandler(
@@ -1560,7 +1581,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchTargetPC, isExceptionalControlFlow = true,
+                            branchTargetPC,
+                            isExceptionalControlFlow = true, forceJoin = forceJoin,
                             updatedOperands2, updatedLocals2
                         )
                     }
@@ -1649,48 +1671,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  *        explicitly required, otherwise, the assumption would be made that the
                  *        exception value could be null – in all cases!
                  */
-                /* OLD REMOVE IF NOT NEEDED
                 def handleException(
                     exceptionValue:                  ExceptionValue,
-                    testForNullnessOfExceptionValue: Boolean
-                ): PCs = {
-                    // Iterating over the individual exceptions is potentially
-                    // more precise than just iterating over the "abstraction".
-                    val baseValues = exceptionValue.baseValues
-                    if (baseValues.isEmpty) {
-                        if (testForNullnessOfExceptionValue) {
-                            exceptionValue.isNull match {
-                                case No ⇒ // just forward
-                                    doHandleTheException(exceptionValue, establishNonNull = false)
-                                case Unknown ⇒
-                                    val npeHandlerPC =
-                                        if (theDomain.throwNullPointerExceptionOnThrow) {
-                                            val npe = theDomain.VMNullPointerException(pc)
-                                            doHandleTheException(npe, establishNonNull = false)
-                                        } else {
-                                            IntTrieSet.empty
-                                        }
-                                    npeHandlerPC ++
-                                        doHandleTheException(exceptionValue, establishNonNull = true)
-                                case Yes ⇒
-                                    val npe = theDomain.VMNullPointerException(pc)
-                                    doHandleTheException(npe, establishNonNull = false)
-                            }
-                        } else {
-                            // The exception is either VM generated or is thrown in the
-                            // context of a called method; in both cases the exception is
-                            // not null; the latter can only be the case if we have a
-                            // "throw null".
-                            doHandleTheException(exceptionValue, establishNonNull = false)
-                        }
-                    } else {
-                        handleExceptions(baseValues, testForNullnessOfExceptionValue)
-                    }
-                }
-                */
-                def handleException(
-                    exceptionValue:                  ExceptionValue,
-                    testForNullnessOfExceptionValue: Boolean
+                    testForNullnessOfExceptionValue: Boolean,
+                    forceJoin:                       Boolean
                 ): Unit = {
                     // Iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction".
@@ -1699,44 +1683,50 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         if (testForNullnessOfExceptionValue) {
                             exceptionValue.isNull match {
                                 case No ⇒ // just forward
-                                    doHandleTheException(exceptionValue, establishNonNull = false)
+                                    doHandleTheException(
+                                        exceptionValue, establishNonNull = false, forceJoin
+                                    )
                                 case Unknown ⇒
                                     if (theDomain.throwNullPointerExceptionOnThrow) {
                                         val npe = theDomain.VMNullPointerException(pc)
-                                        doHandleTheException(npe, establishNonNull = false)
+                                        doHandleTheException(
+                                            npe, establishNonNull = false, forceJoin
+                                        )
                                     }
-                                    doHandleTheException(exceptionValue, establishNonNull = true)
+                                    // Effectively, we now have multiple exceptions that are
+                                    // raised by the same instruction and which may be handled
+                                    // by the same athrow. Hence, we may have one control-flow
+                                    // between the two instructions, but multiple data-flows!
+                                    // Therefore, we have to force the join of the values.
+                                    doHandleTheException(
+                                        exceptionValue, establishNonNull = true, forceJoin = true
+                                    )
                                 case Yes ⇒
                                     val npe = theDomain.VMNullPointerException(pc)
-                                    doHandleTheException(npe, establishNonNull = false)
+                                    doHandleTheException(npe, establishNonNull = false, forceJoin)
                             }
                         } else {
                             // The exception is either VM generated or is thrown in the
                             // context of a called method; in both cases the exception is
                             // not null; the latter can only be the case if we have a
                             // "throw null".
-                            doHandleTheException(exceptionValue, establishNonNull = false)
+                            doHandleTheException(exceptionValue, establishNonNull = false, forceJoin)
                         }
                     } else {
                         handleExceptions(baseValues, testForNullnessOfExceptionValue)
                     }
                 }
 
-                /* OLD - REMOVE IF EVERYTHING WORKS FINE
-                def handleExceptions(
-                    exceptions:                      Traversable[ExceptionValue],
-                    testForNullnessOfExceptionValue: Boolean
-                ): PCs = {
-                    exceptions.foldLeft(IntTrieSet.empty) { (pcs, e) ⇒
-                        pcs ++ handleException(e, testForNullnessOfExceptionValue)
-                    }
-                }
-*/
+                /* One instruction may cause multiple data-flows at the same time! */
                 def handleExceptions(
                     exceptions:                      Traversable[ExceptionValue],
                     testForNullnessOfExceptionValue: Boolean
                 ): Unit = {
-                    exceptions foreach { e ⇒ handleException(e, testForNullnessOfExceptionValue) }
+                    var forceJoin: Boolean = false
+                    exceptions foreach { e ⇒
+                        handleException(e, testForNullnessOfExceptionValue, forceJoin)
+                        forceJoin = true // <= if we have more than one exception
+                    }
                 }
 
                 def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
@@ -1753,7 +1743,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val nextPC = pcOfNextInstruction
                     gotoTarget(
                         pc, instruction, operands, locals,
-                        nextPC, isExceptionalControlFlow = false,
+                        nextPC, isExceptionalControlFlow = false, forceJoin = false,
                         newOperands, newLocals
                     )
                     nextPC
@@ -1762,24 +1752,30 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
-                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                        handleException(
+                            exceptions, testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
                     }
                 }
 
+                /*
+                 * `computationWithException` is only used when the instruction at most throws
+                 * one implicit exception. Therefore, there can be at most one data-flow
+                 * from the instruction to a handler at one point in time.
+                 * `computationWithException` is NOT used when handling aThrow.
+                 */
                 def computationWithException(
                     computation: Computation[Nothing, ExceptionValue],
                     rest:        Operands
                 ): Unit = {
-                    //TODO val regPC =
-                    if (computation.returnsNormally) fallThrough(rest) // else -1
-                    //TODO val exPCs =
+                    if (computation.returnsNormally) fallThrough(rest)
                     if (computation.throwsException) {
-                        val exceptions = computation.exceptions
-                        handleException(exceptions, testForNullnessOfExceptionValue = false)
-                    } // else IntTrieSet.empty
-
-                    //TODO if (computation.returnsNormally != computation.throwsException)
-                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
+                        val exception = computation.exceptions
+                        handleException(
+                            exception,
+                            testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
+                    }
                 }
 
                 def computationWithExceptions(
@@ -1794,32 +1790,46 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     }
                 }
 
+                /*
+                 * @see `computationWithException` w.r.t. "forceJoin = false"
+                 */
                 def computationWithReturnValueAndException(
                     computation: Computation[DomainValue, ExceptionValue],
                     rest:        Operands
                 ): Unit = {
-                    //TODOval regPC =
-                    if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
-                    //TODO val exPCs =
+                    if (computation.hasResult) fallThrough(computation.result :&: rest)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
-                        handleException(exceptions, testForNullnessOfExceptionValue = false)
-                    } // else IntTrieSet.empty
-
-                    //TODO if (computation.returnsNormally != computation.throwsException)
-                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
+                        handleException(
+                            exceptions,
+                            testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
+                    }
                 }
 
                 def computationWithReturnValueAndExceptions(
                     computation: Computation[DomainValue, ExceptionValues],
                     rest:        Operands
                 ): Unit = {
-
                     if (computation.hasResult) fallThrough(computation.result :&: rest)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
                         handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
                     }
+                }
+
+                def computation(
+                    computation: Computation[Nothing, Nothing],
+                    rest:        Operands
+                ): Unit = {
+                    fallThrough(rest)
+                }
+
+                def computationWithReturnValue(
+                    computation: Computation[DomainValue, Nothing],
+                    rest:        Operands
+                ): Unit = {
+                    fallThrough(computation.result :&: rest)
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1837,9 +1847,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val exceptions = computation.exceptions
                         handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
                     }
-
-                    //TODOif (computation.hasResult != computation.throwsException)
-                    //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
                 }
 
                 // Small helper method to make type casts shorter.
@@ -1856,7 +1863,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val branchtarget = pc + offset
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchtarget, isExceptionalControlFlow = false,
+                            branchtarget, isExceptionalControlFlow = false, forceJoin = false,
                             operands, locals
                         )
 
@@ -1905,7 +1912,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val newOperands = theDomain.ReturnAddressValue(returnTarget) :&: operands
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchTarget, isExceptionalControlFlow = false,
+                            branchTarget, isExceptionalControlFlow = false, forceJoin = false,
                             newOperands, locals
                         )
 
@@ -2054,7 +2061,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 pc + switch.defaultOffset,
-                                isExceptionalControlFlow = false,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 remainingOperands, locals
                             )
                         } else {
@@ -2093,7 +2100,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     }
                                     gotoTarget(
                                         pc, instruction, operands, locals,
-                                        branchTargetPC, isExceptionalControlFlow = false,
+                                        branchTargetPC,
+                                        isExceptionalControlFlow = false, forceJoin = false,
                                         updatedOperands, updatedLocals
                                     )
                                 }
@@ -2107,7 +2115,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    defaultBranchTargetPC, isExceptionalControlFlow = false,
+                                    defaultBranchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     remainingOperands, locals
                                 )
                             }
@@ -2143,7 +2152,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 }
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     updatedOperands, updatedLocals
                                 )
                             }
@@ -2154,7 +2164,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             val defaultBranchTargetPC = pc + tableswitch.defaultOffset
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                defaultBranchTargetPC, isExceptionalControlFlow = false,
+                                defaultBranchTargetPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 remainingOperands, locals
                             )
                         }
@@ -2172,7 +2183,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // the exception handlers of the current method in the order that
                         // they appear in the corresponding exception handler table.
                         val theDomain.DomainReferenceValue(exceptionValue) = operands.head
-                        handleException(exceptionValue, testForNullnessOfExceptionValue = true)
+                        handleException(
+                            exceptionValue,
+                            testForNullnessOfExceptionValue = true,
+                            // athrow throws AT MOST  one implicit exception and the case of
+                            // potentially overlapping implicit and explicit exceptions
+                            // related to NullPointerException is handled by "testForNull..=true"
+                            forceJoin = false
+                        )
 
                     //
                     // CREATE ARRAY
@@ -2199,12 +2217,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             case LongType.atype ⇒
                                 theDomain.newarray(pc, count, LongType)
                         }
+                        // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, rest)
 
                     case 189 /*anewarray*/ ⇒
                         val count :&: rest = operands
                         val componentType = instruction.asInstanceOf[ANEWARRAY].componentType
                         val computation = theDomain.newarray(pc, count, componentType)
+                        // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, rest)
 
                     case 197 /*multianewarray*/ ⇒
@@ -2213,6 +2233,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val dimensionSizes = operands.take(multianewarray.dimensions)
                         val arrayType = multianewarray.arrayType
                         val computation = theDomain.multianewarray(pc, dimensionSizes, arrayType)
+                        // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, operands.drop(dimensions))
 
                     //
@@ -2314,7 +2335,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     case 178 /*getstatic*/ ⇒
                         val getstatic = instruction.asInstanceOf[GETSTATIC]
-                        computationWithReturnValueAndException(
+                        computationWithReturnValue(
                             theDomain.getstatic(
                                 pc,
                                 getstatic.declaringClass,
@@ -2342,7 +2363,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     case 179 /*putstatic*/ ⇒
                         val putstatic = instruction.asInstanceOf[PUTSTATIC]
                         val value :&: rest = operands
-                        computationWithException(
+                        computation(
                             theDomain.putstatic(
                                 pc,
                                 value,
@@ -2866,7 +2887,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     if (isNull.isNo) {
                                         handleException(
                                             theDomain.VMClassCastException(pc),
-                                            testForNullnessOfExceptionValue = false
+                                            testForNullnessOfExceptionValue = false,
+                                            forceJoin = false
                                         )
                                     } else { // isNull is unknown
                                         val (newOperands, newLocals) =
@@ -2876,7 +2898,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                         if (theDomain.throwClassCastException) {
                                             handleException(
                                                 theDomain.VMClassCastException(pc),
-                                                testForNullnessOfExceptionValue = false
+                                                testForNullnessOfExceptionValue = false,
+                                                forceJoin = false
                                             )
                                         }
                                     }
@@ -2905,7 +2928,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     if (theDomain.throwClassCastException) {
                                         handleException(
                                             theDomain.VMClassCastException(pc),
-                                            testForNullnessOfExceptionValue = false
+                                            testForNullnessOfExceptionValue = false,
+                                            forceJoin = false
                                         )
                                     }
                             }

@@ -76,6 +76,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
         oldLocals:                Locals,
         targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
+        forceJoin:                Boolean,
         newOperands:              Operands,
         newLocals:                Locals
     ): (Operands, Locals) = {
@@ -83,7 +84,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
         @inline def default() =
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, newOperands, newLocals
+                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
             )
 
         def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
@@ -106,7 +107,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
                         pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, operands2, locals2
+                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
                     )
                 } else {
                     // ... the value is not null... even if an exception was thrown,
@@ -115,7 +116,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
                         pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, operands2, locals2
+                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
                     )
                 }
             } else {
