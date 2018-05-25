@@ -31,6 +31,7 @@ package org.opalj.fpcf
 import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -45,7 +46,7 @@ class ClassAndTypeMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(Set(
             EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis
         ), Set(
-            LazyL1FieldMutabilityAnalysis
+            LazyUnsoundPrematurelyReadFieldsAnalysis, LazyL1FieldMutabilityAnalysis
         ))
         validateProperties(
             as,

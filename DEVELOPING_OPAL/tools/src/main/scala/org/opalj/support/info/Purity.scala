@@ -73,6 +73,7 @@ import org.opalj.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.ContextuallyPure
@@ -117,16 +118,19 @@ object Purity {
 
     val supportingAnalyses = List(
         List(
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
         List(
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
         List(
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
