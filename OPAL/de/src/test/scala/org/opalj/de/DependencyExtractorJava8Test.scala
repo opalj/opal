@@ -1075,6 +1075,7 @@ class DependencyExtractorJava8Test extends FunSuite {
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "dependencies.AnnotationTypeTestClass", DECLARING_CLASS_OF_CALLED_METHOD)
 
         //            lambdaFunction("value", @TypeTestAnnotation String::toString);
+        assertDependency("dependencies.AnnotationTypeTestClass.java8()", "java.lang.String", LOADS_CONSTANT)
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "dependencies.TypeTestAnnotation", ANNOTATED_WITH)
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "dependencies.AnnotationTypeTestClass.lambdaFunction(java.lang.String, java.util.function.Function)", CALLS_METHOD)
         assertDependency("dependencies.AnnotationTypeTestClass.java8()", "java.lang.String", RETURN_TYPE_OF_CALLED_METHOD)
@@ -1245,8 +1246,8 @@ class DependencyExtractorJava8Test extends FunSuite {
         //    }
 
         val remainingDependencies = dependencies.view.filter(_._2 > 0).map(_.toString).toList.sorted
-        assert(
-            remainingDependencies.isEmpty
-        )
+        if (remainingDependencies.nonEmpty) {
+            fail(remainingDependencies.mkString("not extracted dependencies:\n", "\n", ""))
+        }
     }
 }

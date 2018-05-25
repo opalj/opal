@@ -34,6 +34,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualMethod
 import org.opalj.br.VirtualField
+import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.Type
@@ -85,6 +86,7 @@ object DependencyExtractorsHelper {
         val dependencyExtractor =
             createDependencyExtractor(
                 new DependencyProcessorAdapter() {
+
                     override def processDependency(
                         source: VirtualSourceElement,
                         target: VirtualSourceElement,
@@ -95,6 +97,17 @@ object DependencyExtractorsHelper {
                             key,
                             dependencies.getOrElse(key, 0) + 1
                         )
+                    }
+                    override def processDependency(
+                        source: VirtualSourceElement,
+                        target: ArrayType,
+                        dType:  DependencyType
+                    ): Unit = {
+                        if (target.elementType.isObjectType) {
+                            processDependency(
+                                source, VirtualClass(target.elementType.asObjectType), dType
+                            )
+                        }
                     }
                 }
             )
