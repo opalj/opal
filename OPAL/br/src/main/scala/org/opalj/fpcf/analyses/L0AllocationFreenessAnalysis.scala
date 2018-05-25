@@ -32,6 +32,8 @@ package analyses
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.ComputationalTypeCategory
+import org.opalj.br.Category2ComputationalTypeCategory
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.instructions._
@@ -111,6 +113,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             body.pcOfPreviousInstruction(pc)
         }
 
+        // We need this for numberOfPoppedOperands, but the actual result is irrelevant as we care
+        // only for whether ANY operand is popped, not how many exactly.
+        def someTypeCategory(i: Int): ComputationalTypeCategory = Category2ComputationalTypeCategory
+
         var currentPC = 0
         while (currentPC < maxPC) {
             val instruction = instructions(currentPC)
@@ -161,18 +167,27 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                 case GETFIELD.opcode ⇒ // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)
                         return Result(definedMethod, MethodWithAllocations);
-                    else if (instructions(prevPC(currentPC)).opcode !=
-                        ALOAD_0.opcode)
+                    else if (instructions(prevPC(currentPC)).opcode != ALOAD_0.opcode ||
+                        body.cfJoins.contains(currentPC))
                         return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
 
                 case PUTFIELD.opcode ⇒ // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)
                         return Result(definedMethod, MethodWithAllocations);
-                    else if (instructions(prevPC(prevPC(currentPC))).opcode !=
-                        ALOAD_0.opcode)
-                        return Result(definedMethod, MethodWithAllocations);
-                    else mayOverwriteSelf = false
+                    else {
+                        val previousPC = prevPC(currentPC)
+                        val previousInst = instructions(previousPC)
+                        val prevPrevInst = instructions(prevPC(previousPC))
+                        // If there is a branch target here, if the previous instruction pops an
+                        // operand, or if the second last instruction is not an ALOAD_0, we
+                        // cannot guarantee that the receiver is `this`.
+                        if (body.cfJoins.contains(currentPC) || body.cfJoins.contains(previousPC) ||
+                            previousInst.numberOfPoppedOperands(someTypeCategory) != 0 ||
+                            prevPrevInst.opcode != ALOAD_0.opcode)
+                            return Result(definedMethod, MethodWithAllocations)
+                        else mayOverwriteSelf = false
+                    }
 
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     // We don't handle these calls here, just treat them as having allocations

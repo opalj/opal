@@ -20,10 +20,18 @@ public class AllocationFreeness {
         return field;
     }
 
+    @MethodWithAllocations("May throw null pointer exception")
+    private int getField(AllocationFreeness other) {
+        return other.field;
+    }
+
     @AllocationFreeMethod("Simple setter")
     private void setField(int i){
         field = i;
     }
+
+    @MethodWithAllocations("May throw null pointer exception")
+    private void setField(AllocationFreeness other, int i){ other.field = i; }
 
     @AllocationFreeMethod("Calls method without allocations")
     private void allocationFreeCall(){
