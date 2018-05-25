@@ -36,6 +36,7 @@ import org.opalj.br.BooleanValue
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -59,7 +60,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev ⇒ ev.asAnnotationValue.annotation)
         val negate = getValue(p, annotationType, a.elementValuePairs, "negate").asInstanceOf[BooleanValue].value
 
-        analyses.exists(as.contains) && (eps.forall(negate ^ evaluateEP(p, as, _, negate)))
+        analyses.exists(as.contains) && eps.forall(negate ^ evaluateEP(p, as, _, negate))
     }
 
     def evaluateEP(
@@ -72,14 +73,16 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val classType = getValue(project, annotationType, ep.elementValuePairs, "cf").asClassValue.value.asObjectType
 
-        val field = getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
-        val method = getValue(project, annotationType, ep.elementValuePairs, "method").asStringValue.value
+        val field =
+            getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
+        val method =
+            getValue(project, annotationType, ep.elementValuePairs, "method").asStringValue.value
 
         val analysesElementValues =
             getValue(project, annotationType, ep.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
-        if (!analyses.isEmpty && !analyses.exists(as.contains)) {
+        if (analyses.nonEmpty && !analyses.exists(as.contains)) {
             return !negate // Analysis specific ep requirement, but analysis was not executed
         }
 
@@ -132,10 +135,10 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case `property` ⇒ true
             case _          ⇒ false
-        })) {
+        }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -152,84 +155,83 @@ class CompileTimePureMatcher extends PurityMatcher(properties.CompileTimePure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBPure]].
+ * [[org.opalj.fpcf.properties.Pure]].
  */
-class PureMatcher extends PurityMatcher(properties.LBPure)
+class PureMatcher extends PurityMatcher(properties.Pure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBSideEffectFree]].
+ * [[org.opalj.fpcf.properties.SideEffectFree]].
  */
-class SideEffectFreeMatcher extends PurityMatcher(properties.LBSideEffectFree)
+class SideEffectFreeMatcher extends PurityMatcher(properties.SideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBExternallyPure]].
+ * [[org.opalj.fpcf.properties.ExternallyPure]].
  */
-class ExternallyPureMatcher extends PurityMatcher(properties.LBExternallyPure)
+class ExternallyPureMatcher extends PurityMatcher(properties.ExternallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBExternallySideEffectFree]].
+ * [[org.opalj.fpcf.properties.ExternallySideEffectFree]].
  */
-class ExternallySideEffectFreeMatcher extends PurityMatcher(properties.LBExternallySideEffectFree)
+class ExternallySideEffectFreeMatcher extends PurityMatcher(properties.ExternallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBContextuallyPure]].
+ * [[org.opalj.fpcf.properties.ContextuallyPure]].
  */
-class ContextuallyPureMatcher extends PurityMatcher(properties.LBContextuallyPure)
+class ContextuallyPureMatcher extends PurityMatcher(properties.ContextuallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBContextuallySideEffectFree]].
+ * [[org.opalj.fpcf.properties.ContextuallySideEffectFree]].
  */
-class ContextuallySideEffectFreeMatcher
-    extends PurityMatcher(properties.LBContextuallySideEffectFree)
+class ContextuallySideEffectFreeMatcher extends PurityMatcher(properties.ContextuallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBDPure]].
+ * [[org.opalj.fpcf.properties.DPure]].
  */
-class DomainSpecificPureMatcher extends PurityMatcher(properties.LBDPure)
+class DomainSpecificPureMatcher extends PurityMatcher(properties.DPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBDSideEffectFree]].
+ * [[org.opalj.fpcf.properties.DSideEffectFree]].
  */
-class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(properties.LBDSideEffectFree)
+class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(properties.DSideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBDExternallyPure]].
+ * [[org.opalj.fpcf.properties.DExternallyPure]].
  */
-class DomainSpecificExternallyPureMatcher extends PurityMatcher(properties.LBDExternallyPure)
+class DomainSpecificExternallyPureMatcher extends PurityMatcher(properties.DExternallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBDExternallySideEffectFree]].
+ * [[org.opalj.fpcf.properties.DExternallySideEffectFree]].
  */
 class DomainSpecificExternallySideEffectFreeMatcher
-    extends PurityMatcher(properties.LBDExternallySideEffectFree)
+    extends PurityMatcher(properties.DExternallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBDContextuallyPure]].
+ * [[org.opalj.fpcf.properties.DContextuallyPure]].
  */
-class DomainSpecificContextuallyPureMatcher extends PurityMatcher(properties.LBDContextuallyPure)
+class DomainSpecificContextuallyPureMatcher extends PurityMatcher(properties.DContextuallyPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.LBDContextuallySideEffectFree]].
+ * [[org.opalj.fpcf.properties.DContextuallySideEffectFree]].
  */
 class DomainSpecificContextuallySideEffectFreeMatcher
-    extends PurityMatcher(properties.LBDContextuallySideEffectFree)
+    extends PurityMatcher(properties.DContextuallySideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the property is an instance of
  * [[org.opalj.fpcf.properties.ClassifiedImpure]].
  */
-class ImpureMatcher extends PurityMatcher(properties.Impure) {
+class ImpureMatcher extends PurityMatcher(properties.ImpureByLackOfInformation) {
 
     override def validateProperty(
         p:          SomeProject,
@@ -238,10 +240,10 @@ class ImpureMatcher extends PurityMatcher(properties.Impure) {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case _: ClassifiedImpure ⇒ true
             case _                   ⇒ false
-        })) {
+        }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {

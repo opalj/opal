@@ -1,7 +1,7 @@
-package org.opalj.fpcf.fixtures.declared_methods.base;
+package org.opalj.br.analyses.fixtures.declared_methods.base;
 
-import org.opalj.fpcf.fixtures.declared_methods.sub.SubClass;
-import org.opalj.fpcf.properties.declared_methods.DeclaredMethod;
+import org.opalj.br.analyses.fixtures.declared_methods.sub.SubClass;
+import org.opalj.br.analyses.properties.declared_methods.DeclaredMethod;
 
 /**
  * Classes annotated with the DefinedMethods that correspond to them.

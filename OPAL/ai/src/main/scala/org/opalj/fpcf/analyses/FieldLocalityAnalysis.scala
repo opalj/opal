@@ -45,6 +45,7 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -351,7 +352,7 @@ class FieldLocalityAnalysis private[analyses] (
      * @return false if the value may be fresh, true otherwise
      */
     private[this] def checkFreshnessOfDef(
-        stmt: Stmt[V], method: Method
+        stmt: Stmt[V], caller: Method
     )(implicit state: FieldLocalityState): Boolean = {
         // the object stored in the field is fresh
         stmt match {
@@ -367,33 +368,30 @@ class FieldLocalityAnalysis private[analyses] (
                 handleConcreteCall(callee)
 
             case Assignment(_, _, VirtualFunctionCall(_, _, _, name, desc, receiver, _)) ⇒
+                val callerType = caller.classFile.thisType
                 val value = receiver.asVar.value.asDomainReferenceValue
-                val receiverType =
-                    project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                        value.upperTypeBound
-                    )
+                val receiverType = value.valueType
 
-                if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes) {
-                    false
-                } else if (receiverType.isArrayType) {
+                if (receiverType.isEmpty) {
+                    false // Receiver is null, call will never be executed
+                } else if (receiverType.get.isArrayType) {
                     val callee =
                         project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
                     handleConcreteCall(callee)
 
                 } else if (value.isPrecise) {
-                    val preciseType = value.valueType.get
                     val callee =
-                        project.instanceCall(method.classFile.thisType, preciseType, name, desc)
+                        project.instanceCall(callerType, receiverType.get, name, desc)
                     handleConcreteCall(callee)
 
                 } else {
-                    val packageName = method.classFile.thisType.packageName
+                    val packageName = callerType.packageName
                     val callee =
-                        declaredMethods(packageName, receiverType.asObjectType, name, desc)
+                        declaredMethods(packageName, receiverType.get.asObjectType, name, desc)
 
                     if (!callee.hasDefinition ||
                         isOverridableMethod(callee.methodDefinition).isNotNo) {
-                        return true; // We don't know all overrides
+                        true // We don't know all overrides
                     } else {
                         val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
                         handleReturnValueFreshness(rvf)

@@ -33,11 +33,12 @@ package analyses
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBImpure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 
 /**
  * Determines the aggregated purity for virtual methods.
@@ -81,14 +82,14 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
                 Result(dm, maxPurity.aggregatedProperty)
             } else {
-                IntermediateResult(dm, VLBImpure, maxPurity.aggregatedProperty, dependees, c)
+                IntermediateResult(dm, VImpureByAnalysis, maxPurity.aggregatedProperty, dependees, c)
             }
         }
 
         if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
             Result(dm, maxPurity.aggregatedProperty)
         } else {
-            IntermediateResult(dm, VLBImpure, maxPurity.aggregatedProperty, dependees, c)
+            IntermediateResult(dm, VImpureByAnalysis, maxPurity.aggregatedProperty, dependees, c)
         }
     }
 

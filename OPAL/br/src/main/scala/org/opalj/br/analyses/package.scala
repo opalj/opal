@@ -31,7 +31,6 @@ package br
 
 import scala.collection.Map
 
-import org.opalj.collection.QualifiedCollection
 import org.opalj.collection.immutable.ConstArray
 
 /**
@@ -47,8 +46,6 @@ package object analyses {
     type SomeProject = Project[_]
 
     type ProgressEvent = ProgressEvents.Value
-
-    type DeclaredMethods = Map[ObjectType, QualifiedCollection[Set[Method]]]
 
     type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
 

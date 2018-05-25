@@ -42,12 +42,12 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.DeclaredMethods
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.DeclaredMethodsKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
@@ -63,12 +63,12 @@ import org.opalj.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
-import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VLBSideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity.VPure
+import org.opalj.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.ExprStmt
@@ -137,12 +137,13 @@ object UnusedResults extends DefaultOneStepAnalysis {
 
     def analyzeMethod(
         method: Method
-    )(implicit
-        project: SomeProject,
-      propertyStore:       PropertyStore,
-      tacai:               Method ⇒ TACode[_, V],
-      declaredMethods:     DeclaredMethods,
-      isMethodOverridable: Method ⇒ Answer
+    )(
+        implicit
+        project:             SomeProject,
+        propertyStore:       PropertyStore,
+        tacai:               Method ⇒ TACode[_, V],
+        declaredMethods:     DeclaredMethods,
+        isMethodOverridable: Method ⇒ Answer
     ): Seq[String] = {
         val code = tacai(method).stmts
 
@@ -161,17 +162,18 @@ object UnusedResults extends DefaultOneStepAnalysis {
     }
 
     def handleCall(
-        method: Method,
+        caller: Method,
         callee: Result[Method],
         pc:     Int
-    )(implicit
-        propertyStore: PropertyStore,
-      declaredMethods: DeclaredMethods
+    )(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
     ): Option[String] = {
         if (callee.hasValue) {
             propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                case FinalEP(_, CompileTimePure | LBPure | LBSideEffectFree) ⇒
-                    createIssue(method, callee.value, pc)
+                case FinalEP(_, CompileTimePure | Pure | SideEffectFree) ⇒
+                    createIssue(caller, callee.value, pc)
                 case _ ⇒ None
             }
         } else {
@@ -181,41 +183,38 @@ object UnusedResults extends DefaultOneStepAnalysis {
 
     def handleVirtualCall(
         call:   VirtualFunctionCall[V],
-        method: Method
-    )(implicit
-        project: SomeProject,
-      propertyStore:       PropertyStore,
-      declaredMethods:     DeclaredMethods,
-      isMethodOverridable: Method ⇒ Answer
+        caller: Method
+    )(
+        implicit
+        project:             SomeProject,
+        propertyStore:       PropertyStore,
+        declaredMethods:     DeclaredMethods,
+        isMethodOverridable: Method ⇒ Answer
     ): Option[String] = {
+        val callerType = caller.classFile.thisType
+        val VirtualFunctionCall(_, _, _, name, descr, receiver, _) = call
 
-        val callerType = method.classFile.thisType
-        val VirtualFunctionCall(_, declClass, isInterface, name, descr, receiver, _) = call
+        val value = receiver.asVar.value.asDomainReferenceValue
+        val receiverType = value.valueType
 
-        val typeBound =
-            project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                receiver.asVar.value.asDomainReferenceValue.upperTypeBound
-            )
-
-        if (receiver.asVar.value.asDomainReferenceValue.isNull.isYes) {
-            None
-        } else if (typeBound.isArrayType) {
+        if (receiverType.isEmpty) {
+            None // Receiver is null, call will never be executed
+        } else if (receiverType.get.isArrayType) {
             val callee = project.instanceCall(callerType, ObjectType.Object, name, descr)
-            handleCall(method, callee, call.pc)
-        } else if (receiver.isVar && receiver.asVar.value.asDomainReferenceValue.isPrecise) {
-            val preciseType = receiver.asVar.value.asDomainReferenceValue.valueType.get
-            val callee = project.instanceCall(callerType, preciseType, name, descr)
-            handleCall(method, callee, call.pc)
+            handleCall(caller, callee, call.pc)
+        } else if (receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+            val callee = project.instanceCall(callerType, receiverType.get, name, descr)
+            handleCall(caller, callee, call.pc)
         } else {
             val callee =
-                declaredMethods(callerType.packageName, typeBound.asObjectType, name, descr)
+                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
 
             if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
                 None // We don't know all overrides, ignore the call (it may be impure)
             } else {
                 propertyStore(callee, VirtualMethodPurity.key) match {
-                    case FinalEP(_, VCompileTimePure | VLBPure | VLBSideEffectFree) ⇒
-                        createIssue(method, callee.methodDefinition, call.pc)
+                    case FinalEP(_, VCompileTimePure | VPure | VSideEffectFree) ⇒
+                        createIssue(caller, callee.methodDefinition, call.pc)
                     case _ ⇒ None
                 }
             }

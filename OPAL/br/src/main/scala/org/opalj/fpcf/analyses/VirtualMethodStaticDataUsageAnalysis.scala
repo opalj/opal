@@ -32,6 +32,7 @@ package analyses
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage
 import org.opalj.fpcf.properties.StaticDataUsage

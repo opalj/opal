@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesNoStaticData
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesConstantDataOnly
@@ -63,7 +64,7 @@ object StaticDataUsage extends StaticDataUsagePropertyMetaInformation {
      * The key associated with every static constant usage property. The name is
      * "StaticConstantUsage"; the fallback is "UsesVaryingData".
      */
-    final val key = PropertyKey.create[DeclaredMethods, StaticDataUsage](
+    final val key = PropertyKey.create[DeclaredMethod, StaticDataUsage](
         "StaticConstantUsage",
         UsesVaryingData
     )

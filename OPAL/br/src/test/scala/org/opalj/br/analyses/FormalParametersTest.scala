@@ -35,7 +35,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.opalj.br.TestSupport.biProject
-import org.opalj.fpcf.DeclaredMethodsKey
 
 /**
  * Tests the `FormalParameters`.

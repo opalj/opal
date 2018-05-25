@@ -55,6 +55,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -144,11 +145,11 @@ abstract class PropertiesTest extends FunSpec with Matchers {
      *         to be tested.
      */
     def validateProperties(
-        context:       (Project[URL], PropertyStore, Set[FPCFAnalysis]),
+        context:       TestContext,
         eas:           TraversableOnce[(Entity, /*the processed annotation*/ String ⇒ String /* a String identifying the entity */ , Traversable[AnnotationLike])],
         propertyKinds: Set[String]
     ): Unit = {
-        val (p: Project[URL], ps: PropertyStore, as: Set[FPCFAnalysis]) = context
+        val TestContext(p: Project[URL], ps: PropertyStore, as: Set[FPCFAnalysis]) = context
         val ats = as.map(a ⇒ ObjectType(a.getClass.getName.replace('.', '/')))
 
         for {
@@ -189,9 +190,11 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     // CONVENIENCE METHODS
     //
 
-    def fieldsWithAnnotations(p: SomeProject): Traversable[(Field, String ⇒ String, Annotations)] = {
+    def fieldsWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(Field, String ⇒ String, Annotations)] = {
         for {
-            f ← p.allFields // cannot be parallelized; "it" is not thread safe
+            f ← recreatedFixtureProject.allFields // cannot be parallelized; "it" is not thread safe
             annotations = f.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -199,9 +202,12 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def methodsWithAnnotations(p: SomeProject): Traversable[(Method, String ⇒ String, Annotations)] = {
+    def methodsWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(Method, String ⇒ String, Annotations)] = {
         for {
-            m ← p.allMethods // cannot be parallelized; "it" is not thread safe
+            // cannot be parallelized; "it" is not thread safe
+            m ← recreatedFixtureProject.allMethods
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -209,21 +215,31 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
-    def declaredMethodsWithAnnotations(p: SomeProject): Traversable[(DefinedMethod, String ⇒ String, Annotations)] = {
-        val declaredMethods = p.get(DeclaredMethodsKey)
+    def declaredMethodsWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(DefinedMethod, String ⇒ String, Annotations)] = {
+        val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
-            m ← p.allMethods // cannot be parallelized; "it" is not thread safe
+            // cannot be parallelized; "it" is not thread safe
+            m ← recreatedFixtureProject.allMethods
             dm = declaredMethods(m)
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
-            (dm, (a: String) ⇒ m.toJava(s"@$a").substring(24), annotations)
+            (
+                dm,
+                (a: String) ⇒ m.toJava(s"@$a").substring(24),
+                annotations
+            )
         }
     }
 
-    def classFilesWithAnnotations(p: SomeProject): Traversable[(ClassFile, String ⇒ String, Annotations)] = {
+    def classFilesWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(ClassFile, String ⇒ String, Annotations)] = {
         for {
-            cf ← p.allClassFiles // cannot be parallelized; "it" is not thread safe
+            // cannot be parallelized; "it" is not thread safe
+            cf ← recreatedFixtureProject.allClassFiles
             annotations = cf.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -232,12 +248,14 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     // there can't be any annotations of the implicit "this" parameter...
-    def explicitFormalParametersWithAnnotations(p: SomeProject): Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
-        val formalParameters = p.get(VirtualFormalParametersKey)
-        val declaredMethods = p.get(DeclaredMethodsKey)
+    def explicitFormalParametersWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(VirtualFormalParameter, String ⇒ String, Annotations)] = {
+        val formalParameters = recreatedFixtureProject.get(VirtualFormalParametersKey)
+        val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
-            m ← p.allMethods
-            //m ← FixtureProject.allMethods // cannot be parallelized; "it" is not thread safe
+            // cannot be parallelized; "it" is not thread safe
+            m ← recreatedFixtureProject.allMethods
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
             i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
@@ -245,12 +263,19 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             dm = declaredMethods(m)
         } yield {
             val fp = formalParameters(dm)(i + 1)
-            (fp, (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in ${dm.declaringClassType}#${m.toJava(s"@$a")}", annotations)
+            (
+                fp,
+                (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in "+
+                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                annotations
+            )
         }
     }
 
-    def allocationSitesWithAnnotations(p: SomeProject): Traversable[(DefinitionSite, String ⇒ String, Traversable[AnnotationLike])] = {
-        val allocationSites: Seq[DefinitionSite] = p.get(DefinitionSitesKey).getAllocationSites
+    def allocationSitesWithAnnotations(
+        recreatedFixtureProject: SomeProject
+    ): Traversable[(DefinitionSite, String ⇒ String, Traversable[AnnotationLike])] = {
+        val allocationSites = recreatedFixtureProject.get(DefinitionSitesKey).getAllocationSites
         for {
             as ← allocationSites
             m = as.method
@@ -264,14 +289,19 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             }
             if annotations.nonEmpty
         } yield {
-            (as, (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in ${m.toJava(s"@$a").substring(24)})", annotations)
+            (
+                as,
+                (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in "+
+                    s"${m.toJava(s"@$a").substring(24)})",
+                annotations
+            )
         }
     }
 
     def executeAnalyses(
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
-    ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
+    ): TestContext = {
         val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
         val ps = p.get(PropertyStoreKey)
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
@@ -280,6 +310,12 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()
-        (p, ps, as ++ las)
+        TestContext(p, ps, as ++ las)
     }
 }
+
+case class TestContext(
+        project:       Project[URL],
+        propertyStore: PropertyStore,
+        analyses:      Set[FPCFAnalysis]
+)
