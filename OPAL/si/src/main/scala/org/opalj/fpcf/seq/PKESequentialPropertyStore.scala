@@ -306,7 +306,9 @@ final class PKESequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null")
         }
         val pkId = ub.key.id
-        /*user level*/ assert(ub.key == lb.key)
+        if (debug && ub.key != lb.key) {
+            throw new IllegalArgumentException("property keys for lower and upper bound don't match")
+        }
         /*user level*/ assert(
             !lb.isOrderedProperty || {
                 val ubAsOP = ub.asOrderedProperty
@@ -638,7 +640,7 @@ final class PKESequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty)
+        assert(tasks.isEmpty, "setup phase can only be called as long as no tasks are scheduled")
 
         // this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.computedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)

@@ -327,7 +327,7 @@ final class EPKSequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null")
         }
         val pkId = ub.key.id.toLong
-        /*user level*/ assert(ub.key == lb.key)
+        /*user level*/ assert(ub.key == lb.key, "lb and ub properties have different keys")
         /*user level*/ assert(
             !lb.isOrderedProperty || {
                 val ubAsOP = ub.asOrderedProperty
@@ -682,7 +682,7 @@ final class EPKSequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty)
+        assert(tasks.isEmpty, "setup phase can only when no tasks are scheduled")
 
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
@@ -719,8 +719,6 @@ final class EPKSequentialPropertyStore private (
                     // Check that we have no running computations and that the
                     // property will not be computed later on.
                     if (pValue.ub == null && !delayedPropertyKinds.contains(pkId)) {
-                        // assert(pv.dependers.isEmpty)
-
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
                         if (traceFallbacks) {
