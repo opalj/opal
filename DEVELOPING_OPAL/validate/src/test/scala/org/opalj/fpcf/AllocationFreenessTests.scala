@@ -44,7 +44,11 @@ class AllocationFreenessTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL0AllocationFreenessAnalysis)
         )
-        validateProperties(as, declaredMethodsWithAnnotations(as._1), Set("AllocationFreeness"))
+        validateProperties(
+            as,
+            declaredMethodsWithAnnotations(as.project),
+            Set("AllocationFreeness")
+        )
     }
 
 }

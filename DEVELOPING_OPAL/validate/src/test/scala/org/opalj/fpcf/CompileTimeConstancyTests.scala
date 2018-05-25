@@ -44,7 +44,7 @@ class CompileTimeConstancyTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL0CompileTimeConstancyAnalysis)
         )
-        validateProperties(as, fieldsWithAnnotations(as._1), Set("CompileTimeConstancy"))
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("CompileTimeConstancy"))
     }
 
 }

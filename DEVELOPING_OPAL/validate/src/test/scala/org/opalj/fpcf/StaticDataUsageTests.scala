@@ -46,7 +46,7 @@ class StaticDataUsageTests extends PropertiesTest {
             Set(EagerStaticDataUsageAnalysis),
             Set(LazyL0CompileTimeConstancyAnalysis)
         )
-        validateProperties(as, declaredMethodsWithAnnotations(as._1), Set("StaticDataUsage"))
+        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("StaticDataUsage"))
     }
 
 }
