@@ -1531,9 +1531,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 def doHandleTheException(
                     exceptionValue:   ExceptionValue,
                     establishNonNull: Boolean
-                ): PCs = {
+                ): Unit = {
 
-                    var targetPCs = IntTrieSet.empty
                     def gotoExceptionHandler(
                         pc:             Int,
                         branchTargetPC: Int,
@@ -1564,7 +1563,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             branchTargetPC, isExceptionalControlFlow = true,
                             updatedOperands2, updatedLocals2
                         )
-                        targetPCs += branchTargetPC
                     }
 
                     val isHandled = code.handlersFor(pc) exists { eh ⇒
@@ -1583,9 +1581,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 true
                             } else {
                                 theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
-                                    case No ⇒ false
+                                    case No ⇒
+                                        false
                                     case Yes ⇒
-                                        gotoExceptionHandler(pc, branchTarget, None); true
+                                        gotoExceptionHandler(pc, branchTarget, None)
+                                        true
 
                                     case _ ⇒ /*Unknown*/
                                         // In general, we have to abort the exception handling...
@@ -1637,8 +1637,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // to avoid that impossible paths are taken ... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled) abruptMethodExecution(pc, exceptionValue)
-
-                    targetPCs
                 }
 
                 /*
@@ -1651,6 +1649,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  *        explicitly required, otherwise, the assumption would be made that the
                  *        exception value could be null – in all cases!
                  */
+                /* OLD REMOVE IF NOT NEEDED
                 def handleException(
                     exceptionValue:                  ExceptionValue,
                     testForNullnessOfExceptionValue: Boolean
@@ -1688,7 +1687,42 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         handleExceptions(baseValues, testForNullnessOfExceptionValue)
                     }
                 }
+                */
+                def handleException(
+                    exceptionValue:                  ExceptionValue,
+                    testForNullnessOfExceptionValue: Boolean
+                ): Unit = {
+                    // Iterating over the individual exceptions is potentially
+                    // more precise than just iterating over the "abstraction".
+                    val baseValues = exceptionValue.baseValues
+                    if (baseValues.isEmpty) {
+                        if (testForNullnessOfExceptionValue) {
+                            exceptionValue.isNull match {
+                                case No ⇒ // just forward
+                                    doHandleTheException(exceptionValue, establishNonNull = false)
+                                case Unknown ⇒
+                                    if (theDomain.throwNullPointerExceptionOnThrow) {
+                                        val npe = theDomain.VMNullPointerException(pc)
+                                        doHandleTheException(npe, establishNonNull = false)
+                                    }
+                                    doHandleTheException(exceptionValue, establishNonNull = true)
+                                case Yes ⇒
+                                    val npe = theDomain.VMNullPointerException(pc)
+                                    doHandleTheException(npe, establishNonNull = false)
+                            }
+                        } else {
+                            // The exception is either VM generated or is thrown in the
+                            // context of a called method; in both cases the exception is
+                            // not null; the latter can only be the case if we have a
+                            // "throw null".
+                            doHandleTheException(exceptionValue, establishNonNull = false)
+                        }
+                    } else {
+                        handleExceptions(baseValues, testForNullnessOfExceptionValue)
+                    }
+                }
 
+                /* OLD - REMOVE IF EVERYTHING WORKS FINE
                 def handleExceptions(
                     exceptions:                      Traversable[ExceptionValue],
                     testForNullnessOfExceptionValue: Boolean
@@ -1696,6 +1730,13 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     exceptions.foldLeft(IntTrieSet.empty) { (pcs, e) ⇒
                         pcs ++ handleException(e, testForNullnessOfExceptionValue)
                     }
+                }
+*/
+                def handleExceptions(
+                    exceptions:                      Traversable[ExceptionValue],
+                    testForNullnessOfExceptionValue: Boolean
+                ): Unit = {
+                    exceptions foreach { e ⇒ handleException(e, testForNullnessOfExceptionValue) }
                 }
 
                 def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
