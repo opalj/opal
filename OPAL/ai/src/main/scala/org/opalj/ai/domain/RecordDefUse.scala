@@ -188,8 +188,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     def localOrigin(pc: /*PC*/ Int, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
-     * Returns the instructions which use the value or the external value identified by the given
-     * value origin. In case of external values (typically exceptions) thrown by instruction X,
+     * Returns the instructions which use the value or the external exception identified by
+     * the given value origin. In case of external exceptions thrown by an instruction,
      * the value origin's pc is `ai.underlyingPC(valueOrigin)`
      */
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = {
@@ -255,15 +255,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     ): Unit = {
         usedValues foreach { usedValue ⇒
             if (ai.isImplicitOrExternalException(usedValue)) {
-                // we have a usage of an implicit exception or method external value
+                // we have a usage of an implicit exception or method external exception
                 val usedIndex = ai.underlyingPC(usedValue)
-                val oldUsedExternalValuesInfo: ValueOrigins = usedExternalExceptions(usedIndex)
-                if (oldUsedExternalValuesInfo eq null) {
+                val oldUsedExternalExceptions: ValueOrigins = usedExternalExceptions(usedIndex)
+                if (oldUsedExternalExceptions eq null) {
                     usedExternalExceptions(usedIndex) = ValueOrigins(useSite)
                 } else {
-                    val newUsedExternalValuesInfo = oldUsedExternalValuesInfo + useSite
-                    if (newUsedExternalValuesInfo ne oldUsedExternalValuesInfo)
-                        usedExternalExceptions(usedIndex) = newUsedExternalValuesInfo
+                    val newUsedExternalExceptions = oldUsedExternalExceptions + useSite
+                    if (newUsedExternalExceptions ne oldUsedExternalExceptions)
+                        usedExternalExceptions(usedIndex) = newUsedExternalExceptions
                 }
             } else {
                 val usedIndex = usedValue + parametersOffset
@@ -272,16 +272,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     used(usedIndex) = ValueOrigins(useSite)
                 } else {
                     val newUsedInfo = oldUsedInfo + useSite
-                    if (newUsedInfo ne oldUsedInfo)
+                    if (newUsedInfo ne oldUsedInfo) {
                         used(usedIndex) = newUsedInfo
+                    }
                 }
             }
         }
     }
 
     protected[this] def propagate(
-        currentPC: /*PC*/ Int,
-        successorPC: /*PC*/ Int,
+        currentPC:    Int,
+        successorPC:  Int,
         newDefOps:    Chain[ValueOrigins],
         newDefLocals: Registers[ValueOrigins]
     )(
@@ -440,9 +441,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
      * E.g., the l1.ReferenceValues domain tracks alias relations and can (when we inline calls)
      * correctly identify those returned values that were passed to it.
      *
-     * @param domainValue The domain value for which the origin information is required.
+     * @param  domainValue The domain value for which the origin information is required.
      *                    If no information is available, `defaultOrigins` should be returned.
-     * @param defaultOrigins The default origin information.
+     * @param  defaultOrigins The default origin information.
      * @return The origin information for the given `domainValue`.
      */
     protected[this] def originsOf(
