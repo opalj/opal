@@ -527,7 +527,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 // set.
                 var currentMaximallySpecificMethods = currentMethods
                 var additionalMaximallySpecificMethods = Set.empty[Method]
-                methods.view.filter(!currentMethods.contains(_)) foreach { method ⇒
+                methods.iterator.filter(!currentMethods.contains(_)) foreach { method ⇒
                     val newMethodDeclaringClassType = method.classFile.thisType
                     var addNewMethod = true
                     currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒

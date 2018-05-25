@@ -51,7 +51,12 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
     private[this] var theCFJoins: IntTrieSet = null
 
     def instructions: Array[Instruction] = theInstructions
-    /** @see [[org.opalj.br.Code.cfPCs]] */
+
+    /**
+     * @see    [[org.opalj.br.Code.cfPCs]],
+     *         [[org.opalj.br.Code.cfJoins]],
+     *         [[org.opalj.br.Code.predecessorPCs]]
+     */
     def cfJoins: IntTrieSet = theCFJoins
 
     /**

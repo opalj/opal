@@ -36,6 +36,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar

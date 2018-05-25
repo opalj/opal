@@ -58,7 +58,9 @@ sealed abstract class AIResult {
     /**
      * The instructions where two or more control flow paths join.
      *
-     * @see    [[org.opalj.br.Code.cfPCs]] / [[org.opalj.br.Code.cfJoins]]
+     * @see    [[org.opalj.br.Code.cfPCs]],
+     *         [[org.opalj.br.Code.cfJoins]],
+     *         [[org.opalj.br.Code.predecessorPCs]]
      *
      * @note   This information could be recomputed on-demand but is stored for performance
      *         reasons.

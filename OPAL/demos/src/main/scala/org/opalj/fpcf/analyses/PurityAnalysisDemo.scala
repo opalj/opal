@@ -38,7 +38,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.Method
 import org.opalj.br.Field
 import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
@@ -149,7 +149,7 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
                 )
 
             fieldInfo + methodInfo + propertyStore.toString(false)+
-                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == LBPure).size
+                "\nPure methods: "+pureMethods.filter(m ⇒ m._2 == Pure).size
         }
     }
 }

@@ -46,6 +46,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt

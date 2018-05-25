@@ -28,12 +28,9 @@
  */
 package org.opalj.fpcf
 
-import java.net.URL
-
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
-import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
@@ -50,7 +47,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     override def executeAnalyses(
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
-    ): (Project[URL], PropertyStore, Set[FPCFAnalysis]) = {
+    ): TestContext = {
         val p = FixtureProject.recreate()
 
         p.getOrCreateProjectInformationKeyInitializationData(
@@ -68,32 +65,38 @@ class EscapeAnalysisTests extends PropertiesTest {
         lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()
-        (p, ps, as)
+        TestContext(p, ps, as)
     }
 
     describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty, Set.empty)
+        val as = executeAnalyses(Set.empty)
         validateProperties(
             as,
-            allocationSitesWithAnnotations(as._1) ++ explicitFormalParametersWithAnnotations(as._1),
+            allocationSitesWithAnnotations(as.project) ++
+                explicitFormalParametersWithAnnotations(as.project),
             Set("EscapeProperty")
         )
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set.empty)
+        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis))
         validateProperties(
             as,
-            allocationSitesWithAnnotations(as._1) ++ explicitFormalParametersWithAnnotations(as._1),
+            allocationSitesWithAnnotations(as.project) ++
+                explicitFormalParametersWithAnnotations(as.project),
             Set("EscapeProperty")
         )
     }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerInterProceduralEscapeAnalysis), Set(LazyVirtualCallAggregatingEscapeAnalysis))
+        val as = executeAnalyses(
+            Set(EagerInterProceduralEscapeAnalysis),
+            Set(LazyVirtualCallAggregatingEscapeAnalysis)
+        )
         validateProperties(
             as,
-            allocationSitesWithAnnotations(as._1) ++ explicitFormalParametersWithAnnotations(as._1),
+            allocationSitesWithAnnotations(as.project) ++
+                explicitFormalParametersWithAnnotations(as.project),
             Set("EscapeProperty")
         )
     }
