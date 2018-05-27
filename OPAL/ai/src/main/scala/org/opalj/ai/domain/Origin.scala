@@ -111,6 +111,9 @@ trait Origin { domain: ValuesDomain ⇒
         }
     }
 
+    /**
+     * Iterates over the origin(s) of the given value if the information is available.
+     */
     def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
         value match {
             case sov: SingleOriginValue    ⇒ f(sov.origin)
@@ -119,6 +122,9 @@ trait Origin { domain: ValuesDomain ⇒
         }
     }
 
+    /**
+     * Returns the origin(s) of the given value if the information is available.
+     */
     def origins(value: DomainValue): ValueOrigins = {
         value match {
             case vo: ValueWithOriginInformation ⇒ vo.origins
