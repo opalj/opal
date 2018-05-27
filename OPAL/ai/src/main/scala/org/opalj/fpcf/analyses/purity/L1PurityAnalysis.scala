@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
+package purity
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.isVMLevelValue
@@ -41,20 +42,21 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
-import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.FinalField
 import org.opalj.fpcf.properties.ImmutableObject
 import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.LBImpure
-import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.Pure
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Expr
 import org.opalj.tac.GetField
@@ -70,14 +72,12 @@ import org.opalj.tac.TACode
  * @note This analysis is sound only up to the usual standards, i.e. it does not cope with
  *       VirtualMachineErrors and may be unsound in the presence of native code, reflection or
  *       `sun.misc.Unsafe`. Calls to native methods are generally handled soundly as they are
- *       considered [[org.opalj.fpcf.properties.LBImpure]]. There are no soundness guarantees in the
+ *       considered [[org.opalj.fpcf.properties.ImpureByAnalysis]]. There are no soundness guarantees in the
  *       presence of load-time transformation. Soundness in general depends on the soundness of the
  *       analyses that compute properties used by this analysis, e.g. field mutability.
- *
  * @note This analysis is sound even if the three address code hierarchy is not flat, it will
  *       produce better results for a flat hierarchy, though. This is because it will not assess the
  *       types of expressions other than [[org.opalj.tac.Var]]s.
- *
  * @note This analysis derives all purity levels except for the `Externally` variants. A
  *       configurable [[DomainSpecificRater]] is used to identify calls, expressions and exceptions
  *       that are `LBDPure` instead of `LBImpure` or any `SideEffectFree` purity level.
@@ -86,7 +86,6 @@ import org.opalj.tac.TACode
  *       array loads, array length and virtual/interface calls. Array stores and field writes as
  *       well as (useless) synchronization on locally created, non-escaping objects/arrays are also
  *       handled. Newly allocated objects/arrays returned from callees are not identified.
- *
  * @author Dominik Helm
  */
 class L1PurityAnalysis private[analyses] (val project: SomeProject) extends AbstractPurityAnalysis {
@@ -186,11 +185,11 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         params: (Option[Expr[V]], Seq[Expr[V]])
     )(implicit state: State): Boolean = ep match {
         case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
-            atMost(LBImpure)
+            atMost(ImpureByAnalysis)
             false
         case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
             if (ub.modifiesReceiver) {
-                atMost(LBImpure)
+                atMost(ImpureByAnalysis)
                 false
             } else {
                 if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
@@ -202,7 +201,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
             if (ub.modifiesReceiver) {
-                atMost(LBImpure)
+                atMost(ImpureByAnalysis)
                 false
             } else {
                 if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
@@ -214,7 +213,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         case _ ⇒
             state.dependees += ep
-            reducePurityLB(LBImpure)
+            reducePurityLB(ImpureByAnalysis)
             true
     }
 
@@ -226,7 +225,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
-        if (objRef.isEmpty || !isLocal(objRef.get, LBPure)) state.dependees += ep
+        if (objRef.isEmpty || !isLocal(objRef.get, Pure)) state.dependees += ep
     }
 
     /**
@@ -237,7 +236,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
-        if (!isLocal(expr, LBPure)) state.dependees += ep
+        if (!isLocal(expr, Pure)) state.dependees += ep
     }
 
     def cleanupDependees()(implicit state: State): Unit = {
@@ -265,16 +264,16 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             // Cases dealing with other purity values
             case EPS(_, _, _: Purity | _: VirtualMethodPurity) ⇒
                 if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]]))
-                    return Result(state.definedMethod, LBImpure)
+                    return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalEP(_, EffectivelyFinalField | // Reading eff. final fields
-                ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalEP(_, _: FinalField)                   ⇒ // Reading eff. final fields
+            case FinalEP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
             case FinalEP(_, _: FieldMutability | // Reading non-final field
                 _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
-                atMost(LBSideEffectFree)
+                atMost(SideEffectFree)
 
             case IntermediateEP(_, _, _) ⇒ state.dependees += eps
         }
@@ -311,12 +310,12 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         // We treat all synchronized methods as impure
         if (method.isSynchronized)
-            return Result(definedMethod, LBImpure);
+            return Result(definedMethod, ImpureByAnalysis);
 
         val TACode(_, code, _, cfg, _, _) = tacai(method)
 
         implicit val state: State =
-            new State(LBPure, LBPure, Set.empty, method, definedMethod, declClass, code)
+            new State(Pure, Pure, Set.empty, method, definedMethod, declClass, code)
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
@@ -350,7 +349,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
             val ratedResult = rater.handleException(origin)
             if (ratedResult.isDefined) atMost(ratedResult.get)
-            else atMost(LBSideEffectFree)
+            else atMost(SideEffectFree)
         }
 
         val stmtCount = code.length
@@ -362,7 +361,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         // Remove unnecessary dependees
-        if (state.ubPurity ne LBPure) {
+        if (state.ubPurity ne Pure) {
             cleanupDependees()
         }
 

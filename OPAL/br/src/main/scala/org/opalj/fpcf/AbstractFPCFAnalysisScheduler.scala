@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Provides the generic infrastructure that is implemented by all factories for
  * FPCF analyses.
- * Analyses that are created sing this factory will then be run using the [[PropertyStore]].
+ * Analyses that are created using this factory will then be run using the [[PropertyStore]].
  * I.e., this trait is typically implemented by the singleton object that facilitates
  * the creation of analyses.
  *

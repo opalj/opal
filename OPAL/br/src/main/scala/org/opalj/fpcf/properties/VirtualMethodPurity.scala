@@ -61,32 +61,21 @@ object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
     def apply(name: String): Option[VirtualMethodPurity] =
         if (name.charAt(0) == 'V') Purity(name.substring(1)).map(_.aggregatedProperty) else None
 
-    final val VCompileTimePure =
-        new VirtualMethodPurity(CompileTimePure)
-    final val VLBPure = new VirtualMethodPurity(LBPure)
-    final val VLBSideEffectFree =
-        new VirtualMethodPurity(LBSideEffectFree)
-    final val VLBExternallyPure =
-        new VirtualMethodPurity(LBExternallyPure)
-    final val VLBExternallySideEffectFree =
-        new VirtualMethodPurity(LBExternallySideEffectFree)
-    final val VLBContextuallyPure =
-        new VirtualMethodPurity(LBContextuallyPure)
-    final val VLBContextuallySideEffectFree =
-        new VirtualMethodPurity(LBContextuallySideEffectFree)
-    final val VLBDPure = new VirtualMethodPurity(LBDPure)
-    final val VLBDSideEffectFree =
-        new VirtualMethodPurity(LBDSideEffectFree)
-    final val VLBDExternallyPure =
-        new VirtualMethodPurity(LBDExternallyPure)
-    final val VLBDExternallySideEffectFree =
-        new VirtualMethodPurity(LBDExternallySideEffectFree)
-    final val VLBDContextuallyPure =
-        new VirtualMethodPurity(LBDContextuallyPure)
-    final val VLBDContextuallySideEffectFree =
-        new VirtualMethodPurity(LBDContextuallySideEffectFree)
-    final val VLBImpure = new VirtualMethodPurity(LBImpure)
-    final val VImpure = new VirtualMethodPurity(Impure)
+    final val VCompileTimePure = new VirtualMethodPurity(CompileTimePure)
+    final val VPure = new VirtualMethodPurity(Pure)
+    final val VSideEffectFree = new VirtualMethodPurity(SideEffectFree)
+    final val VExternallyPure = new VirtualMethodPurity(ExternallyPure)
+    final val VExternallySideEffectFree = new VirtualMethodPurity(ExternallySideEffectFree)
+    final val VContextuallyPure = new VirtualMethodPurity(ContextuallyPure)
+    final val VContextuallySideEffectFree = new VirtualMethodPurity(ContextuallySideEffectFree)
+    final val VDPure = new VirtualMethodPurity(DPure)
+    final val VDSideEffectFree = new VirtualMethodPurity(DSideEffectFree)
+    final val VDExternallyPure = new VirtualMethodPurity(DExternallyPure)
+    final val VDExternallySideEffectFree = new VirtualMethodPurity(DExternallySideEffectFree)
+    final val VDContextuallyPure = new VirtualMethodPurity(DContextuallyPure)
+    final val VDContextuallySideEffectFree = new VirtualMethodPurity(DContextuallySideEffectFree)
+    final val VImpureByAnalysis = new VirtualMethodPurity(ImpureByAnalysis)
+    final val VImpureByLackOfInformation = new VirtualMethodPurity(ImpureByLackOfInformation)
 
     /**
      * The key associated with every purity property. The name is "VirtualMethodPurity";
@@ -94,6 +83,6 @@ object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, VirtualMethodPurity](
         "VirtualMethodPurity",
-        VImpure
+        VImpureByLackOfInformation
     )
 }

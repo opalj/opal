@@ -46,10 +46,14 @@ import scala.collection.JavaConverters._
  * Holds a mutable map of [[DefinitionSite]] objects to ensure unique identities.
  * The map is filled on-the-fly while querying.
  *
+ * ==Thread Safety==
+ * This class is thread-safe.
+ *
  * @author Dominik Helm
  * @author Florian Kuebler
  */
 class DefinitionSites(val project: SomeProject) {
+
     val definitionSites = new ConcurrentHashMap[DefinitionSite, DefinitionSite]()
     private[this] val aiResult = project.get(SimpleAIKey)
 

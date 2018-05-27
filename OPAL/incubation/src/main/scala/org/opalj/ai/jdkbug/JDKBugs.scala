@@ -97,7 +97,7 @@ class ContextNode(
 }
 
 /**
- * Searches for occurrences of the Class.forName bug in the JDK
+ * Searches for occurrences of the Class.forName bug in the JDK.
  *
  * @author Lars Schulte
  */
@@ -157,7 +157,7 @@ object JDKTaintAnalysis
     /**
      * This method finds all possible entry points.
      * An entry point has to be public or protected and not final.
-     * Also it needs to take a String as argument and return an Object or Class
+     * Also it needs to take a String as argument and return an Object or Class.
      */
     def entryPoints(project: Project[URL]): Iterable[Method] = {
         import ObjectType._
@@ -214,7 +214,7 @@ object JDKTaintAnalysis
 //}
 
 /**
- * This companion object saves some values during the analysis. It can be used for testing purpose
+ * This companion object saves some values during the analysis. It can be used for testing purposes.
  */
 object TaintAnalysisDomain {
 
@@ -223,7 +223,7 @@ object TaintAnalysisDomain {
 }
 
 /**
- * This is the analysis domain it provides all need functionality to find Class.forName bugs.
+ * This is the analysis domain. It provides all needed functionality to find Class.forName bugs.
  */
 trait TaintAnalysisDomain[Source]
     extends CorrelationalDomain
@@ -305,14 +305,14 @@ trait TaintAnalysisDomain[Source]
 
     /**
      * Predicates if the analysis is currently in the process of looking
-     * for the use of a previously tainted field. If this is true then this
+     * for the use of a previously tainted field. If this is true, then this
      * boolean prevents the analysis from analyzing "putfield" instructions that
-     * could lead the analysis to run into an endless loop
+     * could lead the analysis to run into an endless loop.
      */
     val checkForFields: Boolean
 
     /**
-     * Stores if a call to Class.forName has occurred. No report is created if this is not true
+     * Stores if a call to Class.forName has occurred. No report is created if this is not true.
      */
     protected var callToClassForNameFound: Boolean = false;
 
@@ -643,7 +643,7 @@ trait TaintAnalysisDomain[Source]
         fieldType:      FieldType
     ) = {
 
-        // skip if we already check for fields so we don't run into a loop
+        // skip if we already check for fields, so we don't run into a loop
         if (!checkForFields) {
             // check if the field is set with a relevant value
             if (contextNode.identifier._1.union(taintedPCs).intersect(
@@ -853,7 +853,7 @@ trait TaintAnalysisDomain[Source]
     /**
      * This method tries to find new entry points that use a tainted field.
      * For each found entry point a new RootTaintAnalysisDomain is created.
-     * If the analyzed method found a bug (created a report) this report is printed.
+     * If the analyzed method found a bug (created a report), this report is printed.
      */
     def findAndInspectNewEntryPoint(classFile: ClassFile): Unit = {
         for (method ← classFile.methods) {
@@ -872,7 +872,7 @@ trait TaintAnalysisDomain[Source]
 
 /**
  * The root domain that one is instanciated for every entry point found
- * as well as when searching for the use of a field
+ * as well as when searching for the use of a field.
  */
 class RootTaintAnalysisDomain[Source](
         val project:              Project[Source],
@@ -941,7 +941,7 @@ class CalledTaintAnalysisDomain[Source](
 
     /**
      * Checks against all previous instantiated AnalysisDomains in the respective call graph
-     * up to the RootTaintAnalysisDomain
+     * up to the RootTaintAnalysisDomain.
      */
     def isRecursiveCall(
         declaringClass: ReferenceType,

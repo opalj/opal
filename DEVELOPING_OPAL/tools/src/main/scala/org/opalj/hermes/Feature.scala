@@ -65,8 +65,11 @@ object Feature {
         id:         String,
         count:      Int                = 0,
         extensions: Chain[Location[S]] = Naught
+    )(
+        implicit
+        hermes: HermesConfig
     ): Feature[S] = {
-        new Feature(id, count, extensions.takeUpTo(Globals.MaxLocations)) {}
+        new Feature(id, count, extensions.takeUpTo(hermes.MaxLocations)) {}
     }
 
     def apply[S](

@@ -35,50 +35,24 @@ import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
-
 import scalafx.collections.ObservableBuffer
 import scalafx.beans.property.BooleanProperty
 import scalafx.beans.property.IntegerProperty
 import scalafx.beans.property.LongProperty
-
 import org.opalj.br.analyses.Project
 
 /**
- * Implements the core functionality to evaluate a sef of feature queries against a set of
+ * Implements the core functionality to evaluate a set of feature queries against a set of
  * projects; does not provide any UI. The GUI is implemented by the class [[Hermes]] and the
  * command-line interface is implemented by the class [[HermesCLI]].
  *
  * @author Michael Eichberg
  */
-trait HermesCore {
-
-    /** Creates the initial, overall configuration. */
-    def initialize(configFile: File): Unit = {
-        import Console.err
-        if (!configFile.exists || !configFile.canRead()) {
-            err.println(s"The config file cannot be found or read: $configFile")
-            err.println("The current folder is: "+System.getProperty("user.dir"))
-            System.exit(2)
-        }
-        try {
-            val config = ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
-            Globals.setConfig(config)
-        } catch {
-            case t: Throwable ⇒
-                err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
-                System.exit(3)
-                //... if System.exit does not terminate the app; this will at least kill the
-                // the current call.
-                throw t;
-
-        }
-    }
+trait HermesCore extends HermesConfig {
 
     // ---------------------------------------------------------------------------------------------
     //
@@ -90,12 +64,12 @@ trait HermesCore {
 
     /** The list of all registered feature queries. */
     lazy val registeredQueries: List[Query] = {
-        Globals.Config.as[List[Query]]("org.opalj.hermes.queries.registered")
+        Config.as[List[Query]]("org.opalj.hermes.queries.registered")
     }
 
     /** The list of enabled feature queries. */
     lazy val featureQueries: List[FeatureQuery] = {
-        registeredQueries.flatMap(q ⇒ if (q.isEnabled) q.reify else None)
+        registeredQueries.flatMap(q ⇒ if (q.isEnabled) q.reify(this) else None)
     }
 
     /**
@@ -123,8 +97,8 @@ trait HermesCore {
     }
 
     /** The set of all project configurations. */
-    lazy val projectConfigurations = {
-        val pcs = Globals.Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+    lazy val projectConfigurations: List[ProjectConfiguration] = {
+        val pcs = Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
         if (pcs.map(_.id).toSet.size != pcs.size) {
             throw new RuntimeException("some project names are not unique")
         }
@@ -275,6 +249,12 @@ trait HermesCore {
     // ---------------------------------------------------------------------------------------------
 
     def exportStatistics(file: File, exportProjectStatistics: Boolean = true): Unit = {
+        io.process(new BufferedWriter(new FileWriter(file))) { writer ⇒
+            exportStatistics(writer, exportProjectStatistics)
+        }
+    }
+
+    def exportStatistics(writer: BufferedWriter, exportProjectStatistics: Boolean): Unit = {
         // Create the set of all names of all project-wide statistics
         var projectStatisticsIDs = Set.empty[String]
         featureMatrix.foreach { pf ⇒
@@ -293,7 +273,7 @@ trait HermesCore {
                 }.
                 setUseHeader(true).
                 build()
-        val writer = new BufferedWriter(new FileWriter(file))
+
         val csvGenerator = new CsvFactory().createGenerator(writer)
         csvGenerator.setSchema(csvSchema)
         featureMatrix.foreach { pf ⇒
@@ -311,7 +291,7 @@ trait HermesCore {
             csvGenerator.flush()
             csvGenerator.writeEndArray()
         }
-        csvGenerator.close()
+        csvGenerator.flush()
     }
 
     /**
@@ -325,11 +305,12 @@ trait HermesCore {
      * @param file The file to which the mapping will be written.
      */
     def exportMapping(file: File): Unit = {
+        io.process(new BufferedWriter(new FileWriter(file))) { exportMapping }
+    }
 
-        val writer = new BufferedWriter(new FileWriter(file))
-
-        registeredQueries.iterator.filter(_.isEnabled).foreach { q ⇒
-            val fq = q.reify.get
+    def exportMapping(writer: BufferedWriter): Unit = {
+        registeredQueries.iterator.filter(_.isEnabled) foreach { q ⇒
+            val fq = q.reify(this).get
             writer.write(q.query)
             writer.write("=")
             writer.write(
@@ -339,8 +320,7 @@ trait HermesCore {
             )
             writer.newLine()
         }
-
-        writer.close()
+        writer.flush()
     }
 
 }

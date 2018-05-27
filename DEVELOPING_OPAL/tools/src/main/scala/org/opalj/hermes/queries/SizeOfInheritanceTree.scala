@@ -43,7 +43,7 @@ import org.opalj.hermes.{Feature, FeatureQuery, ProjectConfiguration}
  * @author Ben Hermann
  * @author Michael Eichberg
  */
-object SizeOfInheritanceTree extends FeatureQuery {
+class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: List[String] = {
         List(

@@ -3,7 +3,7 @@ language: scala
 scala:
    - 2.12.6
 jdk:
-  - oraclejdk9
+  - oraclejdk8
 
 branches:
   only:

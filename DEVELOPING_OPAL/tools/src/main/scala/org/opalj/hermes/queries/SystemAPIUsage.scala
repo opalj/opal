@@ -26,10 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.hermes.queries
+package org.opalj.hermes
+package queries
 
-import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain
+import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -41,7 +42,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  *
  * @author Michael Reif
  */
-object SystemAPIUsage extends APIFeatureQuery {
+class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: Chain[APIFeature] = {
 

@@ -723,11 +723,13 @@ final class EPKSequentialPropertyStore private (
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
-                        info(
-                            "analysis progress",
-                            s"used fallback $fallbackProperty for $e "+
-                                "(though an analysis was supposedly scheduled)"
-                        )
+                        if (traceFallbacks) {
+                            info(
+                                "analysis progress",
+                                s"used fallback $fallbackProperty for $e "+
+                                    "(though an analysis was supposedly scheduled)"
+                            )
+                        }
                         handleResult(fallbackResult)
 
                         continueComputation = true
@@ -772,10 +774,12 @@ final class EPKSequentialPropertyStore private (
                                 cSCC.take(10).mkString("", ",", "...")
                             else
                                 cSCC.mkString(",")
-                        info(
-                            "analysis progress",
-                            s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
-                        )
+                        if (traceCycleResolutions) {
+                            info(
+                                "analysis progress",
+                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                            )
+                        }
                         update(newEP.e, newEP.p, newEP.p, Nil)
                         continueComputation = true
                     }

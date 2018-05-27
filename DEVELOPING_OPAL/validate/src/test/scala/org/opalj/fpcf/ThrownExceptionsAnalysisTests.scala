@@ -58,10 +58,10 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
     describe("no analysis is scheduled and fallback is used") {
         val as = executeAnalyses(Set.empty)
         val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
-        val (p, ps, _) = as
+        val TestContext(p, ps, _) = as
         ps.setupPhase(Set(ThrownExceptions.key))
         for {
-            (e, _, annotations) ← methodsWithAnnotations
+            (e, _, annotations) ← methodsWithAnnotations(as.project)
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
         } {
             val epk = EPK(e, ThrownExceptions.key)
@@ -74,7 +74,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
         validateProperties(
             as,
-            methodsWithAnnotations,
+            methodsWithAnnotations(as.project),
             pk
         )
     }
@@ -86,7 +86,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         ))
         validateProperties(
             as,
-            methodsWithAnnotations,
+            methodsWithAnnotations(as.project),
             Set(
                 "ExpectedExceptions",
                 "ExpectedExceptionsByOverridingMethods",

@@ -39,12 +39,13 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
-import org.opalj.ai.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -97,8 +98,12 @@ import org.opalj.tac.VirtualFunctionCall
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class FieldLocalityAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
     private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
@@ -347,7 +352,7 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
      * @return false if the value may be fresh, true otherwise
      */
     private[this] def checkFreshnessOfDef(
-        stmt: Stmt[V], method: Method
+        stmt: Stmt[V], caller: Method
     )(implicit state: FieldLocalityState): Boolean = {
         // the object stored in the field is fresh
         stmt match {
@@ -363,52 +368,36 @@ class FieldLocalityAnalysis private[analyses] ( final val project: SomeProject) 
                 handleConcreteCall(callee)
 
             case Assignment(_, _, VirtualFunctionCall(_, _, _, name, desc, receiver, _)) ⇒
+                val callerType = caller.classFile.thisType
                 val value = receiver.asVar.value.asDomainReferenceValue
+                val receiverType = value.valueType
 
-                if (value.isNull.isNotYes) {
-                    val receiverType = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                        value.upperTypeBound
-                    )
+                if (receiverType.isEmpty) {
+                    false // Receiver is null, call will never be executed
+                } else if (receiverType.get.isArrayType) {
+                    val callee =
+                        project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
+                    handleConcreteCall(callee)
 
-                    if (receiverType.isArrayType) {
-                        val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                        handleConcreteCall(callee)
+                } else if (value.isPrecise) {
+                    val callee =
+                        project.instanceCall(callerType, receiverType.get, name, desc)
+                    handleConcreteCall(callee)
 
-                    } else if (value.isPrecise) {
-                        val preciseType = value.valueType.get
-                        val callee = project.instanceCall(method.classFile.thisType, preciseType, name, desc)
-                        handleConcreteCall(callee)
-
-                    } else {
-                        var callee = project.instanceCall(method.classFile.thisType, receiverType, name, desc)
-
-                        // handle abstract method
-                        if (callee.isEmpty) {
-                            project.classFile(receiverType.asObjectType) match {
-                                case Some(cf) ⇒
-                                    callee = if (cf.isInterfaceDeclaration) {
-                                        org.opalj.Result(
-                                            project.resolveInterfaceMethodReference(receiverType.asObjectType, name, desc)
-                                        )
-                                    } else {
-                                        project.resolveClassMethodReference(receiverType.asObjectType, name, desc)
-                                    }
-                                case None ⇒
-                                    return true;
-                            }
-                        }
-
-                        if (callee.isEmpty || isOverridableMethod(callee.value).isYesOrUnknown)
-                            true
-                        else {
-                            val dm = declaredMethods(callee.value)
-                            val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
-                            handleReturnValueFreshness(rvf)
-                        }
-                    }
                 } else {
-                    false
+                    val packageName = callerType.packageName
+                    val callee =
+                        declaredMethods(packageName, receiverType.get.asObjectType, name, desc)
+
+                    if (!callee.hasDefinition ||
+                        isOverridableMethod(callee.methodDefinition).isNotNo) {
+                        true // We don't know all overrides
+                    } else {
+                        val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
+                        handleReturnValueFreshness(rvf)
+                    }
                 }
+
             case Assignment(_, _, _: Const) ⇒
                 false
 
@@ -633,8 +622,10 @@ object LazyFieldLocalityAnalysis
  * @author Florian Kuebler
  */
 object DefinitionSitesWithoutPutField {
-    private val defSites =
+
+    private val defSites = {
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
+    }
 
     def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
         val defSite = DefinitionSiteWithoutPutField(method, pc, usedBy)

@@ -46,7 +46,7 @@ import org.opalj.collection.immutable.IntTrieSet
  * pool entries. This facilitates developing analyses and fosters comprehension.
  *
  * Based on the fact that indirect
- * reference to constant pool entries are resolved and replaced by direct reference this
+ * references to constant pool entries are resolved and replaced by direct references this
  * representation is called the resolved representation.
  *
  * This representation of Java bytecode is considered as OPAL's standard representation

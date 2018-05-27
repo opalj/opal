@@ -39,6 +39,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
@@ -66,7 +67,7 @@ class SimpleEscapeAnalysisContext(
     with CFGContainer
 
 /**
- * A simple escape analysis that can handle [[org.opalj.ai.DefinitionSiteLike]]s and
+ * A simple escape analysis that can handle [[org.opalj.ai.common.DefinitionSiteLike]]s and
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost]]([[org.opalj.fpcf.properties.NoEscape]]).

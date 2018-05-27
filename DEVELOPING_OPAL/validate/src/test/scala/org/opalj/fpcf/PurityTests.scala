@@ -30,10 +30,10 @@ package org.opalj
 package fpcf
 
 import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.fpcf.analyses.EagerL1PurityAnalysis
-import org.opalj.fpcf.analyses.EagerL2PurityAnalysis
-import org.opalj.fpcf.analyses.L1PurityAnalysis
-import org.opalj.fpcf.analyses.L2PurityAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
+import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
@@ -42,7 +42,7 @@ import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.SystemOutLoggingAllExceptionRater
+import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -69,7 +69,7 @@ class PurityTests extends PropertiesTest {
                 LazyTypeImmutabilityAnalysis
             )
         )
-        validateProperties(as, declaredMethodsWithAnnotations, Set("Purity"))
+        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
@@ -83,7 +83,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
-        validateProperties(as, declaredMethodsWithAnnotations, Set("Purity"))
+        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
@@ -105,7 +105,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
-        validateProperties(as, declaredMethodsWithAnnotations, Set("Purity"))
+        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
 }

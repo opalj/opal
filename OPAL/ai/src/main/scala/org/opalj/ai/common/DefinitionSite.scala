@@ -28,6 +28,7 @@
  */
 package org.opalj
 package ai
+package common
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet

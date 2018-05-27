@@ -46,6 +46,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
@@ -189,6 +190,7 @@ object EagerInterProceduralEscapeAnalysis
 object LazyInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
+
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

@@ -48,7 +48,7 @@ trait ArithmeticInstruction extends Instruction with NoLabels {
      * A string representation of the operator as
      * used by the Java programming language (if possible).
      * (In case of the comparison operators for long, float and double values the
-     * strings `cmp(g|l)?` are used.
+     * strings `cmp(g|l)?` are used.)
      */
     def operator: String
 

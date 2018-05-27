@@ -32,7 +32,7 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.ai.DefinitionSite
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.br.Method
@@ -98,9 +98,11 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project)
-            EagerInterProceduralEscapeAnalysis.start(project)
-            propertyStore.waitOnPhaseCompletion()
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(
+                LazyVirtualCallAggregatingEscapeAnalysis,
+                EagerInterProceduralEscapeAnalysis
+            )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {

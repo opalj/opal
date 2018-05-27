@@ -493,7 +493,7 @@ final class Code private (
      *
      * Note, that in case of completely broken code, set 2 may contain other
      * instructions than `return` and `athrow` instructions.
-     * If the code contains jsr/ret instructions the full blown CFG is computed.
+     * If the code contains jsr/ret instructions, the full blown CFG is computed.
      */
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
         implicit val code = this
@@ -1579,7 +1579,7 @@ final class Code private (
     /**
      * Computes the stack depth for the instruction with the given pc (`atPC`).
      * I.e, computes the stack depth before executing the instruction! This function is intended
-     * to be used iff and only if the stack depth is only required for a single instruction; it
+     * to be used if and only if the stack depth is only required for a single instruction; it
      * recomputes the stack depth for all instructions whenever the function is called.
      *
      * @note If the CFG is already available, it should be passed as the computation is

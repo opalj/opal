@@ -94,7 +94,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * Resolves a symbolic reference to a field. Basically, the search starts with
      * the given class `c` and then continues with `c`'s superinterfaces before the
      * search is continued with `c`'s superclass (as prescribed by the JVM specification
-     * for the resolution of unresolved symbolic references.)
+     * for the resolution of unresolved symbolic references).
      *
      * Resolving a symbolic reference is particularly required to, e.g., get a field's
      * annotations or to get a field's value (if it is `static`, `final` and has a
@@ -307,7 +307,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     /* GENERAL NOTES
      *
-     * (Accessibilty checks are done by the JVM when the method is resolved; this is, however, not
+     * (Accessibility checks are done by the JVM when the method is resolved; this is, however, not
      * done by the following methods as it does not affect the search for the potential target
      * methods.)
      *

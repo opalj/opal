@@ -29,7 +29,10 @@
 package org.opalj
 package hermes
 
+import java.io.File
+
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 
 /**
@@ -38,21 +41,7 @@ import com.typesafe.config.ConfigRenderOptions
  *
  * @author Michael Eichberg
  */
-object Globals {
-
-    // local state
-    private[this] var isInitialized: Boolean = false
-    private[this] var config: Config = null
-
-    // ---------------------------------------------------------------------------------------------
-    //
-    // Configuration parameters
-    //
-    // ---------------------------------------------------------------------------------------------
-
-    /** The config key of the number of locations per feature pre project that is stored. */
-    final val MaxLocationsKey: String = "org.opalj.hermes.maxLocations"
-    private[this] var maxLocations: Int = 0
+trait HermesConfig {
 
     // ---------------------------------------------------------------------------------------------
     //
@@ -60,17 +49,49 @@ object Globals {
     //
     // ---------------------------------------------------------------------------------------------
 
+    private[this] var isInitialized: Boolean = false
+
+    private[this] var config: Config = null
+
+    /**
+     * The global configuration file.
+     */
+    final lazy val Config: Config = validateInitialized { config }
+
+    /**
+     * Reads the initial, overall configuration. This method or setConfig has to be called
+     * before Hermes can be used.
+     */
+    def initialize(configFile: File): Unit = {
+        import Console.err
+        if (!configFile.exists || !configFile.canRead()) {
+            err.println(s"The config file cannot be found or read: $configFile")
+            err.println("The current folder is: "+System.getProperty("user.dir"))
+            System.exit(2)
+        }
+        try {
+            val config = ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
+            setConfig(config)
+        } catch {
+            case t: Throwable ⇒
+                err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
+                System.exit(3)
+                //... if System.exit does not terminate the app; this will at least kill the
+                // the current call.
+                throw t;
+        }
+    }
+
     /**
      * Sets the used configuration object.
      */
-    private[hermes] def setConfig(config: Config): Unit = {
-        if (isInitialized)
+    def setConfig(config: Config): Unit = {
+        if (isInitialized) {
             throw new IllegalStateException("configuration is already set");
+        }
 
         this.config = config
         isInitialized = true
-
-        maxLocations = config.getInt(MaxLocationsKey)
     }
 
     private[this] def validateInitialized[@specialized(Int, Boolean, Long, Double, Float) T](
@@ -82,24 +103,22 @@ object Globals {
             f
     }
 
-    // ---------------------------------------------------------------------------------------------
-    //
-    // ACCESSORS
-    //
-    // ---------------------------------------------------------------------------------------------
-
-    /**
-     * The global configuration file.
-     */
-    final def Config: Config = validateInitialized { config }
-
     /** Textual representation of the configuration related to OPAL/Hermes.  */
     def renderConfig: String = {
         val rendererConfig = ConfigRenderOptions.defaults().setOriginComments(false)
         config.getObject("org.opalj").render(rendererConfig)
     }
 
+    // ---------------------------------------------------------------------------------------------
+    //
+    // ACCESSORS
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    /** The config key of the number of locations per feature pre project that is stored. */
+    final val MaxLocationsKey: String = "org.opalj.hermes.maxLocations"
+
     /** The number of locations per feature pre project that is stored. */
-    final def MaxLocations: Int = validateInitialized { maxLocations }
+    final lazy val MaxLocations: Int = validateInitialized { Config.getInt(MaxLocationsKey) }
 
 }

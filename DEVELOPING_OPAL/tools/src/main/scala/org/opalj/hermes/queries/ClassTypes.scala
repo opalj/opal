@@ -37,7 +37,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-object ClassTypes extends FeatureQuery {
+class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: List[String] = {
         List(

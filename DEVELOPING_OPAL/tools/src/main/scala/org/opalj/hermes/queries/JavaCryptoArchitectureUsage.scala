@@ -43,7 +43,7 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
  *
  * @author Michael Reif
  */
-object JavaCryptoArchitectureUsage extends APIFeatureQuery {
+class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: Chain[APIFeature] = {
 

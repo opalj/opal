@@ -91,7 +91,7 @@ class SimilarityTestConfigurationTest extends FunSuite with Matchers {
         assert(simpleClass.findDissimilarity(simpleClass, CompareAllConfiguration).isEmpty)
     }
 
-    test("two identical class files are similar when only hard coded comparisons are done") {
+    test("two identical class files are similar when only hardcoded comparisons are done") {
         object NoTestsConfiguration extends SimilarityTestConfiguration {
 
             def compareFields(

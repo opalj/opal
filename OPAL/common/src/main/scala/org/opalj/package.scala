@@ -41,7 +41,8 @@ import org.opalj.log.OPALLogger
  * Its main components are:
  *  - a library (`Common`) which provides generally useful data-structures and algorithms
  *    for static analyses.
- *  - a framework for parsing Java bytecode (`Bytecode Infrastructure`) that can be used to
+ *  - a framework for implementing lattice based static analyses (`Static Analysis Infrastructure`)
+ *  - a framework for parsing Java bytecode (Bytecode Infrastructure`) that can be used to
  *    create arbitrary representations.
  *  - a library to create a one-to-one in-memory representation of Java bytecode
  *    (`Bytecode Disassembler`).
@@ -51,7 +52,7 @@ import org.opalj.log.OPALLogger
  *    Java bytecode (`Abstract Interpretation Framework` - [[org.opalj.ai]]).
  *  - a library to extract dependencies between code elements and to facilitate checking
  *    architecture definitions.
- *  - a library for the lightweight manipulation and creation of Java bytecode.
+ *  - a library for the lightweight manipulation and creation of Java bytecode (Bytecode Assembler).
  *
  * ==General Design Decisions==
  *
@@ -172,9 +173,9 @@ package object opalj {
     }
 
     /**
-     * A method that takes an arbitrary parameter and throws an UnknownError that states
+     * A method that takes an arbitrary parameter and throws an `UnknownError` that states
      * that an implementation was not required.
      */
-    final val NotRequired: (Any) ⇒ Nothing = (a: Any) ⇒ { notRequired() }
+    final val NotRequired: Any ⇒ Nothing = (a: Any) ⇒ { notRequired() }
 
 }

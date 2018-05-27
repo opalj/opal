@@ -40,7 +40,7 @@ import org.opalj.br.MethodWithBody
  *
  * @author Michael Eichberg
  */
-object DebugInformation extends FeatureQuery {
+class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override def featureIDs: IndexedSeq[String] = {
         IndexedSeq(

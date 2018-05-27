@@ -528,7 +528,7 @@ sealed abstract class ContravariantIndicator extends VarianceIndicator {
 case object ContravariantIndicator extends ContravariantIndicator
 
 /**
- * If a type argument is not further specified (e.g. List<?> l = …) then the
+ * If a type argument is not further specified (e.g., List<?> l = …), then the
  * type argument "?" is represented by this object.
  *
  *

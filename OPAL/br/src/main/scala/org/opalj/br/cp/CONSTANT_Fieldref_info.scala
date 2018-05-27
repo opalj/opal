@@ -47,7 +47,7 @@ case class CONSTANT_Fieldref_info(
 
     // We don't mind if the field is initialized more than once (if reading the classfile
     // should be parallelized) as it is just an optimization and the object reference
-    // is of now importance; an equals check will return true. Hence, w.r.t. the
+    // is of no importance; an equals check will return true. Hence, w.r.t. the
     // previous definition this code is thread-safe.
     private[this] var fieldref: (ObjectType, String, FieldType) = null // to cache the result
     override def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) = {

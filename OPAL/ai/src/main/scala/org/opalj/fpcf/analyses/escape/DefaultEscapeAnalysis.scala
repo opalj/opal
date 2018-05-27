@@ -54,6 +54,7 @@ import org.opalj.tac.VirtualMethodCall
  * @author Florian Kuebler
  */
 trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
+
     protected[this] override def handlePutField(
         putField: PutField[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {

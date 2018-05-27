@@ -30,25 +30,27 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.annotation.switch
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.instructions._
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FinalField
 import org.opalj.fpcf.properties.ImmutableContainerType
 import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.Impure
-import org.opalj.fpcf.properties.LBImpure
+import org.opalj.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.NonFinalField
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.LBPure
+import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.CompileTimePure
-
-import scala.annotation.switch
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
@@ -66,7 +68,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Determines the purity of the method starting with the instruction with the given
@@ -105,13 +107,13 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             // if it is an object – immutable!
                             val fieldType = field.fieldType
                             if (fieldType.isArrayType) {
-                                return Result(declaringClass, LBImpure);
+                                return Result(declaringClass, ImpureByAnalysis);
                             }
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
                                     case FinalEP(_, ImmutableType) ⇒
                                     case FinalEP(_, _) ⇒
-                                        return Result(definedMethod, LBImpure);
+                                        return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
                                 }
@@ -120,7 +122,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                 propertyStore(field, FieldMutability.key) match {
                                     case FinalEP(_, _: FinalField) ⇒
                                     case FinalEP(_, _) ⇒
-                                        return Result(definedMethod, LBImpure);
+                                        return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
                                 }
@@ -129,7 +131,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         case _ ⇒
                             // We know nothing about the target field (it is not
                             // found in the scope of the current project).
-                            return Result(definedMethod, LBImpure);
+                            return Result(definedMethod, ImpureByAnalysis);
                     }
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
@@ -148,14 +150,14 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                 val purity = propertyStore(declaredMethods(callee), Purity.key)
 
                                 purity match {
-                                    case FinalEP(_, CompileTimePure | LBPure) ⇒ /* Nothing to do */
+                                    case FinalEP(_, CompileTimePure | Pure) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
-                                    case ep @ IntermediateEP(_, _, LBPure) ⇒
+                                    case ep @ IntermediateEP(_, _, Pure) ⇒
                                         dependees += ep
 
                                     case EPS(_, _, _) ⇒
-                                        return Result(definedMethod, LBImpure);
+                                        return Result(definedMethod, ImpureByAnalysis);
 
                                     case epk ⇒
                                         dependees += epk
@@ -164,7 +166,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             case _ /* Empty or Failure */ ⇒
                                 // We know nothing about the target method (it is not
                                 // found in the scope of the current project).
-                                return Result(definedMethod, LBImpure);
+                                return Result(definedMethod, ImpureByAnalysis);
 
                         }
                 }
@@ -182,7 +184,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     ARRAYLENGTH.opcode |
                     MONITORENTER.opcode | MONITOREXIT.opcode |
                     INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                    return Result(definedMethod, LBImpure);
+                    return Result(definedMethod, ImpureByAnalysis);
 
                 case ARETURN.opcode |
                     IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
@@ -197,7 +199,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     if (instruction.jvmExceptions.nonEmpty) {
                         // JVM Exceptions reify the stack and, hence, make the method impure as
                         // the calling context is now an explicit part of the method's result.
-                        return Result(definedMethod, LBImpure);
+                        return Result(definedMethod, ImpureByAnalysis);
                     }
                 // else ok..
 
@@ -208,7 +210,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // IN GENERAL
         // Every method that is not identified as being impure is (conditionally)pure.
         if (dependees.isEmpty)
-            return Result(definedMethod, LBPure);
+            return Result(definedMethod, Pure);
 
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
@@ -222,38 +224,38 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                 case FinalEP(_, _: FinalField | ImmutableType) ⇒
                     if (dependees.isEmpty) {
-                        Result(definedMethod, LBPure)
+                        Result(definedMethod, Pure)
                     } else {
                         // We still have dependencies regarding field mutability/type immutability;
                         // hence, we have nothing to report.
-                        IntermediateResult(definedMethod, LBImpure, LBPure, dependees, c)
+                        IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
                 case FinalEP(_, ImmutableContainerType) ⇒
-                    Result(definedMethod, LBImpure)
+                    Result(definedMethod, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.
-                case FinalEP(_, _: TypeImmutability) ⇒ Result(definedMethod, LBImpure)
-                case FinalEP(_, _: NonFinalField)    ⇒ Result(definedMethod, LBImpure)
+                case FinalEP(_, _: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalEP(_, _: NonFinalField)    ⇒ Result(definedMethod, ImpureByAnalysis)
 
-                case FinalEP(_, CompileTimePure | LBPure) ⇒
+                case FinalEP(_, CompileTimePure | Pure) ⇒
                     if (dependees.isEmpty)
-                        Result(definedMethod, LBPure)
+                        Result(definedMethod, Pure)
                     else {
-                        IntermediateResult(definedMethod, LBImpure, LBPure, dependees, c)
+                        IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
                 case IntermediateEP(_, _, _) ⇒
                     dependees += eps
-                    IntermediateResult(definedMethod, LBImpure, LBPure, dependees, c)
+                    IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
                 case FinalEP(_, _: Purity) ⇒
                     // a called method is impure...
-                    Result(definedMethod, LBImpure)
+                    Result(definedMethod, ImpureByAnalysis)
             }
         }
 
-        IntermediateResult(definedMethod, LBImpure, LBPure, dependees, c)
+        IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
     }
 
     def determinePurityStep1(definedMethod: DefinedMethod): PropertyComputationResult = {
@@ -263,13 +265,13 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // IMPROVE Use plain object type once we use ObjectType in the store!
         var referenceTypes = method.parameterTypes.iterator.collect {
             case t: ObjectType ⇒ t
-            case _: ArrayType  ⇒ return Result(definedMethod, LBImpure);
+            case _: ArrayType  ⇒ return Result(definedMethod, ImpureByAnalysis);
         }
         val methodReturnType = method.descriptor.returnType
         if (methodReturnType.isArrayType) {
             // we currently have no logic to decide whether the array was created locally
             // and did not escape or was created elsewhere...
-            return Result(definedMethod, LBImpure);
+            return Result(definedMethod, ImpureByAnalysis);
         }
         if (methodReturnType.isObjectType) {
             referenceTypes ++= Iterator(methodReturnType.asObjectType)
@@ -280,9 +282,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
             propertyStore(e, TypeImmutability.key) match {
                 case FinalEP(_, ImmutableType) ⇒ /*everything is Ok*/
                 case FinalEP(_, _) ⇒
-                    return Result(definedMethod, LBImpure);
-                case eps @ IntermediateEP(_, _, ub) if ub ne ImmutableType ⇒
-                    return Result(definedMethod, LBImpure);
+                    return Result(definedMethod, ImpureByAnalysis);
+                case IntermediateEP(_, _, ub) if ub ne ImmutableType ⇒
+                    return Result(definedMethod, ImpureByAnalysis);
                 case epk ⇒ dependees += epk
             }
         }
@@ -299,7 +301,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalEP(_, p)                  ⇒ Result(dm, p)
             case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
-            case epk                            ⇒ IntermediateResult(dm, LBImpure, CompileTimePure, Seq(epk), c)
+            case epk                            ⇒ IntermediateResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
@@ -317,10 +319,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
             return baseMethodPurity(definedMethod);
 
         if (method.body.isEmpty)
-            return Result(definedMethod, LBImpure);
+            return Result(definedMethod, ImpureByAnalysis);
 
         if (method.isSynchronized)
-            return Result(definedMethod, LBImpure);
+            return Result(definedMethod, ImpureByAnalysis);
 
         // 1. step (will schedule 2. step if necessary):
         determinePurityStep1(definedMethod.asDefinedMethod)
@@ -330,8 +332,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def doDeterminePurity(e: Entity): PropertyComputationResult = {
         e match {
             case m: DefinedMethod         ⇒ determinePurity(m)
-            case m: VirtualDeclaredMethod ⇒ Result(m, Impure)
-            case e                        ⇒ throw new UnknownError("purity is only defined for methods")
+            case m: VirtualDeclaredMethod ⇒ Result(m, ImpureByLackOfInformation)
+            case _ ⇒
+                throw new UnknownError("purity is only defined for methods")
         }
     }
 }

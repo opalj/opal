@@ -46,8 +46,8 @@ import org.opalj.collection.immutable.UIDSet2
  * Represents a JVM type.
  *
  * Programmatically, we distinguish three major kinds of types:
- *  - base types/primitive types
- *  - reference types
+ *  - base types/primitive types,
+ *  - reference types,
  *  - the type void.
  *
  * ==General Information==
@@ -101,7 +101,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
     def isByteType: Boolean = false
 
     /**
-     * Returns `true` if this type is the primitive type `char` (Range: [0..65535].
+     * Returns `true` if this type is the primitive type `char` (Range: [0..65535]).
      */
     def isCharType: Boolean = false
 
@@ -1373,11 +1373,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     /**
      * Returns the component type of this array type after dropping the given number
      * of dimensions. E.g., if dimensions is `0`
-     * `this` is returned; if it is `1` then this array type's component type is returned.
-     * If the value is larger than `1` then the `componentType` has to be an array type
+     * `this` is returned; if it is `1`, then this array type's component type is returned.
+     * If the value is larger than `1`, then the `componentType` has to be an array type
      * and `drop(dimensions-1)` will be called on that type.
      *
-     * @param  dimensions The number of dimensions to drop. This values has be equal or
+     * @param  dimensions The number of dimensions to drop. This values has to be equal or
      *         smaller than the number of dimensions of this array.
      */
     def drop(dimensions: Int): FieldType = {

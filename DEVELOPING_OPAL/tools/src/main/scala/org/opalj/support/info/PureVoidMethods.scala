@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.analyses
+package org.opalj
+package support
+package info
 
 import java.net.URL
 
@@ -34,11 +36,24 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.LBPure
-import org.opalj.fpcf.properties.LBSideEffectFree
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
 
 /**
@@ -46,12 +61,12 @@ import org.opalj.fpcf.properties.CompileTimePure
  *
  * @author Dominik Helm
  */
-object PureVoidMethodsAnalysis extends DefaultOneStepAnalysis {
+object PureVoidMethods extends DefaultOneStepAnalysis {
 
     override def title: String = "Pure Void Methods Analysis"
 
     override def description: String = {
-        "find pure/side effect free methods with a void return type"
+        "finds useless methods because they are side effect free and do not return a value (void)"
     }
 
     override def doAnalyze(
@@ -60,17 +75,37 @@ object PureVoidMethodsAnalysis extends DefaultOneStepAnalysis {
 
         val propertyStore = project.get(PropertyStoreKey)
 
-        val entities = propertyStore.entities(Purity.key)
+        project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyVirtualMethodStaticDataUsageAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyVirtualCallAggregatingEscapeAnalysis,
+            LazyReturnValueFreshnessAnalysis,
+            LazyVirtualReturnValueFreshnessAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyVirtualMethodPurityAnalysis,
+            EagerL2PurityAnalysis
+        )
+
+        val entities = propertyStore.entities(fpcf.properties.Purity.key)
 
         val voidReturn = entities.collect {
-            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | LBPure | LBSideEffectFree)) // Do not report empty methods, they are often used for base implementations of listeners or similar
-            // Emtpy methods still have a return instruction and therefore a body size of 1
+            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
+            // Empty methods still have a return instruction and therefore a body size of 1
             if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
                 m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.size != 1 ⇒
                 (m, p)
         }
 
-        BasicReport(voidReturn.toIterable.map(mp ⇒
-            s"${mp._1.toJava} has a void return type but it is ${mp._2}"))
+        BasicReport(
+            voidReturn.toIterable map { mp ⇒
+                val (m, p) = mp
+                s"${m.toJava} has a void return type but it is $p"
+            }
+        )
     }
 }

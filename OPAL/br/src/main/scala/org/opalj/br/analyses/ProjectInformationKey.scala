@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the result will be cached for future usage before it is returned.
  *
  * ==Using Project Information==
- * If access to some project information is required it is sufficient to use
+ * If access to some project information is required, it is sufficient to use
  * the (singleton) instance of the respective `ProjectInformationKey` to get
  * the respective project information.
  *

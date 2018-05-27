@@ -31,7 +31,7 @@ package br
 
 /**
  * Represents a method signature which consists of the name and descriptor of a method;
- * the signatures of all methods of a class file has to be different.
+ * the signatures of all methods of a class file have to be different.
  *
  * @author Michael Eichberg
  */

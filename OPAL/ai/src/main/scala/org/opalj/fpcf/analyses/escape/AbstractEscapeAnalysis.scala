@@ -31,12 +31,14 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.Method
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
@@ -68,7 +70,7 @@ import org.opalj.tac.VirtualMethodCall
 import scala.annotation.switch
 
 /**
- * An abstract escape analysis for a [[org.opalj.ai.DefinitionSiteLike]] or a
+ * An abstract escape analysis for a [[org.opalj.ai.common.DefinitionSiteLike]] or a
  * [[org.opalj.br.analyses.VirtualFormalParameter]].
  * The entity and all other information required by the analyses such as the defSite, uses or the
  * code correspond to this entity are given as [[AbstractEscapeAnalysisContext]].
