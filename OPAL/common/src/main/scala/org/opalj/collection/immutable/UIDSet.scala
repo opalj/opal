@@ -66,6 +66,9 @@ sealed abstract class UIDSet[T <: UID]
     //
     // METHODS DEFINED BY UIDSet
     //
+    /** Iterator over all ids. */
+    def toIdIterator: IntIterator
+    def toIdSet: IntTrieSet
     def isSingletonSet: Boolean
     def ++(es: UIDSet[T]): UIDSet[T]
 
@@ -130,7 +133,8 @@ object UIDSet0 extends UIDSet[UID] {
     //
     // METHODS DEFINED BY UIDSet
     //
-
+    def toIdIterator: IntIterator = IntIterator.empty
+    def toIdSet: IntTrieSet = IntTrieSet.empty
     def isSingletonSet: Boolean = false
     def ++(es: UIDSet[UID]): UIDSet[UID] = es
 
@@ -169,6 +173,8 @@ case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     //
     // METHODS DEFINED BY UIDTrieSet
     //
+    def toIdIterator: IntIterator = IntIterator(value.id)
+    def toIdSet: IntTrieSet = IntTrieSet1(value.id)
     def isSingletonSet: Boolean = true
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
@@ -263,7 +269,8 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     //
     // METHODS DEFINED BY UIDSet
     //
-
+    def toIdIterator: IntIterator = IntIterator(value1.id, value2.id)
+    def toIdSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id)
     def isSingletonSet: Boolean = false
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
@@ -289,7 +296,9 @@ case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
 // ------------------------------------------------------------------------------------------------
 
 sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { self ⇒
+
     protected def value: T
+
     // the following two methods return either a UIDTrieSetNode, a UIDTrieSetLeaf or null:
     protected def left: UIDTrieSetNodeLike[T]
     protected def right: UIDTrieSetNodeLike[T]
@@ -298,9 +307,17 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
         if (p(value))
             return Some(value);
 
-        var result: Option[T] = if (left ne null) left.find(p) else None
-        if (result.isEmpty && (right ne null)) result = right.find(p)
-        result
+        if (left ne null) {
+            val result = left.find(p);
+            if (result.isDefined)
+                return result;
+        }
+        if (right ne null) {
+            val result = right.find(p)
+            if (result.isDefined)
+                return result;
+        }
+        None
     }
 
     override def exists(p: T ⇒ Boolean): Boolean = {
@@ -324,7 +341,6 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     }
 
     def iterator: Iterator[T] = {
-
         new AbstractIterator[T] {
 
             private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
@@ -473,6 +489,26 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     //
     // METHODS DEFINED BY UIDTrieSet
     //
+
+    def toIdIterator: IntIterator = {
+        new IntIterator {
+
+            private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
+
+            override def hasNext: Boolean = nextNodes.nonEmpty
+
+            override def next(): Int = {
+                val currentNode = nextNodes.pop
+                val nextRight = currentNode.right
+                val nextLeft = currentNode.left
+                if (nextRight ne null) nextNodes.push(nextRight)
+                if (nextLeft ne null) nextNodes.push(nextLeft)
+                currentNode.value.id
+            }
+        }
+    }
+
+    def toIdSet: IntTrieSet = toIdIterator.toSet
 
     def isSingletonSet: Boolean = false
 
