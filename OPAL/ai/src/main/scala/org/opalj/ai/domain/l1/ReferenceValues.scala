@@ -508,7 +508,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         // This value has the the same origin as a value found in
                         // MultipleReferenceValues.
                         val key = IdentityPair(this, that)
-                        val joinResult = joinedValues.getOrElseUpdate(key, this.join(pc, that))
+                        val joinResult = joinedValues.computeIfAbsent(key, _ ⇒ this.join(pc, that))
 
                         if (joinResult.isNoUpdate)
                             StructuralUpdate(other.rejoinValue(that, this, this))
@@ -1608,7 +1608,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // a join of thisValue with thatValue
             val joinKey = IdentityPair(thisValue, thatValue)
             val joinResult =
-                joinedValues.getOrElseUpdate(joinKey, thisValue.join(joinPC, thatValue))
+                joinedValues.computeIfAbsent(joinKey, _ ⇒ thisValue.join(joinPC, thatValue))
 
             joinResult match {
                 case NoUpdate ⇒
@@ -1677,9 +1677,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                     newValues += thisValue
                                 } else {
                                     val joinResult =
-                                        joinedValues.getOrElseUpdate(
+                                        joinedValues.computeIfAbsent(
                                             new IdentityPair(thisValue, otherValue),
-                                            thisValue.join(joinPC, otherValue)
+                                            _ ⇒ thisValue.join(joinPC, otherValue)
                                         )
 
                                     joinResult match {
