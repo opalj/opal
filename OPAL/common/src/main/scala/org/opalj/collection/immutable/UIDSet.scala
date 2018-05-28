@@ -634,19 +634,20 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
     def isSingletonSet: Boolean = false
 
     override def findById(id: Int): Option[T] = {
-        if (value.id == id)
-            return Some(value);
+        var currentNode: UIDTrieSetNodeLike[T] = this
+        var currentShiftedEId = id
+        do {
+            if (currentNode.value.id == id)
+                return Some(currentNode.value);
 
-        if (left ne null) {
-            val result = left.findById(id);
-            if (result.isDefined)
-                return result;
-        }
-        if (right ne null) {
-            val result = right.findById(id)
-            if (result.isDefined)
-                return result;
-        }
+            if ((currentShiftedEId & 1) == 1)
+                currentNode = currentNode.right
+            else
+                currentNode = currentNode.left
+
+            currentShiftedEId = currentShiftedEId >>> 1
+
+        } while (currentNode ne null)
         None
     }
 

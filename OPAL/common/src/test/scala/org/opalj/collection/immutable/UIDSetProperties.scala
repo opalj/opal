@@ -193,6 +193,13 @@ object UIDSetProperties extends Properties("UIDSet") {
         usFound.isDefined == ssFound.isDefined
     }
 
+    property("findById") = forAll { (s: Set[Int], e: Set[Int]) ⇒
+        val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq: _*)
+        classify(us.size > 0, "non-empty set") {
+            e.forall(v ⇒ us.find(_.id == v) == us.findById(v))
+        }
+    }
+
     property("iterator") = forAll { (s: Set[Int]) ⇒
         val us = toSUIDSet(s)
         us.iterator.toSet == s.map(SUID.apply)
