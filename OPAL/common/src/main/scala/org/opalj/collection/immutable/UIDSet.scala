@@ -71,6 +71,7 @@ sealed abstract class UIDSet[T <: UID]
     def toIdSet: IntTrieSet
     def isSingletonSet: Boolean
     def ++(es: UIDSet[T]): UIDSet[T]
+    def findById(id: Int): Option[T]
 
     /**
      * Adds the given element to this set by mutating it!
@@ -137,6 +138,7 @@ object UIDSet0 extends UIDSet[UID] {
     def toIdSet: IntTrieSet = IntTrieSet.empty
     def isSingletonSet: Boolean = false
     def ++(es: UIDSet[UID]): UIDSet[UID] = es
+    def findById(id: Int): Option[UID] = None
 
     override def compare(that: UIDSet[UID]): SetRelation = {
         if (that.isEmpty) EqualSets else /* this is a */ StrictSubset
@@ -176,6 +178,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     def toIdIterator: IntIterator = IntIterator(value.id)
     def toIdSet: IntTrieSet = IntTrieSet1(value.id)
     def isSingletonSet: Boolean = true
+    def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
@@ -271,6 +274,9 @@ final case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[
     def toIdIterator: IntIterator = IntIterator(value1.id, value2.id)
     def toIdSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id)
     def isSingletonSet: Boolean = false
+    override def findById(id: Int): Option[T] = {
+        if (value1.id == id) Some(value1) else if (value2.id == id) Some(value2) else None
+    }
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
@@ -375,6 +381,15 @@ final case class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonE
     def toIdIterator: IntIterator = IntIterator(value1.id, value2.id, value3.id)
     def toIdSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id, value3.id)
     def isSingletonSet: Boolean = false
+    override def findById(id: Int): Option[T] = {
+        if (value1.id == id)
+            Some(value1)
+        else if (value2.id == id)
+            Some(value2)
+        else if (value3.id == id)
+            Some(value3)
+        else None
+    }
 
     def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
@@ -618,6 +633,23 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
 
     def isSingletonSet: Boolean = false
 
+    override def findById(id: Int): Option[T] = {
+        if (value.id == id)
+            return Some(value);
+
+        if (left ne null) {
+            val result = left.findById(id);
+            if (result.isDefined)
+                return result;
+        }
+        if (right ne null) {
+            val result = right.findById(id)
+            if (result.isDefined)
+                return result;
+        }
+        None
+    }
+
     def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
@@ -844,6 +876,7 @@ final case class UIDTrieSetLeaf[T <: UID] private[immutable] (
     override def foreach[U](f: T ⇒ U): Unit = f(value)
     override def iterator: Iterator[T] = Iterator.single(value)
     override def find(p: T ⇒ Boolean): Option[T] = if (p(value)) Some(value) else None
+    override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
 
     override private[opalj] def +!(e: T): UIDSet[T] = throw new UnknownError
 
