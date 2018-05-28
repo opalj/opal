@@ -34,7 +34,9 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
+import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
@@ -45,18 +47,53 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.sbt.perf.spec.PerfSpec
 
+
+class RtJarPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = RTJar
+}
+
+class ColumbusPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = locateTestResources("classfiles/Columbus 2008_10_16 - target 1.6.jar", "bi")
+}
+
+class GroovyPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = locateTestResources("classfiles/groovy-2.2.1-indy.jar", "bi")
+}
+
+class ScalaLibPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = locateTestResources("classfiles/scala-2.12.4/scala-library-2.12.4.jar", "bi")
+}
+
+class ScalaCompilerPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = locateTestResources("classfiles/scala-2.12.4/scala-compiler-2.12.4.jar", "bi")
+}
+
+class FastUtilPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/fastutil-8.1.0.jar", "bi")
+}
+
+class JreLibPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+    override def fixutureFile: File = JRELibraryFolder
+}
+
 /**
-  * Example performance test that sleeps for 100ms and returnes a 1MB array.
+  * Memory measurements using L1ThrownExceptionsAnalysis
   *
   * @author Andreas Muttscheller
   */
-class PropertyStorePerf extends PerfSpec {
+trait L1ThrownExceptionsAnalysisPropertyStorePerf extends PerfSpec {
     implicit val logContext: LogContext = GlobalLogContext
+
+    def fixutureFile: File
 
     val baseConfig: Config = ConfigFactory.load()
     val propertyStoreImplementation = ConfigKeyPrefix+"PropertyStoreImplementation"
 
-    measure("ReactiveAsyncPropertyStore - L1ThrownExceptionsAnalysis") {
+    println(s"*** Running measurement for ${fixutureFile.getName} " +
+        s"containing ${buildProject("").allMethodsWithBody.size} methods with body ***")
+    Console.out.flush()
+
+    measure(s"ReactiveAsyncPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.par.ReactiveAsyncPropertyStore")
         val ps = project.get(PropertyStoreKey)
         ps.setupPhase(
@@ -71,7 +108,7 @@ class PropertyStorePerf extends PerfSpec {
         ps
     }
 
-    measure("PKESequentialPropertyStore - L1ThrownExceptionsAnalysis") {
+    measure(s"PKESequentialPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.seq.PKESequentialPropertyStore")
         val ps = project.get(PropertyStoreKey)
         ps.setupPhase(
@@ -86,7 +123,7 @@ class PropertyStorePerf extends PerfSpec {
         ps
     }
 
-    measure("EPKSequentialPropertyStore - L1ThrownExceptionsAnalysis") {
+    measure(s"EPKSequentialPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.seq.EPKSequentialPropertyStore")
         val ps = project.get(PropertyStoreKey)
         ps.setupPhase(
@@ -107,8 +144,7 @@ class PropertyStorePerf extends PerfSpec {
 
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
-        val fixtureFiles = new File(RTJar.getAbsolutePath)
-        val fixtureClassFiles = ClassFiles(fixtureFiles)
+        val fixtureClassFiles = ClassFiles(fixutureFile)
 
         Project(
             fixtureClassFiles,
