@@ -150,7 +150,7 @@ sealed abstract class NonEmptyUIDSet[T <: UID] extends UIDSet[T] {
     final override def headOption: Option[T] = Some(head)
 }
 
-case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
+final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
 
     override def size: Int = 1
     override def find(p: T ⇒ Boolean): Option[T] = if (p(value)) Some(value) else None
@@ -200,7 +200,7 @@ case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     }
 }
 
-case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
+final case class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
 
     override def size: Int = 2
     override def find(p: T ⇒ Boolean): Option[T] = {
@@ -508,7 +508,9 @@ sealed abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] { s
         }
     }
 
-    def toIdSet: IntTrieSet = toIdIterator.toSet
+    def toIdSet: IntTrieSet = growIdSet(IntTrieSet.empty)
+
+    protected[immutable] def growIdSet(set: IntTrieSet): IntTrieSet
 
     def isSingletonSet: Boolean = false
 
@@ -742,6 +744,8 @@ case class UIDTrieSetLeaf[T <: UID] private[immutable] (
             new UIDTrieSetInnerNode(2, value, new UIDTrieSetLeaf(e), null)
     }
 
+    protected[immutable] def growIdSet(set: IntTrieSet): IntTrieSet = set + value.id
+
 }
 
 // we wan't to be able to adapt the case class...
@@ -817,6 +821,18 @@ case class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         this
     }
 
+    protected[immutable] def growIdSet(set: IntTrieSet): IntTrieSet = {
+        var newSet = set + value.id
+        val nextLeft = this.left
+        if (nextLeft ne null) {
+            newSet = nextLeft.growIdSet(newSet)
+        }
+        val nextRight = this.right
+        if (nextRight ne null) {
+            newSet = nextRight.growIdSet(newSet)
+        }
+        newSet
+    }
 }
 
 object UIDSet {
