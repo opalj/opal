@@ -67,6 +67,7 @@ class PropertyStorePerf extends PerfSpec {
         EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
 
         ps.waitOnPhaseCompletion()
+        Runtime.getRuntime.gc()
         ps
     }
 
@@ -81,6 +82,22 @@ class PropertyStorePerf extends PerfSpec {
         EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
 
         ps.waitOnPhaseCompletion()
+        Runtime.getRuntime.gc()
+        ps
+    }
+
+    measure("EPKSequentialPropertyStore - L1ThrownExceptionsAnalysis") {
+        val project = buildProject("org.opalj.fpcf.seq.EPKSequentialPropertyStore")
+        val ps = project.get(PropertyStoreKey)
+        ps.setupPhase(
+            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
+        )
+
+        EagerL1ThrownExceptionsAnalysis.start(project, ps)
+        EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
+
+        ps.waitOnPhaseCompletion()
+        Runtime.getRuntime.gc()
         ps
     }
 

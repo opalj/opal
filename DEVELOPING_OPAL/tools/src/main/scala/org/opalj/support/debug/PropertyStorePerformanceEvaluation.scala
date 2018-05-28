@@ -50,6 +50,8 @@ import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses._
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.par.ReactiveAsyncPropertyStore
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.EscapeProperty
@@ -517,6 +519,7 @@ object PropertyStorePerformanceEvaluation {
                             //InterProceduralEscapeAnalysis.start(project, propertyStore)
                             //VirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
                             case "L1ThrownExceptionsAnalysis" ⇒
+                                // TODO randomize allMethods
                                 LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
                                 EagerL1ThrownExceptionsAnalysis.start(project, propertyStore)
                         }

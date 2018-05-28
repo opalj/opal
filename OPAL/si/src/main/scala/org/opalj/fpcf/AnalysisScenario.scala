@@ -141,13 +141,13 @@ class AnalysisScenario {
             var leafComputations = computationDependencies.leafNodes
             while (leafComputations.nonEmpty) {
                 // assign each computation to its own "batch"
-                batches = batches ++! leafComputations.map(Chain.singleton(_)).to[Chain]
+                batches = batches ++! leafComputations.toSeq.sortBy(!_.isLazy).map(Chain.singleton(_)).to[Chain]
                 computationDependencies --= leafComputations
                 leafComputations = computationDependencies.leafNodes
             }
             var cyclicComputations = closedSCCs(computationDependencies)
             while (cyclicComputations.nonEmpty) {
-                val cyclicComputation = cyclicComputations.head
+                val cyclicComputation = cyclicComputations.head.toSeq.sortBy(!_.isLazy)
                 cyclicComputations = cyclicComputations.tail
                 // assign cyclic computations to one batch
                 batches = batches ++! (new :&:(cyclicComputation.to[Chain]))
