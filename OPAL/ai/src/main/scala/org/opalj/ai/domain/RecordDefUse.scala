@@ -449,22 +449,26 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         // and was explicitly thrown by an athrow instruction or which resulted from
         // a called method or which was created by the JVM).
         // (Whether we had a join or not is irrelevant.)
-
-        val newDefOps = if (currentInstruction.isAthrow) {
-            // The thrown value may be null... in that case the thrown exception is
-            // the VM generated NullPointerException.
-            val thrownValue = operandsArray(currentPC).head
-            val exceptionIsNull = refIsNull(currentPC, thrownValue)
-            var newDefOps = NoValueOrigins
-            if (exceptionIsNull.isYesOrUnknown) newDefOps += ValueOriginForVMLevelValue(currentPC)
-            if (exceptionIsNull.isNoOrUnknown) newDefOps ++= defOps(currentPC).head
-            newDefOps
-        } else {
-            // The instruction implicitly threw the exception... (it was not athrow...)
-            ValueOrigins(ValueOriginForVMLevelValue(currentPC))
-        }
-
-        new :&:(originsOf(operandsArray(successorPC).head, newDefOps))
+        val origins =
+            originsOf(operandsArray(successorPC).head) match {
+                case None ⇒
+                    if (currentInstruction.isAthrow) {
+                        // The thrown value may be null... in that case the thrown exception is
+                        // the VM generated NullPointerException.
+                        val thrownValue = operandsArray(currentPC).head
+                        val exceptionIsNull = refIsNull(currentPC, thrownValue)
+                        var newDefOps = NoValueOrigins
+                        if (exceptionIsNull.isYesOrUnknown) newDefOps += ValueOriginForVMLevelValue(currentPC)
+                        if (exceptionIsNull.isNoOrUnknown) newDefOps ++= defOps(currentPC).head
+                        newDefOps
+                    } else {
+                        // The instruction implicitly threw the exception... (it was not athrow...)
+                        ValueOrigins(ValueOriginForVMLevelValue(currentPC))
+                    }
+                case Some(origins) ⇒
+                    origins
+            }
+        new :&:(origins)
     }
 
     /*

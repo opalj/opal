@@ -124,11 +124,12 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
 
     override protected[domain] def MultipleReferenceValues(
         values:            UIDSet[DomainSingleOriginReferenceValue],
+        origins:           ValueOrigins,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: UIDSet[_ <: ReferenceType],
         refId:             RefId
     ): DomainMultipleReferenceValues = {
-        new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, refId)
+        new MultipleReferenceValues(values, origins, isNull, isPrecise, theUpperTypeBound, refId)
     }
 }
