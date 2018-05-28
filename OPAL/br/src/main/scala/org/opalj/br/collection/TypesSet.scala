@@ -55,7 +55,7 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
 
     /**
      * The number of types explicitly stored in the set. This number is '''independent'''
-     * of the number of represented types. E.g., if `java.lang.Object` is stored in this set, 
+     * of the number of represented types. E.g., if `java.lang.Object` is stored in this set,
      * then the size of this set is 1 even though it represents all known types.
      */
     def size: Int = concreteTypes.size + upperTypeBounds.size
