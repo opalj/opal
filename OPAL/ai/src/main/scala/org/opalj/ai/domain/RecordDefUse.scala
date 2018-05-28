@@ -433,15 +433,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      *
      * @param domainValue The domain value for which the origin information is required.
      *                    If no information is available, `defaultOrigins` should be returned.
-     * @param defaultOrigins The default origin information.
      * @return The origin information for the given `domainValue`.
      */
-    protected[this] def originsOf(
-        domainValue:    DomainValue,
-        defaultOrigins: ValueOrigins
-    ): ValueOrigins = {
-        defaultOrigins
-    }
+    protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = None
 
     protected[this] def newDefOpsForExceptionalControlFlow(
         currentPC:          Int,
@@ -502,8 +496,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 newDefOpsForExceptionalControlFlow(currentPC, currentInstruction, successorPC)
             } else {
                 if (pushesValue)
-                    originsOf(operandsArray(successorPC).head, ValueOrigins(currentPC)) :&:
-                        currentDefOps.drop(usedValues)
+                    (originsOf(operandsArray(successorPC).head) match {
+                        case Some(origins) ⇒ origins
+                        case None          ⇒ ValueOrigins(currentPC)
+                    }) :&: currentDefOps.drop(usedValues)
                 else
                     currentDefOps.drop(usedValues)
             }
@@ -523,8 +519,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     ): Boolean = {
         val currentDefLocals = defLocals(currentPC)
         updateUsageInformation(currentDefLocals(index), currentPC)
-        val newOrigin = originsOf(localsArray(successorPC)(index), ValueOrigins(currentPC))
-        val newDefLocals = currentDefLocals.updated(index, newOrigin)
+        val newOrigins = originsOf(localsArray(successorPC)(index)) match {
+            case None          ⇒ ValueOrigins(currentPC)
+            case Some(origins) ⇒ origins
+        }
+        val newDefLocals = currentDefLocals.updated(index, newOrigins)
         propagate(currentPC, successorPC, defOps(currentPC), newDefLocals)
     }
 
