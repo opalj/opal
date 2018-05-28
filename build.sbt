@@ -304,6 +304,7 @@ lazy val `OPAL-Validate` = (project in file("DEVELOPING_OPAL/validate"))
     publishArtifact := false,
     name := "OPAL-Validate",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
+      libraryDependencies ++= Dependencies.validate,
     compileOrder in Test := CompileOrder.Mixed
   )
   .dependsOn(DeveloperTools % "compile->compile;test->test;it->it;it->test")

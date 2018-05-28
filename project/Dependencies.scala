@@ -55,6 +55,7 @@ object Dependencies {
         val fastutil = "8.1.1"
 
         val reactiveasync = "0.2.0-SNAPSHOT"
+        val sbtPerfSpec = "0.2.0-SNAPSHOT"
     }
 
     object library {
@@ -86,6 +87,7 @@ object Dependencies {
 
         // --- other framework dependencies
         val reactiveasync = "com.phaller" % "reactive-async_2.12" % version.reactiveasync
+        val sbtPerfSpec = "de.opal-project" % "perf-api_2.12" % version.sbtPerfSpec
     }
 
     import library._
@@ -97,5 +99,5 @@ object Dependencies {
     val bi = Seq(commonstext)
     val br = Seq(scalaparsercombinators, scalaxml)
     val developertools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
-
+    val validate = Seq(sbtPerfSpec)
 }

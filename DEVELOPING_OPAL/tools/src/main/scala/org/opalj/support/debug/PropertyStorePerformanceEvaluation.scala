@@ -425,7 +425,7 @@ object PropertyStorePerformanceEvaluation {
         val parallelismRuns: List[Int] = if (threads != 0) {
             List(threads)
         } else {
-            (minThreads to (NumberOfThreadsForCPUBoundTasks + 2)).toList
+            (minThreads to (NumberOfThreadsForCPUBoundTasks * 2 + 1)).toList
         }
 
         val baseConfig: Config = ConfigFactory.load()
@@ -462,7 +462,7 @@ object PropertyStorePerformanceEvaluation {
 
                         // Pre analysis computations
                         analysis match {
-                            case "InterProceduralEscapeAnalysis" ⇒
+                            case "L2PurityAnalysisEagerTAC" ⇒
                                 val tac = project.get(DefaultTACAIKey)
                                 project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
                             case _ ⇒
@@ -505,7 +505,7 @@ object PropertyStorePerformanceEvaluation {
                                 LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
                                 LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
                                 EagerL1PurityAnalysis.start(project, propertyStore)
-                            case "L2PurityAnalysis" ⇒
+                            case "L2PurityAnalysis" | "L2PurityAnalysisEagerTAC" ⇒
                                 LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
                                 LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
                                 LazyReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
@@ -514,10 +514,6 @@ object PropertyStorePerformanceEvaluation {
                                 LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
                                 LazyFieldLocalityAnalysis.startLazily(project, propertyStore)
                                 EagerL2PurityAnalysis.start(project, propertyStore)
-                            case "InterProceduralEscapeAnalysis" ⇒
-
-                            //InterProceduralEscapeAnalysis.start(project, propertyStore)
-                            //VirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
                             case "L1ThrownExceptionsAnalysis" ⇒
                                 // TODO randomize allMethods
                                 LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
