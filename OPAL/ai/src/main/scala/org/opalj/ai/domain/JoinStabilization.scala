@@ -154,7 +154,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
             joinedValue
         } else {
             val newJoinedValue = super.joinValues(pc, left, right)
-            joinedValues.put(key, joinedValue)
+            joinedValues.put(key, newJoinedValue)
             newJoinedValue
         }
     }
