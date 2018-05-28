@@ -364,4 +364,17 @@ object UIDSetProperties extends Properties("UIDSet") {
         val us = EmptyUIDSet ++ s
         (s.size == 1) == us.isSingletonSet
     }
+
+    property("add, remove, filter") = forAll { (a: Set[Int], b: Set[Int]) ⇒
+        val aus = UIDSet.empty[SUID] ++ a.map(SUID.apply)
+        val toBeRemoved = b.size / 2
+        val newAUS = ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i ⇒ b.contains(i.id))
+        val newA = (a ++ b -- b.slice(0, toBeRemoved)).filter(b.contains)
+        classify(newA.size == 0, "new A is now empty") {
+            classify(newA.size < a.size, "new A is smaller than a") {
+                newAUS.size == newA.size &&
+                    newAUS.iterator.map(_.id).toSet == newA
+            }
+        }
+    }
 }
