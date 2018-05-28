@@ -833,9 +833,17 @@ final case class UIDTrieSetLeaf[T <: UID] private[immutable] (
     override def size: Int = 1
     override def left: UIDTrieSetNodeLike[T] = null
     override def right: UIDTrieSetNodeLike[T] = null
+    override def head: T = value
+    override def tail: UIDSet[T] = empty
     override def last: T = value
     override def filter(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) this else null
     override def contains(e: T): Boolean = e.id == value.id
+    override def foldLeft[B](z: B)(op: (B, T) ⇒ B): B = op(z, value)
+    override def exists(p: T ⇒ Boolean): Boolean = p(value)
+    override def forall(p: T ⇒ Boolean): Boolean = p(value)
+    override def foreach[U](f: T ⇒ U): Unit = f(value)
+    override def iterator: Iterator[T] = Iterator.single(value)
+    override def find(p: T ⇒ Boolean): Option[T] = if (p(value)) Some(value) else None
 
     override private[opalj] def +!(e: T): UIDSet[T] = throw new UnknownError
 
