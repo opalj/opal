@@ -515,7 +515,6 @@ object PropertyStorePerformanceEvaluation {
                                 LazyFieldLocalityAnalysis.startLazily(project, propertyStore)
                                 EagerL2PurityAnalysis.start(project, propertyStore)
                             case "L1ThrownExceptionsAnalysis" ⇒
-                                // TODO randomize allMethods
                                 LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
                                 EagerL1ThrownExceptionsAnalysis.start(project, propertyStore)
                         }
