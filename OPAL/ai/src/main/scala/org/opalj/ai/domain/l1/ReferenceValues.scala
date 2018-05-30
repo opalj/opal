@@ -1094,7 +1094,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def this(values: UIDSet[DomainSingleOriginReferenceValue]) {
             this(
                 values,
-                values.toIdSet,
+                values.idSet,
                 domain.isNull(values),
                 domain.isPrecise(values),
                 domain.upperTypeBound(values),
@@ -1231,8 +1231,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def originsIterator: IntIterator = values.idIterator
-
-        override def origins: ValueOrigins = values.idSet
 
         override def baseValues: Traversable[DomainReferenceValue] = values
 
