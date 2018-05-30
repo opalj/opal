@@ -261,9 +261,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 if (oldUsedExternalExceptions eq null) {
                     usedExternalExceptions(usedIndex) = ValueOrigins(useSite)
                 } else {
-                    val newUsedExternalExceptions = oldUsedExternalExceptions + useSite
-                    if (newUsedExternalExceptions ne oldUsedExternalExceptions)
-                        usedExternalExceptions(usedIndex) = newUsedExternalExceptions
+                    usedExternalExceptions(usedIndex) = oldUsedExternalExceptions +! useSite
                 }
             } else {
                 val usedIndex = usedValue + parametersOffset
@@ -271,10 +269,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 if (oldUsedInfo eq null) {
                     used(usedIndex) = ValueOrigins(useSite)
                 } else {
-                    val newUsedInfo = oldUsedInfo + useSite
-                    if (newUsedInfo ne oldUsedInfo) {
-                        used(usedIndex) = newUsedInfo
-                    }
+                    used(usedIndex) = oldUsedInfo +! useSite
                 }
             }
         }
@@ -427,7 +422,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
 
             forceScheduling
         } else {
-            newDefOps foreach { vo ⇒ require(vo != null, s"$newDefOps contains null") }
+            assert(newDefOps forall { vo ⇒ vo != null }, "null value origin found")
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
