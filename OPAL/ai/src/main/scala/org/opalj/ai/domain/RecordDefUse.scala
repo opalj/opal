@@ -251,9 +251,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 if (oldUsedInfo eq null) {
                     used(usedIndex) = ValueOrigins(useSite)
                 } else {
-                    val newUsedInfo = oldUsedInfo + useSite
-                    if (newUsedInfo ne oldUsedInfo)
-                        used(usedIndex) = newUsedInfo
+                    used(usedIndex) = oldUsedInfo +! useSite
                 }
             } else {
                 // we have a usage of an implicit exception
@@ -262,9 +260,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 if (oldUsedExceptionsInfo eq null) {
                     usedExceptions(usedIndex) = ValueOrigins(useSite)
                 } else {
-                    val newUsedExceptionsInfo = oldUsedExceptionsInfo + useSite
-                    if (newUsedExceptionsInfo ne oldUsedExceptionsInfo)
-                        usedExceptions(usedIndex) = newUsedExceptionsInfo
+                    usedExceptions(usedIndex) = oldUsedExceptionsInfo +! useSite
                 }
             }
         }
