@@ -31,7 +31,6 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
@@ -40,6 +39,8 @@ import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -50,7 +51,6 @@ import org.scalacheck.Arbitrary
 @RunWith(classOf[JUnitRunner])
 object UIDSetProperties extends Properties("UIDSet") {
 
-    case class SUID(id: Int) extends UID
     type SUIDSet = UIDSet[SUID]
     val EmptyUIDSet: SUIDSet = UIDSet.empty[SUID]
 
@@ -205,14 +205,14 @@ object UIDSetProperties extends Properties("UIDSet") {
         us.iterator.toSet == s.map(SUID.apply)
     }
 
-    property("toIdIterator") = forAll { (s: Set[Int]) ⇒
+    property("idIterator") = forAll { (s: Set[Int]) ⇒
         val us = toSUIDSet(s)
-        us.toIdIterator.toSet.iterator.toSet == s
+        us.idIterator.toSet.iterator.toSet == s
     }
 
-    property("toIdSet") = forAll { (s: Set[Int]) ⇒
+    property("idSet") = forAll { (s: Set[Int]) ⇒
         val us = toSUIDSet(s)
-        us.toIdSet.iterator.toSet == s
+        us.idSet.iterator.toSet == s
     }
 
     property("last") = forAll { (s: Set[Int]) ⇒
@@ -385,3 +385,77 @@ object UIDSetProperties extends Properties("UIDSet") {
         }
     }
 }
+
+@RunWith(classOf[JUnitRunner])
+class UIDSetTest extends FunSpec with Matchers {
+
+    describe("the equals operation for sets of one value") {
+        it("should return true for two sets containing the same value") {
+            assert(new UIDSet1(SUID(1)) == UIDSet1(SUID(1)))
+
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))
+            )
+        }
+    }
+
+    describe("the equals operation for sets of two values") {
+
+        it("should return true for two new sets containing the same values") {
+            assert(new UIDSet2(SUID(1), SUID(2)) == new UIDSet2(SUID(2), SUID(1)))
+
+            assert(
+                new UIDSet3(SUID(1), SUID(2), SUID(3)).filter(_.id != 2)
+                    == new UIDSet2(SUID(3), SUID(1))
+            )
+            assert(
+                (UIDSet.empty[SUID] + SUID(1) + SUID(2) + SUID(3) + SUID(4)).filter(_.id != 2) - SUID(1)
+                    == new UIDSet2(SUID(3), SUID(4))
+            )
+
+            assert(
+
+                new UIDSet2(SUID(3), SUID(1)) ==
+                    new UIDSet3(SUID(1), SUID(2), SUID(3)).filter(_.id != 2)
+            )
+            assert(
+                new UIDSet2(SUID(3), SUID(4)) ==
+                    (UIDSet.empty[SUID] + SUID(1) + SUID(2) + SUID(3) + SUID(4)).filter(_.id != 2) - SUID(1)
+            )
+        }
+    }
+
+    describe("the equals operation for sets of three values") {
+
+        it("should return true for two new sets containing the same values") {
+            assert(new UIDSet2(SUID(3), SUID(2)) + SUID(1) == new UIDSet3(SUID(2), SUID(1), SUID(3)))
+            assert(new UIDSet2(SUID(1), SUID(2)) + SUID(3) == new UIDSet3(SUID(2), SUID(1), SUID(3)))
+
+            assert(
+                new UIDSet3(SUID(1), SUID(2), SUID(3)) ==
+                    (UIDSet.empty[SUID] + SUID(1) + SUID(2) + SUID(3) + SUID(4)).filter(_.id != 4)
+            )
+        }
+    }
+
+    describe("the equals operation for sets of four values") {
+
+        it("should return true for two new sets containing the same values") {
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDTrieSetInnerNode[SUID](1, SUID(4), null, null) + SUID(3) + SUID(2) + SUID(1)
+            )
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDTrieSetInnerNode[SUID](1, SUID(2), null, null) + SUID(4) + SUID(1) + SUID(3)
+            )
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDSet3[SUID](SUID(1), SUID(4), SUID(2)) + SUID(3)
+            )
+        }
+    }
+
+}
+
+case class SUID(val id: Int) extends UID
