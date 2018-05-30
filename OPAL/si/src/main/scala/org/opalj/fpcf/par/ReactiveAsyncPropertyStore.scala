@@ -340,8 +340,8 @@ class ReactiveAsyncPropertyStore private (
                     .toIterator
                     .filter {
                         case (e, cc) ⇒
-                            val eps = cc.cell.getResult.toEPS(e).get
-                            propertyFilter(eps)
+                            val res = cc.cell.getResult
+                            res != null && propertyFilter(res.toEPS(e).get)
                     }
                     .map(_._1)
             }
