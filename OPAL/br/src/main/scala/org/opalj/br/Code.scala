@@ -458,7 +458,7 @@ final class Code private (
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
                 if (isReached(pc))
-                    cfJoins += pc
+                    cfJoins +!= pc
                 else
                     isReached(pc) = true
             }
@@ -510,7 +510,7 @@ final class Code private (
         isReached(0) = true // the first instruction is always reached!
         @inline def runtimeSuccessor(successorPC: Int): Unit = {
             if (isReached(successorPC))
-                cfJoins += successorPC
+                cfJoins +!= successorPC
             else
                 isReached(successorPC) = true
         }
@@ -536,7 +536,7 @@ final class Code private (
                         if (predecessorPCs eq null) {
                             allPredecessorPCs(nextPC) = IntTrieSet1(pc)
                         } else {
-                            allPredecessorPCs(nextPC) = predecessorPCs + pc
+                            allPredecessorPCs(nextPC) = predecessorPCs +! pc
                         }
                     } else {
                         // This handles cases where we have totally broken code; e.g.,
@@ -544,7 +544,7 @@ final class Code private (
                         // very last instruction is not even a ret/jsr/goto/return/atrow
                         // instruction (e.g., a NOP instruction as in case of jPython
                         // related classes.)
-                        exitPCs += pc
+                        exitPCs +!= pc
                     }
                 }
             }
@@ -699,8 +699,8 @@ final class Code private (
                 case RET.opcode ⇒
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.
-                    cfForks += pc
-                    cfForkTargets += ((pc, cfg.successors(pc)))
+                    cfForks +!= pc
+                    cfForkTargets +!= ((pc, cfg.successors(pc)))
 
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
@@ -711,8 +711,8 @@ final class Code private (
                     val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
-                        cfForks += pc
-                        cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ + _)))
+                        cfForks +!= pc
+                        cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ +! _)))
                     }
             }
 

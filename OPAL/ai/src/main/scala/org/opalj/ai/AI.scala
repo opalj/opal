@@ -1075,7 +1075,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     while (worklist.head >= SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND) {
                         // In case that a subroutine always throws a (non-caught) exception,
                         // we will not have encountered a single ret instruction.
-                        retPCs += worklist.head
+                        retPCs +!= worklist.head
                         worklist = worklist.tail
                     }
                     // We don't know the local variable in case that the subroutine
