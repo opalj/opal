@@ -1139,8 +1139,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
-        final override def originsIterator: IntIterator = values.toIdIterator
-
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
             assert(!values.exists(_.origin == newValue.origin))
@@ -1231,6 +1229,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     newRefId
                 )
         }
+
+        override def originsIterator: IntIterator = values.idIterator
+
+        override def origins: ValueOrigins = values.idSet
 
         override def baseValues: Traversable[DomainReferenceValue] = values
 
