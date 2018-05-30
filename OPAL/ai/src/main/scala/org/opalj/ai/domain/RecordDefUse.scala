@@ -468,12 +468,15 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                             // the VM generated NullPointerException.
                             val thrownValue = operandsArray(currentPC).head
                             val exceptionIsNull = refIsNull(currentPC, thrownValue)
-                            var newDefOps = NoValueOrigins
-                            if (throwNullPointerExceptionOnThrow
-                                && exceptionIsNull.isYesOrUnknown)
+                            var newDefOps =
+                                if (exceptionIsNull.isNoOrUnknown) {
+                                    defOps(currentPC).head
+                                } else {
+                                    NoValueOrigins
+                                }
+                            if (throwNullPointerExceptionOnThrow &&
+                                exceptionIsNull.isYesOrUnknown)
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
-                            if (exceptionIsNull.isNoOrUnknown)
-                                newDefOps ++= defOps(currentPC).head
                             newDefOps
 
                         case INVOKEINTERFACE.opcode |

@@ -213,41 +213,28 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         val identicalOrigins = new AtomicLong(0)
         val failures = new ConcurrentLinkedQueue[(String, Throwable)]
-        var concurrentExceptions: Array[Throwable] = null
-        try {
+
+        time {
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val m = methodInfo.method
                 try {
-                    time {
-                        analyzeDefUse(
-                            m, BaseAI(m, new RefinedDefUseDomain(m, project)),
-                            identicalOrigins, refinedDefUseInformation = true
-                        )
-                    } { t ⇒
-                        val secs = t.toSeconds
-                        if (secs.timeSpan > 1d) {
-                            info(m.toJava("evaluation using RefinedDefUseDomain took: "+secs))
-                        }
-                    }
-
-                    time {
-                        analyzeDefUse(
-                            m, BaseAI(m, new DefUseDomain(m, project)),
-                            identicalOrigins, refinedDefUseInformation = false
-                        )
-                    } { t ⇒
-                        val secs = t.toSeconds
-                        if (secs.timeSpan > 1d) {
-                            info(m.toJava("evaluation using DefUseDomain took: "+secs))
-                        }
-                    }
+                    analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
                 } catch {
                     case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
                 }
             }
-        } catch {
-            case cex: ConcurrentExceptions ⇒ concurrentExceptions = cex.getSuppressed
-        }
+        } { t ⇒ info(s"using the record def use origin information took ${t.toSeconds}") }
+
+        time {
+            project.parForeachMethodWithBody() { methodInfo ⇒
+                val m = methodInfo.method
+                try {
+                    analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
+                } catch {
+                    case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
+                }
+            }
+        } { t ⇒ info(s"using the reference domain's origin information took ${t.toSeconds}") }
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
         if (failures.size > 0) {

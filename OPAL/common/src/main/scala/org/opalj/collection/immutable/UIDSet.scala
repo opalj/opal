@@ -84,6 +84,7 @@ sealed abstract class UIDSet[T <: UID]
     def isSingletonSet: Boolean
 
     def ++(es: UIDSet[T]): UIDSet[T]
+    def findById(id: Int): Option[T]
 
     /**
      * Adds the given element to this set by mutating it!
@@ -144,6 +145,7 @@ object UIDSet0 extends UIDSet[UID] {
     //
     // METHODS DEFINED BY UIDSet
     //
+    override def findById(id: Int): Option[UID] = None
     override def idIterator: IntIterator = IntIterator.empty
     override def idSet: IntTrieSet = IntTrieSet.empty
     override def containsId(id: Int): Boolean = false
@@ -193,6 +195,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     // METHODS DEFINED BY UIDTrieSet
     //
 
+    override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
     override def idIterator: IntIterator = IntIterator(value.id)
     override def idSet: IntTrieSet = IntTrieSet1(value.id)
     override def isSingletonSet: Boolean = true
@@ -307,6 +310,11 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     //
     // METHODS DEFINED BY UIDSet
     //
+
+    override def findById(id: Int): Option[T] = {
+        if (value1.id == id) Some(value1) else if (value2.id == id) Some(value2) else None
+    }
+
     override def idIterator: IntIterator = IntIterator(value1.id, value2.id)
     override def idSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id)
     override def isSingletonSet: Boolean = false
@@ -426,6 +434,16 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     //
     // METHODS DEFINED BY UIDSet
     //
+
+    override def findById(id: Int): Option[T] = {
+        if (value1.id == id)
+            Some(value1)
+        else if (value2.id == id)
+            Some(value2)
+        else if (value3.id == id)
+            Some(value3)
+        else None
+    }
 
     override def idIterator: IntIterator = IntIterator(value1.id, value2.id, value3.id)
     override def idSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id, value3.id)
@@ -673,6 +691,24 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
 
     override def isSingletonSet: Boolean = false
 
+    override def findById(id: Int): Option[T] = {
+        var currentNode: UIDTrieSetNodeLike[T] = this
+        var currentShiftedEId = id
+        do {
+            if (currentNode.value.id == id)
+                return Some(currentNode.value);
+
+            if ((currentShiftedEId & 1) == 1)
+                currentNode = currentNode.right
+            else
+                currentNode = currentNode.left
+
+            currentShiftedEId = currentShiftedEId >>> 1
+
+        } while (currentNode ne null)
+        None
+    }
+
     override def ++(es: UIDSet[T]): UIDSet[T] = {
         if (es eq this)
             return this;
@@ -890,8 +926,17 @@ final class UIDTrieSetLeaf[T <: UID] private[immutable] (
     override def size: Int = 1
     override def left: UIDTrieSetNodeLike[T] = null
     override def right: UIDTrieSetNodeLike[T] = null
+    override def head: T = value
+    override def tail: UIDSet[T] = empty
     override def last: T = value
     override def filter(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) this else null
+    override def foldLeft[B](z: B)(op: (B, T) ⇒ B): B = op(z, value)
+    override def exists(p: T ⇒ Boolean): Boolean = p(value)
+    override def forall(p: T ⇒ Boolean): Boolean = p(value)
+    override def foreach[U](f: T ⇒ U): Unit = f(value)
+    override def iterator: Iterator[T] = Iterator.single(value)
+    override def find(p: T ⇒ Boolean): Option[T] = if (p(value)) Some(value) else None
+    override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
 
     override def hashCode: Int = value.id.hashCode()
 
