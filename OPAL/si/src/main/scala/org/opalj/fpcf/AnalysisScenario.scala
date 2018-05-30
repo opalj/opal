@@ -39,6 +39,8 @@ import org.opalj.collection.immutable.:&:
 
 class AnalysisScenario {
 
+    // FIXME Schedule all lazy computations in the very first schedule !
+
     private[this] var ccs: Set[ComputationSpecification] = Set.empty
 
     private[this] var lazilyComputedProperties: Set[PropertyKind] = Set.empty
