@@ -84,5 +84,4 @@ class DefaultDomainWithCFGAndDefUse[Source](
         project: Project[Source],
         method:  Method
 ) extends DefaultDomainWithCFG[Source](project, method)
-    with RecordDefUse
-// Using with RefineDefUseUsingOrigins hampers the performance by roughly 7%
+    with RefineDefUseUsingOrigins
