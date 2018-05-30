@@ -86,10 +86,10 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with RefineDefUseUsingOrigins // this should not really affect the results...
 
     protected[this] def analyzeDefUse(
-        m:                Method,
-        r:                AIResult { val domain: DefUseDomain },
-        identicalOrigins: AtomicLong,
-        refinedDefUseInformation : Boolean
+        m:                        Method,
+        r:                        AIResult { val domain: DefUseDomain },
+        identicalOrigins:         AtomicLong,
+        refinedDefUseInformation: Boolean
     ): Unit = {
         val d: r.domain.type = r.domain
         val dt = DominatorsPerformanceEvaluation.time('Dominators) { d.dominatorTree }
@@ -104,7 +104,6 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         val instructions = code.instructions
         val ehs = code.exceptionHandlers
-
 
         for {
             (ops, pc) ← r.operandsArray.iterator.zipWithIndex
@@ -146,8 +145,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 val hasDefSite =
                     (0 until poppedOperands).exists { poIndex ⇒
                         val defSites = d.operandOrigin(useSite, poIndex)
-                            defSites.contains(ai.ValueOriginForMethodExternalException(pc))                        ||
-                                defSites.contains(ai.ValueOriginForImmediateVMException(pc))
+                        defSites.contains(ai.ValueOriginForMethodExternalException(pc)) ||
+                            defSites.contains(ai.ValueOriginForImmediateVMException(pc))
                     } || {
                         useInstruction.readsLocal &&
                             d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
@@ -180,7 +179,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                             s"{pc=$pc:$instruction[isHandler=$isHandler][operand=$opIndex] "+
                                 s"deviating def/use info: "+
                                 s"domain=$domainOrigins vs defUse=$defUseOrigins}"
-                        fail((if(refinedDefUseInformation)"[using domain.origin]" else "")+message)
+                        fail((if (refinedDefUseInformation) "[using domain.origin]" else "") + message)
                     }
                 }
                 identicalOrigins.incrementAndGet
@@ -214,7 +213,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         val identicalOrigins = new AtomicLong(0)
         val failures = new ConcurrentLinkedQueue[(String, Throwable)]
-    var concurrentExceptions : Array[Throwable] = null
+        var concurrentExceptions: Array[Throwable] = null
         try {
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val m = methodInfo.method
@@ -227,7 +226,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     } { t ⇒
                         val secs = t.toSeconds
                         if (secs.timeSpan > 1d) {
-                            info(m.toJava("evaluation using RefinedDefUseDomain took: " + secs))
+                            info(m.toJava("evaluation using RefinedDefUseDomain took: "+secs))
                         }
                     }
 
@@ -239,7 +238,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     } { t ⇒
                         val secs = t.toSeconds
                         if (secs.timeSpan > 1d) {
-                            info(m.toJava("evaluation using DefUseDomain took: " + secs))
+                            info(m.toJava("evaluation using DefUseDomain took: "+secs))
                         }
                     }
                 } catch {
@@ -247,7 +246,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 }
             }
         } catch {
-            case cex : ConcurrentExceptions =>  concurrentExceptions = cex.getSuppressed
+            case cex: ConcurrentExceptions ⇒ concurrentExceptions = cex.getSuppressed
         }
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
@@ -270,9 +269,9 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
             fail(failureMessages.mkString(errorMessageHeader, "\n", "\n"))
-        } else if(concurrentExceptions != null && concurrentExceptions.length > 0) {
-            fail(concurrentExceptions.mkString("concurrent exceptions:\n","\n","\n"))
-        }else {
+        } else if (concurrentExceptions != null && concurrentExceptions.length > 0) {
+            fail(concurrentExceptions.mkString("concurrent exceptions:\n", "\n", "\n"))
+        } else {
             info(baseMessage)
         }
     }
