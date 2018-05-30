@@ -30,8 +30,6 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-import scala.collection.mutable.Queue
-
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
@@ -61,6 +59,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.collection.mutable.AnyRefAppendChain
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -228,7 +227,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: Queue[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = Queue.empty
+        val obsoleteUseSites: AnyRefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new AnyRefAppendChain()
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -246,13 +245,13 @@ object TACAI {
                     origins ++= normalizeParameterOrigins(domain.operandOrigin(useSitePC, i))
                     i += 1
                 }
-                obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
+                obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
             }
         }
 
         def killRegisterBasedUsages(useSitePC: Int, index: Int): Unit = {
             val origins = normalizeParameterOrigins(domain.localOrigin(useSitePC, index))
-            obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
+            obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
         }
 
         // The catch handler statements which were added to the code that do not take up
@@ -929,7 +928,7 @@ object TACAI {
         //  - every pc appears at most once in `obsoleteUseSites`
         //  - we do not have deeply nested expressions
         while (obsoleteUseSites.nonEmpty) {
-            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.dequeue()
+            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.take()
             val useSite = useDefMapping.pc
             val defSites = useDefMapping.value
             // Now... we need to go the def site - which has to be an assignment - and kill
