@@ -700,7 +700,7 @@ final class Code private (
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.
                     cfForks +!= pc
-                    cfForkTargets +!= ((pc, cfg.successors(pc)))
+                    cfForkTargets += ((pc, cfg.successors(pc)))
 
                 case JSR.opcode | JSR_W.opcode ⇒
                     val jsrInstr = instruction.asInstanceOf[JSRInstruction]
