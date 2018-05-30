@@ -2119,7 +2119,7 @@ class ClassHierarchy private (
             return upperTypeBound;
         }
 
-        if (upperTypeBoundB contains (upperTypeBoundA)) {
+        if (upperTypeBoundB contains upperTypeBoundA) {
             // The upperTypeBoundB contains more than one type; hence, considering
             // "reflexive" is no longer necessary...
             // if (isKnownToBeFinal(upperTypeBoundA)) the upper type bound (hopefully)
@@ -2222,8 +2222,7 @@ class ClassHierarchy private (
 
         assert(
             reflexive || (
-                (upperTypeBoundA ne ObjectType.Object) &&
-                (upperTypeBoundB ne ObjectType.Object)
+                (upperTypeBoundA ne ObjectType.Object) && (upperTypeBoundB ne ObjectType.Object)
             )
         )
 
@@ -2256,7 +2255,8 @@ class ClassHierarchy private (
         val allSupertypesOfA = allSupertypes(upperTypeBoundA, false)
         val allSupertypesOfB = allSupertypes(upperTypeBoundB, false)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
-        leafTypes(commonSupertypes)
+        val mostSpecificCommonSupertype = leafTypes(commonSupertypes)
+        mostSpecificCommonSupertype
     }
 
     /**
@@ -2521,12 +2521,12 @@ object ClassHierarchy {
     )
 
     def parseTypeHierarchyDefinition(
-        createInputStream: () ⇒ InputStream
+        in: InputStream
     )(
         implicit
         logContext: LogContext
     ): Seq[TypeDeclaration] = {
-        process(createInputStream()) { in ⇒
+        process(in) { in ⇒
             if (in eq null) {
                 OPALLogger.error(
                     "internal - class hierarchy",
@@ -2568,10 +2568,15 @@ object ClassHierarchy {
         implicit
         logContext: LogContext
     ): ClassHierarchy = {
-
         // We have to make sure that we have seen all types before we can generate
         // the arrays to store the information about the types!
-        create(classFiles, typeHierarchyDefinitions.flatMap(parseTypeHierarchyDefinition))
+        create(
+            classFiles,
+            typeHierarchyDefinitions flatMap { inputStreamFactory ⇒
+                val in = inputStreamFactory.apply()
+                parseTypeHierarchyDefinition(in)
+            }
+        )
     }
 
     /**

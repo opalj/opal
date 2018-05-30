@@ -31,7 +31,7 @@ package br
 package cfg
 
 import java.util.Arrays
-import java.util.IdentityHashMap
+import java.util.HashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
@@ -180,7 +180,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * @return The basic block associated with the given `pc`. If the `pc` is not valid,
      *         `null` is returned or an index out of bounds exception is thrown.
      */
-    def bb(pc: Int): BasicBlock = basicBlocks(pc)
+    final def bb(pc: Int): BasicBlock = basicBlocks(pc)
 
     /**
      * Returns the set of all reachable [[CFGNode]]s of the control flow graph.
@@ -372,7 +372,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         */
 
         val bbsLength = basicBlocks.length
-        val bbMapping = new IdentityHashMap[CFGNode, CFGNode]()
+        val bbMapping = new HashMap[CFGNode, CFGNode]()
 
         val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
         val newBasicBlocksArray = newBasicBlocks.asInstanceOf[Array[Object]]

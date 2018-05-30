@@ -245,7 +245,7 @@ class ConstantsBuffer private (
     /**
      * Converts this constant pool buffer to an array and also returns an immutable view of the
      * current state of the constants pool. This in particular enables the creation of the
-     * `BootstrapMethodTable` attribute - iff the table is not empty! If the table is empty, 
+     * `BootstrapMethodTable` attribute - iff the table is not empty! If the table is empty,
      * it is not guaranteed that the name of the `BootstrapMethodTable` attribute is defined by
      * the constant pool, but there is also no need to add the attribute.
      */

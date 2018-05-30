@@ -270,6 +270,11 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         its != (new Object)
     }
 
+    property("+!") = forAll { s: IntTrieSet ⇒
+        val its = EmptyIntTrieSet ++! s
+        its == s
+    }
+
     property("equals") = forAll { s: IntTrieSet ⇒
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
         val newS = (s + i - i)
@@ -277,15 +282,15 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     }
 
     property("toString") = forAll { s: IntArraySet ⇒
-        val its = s.foldLeft(IntTrieSet.empty)(_ + _)
+        val its = s.foldLeft(IntTrieSet.empty)(_ +! _)
         val itsToString = its.toString
         itsToString.startsWith("IntTrieSet(") && itsToString.endsWith(")")
         // IMPROVE add content based test
     }
 
     property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Int) ⇒
-        val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
-        val its2 = s1.foldLeft(IntTrieSet.empty)(_ + _) + i
+        val its1 = s1.foldLeft(IntTrieSet.empty)(_ +! _)
+        val its2 = s1.foldLeft(IntTrieSet.empty)(_ +! _) +! i
         classify(its1.size == 0, "its1 is empty") {
             classify(its1.size == 1, "its1.size == 1") {
                 classify(its1.size == 2, "its1.size == 2") {

@@ -29,8 +29,9 @@
 package org.opalj
 package ai
 
-import scala.collection.mutable.Map
-import scala.collection.mutable.AnyRefMap
+import java.util.{HashMap ⇒ JHashMap}
+//import scala.collection.mutable.Map
+//import scala.collection.mutable.AnyRefMap
 
 import org.opalj.collection.immutable.IdentityPair
 
@@ -117,6 +118,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
     //        joinedValues.clear()
     //    }
 
+    /*
     protected[this] val joinedValues: Map[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
         AnyRefMap.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
     }
@@ -128,6 +130,33 @@ trait JoinStabilization extends CoreDomainFunctionality {
     ): Update[DomainValue] = {
         val key = new IdentityPair(left, right)
         joinedValues.getOrElseUpdate(key, super.joinValues(pc, left, right))
+    }
+
+    /** Classes overriding this method generally have to call it! */
+    override protected[this] def afterBaseJoin(pc: Int): Unit = {
+        super.afterBaseJoin(pc)
+        joinedValues.clear()
+    }
+    */
+
+    protected[this] val joinedValues: JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
+        new JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]()
+    }
+
+    /** Classes overriding this method generally have to call it! */
+    override protected[this] def joinValues(
+        pc:   Int,
+        left: DomainValue, right: DomainValue
+    ): Update[DomainValue] = {
+        val key = new IdentityPair(left, right)
+        val joinedValue = joinedValues.get(key)
+        if (joinedValue != null) {
+            joinedValue
+        } else {
+            val newJoinedValue = super.joinValues(pc, left, right)
+            joinedValues.put(key, newJoinedValue)
+            newJoinedValue
+        }
     }
 
     /** Classes overriding this method generally have to call it! */
