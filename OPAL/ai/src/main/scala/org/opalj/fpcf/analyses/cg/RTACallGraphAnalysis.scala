@@ -151,6 +151,7 @@ class RTACallGraphAnalysis private[analyses] (
                     PartialResult[SomeProject, CallGraph](p, CallGraph.key, {
                         case EPS(_, lb: CallGraph, ub: CallGraph) ⇒
                             Some(EPS(p, lb, ub)) //TODO compute the union between the ub and the computed cg
+                            //TODO it should be ub except the edges from/to m and instead the computed ones here
                         case EPK(_, _) ⇒ Some(EPS(
                             p, CallGraph.fallbackCG(p), new CallGraph(callees, callers)
                         ))
