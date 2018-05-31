@@ -28,6 +28,7 @@
  */
 package org.opalj.fpcf.par
 
+import java.io.FileWriter
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
 
@@ -64,6 +65,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
+import scala.reflect.io.File
 import scala.reflect.runtime.universe.Type
 
 class ReactiveAsyncPropertyStore private (
@@ -85,6 +87,8 @@ class ReactiveAsyncPropertyStore private (
             t.printStackTrace()
         }
     )
+
+    File("dependees.tmp").delete()
 
     implicit object RAUpdater extends Updater[PropertyValue] {
         override val initial: PropertyValue = null
@@ -549,11 +553,14 @@ class ReactiveAsyncPropertyStore private (
                         cc.cell.removeDependency(dependeeCell)
                     } catch {
                         case e: NoSuchElementException ⇒
-                            println(s"Got update for $e ($ub)")
-                            println(s"dependees: $dependees")
-                            println(s"stored dependees: $oldDependees")
-                            println(s"to remove dependees: $removedDependees")
-                            println(s"Failed one: $someEOptionP")
+                            val fw = new FileWriter("dependees.tmp", true)
+                            fw.append(s"Got update for $e ($ub)\n"+
+                                s"dependees: $dependees\n"+
+                                s"stored dependees: $oldDependees\n"+
+                                s"to remove dependees: $removedDependees\n"+
+                                s"Failed one: $someEOptionP")
+                            fw.close()
+
                             throw e
                     }
                 }
@@ -571,6 +578,11 @@ class ReactiveAsyncPropertyStore private (
                             new RAKey(someEOptionP.e, someEOptionP.pk)
                         )
                     ).cell
+                    val fw = new FileWriter("dependees.tmp", true)
+                    fw.append(s"Got update for $e ($ub)\n"+
+                        s"add dependency for: $someEOptionP"+
+                        s"cell: $dependeeCell")
+                    fw.close()
 
                     // whenNext is also called if dependeeCell is already final
                     // cell1.whenSequential(cell2, ...)
