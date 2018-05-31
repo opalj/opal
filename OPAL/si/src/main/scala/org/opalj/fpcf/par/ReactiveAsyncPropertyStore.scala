@@ -28,7 +28,6 @@
  */
 package org.opalj.fpcf.par
 
-import java.io.FileWriter
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
 
@@ -65,7 +64,6 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
-import scala.reflect.io.File
 import scala.reflect.runtime.universe.Type
 
 class ReactiveAsyncPropertyStore private (
@@ -87,8 +85,6 @@ class ReactiveAsyncPropertyStore private (
             t.printStackTrace()
         }
     )
-
-    File("dependees.tmp").delete()
 
     implicit object RAUpdater extends Updater[PropertyValue] {
         override val initial: PropertyValue = null
@@ -503,6 +499,7 @@ class ReactiveAsyncPropertyStore private (
                 val IntermediateResult(e, lb, ub, dependees, c) = r
 
                 if (debug) {
+                    assert(lb.key.id == ub.key.id)
                     if (dependees.isEmpty) {
                         throw new IllegalArgumentException("IntermediateResult without dependees")
                     }
@@ -537,74 +534,69 @@ class ReactiveAsyncPropertyStore private (
                     cc.putNext(new PropertyValue(lb, ub))
                 }
 
-                val oldDependees = dependencyMap.getOrElse(EPK(e, lb.key), Traversable.empty)
-                val dependeesEPK = dependees.map(_.toEPK)
-                val newDependees = dependeesEPK.filterNot(oldDependees.toSet)
-                val removedDependees = oldDependees.filterNot(dependeesEPK.toSet)
+                // TODO there has to be a better way to do this
+                // We have to synchronize to the cell. ReactiveAsync creates a lock on it whenever
+                // a dependee has an update for us. It can happen that here we got our first result
+                // from the analysis and register dependencies. One of it returns and calls the
+                // continuation function. This function removes a dependency, that is not yet
+                // registered in ReactiveAsync as we here are still iterating over `newDependees`.
+                // Now it tries to get the cell from `ps`, but it is not yet in there and we crash
+                // with a NoSuchElementException. This lock prevents us from processing updates for
+                // this cell (`cc`) and executes them once all dependencies were registered
+                // successfully.
+                cc.synchronized {
 
-                // 2. Check which dependencies the cell has. Remove dependencies that are
-                // no longer necessary.
-                removedDependees foreach { someEOptionP ⇒
-                    val psE = ps(someEOptionP.pk.id)
-                    // When querying the properties, the cell already exists. At some point it was
-                    // added and in step 3 the cell was generated
-                    try {
-                        val dependeeCell = psE(someEOptionP.e).cell
-                        cc.cell.removeDependency(dependeeCell)
-                    } catch {
-                        case e: NoSuchElementException ⇒
-                            val fw = new FileWriter("dependees.tmp", true)
-                            fw.append(s"Got update for $e ($ub)\n"+
-                                s"dependees: $dependees\n"+
-                                s"stored dependees: $oldDependees\n"+
-                                s"to remove dependees: $removedDependees\n"+
-                                s"Failed one: $someEOptionP")
-                            fw.close()
+                    val oldDependees = dependencyMap.getOrElse(EPK(e, lb.key), Traversable.empty)
+                    val dependeesEPK = dependees.map(_.toEPK)
+                    val newDependees = dependeesEPK.filterNot(oldDependees.toSet)
+                    val removedDependees = oldDependees.filterNot(dependeesEPK.toSet)
 
-                            throw e
+                    // 2. Check which dependencies the cell has. Remove dependencies that are
+                    // no longer necessary.
+                    removedDependees foreach { someEOptionP ⇒
+                        val psE = ps(someEOptionP.pk.id)
+                        // When querying the properties, the cell already exists. At some point it was
+                        // added and in step 3 the cell was generated
+                            val dependeeCell = psE(someEOptionP.e).cell
+                            cc.cell.removeDependency(dependeeCell)
                     }
-                }
-                dependencyMap.put(EPK(e, lb.key), dependeesEPK)
+                    dependencyMap.put(EPK(e, lb.key), dependeesEPK)
 
-                incCounter("handleResult.IntermediateResult.removedCallbacks", removedDependees.size)
+                    incCounter("handleResult.IntermediateResult.removedCallbacks", removedDependees.size)
 
-                // 3. Register new dependencies
-                incCounter("handleResult.IntermediateResult.newDependees", newDependees.size)
-                newDependees foreach { someEOptionP ⇒
-                    val psE = ps(someEOptionP.pk.id)
-                    val dependeeCell = psE.getOrElseUpdate(
-                        someEOptionP.e,
-                        CellCompleter[RAKey, PropertyValue](
-                            new RAKey(someEOptionP.e, someEOptionP.pk)
-                        )
-                    ).cell
-                    val fw = new FileWriter("dependees.tmp", true)
-                    fw.append(s"Got update for $e ($ub)\n"+
-                        s"add dependency for: $someEOptionP"+
-                        s"cell: $dependeeCell")
-                    fw.close()
+                    // 3. Register new dependencies
+                    incCounter("handleResult.IntermediateResult.newDependees", newDependees.size)
+                    newDependees foreach { someEOptionP ⇒
+                        val psE = ps(someEOptionP.pk.id)
+                        val dependeeCell = psE.getOrElseUpdate(
+                            someEOptionP.e,
+                            CellCompleter[RAKey, PropertyValue](
+                                new RAKey(someEOptionP.e, someEOptionP.pk)
+                            )
+                        ).cell
 
-                    // whenNext is also called if dependeeCell is already final
-                    // cell1.whenSequential(cell2, ...)
-                    // cell1.whenSequential(cell3, ...)
-                    // -> runs sequential
+                        // whenNext is also called if dependeeCell is already final
+                        // cell1.whenSequential(cell2, ...)
+                        // cell1.whenSequential(cell3, ...)
+                        // -> runs sequential
 
-                    // cell1.whenSequential(cell3, ...)
-                    // cell2.whenSequential(cell3, ...)
-                    // -> runs parallel
-                    cc.cell.whenSequential(dependeeCell, (p, _) ⇒ {
-                        incCounter("handleResult.IntermediateResult.continuationFunction")
-                        assert(!cc.cell.isComplete)
+                        // cell1.whenSequential(cell3, ...)
+                        // cell2.whenSequential(cell3, ...)
+                        // -> runs parallel
+                        cc.cell.whenSequential(dependeeCell, (p, _) ⇒ {
+                            incCounter("handleResult.IntermediateResult.continuationFunction")
+                            assert(!cc.cell.isComplete)
 
-                        // Ignore null updates. They can occur if we are in fallback and a cell
-                        // was not scheduled
-                        if (p != null && !someEOptionP.is(p)) {
-                            // EPS.apply creates a FinalEP if lp == ub
-                            val newEPs = c(EPS(dependeeCell.key.e, p.lb, p.ub))
-                            handleResult(newEPs)
-                        }
-                        NoOutcome
-                    })
+                            // Ignore null updates. They can occur if we are in fallback and a cell
+                            // was not scheduled
+                            if (p != null && !someEOptionP.is(p)) {
+                                // EPS.apply creates a FinalEP if lp == ub
+                                val newEPs = c(EPS(dependeeCell.key.e, p.lb, p.ub))
+                                handleResult(newEPs)
+                            }
+                            NoOutcome
+                        })
+                    }
                 }
 
             case IncrementalResult.id ⇒
