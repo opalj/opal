@@ -553,6 +553,8 @@ class ReactiveAsyncPropertyStore private (
                             println(s"dependees: $dependees")
                             println(s"stored dependees: $oldDependees")
                             println(s"to remove dependees: $removedDependees")
+                            println(s"Failed one: $someEOptionP")
+                            throw e
                     }
                 }
                 dependencyMap.put(EPK(e, lb.key), dependeesEPK)
@@ -560,7 +562,7 @@ class ReactiveAsyncPropertyStore private (
                 incCounter("handleResult.IntermediateResult.removedCallbacks", removedDependees.size)
 
                 // 3. Register new dependencies
-                incCounter("handleResult.IntermediateResult.dependees", dependees.size)
+                incCounter("handleResult.IntermediateResult.newDependees", newDependees.size)
                 newDependees foreach { someEOptionP ⇒
                     val psE = ps(someEOptionP.pk.id)
                     val dependeeCell = psE.getOrElseUpdate(
