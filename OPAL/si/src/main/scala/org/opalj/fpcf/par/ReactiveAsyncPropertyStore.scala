@@ -537,7 +537,6 @@ class ReactiveAsyncPropertyStore private (
                 val dependeesEPK = dependees.map(_.toEPK)
                 val newDependees = dependeesEPK.filterNot(oldDependees.toSet)
                 val removedDependees = oldDependees.filterNot(dependeesEPK.toSet)
-                dependencyMap.put(EPK(e, lb.key), dependeesEPK)
 
                 // 2. Check which dependencies the cell has. Remove dependencies that are
                 // no longer necessary.
@@ -545,9 +544,18 @@ class ReactiveAsyncPropertyStore private (
                     val psE = ps(someEOptionP.pk.id)
                     // When querying the properties, the cell already exists. At some point it was
                     // added and in step 3 the cell was generated
-                    val dependeeCell = psE(someEOptionP.e).cell
-                    cc.cell.removeDependency(dependeeCell)
+                    try {
+                        val dependeeCell = psE(someEOptionP.e).cell
+                        cc.cell.removeDependency(dependeeCell)
+                    } catch {
+                        case e: NoSuchElementException ⇒
+                            println(s"Got update for $e ($ub)")
+                            println(s"dependees: $dependees")
+                            println(s"stored dependees: $oldDependees")
+                            println(s"to remove dependees: $removedDependees")
+                    }
                 }
+                dependencyMap.put(EPK(e, lb.key), dependeesEPK)
 
                 incCounter("handleResult.IntermediateResult.removedCallbacks", removedDependees.size)
 

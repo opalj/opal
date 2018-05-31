@@ -433,7 +433,7 @@ object PropertyStorePerformanceEvaluation {
 
         val psResults = propertyStoreImplementationList
             .filter(psI ⇒ allSchedulings || psI.configurationDescription == defaultConfigurationDescription)
-            .filter(psI ⇒ specificPropertyStore.isEmpty || psI.className == specificPropertyStore.get)
+            .filter(psI ⇒ specificPropertyStore.isEmpty || psI.className.contains(specificPropertyStore.get))
             .map { psI ⇒
                 var nanos: Nanoseconds = Nanoseconds.None
 
