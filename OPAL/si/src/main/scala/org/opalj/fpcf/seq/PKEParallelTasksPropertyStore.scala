@@ -30,14 +30,16 @@ package org.opalj
 package fpcf
 package seq
 
-import scala.reflect.runtime.universe.Type
 import java.lang.System.identityHashCode
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.graphs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -48,8 +50,6 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.ConcurrentExceptions
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * A concurrent implementation of the property store which parallels the execution of the scheduled
@@ -111,31 +111,29 @@ final class PKEParallelTasksPropertyStore private (
     private[this] def incOpenJobs(): Unit = openJobs.incrementAndGet()
 
     /* The list of scheduled property computations  - they will be processed in parallel. */
-    private[this] val tasks = {
-        Tasks[QualifiedTask](
-            (_, t) ⇒ {
-                try {
-                    // As a sideeffect, we may have (implicit) calls to schedule...
-                    // and implicit calls handleResult calls
-                    // both will increase openJobs.
-                    t.apply()
-                } catch {
-                    case t: Throwable ⇒
-                        error("analysis progress", "parallelized property computation failed", t)
-                        interruptResultsProcessor()
-                        store.synchronized {
-                            if (exception == null) exception = new ConcurrentExceptions
-                            exception.addSuppressed(t)
-                        }
-                        throw t;
-                } finally {
-                    decOpenJobs()
-                }
-            },
-            abortOnExceptions = true,
-            isInterrupted
-        )(OPALExecutionContext)
-    }
+    private[this] val tasks = Tasks[QualifiedTask](
+        (_, t) ⇒ {
+            try {
+                // As a sideeffect, we may have (implicit) calls to schedule...
+                // and implicit calls handleResult calls
+                // both will increase openJobs.
+                t.apply()
+            } catch {
+                case t: Throwable ⇒
+                    error("analysis progress", "parallelized property computation failed", t)
+                    interruptResultsProcessor()
+                    store.synchronized {
+                        if (exception == null) exception = new ConcurrentExceptions
+                        exception.addSuppressed(t)
+                    }
+                    throw t;
+            } finally {
+                decOpenJobs()
+            }
+        },
+        abortOnExceptions = true,
+        isInterrupted
+    )(OPALExecutionContext)
 
     private[this] val results = new LinkedBlockingDeque[(PropertyComputationResult, Boolean /*was lazily triggered*/ )]()
     private[this] val resultsProcessor = {
