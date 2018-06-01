@@ -30,6 +30,10 @@ package org.opalj
 package br
 package analyses
 
+/**
+  * TODO
+  * @author Florian Kuebler
+  */
 object MethodIDKey extends ProjectInformationKey[Map[Method, Int], Nothing] {
 
     override protected def requirements: ProjectInformationKeys = Nil

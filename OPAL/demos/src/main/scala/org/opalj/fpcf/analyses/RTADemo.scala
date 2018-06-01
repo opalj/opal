@@ -28,45 +28,33 @@
  */
 package org.opalj
 package fpcf
-package properties
+package analyses
 
-import scala.collection.Set
-import org.opalj.br.Method
+import java.net.URL
 
-/**
- * TODO
- * @author Florian Kuebler
- */
-sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+//import org.opalj.fpcf.properties.CallGraph
+import org.opalj.fpcf.properties.InstantiatedTypes
 
-    final type Self = Callees
-}
+object RTADemo extends DefaultOneStepAnalysis {
+    override def doAnalyze(
+        project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
+    ): ReportableAnalysisResult = {
+        val ps = project.get(PropertyStoreKey)
+        val manager = project.get(FPCFAnalysesManagerKey)
+        manager.runAll(EagerRTACallGraphAnalysisScheduler)
 
-class Callees(
-        val callees: Map[Int /*PC*/ , Set[Method]]
-) extends Property with CalleesPropertyMetaInformation {
-    final def key: PropertyKey[Callees] = Callees.key
+        ps.waitOnPhaseCompletion()
 
-    override def toString: String = {
-        s"Callees(size=${this.size}):${callees}"
+
+
+        println(ps(project, InstantiatedTypes.key).ub)
+        //println(ps(project, CallGraph.key).ub)
+
+        BasicReport("")
     }
-
-    def size: Int = {
-        callees.map(_._2.size).sum
-    }
-}
-
-object Callees extends CalleesPropertyMetaInformation {
-
-    final val key: PropertyKey[Callees] = {
-        PropertyKey.create(
-            "Callees",
-            Callees(Map.empty.withDefaultValue(Set.empty)),
-            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.toUBEP
-        )
-    }
-
-    def apply(callees: Map[Int /*PC*/ , Set[Method]]): Callees = new Callees(callees)
-
-    def unapply(callees: Callees): Option[Map[Int /*PC*/ , Set[Method]]] = Some(callees.callees)
 }
