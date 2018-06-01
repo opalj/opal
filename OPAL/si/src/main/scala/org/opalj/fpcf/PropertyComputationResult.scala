@@ -248,4 +248,3 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 }
 private[fpcf] object PartialResult { private[fpcf] final val id = 6 }
 
-case class PropertyBounds[P <: Property](lb: P, ub: P)
