@@ -48,8 +48,8 @@ import scala.collection.mutable.Buffer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import org.apache.commons.lang3.concurrent.ConcurrentException
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.SequentialTasks
 import org.opalj.concurrent.defaultIsInterrupted
@@ -73,7 +73,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -660,13 +659,8 @@ class Project[Source] private (
     )(
         f: ClassFile ⇒ T
     ): Unit = {
-        try {
-            parForeachProjectClassFile(isInterrupted)(f)
-            parForeachLibraryClassFile(isInterrupted)(f)
-        } catch {
-            case ce: ConcurrentExceptions ⇒
-                throw ce;
-        }
+        parForeachProjectClassFile(isInterrupted)(f)
+        parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -1132,7 +1126,7 @@ object Project {
             }
         } catch {
             case ce: ConcurrentExceptions ⇒
-                ce.getSuppressed.foreach { e ⇒
+                ce.getSuppressed foreach { e ⇒
                     error("internal - ignored", "project validation failed", e)
                 }
         }
@@ -1278,8 +1272,8 @@ object Project {
         try {
             tasks.join()
         } catch {
-            case ce : ConcurrentException ⇒
-                error("project setup","computing overriding methods failed, e")
+            case ce: ConcurrentExceptions ⇒
+                error("project setup", "computing overriding methods failed, e")
                 ce.getSuppressed foreach { e ⇒
                     error("project setup", "computing the defined methods failed", e)
                 }
@@ -1399,8 +1393,8 @@ object Project {
         try {
             tasks.join()
         } catch {
-            case ce : ConcurrentExceptions ⇒
-                error("project setup","computing overriding methods failed, e")
+            case ce: ConcurrentExceptions ⇒
+                error("project setup", "computing overriding methods failed, e")
                 ce.getSuppressed foreach { e ⇒
                     error("project setup", "computing the overriding methods failed", e)
                 }
