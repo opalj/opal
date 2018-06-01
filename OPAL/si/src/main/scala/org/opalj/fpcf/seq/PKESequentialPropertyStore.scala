@@ -303,13 +303,17 @@ final class PKESequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null")
         }
         val pkId = ub.key.id
-        /*user level*/ assert(ub.key == lb.key)
-        /*user level*/ assert(
-            !lb.isOrderedProperty || {
-                val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
+        if (debug) {
+            if (ub.key != lb.key) {
+                throw new IllegalArgumentException(
+                    s"lower and upper bound have different keys: lb=$lb vs. ub=$ub"
+                );
             }
-        )
+            if (lb.isOrderedProperty) {
+                val ubAsOP = ub.asOrderedProperty
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+            }
+        }
         ps(pkId).get(e) match {
             case null ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
@@ -635,7 +639,11 @@ final class PKESequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty)
+        if (debug && tasks.size > 0) {
+            throw new IllegalStateException(
+                "setup phase can only be called as long as no tasks are scheduled"
+            )
+        }
 
         val newComputedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
         this.computedPropertyKinds = newComputedPropertyKinds
@@ -677,7 +685,7 @@ final class PKESequentialPropertyStore private (
                         // Check that we have no running computations and that the
                         // property will not be computed later on.
                         if (pValue.ub == null && !delayedPropertyKinds(pkId)) {
-                            // assert(pv.dependers.isEmpty)
+                            assert(pValue.dependees.isEmpty)
 
                             val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                             if (traceFallbacks) {
