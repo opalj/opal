@@ -43,8 +43,12 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.CallGraph
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.InstantiatedTypes
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
+import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
 import org.opalj.tac.NonVirtualMethodCall
@@ -68,9 +72,10 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] val methodIds = project.get(MethodIDKey)
 
-    var processedMethods = new Array[Boolean](Int.MaxValue)
+    var processedMethods = new Array[Boolean](project.allMethods.size)
 
     def computeCG(m: Method): PropertyComputationResult = {
+        processedMethods(methodIds(m)) = true
         doComputeCG(m, propertyStore(project, InstantiatedTypes.key))
     }
 
@@ -114,7 +119,6 @@ class RTACallGraphAnalysis private[analyses] (
         def handleCall(pc: Int, targets: Set[Method]): Unit = {
             for {
                 tgt ← targets
-                if instantiatedTypesUB.contains(tgt.classFile.thisType)
             } {
                 val methodId = methodIds(tgt)
                 // add call edge to CG
@@ -152,7 +156,24 @@ class RTACallGraphAnalysis private[analyses] (
                     handleCall(stmt.pc, call.resolveCallTarget.toSet)
 
                 case call: VirtualMethodCall[V] ⇒
-                    handleCall(stmt.pc, call.resolveCallTargets(method.classFile.thisType).toSet)
+                    val tgts = call.resolveCallTargets(method.classFile.thisType)
+
+                    // TODO it seems to be the case that there is a bug in the tac code
+
+                    handleCall(
+                        stmt.pc,
+                        tgts.filter(tgt ⇒ instantiatedTypesUB.contains(tgt.classFile.thisType))
+                    )
+
+                case Assignment(_, _, _: Invokedynamic[V]) ⇒
+                    OPALLogger.logOnce(
+                        Warn(
+                            "analysis",
+                            "unresolved invokedynamics are not handled. please use appropriate reading configuration"
+                        )
+                    )(p.logContext)
+
+                case _ ⇒ //nothing to do
 
             }
         }
@@ -179,76 +200,97 @@ class RTACallGraphAnalysis private[analyses] (
             doComputeCG(method, eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]])
         }
 
-        IncrementalResult(
-            Results(
-                Traversable(
-                    // instantiated types updates
-                    PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
-                        (eOptionP: EOptionP[SomeProject, InstantiatedTypes]) ⇒ eOptionP match {
-                            case EPS(_, lb, ub) ⇒
-                                Some(EPS(
-                                    project,
-                                    lb,
-                                    InstantiatedTypes(ub.types ++ newInstantiatedTypes)
-                                ))
-                            case EPK(_, _) ⇒
-                                Some(EPS(
-                                    project,
-                                    InstantiatedTypes.allTypes(p),
-                                    InstantiatedTypes(newInstantiatedTypes)
-                                ))
-                        }),
+        var results: Set[PropertyComputationResult] = Set.empty
 
-                    // call graph updates
-                    PartialResult[SomeProject, CallGraph](p, CallGraph.key, {
-                        case EPS(_, lb: CallGraph, CallGraph(calleesUB, callersUB)) ⇒
-                            val callees = calleesUB.updated(method, calleesOfM)
-                            val newCallers = callers.foldLeft(callersUB) {
-                                case (tmpCG, (caller, newEdges)) ⇒
-                                    tmpCG.updated(caller, tmpCG(caller) ++ newEdges)
-                            }
+        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(method))
+        val newCallees = Callees(calleesOfM)
 
-                            Some(EPS(project, lb, CallGraph(callees, newCallers)))
-                        case EPK(_, _) ⇒ Some(EPS(
-                            project,
-                            CallGraph.fallbackCG(p),
-                            new CallGraph(Map(method → calleesOfM), callers)
-                        ))
-                    }),
+        if (method.name == "main" && method.classFile.thisType == ObjectType("csr5/Foo"))
+            println()
 
-                    // callee updates (in order to hold a dependency to instantiated types)
-                    if (instantiatedTypesDependee.isEmpty)
-                        Result(method, Callees(calleesOfM))
-                    else
-                        IntermediateResult(
-                            method,
-                            Callees(CallGraph.fallbackCG(p).callees(method)),
-                            Callees(calleesOfM),
-                            instantiatedTypesDependee.toSeq,
-                            continuation
-                        )
+        // callee updates (in order to hold a dependency to instantiated types)
+        results += (
+            //TODO the == is to expensive
+            if (instantiatedTypesDependee.isEmpty || calleesLB.size == newCallees.size)
+                Result(method, newCallees)
+            else
+                IntermediateResult(
+                    method,
+                    calleesLB,
+                    newCallees,
+                    instantiatedTypesDependee.toSeq,
+                    continuation
                 )
-            ),
+        )
+
+        // instantiated types updates
+        if (newInstantiatedTypes.nonEmpty)
+            results += PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
+                (eOptionP: EOptionP[SomeProject, InstantiatedTypes]) ⇒ eOptionP match {
+                    case EPS(_, lb, ub) ⇒
+                        Some(EPS(
+                            project,
+                            lb,
+                            InstantiatedTypes(ub.types ++ newInstantiatedTypes)
+                        ))
+                    case EPK(_, _) ⇒
+                        Some(EPS(
+                            project,
+                            InstantiatedTypes.allTypes(p),
+                            InstantiatedTypes(newInstantiatedTypes)
+                        ))
+                })
+
+        // call graph updates
+        results += PartialResult[SomeProject, CallGraph](p, CallGraph.key, {
+            case EPS(_, lb: CallGraph, ub @ CallGraph(calleesUB, callersUB)) ⇒
+                val newCallees = calleesUB.updated(method, calleesOfM)
+                val newCallers = callers.foldLeft(callersUB) {
+                    case (tmpCG, (caller, newEdges)) ⇒
+                        tmpCG.updated(caller, tmpCG(caller) ++ newEdges)
+                }
+
+                val newCG = CallGraph(newCallees, newCallers)
+
+                if (newCG.size == ub.size)
+                    None
+                else
+                    Some(EPS(project, lb, newCG))
+            case EPK(_, _) ⇒ Some(EPS(
+                project,
+                CallGraph.fallbackCG(p),
+                new CallGraph(Map(method → calleesOfM), callers)
+            ))
+        })
+
+        IncrementalResult(
+            Results(results),
             // continue the computation with the newly reachable methods
             newReachableMethods.map(nextMethod ⇒ (computeCG _, nextMethod))
         )
     }
 }
 
-class EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
+object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new RTACallGraphAnalysis(project)
+
         val mainDescriptor = MethodDescriptor.JustTakes(ArrayType(ObjectType.String))
+        println(mainDescriptor)
         // TODO also handle libraries
         val entryPoints: Seq[Method] = project.allMethodsWithBody.filter { m ⇒
-            m.name == "main" && m.descriptor.parameterTypes == mainDescriptor
+            m.name == "main" // && m.descriptor.parameterTypes == mainDescriptor
         }
+        if (entryPoints.isEmpty)
+            OPALLogger.logOnce(
+                Error("analysis", "The target has no entry points")
+            )(project.logContext)
         propertyStore.scheduleEagerComputationsForEntities(entryPoints)(analysis.computeCG)
         analysis
     }
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallGraph)
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallGraph, Callees)
 }

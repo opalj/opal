@@ -46,7 +46,9 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 
 class InstantiatedTypes(val types: Set[ObjectType]) extends Property with InstantiatedTypesPropertyMetaInformation {
 
-    final def key = InstantiatedTypes.key
+    final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
+
+    override def toString: String = s"InstantiatedTypes(size=${types.size})"
 }
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {

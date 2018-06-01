@@ -43,9 +43,9 @@ import org.opalj.log.Warn
 import scala.collection.Set
 
 /**
-  * TODO
-  * @author Florian Kuebler
-  */
+ * TODO
+ * @author Florian Kuebler
+ */
 sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = CallGraph
@@ -56,6 +56,13 @@ class CallGraph(
         val callers: Map[Method, Set[(Method, Int /*pc*/ )]]
 ) extends Property with CallGraphPropertyMetaInformation {
     final def key: PropertyKey[CallGraph] = CallGraph.key
+
+    final def size: Int = {
+        val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
+        val callersSize = callers.map(_._2.size).sum
+        assert(callersSize == calleesSize)
+        calleesSize
+    }
 }
 
 object CallGraph extends CallGraphPropertyMetaInformation {
@@ -69,7 +76,10 @@ object CallGraph extends CallGraphPropertyMetaInformation {
         val callees = p.allMethods.map { m ⇒
             m.body match {
                 case Some(code) ⇒
-                    val callees = code.instructions.zipWithIndex.collect {
+                    val calleesOfM = code.instructions.view.zipWithIndex.filter {
+                        case (instr, _) ⇒
+                            instr != null && instr.isInvocationInstruction
+                    }.map {
                         case (instr, pc) ⇒
                             val tgts = instr match {
                                 case call: INVOKESTATIC ⇒
@@ -89,13 +99,14 @@ object CallGraph extends CallGraphPropertyMetaInformation {
                                     )(p.logContext)
                                     Set.empty[Method]
                             }
-                            for (tgt ← tgts) {
-                                // TODO make updates nicer
+                            tgts.foreach { tgt ⇒
                                 callers = callers.updated(tgt, callers(tgt) + (m → pc))
                             }
+
                             pc → tgts
                     }.toMap
-                    m → callees
+
+                    m → calleesOfM
                 case None ⇒
                     m → Map.empty[Int /*PC*/ , Set[Method]]
             }
@@ -105,7 +116,7 @@ object CallGraph extends CallGraphPropertyMetaInformation {
 
     final val key: PropertyKey[CallGraph] = {
         PropertyKey.create(
-            name = "Callees",
+            name = "CallGraph",
             (_: PropertyStore, p: SomeProject) ⇒ {
                 fallbackCG(p)
             },
