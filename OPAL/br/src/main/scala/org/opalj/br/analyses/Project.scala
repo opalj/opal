@@ -48,6 +48,7 @@ import scala.collection.mutable.Buffer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import org.apache.commons.lang3.concurrent.ConcurrentException
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.SequentialTasks
@@ -1274,9 +1275,14 @@ object Project {
 
         val tasks = new SequentialTasks[ObjectType](computeDefinedMethods)
         classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
-        val exceptions = tasks.join()
-        exceptions foreach { e ⇒
-            OPALLogger.error("project setup", "computing the defined methods failed", e)
+        try {
+            tasks.join()
+        } catch {
+            case ce : ConcurrentException ⇒
+                error("project setup","computing overriding methods failed, e")
+                ce.getSuppressed foreach { e ⇒
+                    error("project setup", "computing the defined methods failed", e)
+                }
         }
 
         val result = methods.mapValuesNow { mdcs ⇒
@@ -1390,9 +1396,14 @@ object Project {
 
         val tasks = new SequentialTasks[ObjectType](computeOverridingMethods)
         classHierarchy.leafTypes foreach { t ⇒ tasks.submit(t) }
-        val exceptions = tasks.join()
-        exceptions foreach { e ⇒
-            OPALLogger.error("project configuration", "computing the overriding methods failed", e)
+        try {
+            tasks.join()
+        } catch {
+            case ce : ConcurrentExceptions ⇒
+                error("project setup","computing overriding methods failed, e")
+                ce.getSuppressed foreach { e ⇒
+                    error("project setup", "computing the overriding methods failed", e)
+                }
         }
         methods.repack
         methods

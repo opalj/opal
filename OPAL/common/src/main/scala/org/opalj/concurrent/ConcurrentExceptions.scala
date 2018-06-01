@@ -29,4 +29,4 @@
 package org.opalj
 package concurrent
 
-class ConcurrentExceptions extends Exception("concurrent execution failed", null, true, false)
+class ConcurrentExceptions extends Exception("concurrent exceptions occurred", null, true, false)
