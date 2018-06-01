@@ -107,10 +107,8 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    // private[this] var computedPropertyKinds: IntTrieSet = null // has to be set before usage
     private[this] var computedPropertyKinds: Array[Boolean] = null // has to be set before usage
 
-    // private[this] var delayedPropertyKinds: IntTrieSet = null // has to be set before usage
     private[this] var delayedPropertyKinds: Array[Boolean] = null // has to be set before usage
 
     override def isKnown(e: Entity): Boolean = ps.contains(e)
@@ -234,7 +232,6 @@ final class PKESequentialPropertyStore private (
                 lazyComputations(pkId) match {
                     case null ⇒
                         if (debug && computedPropertyKinds == null) {
-                            /*&& delayedPropertyKinds ne null (not necessary)*/
                             throw new IllegalStateException("setup phase was not called")
                         }
                         if (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) {
@@ -640,13 +637,13 @@ final class PKESequentialPropertyStore private (
     ): Unit = {
         assert(tasks.isEmpty)
 
-        // this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
-        this.computedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
-        computedPropertyKinds foreach { pk ⇒ this.computedPropertyKinds(pk.id) = true }
+        val newComputedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        this.computedPropertyKinds = newComputedPropertyKinds
+        computedPropertyKinds foreach { pk ⇒ newComputedPropertyKinds(pk.id) = true }
 
-        // this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
-        this.delayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
-        delayedPropertyKinds foreach { pk ⇒ this.delayedPropertyKinds(pk.id) = true }
+        val newDelayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        this.delayedPropertyKinds = newDelayedPropertyKinds
+        delayedPropertyKinds foreach { pk ⇒ newDelayedPropertyKinds(pk.id) = true }
     }
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
@@ -765,7 +762,10 @@ final class PKESequentialPropertyStore private (
                             val isFinal = pValue.isFinal
                             // Check that we have no running computations and that the
                             // property will not be computed later on.
-                            if (!isFinal && lb != ub && !delayedPropertyKinds.contains(pkId)) {
+                            if (!isFinal &&
+                                lb != ub &&
+                                !delayedPropertyKinds(pkId) &&
+                                pValue.dependees.isEmpty) {
                                 update(e, ub, ub, Nil) // commit as Final value
                                 continueComputation = true
                             }
