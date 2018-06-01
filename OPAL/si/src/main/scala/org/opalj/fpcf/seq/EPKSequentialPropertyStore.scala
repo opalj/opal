@@ -799,7 +799,10 @@ final class EPKSequentialPropertyStore private (
                         val isFinal = pValue.isFinal
                         // Check that we have no running computations and that the
                         // property will not be computed later on.
-                        if (!isFinal && lb != ub && !delayedPropertyKinds.contains(pkId)) {
+                        if (!isFinal &&
+                            lb != ub &&
+                            !delayedPropertyKinds.contains(pkId) &&
+                            pValue.dependees.isEmpty) {
                             update(e, ub, ub, Nil) // commit as Final value
                             continueComputation = true
                         }
