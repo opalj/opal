@@ -491,7 +491,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                                 && refIsNull(currentPC, receiver).isYesOrUnknown
                                 && {
                                     var foundDefinitiveHandler = false
-                                    code.exceptionHandlersFor(currentPC).filter(eh ⇒
+                                    code.handlersFor(currentPC) filter { eh ⇒
                                         !foundDefinitiveHandler && (
                                             (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
                                                 val isHandled = isSubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
@@ -503,7 +503,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                                                 else
                                                     false
                                             }
-                                        ))
+                                        )
+                                    }
                                 }.exists(eh ⇒ eh.handlerPC == successorPC)) {
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
                             }
