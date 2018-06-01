@@ -327,13 +327,17 @@ final class EPKSequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null")
         }
         val pkId = ub.key.id.toLong
-        /*user level*/ assert(ub.key == lb.key)
-        /*user level*/ assert(
-            !lb.isOrderedProperty || {
-                val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
+        if (debug) {
+            if (ub.key != lb.key) {
+                throw new IllegalArgumentException(
+                    s"lower and upper bound have different keys: lb=$lb vs. ub=$ub"
+                );
             }
-        )
+            if (lb.isOrderedProperty) {
+                val ubAsOP = ub.asOrderedProperty
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+            }
+        }
         ps.get(e) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
@@ -719,7 +723,7 @@ final class EPKSequentialPropertyStore private (
                     // Check that we have no running computations and that the
                     // property will not be computed later on.
                     if (pValue.ub == null && !delayedPropertyKinds.contains(pkId)) {
-                        // assert(pv.dependers.isEmpty)
+                        assert(pValue.dependees.isEmpty)
 
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
@@ -731,7 +735,6 @@ final class EPKSequentialPropertyStore private (
                             )
                         }
                         handleResult(fallbackResult)
-
                         continueComputation = true
                     }
                 }
