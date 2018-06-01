@@ -799,7 +799,7 @@ final class PKESequentialPropertyStore private (
 }
 
 /**
- * Factory for creating `EPKSequentialPropertyStore`s.
+ * Factory for creating `PKESequentialPropertyStore`s.
  *
  * @author Michael Eichberg
  */

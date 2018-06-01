@@ -439,7 +439,7 @@ abstract class PropertyStore {
     def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
 
     /**
-     * Processes the result; generally, not directly called by analyses.
+     * Processes the result eventually; generally, not directly called by analyses.
      * If this function is directly called, the caller has to ensure that we don't have overlapping
      * results and that the given result is a meaningful update of the previous property
      * associated with the respective entity - if any!
