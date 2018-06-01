@@ -108,4 +108,14 @@ object CallGraph extends CallGraphPropertyMetaInformation {
             (_, eps: EPS[SomeProject, CallGraph]) ⇒ eps.toUBEP
         )
     }
+
+    def apply(
+        callees: Map[Method, Map[Int /*PC*/ , Set[Method]]],
+        callers: Map[Method, Set[(Method, Int /*pc*/ )]]
+    ): CallGraph = new CallGraph(callees, callers)
+
+    def unapply(
+        cg: CallGraph
+    ): Option[(Map[Method, Map[Int /*PC*/ , Set[Method]]], Map[Method, Set[(Method, Int /*PC*/ )]])] =
+        Some(cg.callees → cg.callers)
 }
