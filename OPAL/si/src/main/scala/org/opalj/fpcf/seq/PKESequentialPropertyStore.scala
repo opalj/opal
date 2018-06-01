@@ -281,7 +281,9 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply[Entity, Property](EPK(e, pk), true)
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply[E, P](EPK(e, pk), force = true)
+    }
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
@@ -458,14 +460,10 @@ final class PKESequentialPropertyStore private (
 
         r.id match {
 
-            case NoResult.id ⇒
-            // A computation reported no result; i.e., it is not possible to
-            // compute a/some property/properties for a given entity.
-
-            case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
-                handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+            case NoResult.id ⇒ {
+                // A computation reported no result; i.e., it is not possible to
+                // compute a/some property/properties for a given entity.
+            }
 
             case Results.id ⇒
                 val Results(results) = r
@@ -475,9 +473,16 @@ final class PKESequentialPropertyStore private (
                 val MultiResult(results) = r
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
+            case IncrementalResult.id ⇒
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                handleResult(ir)
+                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+
             //
             // Methods which actually store results...
             //
+
+            case ExternalResult.id ⇒ throw new UnknownError(s"unexteped result: $r")
 
             case Result.id ⇒
                 val Result(e, p) = r

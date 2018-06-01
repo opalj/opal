@@ -29,12 +29,12 @@
 package org.opalj
 package fpcf
 
-import scala.util.control.ControlThrowable
+import org.opalj.concurrent.ConcurrentExceptions
 
+import scala.util.control.ControlThrowable
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
 
@@ -297,7 +297,7 @@ abstract class PropertyStore {
      * we may have to compute the property for some entities of the libraries, but we don't
      * want to compute them for all.
      */
-    def force(e: Entity, pk: SomePropertyKey): Unit
+    def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
 
     /**
      * Returns an iterator of the different properties associated with the given element.
@@ -350,8 +350,9 @@ abstract class PropertyStore {
     def finalEntities[P <: Property](p: P): Iterator[Entity] = entities(p, p)
 
     /**
-     * Directly associates the given property `p` with property kind `pk` with the given entity
-     * `e` if `e` has no property of the respective kind. The set property is always final.
+     * Associates the given property `p` with property kind `pk` with the given entity
+     * `e` if `e` has no property of the respective kind.
+     * The set property is always final.
      *
      * @note    This method must not be used '''if there might be another computation that
      *          computes the property kind `pk` for `e` and which returns the respective property
@@ -359,15 +360,16 @@ abstract class PropertyStore {
      *
      * A use case is an analysis that does use the property store while executing the analysis,
      * but which wants to store the results in the store. Such an analysis '''must
-     * be executed before any other analysis is scheduled'''.
+     * be executed before any other analysis is scheduled''' otherwise, some analyses may have
+     * seen fallback values.
      *
      * If a different property is already associated with the given entity, an
-     * IllegalStateException is thrown.
+     * IllegalStateException is eventually thrown; i.e., the exception is not necessarily thrown
+     * by the calling thread!
      *
      * @note   If any computation resulted in an exception, then `set` will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    @throws[IllegalStateException]
     def set(e: Entity, p: Property): Unit
 
     /**
@@ -397,12 +399,12 @@ abstract class PropertyStore {
     ): Unit
 
     /**
-     * Needs to be called before an analysis is scheduled to inform the property store which
-     * properties will be computed now and which are computed in a later phase. The later
-     * information is used to decide when we use a fallback.
+     * Needs to be called before an analysis is scheduled or a property is set to inform the
+     * property store which properties will be (externally) computed now and which are computed
+     * in a later phase. The later information is used to decide when we use a fallback.
      *
-     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
-     *        this case both sets have to be empty.
+     * @note  `setupPhase` always needs to be called - even  if just fallback values should
+     *        be computed; in this case both sets have to be empty.
      *
      * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
      *
@@ -473,9 +475,10 @@ abstract class PropertyStore {
      *         and return the thrown exception. No strong guarantees are given which exception
      *         is returned in case of concurrent execution.
      */
+    @throws[ConcurrentExceptions]("if exceptions occurred while executing the tasks")
     def waitOnPhaseCompletion(): Unit
 
-    protected[this] var exception: Throwable @volatile = null
+    @volatile protected[this] var exception: Throwable = null
 
     protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
