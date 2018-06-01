@@ -286,9 +286,12 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
         evaluateProject("the JDK", () ⇒ createJREProject)
 
+        var projectsCount = 0
         br.TestSupport.allBIProjects(reader, None) foreach { biProject ⇒
             val (projectName, projectFactory) = biProject
             evaluateProject(projectName, projectFactory)
+            projectsCount += 1
         }
+        info(s"analyzed $projectsCount projects w.r.t. the correctness of the def-use information")
     }
 }
