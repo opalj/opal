@@ -53,6 +53,8 @@ import org.opalj.tac.StaticFunctionCallStatement
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
 
+import scala.collection.Set
+
 /**
  * TODO
  * @author Florian Kuebler
@@ -174,10 +176,7 @@ class RTACallGraphAnalysis private[analyses] (
         }
 
         def continuation(eps: SomeEPS): PropertyComputationResult = {
-            eps match {
-                case newInstantiatedTypes: EPS[SomeProject, InstantiatedTypes] ⇒
-                    doComputeCG(method, newInstantiatedTypes)
-            }
+            doComputeCG(method, eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]])
         }
 
         IncrementalResult(
@@ -223,8 +222,8 @@ class RTACallGraphAnalysis private[analyses] (
                     else
                         IntermediateResult(
                             method,
-                            CallGraph.fallbackCG(p).callees(method),
-                            calleesOfM,
+                            Callees(CallGraph.fallbackCG(p).callees(method)),
+                            Callees(calleesOfM),
                             instantiatedTypesDependee.toSeq,
                             continuation
                         )
@@ -249,7 +248,7 @@ class EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes /* TODO maybe also: ,CallGraph*/ )
+    override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
 
-    override def derives: Set[PropertyKind] = Set(InstantiatedTypes, CallGraph)
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallGraph)
 }

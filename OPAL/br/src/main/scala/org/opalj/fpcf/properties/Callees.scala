@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package properties
 
+import scala.collection.Set
 import org.opalj.br.Method
 
 /**
