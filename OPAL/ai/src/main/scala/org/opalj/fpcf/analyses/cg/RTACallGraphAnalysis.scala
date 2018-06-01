@@ -210,7 +210,6 @@ class RTACallGraphAnalysis private[analyses] (
 
         // callee updates (in order to hold a dependency to instantiated types)
         results += (
-            //TODO the == is to expensive
             if (instantiatedTypesDependee.isEmpty || calleesLB.size == newCallees.size)
                 Result(method, newCallees)
             else

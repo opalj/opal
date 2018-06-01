@@ -31,6 +31,8 @@ package fpcf
 package properties
 
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -68,50 +70,10 @@ class CallGraph(
 object CallGraph extends CallGraphPropertyMetaInformation {
 
     /**
-     * Computes a CHA like call graph
+     * Computes a CHA like call graph.
      */
     def fallbackCG(p: SomeProject): CallGraph = {
-        //TODO parallelize. The current prototype impl. should be incredibly slow!
-        var callers = Map.empty[Method, Set[(Method, Int /*PC*/ )]].withDefaultValue(Set.empty)
-        val callees = p.allMethods.map { m ⇒
-            m.body match {
-                case Some(code) ⇒
-                    val calleesOfM = code.instructions.view.zipWithIndex.filter {
-                        case (instr, _) ⇒
-                            instr != null && instr.isInvocationInstruction
-                    }.map {
-                        case (instr, pc) ⇒
-                            val tgts = instr match {
-                                case call: INVOKESTATIC ⇒
-                                    p.staticCall(call).toSet
-                                case call: INVOKESPECIAL ⇒
-                                    p.specialCall(call).toSet
-                                case call: INVOKEVIRTUAL ⇒
-                                    p.virtualCall(m.classFile.thisType.packageName, call)
-                                case call: INVOKEINTERFACE ⇒
-                                    p.interfaceCall(call)
-                                case _: INVOKEDYNAMIC ⇒
-                                    OPALLogger.logOnce(
-                                        Warn(
-                                            "analysis",
-                                            "unresolved invokedynamics are not handled. please use appropriate reading configuration"
-                                        )
-                                    )(p.logContext)
-                                    Set.empty[Method]
-                            }
-                            tgts.foreach { tgt ⇒
-                                callers = callers.updated(tgt, callers(tgt) + (m → pc))
-                            }
-
-                            pc → tgts
-                    }.toMap
-
-                    m → calleesOfM
-                case None ⇒
-                    m → Map.empty[Int /*PC*/ , Set[Method]]
-            }
-        }.toMap
-        new CallGraph(callees, callers)
+        p.get(CHACallGraphKey)
     }
 
     final val key: PropertyKey[CallGraph] = {
@@ -133,4 +95,58 @@ object CallGraph extends CallGraphPropertyMetaInformation {
         cg: CallGraph
     ): Option[(Map[Method, Map[Int /*PC*/ , Set[Method]]], Map[Method, Set[(Method, Int /*PC*/ )]])] =
         Some(cg.callees → cg.callers)
+}
+
+/**
+ * Computes a CHA like call graph
+ * TODO move to a ProjectKey for cashing
+ */
+object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
+
+    override protected def requirements: ProjectInformationKeys = Nil
+
+    override protected def compute(project: SomeProject): CallGraph = {
+        //TODO parallelize. The current prototype impl. should be incredibly slow!
+        var callers = Map.empty[Method, Set[(Method, Int /*PC*/ )]].withDefaultValue(Set.empty)
+        val callees = project.allMethods.map { m ⇒
+            m.body match {
+                case Some(code) ⇒
+                    val calleesOfM = code.instructions.view.zipWithIndex.filter {
+                        case (instr, _) ⇒
+                            instr != null && instr.isInvocationInstruction
+                    }.map {
+                        case (instr, pc) ⇒
+                            val tgts = instr match {
+                                case call: INVOKESTATIC ⇒
+                                    project.staticCall(call).toSet
+                                case call: INVOKESPECIAL ⇒
+                                    project.specialCall(call).toSet
+                                case call: INVOKEVIRTUAL ⇒
+                                    project.virtualCall(m.classFile.thisType.packageName, call)
+                                case call: INVOKEINTERFACE ⇒
+                                    project.interfaceCall(call)
+                                case _: INVOKEDYNAMIC ⇒
+                                    OPALLogger.logOnce(
+                                        Warn(
+                                            "analysis",
+                                            "unresolved invokedynamics are not handled. please use appropriate reading configuration"
+                                        )
+                                    )(project.logContext)
+                                    Set.empty[Method]
+                            }
+                            tgts.foreach { tgt ⇒
+                                callers = callers.updated(tgt, callers(tgt) + (m → pc))
+                            }
+
+                            pc → tgts
+                    }.toMap
+
+                    m → calleesOfM
+                case None ⇒
+                    m → Map.empty[Int /*PC*/ , Set[Method]]
+            }
+        }.toMap
+        new CallGraph(callees, callers)
+    }
+
 }
