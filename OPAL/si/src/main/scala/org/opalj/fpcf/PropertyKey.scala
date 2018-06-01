@@ -151,7 +151,10 @@ object PropertyKey {
         e:    Entity,
         pkId: Int
     ): Property = {
-        withReadLock(keysLock) { fallbackProperties(pkId)(ps, e) }
+        withReadLock(keysLock) {
+            val fallbackPropertyComputation = fallbackProperties(pkId)
+            fallbackPropertyComputation(ps, e)
+        }
     }
 
     /**
