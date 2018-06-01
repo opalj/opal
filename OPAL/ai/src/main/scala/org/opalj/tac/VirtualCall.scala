@@ -40,41 +40,46 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 
 /**
- * Common supertrait of statements and expressions calling a method.
+ * Common supertrait of statements and expressions calling a virtual method.
  *
  * @author Michael Eichberg
  */
-trait Call[+V <: Var[V]] {
-    /** The declaring class; can be an array type for all methods defined by `java.lang.Object`. */
-    def declaringClass: ReferenceType
-    def isInterface: Boolean
-    def name: String
-    def descriptor: MethodDescriptor
+trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
+
+    def receiver: Expr[V]
 
     /**
-     * The parameters of the method call (including the implicit `this` reference if necessary.)
+     * Resolves the call targets taking the domain value information (`isPrecise` and `isNull`)
+     * into consideration.
+     *
+     * @note __This method requires that we have a flat representation!__ (That is, the receiver
+     *      is a `Var`.)
      */
-    def params: Seq[Expr[V]] // TODO IndexedSeq
-}
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[(Domain with RecordDefUse)#DomainValue]
+    ): Set[Method] = {
+        val receiverValue = receiver.asVar.value.asDomainReferenceValue
 
-object Call {
-
-    def unapply[V <: Var[V]](
-        call: Call[V]
-    ): Some[(ReferenceType, Boolean, String, MethodDescriptor)] = {
-        Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
-    }
-}
-
-
-object MethodCallParameters {
-
-    def unapply[V <: Var[V]](astNode: ASTNode[V]): Option[Seq[Expr[V]]] = {
-        astNode match {
-            case c: Call[V @unchecked]                   ⇒ Some(c.params)
-            case Assignment(_, _, c: Call[V @unchecked]) ⇒ Some(c.params)
-            case _                                       ⇒ None
+        if (receiverValue.isNull.isYes) {
+            Set.empty
+        } else if (declaringClass.isArrayType) {
+            p.instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
+        } else if (receiverValue.isPrecise) {
+            val receiverType = receiverValue.valueType.get
+            p.instanceCall(callingContext, receiverType, name, descriptor).toSet
+        } else {
+            // IMPROVE use the upper type bound to find the relevant types and then locate the methods
+            import p.classHierarchy.joinReferenceTypesUntilSingleUpperBound
+            val receiverType = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
+            if (isInterface) {
+                p.interfaceCall(receiverType.asObjectType, name, descriptor)
+            } else {
+                p.virtualCall(callingContext.packageName, receiverType, name, descriptor)
+            }
         }
     }
-
 }
