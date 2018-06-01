@@ -30,39 +30,34 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectLike
+import org.opalj.br.Method
 
 /**
   * TODO
   * @author Florian Kuebler
   */
-sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
+sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = InstantiatedTypes
+    final type Self = Callees
 }
 
-class InstantiatedTypes(val types: Set[ObjectType]) extends Property with InstantiatedTypesPropertyMetaInformation {
-
-    final def key = InstantiatedTypes.key
+class Callees(
+        val callees: Map[Int /*PC*/ , Set[Method]]
+) extends Property with CalleesPropertyMetaInformation {
+    final def key: PropertyKey[Callees] = Callees.key
 }
 
-object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
+object Callees extends CalleesPropertyMetaInformation {
 
-    def apply(types: Set[ObjectType]): InstantiatedTypes = new InstantiatedTypes(types)
-
-    def allTypes(p: ProjectLike): InstantiatedTypes = {
-        val allTypes = p.classHierarchy.allSubtypes(ObjectType.Object, reflexive = true)
-        InstantiatedTypes(allTypes)
-    }
-
-    final val key: PropertyKey[InstantiatedTypes] = {
-        PropertyKey.create[ProjectLike, InstantiatedTypes](
-            "InstantiatedTypes",
-            (_: PropertyStore, project: ProjectLike) ⇒ {
-                allTypes(project)
-            },
-            (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.toUBEP
+    final val key: PropertyKey[Callees] = {
+        PropertyKey.create(
+            "Callees",
+            Callees(Map.empty.withDefaultValue(Set.empty)),
+            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.toUBEP
         )
     }
+
+    def apply(callees: Map[Int /*PC*/ , Set[Method]]): Callees = new Callees(callees)
+
+    def unapply(callees: Callees): Option[Map[Int /*PC*/ , Set[Method]]] = Some(callees.callees)
 }

@@ -42,6 +42,10 @@ import org.opalj.log.Warn
 
 import scala.collection.Set
 
+/**
+  * TODO
+  * @author Florian Kuebler
+  */
 sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = CallGraph
@@ -100,12 +104,12 @@ object CallGraph extends CallGraphPropertyMetaInformation {
     }
 
     final val key: PropertyKey[CallGraph] = {
-        PropertyKey.create[SomeProject, CallGraph](
+        PropertyKey.create(
             name = "Callees",
-            (ps: PropertyStore, p: SomeProject) ⇒ {
+            (_: PropertyStore, p: SomeProject) ⇒ {
                 fallbackCG(p)
             },
-            (_, eps: EPS[SomeProject, CallGraph]) ⇒ eps.toUBEP
+            (_: PropertyStore, eps: EPS[SomeProject, CallGraph]) ⇒ eps.toUBEP
         )
     }
 
