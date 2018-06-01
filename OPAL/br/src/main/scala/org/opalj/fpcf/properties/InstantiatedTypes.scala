@@ -33,10 +33,12 @@ package properties
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 
+import scala.collection.Set
+
 /**
-  * TODO
-  * @author Florian Kuebler
-  */
+ * TODO
+ * @author Florian Kuebler
+ */
 sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = InstantiatedTypes
