@@ -292,7 +292,6 @@ class RecordDefUseTest extends FunSpec with Matchers {
             evaluateProject(projectName, projectFactory)
             projectsCount += 1
         }
-
-        info(s"analyzed $projectsCount project")
+        info(s"analyzed $projectsCount projects w.r.t. the correctness of the def-use information")
     }
 }
