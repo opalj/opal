@@ -116,10 +116,10 @@ final class FilteredIntTrieSet(
 
     override def foreach(f: IntConsumer): Unit = s.foreach { i ⇒ if (p(i)) f.accept(i) }
     override def map(f: Int ⇒ Int): IntTrieSet = {
-        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c + f(i) else c }
+        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c +! f(i) else c }
     }
     override def map(map: Array[Int]): IntTrieSet = {
-        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c + map(i) else c }
+        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c +! map(i) else c }
     }
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
         s.flatMap(i ⇒ if (p(i)) f(i) else EmptyIntTrieSet)
