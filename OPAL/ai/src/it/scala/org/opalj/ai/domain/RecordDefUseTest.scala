@@ -45,7 +45,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.Method
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
-import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Tests if we are able to usefull self-consistent collect def/use information for the entire
@@ -179,7 +178,9 @@ class RecordDefUseTest extends FunSpec with Matchers {
                             s"{pc=$pc:$instruction[isHandler=$isHandler][operand=$opIndex] "+
                                 s"deviating def/use info: "+
                                 s"domain=$domainOrigins vs defUse=$defUseOrigins}"
-                        fail((if (refinedDefUseInformation) "[using domain.origin]" else "") + message)
+                        val messageHeader =
+                            if (refinedDefUseInformation) "[using domain.origin]" else ""
+                        fail(messageHeader + message)
                     }
                 }
                 identicalOrigins.incrementAndGet
@@ -218,7 +219,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val m = methodInfo.method
                 try {
-                    analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
+                    val aiResult = BaseAI(m, new DefUseDomain(m, project))
+                    analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = false)
                 } catch {
                     case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
                 }
@@ -229,7 +231,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val m = methodInfo.method
                 try {
-                    analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
+                    val aiResult = BaseAI(m, new RefinedDefUseDomain(m, project))
+                    analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = true)
                 } catch {
                     case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
                 }
@@ -256,8 +259,6 @@ class RecordDefUseTest extends FunSpec with Matchers {
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
             fail(failureMessages.mkString(errorMessageHeader, "\n", "\n"))
-        } else if (concurrentExceptions != null && concurrentExceptions.length > 0) {
-            fail(concurrentExceptions.mkString("concurrent exceptions:\n", "\n", "\n"))
         } else {
             info(baseMessage)
         }
