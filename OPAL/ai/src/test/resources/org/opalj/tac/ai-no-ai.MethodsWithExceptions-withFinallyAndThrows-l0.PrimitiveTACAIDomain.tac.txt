@@ -17,12 +17,12 @@
 5:/*pc=14:*/ goto 9
 
 // <FINALLY> →
-6:/*pc=17:*/ caught <ANY> /* <= {exception@4,exception[VM]@4,param1,exception[VM]@1}*/
+6:/*pc=17:*/ caught <ANY> /* <= {exception[VM]@4,exception@4,param1,exception[VM]@1}*/
 7:/*pc=19:*/ {param1}/*java.lang.Throwable*/.printStackTrace()
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 7 →
-8:/*pc=23:*/ throw {exception@4, param1, exception[VM]@1}
+8:/*pc=23:*/ throw {exception[VM]@4, exception@4, param1, exception[VM]@1}
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 5 →

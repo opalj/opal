@@ -86,6 +86,9 @@ sealed abstract class IntTrieSet
      */
     def +!(value: Int): IntTrieSet
 
+    /**
+     * @see [[+!]] for details!
+     */
     final def ++!(that: IntTrieSet): IntTrieSet = {
         that.foldLeft(this)(_ +! _) // We have to expand `this`!
     }
@@ -223,8 +226,8 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def getAndRemove: IntHeadAndRestOfSet[IntTrieSet] = {
         IntHeadAndRestOfSet(i, EmptyIntTrieSet: IntTrieSet)
     }
-    override def filter(p: (Int) ⇒ Boolean): IntTrieSet = if (p(i)) this else EmptyIntTrieSet
-    override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
+    override def filter(p: Int ⇒ Boolean): IntTrieSet = if (p(i)) this else EmptyIntTrieSet
+    override def withFilter(p: Int ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
     override def map(f: Int ⇒ Int): IntTrieSet = {
         val newI = f(i)
         if (newI != i)
