@@ -248,3 +248,13 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 }
 private[fpcf] object PartialResult { private[fpcf] final val id = 6 }
 
+/** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
+private[fpcf] case class ExternalResult(
+        e: Entity,
+        p: Property
+) extends FinalPropertyComputationResult {
+
+    private[fpcf] final def id = ExternalResult.id
+
+}
+private[fpcf] object ExternalResult { private[fpcf] final val id = 7 }
