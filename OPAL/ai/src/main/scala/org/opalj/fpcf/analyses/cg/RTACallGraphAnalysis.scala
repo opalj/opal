@@ -81,14 +81,14 @@ class RTACallGraphAnalysis private[analyses] (
 
         var newInstantiatedTypes = Set.empty[ObjectType] //TODO maybe use Seq instead
         var newMethods = Set.empty[Method] //TODO maybe use Seq instead
-        var callees = Map.empty[Method, Map[Int /*PC*/ , Set[Method]]] //TODO use withDefault
+        var calleesOfM = Map.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
         var callers = Map.empty[Method, Set[(Method, Int /*PC*/ )]] //TODO use withDefault
 
         def handleCall(pc: Int, tgts: Set[Method]): Unit = {
             for (tgt ← tgts) {
                 val methodId = methodIds(tgt)
                 // add call edge to CG
-                callees = callees.updated(m, callees(m).updated(pc, callees(m)(pc) + tgt))
+                calleesOfM = calleesOfM.updated(pc, calleesOfM(pc) + tgt)
                 callers = callers.updated(tgt, callers(tgt) + (m → pc))
 
                 // the callee is now reachable and should be processed, if not done already
@@ -99,6 +99,8 @@ class RTACallGraphAnalysis private[analyses] (
             }
         }
 
+        implicit val p: SomeProject = project
+
         for (stmt ← tac.stmts) {
             stmt match {
                 case Assignment(_, _, New(_, allocatedType)) ⇒
@@ -106,22 +108,22 @@ class RTACallGraphAnalysis private[analyses] (
                         newInstantiatedTypes += allocatedType
 
                 case StaticFunctionCallStatement(call) ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget(p).toSet)
+                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
 
                 case call: StaticMethodCall[V] ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget(p).toSet)
+                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
 
                 case NonVirtualFunctionCallStatement(call) ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget(p).toSet)
+                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
 
                 case call: NonVirtualMethodCall[V] ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget(p).toSet)
+                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
 
                 case VirtualFunctionCallStatement(call) ⇒
-                //TODO I need "ev" here: call.resolveCallTargets(m.classFile.thisType)
+                    call.resolveCallTargets(m.classFile.thisType)
 
-                case call: VirtualMethodCall[V]         ⇒
-                //TODO I need "ev" here: call.resolveCallTargets(m.classFile.thisType)
+                case call: VirtualMethodCall[V] ⇒
+                    call.resolveCallTargets(m.classFile.thisType)
 
             }
         }
@@ -149,11 +151,12 @@ class RTACallGraphAnalysis private[analyses] (
 
                     // TODO handle the update of a call grpah
                     PartialResult[SomeProject, CallGraph](p, CallGraph.key, {
-                        case EPS(_, lb: CallGraph, ub: CallGraph) ⇒
-                            Some(EPS(p, lb, ub)) //TODO compute the union between the ub and the computed cg
-                            //TODO it should be ub except the edges from/to m and instead the computed ones here
+                        case EPS(_, lb: CallGraph, CallGraph(calleesUB, callersUB)) ⇒
+                            val callees = calleesUB.updated(m, calleesOfM)
+                            Some(EPS(p, lb, CallGraph(callees, callersUB))) //TODO compute the union between the ub and the computed cg
+                        //TODO it should be ub except the edges from/to m and instead the computed ones here
                         case EPK(_, _) ⇒ Some(EPS(
-                            p, CallGraph.fallbackCG(p), new CallGraph(callees, callers)
+                            p, CallGraph.fallbackCG(p), new CallGraph(Map(m → calleesOfM), callers)
                         ))
                     })
                 )
