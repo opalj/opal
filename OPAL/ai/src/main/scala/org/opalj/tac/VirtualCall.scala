@@ -29,15 +29,13 @@
 package org.opalj
 package tac
 
-import scala.collection.Set
-
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
+
+import scala.collection.Set
 
 /**
  * Common supertrait of statements and expressions calling a virtual method.
