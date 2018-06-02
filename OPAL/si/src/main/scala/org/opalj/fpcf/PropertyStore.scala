@@ -34,7 +34,9 @@ import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 
 /**
  * A property store manages the execution of computations of properties related to specific
@@ -115,6 +117,8 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 abstract class PropertyStore {
+
+    implicit val logContext: LogContext
 
     //
     //
@@ -503,27 +507,43 @@ abstract class PropertyStore {
      */
     def waitOnPhaseCompletion(): Unit
 
-    @volatile protected[this] var exception: Throwable = _ /*null*/
+    @volatile private[this] var exception: Throwable = _ /*null*/
+
+    /** ONLY INTENDED TO BE USED BY TESTS TO AVOID MISGUIDING TEST REPORTS! */
+    @volatile private[fpcf] var suppressError: Boolean = false
+
+    protected[this] def onFirstException(t: Throwable): Unit = {
+        if (!suppressError) {
+            error("analysis progress", "analysis resulted in exception", t)
+        }
+    }
+
+    protected[this] def collectAndThrowException(t: Throwable): Nothing = {
+        if (exception ne null) {
+            if (exception ne t) {
+                exception.addSuppressed(t)
+            }
+        } else {
+            this.synchronized {
+                if (exception ne null) {
+                    exception.addSuppressed(t)
+                } else {
+                    exception = t
+                    onFirstException(t)
+                }
+            }
+        }
+        throw t;
+    }
 
     protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
             throw exception;
-
         try {
             f
         } catch {
-            case ct: ControlThrowable ⇒
-                /*  BASICALLY IGNORED - BUT THERE IS ROOM FOR IMPROVEMENT! */
-                throw ct;
-            case t: Throwable ⇒
-                if (exception ne null) {
-                    // We may swallow some exceptions, but, the caught exception is
-                    // definitively a "top-level" exception.
-                    exception.addSuppressed(t)
-                } else {
-                    exception = t
-                }
-                throw t;
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable         ⇒ collectAndThrowException(t)
         }
     }
 
