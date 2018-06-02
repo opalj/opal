@@ -41,15 +41,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.RTJar
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.fpcf.seq.EPKSequentialPropertyStore
-import org.opalj.fpcf.seq.EagerDependeeUpdateHandling
-import org.opalj.fpcf.seq.LazyDependeeUpdateHandling
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses._
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.par.ReactiveAsyncPropertyStore
@@ -65,11 +60,16 @@ import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.fpcf.seq.EPKSequentialPropertyStore
+import org.opalj.fpcf.seq.EagerDependeeUpdateHandling
+import org.opalj.fpcf.seq.LazyDependeeUpdateHandling
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.{Error ⇒ ErrorLogLevel}
+import org.opalj.support.info
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
@@ -499,20 +499,13 @@ object PropertyStorePerformanceEvaluation {
                             case "L1FieldMutabilityAnalysis" ⇒
                                 EagerL1FieldMutabilityAnalysis.start(project, propertyStore)
                             case "L0PurityAnalysis" ⇒
-                                LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore)
+                                info.Purity.supportingAnalyses(0).foreach(_.startLazily(project, propertyStore))
                                 EagerL0PurityAnalysis.start(project, propertyStore)
                             case "L1PurityAnalysis" ⇒
-                                LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
-                                LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
+                                info.Purity.supportingAnalyses(1).foreach(_.startLazily(project, propertyStore))
                                 EagerL1PurityAnalysis.start(project, propertyStore)
                             case "L2PurityAnalysis" | "L2PurityAnalysisEagerTAC" ⇒
-                                LazyL1FieldMutabilityAnalysis.startLazily(project, propertyStore)
-                                LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
-                                LazyReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
-                                LazyVirtualReturnValueFreshnessAnalysis.startLazily(project, propertyStore)
-                                LazyInterProceduralEscapeAnalysis.startLazily(project, propertyStore)
-                                LazyVirtualCallAggregatingEscapeAnalysis.startLazily(project, propertyStore)
-                                LazyFieldLocalityAnalysis.startLazily(project, propertyStore)
+                                info.Purity.supportingAnalyses(2).foreach(_.startLazily(project, propertyStore))
                                 EagerL2PurityAnalysis.start(project, propertyStore)
                             case "L1ThrownExceptionsAnalysis" ⇒
                                 LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
