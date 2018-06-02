@@ -504,6 +504,8 @@ abstract class PropertyStore {
      * @note If a computation fails with an exception, the property store will stop in due time
      *       and return the thrown exception. No strong guarantees are given which exception
      *       is returned in case of concurrent execution.
+     * @note In case of an exception, the analyses are aborted as fast as possible and the
+     *       store is no longer usable.
      */
     def waitOnPhaseCompletion(): Unit
 
