@@ -245,8 +245,8 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = {
-        apply[Entity, Property](EPK(e, pk), true)
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply[E, P](EPK(e, pk), true)
     }
 
     /**

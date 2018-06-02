@@ -394,7 +394,7 @@ abstract class PropertyStore {
      * @note   Triggers lazy evaluations.
      * @see `apply(epk:EPK)` for details.
      */
-    def force(e: Entity, pk: SomePropertyKey): Unit
+    def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
 
     /**
      * Registers a function that lazily computes a property for an element
