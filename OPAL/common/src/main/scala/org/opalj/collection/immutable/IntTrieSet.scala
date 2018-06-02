@@ -113,10 +113,10 @@ final class FilteredIntTrieSet(
 
     override def foreach(f: IntConsumer): Unit = s.foreach { i ⇒ if (p(i)) f.accept(i) }
     override def map(f: Int ⇒ Int): IntTrieSet = {
-        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c + f(i) else c }
+        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c +! f(i) else c }
     }
     override def map(map: Array[Int]): IntTrieSet = {
-        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c + map(i) else c }
+        s.foldLeft(EmptyIntTrieSet: IntTrieSet) { (c, i) ⇒ if (p(i)) c +! map(i) else c }
     }
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
         s.flatMap(i ⇒ if (p(i)) f(i) else EmptyIntTrieSet)
@@ -588,6 +588,17 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
     final override def hasMultipleElements: Boolean = size > 1
     final override def isEmpty: Boolean = false
 
+    final override def map(f: Int ⇒ Int): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! f(_))
+    }
+    final override def map(map: Array[Int]): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! map(_))
+    }
+
+    final override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
+        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++! f(_))
+    }
+
     final override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
 
     final override def toChain: Chain[Int] = {
@@ -666,17 +677,6 @@ private[immutable] final class IntTrieSetN private[immutable] (
             }
             i += 1
         }
-    }
-
-    final override def map(f: Int ⇒ Int): IntTrieSet = {
-        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! f(_))
-    }
-    final override def map(map: Array[Int]): IntTrieSet = {
-        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ +! map(_))
-    }
-
-    final override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = {
-        foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++! f(_))
     }
 
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
@@ -904,9 +904,6 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
     override def forall(p: Int ⇒ Boolean): Boolean = right.forall(p)
     override def foreach(f: IntConsumer): Unit = right.foreach(f)
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = right.foreachPair(f)
-    override def map(f: Int ⇒ Int): IntTrieSet = right.map(f)
-    override def map(map: Array[Int]): IntTrieSet = right.map(map)
-    override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = right.flatMap(f)
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = right.foldLeft(z)(f)
 
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = {
@@ -1034,9 +1031,6 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p)
     override def foreach(f: IntConsumer): Unit = left.foreach(f)
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = left.foreachPair(f)
-    override def map(f: Int ⇒ Int): IntTrieSet = left.map(f)
-    override def map(map: Array[Int]): IntTrieSet = left.map(map)
-    override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = left.flatMap(f)
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = left.foldLeft(z)(f)
 
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = {

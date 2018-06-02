@@ -214,7 +214,8 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             it("should be possible to create a complex schedule") {
                 val scenario = AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7Lazy, c8Lazy, c9))
                 val schedule = scenario.computeSchedule
-                schedule.batches.head.toSet should contain(c7Lazy, c8Lazy)
+                schedule.batches.head.toSet should contain(c7Lazy)
+                schedule.batches.head.toSet should contain(c8Lazy)
             }
         }
     }
