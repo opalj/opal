@@ -29,6 +29,7 @@
 package org.opalj.fpcf.par
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicLong
 
 import com.phaller.rasync._
@@ -80,9 +81,13 @@ class ReactiveAsyncPropertyStore private (
 
     private implicit val handlerPool: HandlerPool = new HandlerPool(
         parallelism = parallelism,
-        unhandledExceptionHandler = t ⇒ {
-            thrownExceptionsInHandlerPool.add(t)
-            t.printStackTrace()
+        unhandledExceptionHandler = {
+            case _: RejectedExecutionException ⇒
+            // HandlerPool was shut down due an exception in the analysis. Ignore those
+            // exceptions.
+            case t ⇒
+                thrownExceptionsInHandlerPool.add(t)
+                t.printStackTrace()
         }
     )
 
@@ -452,6 +457,7 @@ class ReactiveAsyncPropertyStore private (
                     val IntermediateResult(_, _, _, d, _) = r
                     dependencyCounter.getOrElseUpdate(d.size, new AtomicLong(0)).incrementAndGet()
                     incCounter("DependenciesLowerBound", d.size)
+                case _ ⇒
             }
             if (r.id == IntermediateResult.id) {
 
@@ -709,7 +715,7 @@ class ReactiveAsyncPropertyStore private (
         val fut = handlerPool.quiescentResolveCell
         var interrupted: Boolean = false
 
-        while (!interrupted && !fut.isCompleted) {
+        while (!interrupted && !fut.isCompleted && thrownExceptionsInHandlerPool.isEmpty) {
             try {
                 Await.ready(fut, 1.second)
             } catch {
@@ -719,6 +725,7 @@ class ReactiveAsyncPropertyStore private (
 
         // If an exception occured in a ReactiveAsync task, throw the first exception to the client
         if (!thrownExceptionsInHandlerPool.isEmpty) {
+            handlerPool.shutdown()
             throw thrownExceptionsInHandlerPool.peek()
         }
 
