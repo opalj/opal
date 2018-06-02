@@ -698,7 +698,11 @@ final class EPKSequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty)
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "setup phase can only be called as long as no tasks are scheduled"
+            )
+        }
 
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
