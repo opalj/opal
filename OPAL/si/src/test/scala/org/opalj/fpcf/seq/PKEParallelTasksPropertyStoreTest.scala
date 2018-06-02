@@ -33,6 +33,10 @@ import org.opalj.fpcf.PropertyStore
 
 class PKEParallelTasksPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
-    def createPropertyStore(): PropertyStore = PKEParallelTasksPropertyStore()
+    def createPropertyStore(): PropertyStore = {
+        val ps = PKEParallelTasksPropertyStore()
+        ps.suppressError = true
+        ps
+    }
 
 }

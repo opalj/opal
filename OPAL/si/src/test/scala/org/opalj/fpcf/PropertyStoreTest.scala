@@ -407,7 +407,6 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     }
                 )
             }
-
             ps.waitOnPhaseCompletion()
 
             ps("e", ppk) should be(FinalEP("e", Palindrome))
