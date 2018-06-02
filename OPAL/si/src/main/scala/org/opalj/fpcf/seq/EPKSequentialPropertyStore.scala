@@ -339,6 +339,11 @@ final class EPKSequentialPropertyStore private (
                 val ubAsOP = ub.asOrderedProperty
                 ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
             }
+            if (newDependees.nonEmpty && lb == ub) {
+                throw new IllegalArgumentException(
+                    s"final property $lb with dependees: $newDependees"
+                )
+            }
         }
         ps.get(e) match {
             case None ⇒
