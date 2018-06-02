@@ -30,13 +30,13 @@ package org.opalj
 package fpcf
 package seq
 
-import scala.reflect.runtime.universe.Type
-
 import java.lang.System.identityHashCode
 import java.util.ArrayDeque
 import java.util.IdentityHashMap
 
+import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.graphs
 import org.opalj.log.LogContext
@@ -44,8 +44,6 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -63,29 +61,34 @@ final class PKESequentialPropertyStore private (
         val logContext: LogContext
 ) extends PropertyStore { store ⇒
 
-    /*
+    /**
      * Controls in which order updates are processed/scheduled.
      *
-     * May be changed at any time.
+     * May be changed (concurrently) at any time.
      */
     @volatile var dependeeUpdateHandling: DependeeUpdateHandling = EagerDependeeUpdateHandling
 
+    /**
+     * Controls in which order dependers are processed/scheduled.
+     *
+     * May be changed (concurrently) at any time.
+     */
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
-    protected[this] var scheduledTasksCounter: Int = 0
-    final def scheduledTasks: Int = scheduledTasksCounter
+    private[this] var scheduledTasksCounter: Int = 0
+    def scheduledTasks: Int = scheduledTasksCounter
 
-    protected[this] var scheduledOnUpdateComputationsCounter: Int = 0
-    final def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+    private[this] var scheduledOnUpdateComputationsCounter: Int = 0
+    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
 
-    protected[this] var eagerOnUpdateComputationsCounter: Int = 0
-    final def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    private[this] var eagerOnUpdateComputationsCounter: Int = 0
+    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
 
-    protected[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
-    final def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
+    private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
+    def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
 
-    protected[this] var resolvedCyclesCounter: Int = 0
-    final def resolvedCycles: Int = resolvedCyclesCounter
+    private[this] var resolvedCyclesCounter: Int = 0
+    def resolvedCycles: Int = resolvedCyclesCounter
 
     private[this] var quiescenceCounter = 0
 
@@ -107,9 +110,9 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    private[this] var computedPropertyKinds: Array[Boolean] = null // has to be set before usage
+    private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
 
-    private[this] var delayedPropertyKinds: Array[Boolean] = null // has to be set before usage
+    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
 
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
@@ -145,10 +148,6 @@ final class PKESequentialPropertyStore private (
         entities.toIterator
     }
 
-    /**
-     * Returns all entities which have the given property bounds based on an "==" (equals)
-     * comparison.
-     */
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
         require(lb ne null)
         require(ub ne null)
@@ -178,44 +177,12 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: PropertyComputation[E]
-    ): Unit = {
-        if (debug && !tasks.isEmpty) {
-            throw new IllegalStateException(
-                "lazy computations should only be registered while no analysis are scheduled"
-            )
-        }
-        lazyComputations(pk.id) = pc.asInstanceOf[SomePropertyComputation]
-    }
-
-    override def scheduleEagerComputationForEntity[E <: Entity](
-        e: E
-    )(
-        pc: PropertyComputation[E]
-    ): Unit = handleExceptions {
-        scheduledTasksCounter += 1
-        tasks.addLast(new EagerPropertyComputationTask(this, e, pc))
-    }
-
-    private[this] def scheduleLazyComputationForEntity[E <: Entity](
-        e: E
-    )(
-        pc: PropertyComputation[E]
-    ): Unit = handleExceptions {
-        scheduledTasksCounter += 1
-        tasks.addLast(new LazyPropertyComputationTask(this, e, pc))
-    }
-
-    // triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        apply(EPK(e, pk), false)
+        apply(EPK(e, pk), force = false)
     }
 
-    // triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
-        apply(epk, false)
+        apply(epk, force = false)
     }
 
     private[this] def apply[E <: Entity, P <: Property](
@@ -278,12 +245,44 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply[Entity, Property](EPK(e, pk), true)
+    def force(e: Entity, pk: SomePropertyKey): Unit = {
+        apply[Entity, Property](EPK(e, pk), true)
+    }
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
      */
     private[seq] final def getPropertyValue(e: Entity, pkId: Int): PropertyValue = ps(pkId).get(e)
+
+    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "lazy computations should only be registered while no analysis are scheduled"
+            )
+        }
+        lazyComputations(pk.id) = pc.asInstanceOf[SomePropertyComputation]
+    }
+
+    private[this] def scheduleLazyComputationForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit = handleExceptions {
+        scheduledTasksCounter += 1
+        tasks.addLast(new LazyPropertyComputationTask(this, e, pc))
+    }
+
+    override def scheduleEagerComputationForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit = handleExceptions {
+        scheduledTasksCounter += 1
+        tasks.addLast(new EagerPropertyComputationTask(this, e, pc))
+    }
 
     /**
      * Updates the entity; returns true if no property already existed and is also not computed;
@@ -300,7 +299,7 @@ final class PKESequentialPropertyStore private (
         newDependees: Traversable[SomeEOptionP]
     ): Boolean = {
         if (debug && e == null) {
-            throw new IllegalArgumentException("the entity must not be null")
+            throw new IllegalArgumentException("the entity must not be null");
         }
         val pkId = ub.key.id
         if (debug) {
@@ -440,7 +439,7 @@ final class PKESequentialPropertyStore private (
         val pkId = key.id
 
         if (debug && lazyComputations(pkId) != null) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                 s"$e: setting $p is not supported; lazy computation is scheduled for $key"
             )
         }
@@ -495,7 +494,7 @@ final class PKESequentialPropertyStore private (
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
                     if (dependee.isFinal) {
-                        throw new IllegalStateException(
+                        throw new IllegalArgumentException(
                             s"$e (lb=$lb, ub=$ub): dependency to final property: $dependee"
                         )
                     }
@@ -638,7 +637,7 @@ final class PKESequentialPropertyStore private (
     override def setupPhase(
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
-    ): Unit = {
+    ): Unit = handleExceptions {
         if (debug && tasks.size > 0) {
             throw new IllegalStateException(
                 "setup phase can only be called as long as no tasks are scheduled"

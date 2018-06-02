@@ -933,7 +933,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                             // required when we resolve the cycle
                             case FinalEP(_, Pure)             ⇒ Result(node, Pure)
 
-                            // the following three cases should never happen...
+                            // the following cases should never happen...
                             case IntermediateEP(_, Impure, _) ⇒ ???
                             case FinalEP(_, Impure)           ⇒ ???
                         }
