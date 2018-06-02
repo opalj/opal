@@ -953,7 +953,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                             // required when we resolve the cycle
                             case FinalEP(_, Pure)             ⇒ Result(node, Pure)
 
-                            // the following three cases should never happen...
+                            // the following cases should never happen...
                             case IntermediateEP(_, Impure, _) ⇒ ???
                             case FinalEP(_, Impure)           ⇒ ???
                         }
@@ -999,15 +999,15 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val ps = createPropertyStore()
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
             def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = ???
-            def aAnalysis(string: String): PropertyComputationResult = {
-                val bEOptionP = ps("b", ReachableNodesCount.Key)
+            def aAnalysis(ignored: Node): PropertyComputationResult = {
+                val bEOptionP = ps(Node("b"), ReachableNodesCount.Key)
                 new IntermediateResult(
-                    "a", ReachableNodesCount(10), ReachableNodesCount(20), List(bEOptionP),
+                    Node("a"), ReachableNodesCount(10), ReachableNodesCount(20), List(bEOptionP),
                     aContinuation
                 )
             }
             assertThrows[IllegalArgumentException] {
-                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity(Node("a"))(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1020,33 +1020,33 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val ps = createPropertyStore()
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
-            def lazyAnalysis(string: String): PropertyComputationResult = {
-                val aEOptionP = ps("a", ReachableNodesCount.Key)
+            def lazyAnalysis(n: Node): PropertyComputationResult = {
+                val aEOptionP = ps(Node("a"), ReachableNodesCount.Key)
                 count += 1
                 new IntermediateResult(
-                    string, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
+                    n, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
                     aContinuation
                 )
             }
             def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = {
                 new IntermediateResult(
-                    "a",
+                    Node("a"),
                     ReachableNodesCount(8), // <= invalid refinement of lower bound!
                     ReachableNodesCount(1),
                     List(bStringEOptionP),
                     aContinuation
                 )
             }
-            def aAnalysis(string: String): PropertyComputationResult = {
-                val bEOptionP = ps("b", ReachableNodesCount.Key)
+            def aAnalysis(string: Node): PropertyComputationResult = {
+                val bEOptionP = ps(Node("b"), ReachableNodesCount.Key)
                 new IntermediateResult(
-                    "a", ReachableNodesCount(20), ReachableNodesCount(0), List(bEOptionP),
+                    Node("a"), ReachableNodesCount(20), ReachableNodesCount(0), List(bEOptionP),
                     aContinuation
                 )
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
             assertThrows[IllegalArgumentException] {
-                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity(Node("a"))(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1059,33 +1059,33 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val ps = createPropertyStore()
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
-            def lazyAnalysis(string: String): PropertyComputationResult = {
-                val aEOptionP = ps("a", ReachableNodesCount.Key)
+            def lazyAnalysis(n: Node): PropertyComputationResult = {
+                val aEOptionP = ps(Node("a"), ReachableNodesCount.Key)
                 count += 1
                 new IntermediateResult(
-                    string, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
+                    n, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
                     aContinuation
                 )
             }
             def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = {
                 new IntermediateResult(
-                    "a",
+                    Node("a"),
                     ReachableNodesCount(21),
                     ReachableNodesCount(0), // <= invalid refinement of upper bound!
                     List(bStringEOptionP),
                     aContinuation
                 )
             }
-            def aAnalysis(string: String): PropertyComputationResult = {
-                val bEOptionP = ps("b", ReachableNodesCount.Key)
+            def aAnalysis(ignored: Node): PropertyComputationResult = {
+                val bEOptionP = ps(Node("b"), ReachableNodesCount.Key)
                 new IntermediateResult(
-                    "a", ReachableNodesCount(20), ReachableNodesCount(1), List(bEOptionP),
+                    Node("a"), ReachableNodesCount(20), ReachableNodesCount(1), List(bEOptionP),
                     aContinuation
                 )
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
             assertThrows[IllegalArgumentException] {
-                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity(Node("a"))(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1098,17 +1098,17 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val ps = createPropertyStore()
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
-            def lazyAnalysis(string: String): PropertyComputationResult = {
-                val aEOptionP = ps("a", ReachableNodesCount.Key)
+            def lazyAnalysis(n: Node): PropertyComputationResult = {
+                val aEOptionP = ps(Node("a"), ReachableNodesCount.Key)
                 count += 1
                 new IntermediateResult(
-                    string, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
+                    n, ReachableNodesCount(100 - count), ReachableNodesCount(count), List(aEOptionP),
                     aContinuation
                 )
             }
             def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = {
                 new IntermediateResult(
-                    "a",
+                    Node("a"),
                     // bounds have surpassed themselve
                     ReachableNodesCount(5),
                     ReachableNodesCount(15),
@@ -1116,16 +1116,16 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                     aContinuation
                 )
             }
-            def aAnalysis(string: String): PropertyComputationResult = {
-                val bEOptionP = ps("b", ReachableNodesCount.Key)
+            def aAnalysis(string: Node): PropertyComputationResult = {
+                val bEOptionP = ps(Node("b"), ReachableNodesCount.Key)
                 new IntermediateResult(
-                    "a", ReachableNodesCount(20), ReachableNodesCount(1), List(bEOptionP),
+                    Node("a"), ReachableNodesCount(20), ReachableNodesCount(1), List(bEOptionP),
                     aContinuation
                 )
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
             assertThrows[IllegalArgumentException] {
-                ps.scheduleEagerComputationForEntity("a")(aAnalysis)
+                ps.scheduleEagerComputationForEntity(Node("a"))(aAnalysis)
                 ps.waitOnPhaseCompletion()
             }
         }
@@ -1239,7 +1239,6 @@ case class ReachableNodesCount(value: Int) extends OrderedProperty {
     type Self = ReachableNodesCount
     def key = ReachableNodesCount.Key
 
-    @throws[IllegalArgumentException]("if this property is not more precise than the given one")
     def checkIsEqualOrBetterThan(e: Entity, other: ReachableNodesCount): Unit = {
         if (this.value > other.value) {
             throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")

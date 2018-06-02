@@ -29,8 +29,6 @@
 package org.opalj
 package fpcf
 
-import org.opalj.concurrent.ConcurrentExceptions
-
 import scala.util.control.ControlThrowable
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
@@ -91,16 +89,28 @@ import org.opalj.log.OPALLogger.info
  * thread-safe.
  *
  * ==Common Abbreviations==
- * - e =         Entity
- * - p =         Property
- * - ps =        Properties (the properties of an entity - one per kind)
- * - pk =        Property Key
- * - pc =        Property Computation
- * - lpc =       Lazy Property Computation
- * - c =         Continuation (The part of the analysis that factors in all properties of dependees)
- * - EPK =       Entity and a PropertyKey
- * - EP =        Entity and an associated Property
- * - EOptionP =  Entity and either a PropertyKey or (if available) a Property
+ *  - e =         Entity
+ *  - p =         Property
+ *  - ps =        Properties (the properties of an entity - one per kind)
+ *  - pk =        Property Key
+ *  - pc =        Property Computation
+ *  - lpc =       Lazy Property Computation
+ *  - c =         Continuation (The part of the analysis that factors in all properties of dependees)
+ *  - EPK =       Entity and a PropertyKey
+ *  - EP =        Entity and an associated Property
+ *  - EOptionP =  Entity and either a PropertyKey or (if available) a Property
+ *
+ * ==Exceptions==
+ * In general, exceptions are only thrown if debugging is turned on due to the costs for checking
+ * for the respective violations. That is, if debugging is turned off, many potential errors leading
+ * to "incomprehensible" results will not be reported. Hence, after debugging an enalysis to
+ * debugging (and assertions!) off to get the best performance.
+ *
+ * We will throw `IllegalArgumentException`s iff a parameter is in itself invalid. E.g., the lower
+ * and upper bound do not have the same [[PropertyKind]]. In all other cases `IllegalStateException`s
+ * are thrown. All exceptions are either thrown immediately or eventually, when
+ * [[waitOnPhaseCompletion()]] is called. In the latter case, the exceptions are accumulated in
+ * the first thrown exception using suppressed exceptions.
  *
  * @author Michael Eichberg
  */
@@ -224,6 +234,8 @@ abstract class PropertyStore {
      * This method is generally only useful when the property store has reached
      * quiescence and – as a client – I do not want to distinguish between the case if
      * a specific value was computed or not.
+     *
+     * Uses `apply` in the backend.
      */
     def currentPropertyOrFallback[E <: Entity, P <: Property](
         e:  E,
@@ -234,70 +246,6 @@ abstract class PropertyStore {
             case _              ⇒ FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
         }
     }
-
-    /**
-     * Returns a snapshot of the properties with the given kind associated with the given entities.
-     *
-     * @note   Querying the properties of the given entities will trigger lazy computations.
-     * @note   The returned collection can be used to create an [[IntermediateResult]].
-     */
-    final def apply[E <: Entity, P <: Property](
-        es: Traversable[E],
-        pk: PropertyKey[P]
-    ): Traversable[EOptionP[E, P]] = {
-        es.map(e ⇒ apply(EPK(e, pk)))
-    }
-
-    /**
-     * Returns a snapshot of the properties with the given kind associated with the given entities.
-     *
-     * @note  Querying the properties of the given entities will trigger lazy computations.
-     * @note  The returned collection can be used to create an [[IntermediateResult]].
-     */
-    final def apply[E <: Entity, P <: Property](
-        es:  Traversable[E],
-        pmi: PropertyMetaInformation { type Self <: P }
-    ): Traversable[EOptionP[E, P]] = {
-        apply(es, pmi.key)
-    }
-
-    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
-
-    /**
-     * Returns the property of the respective property kind `pk` currently associated
-     * with the given element `e`.
-     *
-     * This is the most basic method to get some property and it is the preferred way
-     * if (a) you know that the property is already available – e.g., because some
-     * property computation function was strictly run before the current one – or
-     * if (b) the property is computed using a lazy property computation - or
-     * if (c) it may be possible to compute a final answer even if the property
-     * of the entity is not yet available.
-     *
-     * @note   In general, the returned value may change over time but only such that it
-     *         is strictly more precise.
-     * @note   Querying a property may trigger the (lazy) computation of the property.
-     * @param  epk An entity/property key pair.
-     * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
-     *         `Final|IntermediateEP(e,Property)` otherwise.
-     */
-    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
-
-    /**
-     * Enforce the evaluation of the specified property kind for the given entity, even
-     * if the property is computed lazily and no "eager computation" requires the results
-     * anymore. Force also ensures that the property is stored in the store even if
-     * the fallback value is used.
-     * Using `force` is in particular necessary in a case where a specific analysis should
-     * be scheduled lazily because the computed information is not necessary for all entities,
-     * but strictly required for some elements.
-     * E.g., if you want to compute a property for some piece of code, but not for those
-     * elements of the used library that are strictly necessary.
-     * For example, if we want to compute the purity of the methods of a specific application,
-     * we may have to compute the property for some entities of the libraries, but we don't
-     * want to compute them for all.
-     */
-    def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
 
     /**
      * Returns an iterator of the different properties associated with the given element.
@@ -325,7 +273,8 @@ abstract class PropertyStore {
     def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]]
 
     /**
-     * Returns all entities that currently have the given property bounds.
+     * Returns all entities that currently have the given property bounds based on an "==" (equals)
+     * comparison..
      * (In case of final properties the bounds are equal.)
      *
      * @note Does not trigger lazy property computations.
@@ -350,27 +299,102 @@ abstract class PropertyStore {
     def finalEntities[P <: Property](p: P): Iterator[Entity] = entities(p, p)
 
     /**
-     * Associates the given property `p` with property kind `pk` with the given entity
-     * `e` if `e` has no property of the respective kind.
-     * The set property is always final.
-     *
-     * @note    This method must not be used '''if there might be another computation that
-     *          computes the property kind `pk` for `e` and which returns the respective property
-     *          as a result'''.
+     * Directly associates the given property `p` with property kind `pk` with the given entity
+     * `e` if `e` has no property of the respective kind. The set property is always final.
+     * The store guarantees that the value is set before before any value is set due to a
+     * subsequently scheduled computation. However, no guarantee is given that the value is set
+     * immediately.
      *
      * A use case is an analysis that does use the property store while executing the analysis,
      * but which wants to store the results in the store. Such an analysis '''must
-     * be executed before any other analysis is scheduled''' otherwise, some analyses may have
-     * seen fallback values.
+     * be executed before any other analysis is scheduled'''.
      *
-     * If a different property is already associated with the given entity, an
-     * IllegalStateException is eventually thrown; i.e., the exception is not necessarily thrown
-     * by the calling thread!
+     * @throws IllegalStateException If a different property is already associated with the
+     *         given entity or a lazy computation is registered. I.e., `set` has to be called
+     *         before respective lazy property computations are registered. The exception may
+     *         be thrown eventually!
      *
-     * @note   If any computation resulted in an exception, then `set` will fail and
-     *         the exception related to the failing computation will be thrown again.
+     * @note   This method must not be used '''if there might be another computation that
+     *         computes the property kind `pk` for `e` and which returns the respective property
+     *         as a result'''.
      */
     def set(e: Entity, p: Property): Unit
+
+    /**
+     * Returns a snapshot of the properties with the given kind associated with the given entities.
+     *
+     * @note   Querying the properties of the given entities will trigger lazy computations.
+     * @note   The returned collection can be used to create an [[IntermediateResult]].
+     *         @see `apply(epk:EPK)` for details.
+     */
+    final def apply[E <: Entity, P <: Property](
+        es: Traversable[E],
+        pk: PropertyKey[P]
+    ): Traversable[EOptionP[E, P]] = {
+        es.map(e ⇒ apply(EPK(e, pk)))
+    }
+
+    /**
+     * Returns a snapshot of the properties with the given kind associated with the given entities.
+     *
+     * @note  Querying the properties of the given entities will trigger lazy computations.
+     * @note  The returned collection can be used to create an [[IntermediateResult]].
+     * @see `apply(epk:EPK)` for details.
+     */
+    final def apply[E <: Entity, P <: Property](
+        es:  Traversable[E],
+        pmi: PropertyMetaInformation { type Self <: P }
+    ): Traversable[EOptionP[E, P]] = {
+        apply(es, pmi.key)
+    }
+
+    /** @see `apply(epk:EPK)` for details. */
+    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
+
+    /**
+     * Returns the property of the respective property kind `pk` currently associated
+     * with the given element `e`.
+     *
+     * This is the most basic method to get some property and it is the preferred way
+     * if (a) you know that the property is already available – e.g., because some
+     * property computation function was strictly run before the current one – or
+     * if (b) the property is computed using a lazy property computation - or
+     * if (c) it may be possible to compute a final answer even if the property
+     * of the entity is not yet available.
+     *
+     * @note   In general, the returned value may change over time but only such that it
+     *         is strictly more precise.
+     * @note   Querying a property may trigger the (lazy) computation of the property.
+     * @note   [[setupPhase]] has to be called before calling apply!
+     *
+     * @throws IllegalStateException If setup phase was not called or
+     *         a previous computation result contained an epk which was not queried.
+     *         (Both state are ALWAYS illegal, but are only explicitly checked for if debug
+     *         is turned on!)
+     * @param  epk An entity/property key pair.
+     * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
+     *         `Final|IntermediateEP(e,Property)` otherwise.
+     */
+    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
+
+    /**
+     * Enforce the evaluation of the specified property kind for the given entity, even
+     * if the property is computed lazily and no "eager computation" requires the results
+     * anymore. Force also ensures that the property is stored in the store even if
+     * the fallback value is used.
+     * Using `force` is in particular necessary in a case where a specific analysis should
+     * be scheduled lazily because the computed information is not necessary for all entities,
+     * but strictly required for some elements.
+     * E.g., if you want to compute a property for some piece of code, but not for those
+     * elements of the used library that are strictly necessary.
+     * For example, if we want to compute the purity of the methods of a specific application,
+     * we may have to compute the property for some entities of the libraries, but we don't
+     * want to compute them for all.
+     *
+     * @note   Triggers lazy evaluations.
+     * @see `apply(epk:EPK)` for details.
+     */
+    def force(e: Entity, pk: SomePropertyKey): Unit
 
     /**
      * Registers a function that lazily computes a property for an element
@@ -399,12 +423,12 @@ abstract class PropertyStore {
     ): Unit
 
     /**
-     * Needs to be called before an analysis is scheduled or a property is set to inform the
-     * property store which properties will be (externally) computed now and which are computed
-     * in a later phase. The later information is used to decide when we use a fallback.
+     * Needs to be called before an analysis is scheduled to inform the property store which
+     * properties will be computed now and which are computed in a later phase. The later
+     * information is used to decide when we use a fallback.
      *
-     * @note  `setupPhase` always needs to be called - even  if just fallback values should
-     *        be computed; in this case both sets have to be empty.
+     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
+     *        this case both sets have to be empty.
      *
      * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
      *
@@ -446,11 +470,13 @@ abstract class PropertyStore {
      * results and that the given result is a meaningful update of the previous property
      * associated with the respective entity - if any!
      *
+     * @throws IllegalStateException If the result cannot be applied.
      * @note   If any computation resulted in an exception, then `handleResult` will fail and
      *         the exception related to the failing computation will be thrown again.
      */
     def handleResult(r: PropertyComputationResult, wasLazilyTriggered: Boolean): Unit
 
+    /** Calls `handleResult(r,false)`. */
     final def handleResult(r: PropertyComputationResult): Unit = {
         handleResult(r, wasLazilyTriggered = false)
     }
@@ -468,17 +494,16 @@ abstract class PropertyStore {
      * computations are finished. By updating the isInterrupted state and calling
      * waitOnPhaseCompletion again computations can be continued.
      *
-     * @note   If a second thread is used to register [[PropertyComputation]] functions
-     *         no guarantees are given; it is recommended to schedule all property computation
-     *         functions using one thread and using that thread to call this method.
-     * @note   If a computation fails with an exception, the property store will stop in due time
-     *         and return the thrown exception. No strong guarantees are given which exception
-     *         is returned in case of concurrent execution.
+     * @note If a second thread is used to register [[org.opalj.fpcf.PropertyComputation]] functions
+     *       no guarantees are given; it is recommended to schedule all property computation
+     *       functions using one thread and using that thread to call this method.
+     * @note If a computation fails with an exception, the property store will stop in due time
+     *       and return the thrown exception. No strong guarantees are given which exception
+     *       is returned in case of concurrent execution.
      */
-    @throws[ConcurrentExceptions]("if exceptions occurred while executing the tasks")
     def waitOnPhaseCompletion(): Unit
 
-    @volatile protected[this] var exception: Throwable = null
+    @volatile protected[this] var exception: Throwable = _ /*null*/
 
     protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
@@ -491,7 +516,13 @@ abstract class PropertyStore {
                 /*  BASICALLY IGNORED - BUT THERE IS ROOM FOR IMPROVEMENT! */
                 throw ct;
             case t: Throwable ⇒
-                exception = t
+                if (exception ne null) {
+                    // We may swallow some exceptions, but, the caught exception is
+                    // definitively a "top-level" exception.
+                    exception.addSuppressed(t)
+                } else {
+                    exception = t
+                }
                 throw t;
         }
     }
