@@ -139,7 +139,7 @@ private[seq] object PropertyValue {
         dependees: Traversable[SomeEOptionP]
     ): PropertyValue = {
         if (lb == ub && ub != PropertyIsLazilyComputed) {
-            assert(dependees.isEmpty, "final property value with dependees")
+            assert(dependees.isEmpty, s"final property value with dependees: $dependees")
             new FinalPropertyValue(ub)
         } else {
             new IntermediatePropertyValue(lb, ub, Map.empty, dependees)

@@ -60,23 +60,30 @@ final class EPKSequentialPropertyStore private (
         val logContext: LogContext
 ) extends PropertyStore { store ⇒
 
-    /*
+    /**
      * Controls in which order updates are processed/scheduled.
+     *
+     * May be changed (concurrently) at any time.
      */
     @volatile var dependeeUpdateHandling: DependeeUpdateHandling = EagerDependeeUpdateHandling
 
+    /**
+     * Controls in which order dependers are processed/scheduled.
+     *
+     * May be changed (concurrently) at any time.
+     */
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
-    final type PKId = Long
+    type PKId = Long
 
-    protected[this] var scheduledTasksCounter: Int = 0
-    final def scheduledTasks: Int = scheduledTasksCounter
+    private[this] var scheduledTasksCounter: Int = 0
+    def scheduledTasks: Int = scheduledTasksCounter
 
-    protected[this] var scheduledOnUpdateComputationsCounter: Int = 0
-    final def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+    private[this] var scheduledOnUpdateComputationsCounter: Int = 0
+    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
 
-    protected[this] var eagerOnUpdateComputationsCounter: Int = 0
-    final def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    private[this] var eagerOnUpdateComputationsCounter: Int = 0
+    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
 
     private[this] var quiescenceCounter = 0
 
@@ -99,9 +106,9 @@ final class EPKSequentialPropertyStore private (
     /** The list of scheduled computations. */
     private[this] var tasks: AnyRefAppendChain[() ⇒ Unit] = new AnyRefAppendChain()
 
-    private[this] var computedPropertyKinds: IntTrieSet = null // has to be set before usage
+    private[this] var computedPropertyKinds: IntTrieSet = _ /*null*/ // has to be set before usage
 
-    private[this] var delayedPropertyKinds: IntTrieSet = null // has to be set before usage
+    private[this] var delayedPropertyKinds: IntTrieSet = _ /*null*/ // has to be set before usage
 
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
@@ -139,10 +146,6 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    /**
-     * Returns all entities which have the given property bounds based on an "==" (equals)
-     * comparison.
-     */
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
         require(lb ne null)
         require(ub ne null)
@@ -179,10 +182,11 @@ final class EPKSequentialPropertyStore private (
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        assert(
-            tasks.isEmpty,
-            "lazy computations should only be registered while no analysis are scheduled"
-        )
+        if (debug && tasks.nonEmpty) {
+            throw new IllegalStateException(
+                "lazy computations should only be registered while no analysis are scheduled"
+            )
+        }
         lazyComputations.put(pk.id.toLong, pc.asInstanceOf[SomePropertyComputation])
     }
 
@@ -195,14 +199,12 @@ final class EPKSequentialPropertyStore private (
         tasks.append(() ⇒ handleResult(pc(e)))
     }
 
-    // Triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        apply(EPK(e, pk), false)
+        apply(EPK(e, pk), force = false)
     }
 
-    // Triggers lazy property computations!
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
-        apply(epk, false)
+        apply(epk, force = false)
     }
 
     private[this] def apply[E <: Entity, P <: Property](
@@ -255,10 +257,10 @@ final class EPKSequentialPropertyStore private (
                             epk
 
                         case None ⇒
-                            assert(
-                                computedPropertyKinds ne null /*&& delayedPropertyKinds ne null (not necessary)*/ ,
-                                "setup phase was not called"
-                            )
+                            if (debug && computedPropertyKinds == null) {
+                                /*&& delayedPropertyKinds ne null (not necessary)*/
+                                throw new IllegalStateException("setup phase was not called")
+                            }
                             if (computedPropertyKinds.contains(pkIdInt) ||
                                 delayedPropertyKinds.contains(pkIdInt)) {
                                 epk
@@ -327,13 +329,17 @@ final class EPKSequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null")
         }
         val pkId = ub.key.id.toLong
-        /*user level*/ assert(ub.key == lb.key, "lb and ub properties have different keys")
-        /*user level*/ assert(
-            !lb.isOrderedProperty || {
-                val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self]); true
+        if (debug) {
+            if (ub.key != lb.key) {
+                throw new IllegalArgumentException(
+                    s"lower and upper bound have different keys: lb=$lb vs. ub=$ub"
+                );
             }
-        )
+            if (lb.isOrderedProperty) {
+                val ubAsOP = ub.asOrderedProperty
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+            }
+        }
         ps.get(e) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
@@ -475,7 +481,7 @@ final class EPKSequentialPropertyStore private (
         val pkId = p.key.id.toLong
 
         if (debug && lazyComputations.get(pkId).nonEmpty) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                 s"$e: setting $p is not supported; "+
                     s"lazy computation scheduled for property kind ${p.key}"
             )
@@ -530,7 +536,7 @@ final class EPKSequentialPropertyStore private (
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
                     if (dependee.isFinal) {
-                        throw new IllegalStateException(
+                        throw new IllegalArgumentException(
                             s"$e (lb=$lb, ub=$ub): dependency to final property: $dependee"
                         )
                     }
@@ -682,7 +688,7 @@ final class EPKSequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty, "setup phase can only when no tasks are scheduled")
+        assert(tasks.isEmpty)
 
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
@@ -719,6 +725,8 @@ final class EPKSequentialPropertyStore private (
                     // Check that we have no running computations and that the
                     // property will not be computed later on.
                     if (pValue.ub == null && !delayedPropertyKinds.contains(pkId)) {
+                        assert(pValue.dependees.isEmpty)
+
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
                         if (traceFallbacks) {
@@ -729,7 +737,6 @@ final class EPKSequentialPropertyStore private (
                             )
                         }
                         handleResult(fallbackResult)
-
                         continueComputation = true
                     }
                 }
@@ -797,7 +804,10 @@ final class EPKSequentialPropertyStore private (
                         val isFinal = pValue.isFinal
                         // Check that we have no running computations and that the
                         // property will not be computed later on.
-                        if (!isFinal && lb != ub && !delayedPropertyKinds.contains(pkId)) {
+                        if (!isFinal &&
+                            lb != ub &&
+                            !delayedPropertyKinds.contains(pkId) &&
+                            pValue.dependees.isEmpty) {
                             update(e, ub, ub, Nil) // commit as Final value
                             continueComputation = true
                         }
