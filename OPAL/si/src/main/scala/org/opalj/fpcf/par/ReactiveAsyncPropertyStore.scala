@@ -445,10 +445,16 @@ class ReactiveAsyncPropertyStore private (
         handlerPool.execute(() ⇒ {
             // Here we call handleResult to store the result in the property store
             val r = pc(e)
+            r.id match {
+                case Result.id ⇒
+                    dependencyCounter.getOrElseUpdate(0, new AtomicLong(0)).incrementAndGet()
+                case IntermediateResult.id ⇒
+                    val IntermediateResult(_, _, _, d, _) = r
+                    dependencyCounter.getOrElseUpdate(d.size, new AtomicLong(0)).incrementAndGet()
+                    incCounter("DependenciesLowerBound", d.size)
+            }
             if (r.id == IntermediateResult.id) {
-                val IntermediateResult(_, _, _, d, _) = r
-                dependencyCounter.getOrElseUpdate(d.size, new AtomicLong(0)).incrementAndGet()
-                incCounter("DependenciesLowerBound", d.size)
+
             }
             handleResult(r)
         })
@@ -499,7 +505,12 @@ class ReactiveAsyncPropertyStore private (
                 val IntermediateResult(e, lb, ub, dependees, c) = r
 
                 if (debug) {
-                    assert(lb.key.id == ub.key.id)
+                    if (lb.key.id != ub.key.id) {
+                        throw new IllegalArgumentException("lower and upper bound have different keys!")
+                    }
+                    if (dependees.nonEmpty && lb == ub) {
+                        throw new IllegalArgumentException(s"final property $lb with dependees: $dependees")
+                    }
                     if (dependees.isEmpty) {
                         throw new IllegalArgumentException("IntermediateResult without dependees")
                     }
@@ -534,7 +545,6 @@ class ReactiveAsyncPropertyStore private (
                     cc.putNext(new PropertyValue(lb, ub))
                 }
 
-                // TODO there has to be a better way to do this
                 // We have to synchronize to the cell. ReactiveAsync creates a lock on it whenever
                 // a dependee has an update for us. It can happen that here we got our first result
                 // from the analysis and register dependencies. One of it returns and calls the
@@ -544,7 +554,7 @@ class ReactiveAsyncPropertyStore private (
                 // with a NoSuchElementException. This lock prevents us from processing updates for
                 // this cell (`cc`) and executes them once all dependencies were registered
                 // successfully.
-                cc.synchronized {
+                cc.sequential {
 
                     val oldDependees = dependencyMap.getOrElse(EPK(e, lb.key), Traversable.empty)
                     val dependeesEPK = dependees.map(_.toEPK)
@@ -557,8 +567,8 @@ class ReactiveAsyncPropertyStore private (
                         val psE = ps(someEOptionP.pk.id)
                         // When querying the properties, the cell already exists. At some point it was
                         // added and in step 3 the cell was generated
-                            val dependeeCell = psE(someEOptionP.e).cell
-                            cc.cell.removeDependency(dependeeCell)
+                        val dependeeCell = psE(someEOptionP.e).cell
+                        cc.cell.removeDependency(dependeeCell)
                     }
                     dependencyMap.put(EPK(e, lb.key), dependeesEPK)
 
