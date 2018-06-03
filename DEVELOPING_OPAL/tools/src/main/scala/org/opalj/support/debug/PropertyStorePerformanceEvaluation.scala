@@ -510,6 +510,9 @@ object PropertyStorePerformanceEvaluation {
                             case "L1ThrownExceptionsAnalysis" ⇒
                                 LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
                                 EagerL1ThrownExceptionsAnalysis.start(project, propertyStore)
+                            case "EagerTAC" ⇒
+                                val tac = project.get(DefaultTACAIKey)
+                                project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
                         }
 
                         propertyStore.waitOnPhaseCompletion()
