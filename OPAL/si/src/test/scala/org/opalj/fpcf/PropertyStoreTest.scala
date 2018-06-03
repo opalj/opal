@@ -93,6 +93,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 )
             }
             ps.waitOnPhaseCompletion()
+            // ps' "isInterrupt" status should now be true; hence, scheduling
+            // further computations should have no effect.
             ps.scheduleEagerComputationForEntity("d")(e ⇒ Result("d", Palindrome))
 
             ps("a", Palindromes.PalindromeKey) should be(IntermediateEP("a", NoPalindrome, Palindrome))
@@ -387,23 +389,25 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     Seq(initiallyExpectedEP),
                     (eps) ⇒ {
                         // Depending the scheduling, we can have a final result here as well.
-                        //if (eps.isFinal)
-                        //    fail("premature final value")
+                        if (eps.isFinal) {
+                            if (eps.lb == SuperPalindrome)
+                                Result(e, Marker.IsMarked)
+                            else
+                                Result(e, Marker.NotMarked)
+                        } else
+                            IntermediateResult(
+                                "e", Marker.NotMarked, Marker.IsMarked,
+                                Seq(eps),
+                                (eps) ⇒ {
+                                    if (!eps.isFinal)
+                                        fail("unexpected non final value")
 
-                        IntermediateResult(
-                            "e", Marker.NotMarked, Marker.IsMarked,
-                            Seq(eps),
-                            (eps) ⇒ {
-                                if (!eps.isFinal)
-                                    fail("unexpected non final value")
-
-                                if (eps.lb == SuperPalindrome)
-                                    Result(e, Marker.IsMarked)
-                                else
-                                    Result(e, Marker.NotMarked)
-                            }
-                        )
-
+                                    if (eps.lb == SuperPalindrome)
+                                        Result(e, Marker.IsMarked)
+                                    else
+                                        Result(e, Marker.NotMarked)
+                                }
+                            )
                     }
                 )
             }
