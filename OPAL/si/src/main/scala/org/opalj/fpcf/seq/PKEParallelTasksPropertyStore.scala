@@ -31,7 +31,7 @@ package fpcf
 package seq
 
 import java.lang.System.identityHashCode
-import java.util.concurrent.LinkedBlockingDeque
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -48,7 +48,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.warn
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 import org.opalj.concurrent.Tasks
-import org.opalj.concurrent.OPALExecutionContext
+import org.opalj.concurrent.ExecutionContextN
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
  * A concurrent implementation of the property store which parallels the execution of the scheduled
@@ -62,7 +63,8 @@ import org.opalj.concurrent.OPALExecutionContext
  * @author Michael Eichberg
  */
 final class PKEParallelTasksPropertyStore private (
-        val ctx: Map[Type, AnyRef]
+        val ctx:                                              Map[Type, AnyRef],
+        val NumberOfThreadsForProcessingPropertyComputations: Int
 )(
         implicit
         val logContext: LogContext
@@ -109,7 +111,7 @@ final class PKEParallelTasksPropertyStore private (
 
     // The number of property computations and results which have not been completely processed.
     private[this] val openJobs = new AtomicInteger(0)
-    private[this] def decOpenJobs(): Unit = openJobs.decrementAndGet()
+    private[this] def decOpenJobs(): Unit = if (openJobs.decrementAndGet() == 0) println("finished?")
     // has to be called before the job is actually processed; i.e., termination of the job
     // always has to precede termination of the job
     private[this] def incOpenJobs(): Unit = openJobs.incrementAndGet()
@@ -130,15 +132,15 @@ final class PKEParallelTasksPropertyStore private (
             },
             abortOnExceptions = true,
             isInterrupted
-        )(OPALExecutionContext)
+        )(ExecutionContextN(NumberOfThreadsForProcessingPropertyComputations))
     }
 
-    private[this] val results = new LinkedBlockingDeque[(PropertyComputationResult, Boolean /*lazily triggered*/ )]()
+    private[this] val results = new LinkedBlockingQueue[(PropertyComputationResult, Boolean /*lazily triggered*/ )]()
     private[this] val resultsProcessor = {
         val t = new Thread("OPAL - Property Computation Results Processor") {
             override def run(): Unit = {
                 while (!isInterrupted) handleExceptions {
-                    val nextResult = results.pollFirst(1, TimeUnit.MINUTES)
+                    val nextResult = results.poll(1, TimeUnit.MINUTES)
                     if (nextResult != null) {
                         try {
                             val (r, wasLazilyTriggered) = nextResult
@@ -155,7 +157,6 @@ final class PKEParallelTasksPropertyStore private (
         }
         t.setDaemon(true)
         t.setUncaughtExceptionHandler((t: Thread, e: Throwable) ⇒ {})
-        t.setPriority(8)
         t.start()
         t
     }
@@ -513,7 +514,10 @@ final class PKEParallelTasksPropertyStore private (
         wasLazilyTriggered: Boolean
     ): Unit = handleExceptions {
         incOpenJobs()
-        results.addLast((r, wasLazilyTriggered))
+        if (!results.offer((r, wasLazilyTriggered))) {
+            // THIS SHOULD NEVER HAPPEN, BECAUSE THE QUEUE IS UNBOUNDED
+            throw new UnknownError("results queue exceeded its size")
+        }
     }
 
     // CONCURRENCY NOTE:
@@ -839,6 +843,10 @@ final class PKEParallelTasksPropertyStore private (
  */
 object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 
+    @volatile var NumberOfThreadsForProcessingPropertyComputations: Int = {
+        NumberOfThreadsForCPUBoundTasks - 1
+    }
+
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
@@ -846,6 +854,6 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
         logContext: LogContext
     ): PKEParallelTasksPropertyStore = {
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
-        new PKEParallelTasksPropertyStore(contextMap)
+        new PKEParallelTasksPropertyStore(contextMap, NumberOfThreadsForProcessingPropertyComputations)
     }
 }
