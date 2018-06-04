@@ -87,8 +87,12 @@ import org.opalj.log.OPALLogger.error
  * value will be committed.
  *
  * ==Thread Safety==
- * The sequential property stores are not thread-safe; the parallelized implementation(s) is
- * thread-safe.
+ * The sequential property stores are not thread-safe; the parallelized implementation(s) are
+ * thread-safe in the following manner:
+ *  - a client has to use the SAME thread to call the [[setupPhase]],
+ *    [[registerLazyPropertyComputation]], [[scheduleEagerComputationForEntity]] /
+ *    [[scheduleEagerComputationsForEntities]], [[force]] and [[waitOnPhaseCompletion]] methods.
+ *    The methods to query the store are thread-safe and
  *
  * ==Common Abbreviations==
  *  - e =         Entity
@@ -514,6 +518,10 @@ abstract class PropertyStore {
     /** ONLY INTENDED TO BE USED BY TESTS TO AVOID MISGUIDING TEST REPORTS! */
     @volatile private[fpcf] var suppressError: Boolean = false
 
+    /**
+     * Called when the first top-level exception occurs.
+     * Intended to be overridden by subclasses.
+     */
     protected[this] def onFirstException(t: Throwable): Unit = {
         if (!suppressError) {
             error("analysis progress", "analysis resulted in exception", t)
@@ -526,6 +534,8 @@ abstract class PropertyStore {
                 exception.addSuppressed(t)
             }
         } else {
+            // double-checked locking... we don't care about performance if everything falls
+            // apart anyway.
             this.synchronized {
                 if (exception ne null) {
                     exception.addSuppressed(t)
@@ -541,6 +551,7 @@ abstract class PropertyStore {
     protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
             throw exception;
+
         try {
             f
         } catch {
