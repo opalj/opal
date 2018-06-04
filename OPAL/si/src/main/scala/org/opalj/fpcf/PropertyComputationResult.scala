@@ -145,7 +145,6 @@ case class IntermediateResult[P <: Property](
     assert(ub ne null)
     assert(c ne null, "onUpdateContinuation is null")
     assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
-    assert(lb ne ub, s"intermediate result $this with same lower and upper bound")
 
     private[fpcf] final def id = IntermediateResult.id
 
