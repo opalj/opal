@@ -55,7 +55,9 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
     def apply(types: Set[ObjectType]): InstantiatedTypes = new InstantiatedTypes(types)
 
+    // todo cache
     def allTypes(p: ProjectLike): InstantiatedTypes = {
+        println("all types called")
         val allTypes = p.classHierarchy.allSubtypes(ObjectType.Object, reflexive = true)
         InstantiatedTypes(allTypes)
     }

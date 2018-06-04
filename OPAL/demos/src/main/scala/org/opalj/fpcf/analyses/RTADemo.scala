@@ -37,23 +37,41 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-//import org.opalj.fpcf.properties.CallGraph
+import org.opalj.fpcf.properties.CallGraph
 import org.opalj.fpcf.properties.InstantiatedTypes
+import org.opalj.log.OPALLogger.info
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.util.PerformanceEvaluation.time
 
 object RTADemo extends DefaultOneStepAnalysis {
     override def doAnalyze(
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
         val ps = project.get(PropertyStoreKey)
-        val manager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(EagerRTACallGraphAnalysisScheduler)
+        PropertyStore.updateDebug(true)
+
+        implicit val logContext = project.logContext
+
+        // Get the TAC code for all methods to make it possible to measure the time for
+        // the analysis itself.
+        time {
+            val tac = project.get(DefaultTACAIKey)
+            project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
+        } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
+
+        // Get the TAC code for all methods to make it possible to measure the time for
+        // the analysis itself.
+        time {
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(EagerRTACallGraphAnalysisScheduler)
+        } { t ⇒ info("progress", s"constructing the call graph took ${t.toSeconds}") }
 
         ps.waitOnPhaseCompletion()
 
-
-
         println(ps(project, InstantiatedTypes.key).ub)
-        //println(ps(project, CallGraph.key).ub)
+        val cg = ps(project, CallGraph.key)
+        println(CallGraph.fallbackCG(project))
+        println(cg.ub)
 
         BasicReport("")
     }

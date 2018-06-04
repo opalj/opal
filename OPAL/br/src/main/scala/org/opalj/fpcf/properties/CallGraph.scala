@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import java.util.concurrent.ConcurrentHashMap
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -39,32 +41,45 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.InvocationInstruction
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 
 import scala.collection.Set
+import scala.collection.Map
+import scala.collection.JavaConverters._
 
-/**
- * TODO
- * @author Florian Kuebler
- */
 sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = CallGraph
 }
 
-class CallGraph(
+/**
+ * Represents a call graph for a specific [[org.opalj.br.analyses.SomeProject]].
+ *
+ * @param callees For each call-site (method and program counter), the set of potential call targets
+ * @param callers For each method m, the set of potential call-sites (method and program counter)
+ *                that have m as target.
+ *
+ * @author Florian Kuebler
+ */
+final class CallGraph(
         val callees: Map[Method, Map[Int /*PC*/ , Set[Method]]],
         val callers: Map[Method, Set[(Method, Int /*pc*/ )]]
 ) extends Property with CallGraphPropertyMetaInformation {
-    final def key: PropertyKey[CallGraph] = CallGraph.key
+    def key: PropertyKey[CallGraph] = CallGraph.key
 
-    final def size: Int = {
+    /**
+     * TODO
+     */
+    def size: Int = {
         val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
         val callersSize = callers.map(_._2.size).sum
         assert(callersSize == calleesSize)
         calleesSize
     }
+
+    override def toString: String = s"CallGraph(size = $size)"
 }
 
 object CallGraph extends CallGraphPropertyMetaInformation {
@@ -98,24 +113,22 @@ object CallGraph extends CallGraphPropertyMetaInformation {
 }
 
 /**
- * Computes a CHA like call graph
- * TODO move to a ProjectKey for cashing
+ * A key to computes a CHA like call graph as fallback.
  */
 object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     override protected def requirements: ProjectInformationKeys = Nil
 
     override protected def compute(project: SomeProject): CallGraph = {
-        //TODO parallelize. The current prototype impl. should be incredibly slow!
-        var callers = Map.empty[Method, Set[(Method, Int /*PC*/ )]].withDefaultValue(Set.empty)
-        val callees = project.allMethods.map { m ⇒
+        val callers = new ConcurrentHashMap[Method, Set[(Method, Int /*PC*/ )]]()
+        val callees = new ConcurrentHashMap[Method, Map[Int /*PC*/ , Set[Method]]]
+
+        project.parForeachMethod() { m ⇒
             m.body match {
                 case Some(code) ⇒
-                    val calleesOfM = code.instructions.view.zipWithIndex.filter {
-                        case (instr, _) ⇒
-                            instr != null && instr.isInvocationInstruction
-                    }.map {
-                        case (instr, pc) ⇒
+                    // TODO use code.collect???
+                    val calleesOfM = code.instructions.iterator.zipWithIndex.collect {
+                        case (instr: InvocationInstruction, pc) ⇒
                             val tgts = instr match {
                                 case call: INVOKESTATIC ⇒
                                     project.staticCall(call).toSet
@@ -135,18 +148,23 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     Set.empty[Method]
                             }
                             tgts.foreach { tgt ⇒
-                                callers = callers.updated(tgt, callers(tgt) + (m → pc))
+                                callers.compute(tgt, (x: Method, prev: Set[(Method, Int)]) ⇒ {
+                                    if (prev == null)
+                                        Set(m → pc)
+                                    else
+                                        prev + (m → pc)
+                                })
                             }
 
                             pc → tgts
                     }.toMap
 
-                    m → calleesOfM
+                    callees.put(m, calleesOfM)
                 case None ⇒
-                    m → Map.empty[Int /*PC*/ , Set[Method]]
+                    callees.put(m, Map.empty)
             }
-        }.toMap
-        new CallGraph(callees, callers)
+        }
+        new CallGraph(callees.asScala, callers.asScala.withDefaultValue(Set.empty))
     }
 
 }

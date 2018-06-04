@@ -31,6 +31,7 @@ package fpcf
 package properties
 
 import scala.collection.Set
+import scala.collection.Map
 import org.opalj.br.Method
 
 /**
@@ -53,6 +54,20 @@ class Callees(
 
     def size: Int = {
         callees.map(_._2.size).sum
+    }
+
+    def canEqual(other: Any): Boolean = other.isInstanceOf[Callees]
+
+    override def equals(other: Any): Boolean = other match {
+        case that: Callees ⇒
+            (that canEqual this) &&
+                callees == that.callees
+        case _ ⇒ false
+    }
+
+    override def hashCode(): Int = {
+        val state = Seq(callees)
+        state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
     }
 }
 
