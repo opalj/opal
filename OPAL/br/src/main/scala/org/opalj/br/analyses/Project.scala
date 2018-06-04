@@ -172,7 +172,9 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
-        final val projectType:                        ProjectType
+        final val projectType:                        ProjectType,
+        // Note that the referenced array will never shrink!
+        @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
         implicit
         final val logContext: LogContext,
@@ -180,10 +182,28 @@ class Project[Source] private (
 ) extends ProjectLike {
 
     /**
-     * Returns a shallow clone of this project excluding project keys and where the log
-     * context is updated.
+     * Returns a shallow clone of this project with an updated log context and (optionally)
+     * filtered ProjectInformations.
+     *
+     * @param filterProjectInformation Enables filtering of the ProjectInformations that should be
+     *                                 kept when a new Project is created.
      */
-    def recreate(): Project[Source] = {
+    def recreate(
+        filterProjectInformation: Int ⇒ Boolean = _ ⇒ false
+    ): Project[Source] = this.synchronized {
+        // the synchronization is necessary to get exclusive access to "project information".
+        val max = projectInformation.length()
+        val newProjectInformation = new AtomicReferenceArray[AnyRef](max)
+        var i = 0
+        while (i < max) {
+            if (filterProjectInformation(i)) {
+                val pi = projectInformation.get(i)
+                if (pi != null) {
+                    newProjectInformation.set(i, pi)
+                }
+            }
+            i += 1
+        }
         val newLogContext = logContext.successor
         val newClassHierarchy = classHierarchy.updatedLogContext(newLogContext)
         new Project(
@@ -218,7 +238,8 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
-            projectType
+            projectType,
+            newProjectInformation
         )(
             newLogContext,
             config
@@ -450,10 +471,6 @@ class Project[Source] private (
             }
         ).asInstanceOf[I]
     }
-
-    // Note that the referenced array will never shrink!
-    @volatile
-    private[this] var projectInformation = new AtomicReferenceArray[AnyRef](32)
 
     /**
      * Returns the additional project information that is ''currently'' available.

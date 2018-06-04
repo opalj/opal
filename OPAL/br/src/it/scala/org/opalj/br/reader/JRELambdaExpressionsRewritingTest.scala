@@ -49,7 +49,10 @@ class JRELambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
         val project = load(org.opalj.bytecode.JRELibraryFolder)
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
-            method.body.get.collect { case i: INVOKEDYNAMIC ⇒ i }
+            method.body.get.collect {
+                // TODO [Java10] Remove the filter of StringConcat related invokedynamics (when we have full support this should no longer be necessary!)
+                case i: INVOKEDYNAMIC if !LambdaExpressionsRewriting.isJava10StringConcatInvokedynamic(i) ⇒ i
+            }
         }
 
         // if the test fails we want to know the invokedynamic instructions

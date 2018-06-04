@@ -670,7 +670,7 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (PCs /*joins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
+    ): (PCs /*cfJoins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
@@ -1724,7 +1724,7 @@ final class Code private (
      * identified sequences.
      * {{{
      * code.slidingCollect(2)({
-     *  case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
+     *      case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
      * }) should be(Seq(...))
      * }}}
      *

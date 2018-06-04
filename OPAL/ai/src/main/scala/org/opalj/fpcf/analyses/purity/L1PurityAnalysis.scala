@@ -32,8 +32,7 @@ package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
+import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -152,8 +151,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                             case _ ⇒ false
                         }
                     }
-                } else if (isVMLevelValue(defSite)) {
-                    true // VMLevelValues are freshly created
+                } else if (isImmediateVMException(defSite)) {
+                    true // immediate VM exceptions are freshly created
                 } else {
                     // In initializers the self reference (this) is local
                     state.method.isConstructor && defSite == OriginOfThis
@@ -337,17 +336,16 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             }
 
-        // Creating implicit except
-        // ions is side-effect free (because of fillInStackTrace)
+        // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         for {
             bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
-            if isImmediateVMException(pc)
+            if isSourceOfImmediateException(pc)
         } {
-            val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
-            val ratedResult = rater.handleException(origin)
+            val throwingStmt = state.code(pc)
+            val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)
         }

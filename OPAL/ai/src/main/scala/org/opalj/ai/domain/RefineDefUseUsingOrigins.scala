@@ -40,7 +40,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RefineDefUseUsingOrigins extends RecordDefUse {
-    defUseDomain: Domain with TheCode with Origin ⇒
+    defUseDomain: Domain with TheCode with TheClassHierarchy with Origin ⇒
 
     override protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = {
         domainValue match {

@@ -105,21 +105,21 @@ private[seq] final class IntermediatePropertyValue(
         this(null, null, Map(epk → c), Nil)
     }
 
-    final override def isFinal: Boolean = {
+    override def isFinal: Boolean = {
         val ub = this.ub
         ub != null && ub != PropertyIsLazilyComputed && ub == lb
     }
 
-    final override def asIntermediate: IntermediatePropertyValue = this
+    override def asIntermediate: IntermediatePropertyValue = this
 }
 
 private[seq] final class FinalPropertyValue(val ub: Property) extends PropertyValue {
-    assert(ub != PropertyIsLazilyComputed)
-    assert(ub != null)
-    final override def lb: Property = ub
-    final override def dependers: Map[SomeEPK, OnUpdateContinuation] = Map.empty
-    final override def dependees: Traversable[SomeEOptionP] = Nil
-    final override def isFinal: Boolean = true
+    assert(ub != PropertyIsLazilyComputed, "ub is lazily computed")
+    assert(ub != null, "ub is null")
+    override def lb: Property = ub
+    override def dependers: Map[SomeEPK, OnUpdateContinuation] = Map.empty
+    override def dependees: Traversable[SomeEOptionP] = Nil
+    override def isFinal: Boolean = true
 }
 
 private[seq] object PropertyValue {
@@ -139,7 +139,6 @@ private[seq] object PropertyValue {
         dependees: Traversable[SomeEOptionP]
     ): PropertyValue = {
         if (lb == ub && ub != PropertyIsLazilyComputed) {
-            assert(dependees.isEmpty)
             new FinalPropertyValue(ub)
         } else {
             new IntermediatePropertyValue(lb, ub, Map.empty, dependees)

@@ -230,6 +230,15 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 ))
             }
             updatedClassFile
+        } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
+            if (logUnknownInvokeDynamics) {
+                OPALLogger.logOnce(StandardLogMessage(
+                    Info,
+                    Some("load-time transformation"),
+                    "Java10's StringConcatFactory INVOKEDYNAMICs are not yet rewritten"
+                ))
+            }
+            updatedClassFile
         } else {
             if (logUnknownInvokeDynamics) {
                 val t = classFile.thisType.toJava
@@ -772,6 +781,13 @@ object LambdaExpressionsRewriting {
         invokedynamic.bootstrapMethod.handle match {
             case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
                 ismh.receiverType.asObjectType.packageName.startsWith("org/codehaus/groovy")
+            case _ ⇒ false
+        }
+    }
+
+    def isJava10StringConcatInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(ObjectType.StringConcatFactory, _, _, _) ⇒ true
             case _ ⇒ false
         }
     }

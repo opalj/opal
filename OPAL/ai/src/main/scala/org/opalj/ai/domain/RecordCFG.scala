@@ -498,7 +498,7 @@ trait RecordCFG
         if (pc == successorPC)
             return true;
 
-        // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
+        // IMPROVE Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         var visitedSuccessors = Set(pc)
         val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator) // REFACTOR fromSeq(Iterator...)
         while (successorsToVisit.nonEmpty) {

@@ -166,7 +166,11 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    assert(epss.forall(_.isFinal))
+                    val nonFinalEPSs = epss.filter(!_.isFinal)
+                    assert(
+                        nonFinalEPSs.isEmpty,
+                        nonFinalEPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
+                    )
                     val properties = epss.map(_.toUBEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
@@ -302,7 +306,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
     ): TestContext = {
-        val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
+        val p = FixtureProject.recreate { piKeyUnidueId ⇒
+            piKeyUnidueId != PropertyStoreKey.uniqueId
+        } // to ensure that this project is not "polluted"
         val ps = p.get(PropertyStoreKey)
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)

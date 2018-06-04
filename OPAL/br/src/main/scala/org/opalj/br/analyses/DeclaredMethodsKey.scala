@@ -35,62 +35,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
-import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
-import org.opalj.br.analyses.DeclaredMethodsKey.PackagePrivateMethodContext
 import org.opalj.collection.immutable.UIDSet
-
-/**
- * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
- *
- * @author Dominik Helm
- */
-class DeclaredMethods(
-        val p: SomeProject,
-        // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
-        // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
-        // methods on type Object when not analyzing the JDK.
-        val data: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]]
-) {
-
-    def apply(
-        packageName: String,
-        classType:   ObjectType,
-        name:        String,
-        descriptor:  MethodDescriptor
-    ): DeclaredMethod = {
-        val dmSet = data.computeIfAbsent(classType, _ ⇒ new ConcurrentHashMap)
-
-        var method = dmSet.get(new PackagePrivateMethodContext(packageName, name, descriptor))
-        if (method == null && ((classType eq MethodHandle) || (classType eq VarHandle))) {
-            method = dmSet.get(
-                new PackagePrivateMethodContext(packageName, name, SignaturePolymorphicMethod)
-            )
-        }
-
-        if (method == null) {
-            // No matching declared method found, need to construct a virtual declared method, but
-            // a concurrent execution of this method may have put the virtual declared method into
-            // the set already already
-            dmSet.computeIfAbsent(
-                new MethodContext(name, descriptor),
-                _ ⇒ VirtualDeclaredMethod(classType, name, descriptor)
-            )
-        } else {
-            method
-        }
-    }
-
-    def apply(method: Method): DefinedMethod = {
-        val classType = method.classFile.thisType
-        data.get(classType).get(MethodContext(method)).asInstanceOf[DefinedMethod]
-    }
-
-    def declaredMethods: Iterator[DeclaredMethod] = {
-        import scala.collection.JavaConverters._
-        // Thread-safe as .values() creates a view of the current state
-        data.values().asScala.iterator.flatMap { _.values().asScala }
-    }
-}
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -151,7 +96,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      */
     override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
-    // TODO [Java9+] Needs to updated for Java9+ projects which use Modules.
+    // TODO [Java9+] Needs to be updated for Java9+ projects which use Modules.
     /**
      * Collects all declared methods.
      */

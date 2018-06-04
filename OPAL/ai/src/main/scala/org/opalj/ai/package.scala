@@ -49,7 +49,7 @@ import org.opalj.br.instructions.Instruction
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
  *
- * Please note, that OPAL/the abstract interpreter just refers to the classes and traits
+ * Please note that OPAL/the abstract interpreter just refers to the classes and traits
  * defined in this package (`ai`). The classes and traits defined in the sub-packages
  * (in particular in `domain`) are not considered to be part of the core of OPAL/the
  * abstract interpreter.
@@ -115,7 +115,7 @@ package object ai {
      * == Parameter Identification ==
      *
      * In general, parameters are identified by using negative origin information as described below.
-     * But, given that
+     * Given that
      *  - the maximum size of the method parameters array is 255 and
      *  - that the first slot is required for the `this` reference in case of instance methods and
      *  - that `long` and `double` values require two slots
@@ -153,69 +153,21 @@ package object ai {
      * ([[ConstantValueOrigin]]). This value is used for the implicit value of `IF_XXX`
      * instructions to facilitates a generalized handling of ifs.
      *
-     * Values in the range [ [[SpecialValuesOriginOffset]] (`-10,000,000`) ,
-     * [[VMLevelValuesOriginOffset]] (`-100,000`) ] are used to identify values that are
-     * created outside of the method, but due to the evaluation of the instruction with
-     * the `pc = -origin-100,000` (in particular exceptions).
+     * Values in the range [ [[SpecialValuesOriginOffset]] (`-800,000,000`) ,
+     * [[MethodExternalExceptionsOriginOffset]] (`-1,000,000`) ] are used to identify exceptions that
+     * are created outside of the method; i.e., by an instruction which does not belong
+     * to the method.
+     * Exceptions in the range ([[MethodExternalExceptionsOriginOffset]] (`-1,000,000`),
+     * [[ImmediateVMExceptionsOriginOffset]] (-100,000)] are used to identify values that are
+     * created by the VM due to an exception while evaluating an instruction.
      *
-     * @see [[isVMLevelValue]], [[ValueOriginForVMLevelValue]], [[pcOfVMLevelValue]]
+     * @see [[isImmediateVMException]], [[ValueOriginForImmediateVMException]], [[pcOfImmediateVMException]],
+     *      [[isMethodExternalExceptionOrigin]], [[ValueOriginForMethodExternalException]],
+     *      [[pcOfMethodExternalException]]
      */
     final type ValueOrigins = IntTrieSet
     final type ValueOriginsIterator = IntIterator
     type ValueOrigin = Int
-
-    /**
-     * Identifies the ''upper bound for those origin values that encode origin
-     * information about VM level values'' (that is, VM generated exceptions).
-     */
-    final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000 // TODO Rename MethodExternalOriginOffset
-
-    /**
-     * Identifies the upper bound for those "origin values" that encode special information;
-     * that is, subroutine boundaries.
-     */
-    final val SpecialValuesOriginOffset /*: ValueOrigin*/ = -10000000
-
-    /**
-     * Returns `true` if the value with the given origin was (implicitly) created
-     * by the JVM while executing an instruction with the program counter
-     * [[pcOfVMLevelValue]]`(origin)`.
-     *
-     * @see [[ValueOriginForVMLevelValue]] for further information.
-     */
-    final def isVMLevelValue(origin: ValueOrigin): Boolean = { // TODO Rename isMethodExternalValue
-        origin <= VMLevelValuesOriginOffset && origin > SpecialValuesOriginOffset
-    }
-
-    /**
-     * Creates the origin information for a value (typically an exception) that
-     * was (implicitly) created while evaluating the instruction with the given
-     * program counter (`pc`).
-     *
-     * @see [[pcOfVMLevelValue]] for further information.
-     * @return The origin id of the value that is the result of the evaluation of the instruction
-     *         with the given PC '''if the evaluation has failed'''!
-     */
-    final def ValueOriginForVMLevelValue(pc: Int): Int = { //TODO Rename valueOriginForMethodExternalValue
-        val origin = VMLevelValuesOriginOffset - pc
-        assert(
-            origin <= VMLevelValuesOriginOffset,
-            s"[pc:$pc] origin($origin) > VMLevelValuesOriginOffset($VMLevelValuesOriginOffset)"
-        )
-        assert(origin > SpecialValuesOriginOffset)
-        origin
-    }
-
-    /**
-     * Returns the program counter (`pc`) of the instruction that (implicitly) led to the
-     * creation of the (method external) value (typically an `Exception`).
-     *
-     * @see [[ValueOriginForVMLevelValue]] for further information.
-     */
-    final def pcOfVMLevelValue(valueOrigin: Int): Int = { //TODO Rename pcOfMethodExternalValue
-        assert(valueOrigin <= VMLevelValuesOriginOffset)
-        -valueOrigin + VMLevelValuesOriginOffset
-    }
 
     /**
      * Used to identify that the origin of the value is outside of the program.
@@ -227,14 +179,206 @@ package object ai {
     final val ConstantValueOrigin /*: ValueOrigin*/ = -333
 
     /**
+     * Identifies the upper bound for those "origin values" that encode special information;
+     * that is, subroutine boundaries.
+     */
+    final val SpecialValuesOriginOffset /*: ValueOrigin*/ = -800000000
+
+    /**
+     * Special value ("pc") that is added to the ''work list''/''list of evaluated instructions''
+     * before the '''program counter of the first instruction''' of a subroutine.
+     *
+     * The marker [[SUBROUTINE]] is used to mark the place in the worklist where we
+     * start having information about subroutines.
+     */
+    final val SUBROUTINE_START = -800000008
+
+    /**
+     * Special value ("pc") that is added to the list of `evaluated instructions`
+     * to mark the end of the evaluation of a subroutine.
+     */
+    final val SUBROUTINE_END = -888888888
+
+    /**
+     * A special value that is larger than all other values used to mark boundaries
+     * and information related to the handling of subroutines and which is smaller
+     * that all other regular values.
+     */
+    final val SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND = -800000000
+
+    final val SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE = -888880008
+
+    final val SUBROUTINE_RETURN_TO_TARGET = -800008888
+
+    /**
+     * Special value that is added to the work list to mark the beginning of a
+     * subroutine call.
+     */
+    final val SUBROUTINE = -900000009
+
+    assert(SUBROUTINE_START <= SpecialValuesOriginOffset)
+    assert(SUBROUTINE_END <= SpecialValuesOriginOffset)
+    assert(SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND <= SpecialValuesOriginOffset)
+    assert(SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE <= SpecialValuesOriginOffset)
+    assert(SUBROUTINE_RETURN_TO_TARGET <= SpecialValuesOriginOffset)
+    assert(SUBROUTINE <= SpecialValuesOriginOffset)
+
+    /**
+     * Identifies the ''upper bound for those origin values that encode origin
+     * information about exceptions created by the JVM''. That is, respective values
+     * identify VM generated and thrown exceptions due to the ''immediate execution'' of the
+     * instruction; exceptions that may have been raised in a called method - even if they
+     * are created by the VM, e.g., due to a div by zero - are not considered immediate VM
+     * exceptions.
+     */
+    final val ImmediateVMExceptionsOriginOffset /*: ValueOrigin*/ = -100000
+
+    /**
+     * Returns `true` if the value with the given origin was (implicitly) created
+     * by the JVM while executing an instruction with the program counter
+     * [[pcOfImmediateVMException]]`(origin)`.
+     *
+     * @see [[ImmediateVMExceptionsOriginOffset]] for further information.
+     */
+    final def isImmediateVMException(origin: ValueOrigin): Boolean = {
+        ImmediateVMExceptionsOriginOffset >= origin && origin > MethodExternalExceptionsOriginOffset
+    }
+
+    /**
+     * Creates the origin information for a value (typically an exception) that
+     * was (implicitly) created while evaluating the instruction with the given
+     * program counter (`pc`).
+     *
+     * @see [[pcOfImmediateVMException]] for further information.
+     * @return The origin id of the value that is the result of the evaluation of the instruction
+     *         with the given PC '''if the evaluation has failed'''!
+     */
+    final def ValueOriginForImmediateVMException(pc: Int): Int = {
+        val origin = ImmediateVMExceptionsOriginOffset - pc
+        assert(
+            origin <= ImmediateVMExceptionsOriginOffset,
+            s"[pc:$pc] "+
+                s"origin($origin) > "+
+                s"ImmediateVMExceptionsOriginOffset($ImmediateVMExceptionsOriginOffset)"
+        )
+        assert(origin > MethodExternalExceptionsOriginOffset)
+        origin
+    }
+
+    /**
+     * Returns the program counter (`pc`) of the instruction that (implicitly) led to the
+     * creation of the (method external) value (typically an `Exception`).
+     *
+     * @see [[ValueOriginForImmediateVMException]] for further information.
+     */
+    final def pcOfImmediateVMException(valueOrigin: Int): Int = {
+        assert(valueOrigin <= ImmediateVMExceptionsOriginOffset)
+        -valueOrigin + ImmediateVMExceptionsOriginOffset
+    }
+
+    /**
+     * Identifies the ''upper bound for those origin values that encode origin
+     * information about values created outside the current method''. Exception which resulted
+     * from the evaluation of a failing instruction are never ''method external values''.
+     */
+    final val MethodExternalExceptionsOriginOffset /*: ValueOrigin*/ = -1000000
+
+    /**
+     * Returns `true` if the value with the given origin was (implicitly) created
+     * by the JVM while executing an instruction with the program counter
+     * [[pcOfMethodExternalException]]`(origin)`.
+     *
+     * @see [[MethodExternalExceptionsOriginOffset]] for further information.
+     */
+    final def isMethodExternalExceptionOrigin(origin: ValueOrigin): Boolean = {
+        origin > SpecialValuesOriginOffset && origin <= MethodExternalExceptionsOriginOffset
+    }
+
+    /**
+     * Creates the origin information for a value (exception) that was created while evaluating the
+     * (invoke) instruction with the given program counter (`pc`).
+     *
+     * @see [[pcOfMethodExternalException]] for further information.
+     * @return The origin id of the value that is the result of the evaluation of the instruction
+     *         with the given PC!
+     */
+    final def ValueOriginForMethodExternalException(pc: Int): Int = {
+        val origin = MethodExternalExceptionsOriginOffset - pc
+        assert(
+            origin <= MethodExternalExceptionsOriginOffset,
+            s"[pc:$pc] "+
+                s"origin($origin) > "+
+                s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
+        )
+        assert(SpecialValuesOriginOffset < origin)
+        origin
+    }
+
+    /**
+     * Returns the program counter (`pc`) of the (invoke) instruction that is (indirectly)
+     * responsible for the creation of the value.
+     *
+     * @see [[MethodExternalExceptionsOriginOffset]] for further information.
+     */
+    final def pcOfMethodExternalException(valueOrigin: Int): Int = {
+        assert(valueOrigin <= MethodExternalExceptionsOriginOffset)
+        -valueOrigin + MethodExternalExceptionsOriginOffset
+    }
+
+    final def isImplicitOrExternalException(valueOrigin: Int): Boolean = {
+        valueOrigin <= ImmediateVMExceptionsOriginOffset
+    }
+
+    /**
+     * Returns the PC underlying the given value origin. If the value origin
+     * identifies a parameter the value is returned as is.
+     */
+    final def underlyingPC(valueOrigin: Int): ValueOrigin = {
+        if (valueOrigin >= 0)
+            valueOrigin
+        else if (valueOrigin > ImmediateVMExceptionsOriginOffset)
+            valueOrigin // <- it is a parameter!
+        else if (valueOrigin > MethodExternalExceptionsOriginOffset)
+            pcOfImmediateVMException(valueOrigin)
+        else
+            pcOfMethodExternalException(valueOrigin)
+    }
+
+    /**
+     * Maps `oldVo` to the value found at the location pcToIndex(oldVo) if `oldVO` actually
+     * identifies a PC. I.e., if `oldVO` is related to a parameter oldVo is returned as is.
+     * If `oldVO` identifies an implicit or a method-external value, oldVO is remapped w.r.t.
+     * to the specific category.
+     *
+     * @param  pcToIndex Array which contains for each PC a new value.
+     * @param  oldValueOrigin The value origin for which the underlying PC
+     *         - if it exists - should be remapped.
+     * @return The mapped value origin.
+     */
+    final def remapPC(pcToIndex: Array[Int])(oldValueOrigin: Int): Int /*PC*/ = {
+        if (oldValueOrigin <= MethodExternalExceptionsOriginOffset) {
+            val remappedPC = pcToIndex(pcOfMethodExternalException(oldValueOrigin))
+            ValueOriginForMethodExternalException(remappedPC)
+        } else if (oldValueOrigin <= ImmediateVMExceptionsOriginOffset) {
+            val remappedPC = pcToIndex(pcOfImmediateVMException(oldValueOrigin))
+            ValueOriginForImmediateVMException(remappedPC)
+        } else if (oldValueOrigin < 0) {
+            // it is a reference to a parameter
+            oldValueOrigin
+        } else {
+            pcToIndex(oldValueOrigin)
+        }
+
+    }
+
+    /**
      * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
      * The index of the first parameter is 0. If the method is not static the this reference
      * stored in local variable `0` has the origin `-1`.
      *
-     * @param   isStatic `true` if method is static and, hence, has no implicit
-     *          parameter for `this`.
-     * @see     [[mapOperandsToParameters]]
-     *     @return The origin id for the specified parameter.
+     * @param  isStatic `true` if method is static and, hence, has no implicit parameter for `this`.
+     * @see    [[mapOperandsToParameters]]
+     * @return The origin id for the specified parameter.
      */
     def parameterIndexToValueOrigin(
         isStatic:       Boolean,
@@ -252,39 +396,6 @@ package object ai {
         }
         origin
     }
-
-    /**
-     * Special value ("pc") that is added to the ''work list''/''list of evaluated instructions''
-     * before the '''program counter of the first instruction''' of a subroutine.
-     *
-     * The marker [[SUBROUTINE]] is used to mark the place in the worklist where we
-     * start having information about subroutines.
-     */
-    // Some value smaller than -65536 to avoid confusion with local variable indexes.
-    final val SUBROUTINE_START = -80000008
-
-    /**
-     * Special value ("pc") that is added to the list of `evaluated instructions`
-     * to mark the end of the evaluation of a subroutine.
-     */
-    final val SUBROUTINE_END = -88888888
-
-    /**
-     * A special value that is larger than all other values used to mark boundaries
-     * and information related to the handling of subroutines and which is smaller
-     * that all other regular values.
-     */
-    final val SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND = -80000000
-
-    final val SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE = -88880008
-
-    final val SUBROUTINE_RETURN_TO_TARGET = -80008888
-
-    /**
-     * Special value that is added to the work list to mark the beginning of a
-     * subroutine call.
-     */
-    final val SUBROUTINE = -90000009 // some value smaller than -2^16
 
     final type Operands[T >: Null <: ValuesDomain#DomainValue] = Chain[T]
     final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
