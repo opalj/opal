@@ -32,7 +32,9 @@ package seq
 
 import java.lang.System.identityHashCode
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.reflect.runtime.universe.Type
@@ -165,21 +167,39 @@ final class PKEParallelTasksPropertyStore private (
         tg
     }
 
+    sealed trait StoreUpdate
+
+    case class PropertyUpdate(
+            pcr:                PropertyComputationResult,
+            wasLazilyTriggered: Boolean
+    ) extends StoreUpdate
+
+    case class LazyPropertyComputationTriggered(
+            e:    Entity,
+            pkId: Int,
+            lc:   SomePropertyComputation
+    ) extends StoreUpdate
+
     /* The list of property computation results - they will be processed sequentially in FIFO order. */
-    private[this] val results = new LinkedBlockingQueue[(PropertyComputationResult, Boolean /*lazily triggered*/ )]()
-    private[this] var resultsProcessor = {
+    private[this] val storeUpdates = new LinkedBlockingDeque[StoreUpdate]()
+    private[this] var storeUpdatesProcessor = {
         val t = new Thread(
             propertyStoreThreads,
-            "OPAL - Property Computation Results Processor"
+            "OPAL - Property Store Updates Processor"
         ) { thread ⇒
             override def run(): Unit = {
                 do {
                     handleExceptions {
                         while (!store.isInterrupted()) {
-                            val nextResult = results.take()
                             try {
-                                val (r, wasLazilyTriggered) = nextResult
-                                doHandleResult(r, wasLazilyTriggered)
+                                storeUpdates.take() match {
+                                    case PropertyUpdate(r, wasLazilyTriggered) ⇒
+                                        doHandleResult(r, wasLazilyTriggered)
+                                    case LazyPropertyComputationTriggered(e, pkId, lc) ⇒
+                                        if (ps(pkId).putIfAbsent(e, PropertyValue.lazilyComputed) == null) {
+                                            scheduleLazyComputationForEntity(e)(lc)
+                                        }
+                                }
                                 decOpenJobs()
                             } catch {
                                 case ie: InterruptedException ⇒
@@ -206,8 +226,8 @@ final class PKEParallelTasksPropertyStore private (
     private[this] def shutdownPropertyStore(): Unit = {
         isInterrupted = () ⇒ true
         // We use the "Thread"s' interrupt method to finally abort the threads...
-        if (resultsProcessor ne null) resultsProcessor.interrupt()
-        resultsProcessor = null
+        if (storeUpdatesProcessor ne null) storeUpdatesProcessor.interrupt()
+        storeUpdatesProcessor = null
         if (tasksProcessors ne null) tasksProcessors.interrupt()
         tasksProcessors = null
     }
@@ -324,6 +344,7 @@ final class PKEParallelTasksPropertyStore private (
         tasks.put(new EagerPropertyComputationTask(this, e, pc))
     }
 
+    // MUST ONLY BE CALLED BY THE PROPERTY STORE UPDATES THREAD!
     private[this] def scheduleLazyComputationForEntity[E <: Entity](
         e: E
     )(
@@ -370,8 +391,8 @@ final class PKEParallelTasksPropertyStore private (
                     case lc: PropertyComputation[E] @unchecked ⇒
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
-                        ps(pkId).put(e, PropertyValue.lazilyComputed)
-                        scheduleLazyComputationForEntity(e)(lc)
+                        incOpenJobs()
+                        storeUpdates.offerFirst(LazyPropertyComputationTriggered(e, pkId, lc))
                         // return the "current" result
                         epk
 
@@ -577,7 +598,7 @@ final class PKEParallelTasksPropertyStore private (
         wasLazilyTriggered: Boolean
     ): Unit = handleExceptions {
         incOpenJobs()
-        if (!results.offer((r, wasLazilyTriggered))) {
+        if (!storeUpdates.offerLast(PropertyUpdate(r, wasLazilyTriggered))) {
             // THIS SHOULD NEVER HAPPEN, BECAUSE THE QUEUE IS UNBOUNDED
             decOpenJobs()
             throw new UnknownError("results queue exceeded its size")
