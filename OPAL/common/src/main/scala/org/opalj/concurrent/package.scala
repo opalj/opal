@@ -214,7 +214,7 @@ package object concurrent {
         val exceptions = new ConcurrentExceptions
 
         if (parallelizationLevel == 1) {
-            data.forall { e ⇒
+            data forall { e ⇒
                 try {
                     f(e)
                 } catch {
@@ -244,9 +244,7 @@ package object concurrent {
                 while (t < parallelizationLevel) {
                     futures(t) = Future[Unit] {
                         var i: Int = -1
-                        while ({
-                            i = index.getAndIncrement; i
-                        } < max && !isInterrupted()) {
+                        while ({i = index.getAndIncrement; i} < max && !isInterrupted()) {
                             val e = data(i)
                             try {
                                 f(e)
@@ -278,7 +276,6 @@ package object concurrent {
         } catch {
             case t: Throwable ⇒
                 // actually, we should never get here...
-                t.printStackTrace(Console.err)
                 exceptions.addSuppressed(t)
         }
         if (exceptions.getSuppressed.length > 0) {
