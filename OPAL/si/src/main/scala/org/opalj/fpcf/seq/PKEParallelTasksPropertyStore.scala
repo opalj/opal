@@ -858,7 +858,7 @@ final class PKEParallelTasksPropertyStore private (
                     // not yet final; let's finalize them!
                     val maxPKIndex = ps.length
                     var pkId = 0
-                    var toBeFinalized : List[(AnyRef,Property)] = Nil
+                    var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
                         ps(pkId).forEach { (e, pValue) ⇒
                             val lb = pValue.lb
@@ -870,14 +870,14 @@ final class PKEParallelTasksPropertyStore private (
                                 lb != ub &&
                                 !delayedPropertyKinds(pkId) &&
                                 pValue.dependees.isEmpty) {
-                                toBeFinalized ::= ((e,ub))
+                                toBeFinalized ::= ((e, ub))
                             }
                         }
                         pkId += 1
                     }
-                    if(toBeFinalized.nonEmpty) {
-                        toBeFinalized foreach  { ep =>
-                            val (e,p) = ep
+                    if (toBeFinalized.nonEmpty) {
+                        toBeFinalized foreach { ep ⇒
+                            val (e, p) = ep
                             update(e, p, p, Nil) // commit as Final value
                         }
 
