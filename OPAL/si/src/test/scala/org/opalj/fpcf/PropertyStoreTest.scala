@@ -28,14 +28,14 @@
  */
 package org.opalj.fpcf
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import org.junit.runner.RunWith
-import org.opalj.concurrent.ConcurrentExceptions
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterAll
+
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -249,8 +249,6 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps.waitOnPhaseCompletion()
             } catch {
                 case _: IllegalStateException ⇒ // eager exception : OK
-                case ce: ConcurrentExceptions ⇒
-                    ce.getSuppressed.exists(_.isInstanceOf[IllegalStateException])
             }
         }
 
