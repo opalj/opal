@@ -573,8 +573,9 @@ abstract class PropertyStore {
         try {
             f
         } catch {
-            case ct: ControlThrowable ⇒ throw ct;
-            case t: Throwable         ⇒ collectAndThrowException(t)
+            case ct: ControlThrowable     ⇒ throw ct;
+            case a: AbortedDueToException ⇒ throw a.cause;
+            case t: Throwable             ⇒ collectAndThrowException(t)
         }
     }
 
