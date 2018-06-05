@@ -57,6 +57,7 @@ import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCallStatement
 import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 
 import scala.collection.Map
@@ -176,10 +177,17 @@ class RTACallGraphAnalysis private[analyses] (
                 case call: NonVirtualMethodCall[V] ⇒
                     handleCall(stmt.pc, call.resolveCallTarget.toSet)
 
+                case VirtualFunctionCallStatement(call) ⇒
+                    val tgts = call.resolveCallTargets(method.classFile.thisType)
+
+                    handleCall(
+                        stmt.pc,
+                        tgts.filter(tgt ⇒ instantiatedTypesUB.contains(tgt.classFile.thisType))
+                    )
+
                 case call: VirtualMethodCall[V] ⇒
                     val tgts = call.resolveCallTargets(method.classFile.thisType)
 
-                    // TODO it seems to be the case that there is a bug in the tac code
                     handleCall(
                         stmt.pc,
                         tgts.filter(tgt ⇒ instantiatedTypesUB.contains(tgt.classFile.thisType))
