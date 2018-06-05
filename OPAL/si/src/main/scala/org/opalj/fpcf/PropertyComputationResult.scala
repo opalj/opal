@@ -140,12 +140,19 @@ case class IntermediateResult[P <: Property](
         c:         OnUpdateContinuation
 ) extends PropertyComputationResult {
 
-    assert(e ne null)
-    assert(lb ne null)
-    assert(ub ne null)
-    assert(c ne null, "onUpdateContinuation is null")
-    assert(dependees.nonEmpty, s"intermediate result $this without open dependencies")
-    assert(lb ne ub, s"intermediate result $this with same lower and upper bound")
+    if (PropertyStore.Debug) {
+        if (lb == ub) {
+            throw new IllegalArgumentException(
+                s"intermediate result with equal bounds: $this"
+            )
+        }
+        if (dependees.isEmpty) {
+            throw new IllegalArgumentException(
+                s"intermediate result $this without open dependencies "+
+                    "(use IncrementalResult for collaboratively computed results)"
+            )
+        }
+    }
 
     private[fpcf] final def id = IntermediateResult.id
 
