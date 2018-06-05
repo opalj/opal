@@ -105,13 +105,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         val result: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
             new ConcurrentHashMap
 
-        val mapFactory = new JFunction[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] {
-            override def apply(
-                t: ReferenceType
-            ): ConcurrentHashMap[MethodContext, DeclaredMethod] = {
-                new ConcurrentHashMap()
-            }
-        }
+        val mapFactory: JFunction[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
+            (_: ReferenceType) ⇒ { new ConcurrentHashMap() }
 
         p.parForeachClassFile() { cf ⇒
             val classType = cf.thisType
