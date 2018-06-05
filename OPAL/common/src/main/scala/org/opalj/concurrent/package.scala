@@ -244,7 +244,7 @@ package object concurrent {
                 while (t < parallelizationLevel) {
                     futures(t) = Future[Unit] {
                         var i: Int = -1
-                        while ({i = index.getAndIncrement; i} < max && !isInterrupted()) {
+                        while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
                             val e = data(i)
                             try {
                                 f(e)

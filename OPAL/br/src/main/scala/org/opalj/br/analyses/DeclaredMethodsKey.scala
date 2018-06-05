@@ -162,8 +162,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 mc ← p.instanceMethods(classType)
             } {
                 val vm = DefinedMethod(classType, mc.method)
-                if (dms.put(MethodContext(mc.method), vm) != null) {
-                    throw new UnknownError("creation of declared methods failed")
+                val oldVM = dms.put(MethodContext(mc.method), vm)
+                if (oldVM != null && oldVM != vm) {
+                    throw new UnknownError(s"creation of declared methods failed:\n\t$oldVM\n\t\tvs.(new)\n\t$vm}")
                 }
             }
         }
