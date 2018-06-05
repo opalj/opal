@@ -57,7 +57,6 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
     // todo cache
     def allTypes(p: ProjectLike): InstantiatedTypes = {
-        println("all types called")
         val allTypes = p.classHierarchy.allSubtypes(ObjectType.Object, reflexive = true)
         InstantiatedTypes(allTypes)
     }

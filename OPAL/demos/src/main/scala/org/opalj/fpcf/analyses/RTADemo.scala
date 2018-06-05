@@ -69,9 +69,11 @@ object RTADemo extends DefaultOneStepAnalysis {
         ps.waitOnPhaseCompletion()
 
         println(ps(project, InstantiatedTypes.key).ub)
-        val cg = ps(project, CallGraph.key)
+        println(ps(project, CallGraph.key).ub)
         println(CallGraph.fallbackCG(project))
-        println(cg.ub)
+        // for (m <- project.allMethods) {
+        //    println(ps(m, Callees.key))
+        //}
 
         BasicReport("")
     }

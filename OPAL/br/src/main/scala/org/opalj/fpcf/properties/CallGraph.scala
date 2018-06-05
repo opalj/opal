@@ -68,14 +68,18 @@ final class CallGraph(
         val callers: Map[Method, Set[(Method, Int /*pc*/ )]]
 ) extends Property with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
-
+    val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
+    val callersSize = callers.map(_._2.size).sum
+    if (callersSize != calleesSize)
+        println()
+    assert(
+        callersSize == calleesSize,
+        s"the size of callers (size=$callersSize) should equal the size of callees (size=$calleesSize)"
+    )
     /**
      * TODO
      */
-    def size: Int = {
-        val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
-        val callersSize = callers.map(_._2.size).sum
-        assert(callersSize == calleesSize)
+    val size: Int = {
         calleesSize
     }
 
@@ -120,6 +124,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     override protected def requirements: ProjectInformationKeys = Nil
 
     override protected def compute(project: SomeProject): CallGraph = {
+        println("compute CHA cg")
         val callers = new ConcurrentHashMap[Method, Set[(Method, Int /*PC*/ )]]()
         val callees = new ConcurrentHashMap[Method, Map[Int /*PC*/ , Set[Method]]]
 

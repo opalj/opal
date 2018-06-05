@@ -50,10 +50,12 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
+import org.opalj.tac.GetStatic
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
 import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.PutStatic
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCallStatement
 import org.opalj.tac.StaticMethodCall
@@ -82,12 +84,10 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     def computeCG(m: Method): PropertyComputationResult = {
+        //println(s"${m.toJava}")
         val methodID = methodIds(m)
-
-        if (processedMethods(methodID).compareAndSet(false, true))
-            doComputeCG(m, propertyStore(project, InstantiatedTypes.key))
-        else
-            NoResult
+        assert(processedMethods(methodID).get())
+        doComputeCG(m, propertyStore(project, InstantiatedTypes.key))
     }
 
     def doComputeCG(
@@ -107,6 +107,17 @@ class RTACallGraphAnalysis private[analyses] (
         // in case the instantiatedTypes are not finally computed, we depend on them
         var instantiatedTypesDependee: Option[EOptionP[ProjectLike, InstantiatedTypes]] = None
 
+        def addNewReachableMethod(m: Method): Unit = {
+            if (processedMethods(methodIds(m)).compareAndSet(false, true))
+                newReachableMethods += m
+        }
+
+        def addClInitAsNewReachable(objectType: ObjectType): Unit = {
+            project.classFile(objectType).foreach { cf ⇒
+                cf.staticInitializer.foreach(addNewReachableMethod)
+            }
+        }
+
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesUB: Set[ObjectType] = instantiatedTypes match {
             case FinalEP(_, ub) ⇒ ub.types
@@ -116,13 +127,8 @@ class RTACallGraphAnalysis private[analyses] (
 
             case epk ⇒
                 instantiatedTypesDependee = Some(epk)
-                project.classFile(ObjectType.String).foreach { cf ⇒
-                    cf.staticInitializer.foreach { clInit ⇒
-                        if (processedMethods(methodIds(clInit)).compareAndSet(false, true))
-                            newReachableMethods += clInit
-                    }
-                }
-
+                addClInitAsNewReachable(ObjectType.String)
+                // todo initial leave types should be also added
                 Set(ObjectType.String) //TODO use default types depending on project setting
         }
 
@@ -142,16 +148,12 @@ class RTACallGraphAnalysis private[analyses] (
             for {
                 tgt ← targets
             } {
-                val methodId = methodIds(tgt)
                 // add call edge to CG
                 calleesOfM(pc) += tgt
                 callers(tgt) += (method → pc)
 
                 // the callee is now reachable and should be processed, if not done already
-
-                if (processedMethods(methodId).compareAndSet(false, true)) {
-                    newReachableMethods += tgt
-                }
+                addNewReachableMethod(tgt)
             }
         }
 
@@ -164,6 +166,12 @@ class RTACallGraphAnalysis private[analyses] (
                 case Assignment(_, _, New(_, allocatedType)) ⇒
                     if (!instantiatedTypesUB.contains(allocatedType))
                         newInstantiatedTypes += allocatedType
+
+                case Assignment(_, _, GetStatic(_, declaringClass, _, _)) ⇒
+                    addClInitAsNewReachable(declaringClass)
+
+                case PutStatic(_, declaringClass, _, _, _) ⇒
+                    addClInitAsNewReachable(declaringClass)
 
                 case StaticFunctionCallStatement(call) ⇒
                     handleCall(stmt.pc, call.resolveCallTarget.toSet)
@@ -245,11 +253,11 @@ class RTACallGraphAnalysis private[analyses] (
                     continuation
                 )
         )
-
         // instantiated types updates
-        if (newInstantiatedTypes.nonEmpty)
-            results += PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
-                (eOptionP: EOptionP[SomeProject, InstantiatedTypes]) ⇒ eOptionP match {
+
+        results += PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
+            (eOptionP: EOptionP[SomeProject, InstantiatedTypes]) ⇒
+                if (newInstantiatedTypes.nonEmpty) eOptionP match {
                     case EPS(_, lb, ub) ⇒
                         Some(EPS(
                             project,
@@ -263,16 +271,31 @@ class RTACallGraphAnalysis private[analyses] (
                             InstantiatedTypes.allTypes(p),
                             InstantiatedTypes(newInstantiatedTypes)
                         ))
-                })
+                }
+                else None)
 
         // call graph updates
         results += PartialResult[SomeProject, CallGraph](p, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub @ CallGraph(calleesUB, callersUB)) ⇒
+
+                // calleesOfM contains all (PC, Set(Method)) pairs from the current method
+                // update the callees of the current method
                 val newCallees = calleesUB.updated(method, calleesOfM)
-                val newCallers = callers.foldLeft(callersUB) {
-                    case (tmpCG, (caller, newEdges)) ⇒
-                        tmpCG.updated(caller, tmpCG(caller) ++ newEdges)
+
+                var newCallers = callersUB
+
+                calleesOfM.foreach {
+                    case (pc, tgtsOfM) ⇒
+                        tgtsOfM.foreach { tgt ⇒
+                            newCallers = newCallers.updated(tgt, newCallers(tgt) + (method → pc))
+                        }
                 }
+
+                // todo old version
+                // val newCallers = callers.foldLeft(callersUB) {
+                //     case (tmpCG, (caller, newEdges)) ⇒
+                //         tmpCG.updated(caller, tmpCG(caller) ++ newEdges)
+                // }
 
                 val newCG = CallGraph(newCallees, newCallers)
 
@@ -304,12 +327,20 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
         val mainDescriptor = MethodDescriptor.JustTakes(ArrayType(ObjectType.String))
         // TODO also handle libraries
         val entryPoints: Seq[Method] = project.allMethodsWithBody.filter { m ⇒
-            m.name == "main" && m.descriptor == mainDescriptor && m.body.isDefined
+            m.name == "main" && m.descriptor == mainDescriptor && m.isStatic && m.body.isDefined
         }
+        println(s"number of entrypoints: ${entryPoints.size}")
         if (entryPoints.isEmpty)
             OPALLogger.logOnce(
                 Error("analysis", "the project has no entry points")
             )(project.logContext)
+
+        // ensure that an entry point is not scheduled later on again
+        entryPoints.foreach(entrypoint ⇒ {
+            val methodIds = project.get(MethodIDKey)
+            if (!analysis.processedMethods(methodIds(entrypoint)).compareAndSet(false, true))
+                throw new IllegalStateException("Unexpected modification of processedMethods array")
+        })
 
         propertyStore.scheduleEagerComputationsForEntities(entryPoints)(analysis.computeCG)
         analysis
