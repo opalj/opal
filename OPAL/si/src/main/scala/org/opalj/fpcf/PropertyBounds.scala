@@ -26,7 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package concurrent
+package org.opalj.fpcf
 
-class ConcurrentExceptions extends Exception("concurrent exceptions occurred", null, true, false)
+/**
+ * Encapsulates the bounds of a property.
+ */
+case class PropertyBounds[P <: Property](lb: P, ub: P)

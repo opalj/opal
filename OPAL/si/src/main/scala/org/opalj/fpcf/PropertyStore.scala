@@ -34,7 +34,9 @@ import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 
 /**
  * A property store manages the execution of computations of properties related to specific
@@ -85,8 +87,12 @@ import org.opalj.log.OPALLogger.info
  * value will be committed.
  *
  * ==Thread Safety==
- * The sequential property stores are not thread-safe; the parallelized implementation(s) is
- * thread-safe.
+ * The sequential property stores are not thread-safe; the parallelized implementation(s) are
+ * thread-safe in the following manner:
+ *  - a client has to use the SAME thread to call the [[setupPhase]],
+ *    [[registerLazyPropertyComputation]], [[scheduleEagerComputationForEntity]] /
+ *    [[scheduleEagerComputationsForEntities]], [[force]] and [[waitOnPhaseCompletion]] methods.
+ *    The methods to query the store are thread-safe and
  *
  * ==Common Abbreviations==
  *  - e =         Entity
@@ -115,6 +121,8 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 abstract class PropertyStore {
+
+    implicit val logContext: LogContext
 
     //
     //
@@ -154,6 +162,7 @@ abstract class PropertyStore {
      * and calling `waitOnPhaseCompletion` again. I.e., interruption can be used for debugging
      * purposes!
      */
+    // TODO Rename to isSuspended to avoid confusion with Thread.isInterrupted..
     @volatile var isInterrupted: () ⇒ Boolean = concurrent.defaultIsInterrupted
 
     //
@@ -394,7 +403,7 @@ abstract class PropertyStore {
      * @note   Triggers lazy evaluations.
      * @see `apply(epk:EPK)` for details.
      */
-    def force(e: Entity, pk: SomePropertyKey): Unit
+    def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
 
     /**
      * Registers a function that lazily computes a property for an element
@@ -500,34 +509,82 @@ abstract class PropertyStore {
      * @note If a computation fails with an exception, the property store will stop in due time
      *       and return the thrown exception. No strong guarantees are given which exception
      *       is returned in case of concurrent execution.
+     * @note In case of an exception, the analyses are aborted as fast as possible and the
+     *       store is no longer usable.
      */
     def waitOnPhaseCompletion(): Unit
 
-    @volatile protected[this] var exception: Throwable = _ /*null*/
+    @volatile private[this] var exception: Throwable = _ /*null*/
+
+    /** ONLY INTENDED TO BE USED BY TESTS TO AVOID MISGUIDING TEST REPORTS! */
+    @volatile private[fpcf] var suppressError: Boolean = false
+
+    /**
+     * Throws the caught exception; if an exception was caught!
+     * This method is NOT intended to be called concurrently; it is only intended to be called
+     * when we are in a state of quiescence.
+     */
+    protected[this] def validateState(): Unit = {
+        if (exception ne null) {
+            throw exception;
+        }
+    }
+
+    /**
+     * Called when the first top-level exception occurs.
+     * Intended to be overridden by subclasses.
+     */
+    protected[this] def onFirstException(t: Throwable): Unit = {
+        if (!suppressError) {
+            error("analysis progress", "analysis resulted in exception", t)
+        }
+    }
+
+    protected[this] def collectException(t: Throwable): Unit = {
+        if (exception ne null) {
+            if (exception ne t) {
+                exception.addSuppressed(t)
+            }
+        } else {
+            // double-checked locking... we don't care about performance if everything falls
+            // apart anyway.
+            this.synchronized {
+                if (exception ne null) {
+                    if (exception ne t) {
+                        exception.addSuppressed(t)
+                    }
+                } else {
+                    exception = t
+                    onFirstException(t)
+                }
+            }
+        }
+    }
+
+    protected[this] def collectAndThrowException(t: Throwable): Nothing = {
+        collectException(t)
+        throw t;
+    }
 
     protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
-            throw exception;
+            throw AbortedDueToException(exception)
 
         try {
             f
         } catch {
-            case ct: ControlThrowable ⇒
-                /*  BASICALLY IGNORED - BUT THERE IS ROOM FOR IMPROVEMENT! */
-                throw ct;
-            case t: Throwable ⇒
-                if (exception ne null) {
-                    // We may swallow some exceptions, but, the caught exception is
-                    // definitively a "top-level" exception.
-                    exception.addSuppressed(t)
-                } else {
-                    exception = t
-                }
-                throw t;
+            case ct: ControlThrowable     ⇒ throw ct;
+            case a: AbortedDueToException ⇒ throw a.cause;
+            case t: Throwable             ⇒ collectAndThrowException(t)
         }
     }
 
 }
+
+case class AbortedDueToException(cause: Throwable) extends RuntimeException(
+    s"processing aborted due to previous exception: ${cause.getMessage}",
+    cause
+)
 
 object PropertyStore {
 

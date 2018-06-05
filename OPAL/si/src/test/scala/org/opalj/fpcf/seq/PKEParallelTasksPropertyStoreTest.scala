@@ -26,7 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package concurrent
+package org.opalj.fpcf.seq
 
-class ConcurrentExceptions extends Exception("concurrent exceptions occurred", null, true, false)
+import org.opalj.fpcf.PropertyStoreTestWithDebugging
+import org.opalj.fpcf.PropertyStore
+
+class PKEParallelTasksPropertyStoreTest extends PropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PropertyStore = {
+        val ps = PKEParallelTasksPropertyStore()
+        ps.suppressError = true
+        ps
+    }
+
+}

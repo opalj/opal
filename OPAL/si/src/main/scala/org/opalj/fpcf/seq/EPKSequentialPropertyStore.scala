@@ -295,7 +295,9 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply(EPK(e, pk), true)
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply(EPK(e, pk), true)
+    }
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
@@ -503,14 +505,10 @@ final class EPKSequentialPropertyStore private (
     ): Unit = handleExceptions {
         r.id match {
 
-            case NoResult.id ⇒
-            // A computation reported no result; i.e., it is not possible to
-            // compute a/some property/properties for a given entity.
-
-            case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
-                handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+            case NoResult.id ⇒ {
+                // A computation reported no result; i.e., it is not possible to
+                // compute a/some property/properties for a given entity.
+            }
 
             case Results.id ⇒
                 val Results(results) = r
@@ -520,9 +518,16 @@ final class EPKSequentialPropertyStore private (
                 val MultiResult(results) = r
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
+            case IncrementalResult.id ⇒
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                handleResult(ir)
+                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+
             //
             // Methods which actually store results...
             //
+
+            case ExternalResult.id ⇒ throw new UnknownError(s"unexteped result: $r")
 
             case Result.id ⇒
                 val Result(e, p) = r
@@ -693,7 +698,11 @@ final class EPKSequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty)
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "setup phase can only be called as long as no tasks are scheduled"
+            )
+        }
 
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
@@ -799,6 +808,8 @@ final class EPKSequentialPropertyStore private (
                     // We used no fallbacks and found no cycles, but we may still have
                     // (collaboratively computed) properties (e.g. CallGraph) which are
                     // not yet final; let's finalize them!
+
+                    var toBeFinalized: List[(AnyRef, Property)] = Nil
                     for {
                         (e, pkIdPV) ← ps
                         (pkLongId, pValue) ← pkIdPV
@@ -813,9 +824,16 @@ final class EPKSequentialPropertyStore private (
                             lb != ub &&
                             !delayedPropertyKinds.contains(pkId) &&
                             pValue.dependees.isEmpty) {
-                            update(e, ub, ub, Nil) // commit as Final value
-                            continueComputation = true
+                            toBeFinalized ::= ((e, ub))
                         }
+                    }
+                    if (toBeFinalized.nonEmpty) {
+                        toBeFinalized foreach { ep ⇒
+                            val (e, p) = ep
+                            update(e, p, p, Nil) // commit as Final value
+                        }
+
+                        continueComputation = true
                     }
                 }
             }

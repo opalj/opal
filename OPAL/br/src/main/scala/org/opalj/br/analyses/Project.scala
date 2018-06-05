@@ -49,6 +49,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.SequentialTasks
 import org.opalj.concurrent.defaultIsInterrupted
@@ -72,7 +73,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.concurrent.ConcurrentExceptions
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -659,13 +659,8 @@ class Project[Source] private (
     )(
         f: ClassFile ⇒ T
     ): Unit = {
-        try {
-            parForeachProjectClassFile(isInterrupted)(f)
-            parForeachLibraryClassFile(isInterrupted)(f)
-        } catch {
-            case ce: ConcurrentExceptions ⇒
-                throw ce;
-        }
+        parForeachProjectClassFile(isInterrupted)(f)
+        parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -1131,7 +1126,7 @@ object Project {
             }
         } catch {
             case ce: ConcurrentExceptions ⇒
-                ce.getSuppressed.foreach { e ⇒
+                ce.getSuppressed foreach { e ⇒
                     error("internal - ignored", "project validation failed", e)
                 }
         }
@@ -1274,9 +1269,14 @@ object Project {
 
         val tasks = new SequentialTasks[ObjectType](computeDefinedMethods)
         classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
-        val exceptions = tasks.join()
-        exceptions foreach { e ⇒
-            OPALLogger.error("project setup", "computing the defined methods failed", e)
+        try {
+            tasks.join()
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                error("project setup", "computing overriding methods failed, e")
+                ce.getSuppressed foreach { e ⇒
+                    error("project setup", "computing the defined methods failed", e)
+                }
         }
 
         val result = methods.mapValuesNow { mdcs ⇒
@@ -1390,9 +1390,14 @@ object Project {
 
         val tasks = new SequentialTasks[ObjectType](computeOverridingMethods)
         classHierarchy.leafTypes foreach { t ⇒ tasks.submit(t) }
-        val exceptions = tasks.join()
-        exceptions foreach { e ⇒
-            OPALLogger.error("project configuration", "computing the overriding methods failed", e)
+        try {
+            tasks.join()
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                error("project setup", "computing overriding methods failed, e")
+                ce.getSuppressed foreach { e ⇒
+                    error("project setup", "computing the overriding methods failed", e)
+                }
         }
         methods.repack
         methods

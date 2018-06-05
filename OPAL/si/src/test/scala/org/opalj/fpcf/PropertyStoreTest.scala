@@ -28,13 +28,13 @@
  */
 package org.opalj.fpcf
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterAll
+
+import java.util.concurrent.atomic.AtomicInteger
 
 import org.opalj.log.GlobalLogContext
 
@@ -63,9 +63,16 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.entities(Palindromes.NoPalindrome, Palindromes.Palindrome) should be('Empty)
             ps.entities(Palindromes.NoPalindrome, Palindromes.NoPalindrome) should be('Empty)
             ps.entities(Palindromes.PalindromeKey) should be('Empty)
-
             ps.properties("<DOES NOT EXIST>") should be('Empty)
+            ps.toString(true).length should be > (0)
 
+            ps.waitOnPhaseCompletion()
+            ps.entities(_ ⇒ true) should be('Empty)
+            ps.entities(Palindromes.Palindrome, Palindromes.Palindrome) should be('Empty)
+            ps.entities(Palindromes.NoPalindrome, Palindromes.Palindrome) should be('Empty)
+            ps.entities(Palindromes.NoPalindrome, Palindromes.NoPalindrome) should be('Empty)
+            ps.entities(Palindromes.PalindromeKey) should be('Empty)
+            ps.properties("<DOES NOT EXIST>") should be('Empty)
             ps.toString(true).length should be > (0)
         }
 
@@ -86,6 +93,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 )
             }
             ps.waitOnPhaseCompletion()
+            // ps' "isInterrupt" status should now be true; hence, scheduling
+            // further computations should have no effect.
             ps.scheduleEagerComputationForEntity("d")(e ⇒ Result("d", Palindrome))
 
             ps("a", Palindromes.PalindromeKey) should be(IntermediateEP("a", NoPalindrome, Palindrome))
@@ -144,6 +153,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.hasProperty("aba", superPalindromeKey) should be(false)
 
             ps.set("aba", Palindrome)
+            ps.waitOnPhaseCompletion()
             ps.hasProperty("aba", palindromeKey) should be(true)
             ps.hasProperty("cbc", palindromeKey) should be(false)
             ps.hasProperty("aba", superPalindromeKey) should be(false)
@@ -151,7 +161,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.scheduleEagerComputationForEntity("a") { e ⇒
                 ps.isInterrupted = () ⇒ true
                 val dependee = EPK("d", Palindromes.PalindromeKey)
-                ps(dependee) // we use a fake dependency...
+                ps[String, Palindromes.PalindromeProperty](dependee) // we use a fake dependency...
                 IntermediateResult(
                     "a",
                     NoPalindrome, Palindrome,
@@ -161,21 +171,26 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             }
             ps.waitOnPhaseCompletion()
             ps.hasProperty("a", palindromeKey) should be(true)
-            ps.hasProperty("d", palindromeKey) should be(false)
+            if (ps.hasProperty("d", palindromeKey)) {
+                fail(s"unexpected property: "+ps("d", palindromeKey))
+            }
         }
 
         // test SET
 
-        it("set should set an entity's property immediately (even if setupPhase has not be called)") {
+        it("set should set an entity's property \"immediately\"") {
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
             val pk = Palindromes.PalindromeKey
             val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindrome.key), Set.empty)
 
             ps.set("aba", Palindrome)
+            ps.waitOnPhaseCompletion()
             ps("aba", pk) should be(FinalEP("aba", Palindrome))
 
             ps.set("abca", NoPalindrome)
+            ps.waitOnPhaseCompletion()
             ps("abca", pk) should be(FinalEP("abca", NoPalindrome))
         }
 
@@ -187,15 +202,17 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
             val ps = createPropertyStore()
+            ps.setupPhase(Set(Palindrome.key), Set.empty)
 
             ps.set("aba", Palindrome)
             ps.set("aba", SuperPalindrome)
-
+            ps.waitOnPhaseCompletion()
             ps("aba", ppk) should be(FinalEP("aba", Palindrome))
             ps("aba", sppk) should be(FinalEP("aba", SuperPalindrome))
 
             ps.set("abca", NoPalindrome)
             ps.set("abca", NoSuperPalindrome)
+            ps.waitOnPhaseCompletion()
             ps("abca", ppk) should be(FinalEP("abca", NoPalindrome))
             ps("abca", sppk) should be(FinalEP("abca", NoSuperPalindrome))
         }
@@ -213,10 +230,9 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.set("aba", SuperPalindrome)
             ps.set("abca", NoPalindrome)
             ps.set("abca", NoSuperPalindrome)
-
+            ps.waitOnPhaseCompletion()
             ps.entities(ppk).map(_.e).toSet should be(Set("aba", "abca"))
             ps.entities(sppk).map(_.e).toSet should be(Set("aba", "abca"))
-
             val expected = Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome))
             ps.properties("aba").toSet should be(expected)
         }
@@ -227,8 +243,12 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             val ps = createPropertyStore()
 
             ps.set("aba", Palindrome)
-            intercept[IllegalStateException] {
+
+            try {
                 ps.set("aba", NoPalindrome)
+                ps.waitOnPhaseCompletion()
+            } catch {
+                case _: IllegalStateException ⇒ // eager exception : OK
             }
         }
 
@@ -367,27 +387,28 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     Seq(initiallyExpectedEP),
                     (eps) ⇒ {
                         // Depending the scheduling, we can have a final result here as well.
-                        //if (eps.isFinal)
-                        //    fail("premature final value")
+                        if (eps.isFinal) {
+                            if (eps.lb == SuperPalindrome)
+                                Result(e, Marker.IsMarked)
+                            else
+                                Result(e, Marker.NotMarked)
+                        } else
+                            IntermediateResult(
+                                "e", Marker.NotMarked, Marker.IsMarked,
+                                Seq(eps),
+                                (eps) ⇒ {
+                                    if (!eps.isFinal)
+                                        fail("unexpected non final value")
 
-                        IntermediateResult(
-                            "e", Marker.NotMarked, Marker.IsMarked,
-                            Seq(eps),
-                            (eps) ⇒ {
-                                if (!eps.isFinal)
-                                    fail("unexpected non final value")
-
-                                if (eps.lb == SuperPalindrome)
-                                    Result(e, Marker.IsMarked)
-                                else
-                                    Result(e, Marker.NotMarked)
-                            }
-                        )
-
+                                    if (eps.lb == SuperPalindrome)
+                                        Result(e, Marker.IsMarked)
+                                    else
+                                        Result(e, Marker.NotMarked)
+                                }
+                            )
                     }
                 )
             }
-
             ps.waitOnPhaseCompletion()
 
             ps("e", ppk) should be(FinalEP("e", Palindrome))
