@@ -33,9 +33,7 @@ package seq
 import java.lang.System.identityHashCode
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReferenceArray
 
 import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
@@ -45,10 +43,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.warn
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
-import org.opalj.concurrent.Tasks
-import org.opalj.concurrent.ExecutionContextN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
@@ -59,6 +54,11 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  *  - they have a property OR
  *  - a computation is already scheduled that will compute the property OR
  *  - we have a `depender`.
+ *
+ * ==Implementation==
+ * The idea is to use one thread for processing results. This enables us to avoid any
+ * synchronization w.r.t. updating the depender/dependee relations. For processing the scheduled
+ * computations we use `NumberOfThreadsForProcessingPropertyComputations` threads.
  *
  * @author Michael Eichberg
  */
@@ -99,72 +99,135 @@ final class PKEParallelTasksPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    // We have to use a concurrent hash to enable concurrent reads.
+    // We have to use a concurrent hash map to enable concurrent reads.
     private[this] val ps: Array[ConcurrentHashMap[Entity, PropertyValue]] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap( /*1024*64)*/ ) }
+        Array.fill(PropertyKind.SupportedPropertyKinds) {
+            new ConcurrentHashMap( /*1024*64)*/ )
+        }
     }
 
     // Those computations that will only be scheduled if the result is required
-    private[this] var lazyComputations: AtomicReferenceArray[SomePropertyComputation] = {
-        new AtomicReferenceArray(PropertyKind.SupportedPropertyKinds)
+    private[this] var lazyComputations: Array[SomePropertyComputation] = {
+        new Array(PropertyKind.SupportedPropertyKinds)
     }
 
     // The number of property computations and results which have not been completely processed.
     private[this] val openJobs = new AtomicInteger(0)
-    private[this] def decOpenJobs(): Unit = if (openJobs.decrementAndGet() == 0) println("finished?")
-    // has to be called before the job is actually processed; i.e., termination of the job
-    // always has to precede termination of the job
-    private[this] def incOpenJobs(): Unit = openJobs.incrementAndGet()
-
-    /* The list of scheduled property computations  - they will be processed in parallel. */
-    private[this] val tasks = handleExceptions {
-        Tasks[QualifiedTask](
-            (_, task) ⇒ {
-                try {
-                    // As a sideeffect, we may have (implicit) calls to schedule...
-                    // and implicit handleResult calls; both will increase openJobs.
-                    task.apply()
-                } catch {
-                    case t: Throwable ⇒ collectAndThrowException(t)
-                } finally {
-                    decOpenJobs()
-                }
-            },
-            abortOnExceptions = true,
-            isInterrupted
-        )(ExecutionContextN(NumberOfThreadsForProcessingPropertyComputations))
+    private[this] def decOpenJobs(): Unit = {
+        /* val count = */ openJobs.decrementAndGet()
+        // println(s"decCount=$count: ${Thread.currentThread().getStackTrace()(2)}")
+    }
+    /* Has to be called before the job is actually processed; i.e., termination of the job
+     * always has to precede decrementing openJobs. */
+    private[this] def incOpenJobs(): Unit = {
+        /* val count = */ openJobs.incrementAndGet()
+        // println(s"incCount=$count: ${Thread.currentThread().getStackTrace()(2)}")
     }
 
+    /* The list of scheduled property computations  - they will be processed in parallel. */
+    private[this] val propertyStoreThreads = new ThreadGroup(s"OPAL - Property Store ${store.hashCode().toHexString} Threads")
+    private[this] val tasks = new LinkedBlockingQueue[QualifiedTask]()
+    private[this] var tasksProcessors = {
+        val tg = new ThreadGroup(propertyStoreThreads, "OPAL - Property Computations Processors")
+        for { i ← 1 to NumberOfThreadsForProcessingPropertyComputations } {
+            val t = new Thread(tg, s"OPAL - Property Computations Processor $i") { thread ⇒
+                override def run(): Unit = {
+                    do {
+                        handleExceptions {
+                            while (!store.isInterrupted()) {
+                                try {
+                                    // As a sideeffect, we may have (implicit) calls to schedule...
+                                    // and implicit handleResult calls; both will increase openJobs.
+                                    val t = tasks.take()
+                                    t.apply()
+                                    decOpenJobs()
+                                } catch {
+                                    case ie: InterruptedException ⇒
+                                        // In this case no element was taken from the queue,
+                                        // because the thread waiting for another task was
+                                        // interrupted; hence, we must not decrement open jobs.
+                                        throw ie;
+                                    case t: Throwable ⇒
+                                        decOpenJobs()
+                                        throw t;
+                                }
+                            }
+                        }
+                        // the user interrupted computations... we are not really "done"
+                        if (store.isInterrupted()) Thread.sleep(1000)
+                    } while (!thread.isInterrupted())
+                }
+            }
+            t.setDaemon(true)
+            t.setUncaughtExceptionHandler(store.handleUncaughtException)
+            t.start()
+        }
+        tg
+    }
+
+    /* The list of property computation results - they will be processed sequentially in FIFO order. */
     private[this] val results = new LinkedBlockingQueue[(PropertyComputationResult, Boolean /*lazily triggered*/ )]()
-    private[this] val resultsProcessor = {
-        val t = new Thread("OPAL - Property Computation Results Processor") {
+    private[this] var resultsProcessor = {
+        val t = new Thread(
+            propertyStoreThreads,
+            "OPAL - Property Computation Results Processor"
+        ) { thread ⇒
             override def run(): Unit = {
-                while (!isInterrupted) handleExceptions {
-                    val nextResult = results.poll(1, TimeUnit.MINUTES)
-                    if (nextResult != null) {
-                        try {
-                            val (r, wasLazilyTriggered) = nextResult
-                            doHandleResult(r, wasLazilyTriggered)
-                        } catch {
-                            case t: Throwable ⇒ collectAndThrowException(t)
-                        } finally {
-                            decOpenJobs()
+                do {
+                    handleExceptions {
+                        while (!store.isInterrupted()) {
+                            val nextResult = results.take()
+                            try {
+                                val (r, wasLazilyTriggered) = nextResult
+                                doHandleResult(r, wasLazilyTriggered)
+                                decOpenJobs()
+                            } catch {
+                                case ie: InterruptedException ⇒
+                                    // In this case no element was taken from the queue,
+                                    // because the thread waiting for another task was
+                                    // interrupted; hence, we must not decrement open jobs.
+                                    throw ie;
+                                case t: Throwable ⇒
+                                    decOpenJobs()
+                                    throw t;
+                            }
                         }
                     }
-                }
-                warn("analysis progress", "processing results was interrupted")
+                    if (store.isInterrupted()) Thread.sleep(1000)
+                } while (!thread.isInterrupted())
             }
         }
         t.setDaemon(true)
-        t.setUncaughtExceptionHandler((t: Thread, e: Throwable) ⇒ {})
+        t.setUncaughtExceptionHandler(store.handleUncaughtException)
         t.start()
         t
     }
 
+    private[this] def shutdownPropertyStore(): Unit = {
+        isInterrupted = () ⇒ true
+        // We use the "Thread"s' interrupt method to finally abort the threads...
+        if (resultsProcessor ne null) resultsProcessor.interrupt()
+        resultsProcessor = null
+        if (tasksProcessors ne null) tasksProcessors.interrupt()
+        tasksProcessors = null
+    }
+
+    override def finalize(): Unit = {
+        // DEPRECATED: super.finalize()
+        shutdownPropertyStore()
+    }
+
+    private[this] def handleUncaughtException(t: Thread, e: Throwable): Unit = {
+        e match {
+            case underlyingException: AbortedDueToException ⇒ /*ignore*/
+            case t: Throwable                               ⇒ collectException(e)
+        }
+        shutdownPropertyStore()
+    }
+
     protected[this] override def onFirstException(t: Throwable): Unit = {
         super.onFirstException(t)
-        tasks.abortDueToExternalException(t)
-        resultsProcessor.interrupt()
+        shutdownPropertyStore()
     }
 
     @volatile private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
@@ -248,7 +311,7 @@ final class PKEParallelTasksPropertyStore private (
                 "lazy computations can only be registered while no analysis are scheduled"
             )
         }
-        lazyComputations.set(pk.id, pc.asInstanceOf[SomePropertyComputation])
+        lazyComputations(pk.id) = pc.asInstanceOf[SomePropertyComputation]
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
@@ -258,7 +321,7 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = handleExceptions {
         scheduledTasksCounter.incrementAndGet()
         incOpenJobs()
-        tasks.submit(new EagerPropertyComputationTask(this, e, pc))
+        tasks.put(new EagerPropertyComputationTask(this, e, pc))
     }
 
     private[this] def scheduleLazyComputationForEntity[E <: Entity](
@@ -268,7 +331,7 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = handleExceptions {
         scheduledTasksCounter.incrementAndGet()
         incOpenJobs()
-        tasks.submit(new LazyPropertyComputationTask(this, e, pc))
+        tasks.put(new LazyPropertyComputationTask(this, e, pc))
     }
 
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
@@ -290,7 +353,7 @@ final class PKEParallelTasksPropertyStore private (
         ps(pkId).get(e) match {
             case null ⇒
                 // the entity is unknown ...
-                lazyComputations.get(pkId) match {
+                lazyComputations(pkId) match {
                     case null ⇒
                         if (debug && computedPropertyKinds == null) {
                             /*&& delayedPropertyKinds ne null (not necessary)*/
@@ -328,7 +391,7 @@ final class PKEParallelTasksPropertyStore private (
                     // of an IntermediateResult must have been queried;
                     // however the sequential store does not create the
                     // data-structure eagerly!
-                    if (debug && ub == null && lazyComputations.get(pkId) != null) {
+                    if (debug && ub == null && lazyComputations(pkId) != null) {
                         throw new IllegalStateException(
                             "registered lazy computation was not triggered; "+
                                 "this happens, e.g., if the list of dependees contains EPKs "+
@@ -412,7 +475,7 @@ final class PKEParallelTasksPropertyStore private (
                         } catch {
                             case t: Throwable ⇒
                                 throw new IllegalArgumentException(
-                                    s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
+                                    s"entity=$e illegal update: old lb=$oldLB -> lb=$lb; old ub=$oldUB -> ub=$ub; "+
                                         newDependees.mkString("newDependees={", ", ", "}")+
                                         "; cause="+t.getMessage,
                                     t
@@ -466,7 +529,7 @@ final class PKEParallelTasksPropertyStore private (
                                 )
                             }
                         scheduledOnUpdateComputationsCounter.incrementAndGet()
-                        incOpenJobs(); tasks.submit(t)
+                        incOpenJobs(); tasks.put(t)
                         // Clear depender => dependee lists.
                         // Given that we have triggered the depender, we now have
                         // to remove the respective onUpdateContinuation from all
@@ -500,7 +563,7 @@ final class PKEParallelTasksPropertyStore private (
         val key = p.key
         val pkId = key.id
 
-        if (debug && lazyComputations.get(pkId) != null) {
+        if (debug && lazyComputations(pkId) != null) {
             throw new IllegalStateException(
                 s"$e: setting $p is not supported; lazy computation is scheduled for $key"
             )
@@ -516,6 +579,7 @@ final class PKEParallelTasksPropertyStore private (
         incOpenJobs()
         if (!results.offer((r, wasLazilyTriggered))) {
             // THIS SHOULD NEVER HAPPEN, BECAUSE THE QUEUE IS UNBOUNDED
+            decOpenJobs()
             throw new UnknownError("results queue exceeded its size")
         }
     }
@@ -557,7 +621,7 @@ final class PKEParallelTasksPropertyStore private (
                 val ExternalResult(e, p) = r
                 if (!update(e, p, p, Nil)) {
                     throw new IllegalStateException(
-                        s"$e: setting $p failed due to existing property"
+                        s"$e: setting $p failed due to existing property: ${apply(e, p.key)}"
                     )
                 }
 
@@ -691,16 +755,15 @@ final class PKEParallelTasksPropertyStore private (
         do {
             continueComputation = false
             while (!isInterrupted && openJobs.get > 0) {
-                handleExceptions {
-                    Thread.sleep(250) // we simply check every 250 milliseconds if we are done..
-                    isInterrupted = this.isInterrupted()
-                }
+                Thread.sleep(250) // we simply check every 250 milliseconds if we are done..
+                isInterrupted = this.isInterrupted()
             }
-            assert(openJobs.get >= 0)
-            if (openJobs.get == 0) quiescenceCounter += 1
+            validateState()
+            assert(openJobs.get >= 0, s"unexpected number of openJobs: $openJobs")
 
             if (!isInterrupted) handleExceptions {
                 assert(openJobs.get == 0)
+                quiescenceCounter += 1
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
@@ -844,7 +907,8 @@ final class PKEParallelTasksPropertyStore private (
 object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 
     @volatile var NumberOfThreadsForProcessingPropertyComputations: Int = {
-        NumberOfThreadsForCPUBoundTasks - 1
+        // We need at least one thread for processing property computations.
+        Math.max(NumberOfThreadsForCPUBoundTasks - 1, 1)
     }
 
     def apply(
@@ -854,6 +918,9 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
         logContext: LogContext
     ): PKEParallelTasksPropertyStore = {
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
-        new PKEParallelTasksPropertyStore(contextMap, NumberOfThreadsForProcessingPropertyComputations)
+        new PKEParallelTasksPropertyStore(
+            contextMap,
+            NumberOfThreadsForProcessingPropertyComputations
+        )
     }
 }
