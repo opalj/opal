@@ -808,6 +808,8 @@ final class EPKSequentialPropertyStore private (
                     // We used no fallbacks and found no cycles, but we may still have
                     // (collaboratively computed) properties (e.g. CallGraph) which are
                     // not yet final; let's finalize them!
+
+                    var toBeFinalized : List[(AnyRef,Property)] = Nil
                     for {
                         (e, pkIdPV) ← ps
                         (pkLongId, pValue) ← pkIdPV
@@ -822,10 +824,17 @@ final class EPKSequentialPropertyStore private (
                             lb != ub &&
                             !delayedPropertyKinds.contains(pkId) &&
                             pValue.dependees.isEmpty) {
-                            update(e, ub, ub, Nil) // commit as Final value
-                            continueComputation = true
+                            toBeFinalized ::= ((e,ub))
                         }
                     }
+                    if(toBeFinalized.nonEmpty) {
+                       toBeFinalized foreach  { ep =>
+                           val (e,p) = ep
+                           update(e, p, p, Nil) // commit as Final value
+                       }
+
+                       continueComputation = true
+                   }
                 }
             }
         } while (continueComputation)

@@ -778,11 +778,18 @@ final class PKESequentialPropertyStore private (
                                 lb != ub &&
                                 !delayedPropertyKinds(pkId) &&
                                 pValue.dependees.isEmpty) {
-                                update(e, ub, ub, Nil) // commit as Final value
-                                continueComputation = true
+                                toBeFinalized ::= ((e,ub))
                             }
                         }
                         pkId += 1
+                    }
+                    if(toBeFinalized.nonEmpty) {
+                        toBeFinalized foreach  { ep =>
+                            val (e,p) = ep
+                            update(e, p, p, Nil) // commit as Final value
+                        }
+
+                        continueComputation = true
                     }
                 }
             }
