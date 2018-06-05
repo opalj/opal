@@ -162,6 +162,7 @@ abstract class PropertyStore {
      * and calling `waitOnPhaseCompletion` again. I.e., interruption can be used for debugging
      * purposes!
      */
+    // TODO Rename to isSuspended to avoid confusion with Thread.isInterrupted..
     @volatile var isInterrupted: () ⇒ Boolean = concurrent.defaultIsInterrupted
 
     //
@@ -519,6 +520,17 @@ abstract class PropertyStore {
     @volatile private[fpcf] var suppressError: Boolean = false
 
     /**
+     * Throws the caught exception; if an exception was caught!
+     * This method is NOT intended to be called concurrently; it is only intended to be called
+     * when we are in a state of quiescence.
+     */
+    protected[this] def validateState(): Unit = {
+        if (exception ne null) {
+            throw exception;
+        }
+    }
+
+    /**
      * Called when the first top-level exception occurs.
      * Intended to be overridden by subclasses.
      */
@@ -528,7 +540,7 @@ abstract class PropertyStore {
         }
     }
 
-    protected[this] def collectAndThrowException(t: Throwable): Nothing = {
+    protected[this] def collectException(t: Throwable): Unit = {
         if (exception ne null) {
             if (exception ne t) {
                 exception.addSuppressed(t)
@@ -538,19 +550,25 @@ abstract class PropertyStore {
             // apart anyway.
             this.synchronized {
                 if (exception ne null) {
-                    exception.addSuppressed(t)
+                    if (exception ne t) {
+                        exception.addSuppressed(t)
+                    }
                 } else {
                     exception = t
                     onFirstException(t)
                 }
             }
         }
+    }
+
+    protected[this] def collectAndThrowException(t: Throwable): Nothing = {
+        collectException(t)
         throw t;
     }
 
     protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
-            throw exception;
+            throw AbortedDueToException(exception)
 
         try {
             f
@@ -561,6 +579,11 @@ abstract class PropertyStore {
     }
 
 }
+
+case class AbortedDueToException(cause: Throwable) extends RuntimeException(
+    s"processing aborted due to previous exception: ${cause.getMessage}",
+    cause
+)
 
 object PropertyStore {
 
