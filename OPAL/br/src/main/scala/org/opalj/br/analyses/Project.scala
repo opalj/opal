@@ -1163,7 +1163,7 @@ object Project {
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
         // information about all super types is available (already stored in instanceMethods)
-        // when we process the subtype. If not all information is already available, which
+        // when we process the subtype. If not, all information is already available, which
         // can happen in the following case if the processing of C would be scheduled before B:
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
@@ -1249,8 +1249,8 @@ object Project {
                     for {
                         declaredMethod ← classFile.methods
                         if declaredMethod.isVirtualMethodDeclaration
-                        declaredMethodContext = MethodDeclarationContext(declaredMethod)
                     } {
+                        val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                         // We have to filter multiple methods when we inherit (w.r.t. the
                         // visibility) multiple conflicting methods!
                         definedMethods =
@@ -1273,7 +1273,6 @@ object Project {
             tasks.join()
         } catch {
             case ce: ConcurrentExceptions ⇒
-                // error("project setup", "computing overriding methods failed, e")
                 ce.getSuppressed foreach { e ⇒
                     error("project setup", "computing the defined methods failed", e)
                 }
