@@ -1261,7 +1261,7 @@ object Project {
                             definedMethods :&:= declaredMethodContext
                         }
                     }
-                case None ⇒ // ... reached only in case of a rather incomplete projects...
+                case None ⇒ // ... reached only in case of rather incomplete projects...
             }
             methods += ((objectType, definedMethods))
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
@@ -1273,7 +1273,7 @@ object Project {
             tasks.join()
         } catch {
             case ce: ConcurrentExceptions ⇒
-                error("project setup", "computing overriding methods failed, e")
+                // error("project setup", "computing overriding methods failed, e")
                 ce.getSuppressed foreach { e ⇒
                     error("project setup", "computing the defined methods failed", e)
                 }
