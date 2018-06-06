@@ -290,7 +290,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * The scala compiler (and possibly other JVM bytecode compilers) add a
+     * The scala compiler (and possibly other comilers targeting JVM bytecode) add a
      * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
      * Serializable. This method is called when the serialized lambda is deserialized.
      * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
@@ -375,11 +375,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * @see More information about lambda deserialization and lambda meta factory:
      *      [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html]
      *
-     * @param classFile The classfile to parse
-     * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instruction
-     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
-     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     * @param classFile The classfile to parse.
+     * @param instructions The instructions of the method we are currently parsing.
+     * @param pc The program counter of the current instruction.
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace.
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java8LambdaResolution(
         classFile:     ClassFile,
