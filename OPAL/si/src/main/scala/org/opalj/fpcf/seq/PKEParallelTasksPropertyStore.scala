@@ -36,10 +36,12 @@ import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.TimeUnit
 
 import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.graphs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -140,9 +142,11 @@ final class PKEParallelTasksPropertyStore private (
                                 try {
                                     // As a sideeffect, we may have (implicit) calls to schedule...
                                     // and implicit handleResult calls; both will increase openJobs.
-                                    val t = tasks.take()
-                                    t.apply()
-                                    decOpenJobs()
+                                    val t = tasks.poll(60, TimeUnit.SECONDS)
+                                    if (t != null) {
+                                        t.apply()
+                                        decOpenJobs()
+                                    }
                                 } catch {
                                     case ie: InterruptedException ⇒
                                         // In this case no element was taken from the queue,
@@ -155,7 +159,7 @@ final class PKEParallelTasksPropertyStore private (
                                 }
                             }
                         }
-                        // the user interrupted computations... we are not really "done"
+                        // the user suspended the store... we are not really "done"
                         if (store.isInterrupted()) Thread.sleep(1000)
                     } while (!thread.isInterrupted())
                 }
@@ -192,15 +196,17 @@ final class PKEParallelTasksPropertyStore private (
                     handleExceptions {
                         while (!store.isInterrupted()) {
                             try {
-                                storeUpdates.take() match {
+                                storeUpdates.poll(60, TimeUnit.SECONDS) match {
+                                    case null ⇒ // nothing to do at the moment...
                                     case PropertyUpdate(r, wasLazilyTriggered) ⇒
                                         doHandleResult(r, wasLazilyTriggered)
+                                        decOpenJobs()
                                     case LazyPropertyComputationTriggered(e, pkId, lc) ⇒
                                         if (ps(pkId).putIfAbsent(e, PropertyValue.lazilyComputed) == null) {
                                             scheduleLazyComputationForEntity(e)(lc)
                                         }
+                                        decOpenJobs()
                                 }
-                                decOpenJobs()
                             } catch {
                                 case ie: InterruptedException ⇒
                                     // In this case no element was taken from the queue,
