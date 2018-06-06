@@ -75,7 +75,7 @@ object DefaultTACAIKey extends TACAIKey {
         def computeAndCacheTAC(m: Method) = { // never executed concurrently
             val aiResult = aiResults(m)
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
-            // well... the following cast safe is safe, because the underlying
+            // well... the following cast is safe, because the underlying
             // datastructure is actually, conceptually immutable
             val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
             taCodes.put(m, taCode)
