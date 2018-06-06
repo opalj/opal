@@ -416,8 +416,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 // TODO We should generate synthetic accessor methods instead of lifting the visibility - currently it may happen that we have an invokespecial pointing to the lifted method which is then no longer valid!
                 if (m.isPrivate &&
                     m.name == targetMethodName &&
-                    m.descriptor == targetMethodDescriptor
-                ) {
+                    m.descriptor == targetMethodDescriptor) {
                     // Interface methods must be either public or private, see
                     //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
                     if (classFile.isInterfaceDeclaration) {

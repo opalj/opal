@@ -62,14 +62,14 @@ final class SequentialTasks[T](
 ) extends Tasks[T] {
 
     private[this] val tasksQueue = scala.collection.mutable.Queue.empty[T]
-    private[this] var concurrentExceptions : ConcurrentExceptions = _
+    private[this] var concurrentExceptions: ConcurrentExceptions = _
 
     def currentTasksCount: Int = tasksQueue.size
 
     def hasExceptions: Boolean = concurrentExceptions != null
 
     def currentExceptions: ConcurrentExceptions = {
-        if(concurrentExceptions == null) {
+        if (concurrentExceptions == null) {
             throw new IllegalStateException("no exceptions have been thrown while processing the tasks")
         } else {
             throw concurrentExceptions
@@ -78,7 +78,7 @@ final class SequentialTasks[T](
 
     def abortDueToExternalException(exception: Throwable): Unit = {
         isInterrupted = () ⇒ true
-        if(concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
+        if (concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
         concurrentExceptions.addSuppressed(exception)
     }
 
@@ -95,7 +95,7 @@ final class SequentialTasks[T](
                 process(this, tasksQueue.dequeue)
             } catch {
                 case t: Throwable ⇒ {
-                    if(concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
+                    if (concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
                     concurrentExceptions.addSuppressed(t)
                     if (abortOnExceptions) {
                         this.isInterrupted = () ⇒ true
