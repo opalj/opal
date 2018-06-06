@@ -32,7 +32,7 @@ package properties
 
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
-
+import org.opalj.collection.immutable.UIDSet
 import scala.collection.Set
 
 /**
@@ -44,16 +44,26 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
     final type Self = InstantiatedTypes
 }
 
-class InstantiatedTypes(val types: Set[ObjectType]) extends Property with InstantiatedTypesPropertyMetaInformation {
+class InstantiatedTypes( val orderedTypes: List[ObjectType], val types: UIDSet[ObjectType])
+        extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
-    override def toString: String = s"InstantiatedTypes(size=${types.size})"
+    override def toString: String = s"InstantiatedTypes(size=${types.size}:${types.mkString("\n\t")})"
+
+    /**
+     * Tests if this property is equal or better than the given one (better means that the
+     * value is above the given value in the underlying lattice.)
+     */
+    override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
+        if (!types.subsetOf(other.types))
+            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
+    }
 }
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
-    def apply(types: Set[ObjectType]): InstantiatedTypes = new InstantiatedTypes(types)
+    def apply(types: Set[ObjectType]): InstantiatedTypes = new InstantiatedTypes( /*types, */ UIDSet(types.toSeq: _*))
 
     // todo cache
     def allTypes(p: ProjectLike): InstantiatedTypes = {

@@ -66,7 +66,7 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
 final class CallGraph(
         val callees: Map[Method, Map[Int /*PC*/ , Set[Method]]],
         val callers: Map[Method, Set[(Method, Int /*pc*/ )]]
-) extends Property with CallGraphPropertyMetaInformation {
+) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
     val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
     val callersSize = callers.map(_._2.size).sum
@@ -84,6 +84,16 @@ final class CallGraph(
     }
 
     override def toString: String = s"CallGraph(size = $size)"
+
+    /**
+     * Tests if this property is equal or better than the given one (better means that the
+     * value is above the given value in the underlying lattice.)
+     */
+    override def checkIsEqualOrBetterThan(e: Entity, other: CallGraph): Unit = {
+        //TODO here compare real edges
+        if (size > other.size)
+            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
+    }
 }
 
 object CallGraph extends CallGraphPropertyMetaInformation {
