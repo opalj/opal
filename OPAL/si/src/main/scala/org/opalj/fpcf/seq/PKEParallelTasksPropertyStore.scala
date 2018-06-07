@@ -204,8 +204,10 @@ final class PKEParallelTasksPropertyStore private (
                                     case LazyPropertyComputationTriggered(e, pkId, lc) ⇒
                                         if (ps(pkId).putIfAbsent(e, PropertyValue.lazilyComputed) == null) {
                                             scheduleLazyComputationForEntity(e)(lc)
+                                            // no "overall" change of openJobs
                                         }
                                         decOpenJobs()
+
                                 }
                             } catch {
                                 case ie: InterruptedException ⇒
@@ -735,11 +737,23 @@ final class PKEParallelTasksPropertyStore private (
 
                     ps(dependeePKId).get(dependeeE) match {
                         case null ⇒
-                            // the dependee is not known
-                            ps(dependeePKId).put(
-                                dependeeE,
-                                new IntermediatePropertyValue(dependerEPK, c)
-                            )
+                            // The dependee is not known, but we have a scheduled
+                            // lazy computation which was not yet processed!
+                            val lc = lazyComputations(dependeePKId)
+                            if (lc == null) {
+                                ps(dependeePKId).put(
+                                    dependeeE,
+                                    new IntermediatePropertyValue(dependerEPK, c)
+                                )
+                            } else {
+                                val oldPV = ps(dependeePKId).put(
+                                    dependeeE,
+                                    IntermediatePropertyValue.lazilyComputed(dependerEPK, c)
+                                )
+                                if (oldPV == null) {
+                                    scheduleLazyComputationForEntity(dependeeE)(lc)
+                                }
+                            }
 
                         case dependeePValue: IntermediatePropertyValue ⇒
                             val dependeeDependers = dependeePValue.dependers
