@@ -32,9 +32,7 @@ package seq
 
 import java.lang.System.identityHashCode
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 
@@ -171,21 +169,13 @@ final class PKEParallelTasksPropertyStore private (
         tg
     }
 
-    sealed trait StoreUpdate
-
     case class PropertyUpdate(
             pcr:                PropertyComputationResult,
             wasLazilyTriggered: Boolean
-    ) extends StoreUpdate
-
-    case class LazyPropertyComputationTriggered(
-            e:    Entity,
-            pkId: Int,
-            lc:   SomePropertyComputation
-    ) extends StoreUpdate
+    )
 
     /* The list of property computation results - they will be processed sequentially in FIFO order. */
-    private[this] val storeUpdates = new LinkedBlockingDeque[StoreUpdate]()
+    private[this] val storeUpdates = new LinkedBlockingQueue[PropertyUpdate]()
     private[this] var storeUpdatesProcessor = {
         val t = new Thread(
             propertyStoreThreads,
@@ -197,14 +187,11 @@ final class PKEParallelTasksPropertyStore private (
                         while (!store.isInterrupted()) {
                             try {
                                 storeUpdates.poll(60, TimeUnit.SECONDS) match {
+
                                     case null ⇒ // nothing to do at the moment...
+
                                     case PropertyUpdate(r, wasLazilyTriggered) ⇒
                                         doHandleResult(r, wasLazilyTriggered)
-                                        decOpenJobs()
-                                    case LazyPropertyComputationTriggered(e, pkId, lc) ⇒
-                                        if (ps(pkId).putIfAbsent(e, PropertyValue.lazilyComputed) == null) {
-                                            scheduleLazyComputationForEntity(e)(lc)
-                                        }
                                         decOpenJobs()
                                 }
                             } catch {
@@ -397,8 +384,9 @@ final class PKEParallelTasksPropertyStore private (
                     case lc: PropertyComputation[E] @unchecked ⇒
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
-                        incOpenJobs()
-                        storeUpdates.offerFirst(LazyPropertyComputationTriggered(e, pkId, lc))
+                        if (ps(pkId).putIfAbsent(e, PropertyValue.lazilyComputed) == null) {
+                            scheduleLazyComputationForEntity(e)(lc)
+                        }
                         // return the "current" result
                         epk
 
@@ -604,7 +592,7 @@ final class PKEParallelTasksPropertyStore private (
         wasLazilyTriggered: Boolean
     ): Unit = handleExceptions {
         incOpenJobs()
-        if (!storeUpdates.offerLast(PropertyUpdate(r, wasLazilyTriggered))) {
+        if (!storeUpdates.offer(PropertyUpdate(r, wasLazilyTriggered))) {
             // THIS SHOULD NEVER HAPPEN, BECAUSE THE QUEUE IS UNBOUNDED
             decOpenJobs()
             throw new UnknownError("results queue exceeded its size")
@@ -735,11 +723,31 @@ final class PKEParallelTasksPropertyStore private (
 
                     ps(dependeePKId).get(dependeeE) match {
                         case null ⇒
-                            // the dependee is not known
+                            assert(lazyComputations(dependeePKId) == null)
+                            // val lazyComputation = lazyComputations(dependeePKId)
+                            // if (lazyComputation == null) {
                             ps(dependeePKId).put(
                                 dependeeE,
                                 new IntermediatePropertyValue(dependerEPK, c)
                             )
+                        // } else {
+                        //     // WE MAY HAVE A CONCURRENT UPDATE WHICH STATES THAT THE
+                        //     // PROPERTY IS LAZILY COMPUTED - BUT NOTHING ELSE, BECAUSE
+                        //     // ALL OTHER UPDATES ARE MADE BY THIS THREAD!
+                        //     val oldPValue = ps(dependeePKId).put(
+                        //         dependeeE,
+                        //         IntermediatePropertyValue.lazilyComputed(
+                        //             dependerEPK,
+                        //             c
+                        //         )
+                        //     )
+                        //     assert(
+                        //         oldPValue == null || (
+                        //             oldPValue.ub == PropertyIsLazilyComputed
+                        //             && oldPValue.dependers.isEmpty
+                        //         )
+                        //      )
+                        //  }
 
                         case dependeePValue: IntermediatePropertyValue ⇒
                             val dependeeDependers = dependeePValue.dependers
