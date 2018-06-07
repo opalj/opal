@@ -72,12 +72,14 @@ import scala.collection.mutable.ArrayBuffer
 case class State(
         method:                            Method,
         virtualCallSites:                  Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
-        private[cg] var calleesOfM:        mutable.Map[Int, Set[Method]],
+        private var _calleesOfM:           mutable.Map[Int, Set[Method]],
         private[cg] var numTypesProcessed: Int
 ) {
-    def addCallEdge(pc: Int, tgt: Method): Unit = {
-        calleesOfM(pc) += tgt
+    private[cg] def addCallEdge(pc: Int, tgt: Method): Unit = {
+        _calleesOfM(pc) += tgt
     }
+
+    private[cg] def calleesOfM: Map[Int, Set[Method]] = _calleesOfM.toMap
 }
 
 /**
@@ -351,9 +353,11 @@ class RTACallGraphAnalysis private[analyses] (
             instantiatedType ← newInstantiatedTypes
         } {
             if (project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYesOrUnknown)
-                // todo is this correct method
-                project.resolveMethodReference(instantiatedType, name, descr).foreach { tgt ⇒
+                project.instanceCall(
+                    state.method.classFile.thisType, instantiatedType, name, descr
+                ).foreach { tgt ⇒
                     addNewReachableMethod(tgt, newReachableMethods)
+                    // in case newCalleesOfM eq state.calleesOfM this is safe
                     newCalleesOfMap(pc) += tgt
                     state.addCallEdge(pc, tgt)
                 }
@@ -422,6 +426,8 @@ class RTACallGraphAnalysis private[analyses] (
         instantiatedTypesEOptP: SomeEOptionP, state: State
     ): PropertyComputationResult = {
         val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method))
+
+        // here we need a immutable copy of the current state
         val newCallees = Callees(state.calleesOfM)
         if (instantiatedTypesEOptP.isFinal || newCallees == calleesLB)
             Result(state.method, newCallees)
