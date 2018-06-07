@@ -142,8 +142,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                     }
                                 val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                                 val vm = DefinedMethod(subtype, methodO.get)
-                                if (subtypeDms.put(MethodContext(methodO.get), vm) != null) {
-                                    throw new UnknownError("creation of declared methods failed")
+                                val oldVM = subtypeDms.put(MethodContext(methodO.get), vm)
+                                if (oldVM != null && oldVM != vm) {
+                                    //throw new UnknownError("creation of declared methods failed")
                                 }
                                 (null, false, false) // Continue traversal on non-overridden method
                             } else {
@@ -152,8 +153,9 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     }
                 }
                 val vm = DefinedMethod(classType, m)
-                if (dms.put(MethodContext(m), vm) != null) {
-                    throw new UnknownError("creation of declared methods failed")
+                val oldVM = dms.put(MethodContext(m), vm)
+                if (oldVM != null && oldVM != vm) {
+                    //throw new UnknownError("creation of declared methods failed")
                 }
             }
             for {
@@ -164,7 +166,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 val vm = DefinedMethod(classType, mc.method)
                 val oldVM = dms.put(MethodContext(mc.method), vm)
                 if (oldVM != null && oldVM != vm) {
-                    throw new UnknownError(s"creation of declared methods failed:\n\t$oldVM\n\t\tvs.(new)\n\t$vm}")
+                    if (oldVM.methodDefinition.classFile.thisType.simpleName != "JComponent" &&
+                        vm.methodDefinition.classFile.thisType.simpleName != "JComponent" &&
+                        !(oldVM.methodDefinition.isPackagePrivate && !vm.methodDefinition.isPackagePrivate
+                            || vm.methodDefinition.isPackagePrivate && !oldVM.methodDefinition.isPackagePrivate) &&
+                        !(!vm.methodDefinition.isAbstract && oldVM.methodDefinition.isAbstract)) {
+                        //throw new UnknownError(s"creation of declared methods failed:\n\t$oldVM\n\t\tvs.(new)\n\t$vm}")
+                    }
                 }
             }
         }
