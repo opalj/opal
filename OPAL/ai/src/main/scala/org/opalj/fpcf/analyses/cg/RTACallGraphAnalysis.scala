@@ -42,6 +42,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.CallGraph
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.InstantiatedTypes
@@ -52,7 +53,6 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetStatic
-
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
@@ -173,8 +173,6 @@ class RTACallGraphAnalysis private[analyses] (
                 ub.getNewTypes(toBeDropped)
             case _ ⇒ Nil // the initial types are already processed
         }
-
-        println(s"cont ${state.method} new types:\n\t${newInstantiatedTypes.mkString("\n\t")}")
 
         // the methods that become reachable due to the new types
         val newReachableMethods = ArrayBuffer.empty[Method]
@@ -412,7 +410,7 @@ class RTACallGraphAnalysis private[analyses] (
                     println(method)
                     Some(EPS(
                         project,
-                        InstantiatedTypes.allTypes(p),
+                        AllTypes,
                         InstantiatedTypes.initial(initialTypes ++ newInstantiatedTypes)
                     ))
 
@@ -426,7 +424,7 @@ class RTACallGraphAnalysis private[analyses] (
         val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method))
         val newCallees = Callees(state.calleesOfM)
         if (instantiatedTypesEOptP.isFinal || newCallees == calleesLB)
-            Result(state.method, Callees(state.calleesOfM))
+            Result(state.method, newCallees)
         else {
             IntermediateResult(
                 state.method,

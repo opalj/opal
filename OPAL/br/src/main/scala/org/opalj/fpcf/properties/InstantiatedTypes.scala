@@ -46,23 +46,28 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
     final type Self = InstantiatedTypes
 }
 
-class InstantiatedTypes private (
+class InstantiatedTypes private[properties] (
         private val orderedTypes: ArrayBuffer[ObjectType], val types: UIDSet[ObjectType] // todo use boolean array here
 ) extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
 
-    assert(orderedTypes.size == types.size)
+    assert(orderedTypes == null || orderedTypes.size == types.size)
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
-    override def toString: String = s"InstantiatedTypes(size=${types.size}:${types.mkString("\n\t")})"
+    override def toString: String = s"InstantiatedTypes(size=${types.size})"
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
      * value is above the given value in the underlying lattice.)
      */
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
-        if (!types.subsetOf(other.types))
+        if ((other ne AllTypes) && !types.subsetOf(other.types)) {
+            val x = types.collect {
+                case t if !other.types.contains(t) ⇒ t
+            }
+            println(x)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
+        }
     }
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
@@ -85,19 +90,15 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
         new InstantiatedTypes(ArrayBuffer(typesSeq: _*), UIDSet(typesSeq: _*))
     }
 
-    // todo cache
-    def allTypes(p: ProjectLike): InstantiatedTypes = {
-        val allTypes = p.classHierarchy.allSubtypes(ObjectType.Object, reflexive = true)
-        InstantiatedTypes.initial(allTypes)
-    }
-
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.create[ProjectLike, InstantiatedTypes](
             "InstantiatedTypes",
-            (_: PropertyStore, project: ProjectLike) ⇒ {
-                allTypes(project)
+            (_: PropertyStore, _: ProjectLike) ⇒ {
+                AllTypes
             },
             (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.toUBEP
         )
     }
 }
+
+object AllTypes extends InstantiatedTypes(null, null)
