@@ -33,7 +33,9 @@ package properties
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.UIDSet
+
 import scala.collection.Set
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * TODO
@@ -44,8 +46,11 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
     final type Self = InstantiatedTypes
 }
 
-class InstantiatedTypes( val orderedTypes: List[ObjectType], val types: UIDSet[ObjectType])
-        extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
+class InstantiatedTypes private (
+        private val orderedTypes: ArrayBuffer[ObjectType], val types: UIDSet[ObjectType] // todo use boolean array here
+) extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
+
+    assert(orderedTypes.size == types.size)
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
@@ -59,16 +64,31 @@ class InstantiatedTypes( val orderedTypes: List[ObjectType], val types: UIDSet[O
         if (!types.subsetOf(other.types))
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
+
+    def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
+        val newOrderedTypes = orderedTypes
+        for (newType ← newTypes) {
+            if (!types.contains(newType))
+                //TODO this is increadible slow, but try avoid mutable data structures
+                newOrderedTypes += newType
+        }
+        new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
+    }
+
+    def getNewTypes(index: Int): Traversable[ObjectType] = orderedTypes.drop(index)
 }
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
-    def apply(types: Set[ObjectType]): InstantiatedTypes = new InstantiatedTypes( /*types, */ UIDSet(types.toSeq: _*))
+    def initial(types: Set[ObjectType]): InstantiatedTypes = {
+        val typesSeq = types.toSeq
+        new InstantiatedTypes(ArrayBuffer(typesSeq: _*), UIDSet(typesSeq: _*))
+    }
 
     // todo cache
     def allTypes(p: ProjectLike): InstantiatedTypes = {
         val allTypes = p.classHierarchy.allSubtypes(ObjectType.Object, reflexive = true)
-        InstantiatedTypes(allTypes)
+        InstantiatedTypes.initial(allTypes)
     }
 
     final val key: PropertyKey[InstantiatedTypes] = {

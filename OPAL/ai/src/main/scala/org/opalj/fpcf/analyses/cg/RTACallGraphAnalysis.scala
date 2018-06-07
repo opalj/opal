@@ -41,7 +41,6 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.MethodIDKey
-import org.opalj.br.analyses.ProjectLike
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.CallGraph
 import org.opalj.fpcf.properties.Callees
@@ -53,6 +52,7 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetStatic
+
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
@@ -70,15 +70,14 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 case class State(
-        method:                              Method,
-        virtualCallSites:                    Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
-        var calleesOfM:                      Map[Int, Set[Method]],
-        var currentIndexOfInstantiatedTypes: Int
+        method:                            Method,
+        virtualCallSites:                  Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
+        private[cg] var calleesOfM:        mutable.Map[Int, Set[Method]],
+        private[cg] var numTypesProcessed: Int
 ) {
     def addCallEdge(pc: Int, tgt: Method): Unit = {
-        calleesOfM = calleesOfM.updated(pc, calleesOfM.getOrElse(pc, Set.empty) + tgt)
+        calleesOfM(pc) += tgt
     }
-
 }
 
 /**
@@ -99,9 +98,226 @@ class RTACallGraphAnalysis private[analyses] (
         Array.fill(project.allMethods.size) { new AtomicBoolean }
     }
 
+    def step1(
+        method: Method
+    ): PropertyComputationResult = {
+
+        val methodID = methodIds(method)
+        assert(processedMethods(methodID).get())
+
+        if (method.body.isEmpty)
+            // happens in particular for native methods
+            return NoResult;
+
+        // the set of methods that become reachable due to the current method and instantiated types
+        val newReachableMethods = ArrayBuffer.empty[Method]
+
+        // the set of types that are definitely initialized at this point in time
+        // in case the instantiatedTypes are not finally computed, we depend on them
+        val instantiatedTypesEOptP: SomeEOptionP = propertyStore(project, InstantiatedTypes.key)
+
+        // the upper bound for type instantiations, seen so far
+        // in case they are not yet computed, we use the initialTypes
+        val instantiatedTypesUB: Set[ObjectType] = instantiatedTypesEOptP match {
+            case EPS(_, _, ub: InstantiatedTypes) ⇒
+                ub.types
+
+            case _ ⇒
+                for (instantiatedType ← initialTypes)
+                    addClInitAsNewReachable(instantiatedType, newReachableMethods)
+                initialTypes
+        }
+
+        // the number of types, already seen by the analysis
+        val numTypesProcessed = instantiatedTypesUB.size
+
+        // process each stmt in the current method to compute:
+        //  1. newly allocated types
+        //  2. methods (+ pc) called by the current method
+        //  3. compute the call sites of virtual calls, whose targets are not yet final
+        //  4. add newly reachable methods
+        val (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
+            method, instantiatedTypesUB, newReachableMethods
+        )
+
+        // for the new instantiated types, <clinit> is now reachable
+        newInstantiatedTypes.foreach(addClInitAsNewReachable(_, newReachableMethods))
+
+        val state = State(method, virtualCallSites, calleesOfM, numTypesProcessed)
+
+        // mutates the calleesOfM that is visible in state and calleesOfM
+        // even though both are the same, this is safe, as the underlying structure are sets
+        handleVirtualCallSites(state, instantiatedTypesUB, newReachableMethods, calleesOfM)
+
+        IncrementalResult(
+            Results(
+                resultForCallees(instantiatedTypesEOptP, state),
+                partialResultForInstantiatedTypes(method, newInstantiatedTypes),
+                // create an immutable view of the calleesOfM, as they get be modified concurrently
+                partialResultForCallGraph(method, calleesOfM.toMap)
+            ),
+            // continue the computation with the newly reachable methods
+            newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
+        )
+    }
+
+    def continuation(
+        instantiatedTypesEOptP: SomeEPS,
+        state:                  State
+    ): PropertyComputationResult = {
+        // find the new types, that should be processed
+        val newInstantiatedTypes = instantiatedTypesEOptP match {
+            case EPS(_, _, ub: InstantiatedTypes) ⇒
+                val toBeDropped = state.numTypesProcessed
+                state.numTypesProcessed = ub.types.size
+                ub.getNewTypes(toBeDropped)
+            case _ ⇒ Nil // the initial types are already processed
+        }
+
+        println(s"cont ${state.method} new types:\n\t${newInstantiatedTypes.mkString("\n\t")}")
+
+        // the methods that become reachable due to the new types
+        val newReachableMethods = ArrayBuffer.empty[Method]
+
+        // the new edges in the call graph due to the new types
+        val newCalleesOfM = mutable.Map.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
+
+        // adds new call edges and instantiated types to the inputs
+        handleVirtualCallSites(state, newInstantiatedTypes, newReachableMethods, newCalleesOfM)
+
+        IncrementalResult(
+            Results(
+                resultForCallees(instantiatedTypesEOptP, state),
+                partialResultForCallGraph(state.method, newCalleesOfM)
+            ),
+            newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
+        )
+    }
+
+    def handleStmts(
+        method:              Method,
+        instantiatedTypesUB: Set[ObjectType],
+        newReachableMethods: ArrayBuffer[Method]
+    ): (Set[ObjectType], mutable.Map[Int, Set[Method]], Set[(Int, ReferenceType, String, MethodDescriptor)]) = {
+        implicit val p: SomeProject = project
+
+        // for each call site in the current method, the set of methods that might called
+        val calleesOfM = mutable.OpenHashMap.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
+
+        // the set of types for which we find an allocation which was not present before
+        var newInstantiatedTypes = Set.empty[ObjectType]
+
+        // the virtual call sites, where we can not determine the precise tgts
+        var virtualCallSites: Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = Set.empty
+
+        // for allocation sites, add new types
+        // for calls, add new edges
+        for (stmt ← tacaiProvider(method).stmts) {
+            stmt match {
+                case Assignment(_, _, New(_, allocatedType)) ⇒
+                    if (!instantiatedTypesUB.contains(allocatedType)) {
+                        newInstantiatedTypes += allocatedType
+                        addClInitAsNewReachable(allocatedType, newReachableMethods)
+                    }
+
+                case ExprStmt(_, New(_, allocatedType)) ⇒
+                    if (!instantiatedTypesUB.contains(allocatedType)) {
+                        newInstantiatedTypes += allocatedType
+                        addClInitAsNewReachable(allocatedType, newReachableMethods)
+                    }
+
+                case Assignment(_, _, GetStatic(_, declaringClass, _, _)) ⇒
+                    addClInitAsNewReachable(declaringClass, newReachableMethods)
+
+                case ExprStmt(_, GetStatic(_, declaringClass, _, _)) ⇒
+                    addClInitAsNewReachable(declaringClass, newReachableMethods)
+
+                case PutStatic(_, declaringClass, _, _, _) ⇒
+                    addClInitAsNewReachable(declaringClass, newReachableMethods)
+
+                case StaticFunctionCallStatement(call) ⇒
+                    handleCall(
+                        stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
+                    )
+
+                case call: StaticMethodCall[V] ⇒
+                    handleCall(
+                        stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
+                    )
+
+                case NonVirtualFunctionCallStatement(call) ⇒
+                    handleCall(
+                        stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
+                    )
+
+                case call: NonVirtualMethodCall[V] ⇒
+                    handleCall(
+                        stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
+                    )
+
+                case VirtualFunctionCallStatement(call) ⇒
+                    val typeBound = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                        call.receiver.asVar.value.asDomainReferenceValue.upperTypeBound
+                    )
+
+                    // todo we can not add the already found new types, as the index could break
+
+                    virtualCallSites += ((call.pc, typeBound, call.name, call.descriptor))
+
+                case call: VirtualMethodCall[V] ⇒
+                    val typeBound = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                        call.receiver.asVar.value.asDomainReferenceValue.upperTypeBound
+                    )
+
+                    // todo if typebound is leaf (e.g. method is final) -> compute directly
+
+                    virtualCallSites += ((call.pc, typeBound, call.name, call.descriptor))
+
+                case Assignment(_, _, _: Invokedynamic[V]) | ExprStmt(_, _: Invokedynamic[V]) ⇒
+                    OPALLogger.logOnce(
+                        Warn(
+                            "analysis",
+                            "unresolved invokedynamics are not handled. please use appropriate reading configuration"
+                        )
+                    )(p.logContext)
+
+                case _ ⇒ //nothing to do
+            }
+        }
+        (newInstantiatedTypes, calleesOfM, virtualCallSites)
+    }
+
     def addNewReachableMethod(m: Method, reachableMethods: ArrayBuffer[Method]): Unit = {
         if (processedMethods(methodIds(m)).compareAndSet(false, true))
             reachableMethods += m
+    }
+
+    def addClInitAsNewReachable(objectType: ObjectType, newReachableMethods: ArrayBuffer[Method]): Unit = {
+        project.classHierarchy.allSupertypes(objectType, reflexive = true) foreach { x ⇒
+            project.classFile(x).foreach { cf ⇒
+                cf.staticInitializer.foreach(addNewReachableMethod(_, newReachableMethods))
+            }
+        }
+    }
+
+    /**
+     * For a call at `pc` and the set of `targets` (determined by CHA), add corresponding
+     * edges for all targets.
+     */
+    def handleCall(
+        pc: Int, targets: Set[Method],
+        newReachableMethods: ArrayBuffer[Method],
+        calleesOfM:          mutable.Map[Int /*PC*/ , Set[Method]]
+    ): Unit = {
+        for {
+            tgt ← targets
+        } {
+            // add call edge to CG
+            calleesOfM(pc) += tgt
+
+            // the callee is now reachable and should be processed, if not done already
+            addNewReachableMethod(tgt, newReachableMethods)
+        }
     }
 
     def updatedCG(
@@ -126,21 +342,12 @@ class RTACallGraphAnalysis private[analyses] (
         CallGraph(newCallees, newCallers)
     }
 
-    def step2(
-        instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes],
-        state:                  State
-    ): PropertyComputationResult = {
-        val method = state.method
-
-        val newInstantiatedTypes =
-            instantiatedTypesEOptP match {
-                case EPS(_, lb: InstantiatedTypes, ub: InstantiatedTypes) ⇒
-                    ub.orderedTypes.drop(state.currentIndexOfInstantiatedTypes)
-                case _ ⇒
-            }
-        val newReachableMethods = ArrayBuffer.empty[Method]
-        val newCallTargets = mutable.Map.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
-
+    def handleVirtualCallSites(
+        state:                State,
+        newInstantiatedTypes: Traversable[ObjectType],
+        newReachableMethods:  ArrayBuffer[Method],
+        newCalleesOfMap:      mutable.Map[Int /*PC*/ , Set[Method]]
+    ): Unit = {
         for {
             (pc, typeBound, name, descr) ← state.virtualCallSites
             instantiatedType ← newInstantiatedTypes
@@ -149,242 +356,32 @@ class RTACallGraphAnalysis private[analyses] (
                 // todo is this correct method
                 project.resolveMethodReference(instantiatedType, name, descr).foreach { tgt ⇒
                     addNewReachableMethod(tgt, newReachableMethods)
-                    newCallTargets(pc) += tgt
+                    newCalleesOfMap(pc) += tgt
                     state.addCallEdge(pc, tgt)
                 }
         }
-
-        IncrementalResult(
-            Results(
-                if (instantiatedTypesEOptP.isFinal)
-                    Result(state.method, Callees(state.calleesOfM))
-                else {
-                    val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method))
-                    IntermediateResult(
-                        state.method,
-                        calleesLB,
-                        Callees(state.calleesOfM),
-                        Seq(instantiatedTypesEOptP),
-                        step2(_, state)
-                    )
-                },
-                PartialResult(project, CallGraph.key, {
-                    case EPS(_, _, ub) if newCallTargets.nonEmpty ⇒
-                        // add all new edges to ub
-                        // assert(newCG.size > ub.size)
-                        None
-                    case EPK(_, _) ⇒
-                        var callers = Map.empty[Method, Set[(Method, Int)]].withDefaultValue(Set.empty)
-                        newCallTargets.foreach {
-                            case (pc, tgtsOfM) ⇒
-                                tgtsOfM.foreach { tgt ⇒
-                                    callers = callers.updated(tgt, callers(tgt) + (method → pc))
-                                }
-                        }
-                        Some(EPS(
-                            project,
-                            CallGraph.fallbackCG(p),
-                            new CallGraph(Map(method → newCallTargets), callers)
-                        ))
-                    case _ ⇒ None
-                })
-            ),
-            newReachableMethods.map(nextMethod ⇒ (doComputeCG _, nextMethod))
-        )
     }
 
-    def doComputeCG(
-        method: Method
-    ): PropertyComputationResult = {
+    def partialResultForCallGraph(
+        method:        Method,
+        newCalleesOfM: Map[Int /*PC*/ , Set[Method]]
+    ): PartialResult[SomeProject, CallGraph] = {
+        PartialResult(project, CallGraph.key, {
+            case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
+                val newCG = updatedCG(ub, method, newCalleesOfM)
 
-        val methodID = methodIds(method)
-        assert(processedMethods(methodID).get())
+                println(s"pr: ${newCalleesOfM.mkString}")
+                /*else {
 
-        if (method.body.isEmpty)
-            // happens in particular for native methods
-            return NoResult;
-
-        // the set of types for which we find an allocation which was not present before
-        var newInstantiatedTypes = Set.empty[ObjectType]
-
-        // the set of methods that become reachable due to the current method and instantiated types
-        val newReachableMethods = ArrayBuffer.empty[Method]
-
-        // in case the instantiatedTypes are not finally computed, we depend on them
-        var instantiatedTypesDependee: Option[EOptionP[ProjectLike, InstantiatedTypes]] = None
-
-        def addClInitAsNewReachable(objectType: ObjectType): Unit = {
-            project.classHierarchy.allSupertypes(objectType, reflexive = true) foreach { x ⇒
-                project.classFile(x).foreach { cf ⇒
-                    cf.staticInitializer.foreach(addNewReachableMethod(_, newReachableMethods))
-                }
-            }
-        }
-
-        // the set of types that are definitely initialized at this point in time
-        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-
-        var currentInstantiatedTypesCount = 0
-        val instantiatedTypesUB: Set[ObjectType] = instantiatedTypesEOptP match {
-            case FinalEP(_, ub) ⇒
-                currentInstantiatedTypesCount = ub.types.size
-                ub.types
-            case eps @ EPS(_, _ /*lb*/ , ub: InstantiatedTypes) ⇒
-                instantiatedTypesDependee = Some(eps)
-                currentInstantiatedTypesCount = ub.types.size
-                ub.types
-
-            case epk ⇒
-                instantiatedTypesDependee = Some(epk)
-                addClInitAsNewReachable(ObjectType.String)
-                // todo initial leave types should be also added
-                Set(ObjectType.String) //TODO use default types depending on project setting
-        }
-
-        val tac = tacaiProvider(method)
-
-        // for each call site in the current method, the set of methods that might called
-        val calleesOfM = mutable.OpenHashMap.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
-
-        /**
-         * For a call at `pc` and the set of `targets` (determined by CHA), add corresponding
-         * edges for all targets of instantiatedTypes.
-         */
-        def handleCall(pc: Int, targets: Set[Method]): Unit = {
-            for {
-                tgt ← targets
-            } {
-                // add call edge to CG
-                calleesOfM(pc) += tgt
-
-                // the callee is now reachable and should be processed, if not done already
-                addNewReachableMethod(tgt, newReachableMethods)
-            }
-        }
-
-        implicit val p: SomeProject = project
-
-        var virtualCallSites: Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = Set.empty
-        // for allocation sites, add new types
-        // for calls, add new edges
-        for (stmt ← tac.stmts) {
-            stmt match {
-                case Assignment(_, _, New(_, allocatedType)) ⇒
-                    if (!instantiatedTypesUB.contains(allocatedType)) {
-                        newInstantiatedTypes += allocatedType
-                        addClInitAsNewReachable(allocatedType)
-                    }
-
-                case ExprStmt(_, New(_, allocatedType)) ⇒
-                    if (!instantiatedTypesUB.contains(allocatedType)) {
-                        newInstantiatedTypes += allocatedType
-                        addClInitAsNewReachable(allocatedType)
-                    }
-
-                case Assignment(_, _, GetStatic(_, declaringClass, _, _)) ⇒
-                    addClInitAsNewReachable(declaringClass)
-
-                case ExprStmt(_, GetStatic(_, declaringClass, _, _)) ⇒
-                    addClInitAsNewReachable(declaringClass)
-
-                case PutStatic(_, declaringClass, _, _, _) ⇒
-                    addClInitAsNewReachable(declaringClass)
-
-                case StaticFunctionCallStatement(call) ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
-
-                case call: StaticMethodCall[V] ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
-
-                case NonVirtualFunctionCallStatement(call) ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
-
-                case call: NonVirtualMethodCall[V] ⇒
-                    handleCall(stmt.pc, call.resolveCallTarget.toSet)
-
-                case VirtualFunctionCallStatement(call) ⇒
-                    val typeBound = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                        call.receiver.asVar.value.asDomainReferenceValue.upperTypeBound
-                    )
-                    virtualCallSites += ((call.pc, typeBound, call.name, call.descriptor))
-
-                case call: VirtualMethodCall[V] ⇒
-                    val typeBound = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                        call.receiver.asVar.value.asDomainReferenceValue.upperTypeBound
-                    )
-
-                    // todo if typebound is leaf (e.g. method is final) -> compute directly
-
-                    virtualCallSites += ((call.pc, typeBound, call.name, call.descriptor))
-
-                case Assignment(_, _, _: Invokedynamic[V]) | ExprStmt(_, _: Invokedynamic[V]) ⇒
-                    OPALLogger.logOnce(
-                        Warn(
-                            "analysis",
-                            "unresolved invokedynamics are not handled. please use appropriate reading configuration"
-                        )
-                    )(p.logContext)
-
-                case _ ⇒ //nothing to do
-
-            }
-        }
-
-        var results: Set[PropertyComputationResult] = Set.empty
-
-        // todo maybe determine locally
-        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(method))
-        val newCallees = Callees(calleesOfM)
-
-        // callee updates (in order to hold a dependency to instantiated types)
-        results += (
-            if (instantiatedTypesDependee.isEmpty || calleesLB == newCallees) {
-                Result(method, newCallees)
-            } else
-                IntermediateResult(
-                    method,
-                    calleesLB,
-                    newCallees,
-                    instantiatedTypesDependee.toSeq,
-                    continuation(_, state)
-                )
-        )
-        // instantiated types updates
-
-        results += PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
-            {
-                case EPS(_, lb, ub) if newInstantiatedTypes.nonEmpty ⇒
-                    Some(EPS(
-                        project,
-                        lb,
-                        InstantiatedTypes(ub.types ++ newInstantiatedTypes)
-                    ))
-
-                case EPK(_, _) ⇒
-                    println(method)
-                    Some(EPS(
-                        project,
-                        InstantiatedTypes.allTypes(p),
-                        InstantiatedTypes(instantiatedTypesUB ++ newInstantiatedTypes)
-                    ))
-
-                case _ ⇒ None
-            })
-
-        // call graph updates
-        results += PartialResult[SomeProject, CallGraph](p, CallGraph.key, {
-            case EPS(_, lb: CallGraph, ub: CallGraph) ⇒
-
-                val newCG = updatedCG(ub, method, calleesOfM)
-
-                if (newCG.size == ub.size)
-                    None
-                else
                     Some(EPS(project, lb, newCG))
+                }*/
+
+                assert(newCG.size > ub.size)
+                Some(EPS(project, lb, newCG))
 
             case EPK(_, _) ⇒
                 var callers = Map.empty[Method, Set[(Method, Int)]].withDefaultValue(Set.empty)
-                calleesOfM.foreach {
+                newCalleesOfM.foreach {
                     case (pc, tgtsOfM) ⇒
                         tgtsOfM.foreach { tgt ⇒
                             callers = callers.updated(tgt, callers(tgt) + (method → pc))
@@ -393,15 +390,57 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(Map(method → calleesOfM), callers)
+                    new CallGraph(Map(method → newCalleesOfM), callers)
                 ))
+            case _ ⇒ None
         })
+    }
 
-        IncrementalResult(
-            Results(results),
-            // continue the computation with the newly reachable methods
-            newReachableMethods.map(nextMethod ⇒ (doComputeCG _, nextMethod))
-        )
+    def partialResultForInstantiatedTypes(
+        method: Method, newInstantiatedTypes: Set[ObjectType]
+    ): PartialResult[SomeProject, InstantiatedTypes] = {
+        PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
+            {
+                case EPS(_, lb, ub) if newInstantiatedTypes.nonEmpty ⇒
+                    Some(EPS(
+                        project,
+                        lb,
+                        ub.updated(newInstantiatedTypes)
+                    ))
+
+                case EPK(_, _) ⇒
+                    println(method)
+                    Some(EPS(
+                        project,
+                        InstantiatedTypes.allTypes(p),
+                        InstantiatedTypes.initial(initialTypes ++ newInstantiatedTypes)
+                    ))
+
+                case _ ⇒ None
+            })
+    }
+
+    def resultForCallees(
+        instantiatedTypesEOptP: SomeEOptionP, state: State
+    ): PropertyComputationResult = {
+        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method))
+        val newCallees = Callees(state.calleesOfM)
+        if (instantiatedTypesEOptP.isFinal || newCallees == calleesLB)
+            Result(state.method, Callees(state.calleesOfM))
+        else {
+            IntermediateResult(
+                state.method,
+                calleesLB,
+                newCallees,
+                Seq(instantiatedTypesEOptP),
+                continuation(_, state)
+            )
+        }
+    }
+
+    def initialTypes: Set[ObjectType] = {
+        // TODO make this configurable
+        Set(ObjectType.String)
     }
 }
 
@@ -428,7 +467,7 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
                 throw new IllegalStateException("Unexpected modification of processedMethods array")
         })
 
-        propertyStore.scheduleEagerComputationsForEntities(entryPoints)(analysis.doComputeCG)
+        propertyStore.scheduleEagerComputationsForEntities(entryPoints)(analysis.step1)
         analysis
     }
 
