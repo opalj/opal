@@ -352,7 +352,7 @@ class RTACallGraphAnalysis private[analyses] (
             (pc, typeBound, name, descr) ← state.virtualCallSites
             instantiatedType ← newInstantiatedTypes
         } {
-            if (project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYesOrUnknown)
+            if (project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes)
                 project.instanceCall(
                     state.method.classFile.thisType, instantiatedType, name, descr
                 ).foreach { tgt ⇒
@@ -371,15 +371,11 @@ class RTACallGraphAnalysis private[analyses] (
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
                 val newCG = updatedCG(ub, method, newCalleesOfM)
-
-                println(s"pr: ${newCalleesOfM.mkString}")
-                /*else {
-
+                // todo assert(newCG.size > ub.size)
+                if (newCG.size <= ub.size)
+                    None
+                else
                     Some(EPS(project, lb, newCG))
-                }*/
-
-                assert(newCG.size > ub.size)
-                Some(EPS(project, lb, newCG))
 
             case EPK(_, _) ⇒
                 var callers = Map.empty[Method, Set[(Method, Int)]].withDefaultValue(Set.empty)
@@ -411,7 +407,6 @@ class RTACallGraphAnalysis private[analyses] (
                     ))
 
                 case EPK(_, _) ⇒
-                    println(method)
                     Some(EPS(
                         project,
                         AllTypes,
