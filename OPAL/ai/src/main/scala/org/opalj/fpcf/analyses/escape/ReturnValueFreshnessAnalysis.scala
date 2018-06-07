@@ -29,7 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
-// TODO @Florian please fix package structure
+package escape
 
 import scala.annotation.switch
 import org.opalj.ai.common.DefinitionSite

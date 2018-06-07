@@ -130,7 +130,7 @@ case object AllocationFreeMethod extends AllocationFreeness {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {}
 
-    override val aggregatedProperty: VirtualMethodAllocationFreeness = VAllocationFreeMethod
+    override lazy val aggregatedProperty: VirtualMethodAllocationFreeness = VAllocationFreeMethod
 
     override def meet(other: AllocationFreeness): AllocationFreeness = other
 }
@@ -145,7 +145,7 @@ case object MethodWithAllocations extends AllocationFreeness {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
 
-    override val aggregatedProperty: VirtualMethodAllocationFreeness = VMethodWithAllocations
+    override lazy val aggregatedProperty: VirtualMethodAllocationFreeness = VMethodWithAllocations
 
     override def meet(other: AllocationFreeness): AllocationFreeness = this
 }

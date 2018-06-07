@@ -64,7 +64,6 @@ import org.opalj.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
@@ -75,6 +74,7 @@ import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ContextuallySideEffectFree
@@ -177,7 +177,12 @@ object Purity {
         else baseConfig
 
         val project = time {
-            Project(classFiles, JDKFiles, false, Traversable.empty)
+            Project(
+                classFiles,
+                JDKFiles,
+                libraryClassFilesAreInterfacesOnly = false,
+                Traversable.empty
+            )
         } { t ⇒ projectTime = t.toSeconds }
 
         if (eagerTAC) {
@@ -393,11 +398,12 @@ object Purity {
                 case "-individual"  ⇒ individual = true
                 case "-closedWorld" ⇒ cwa = true
                 case "-eagerTAC"    ⇒ eagerTAC = true
-                case "-debug"    ⇒ debug = true
+                case "-debug"       ⇒ debug = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-noJDK"       ⇒ withoutJDK = true
-                case "-JDK"         ⇒ { cp = JRELibraryFolder; withoutJDK = true }
+                case "-JDK"         ⇒
+                    cp = JRELibraryFolder; withoutJDK = true
 
                 case unknown ⇒
                     Console.println(usage)
