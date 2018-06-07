@@ -113,6 +113,17 @@ private[seq] final class IntermediatePropertyValue(
     override def asIntermediate: IntermediatePropertyValue = this
 }
 
+object IntermediatePropertyValue {
+    def lazilyComputed(dependerEPK: SomeEPK, c: OnUpdateContinuation): PropertyValue = {
+        new IntermediatePropertyValue(
+            PropertyIsLazilyComputed,
+            PropertyIsLazilyComputed,
+            Map(dependerEPK → c),
+            Nil
+        )
+    }
+}
+
 private[seq] final class FinalPropertyValue(val ub: Property) extends PropertyValue {
     assert(ub != PropertyIsLazilyComputed, "ub is lazily computed")
     assert(ub != null, "ub is null")
