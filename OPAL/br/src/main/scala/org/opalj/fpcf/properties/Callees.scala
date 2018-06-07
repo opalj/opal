@@ -49,14 +49,14 @@ class Callees(
     final def key: PropertyKey[Callees] = Callees.key
 
     override def toString: String = {
-        s"Callees(size=${this.size}):${callees}"
+        s"Callees(size=${this.size})\n\t$callees"
     }
 
     def size: Int = {
         callees.map(_._2.size).sum
     }
 
-    def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
+    private def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
         pcToTgts: (Int, Set[Method]) ⇒ pcToTgts._2.map((tgt: Method) ⇒ (pcToTgts._1, tgt))
     }
 
@@ -65,7 +65,7 @@ class Callees(
     override def equals(other: Any): Boolean = other match {
         case that: Callees ⇒
             (that canEqual this) &&
-                callees == that.callees
+                callees.toMap == that.callees.toMap
         case _ ⇒ false
     }
 

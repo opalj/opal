@@ -54,7 +54,7 @@ class InstantiatedTypes private[properties] (
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
-    override def toString: String = s"InstantiatedTypes(size=${types.size})"
+    override def toString: String = s"InstantiatedTypes(size=${types.size}\n\t$types)"
 
     /**
      * Tests if this property is equal or better than the given one (better means that the

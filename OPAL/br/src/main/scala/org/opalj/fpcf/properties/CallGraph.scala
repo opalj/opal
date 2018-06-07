@@ -83,7 +83,7 @@ final class CallGraph(
         calleesSize
     }
 
-    override def toString: String = s"CallGraph(size = $size)"
+    override def toString: String = s"CallGraph(size = $size)\n\t$callees"
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
