@@ -31,6 +31,7 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.{Function ⇒ JFunction}
 
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
@@ -104,11 +105,14 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         val result: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
             new ConcurrentHashMap
 
+        val mapFactory: JFunction[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
+            (_: ReferenceType) ⇒ { new ConcurrentHashMap() }
+
         p.parForeachClassFile() { cf ⇒
             val classType = cf.thisType
 
             // The set to add the methods for this class to
-            val dms = result.computeIfAbsent(classType, _ ⇒ new ConcurrentHashMap)
+            val dms = result.computeIfAbsent(classType, mapFactory)
 
             for {
                 // all methods present in the current class file, excluding methods derived
@@ -136,10 +140,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                             UIDSet.empty[ObjectType]
                                         )._2.headOption
                                     }
-                                val subtypeDms =
-                                    result.computeIfAbsent(subtype, _ ⇒ new ConcurrentHashMap)
+                                val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                                 val vm = DefinedMethod(subtype, methodO.get)
-                                subtypeDms.put(MethodContext(methodO.get), vm)
+                                val oldVM = subtypeDms.put(MethodContext(methodO.get), vm)
+                                if (oldVM != null && oldVM != vm) {
+                                    //throw new UnknownError("creation of declared methods failed")
+                                }
                                 (null, false, false) // Continue traversal on non-overridden method
                             } else {
                                 (null, true, false) // Stop traversal on overridden method
@@ -147,7 +153,10 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     }
                 }
                 val vm = DefinedMethod(classType, m)
-                dms.put(MethodContext(m), vm)
+                val oldVM = dms.put(MethodContext(m), vm)
+                if (oldVM != null && oldVM != vm) {
+                    //throw new UnknownError("creation of declared methods failed")
+                }
             }
             for {
                 // all non-private, non-abstract instance methods present in the current class file,
@@ -155,20 +164,35 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 mc ← p.instanceMethods(classType)
             } {
                 val vm = DefinedMethod(classType, mc.method)
-                dms.put(MethodContext(mc.method), vm)
+                val oldVM = dms.put(MethodContext(mc.method), vm)
+                if (oldVM != null && oldVM != vm) {
+                    if (oldVM.methodDefinition.classFile.thisType.simpleName != "JComponent" &&
+                        vm.methodDefinition.classFile.thisType.simpleName != "JComponent" &&
+                        !(oldVM.methodDefinition.isPackagePrivate && !vm.methodDefinition.isPackagePrivate
+                            || vm.methodDefinition.isPackagePrivate && !oldVM.methodDefinition.isPackagePrivate) &&
+                        !(!vm.methodDefinition.isAbstract && oldVM.methodDefinition.isAbstract)) {
+                        //throw new UnknownError(s"creation of declared methods failed:\n\t$oldVM\n\t\tvs.(new)\n\t$vm}")
+                    }
+                }
             }
         }
 
         // Special handling for signature-polymorphic methods
         if (p.classFile(MethodHandle).isEmpty) {
             val dms = result.computeIfAbsent(MethodHandle, _ ⇒ new ConcurrentHashMap)
-            for (vm ← methodHandleSignaturePolymorphicMethods)
-                dms.put(new MethodContext(vm.name, vm.descriptor), vm)
+            for (vm ← methodHandleSignaturePolymorphicMethods) {
+                if (dms.put(new MethodContext(vm.name, vm.descriptor), vm) != null) {
+                    throw new UnknownError("creation of declared methods failed")
+                }
+            }
         }
         if (p.classFile(VarHandle).isEmpty) {
             val dms = result.computeIfAbsent(VarHandle, _ ⇒ new ConcurrentHashMap)
-            for (vm ← varHandleSignaturePolymorphicMethods)
-                dms.put(new MethodContext(vm.name, vm.descriptor), vm)
+            for (vm ← varHandleSignaturePolymorphicMethods) {
+                if (dms.put(new MethodContext(vm.name, vm.descriptor), vm) != null) {
+                    throw new UnknownError("creation of declared methods failed")
+                }
+            }
         }
 
         new DeclaredMethods(p, result)
@@ -237,9 +261,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             case _ ⇒ false
         }
 
-        override def hashCode(): Int = {
-            methodName.hashCode * 31 + descriptor.hashCode()
-        }
+        override def hashCode(): Int = methodName.hashCode * 31 + descriptor.hashCode()
     }
 
 }

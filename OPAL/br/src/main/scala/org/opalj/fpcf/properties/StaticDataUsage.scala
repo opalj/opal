@@ -82,7 +82,7 @@ case object UsesNoStaticData extends NoVaryingDataUse {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: StaticDataUsage): Unit = {}
 
-    override val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesNoStaticData
+    override lazy val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesNoStaticData
 
     override def meet(other: StaticDataUsage): StaticDataUsage = other
 }
@@ -97,7 +97,7 @@ case object UsesConstantDataOnly extends NoVaryingDataUse {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
 
-    override val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesConstantDataOnly
+    override lazy val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesConstantDataOnly
 
     override def meet(other: StaticDataUsage): StaticDataUsage = other match {
         case UsesVaryingData ⇒ other
@@ -115,7 +115,7 @@ case object UsesVaryingData extends StaticDataUsage {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
 
-    override val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesVaryingData
+    override lazy val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesVaryingData
 
     override def meet(other: StaticDataUsage): StaticDataUsage = this
 }

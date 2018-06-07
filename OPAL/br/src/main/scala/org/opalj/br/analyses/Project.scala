@@ -48,6 +48,7 @@ import scala.collection.mutable.Buffer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.concurrent.Tasks
@@ -1151,19 +1152,22 @@ object Project {
     }
 
     def instanceMethods(
-        classHierarchy:        ClassHierarchy,
-        objectTypeToClassFile: Map[ObjectType, ClassFile]
+        classHierarchy: ClassHierarchy,
+        // objectTypeToClassFile: Map[ObjectType, ClassFile]
+        objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile]
     )(
         implicit
         logContext: LogContext
     ): Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
+
+        import ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
         // IMPROVE Instead of a Chain => Array (for the value) use a sorted trie (set) or something similar which is always sorted.
 
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
         // information about all super types is available (already stored in instanceMethods)
-        // when we process the subtype. If not all information is already available, which
+        // when we process the subtype. If not, all information is already available, which
         // can happen in the following case if the processing of C would be scheduled before B:
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
@@ -1172,12 +1176,13 @@ object Project {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
-        /* Returns `true` if the potentially available information is actually available. */
-        @inline def isAvailable(
-            objectType: ObjectType,
-            methods:    Option[Chain[MethodDeclarationContext]]
-        ): Boolean = {
-            methods.nonEmpty || !objectTypeToClassFile.contains(objectType)
+        /* Returns `true` if the potentially available information is not yet available. */
+        @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
+            methods.get(superinterfaceType).isEmpty &&
+                // if the class file is not known, we will never have any details;
+                // hence, the information will be "NEVER" available; or - in other
+                // words - all potentially available information is avilable.
+                objectTypeToClassFile(superinterfaceType).nonEmpty
         }
 
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
@@ -1191,7 +1196,7 @@ object Project {
             if (superclassType.isDefined) {
                 val theSuperclassType = superclassType.get
                 val superclassTypeMethods = methods.get(theSuperclassType)
-                if (!isAvailable(theSuperclassType, superclassTypeMethods)) {
+                if (notYetAvailable(theSuperclassType)) {
                     // let's postpone the processing of this object type
                     // because we will get some result in the future
                     tasks.submit(objectType)
@@ -1205,52 +1210,84 @@ object Project {
                 inheritedClassMethods = Naught
             }
 
-            var inheritedInterfacesMethods: Chain[Chain[MethodDeclarationContext]] = Naught
-            for {
-                superinterfaceTypes ← classHierarchy.superinterfaceTypes(objectType)
-                superinterfaceType ← superinterfaceTypes
-                superinterfaceTypeMethods = methods.get(superinterfaceType)
-            } {
-                if (!isAvailable(superinterfaceType, superinterfaceTypeMethods)) {
-                    tasks.submit(objectType)
-                    return ;
-                }
-                if (superinterfaceTypeMethods.nonEmpty) {
-                    inheritedInterfacesMethods :&:= superinterfaceTypeMethods.get
-                }
-            }
-
-            // When we reach this point, we have collected all methods inherited by the
-            // current type.
-
-            // We now have to select the most maximally specific methods, recall that:
+            // We have to select the most maximally specific methods, recall that:
             //  -   methods defined by a class have precedence over concrete methods defined
             //      by interfaces (e.g., default methods).
             //  -   we assume that the project is valid; i.e., there is
             //      always at most one maximally specific method and if not, then
             //      the subclass resolves the conflict by defining the method.
             var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
-            for {
-                inheritedInterfaceMethods ← inheritedInterfacesMethods
-                inheritedInterfaceMethod ← inheritedInterfaceMethods
-            } {
-                // The relevant interface methods are public, hence, the package
-                // name is not relevant!
-                if (!definedMethods.exists { definedMethod ⇒
-                    definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                        definedMethod.name == inheritedInterfaceMethod.name
-                }) {
-                    definedMethods :&:= inheritedInterfaceMethod
+
+            val superinterfaceTypesOption = classHierarchy.superinterfaceTypes(objectType)
+            if (superinterfaceTypesOption.isDefined) {
+                val superinterfaceTypes = superinterfaceTypesOption.get
+                if (superinterfaceTypes.exists(notYetAvailable)) {
+                    tasks.submit(objectType)
+                    return ;
+                }
+
+                // We have to filter (remove) those interfaces that are directly and indirectly
+                // inherited. In this case the potentially(!) correct method is defined by the interface
+                // which also implements the indirectly inherited interface!
+                // Concrete case:
+                // interface S { default void m(){;} }
+                // interface SL extends S { abstract void m(); /* m is made abstract!!! */ }
+                // interface SR extends S { }
+                // The concrete method m defined by S does NOT belong to the interface of SB(!):
+                // interface SB extends SL,SR { }
+                //
+                // Hence, when we have to find the correct method, we first have to determine
+                // that - in case of SB - the only relevant super interfaces are SL and SR, but
+                // not S.
+                var indirectlyInheritedInterfacesMethods: Chain[MethodDeclarationContext] = Naught
+                def processInheritedInterfaceMethod(
+                    inheritedInterfaceMethod: MethodDeclarationContext
+                ): Unit = {
+                    // The relevant interface methods are public, hence, the package
+                    // name is not relevant!
+                    if (!definedMethods.exists { definedMethod ⇒
+                        definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                            definedMethod.name == inheritedInterfaceMethod.name
+                    }) {
+                        definedMethods :&:= inheritedInterfaceMethod
+                    }
+                }
+
+                for {
+                    superinterfaceType ← superinterfaceTypes
+                    superinterfaceTypeMethods ← methods.get(superinterfaceType)
+                    superinterfaceTypeMethod ← superinterfaceTypeMethods
+                } {
+                    if (superinterfaceTypeMethod.method.declaringClassFile.thisType == superinterfaceType) {
+                        processInheritedInterfaceMethod(superinterfaceTypeMethod)
+                    } else {
+                        indirectlyInheritedInterfacesMethods :&:= superinterfaceTypeMethod
+                    }
+                }
+
+                // let's keep the contexts related to the maximally specific methods.
+                indirectlyInheritedInterfacesMethods foreach { mdc ⇒
+                    val (_, maximallySpecificSuperiniterfaceMethod) =
+                        findMaximallySpecificSuperinterfaceMethods(
+                            superinterfaceTypes,
+                            mdc.method.name, mdc.method.descriptor,
+                            UIDSet.empty[ObjectType]
+                        )(
+                                objectTypeToClassFile, classHierarchy
+                            )
+                    if (maximallySpecificSuperiniterfaceMethod.contains(mdc.method)) {
+                        processInheritedInterfaceMethod(mdc)
+                    }
                 }
             }
 
-            objectTypeToClassFile.get(objectType) match {
+            objectTypeToClassFile(objectType) match {
                 case Some(classFile) ⇒
                     for {
                         declaredMethod ← classFile.methods
                         if declaredMethod.isVirtualMethodDeclaration
-                        declaredMethodContext = MethodDeclarationContext(declaredMethod)
                     } {
+                        val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                         // We have to filter multiple methods when we inherit (w.r.t. the
                         // visibility) multiple conflicting methods!
                         definedMethods =
@@ -1261,7 +1298,7 @@ object Project {
                             definedMethods :&:= declaredMethodContext
                         }
                     }
-                case None ⇒ // ... reached only in case of a rather incomplete projects...
+                case None ⇒ // ... reached only in case of rather incomplete projects...
             }
             methods += ((objectType, definedMethods))
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
@@ -1273,7 +1310,6 @@ object Project {
             tasks.join()
         } catch {
             case ce: ConcurrentExceptions ⇒
-                error("project setup", "computing overriding methods failed, e")
                 ce.getSuppressed foreach { e ⇒
                     error("project setup", "computing the defined methods failed", e)
                 }
@@ -1835,7 +1871,7 @@ object Project {
             val classHierarchy = Await.result(classHierarchyFuture, Duration.Inf)
 
             val instanceMethodsFuture = Future {
-                this.instanceMethods(classHierarchy, objectTypeToClassFile)
+                this.instanceMethods(classHierarchy, objectTypeToClassFile.get)
             }
 
             val projectClassFilesArray = projectClassFiles.toArray

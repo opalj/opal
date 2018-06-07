@@ -101,8 +101,8 @@ private[seq] final class IntermediatePropertyValue(
 
     assert(ub != lb || ub == PropertyIsLazilyComputed || ub == null)
 
-    def this(epk: SomeEPK, c: OnUpdateContinuation) {
-        this(null, null, Map(epk → c), Nil)
+    def this(dependerEPK: SomeEPK, c: OnUpdateContinuation) {
+        this(null, null, Map(dependerEPK → c), Nil)
     }
 
     override def isFinal: Boolean = {
@@ -111,6 +111,17 @@ private[seq] final class IntermediatePropertyValue(
     }
 
     override def asIntermediate: IntermediatePropertyValue = this
+}
+
+object IntermediatePropertyValue {
+    def lazilyComputed(dependerEPK: SomeEPK, c: OnUpdateContinuation): PropertyValue = {
+        new IntermediatePropertyValue(
+            PropertyIsLazilyComputed,
+            PropertyIsLazilyComputed,
+            Map(dependerEPK → c),
+            Nil
+        )
+    }
 }
 
 private[seq] final class FinalPropertyValue(val ub: Property) extends PropertyValue {
