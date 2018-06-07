@@ -586,12 +586,20 @@ final class EPKSequentialPropertyStore private (
 
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
                                 eagerOnUpdateComputationsCounter += 1
-                                if (dependeePValue.isFinal) {
-                                    handleResult(c(FinalEP(dependeeE, dependeePValue.ub)))
-                                } else {
-                                    val newEP = EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
-                                    handleResult(c(newEP))
+                                val newR =
+                                    if (dependeePValue.isFinal) {
+                                        c(FinalEP(dependeeE, dependeePValue.ub))
+                                    } else {
+                                        val newEP = EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
+                                        c(newEP)
+                                    }
+                                if (debug && newR == r) {
+                                    throw new IllegalStateException(
+                                        "an on-update continuation resulted in the same result as before:\n"+
+                                            s"\told: $r\n\tnew: $newR"
+                                    )
                                 }
+                                handleResult(newR)
                                 return ;
                             }
                         }

@@ -544,7 +544,14 @@ final class PKESequentialPropertyStore private (
                                     } else {
                                         EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
                                     }
-                                handleResult(c(newEP), wasLazilyTriggered)
+                                val newR = c(newEP)
+                                if (debug && newR == r) {
+                                    throw new IllegalStateException(
+                                        "an on-update continuation resulted in the same result as before:\n"+
+                                            s"\told: $r\n\tnew: $newR"
+                                    )
+                                }
+                                handleResult(newR, wasLazilyTriggered)
                                 return ;
                             }
                         }
