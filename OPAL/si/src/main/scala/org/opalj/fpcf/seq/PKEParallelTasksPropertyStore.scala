@@ -95,6 +95,8 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] var quiescenceCounter = 0
 
+    def quiescenceCount: Int = quiescenceCounter
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
