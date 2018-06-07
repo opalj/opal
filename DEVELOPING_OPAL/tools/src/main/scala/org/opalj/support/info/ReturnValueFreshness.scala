@@ -40,7 +40,7 @@ import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.FreshReturnValue

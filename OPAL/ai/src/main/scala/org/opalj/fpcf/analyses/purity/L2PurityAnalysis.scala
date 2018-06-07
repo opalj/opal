@@ -274,8 +274,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def removeRVFDependee(dm: DeclaredMethod): Unit = rvfDependees -= dm
         def removeVirtualRVFDependee(dm: DeclaredMethod): Unit = virtualRVFDependees -= dm
 
-        def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit =
+        def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit = {
             staticDataUsage = eps
+        }
     }
 
     type StateType = State
@@ -763,6 +764,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 newVPurityDependees += ((dependee, eAndD))
         }
         state.virtualPurityDependees = newVPurityDependees
+
+        //state.recomputeDependees()
     }
 
     /**
@@ -774,14 +777,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for ((eop, _) ← state.purityDependees.valuesIterator) {
             eop match {
                 case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb
-                case _             ⇒ return ; // Nothing to be done, lower bound must still be LBImpure
+                case _             ⇒ return ; // Nothing to be done, lower bound is still LBImpure
             }
         }
 
         for ((eop, _) ← state.virtualPurityDependees.valuesIterator) {
             eop match {
                 case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb.individualProperty
-                case _             ⇒ return ; // Nothing to be done, lower bound must still be LBImpure
+                case _             ⇒ return ; // Nothing to be done, lower bound is still LBImpure
             }
         }
 
@@ -880,7 +883,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.removeVirtualRVFDependee(e)
                 dependees._2.foreach { e ⇒
                     checkLocalityOfReturn(
-                        eps.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                        eps.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
                         e
                     )
                 }
@@ -899,14 +902,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             cleanupDependees() // Remove dependees that we don't need anymore.
         adjustLowerBound()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        val dependees = state.dependees
+        if (dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
-                state.dependees,
+                dependees,
                 c
             )
         }
@@ -984,10 +988,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.ubPurity ne CompileTimePure)
             cleanupDependees()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        val dependees = state.dependees
+        if (dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
             Result(definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(definedMethod, state.lbPurity, state.ubPurity, state.dependees, c)
+            IntermediateResult(definedMethod, state.lbPurity, state.ubPurity, dependees, c)
         }
     }
 }

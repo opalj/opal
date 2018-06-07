@@ -52,7 +52,6 @@ import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -61,6 +60,7 @@ import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
 import org.opalj.fpcf.properties.Pure
@@ -104,7 +104,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         val issues = new ConcurrentLinkedQueue[String]
 
         implicit val p: SomeProject = project
-        implicit val propertyStore = project.get(PropertyStoreKey)
+        implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)

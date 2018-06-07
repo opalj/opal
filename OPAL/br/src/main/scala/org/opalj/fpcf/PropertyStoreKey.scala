@@ -71,7 +71,7 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         // val ps = seq.PKESequentialPropertyStore(context: _*)
         // val ps = seq.EPKSequentialPropertyStore(context: _*)
         val ps = seq.PKEParallelTasksPropertyStore(context: _*)
-        PropertyStore.updateDebug(true)
+        //PropertyStore.updateDebug(true)
         ps
     }
 }
