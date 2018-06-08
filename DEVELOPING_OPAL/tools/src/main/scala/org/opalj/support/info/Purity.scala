@@ -402,7 +402,7 @@ object Purity {
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-noJDK"       ⇒ withoutJDK = true
-                case "-JDK"         ⇒
+                case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
 
                 case unknown ⇒

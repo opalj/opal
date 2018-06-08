@@ -131,8 +131,8 @@ sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSp
 }
 
 object EagerVirtualCallAggregatingEscapeAnalysis
-        extends VirtualCallAggregatingEscapeAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends VirtualCallAggregatingEscapeAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
@@ -142,8 +142,8 @@ object EagerVirtualCallAggregatingEscapeAnalysis
     }
 }
 object LazyVirtualCallAggregatingEscapeAnalysis
-        extends VirtualCallAggregatingEscapeAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends VirtualCallAggregatingEscapeAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
     def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
         propertyStore.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)

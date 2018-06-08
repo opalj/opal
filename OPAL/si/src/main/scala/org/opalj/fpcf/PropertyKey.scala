@@ -54,7 +54,7 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ FinalEP[E, P]
+    type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
     // TODO let's use a presized AtomicRefrenceArray (using SupportedPropertyKinds as the size)
     private[this] val keysLock = new ReentrantReadWriteLock
@@ -118,7 +118,7 @@ object PropertyKey {
     def create[E <: Entity, P <: Property](
         name:                    String,
         fallbackProperty:        P,
-        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.toUBEP
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.ub
     ): PropertyKey[P] = {
         create(name, (ps: PropertyStore, e: Entity) ⇒ fallbackProperty, cycleResolutionStrategy)
     }
@@ -163,9 +163,9 @@ object PropertyKey {
 
     def resolveCycle[E <: Entity, P <: Property](
         ps: PropertyStore, eps: EPS[E, P]
-    ): FinalEP[E, P] = {
+    ): P = {
         withReadLock(keysLock) {
-            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[FinalEP[E, P]]
+            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[P]
         }
     }
 

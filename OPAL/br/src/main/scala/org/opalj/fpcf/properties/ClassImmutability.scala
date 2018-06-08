@@ -134,7 +134,7 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
         MutableObjectDueToUnresolvableDependency,
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable (type and object wise) hence, we can leverage the "immutability"
-        (_: PropertyStore, eps: EPS[ObjectType, ClassImmutability]) ⇒ eps.toUBEP
+        (_: PropertyStore, eps: EPS[ObjectType, ClassImmutability]) ⇒ eps.ub
     )
 }
 

@@ -165,14 +165,6 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
     final override def hasProperty: Boolean = true
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case that: EPS[_, _] ⇒ (that.e eq this.e) && this.lb == that.lb && this.ub == that.ub
-            case _               ⇒ false
-        }
-    }
-
-    final override def hashCode: Int = ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
 }
 
 /**
@@ -212,7 +204,16 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 
     override def isFinal: Boolean = false
 
-    final override def toString: String = {
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntermediateEP[_, _] ⇒ (e eq that.e) && lb == that.lb && ub == that.ub
+            case _                          ⇒ false
+        }
+    }
+
+    override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
+
+    override def toString: String = {
         s"IntermediateEP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
     }
 }
@@ -238,11 +239,20 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
 
     override def isFinal: Boolean = true
 
-    final override def lb: P = ub
+    override def lb: P = ub
 
-    final def p: P = ub // or lb
+    def p: P = ub // or lb
 
-    final override def toString: String = {
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: FinalEP[_, _] ⇒ (that.e eq this.e) && this.p == that.p
+            case _                   ⇒ false
+        }
+    }
+
+    override def hashCode: Int = ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
+
+    override def toString: String = {
         s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 

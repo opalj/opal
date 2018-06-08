@@ -95,6 +95,8 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] var quiescenceCounter = 0
 
+    def quiescenceCount: Int = quiescenceCounter
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -439,9 +441,10 @@ final class PKEParallelTasksPropertyStore private (
         // This is generally the case for collaboratively computed properties or
         // properties for which a computation was eagerly scheduled due to an
         // updated dependee.
-        lb:           Property,
-        ub:           Property,
-        newDependees: Traversable[SomeEOptionP]
+        lb:                   Property,
+        ub:                   Property,
+        newDependees:         Traversable[SomeEOptionP],
+        doNotNotifyDependers: Set[SomeEPK]
     ): Boolean = {
         if (debug) {
             if (e == null) {
@@ -528,23 +531,26 @@ final class PKEParallelTasksPropertyStore private (
                 if (lb != oldLB || ub != oldUB || newPValueIsFinal) {
                     pValue.dependers foreach { depender ⇒
                         val (dependerEPK, onUpdateContinuation) = depender
-                        val t: QualifiedTask =
-                            if (newPValueIsFinal) {
-                                // TODO....
-                                new EagerOnFinalUpdateComputationTask(
-                                    this,
-                                    FinalEP(e, ub),
-                                    onUpdateContinuation
-                                )
-                            } else {
-                                new EagerOnUpdateComputationTask(
-                                    this,
-                                    epk,
-                                    onUpdateContinuation
-                                )
-                            }
-                        scheduledOnUpdateComputationsCounter.incrementAndGet()
-                        incOpenJobs(); tasks.put(t)
+                        if (!doNotNotifyDependers.contains(dependerEPK)) {
+                            val t: QualifiedTask =
+                                if (newPValueIsFinal) {
+                                    // TODO....
+                                    new EagerOnFinalUpdateComputationTask(
+                                        this,
+                                        FinalEP(e, ub),
+                                        onUpdateContinuation
+                                    )
+                                } else {
+                                    new EagerOnUpdateComputationTask(
+                                        this,
+                                        epk,
+                                        onUpdateContinuation
+                                    )
+                                }
+                            scheduledOnUpdateComputationsCounter.incrementAndGet()
+                            incOpenJobs();
+                            tasks.put(t)
+                        }
                         // Clear depender => dependee lists.
                         // Given that we have triggered the depender, we now have
                         // to remove the respective onUpdateContinuation from all
@@ -632,21 +638,45 @@ final class PKEParallelTasksPropertyStore private (
             // Methods which actually store results...
             //
 
-            case ExternalResult.id ⇒
-                val ExternalResult(e, p) = r
-                if (!update(e, p, p, Nil)) {
-                    throw new IllegalStateException(
-                        s"$e: setting $p failed due to existing property: ${apply(e, p.key)}"
-                    )
-                }
-
             case Result.id ⇒
                 val Result(e, p) = r
-                update(e, p, p, Nil)
+                update(e, p, p, Nil, Set.empty)
+
+            case ExternalResult.id ⇒
+                val ExternalResult(e, p) = r
+                if (!update(e, p, p, Nil, Set.empty)) {
+                    throw new IllegalStateException(s"$e: setting $p updated existing property")
+                }
+
+            case CycleResult.id ⇒
+                val CycleResult(cSCCs) = r
+                for (cSCC ← cSCCs) {
+                    if (traceCycleResolutions) {
+                        val cycleAsText =
+                            if (cSCC.size > 10)
+                                cSCC.take(10).mkString("", ",", "...")
+                            else
+                                cSCC.mkString(",")
+                        info(
+                            "analysis progress",
+                            s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText"
+                        )
+                    }
+                    val cycleMembers = cSCC.iterator.map(_.toEPK).toSet
+                    for (epk ← cSCC) {
+                        val e = epk.e
+                        val pkId = epk.pk.id
+                        val pValue = ps(pkId).get(e)
+                        val eps = IntermediateEP(e, pValue.lb, pValue.ub)
+                        val newP = PropertyKey.resolveCycle(this, eps)
+                        update(e, newP, newP, Nil, cycleMembers)
+                    }
+                    resolvedCyclesCounter += 1
+                }
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
-                results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
+                results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil, Set.empty) }
 
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
@@ -654,7 +684,7 @@ final class PKEParallelTasksPropertyStore private (
                 type P = Property
                 val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
                 val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
-                newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
+                newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil, Set.empty) }
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, lb, ub, newDependees, c) = r
@@ -703,14 +733,21 @@ final class PKEParallelTasksPropertyStore private (
                             } else {
                                 EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
                             }
-                        doHandleResult(c(newEP), wasLazilyTriggered)
+                        val newR = c(newEP)
+                        if (debug && newR == r) {
+                            throw new IllegalStateException(
+                                "an on-update continuation resulted in the same result as before:\n"+
+                                    s"\told: $r\n\tnew: $newR"
+                            )
+                        }
+                        doHandleResult(newR, wasLazilyTriggered)
                         return ;
                     }
                 }
                 // all updates are handled; otherwise we have an early return
 
                 // 2.1. update the value (trigger dependers/clear old dependees)
-                update(e, lb, ub, newDependees)
+                update(e, lb, ub, newDependees, Set.empty)
 
                 // 2.2 The most current value of every dependee was taken into account
                 //     register with new (!) dependees.
@@ -724,30 +761,10 @@ final class PKEParallelTasksPropertyStore private (
                     ps(dependeePKId).get(dependeeE) match {
                         case null ⇒
                             assert(lazyComputations(dependeePKId) == null)
-                            // val lazyComputation = lazyComputations(dependeePKId)
-                            // if (lazyComputation == null) {
                             ps(dependeePKId).put(
                                 dependeeE,
                                 new IntermediatePropertyValue(dependerEPK, c)
                             )
-                        // } else {
-                        //     // WE MAY HAVE A CONCURRENT UPDATE WHICH STATES THAT THE
-                        //     // PROPERTY IS LAZILY COMPUTED - BUT NOTHING ELSE, BECAUSE
-                        //     // ALL OTHER UPDATES ARE MADE BY THIS THREAD!
-                        //     val oldPValue = ps(dependeePKId).put(
-                        //         dependeeE,
-                        //         IntermediatePropertyValue.lazilyComputed(
-                        //             dependerEPK,
-                        //             c
-                        //         )
-                        //     )
-                        //     assert(
-                        //         oldPValue == null || (
-                        //             oldPValue.ub == PropertyIsLazilyComputed
-                        //             && oldPValue.dependers.isEmpty
-                        //         )
-                        //      )
-                        //  }
 
                         case dependeePValue: IntermediatePropertyValue ⇒
                             val dependeeDependers = dependeePValue.dependers
@@ -811,19 +828,17 @@ final class PKEParallelTasksPropertyStore private (
                 val maxPKIndex = ps.length
                 var pkId = 0
                 while (pkId < maxPKIndex) {
-                    ps(pkId).forEach { (e, pValue) ⇒
+                    ps(pkId) forEach { (e, pValue) ⇒
                         // Check that we have no running computations and that the
                         // property will not be computed later on.
                         if (pValue.ub == null && !delayedPropertyKinds(pkId)) {
-                            // assert(pv.dependers.isEmpty)
-
                             val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                             if (traceFallbacks) {
-                                trace(
-                                    "analysis progress",
-                                    s"used fallback $fallbackProperty for $e "+
-                                        "(though an analysis was supposedly scheduled)"
-                                )
+                                var message = s"used fallback $fallbackProperty for $e"
+                                if (computedPropertyKinds(pkId)) {
+                                    message += " (though an analysis was supposedly scheduled)"
+                                }
+                                trace("analysis progress", message)
                             }
                             fallbacksUsedForComputedPropertiesCounter += 1
                             handleResult(Result(e, fallbackProperty))
@@ -861,6 +876,11 @@ final class PKEParallelTasksPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id).get(epk.e).dependees
                     )
+                    if (cSCCs.nonEmpty) {
+                        handleResult(CycleResult(cSCCs))
+                        continueComputation = true
+                    }
+                    /*
                     for { cSCC ← cSCCs } {
                         val headEPK = cSCC.head
                         val e = headEPK.e
@@ -885,6 +905,7 @@ final class PKEParallelTasksPropertyStore private (
                         handleResult(Result(newEP.e, newEP.p))
                         continueComputation = true
                     }
+                    */
                 }
 
                 if (!continueComputation) {
@@ -913,9 +934,8 @@ final class PKEParallelTasksPropertyStore private (
                     if (toBeFinalized.nonEmpty) {
                         toBeFinalized foreach { ep ⇒
                             val (e, p) = ep
-                            update(e, p, p, Nil) // commit as Final value
+                            update(e, p, p, Nil, Set.empty) // commit as Final value
                         }
-
                         continueComputation = true
                     }
                 }
