@@ -90,7 +90,7 @@ object Callees extends CalleesPropertyMetaInformation {
         PropertyKey.create(
             "Callees",
             Callees(Map.empty.withDefaultValue(Set.empty)),
-            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.toUBEP
+            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub
         )
     }
 
