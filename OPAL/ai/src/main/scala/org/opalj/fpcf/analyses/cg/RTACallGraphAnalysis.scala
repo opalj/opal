@@ -50,6 +50,7 @@ import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.tac.Assignment
+import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetStatic
@@ -61,6 +62,7 @@ import org.opalj.tac.PutStatic
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCallStatement
 import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 
@@ -208,7 +210,7 @@ class RTACallGraphAnalysis private[analyses] (
         var newInstantiatedTypes = Set.empty[ObjectType]
 
         // the virtual call sites, where we can not determine the precise tgts
-        var virtualCallSites: Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = Set.empty
+        val virtualCallSites: mutable.Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = mutable.Set.empty
 
         // for allocation sites, add new types
         // for calls, add new edges
@@ -256,22 +258,14 @@ class RTACallGraphAnalysis private[analyses] (
                     )
 
                 case VirtualFunctionCallStatement(call) ⇒
-                    val typeBound = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                        call.receiver.asVar.value.asDomainReferenceValue.upperTypeBound
+                    handleVirtualCall(
+                        method, call, call.pc, newReachableMethods, calleesOfM, virtualCallSites
                     )
-
-                    // todo we can not add the already found new types, as the index could break
-
-                    virtualCallSites += ((call.pc, typeBound, call.name, call.descriptor))
 
                 case call: VirtualMethodCall[V] ⇒
-                    val typeBound = project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                        call.receiver.asVar.value.asDomainReferenceValue.upperTypeBound
+                    handleVirtualCall(
+                        method, call, call.pc, newReachableMethods, calleesOfM, virtualCallSites
                     )
-
-                    // todo if typebound is leaf (e.g. method is final) -> compute directly
-
-                    virtualCallSites += ((call.pc, typeBound, call.name, call.descriptor))
 
                 case Assignment(_, _, _: Invokedynamic[V]) | ExprStmt(_, _: Invokedynamic[V]) ⇒
                     OPALLogger.logOnce(
@@ -285,6 +279,43 @@ class RTACallGraphAnalysis private[analyses] (
             }
         }
         (newInstantiatedTypes, calleesOfM, virtualCallSites)
+    }
+
+    def handleVirtualCall(
+        method:              Method,
+        call:                Call[V] with VirtualCall[V],
+        pc:                  Int,
+        newReachableMethods: ArrayBuffer[Method],
+        calleesOfM:          mutable.Map[Int, Set[Method]],
+        virtualCallSites:    mutable.Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)]
+    ): Unit = {
+        val rvs = call.receiver.asVar.value.asDomainReferenceValue.allValues
+        for (rv ← rvs) {
+            // for null there is no call
+            if (rv.isNull.isNoOrUnknown) {
+                // for precise types we can directly add the call edge here
+                if (rv.isPrecise) {
+                    val tgt = project.instanceCall(
+                        method.classFile.thisType,
+                        rv.valueType.get,
+                        call.name,
+                        call.descriptor
+                    )
+                    handleCall(pc, tgt.toSet, newReachableMethods, calleesOfM)
+                } else {
+                    val typeBound =
+                        project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
+                            rv.upperTypeBound
+                        )
+                    val receiverType =
+                        if (project.classHierarchy.isSubtypeOf(typeBound, call.declaringClass).isYes)
+                            typeBound
+                        else
+                            call.declaringClass
+                    virtualCallSites += ((pc, receiverType, call.name, call.descriptor))
+                }
+            }
+        }
     }
 
     def addNewReachableMethod(m: Method, reachableMethods: ArrayBuffer[Method]): Unit = {
