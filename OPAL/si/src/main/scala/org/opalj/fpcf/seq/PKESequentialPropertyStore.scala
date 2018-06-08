@@ -91,6 +91,7 @@ final class PKESequentialPropertyStore private (
     def resolvedCycles: Int = resolvedCyclesCounter
 
     private[this] var quiescenceCounter = 0
+    def quiescenceCount: Int = quiescenceCounter
 
     // --------------------------------------------------------------------------------------------
     //

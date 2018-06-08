@@ -86,6 +86,7 @@ final class EPKSequentialPropertyStore private (
     def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
 
     private[this] var quiescenceCounter = 0
+    def quiescenceCount: Int = quiescenceCounter
 
     // --------------------------------------------------------------------------------------------
     //

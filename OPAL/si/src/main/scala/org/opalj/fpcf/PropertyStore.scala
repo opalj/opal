@@ -91,7 +91,7 @@ import org.opalj.log.OPALLogger.error
  * thread-safe in the following manner:
  *  - a client has to use the SAME thread to call the [[setupPhase]],
  *    [[registerLazyPropertyComputation]], [[scheduleEagerComputationForEntity]] /
- *    [[scheduleEagerComputationsForEntities]], [[force]] and [[waitOnPhaseCompletion]] methods.
+ *    [[scheduleEagerComputationsForEntities]], [[force]] and [[PropertyStore#waitOnPhaseCompletion]] methods.
  *    The methods to query the store are thread-safe and
  *
  * ==Common Abbreviations==
@@ -212,6 +212,8 @@ abstract class PropertyStore {
      * dependee.
      */
     def eagerOnUpdateComputations: Int
+
+    def quiescenceCount: Int
 
     //
     //
