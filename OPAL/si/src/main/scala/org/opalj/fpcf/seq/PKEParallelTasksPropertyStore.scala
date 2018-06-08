@@ -95,6 +95,8 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] var quiescenceCounter = 0
 
+    def quiescenceCount: Int = quiescenceCounter
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -703,7 +705,14 @@ final class PKEParallelTasksPropertyStore private (
                             } else {
                                 EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
                             }
-                        doHandleResult(c(newEP), wasLazilyTriggered)
+                        val newR = c(newEP)
+                        if (debug && newR == r) {
+                            throw new IllegalStateException(
+                                "an on-update continuation resulted in the same result as before:\n"+
+                                    s"\told: $r\n\tnew: $newR"
+                            )
+                        }
+                        doHandleResult(newR, wasLazilyTriggered)
                         return ;
                     }
                 }
@@ -724,30 +733,10 @@ final class PKEParallelTasksPropertyStore private (
                     ps(dependeePKId).get(dependeeE) match {
                         case null ⇒
                             assert(lazyComputations(dependeePKId) == null)
-                            // val lazyComputation = lazyComputations(dependeePKId)
-                            // if (lazyComputation == null) {
                             ps(dependeePKId).put(
                                 dependeeE,
                                 new IntermediatePropertyValue(dependerEPK, c)
                             )
-                        // } else {
-                        //     // WE MAY HAVE A CONCURRENT UPDATE WHICH STATES THAT THE
-                        //     // PROPERTY IS LAZILY COMPUTED - BUT NOTHING ELSE, BECAUSE
-                        //     // ALL OTHER UPDATES ARE MADE BY THIS THREAD!
-                        //     val oldPValue = ps(dependeePKId).put(
-                        //         dependeeE,
-                        //         IntermediatePropertyValue.lazilyComputed(
-                        //             dependerEPK,
-                        //             c
-                        //         )
-                        //     )
-                        //     assert(
-                        //         oldPValue == null || (
-                        //             oldPValue.ub == PropertyIsLazilyComputed
-                        //             && oldPValue.dependers.isEmpty
-                        //         )
-                        //      )
-                        //  }
 
                         case dependeePValue: IntermediatePropertyValue ⇒
                             val dependeeDependers = dependeePValue.dependers
