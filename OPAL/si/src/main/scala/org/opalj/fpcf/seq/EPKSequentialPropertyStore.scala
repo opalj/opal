@@ -752,11 +752,11 @@ final class EPKSequentialPropertyStore private (
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
                         if (traceFallbacks) {
-                            info(
-                                "analysis progress",
-                                s"used fallback $fallbackProperty for $e "+
-                                    "(though an analysis was supposedly scheduled)"
-                            )
+                            var message = s"used fallback $fallbackProperty for $e"
+                            if (computedPropertyKinds.contains(pkId)) {
+                                message += " (though an analysis was supposedly scheduled)"
+                            }
+                            info("analysis progress", message)
                         }
                         handleResult(fallbackResult)
                         continueComputation = true
@@ -795,19 +795,20 @@ final class EPKSequentialPropertyStore private (
                         val lb = ps(e)(headEPK.pk.id.toLong).lb
                         val ub = ps(e)(headEPK.pk.id.toLong).ub
                         val headEPS = IntermediateEP(e, lb, ub)
-                        val newEP = PropertyKey.resolveCycle(this, headEPS)
-                        val cycleAsText =
-                            if (cSCC.size > 10)
-                                cSCC.take(10).mkString("", ",", "...")
-                            else
-                                cSCC.mkString(",")
+                        val newP = PropertyKey.resolveCycle(this, headEPS)
                         if (traceCycleResolutions) {
+                            val cycleAsText =
+                                if (cSCC.size > 10)
+                                    cSCC.take(10).mkString("", ",", "...")
+                                else
+                                    cSCC.mkString(",")
+
                             info(
                                 "analysis progress",
-                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updatding $e:ub=$ub with $newP"
                             )
                         }
-                        update(newEP.e, newEP.p, newEP.p, Nil)
+                        update(e, newP, newP, Nil)
                         continueComputation = true
                     }
                 }

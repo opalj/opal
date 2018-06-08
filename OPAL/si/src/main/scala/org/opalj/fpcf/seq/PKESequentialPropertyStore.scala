@@ -700,11 +700,11 @@ final class PKESequentialPropertyStore private (
 
                             val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                             if (traceFallbacks) {
-                                trace(
-                                    "analysis progress",
-                                    s"used fallback $fallbackProperty for $e "+
-                                        "(though an analysis was supposedly scheduled)"
-                                )
+                                var message = s"used fallback $fallbackProperty for $e"
+                                if (computedPropertyKinds(pkId)) {
+                                    message += " (though an analysis was supposedly scheduled)"
+                                }
+                                trace("analysis progress", message)
                             }
                             fallbacksUsedForComputedPropertiesCounter += 1
                             update(e, fallbackProperty, fallbackProperty, Nil)
@@ -722,7 +722,7 @@ final class PKESequentialPropertyStore private (
                     val maxPKIndex = ps.length
                     var pkId = 0
                     while (pkId < maxPKIndex) {
-                        ps(pkId).forEach { (e, pValue) ⇒
+                        ps(pkId) forEach { (e, pValue) ⇒
                             val ub = pValue.ub
                             if (ub != null // analyses must always commit some value; hence,
                                 // Both of the following tests are necessary because we may have
@@ -742,7 +742,7 @@ final class PKESequentialPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id).get(epk.e).dependees
                     )
-                    for { cSCC ← cSCCs } {
+                    for (cSCC ← cSCCs) {
                         val headEPK = cSCC.head
                         val e = headEPK.e
                         val pkId = headEPK.pk.id
@@ -750,20 +750,21 @@ final class PKESequentialPropertyStore private (
                         val lb = pValue.lb
                         val ub = pValue.ub
                         val headEPS = IntermediateEP(e, lb, ub)
-                        val newEP = PropertyKey.resolveCycle(this, headEPS)
-                        val cycleAsText =
-                            if (cSCC.size > 10)
-                                cSCC.take(10).mkString("", ",", "...")
-                            else
-                                cSCC.mkString(",")
+                        val newP = PropertyKey.resolveCycle(this, headEPS)
                         if (traceCycleResolutions) {
+                            val cycleAsText =
+                                if (cSCC.size > 10)
+                                    cSCC.take(10).mkString("", ",", "...")
+                                else
+                                    cSCC.mkString(",")
+
                             info(
                                 "analysis progress",
-                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updatding $e:ub=$ub with $newP"
                             )
                         }
                         resolvedCyclesCounter += 1
-                        update(newEP.e, newEP.p, newEP.p, Nil)
+                        update(e, newP, newP, Nil)
                         continueComputation = true
                     }
                 }
@@ -809,7 +810,7 @@ final class PKESequentialPropertyStore private (
             val maxPKIndex = ps.length
             var pkId = 0
             while (pkId < maxPKIndex) {
-                ps(pkId).forEach { (e, pValue) ⇒
+                ps(pkId) forEach { (e, pValue) ⇒
                     if (!pValue.isFinal) {
                         error(
                             "analysis progress",
