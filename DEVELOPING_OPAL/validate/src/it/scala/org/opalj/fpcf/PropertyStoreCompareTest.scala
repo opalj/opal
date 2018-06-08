@@ -38,6 +38,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.bytecode.RTJar
@@ -47,13 +48,16 @@ import org.opalj.fpcf.PropertyStoreCompareTester.propertyStoreImplementationKey
 import org.opalj.fpcf.PropertyStoreCompareTester.propertyStoreList
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses._
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties._
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
 import org.opalj.log.{Error => ErrorLogLevel}
+import org.opalj.support.info.Purity.supportingAnalyses
+import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest._
 
@@ -183,7 +187,7 @@ class PsL0PurityAnalysis extends PropertyStoreCompareTester {
         ps.setupPhase(
             Set(org.opalj.fpcf.properties.Purity.key, FieldMutability.key, TypeImmutability.key)
         )
-        LazyL0FieldMutabilityAnalysis.startLazily(fixtureProject, ps)
+        supportingAnalyses(0).foreach(_.startLazily(fixtureProject, ps))
         EagerL0PurityAnalysis.start(fixtureProject, ps)
 
         ps.waitOnPhaseCompletion()
@@ -215,8 +219,7 @@ class PsL1PurityAnalysis extends PropertyStoreCompareTester {
                 TypeImmutability.key
             )
         )
-        LazyL1FieldMutabilityAnalysis.startLazily(fixtureProject, ps)
-        LazyVirtualMethodPurityAnalysis.startLazily(fixtureProject, ps)
+        supportingAnalyses(1).foreach(_.startLazily(fixtureProject, ps))
         EagerL1PurityAnalysis.start(fixtureProject, ps)
 
         ps.waitOnPhaseCompletion()
@@ -240,6 +243,10 @@ class PsL1PurityAnalysis extends PropertyStoreCompareTester {
   */
 class PsL2PurityAnalysis extends PropertyStoreCompareTester {
     val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
+        // Eager TAC
+        val tac = fixtureProject.get(DefaultTACAIKey)
+        fixtureProject.parForeachMethodWithBody() { m ⇒ tac(m.method) }
+
         ps.setupPhase(
             Set(
                 org.opalj.fpcf.properties.Purity.key,
@@ -252,13 +259,7 @@ class PsL2PurityAnalysis extends PropertyStoreCompareTester {
                 VirtualMethodReturnValueFreshness.key
             )
         )
-        LazyL1FieldMutabilityAnalysis.startLazily(fixtureProject, ps)
-        LazyVirtualMethodPurityAnalysis.startLazily(fixtureProject, ps)
-        LazyReturnValueFreshnessAnalysis.startLazily(fixtureProject, ps)
-        LazyVirtualReturnValueFreshnessAnalysis.startLazily(fixtureProject, ps)
-        LazyInterProceduralEscapeAnalysis.startLazily(fixtureProject, ps)
-        LazyVirtualCallAggregatingEscapeAnalysis.startLazily(fixtureProject, ps)
-        LazyFieldLocalityAnalysis.startLazily(fixtureProject, ps)
+        supportingAnalyses(2).foreach(_.startLazily(fixtureProject, ps))
         EagerL2PurityAnalysis.start(fixtureProject, ps)
 
         ps.waitOnPhaseCompletion()

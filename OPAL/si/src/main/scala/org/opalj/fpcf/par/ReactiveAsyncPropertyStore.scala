@@ -459,9 +459,6 @@ class ReactiveAsyncPropertyStore private (
                     incCounter("DependenciesLowerBound", d.size)
                 case _ ⇒
             }
-            if (r.id == IntermediateResult.id) {
-
-            }
             handleResult(r)
         })
     }
@@ -560,8 +557,21 @@ class ReactiveAsyncPropertyStore private (
                 // with a NoSuchElementException. This lock prevents us from processing updates for
                 // this cell (`cc`) and executes them once all dependencies were registered
                 // successfully.
-                cc.sequential {
+                if (oldResult == null) {
+                    // oldResult == null iff this is the first time handleResult was called for the
+                    // entity and the cell didn't exists yet or another entity build a dependency
+                    // on `e`.
+                    cc.sequential {
+                        updateDependencies()
+                    }
+                } else {
+                    // If the result already exists we are in the continuation function. We already
+                    // have obtained a lock on cc inside ReactiveAsync and for `e` the continuation
+                    // function is not called concurrently.
+                    updateDependencies()
+                }
 
+                def updateDependencies(): Unit = {
                     val oldDependees = dependencyMap.getOrElse(EPK(e, lb.key), Traversable.empty)
                     val dependeesEPK = dependees.map(_.toEPK)
                     val newDependees = dependeesEPK.filterNot(oldDependees.toSet)
