@@ -70,8 +70,8 @@ final class CallGraph(
         val callers: Map[Method, Set[(Method, Int /*pc*/ )]]
 ) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
-    val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
-    val callersSize = callers.map(_._2.size).sum
+    private[this] val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
+    private[this] val callersSize = callers.map(_._2.size).sum
     if (callersSize != calleesSize)
         println()
     assert(
@@ -85,7 +85,7 @@ final class CallGraph(
         calleesSize
     }
 
-    override def toString: String = s"CallGraph(size = $size)\n\t$callees"
+    override def toString: String = s"CallGraph(size = $size)"
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
@@ -139,7 +139,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val callers = new ConcurrentHashMap[Method, Set[(Method, Int /*PC*/ )]]()
         val callees = new ConcurrentHashMap[Method, Map[Int /*PC*/ , Set[Method]]]
 
-        val callGraphCache = new CallGraphCache[(Boolean /*same package*/ , MethodSignature), Set[Method]](project)
+        val callGraphCache = new CallGraphCache[(String /*same package*/ , MethodSignature), Set[Method]](project)
 
         project.parForeachMethod() { m ⇒
             m.body match {
@@ -151,32 +151,32 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                 case call: INVOKESTATIC ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
                                     callGraphCache.getOrElseUpdate(
-                                        call.declaringClass, (true, methodSignature)
+                                        call.declaringClass, ("", methodSignature)
                                     ) {
-                                        project.staticCall(call).toSet
-                                    }
+                                            project.staticCall(call).toSet
+                                        }
 
                                 case call: INVOKESPECIAL ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
                                     callGraphCache.getOrElseUpdate(
-                                        call.declaringClass, (true, methodSignature)
+                                        call.declaringClass, ("", methodSignature)
                                     ) {
-                                        project.specialCall(call).toSet
-                                    }
+                                            project.specialCall(call).toSet
+                                        }
 
                                 case call: INVOKEINTERFACE ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
                                     callGraphCache.getOrElseUpdate(
-                                        call.declaringClass, (true, methodSignature)
+                                        call.declaringClass, ("", methodSignature)
                                     ) {
-                                        project.interfaceCall(call)
-                                    }
+                                            project.interfaceCall(call)
+                                        }
 
                                 case call: INVOKEVIRTUAL ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
-                                    val samePackage = call.declaringClass.isObjectType &&
+                                    /*val samePackage = call.declaringClass.isObjectType &&
                                         m.classFile.thisType.packageName ==
-                                        call.declaringClass.asObjectType.packageName
+                                        call.declaringClass.asObjectType.packageName*/
 
                                     val objType =
                                         if (call.declaringClass.isArrayType)
@@ -185,7 +185,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                             call.declaringClass.asObjectType
 
                                     callGraphCache.getOrElseUpdate(
-                                        objType, (samePackage, methodSignature)
+                                        objType, (m.classFile.thisType.packageName, methodSignature)
                                     ) {
                                         project.virtualCall(m.classFile.thisType.packageName, call)
                                     }
