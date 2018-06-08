@@ -72,7 +72,11 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
         } else {
             // IMPROVE use the upper type bound to find the relevant types and then locate the methods
             import p.classHierarchy.joinReferenceTypesUntilSingleUpperBound
-            val receiverType = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
+            val typeUpperBound = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
+            val receiverType =
+                if (p.classHierarchy.isSubtypeOf(typeUpperBound, declaringClass).isNotYes)
+                    declaringClass
+                else typeUpperBound
             if (isInterface) {
                 p.interfaceCall(receiverType.asObjectType, name, descriptor)
             } else {
