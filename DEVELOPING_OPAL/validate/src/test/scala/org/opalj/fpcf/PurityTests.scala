@@ -37,7 +37,7 @@ import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
