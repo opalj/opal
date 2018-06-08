@@ -46,11 +46,13 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
     final type Self = InstantiatedTypes
 }
 
-class InstantiatedTypes private[properties] (
-        private val orderedTypes: ArrayBuffer[ObjectType], val types: UIDSet[ObjectType] // todo use boolean array here
+case class InstantiatedTypes private[properties] (
+        private val _orderedTypes: ArrayBuffer[ObjectType], private val _types: UIDSet[ObjectType] // todo use boolean array here
 ) extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
 
-    assert(orderedTypes == null || orderedTypes.size == types.size)
+    def types: Set[ObjectType] = _types
+
+    assert(_orderedTypes == null || _orderedTypes.size == _types.size)
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
@@ -71,16 +73,18 @@ class InstantiatedTypes private[properties] (
     }
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
-        val newOrderedTypes = orderedTypes
+        val newOrderedTypes = _orderedTypes
         for (newType ← newTypes) {
-            if (!types.contains(newType))
-                //TODO this is increadible slow, but try avoid mutable data structures
+            if (!_types.contains(newType))
+                //TODO this is incredible slow, but try avoid mutable data structures
                 newOrderedTypes += newType
         }
-        new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
+        new InstantiatedTypes(newOrderedTypes, _types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Traversable[ObjectType] = orderedTypes.drop(index)
+    def getNewTypes(index: Int): Traversable[ObjectType] = _orderedTypes.drop(index)
+
+    def numElements: Int = _types.size
 }
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
@@ -101,4 +105,17 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     }
 }
 
-object AllTypes extends InstantiatedTypes(null, null)
+// todo we can not use null here, so we need special handling
+object AllTypes extends InstantiatedTypes(null, null) {
+    override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {}
+
+    override def updated(newTypes: Set[ObjectType]): InstantiatedTypes = this
+
+    override def toString: String = "AllTypesInstantiated"
+
+    override def getNewTypes(index: Int): Traversable[ObjectType] = Traversable.empty
+
+    override def numElements: Int = Int.MaxValue
+
+    override def types: Set[ObjectType] = throw new IllegalArgumentException()
+}

@@ -173,7 +173,7 @@ class RTACallGraphAnalysis private[analyses] (
         val newInstantiatedTypes = instantiatedTypesEOptP match {
             case EPS(_, _, ub: InstantiatedTypes) ⇒
                 val toBeDropped = state.numTypesProcessed
-                state.numTypesProcessed = ub.types.size
+                state.numTypesProcessed = ub.numElements
                 ub.getNewTypes(toBeDropped)
             case _ ⇒ Nil // the initial types are already processed
         }
