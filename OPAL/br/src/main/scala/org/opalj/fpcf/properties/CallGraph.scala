@@ -33,6 +33,8 @@ package properties
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj.br.Method
+import org.opalj.br.MethodSignature
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -134,25 +136,60 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     override protected def requirements: ProjectInformationKeys = Nil
 
     override protected def compute(project: SomeProject): CallGraph = {
-        println("compute CHA cg")
         val callers = new ConcurrentHashMap[Method, Set[(Method, Int /*PC*/ )]]()
         val callees = new ConcurrentHashMap[Method, Map[Int /*PC*/ , Set[Method]]]
+
+        val callGraphCache = new CallGraphCache[(Boolean /*same package*/ , MethodSignature), Set[Method]](project)
 
         project.parForeachMethod() { m ⇒
             m.body match {
                 case Some(code) ⇒
-                    // TODO use code.collect???
                     val calleesOfM = code.instructions.iterator.zipWithIndex.collect {
                         case (instr: InvocationInstruction, pc) ⇒
                             val tgts = instr match {
+
                                 case call: INVOKESTATIC ⇒
-                                    project.staticCall(call).toSet
+                                    val methodSignature = MethodSignature(call.name, call.methodDescriptor)
+                                    callGraphCache.getOrElseUpdate(
+                                        call.declaringClass, (true, methodSignature)
+                                    ) {
+                                        project.staticCall(call).toSet
+                                    }
+
                                 case call: INVOKESPECIAL ⇒
-                                    project.specialCall(call).toSet
-                                case call: INVOKEVIRTUAL ⇒
-                                    project.virtualCall(m.classFile.thisType.packageName, call)
+                                    val methodSignature = MethodSignature(call.name, call.methodDescriptor)
+                                    callGraphCache.getOrElseUpdate(
+                                        call.declaringClass, (true, methodSignature)
+                                    ) {
+                                        project.specialCall(call).toSet
+                                    }
+
                                 case call: INVOKEINTERFACE ⇒
-                                    project.interfaceCall(call)
+                                    val methodSignature = MethodSignature(call.name, call.methodDescriptor)
+                                    callGraphCache.getOrElseUpdate(
+                                        call.declaringClass, (true, methodSignature)
+                                    ) {
+                                        project.interfaceCall(call)
+                                    }
+
+                                case call: INVOKEVIRTUAL ⇒
+                                    val methodSignature = MethodSignature(call.name, call.methodDescriptor)
+                                    val samePackage = call.declaringClass.isObjectType &&
+                                        m.classFile.thisType.packageName ==
+                                        call.declaringClass.asObjectType.packageName
+
+                                    val objType =
+                                        if (call.declaringClass.isArrayType)
+                                            ObjectType.Object
+                                        else
+                                            call.declaringClass.asObjectType
+
+                                    callGraphCache.getOrElseUpdate(
+                                        objType, (samePackage, methodSignature)
+                                    ) {
+                                        project.virtualCall(m.classFile.thisType.packageName, call)
+                                    }
+
                                 case _: INVOKEDYNAMIC ⇒
                                     OPALLogger.logOnce(
                                         Warn(
@@ -163,7 +200,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     Set.empty[Method]
                             }
                             tgts.foreach { tgt ⇒
-                                callers.compute(tgt, (x: Method, prev: Set[(Method, Int)]) ⇒ {
+                                callers.compute(tgt, (_: Method, prev: Set[(Method, Int)]) ⇒ {
                                     if (prev == null)
                                         Set(m → pc)
                                     else
@@ -179,6 +216,9 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                     callees.put(m, Map.empty)
             }
         }
+
+        println("computed fallback cg")
+
         new CallGraph(callees.asScala, callers.asScala.withDefaultValue(Set.empty))
     }
 
