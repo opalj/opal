@@ -97,7 +97,11 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             // further computations should have no effect.
             ps.scheduleEagerComputationForEntity("d")(e ⇒ Result("d", Palindrome))
 
-            ps("a", Palindromes.PalindromeKey) should be(IntermediateEP("a", NoPalindrome, Palindrome))
+            val aEP = ps("a", Palindromes.PalindromeKey)
+            if (aEP != IntermediateEP("a", NoPalindrome, Palindrome) &&
+                aEP != EPK("a", Palindromes.PalindromeKey)) {
+                fail("the property store was not correctly suspended")
+            }
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
 
             // let's test that – if we resume the computation – the results are as expected!
