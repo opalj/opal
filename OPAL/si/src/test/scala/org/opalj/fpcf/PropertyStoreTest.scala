@@ -97,7 +97,11 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             // further computations should have no effect.
             ps.scheduleEagerComputationForEntity("d")(e ⇒ Result("d", Palindrome))
 
-            ps("a", Palindromes.PalindromeKey) should be(IntermediateEP("a", NoPalindrome, Palindrome))
+            val aEP = ps("a", Palindromes.PalindromeKey)
+            if (aEP != IntermediateEP("a", NoPalindrome, Palindrome) &&
+                aEP != EPK("a", Palindromes.PalindromeKey)) {
+                fail("the property store was not correctly suspended")
+            }
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
 
             // let's test that – if we resume the computation – the results are as expected!
@@ -457,7 +461,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     PropertyKey.create[Node, ReachableNodes](
                         s"ReachableNodes(t=${System.nanoTime()})",
                         (_: PropertyStore, e: Node) ⇒ AllNodes,
-                        (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.toUBEP
+                        (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.ub
                     )
             }
             case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
@@ -1233,7 +1237,7 @@ object ReachableNodesCount {
         PropertyKey.create[Node, ReachableNodesCount](
             s"ReachableNodesCount",
             (_: PropertyStore, e: Node) ⇒ TooManyNodesReachable,
-            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ FinalEP(eps.e, TooManyNodesReachable)
+            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ TooManyNodesReachable
         )
 }
 case class ReachableNodesCount(value: Int) extends OrderedProperty {

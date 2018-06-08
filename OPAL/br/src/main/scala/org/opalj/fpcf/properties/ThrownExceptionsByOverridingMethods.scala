@@ -70,7 +70,7 @@ object ThrownExceptionsByOverridingMethods
             name = "ThrownExceptionsByOverridingMethods",
             fallbackPropertyComputation _,
             (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒
-                eps.toUBEP
+                eps.ub
         )
     }
 
