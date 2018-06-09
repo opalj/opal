@@ -31,6 +31,7 @@ package org.opalj.fpcf.par
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
 
 import com.phaller.rasync._
 import com.phaller.rasync.lattice.Key
@@ -116,6 +117,11 @@ class ReactiveAsyncPropertyStore private (
 
     // This map keeps track of the dependencies. Key is (Entity, PropertyKind.id)
     val dependencyMap = TrieMap.empty[SomeEPK, Traversable[SomeEPK]]
+
+    // Map of locks for partial result. The update function must run sequentially for an EPK pair,
+    // we have to set a lock for each one. EPK(e, pk).synchronized does not work as it creates a new
+    // object each time and therefore does not lock correctly.
+    val partialResultLockMap = TrieMap.empty[SomeEPK, ReentrantLock]
 
     // PropertyKinds that will be computed now or at a later time
     var computedPropertyKinds: Set[PropertyKind] = Set.empty
@@ -503,6 +509,7 @@ class ReactiveAsyncPropertyStore private (
                 }
                 cc.putFinal(new PropertyValue(p))
                 dependencyMap.remove(EPK(e, p.key))
+                partialResultLockMap.remove(EPK(e, p.key))
 
             case IntermediateResult.id ⇒
                 val IntermediateResult(e, lb, ub, dependees, c) = r
@@ -671,12 +678,17 @@ class ReactiveAsyncPropertyStore private (
                     }
                     cc.putFinal(new PropertyValue(someFinalEP.p))
                     dependencyMap.remove(EPK(someFinalEP.e, someFinalEP.p.key))
+                    partialResultLockMap.remove(EPK(someFinalEP.e, someFinalEP.p.key))
                 }
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
-                EPK(e, pk).synchronized {
-                    type E = e.type
-                    type P = Property
+                type E = e.type
+                type P = Property
+
+                val l = partialResultLockMap.getOrElseUpdate(EPK(e, pk), new ReentrantLock)
+                l.lock()
+
+                try {
                     val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
                     val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
                     newEPSOption foreach { newEPS ⇒
@@ -693,6 +705,8 @@ class ReactiveAsyncPropertyStore private (
                         }
                         cc.putNext(new PropertyValue(newEPS.lb, newEPS.ub))
                     }
+                } finally {
+                    l.unlock()
                 }
         }
 
