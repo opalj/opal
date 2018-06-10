@@ -50,8 +50,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - we have a `depender`.
  *
  *  Compared to the [[PKESequentialPropertyStore]] this implementation can be considered a
- *  bare-bone implementation that primarily supports required features. Furthermore, this
- *  implementation is less polished w.r.t. the usage of data-structures.
+ *  bare-bone implementation that primarily supports the strictly required features.
+ *  Furthermore, this implementation is less polished w.r.t. the usage of data-structures.
  */
 final class EPKSequentialPropertyStore private (
         val ctx: Map[Type, AnyRef]
