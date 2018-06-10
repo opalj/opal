@@ -35,11 +35,11 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.CountDownLatch
 
 import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.graphs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -115,17 +115,22 @@ final class PKEParallelTasksPropertyStore private (
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
+    @volatile private[this] var latch: CountDownLatch = _
     // The number of property computations and results which have not been completely processed.
     private[this] val openJobs = new AtomicInteger(0)
+
+    /** `decOpenJobs` MUST BE called after the respective task has finished. */
     private[this] def decOpenJobs(): Unit = {
-        /* val count = */ openJobs.decrementAndGet()
-        // println(s"decCount=$count: ${Thread.currentThread().getStackTrace()(2)}")
+        val v = openJobs.decrementAndGet()
+        //println(v)
+        if (v == 0) { latch.countDown() }
     }
     /* Has to be called before the job is actually processed; i.e., termination of the job
      * always has to precede decrementing openJobs. */
     private[this] def incOpenJobs(): Unit = {
-        /* val count = */ openJobs.incrementAndGet()
-        // println(s"incCount=$count: ${Thread.currentThread().getStackTrace()(2)}")
+        val v = openJobs.getAndIncrement()
+        //println(v)
+        if (v == 0) { latch = new CountDownLatch(0) }
     }
 
     /* The list of scheduled property computations  - they will be processed in parallel. */
@@ -368,6 +373,7 @@ final class PKEParallelTasksPropertyStore private (
 
         ps(pkId).get(e) match {
             case null ⇒
+                // TODO consider force in the following cases!
                 // the entity is unknown ...
                 lazyComputations(pkId) match {
                     case null ⇒
@@ -806,8 +812,9 @@ final class PKEParallelTasksPropertyStore private (
         var isInterrupted: Boolean = this.isInterrupted()
         do {
             continueComputation = false
+
             while (!isInterrupted && openJobs.get > 0) {
-                Thread.sleep(250) // we simply check every 250 milliseconds if we are done..
+                latch.await()
                 isInterrupted = this.isInterrupted()
             }
             validateState()
