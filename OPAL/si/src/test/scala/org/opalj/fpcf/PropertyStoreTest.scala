@@ -174,9 +174,14 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 )
             }
             ps.waitOnPhaseCompletion()
-            ps.hasProperty("a", palindromeKey) should be(true)
             if (ps.hasProperty("d", palindromeKey)) {
                 fail(s"unexpected property: "+ps("d", palindromeKey))
+            }
+
+            if (!ps.hasProperty("a", palindromeKey)) {
+                ps.isInterrupted = () ⇒ false
+                ps.waitOnPhaseCompletion()
+                ps.hasProperty("a", palindromeKey) should be(true)
             }
         }
 
