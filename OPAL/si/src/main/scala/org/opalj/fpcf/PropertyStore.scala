@@ -40,26 +40,29 @@ import org.opalj.log.OPALLogger.error
 
 /**
  * A property store manages the execution of computations of properties related to specific
- * entities (e.g., methods, fields and classes of a program). These computations may require and
+ * concrete as well as artificial entities (e.g., methods, fields and classes of a program, but
+ * also the call graph as such etc.). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
  * to handle the computations related to the dependencies between the entities.
  * Furthermore, the property store may parallelize the computation of the properties as far as
  * possible without requiring users to take care of it;
  * users are also generally not required to think about the concurrency when implementing an
- * analysis.
+ * analysis. The only very strong recommendation is that users should use immutable data-structures.
+ * The concepts are also described in the SOAP paper: "Lattice Based Modularization of Static
+ * Analyses" (https://conf.researchr.org/event/issta-2018/soap-2018-papers-lattice-based-modularization-of-static-analyses)
  *
  * ==Usage==
  * The correct strategy, when using the PropertyStore, is to always continue computing the property
  * of an entity and to collect the dependencies on those elements that are (still) relevant.
  * I.e., if some information is not or just not completely available, the analysis should
- * still continue using the provided information and (internally) records the dependency.
+ * still continue using the provided information and (internally) record the dependency.
  * Later on, when the analysis has computed its result, it reports the same and informs the
  * framework about its dependencies. Based on the later the framework will call back the analysis
  * when a dependency is updated. In general, an analysis should always try to minimize the number
  * of dependencies to the minimum set to enable the property store to suspend computations that
  * are no longer required.
  *
- * ===Core Requirements on Property Computation Functions (Modular Static Analysis)===
+ * ===Core Requirements on Property Computation Functions (Modular Static Analyses)===
  *  The following requirements ensure correctness and determinism of the result.
  *  - (At Most One Lazy Function per Property Kind) A specific kind of property is (in each
  *    phase) always computed by only one registered lazy `PropertyComputation` function.
@@ -89,10 +92,12 @@ import org.opalj.log.OPALLogger.error
  * ==Thread Safety==
  * The sequential property stores are not thread-safe; the parallelized implementation(s) are
  * thread-safe in the following manner:
- *  - a client has to use the SAME thread to call the [[setupPhase]],
+ *  - a client has to use the SAME thread (the driver thread) to call the [[setupPhase]],
  *    [[registerLazyPropertyComputation]], [[scheduleEagerComputationForEntity]] /
- *    [[scheduleEagerComputationsForEntities]], [[force]] and [[PropertyStore#waitOnPhaseCompletion]] methods.
- *    The methods to query the store are thread-safe and
+ *    [[scheduleEagerComputationsForEntities]], [[force]] and (finally)
+ *    [[PropertyStore#waitOnPhaseCompletion]] methods. The methods (`apply`) to query the store are
+ *    thread-safe and can be called at any time. Hence, the previously mentioned methods MUST
+ *    NO be called by PropertyComputation/OnUpdateComputation functions.
  *
  * ==Common Abbreviations==
  *  - e =         Entity
@@ -107,16 +112,16 @@ import org.opalj.log.OPALLogger.error
  *  - EOptionP =  Entity and either a PropertyKey or (if available) a Property
  *
  * ==Exceptions==
- * In general, exceptions are only thrown if debugging is turned on due to the costs for checking
+ * In general, exceptions are only thrown if debugging is turned on due to the costs of checking
  * for the respective violations. That is, if debugging is turned off, many potential errors leading
- * to "incomprehensible" results will not be reported. Hence, after debugging an enalysis to
+ * to "incomprehensible" results will not be reported. Hence, after debugging an analysis turn
  * debugging (and assertions!) off to get the best performance.
  *
- * We will throw `IllegalArgumentException`s iff a parameter is in itself invalid. E.g., the lower
+ * We will throw IllegalArgumentException`s iff a parameter is in itself invalid. E.g., the lower
  * and upper bound do not have the same [[PropertyKind]]. In all other cases `IllegalStateException`s
  * are thrown. All exceptions are either thrown immediately or eventually, when
- * [[waitOnPhaseCompletion()]] is called. In the latter case, the exceptions are accumulated in
- * the first thrown exception using suppressed exceptions.
+ * [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
+ * accumulated in the first thrown exception using suppressed exceptions.
  *
  * @author Michael Eichberg
  */
@@ -199,20 +204,35 @@ abstract class PropertyStore {
      * Simple counter of the number of tasks that were executed to perform an initial
      * computation of a property for some entity.
      */
-    def scheduledTasks: Int
+    def scheduledTasksCount: Int
 
     /**
      * Simple counter of the number of tasks (OnUpdateContinuations) that were executed
      * in response to an updated property.
      */
-    def scheduledOnUpdateComputations: Int
+    def scheduledOnUpdateComputationsCount: Int
 
     /**
      * The number of times a property was directly computed again due to an updated
      * dependee.
      */
-    def eagerOnUpdateComputations: Int
+    def eagerOnUpdateComputationsCount: Int
 
+    /**
+     * The number of resolved closed strongly connected components.
+     *
+     * Please note, that depending on the implementation strategy and the type of the
+     * closed strongly connected component, the resolution of one strongly connected
+     * component may require multiple phases. This is in particular true if a cSCC is
+     * resolved by committing an arbitrary value as a final value and we have a cSCC
+     * which is actually a chain-like cSCC. In the latter case committing a single value
+     * as final which just break up the chain, but will otherwise (in case of chains with
+     * more than three elements) lead to new cSCCs which the require detection and
+     * resolution.
+     */
+    def resolvedCSCCsCount: Int
+
+    /** The number of times the property store reached quiescence. */
     def quiescenceCount: Int
 
     //
