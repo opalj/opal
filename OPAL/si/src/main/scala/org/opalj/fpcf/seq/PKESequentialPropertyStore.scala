@@ -76,19 +76,19 @@ final class PKESequentialPropertyStore private (
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
     private[this] var scheduledTasksCounter: Int = 0
-    def scheduledTasks: Int = scheduledTasksCounter
+    def scheduledTasksCount: Int = scheduledTasksCounter
 
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
-    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+    def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
     private[this] var eagerOnUpdateComputationsCounter: Int = 0
-    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
 
     private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
-    def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
+    def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
 
-    private[this] var resolvedCyclesCounter: Int = 0
-    def resolvedCycles: Int = resolvedCyclesCounter
+    private[this] var resolvedCSCCsCounter: Int = 0
+    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
@@ -764,7 +764,7 @@ final class PKESequentialPropertyStore private (
                                 s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updatding $e:ub=$ub with $newP"
                             )
                         }
-                        resolvedCyclesCounter += 1
+                        resolvedCSCCsCounter += 1
                         update(e, newP, newP, Nil)
                         continueComputation = true
                     }
@@ -807,7 +807,7 @@ final class PKESequentialPropertyStore private (
 
         if (debug && !isInterrupted) {
             // let's search for "unsatisfied computations" related to "forced properties"
-            // TODO support forced properties
+            // TODO support forced properties if we have real lazy evaluation...
             val maxPKIndex = ps.length
             var pkId = 0
             while (pkId < maxPKIndex) {

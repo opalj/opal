@@ -688,9 +688,9 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     )
 
                     info(
-                        s"(id of first permutation = ${dropCount + 1}) number of executed tasks:"+ps.scheduledTasks+
-                            "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputations+
-                            "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputations
+                        s"(id of first permutation = ${dropCount + 1}) number of executed tasks:"+ps.scheduledTasksCount+
+                            "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputationsCount+
+                            "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputationsCount
                     )
                 }
             }
@@ -986,9 +986,9 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
 
                 info(s"test succeeded with $testSize node(s) in a circle")
                 info(
-                    s"number of executed tasks:"+ps.scheduledTasks+
-                        "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputations+
-                        "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputations
+                    s"number of executed tasks:"+ps.scheduledTasksCount+
+                        "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputationsCount+
+                        "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputationsCount
                 )
             }
         }

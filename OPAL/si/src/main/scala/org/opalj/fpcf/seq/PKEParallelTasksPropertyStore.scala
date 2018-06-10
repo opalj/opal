@@ -75,23 +75,23 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] val scheduledTasksCounter: AtomicInteger = new AtomicInteger(0)
 
-    def scheduledTasks: Int = scheduledTasksCounter.get
+    def scheduledTasksCount: Int = scheduledTasksCounter.get
 
     private[this] val scheduledOnUpdateComputationsCounter = new AtomicInteger(0)
 
-    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter.get
+    def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter.get
 
     private[this] var eagerOnUpdateComputationsCounter = 0
 
-    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
 
     private[this] var fallbacksUsedForComputedPropertiesCounter = 0
 
-    def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
+    def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
 
-    private[this] var resolvedCyclesCounter = 0
+    private[this] var resolvedCSCCsCounter = 0
 
-    def resolvedCycles: Int = resolvedCyclesCounter
+    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
     private[this] var quiescenceCounter = 0
 
@@ -671,7 +671,7 @@ final class PKEParallelTasksPropertyStore private (
                         val newP = PropertyKey.resolveCycle(this, eps)
                         update(e, newP, newP, Nil, cycleMembers)
                     }
-                    resolvedCyclesCounter += 1
+                    resolvedCSCCsCounter += 1
                 }
 
             case MultiResult.id ⇒
@@ -814,7 +814,7 @@ final class PKEParallelTasksPropertyStore private (
             assert(openJobs.get >= 0, s"unexpected number of openJobs: $openJobs")
 
             if (!isInterrupted) handleExceptions {
-                assert(openJobs.get == 0)
+                assert(openJobs.get == 0, s"unexpected number of open jobs: ${openJobs.get}")
                 quiescenceCounter += 1
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
@@ -880,32 +880,6 @@ final class PKEParallelTasksPropertyStore private (
                         handleResult(CycleResult(cSCCs))
                         continueComputation = true
                     }
-                    /*
-                    for { cSCC ← cSCCs } {
-                        val headEPK = cSCC.head
-                        val e = headEPK.e
-                        val pkId = headEPK.pk.id
-                        val pValue = ps(pkId).get(e)
-                        val lb = pValue.lb
-                        val ub = pValue.ub
-                        val headEPS = IntermediateEP(e, lb, ub)
-                        val newEP = PropertyKey.resolveCycle(this, headEPS)
-                        val cycleAsText =
-                            if (cSCC.size > 10)
-                                cSCC.take(10).mkString("", ",", "...")
-                            else
-                                cSCC.mkString(",")
-                        if (traceCycleResolutions) {
-                            info(
-                                "analysis progress",
-                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
-                            )
-                        }
-                        resolvedCyclesCounter += 1
-                        handleResult(Result(newEP.e, newEP.p))
-                        continueComputation = true
-                    }
-                    */
                 }
 
                 if (!continueComputation) {
@@ -916,7 +890,7 @@ final class PKEParallelTasksPropertyStore private (
                     var pkId = 0
                     var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
-                        ps(pkId).forEach { (e, pValue) ⇒
+                        ps(pkId) forEach { (e, pValue) ⇒
                             val lb = pValue.lb
                             val ub = pValue.ub
                             val isFinal = pValue.isFinal

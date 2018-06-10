@@ -77,13 +77,16 @@ final class EPKSequentialPropertyStore private (
     type PKId = Long
 
     private[this] var scheduledTasksCounter: Int = 0
-    def scheduledTasks: Int = scheduledTasksCounter
+    def scheduledTasksCount: Int = scheduledTasksCounter
 
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
-    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+    def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
     private[this] var eagerOnUpdateComputationsCounter: Int = 0
-    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
+
+    private[this] var resolvedCSCCsCounter: Int = 0
+    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
@@ -791,6 +794,7 @@ final class EPKSequentialPropertyStore private (
                     for {
                         cSCC ← cSCCs
                     } {
+                        resolvedCSCCsCounter
                         val headEPK = cSCC.head
                         val e = headEPK.e
                         val lb = ps(e)(headEPK.pk.id.toLong).lb
