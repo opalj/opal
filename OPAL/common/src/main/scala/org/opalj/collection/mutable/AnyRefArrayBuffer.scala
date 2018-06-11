@@ -83,6 +83,26 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         this
     }
 
+    def ++=(is: Iterator[N]): this.type = {
+        is.foreach(+=)
+        this
+    }
+
+    def ++=[N](other: AnyRefArrayBuffer[N]): this.type = {
+        if(data.length - size0 >= other.data.length) {
+            System.arraycopy(other.data,0,this.data,size0,other.data.length)
+
+        } else {
+            val newData = new Array[AnyRef](this.size0 + other.size0 + 8)
+                System.arraycopy(data, 0, newData, 0, size0)
+            System.arraycopy(other.data, 0, newData,this.size0, other.size0)
+                data = newData
+                this.data = newData
+        }
+        this.size0 = this.size0 + other.size0
+        this
+    }
+
     def +=(i: N): this.type = {
         val size0 = this.size0
         var data = this.data
@@ -119,6 +139,16 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         while (i < size) {
             f(data(i).asInstanceOf[N])
             i += 1
+        }
+    }
+
+    def iteratorFrom(startIndex : Int) : Iterator[N] = new AbstractIterator[N] {
+        var currentIndex = startIndex
+        override def hasNext: Boolean = currentIndex < size0
+        override def next(): N = {
+            val r = data(currentIndex)
+            currentIndex += 1
+            r.asInstanceOf[N]
         }
     }
 
