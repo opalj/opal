@@ -68,20 +68,20 @@ import org.opalj.tac.VirtualMethodCall
 
 import scala.collection.Map
 import scala.collection.Set
-import scala.collection.mutable
+import scala.collection.immutable.IntMap
 import scala.collection.mutable.ArrayBuffer
 
 case class State(
         private[cg] val method:            Method,
-        private[cg] val virtualCallSites:  Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
-        private var _calleesOfM:           Map[Int /*PC*/ , Set[Method]],
+        private[cg] val virtualCallSites:  ArrayBuffer[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
+        private var _calleesOfM:           IntMap[Set[Method]], // key = PC
         private[cg] var numTypesProcessed: Int
 ) {
     private[cg] def addCallEdge(pc: Int, tgt: Method): Unit = {
         _calleesOfM = calleesOfM.updated(pc, calleesOfM.getOrElse(pc, Set.empty) + tgt)
     }
 
-    private[cg] def calleesOfM: Map[Int, Set[Method]] = _calleesOfM
+    private[cg] def calleesOfM: IntMap[Set[Method]] = _calleesOfM
 }
 
 /**
@@ -146,7 +146,7 @@ class RTACallGraphAnalysis private[analyses] (
         //  2. methods (+ pc) called by the current method
         //  3. compute the call sites of virtual calls, whose targets are not yet final
         //  4. add newly reachable methods
-        val (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
+        var (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
             method, instantiatedTypesUB, newReachableMethods
         )
 
@@ -155,15 +155,12 @@ class RTACallGraphAnalysis private[analyses] (
 
         val state = State(method, virtualCallSites, calleesOfM, numTypesProcessed)
 
-        // mutates the calleesOfM that is visible in state and calleesOfM
-        // even though both are the same, this is safe, as the underlying structure are sets
-        handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
+        calleesOfM = handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
 
         IncrementalResult(
             Results(
                 resultForCallees(instantiatedTypesEOptP, state),
                 partialResultForInstantiatedTypes(method, newInstantiatedTypes),
-                // create an immutable view of the calleesOfM, as they get be modified concurrently
                 partialResultForCallGraph(method, calleesOfM)
             ),
             // continue the computation with the newly reachable methods
@@ -188,10 +185,7 @@ class RTACallGraphAnalysis private[analyses] (
         val newReachableMethods = ArrayBuffer.empty[Method]
 
         // the new edges in the call graph due to the new types
-        val newCalleesOfM = mutable.Map.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
-
-        // adds new call edges and instantiated types to the inputs
-        handleVirtualCallSites(state, newInstantiatedTypes, newReachableMethods, newCalleesOfM)
+        val newCalleesOfM = handleVirtualCallSites(state, newInstantiatedTypes, newReachableMethods, IntMap.empty)
 
         IncrementalResult(
             Results(
@@ -206,21 +200,23 @@ class RTACallGraphAnalysis private[analyses] (
         method:              Method,
         instantiatedTypesUB: Set[ObjectType],
         newReachableMethods: ArrayBuffer[Method]
-    ): (Set[ObjectType], mutable.Map[Int, Set[Method]], Set[(Int, ReferenceType, String, MethodDescriptor)]) = {
+    ): (Set[ObjectType], IntMap[Set[Method]], ArrayBuffer[(Int, ReferenceType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
-        val calleesOfM = mutable.OpenHashMap.empty[Int /*PC*/ , Set[Method]].withDefaultValue(Set.empty)
+        var calleesOfM = IntMap.empty[Set[Method]]
 
         // the set of types for which we find an allocation which was not present before
         var newInstantiatedTypes = Set.empty[ObjectType]
 
+        val stmts = tacaiProvider(method).stmts
+
         // the virtual call sites, where we can not determine the precise tgts
-        val virtualCallSites: mutable.Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = mutable.Set.empty
+        val virtualCallSites: ArrayBuffer[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = new ArrayBuffer((stmts.length / 3) + 1)
 
         // for allocation sites, add new types
         // for calls, add new edges
-        for (stmt ← tacaiProvider(method).stmts) {
+        for (stmt ← stmts) {
             stmt match {
                 case Assignment(_, _, New(_, allocatedType)) ⇒
                     if (!instantiatedTypesUB.contains(allocatedType)) {
@@ -244,32 +240,32 @@ class RTACallGraphAnalysis private[analyses] (
                     addClInitAsNewReachable(declaringClass, newReachableMethods)
 
                 case StaticFunctionCallStatement(call) ⇒
-                    handleCall(
+                    calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
                     )
 
                 case call: StaticMethodCall[V] ⇒
-                    handleCall(
+                    calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
                     )
 
                 case NonVirtualFunctionCallStatement(call) ⇒
-                    handleCall(
+                    calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
                     )
 
                 case call: NonVirtualMethodCall[V] ⇒
-                    handleCall(
+                    calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, newReachableMethods, calleesOfM
                     )
 
                 case VirtualFunctionCallStatement(call) ⇒
-                    handleVirtualCall(
+                    calleesOfM = handleVirtualCall(
                         method, call, call.pc, newReachableMethods, calleesOfM, virtualCallSites
                     )
 
                 case call: VirtualMethodCall[V] ⇒
-                    handleVirtualCall(
+                    calleesOfM = handleVirtualCall(
                         method, call, call.pc, newReachableMethods, calleesOfM, virtualCallSites
                     )
 
@@ -292,9 +288,10 @@ class RTACallGraphAnalysis private[analyses] (
         call:                Call[V] with VirtualCall[V],
         pc:                  Int,
         newReachableMethods: ArrayBuffer[Method],
-        calleesOfM:          mutable.Map[Int, Set[Method]],
-        virtualCallSites:    mutable.Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)]
-    ): Unit = {
+        calleesOfM:          IntMap[Set[Method]],
+        virtualCallSites:    ArrayBuffer[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)]
+    ): IntMap[Set[Method]] = {
+        var result = calleesOfM
         val rvs = call.receiver.asVar.value.asDomainReferenceValue.allValues
         for (rv ← rvs) {
             // for null there is no call
@@ -307,7 +304,7 @@ class RTACallGraphAnalysis private[analyses] (
                         call.name,
                         call.descriptor
                     )
-                    handleCall(pc, tgt.toSet, newReachableMethods, calleesOfM)
+                    result = handleCall(pc, tgt.toSet, newReachableMethods, calleesOfM)
                 } else {
                     val typeBound =
                         project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
@@ -322,6 +319,7 @@ class RTACallGraphAnalysis private[analyses] (
                 }
             }
         }
+        result
     }
 
     def addNewReachableMethod(m: Method, reachableMethods: ArrayBuffer[Method]): Unit = {
@@ -344,44 +342,48 @@ class RTACallGraphAnalysis private[analyses] (
     def handleCall(
         pc: Int, targets: Set[Method],
         newReachableMethods: ArrayBuffer[Method],
-        calleesOfM:          mutable.Map[Int /*PC*/ , Set[Method]]
-    ): Unit = {
+        calleesOfM:          IntMap[Set[Method]]
+    ): IntMap[Set[Method]] = {
+
+        var result = calleesOfM
         for {
             tgt ← targets
         } {
             // add call edge to CG
-            calleesOfM(pc) += tgt
+            result = result.updated(pc, result.getOrElse(pc, Set.empty) + tgt)
 
             // the callee is now reachable and should be processed, if not done already
             addNewReachableMethod(tgt, newReachableMethods)
         }
+        result
     }
 
     def handleVirtualCallSites(
         state:                State,
         newInstantiatedTypes: Iterator[ObjectType],
         newReachableMethods:  ArrayBuffer[Method],
-        newCalleesOfMap:      mutable.Map[Int /*PC*/ , Set[Method]]
-    ): Unit = {
+        newCalleesOfMap:      IntMap[Set[Method]]
+    ): IntMap[Set[Method]] = {
+        var result = newCalleesOfMap
         for {
             instantiatedType ← newInstantiatedTypes
             (pc, typeBound, name, descr) ← state.virtualCallSites
+            if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
+            tgt ← project.instanceCall(
+                state.method.classFile.thisType, instantiatedType, name, descr
+            )
         } {
-            if (project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes)
-                project.instanceCall(
-                    state.method.classFile.thisType, instantiatedType, name, descr
-                ).foreach { tgt ⇒
-                    addNewReachableMethod(tgt, newReachableMethods)
-                    // in case newCalleesOfM eq state.calleesOfM this is safe
-                    newCalleesOfMap(pc) += tgt
-                    state.addCallEdge(pc, tgt)
-                }
+            addNewReachableMethod(tgt, newReachableMethods)
+            // in case newCalleesOfM eq state.calleesOfM this is safe
+            result = result.updated(pc, result.getOrElse(pc, Set.empty) + tgt)
+            state.addCallEdge(pc, tgt)
         }
+        result
     }
 
     def partialResultForCallGraph(
         method:        Method,
-        newCalleesOfM: Map[Int /*PC*/ , Set[Method]]
+        newCalleesOfM: IntMap[Set[Method]]
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
@@ -400,7 +402,7 @@ class RTACallGraphAnalysis private[analyses] (
                 newCalleesOfM.foreach {
                     case (pc, tgtsOfM) ⇒
                         tgtsOfM.foreach { tgt ⇒
-                            callers = callers.updated(tgt, callers(tgt) + (method → pc))
+                            callers = callers.updated(tgt, callers(tgt) + (method → pc.toInt))
                         }
                 }
                 Some(EPS(

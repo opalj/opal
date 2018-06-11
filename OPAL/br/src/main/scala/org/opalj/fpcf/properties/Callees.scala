@@ -30,9 +30,10 @@ package org.opalj
 package fpcf
 package properties
 
-import scala.collection.Set
-import scala.collection.Map
 import org.opalj.br.Method
+
+import scala.collection.Set
+import scala.collection.immutable.IntMap
 
 /**
  * For a given [[Method]], and for each call site (represented by the PC), the set of methods
@@ -46,7 +47,7 @@ sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 }
 
 class Callees(
-        val callees: Map[Int /*PC*/ , Set[Method]]
+        val callees: IntMap[Set[Method]]
 ) extends Property with OrderedProperty with CalleesPropertyMetaInformation {
     final def key: PropertyKey[Callees] = Callees.key
 
@@ -58,22 +59,22 @@ class Callees(
         callees.map(_._2.size).sum
     }
 
-    private def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
-        pcToTgts: (Int, Set[Method]) ⇒ pcToTgts._2.map((tgt: Method) ⇒ (pcToTgts._1, tgt))
-    }
-
     def canEqual(other: Any): Boolean = other.isInstanceOf[Callees]
 
     override def equals(other: Any): Boolean = other match {
         case that: Callees ⇒
             (that canEqual this) &&
-                callees.toMap == that.callees.toMap
+                callees == that.callees
         case _ ⇒ false
     }
 
     override def hashCode(): Int = {
         val state = Seq(callees)
         state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
+    }
+
+    private def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
+        pcToTgts: (Int, Set[Method]) ⇒ pcToTgts._2.map((tgt: Method) ⇒ (pcToTgts._1, tgt))
     }
 
     /**
@@ -91,12 +92,12 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            Callees(Map.empty.withDefaultValue(Set.empty)),
+            Callees(IntMap.empty),
             (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub
         )
     }
 
-    def apply(callees: Map[Int /*PC*/ , Set[Method]]): Callees = new Callees(callees)
+    def apply(callees: IntMap[Set[Method]]): Callees = new Callees(callees)
 
-    def unapply(callees: Callees): Option[Map[Int /*PC*/ , Set[Method]]] = Some(callees.callees)
+    def unapply(callees: Callees): Option[IntMap[Set[Method]]] = Some(callees.callees)
 }
