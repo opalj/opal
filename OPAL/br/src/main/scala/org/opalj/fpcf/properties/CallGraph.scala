@@ -72,14 +72,13 @@ final class CallGraph(
     def key: PropertyKey[CallGraph] = CallGraph.key
     private[this] val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
     private[this] val callersSize = callers.map(_._2.size).sum
-    if (callersSize != calleesSize)
-        println()
+
     assert(
         callersSize == calleesSize,
         s"the size of callers (size=$callersSize) should equal the size of callees (size=$calleesSize)"
     )
     /**
-     * TODO
+     * The number of edges in the call graph.
      */
     val size: Int = {
         calleesSize
@@ -89,13 +88,44 @@ final class CallGraph(
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
-     * value is above the given value in the underlying lattice.)
+     * value is above the given value in the underlying lattice).
      */
     override def checkIsEqualOrBetterThan(e: Entity, other: CallGraph): Unit = {
         //TODO here compare real edges
         if (size > other.size)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
+
+    def updated(method: Method, calleesOfM: Map[Int, Set[Method]]): CallGraph = {
+        // add the new edges to the callee map of the call graph
+        var newCallees = callees
+        // todo refactor this into a readable stmt
+        calleesOfM.foreach {
+            case (pc, tgtsOfM) ⇒
+                newCallees = newCallees.updated(
+                    method,
+                    newCallees.getOrElse(
+                        method, Map.empty[Int, Set[Method]]
+                    ).updated(
+                        pc, newCallees.getOrElse(
+                        method, Map.empty[Int, Set[Method]]
+                    ).getOrElse(pc, Set.empty) ++ tgtsOfM
+                    )
+                )
+        }
+
+        // add the new edges to the caller map of the call graph
+        var newCallers = callers
+
+        calleesOfM.foreach {
+            case (pc, tgtsOfM) ⇒
+                tgtsOfM.foreach { tgt ⇒
+                    newCallers = newCallers.updated(tgt, newCallers(tgt) + (method → pc))
+                }
+        }
+        CallGraph(newCallees, newCallers)
+    }
+
 }
 
 object CallGraph extends CallGraphPropertyMetaInformation {
@@ -126,6 +156,7 @@ object CallGraph extends CallGraphPropertyMetaInformation {
         cg: CallGraph
     ): Option[(Map[Method, Map[Int /*PC*/ , Set[Method]]], Map[Method, Set[(Method, Int /*PC*/ )]])] =
         Some(cg.callees → cg.callers)
+
 }
 
 /**
@@ -153,24 +184,24 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     callGraphCache.getOrElseUpdate(
                                         call.declaringClass, ("", methodSignature)
                                     ) {
-                                            project.staticCall(call).toSet
-                                        }
+                                        project.staticCall(call).toSet
+                                    }
 
                                 case call: INVOKESPECIAL ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
                                     callGraphCache.getOrElseUpdate(
                                         call.declaringClass, ("", methodSignature)
                                     ) {
-                                            project.specialCall(call).toSet
-                                        }
+                                        project.specialCall(call).toSet
+                                    }
 
                                 case call: INVOKEINTERFACE ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
                                     callGraphCache.getOrElseUpdate(
                                         call.declaringClass, ("", methodSignature)
                                     ) {
-                                            project.interfaceCall(call)
-                                        }
+                                        project.interfaceCall(call)
+                                    }
 
                                 case call: INVOKEVIRTUAL ⇒
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)

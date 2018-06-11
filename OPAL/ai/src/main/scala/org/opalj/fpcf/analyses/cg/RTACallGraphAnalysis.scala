@@ -72,9 +72,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 case class State(
-        method:                            Method,
-        virtualCallSites:                  Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
-        private var _calleesOfM:           mutable.Map[Int, Set[Method]],
+        private[cg] val method:            Method,
+        private[cg] val virtualCallSites:  Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
+        private var _calleesOfM:           mutable.Map[Int /*PC*/ , Set[Method]],
         private[cg] var numTypesProcessed: Int
 ) {
     private[cg] def addCallEdge(pc: Int, tgt: Method): Unit = {
@@ -85,8 +85,9 @@ case class State(
 }
 
 /**
- * TODO
- *
+ * An rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
+ * call edges ([[Callees]]). Furthermore, it updates the types for which allocations are present in
+ * the [[SomeProject]] ([[InstantiatedTypes]]) and updates the projects [[CallGraph]].
  * @author Florian Kuebler
  */
 class RTACallGraphAnalysis private[analyses] (
@@ -98,6 +99,10 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] val methodIds = project.get(MethodIDKey)
 
+    /**
+     * For each MethodId ([[MethodIDKey]]), it states whether the method has been analysed using
+     * `step1` or not.
+     */
     val processedMethods: Array[AtomicBoolean] = {
         Array.fill(project.allMethods.size) { new AtomicBoolean }
     }
@@ -106,6 +111,7 @@ class RTACallGraphAnalysis private[analyses] (
         method: Method
     ): PropertyComputationResult = {
 
+        // we must only call this method once per method.
         val methodID = methodIds(method)
         assert(processedMethods(methodID).get())
 
@@ -127,9 +133,9 @@ class RTACallGraphAnalysis private[analyses] (
                 ub.types
 
             case _ ⇒
-                for (instantiatedType ← initialTypes)
+                for (instantiatedType ← InstantiatedTypes.initialTypes)
                     addClInitAsNewReachable(instantiatedType, newReachableMethods)
-                initialTypes
+                InstantiatedTypes.initialTypes
         }
 
         // the number of types, already seen by the analysis
@@ -351,28 +357,6 @@ class RTACallGraphAnalysis private[analyses] (
         }
     }
 
-    def updatedCG(
-        callGraph: CallGraph, method: Method, calleesOfM: Map[Int, Set[Method]]
-    ): CallGraph = {
-        val CallGraph(callees, callers) = callGraph
-
-        var newCallees = callees // todo with default
-        calleesOfM.foreach {
-            case (pc, tgtsOfM) ⇒
-                newCallees = newCallees.updated(method, newCallees.getOrElse(method, Map.empty[Int, Set[Method]]).updated(pc, newCallees.getOrElse(method, Map.empty[Int, Set[Method]]).getOrElse(pc, Set.empty) ++ tgtsOfM))
-        }
-
-        var newCallers = callers
-
-        calleesOfM.foreach {
-            case (pc, tgtsOfM) ⇒
-                tgtsOfM.foreach { tgt ⇒
-                    newCallers = newCallers.updated(tgt, newCallers(tgt) + (method → pc))
-                }
-        }
-        CallGraph(newCallees, newCallers)
-    }
-
     def handleVirtualCallSites(
         state:                State,
         newInstantiatedTypes: Traversable[ObjectType],
@@ -401,9 +385,12 @@ class RTACallGraphAnalysis private[analyses] (
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
-                val newCG = updatedCG(ub, method, newCalleesOfM)
-                // todo assert(newCG.size > ub.size)
-                if (newCG.size <= ub.size)
+                val newCG = ub.updated(method, newCalleesOfM)
+
+                // todo shouldn't it be newCG.size > ub.size
+                assert(newCG.size >= ub.size)
+
+                if (newCG.size == ub.size)
                     None
                 else
                     Some(EPS(project, lb, newCG))
@@ -441,7 +428,7 @@ class RTACallGraphAnalysis private[analyses] (
                     Some(EPS(
                         project,
                         AllTypes,
-                        InstantiatedTypes.initial(initialTypes ++ newInstantiatedTypes)
+                        InstantiatedTypes.initial(InstantiatedTypes.initialTypes ++ newInstantiatedTypes)
                     ))
 
                 case _ ⇒ None
@@ -466,11 +453,6 @@ class RTACallGraphAnalysis private[analyses] (
                 continuation(_, state)
             )
         }
-    }
-
-    def initialTypes: Set[ObjectType] = {
-        // TODO make this configurable
-        Set(ObjectType.String)
     }
 }
 

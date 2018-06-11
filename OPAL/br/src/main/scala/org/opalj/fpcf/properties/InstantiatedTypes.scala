@@ -38,7 +38,8 @@ import scala.collection.Set
 import scala.collection.mutable.ArrayBuffer
 
 /**
- * TODO
+ * Represent the set of types that have allocations reachable from the respective entry points.
+ *
  * @author Florian Kuebler
  */
 sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
@@ -47,7 +48,8 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 }
 
 case class InstantiatedTypes private[properties] (
-        private val _orderedTypes: ArrayBuffer[ObjectType], private val _types: UIDSet[ObjectType] // todo use boolean array here
+        // todo use boolean array here
+        private val _orderedTypes: ArrayBuffer[ObjectType], private val _types: UIDSet[ObjectType]
 ) extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
 
     def types: Set[ObjectType] = _types
@@ -58,10 +60,6 @@ case class InstantiatedTypes private[properties] (
 
     override def toString: String = s"InstantiatedTypes(size=${types.size}\n\t$types)"
 
-    /**
-     * Tests if this property is equal or better than the given one (better means that the
-     * value is above the given value in the underlying lattice.)
-     */
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if ((other ne AllTypes) && !types.subsetOf(other.types)) {
             val x = types.collect {
@@ -73,13 +71,10 @@ case class InstantiatedTypes private[properties] (
     }
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
-        val newOrderedTypes = _orderedTypes
-        for (newType ← newTypes) {
-            if (!_types.contains(newType))
-                //TODO this is incredible slow, but try avoid mutable data structures
-                newOrderedTypes += newType
-        }
-        new InstantiatedTypes(newOrderedTypes, _types ++ newTypes)
+
+        val actualNewTypes = newTypes diff _types
+
+        new InstantiatedTypes(_orderedTypes ++ actualNewTypes, _types ++ actualNewTypes)
     }
 
     def getNewTypes(index: Int): Traversable[ObjectType] = _orderedTypes.drop(index)
@@ -103,6 +98,11 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
             (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub
         )
     }
+
+    def initialTypes: Set[ObjectType] = {
+        // TODO make this configurable
+        Set(ObjectType.String)
+    }
 }
 
 // todo we can not use null here, so we need special handling
@@ -115,7 +115,7 @@ object AllTypes extends InstantiatedTypes(null, null) {
 
     override def getNewTypes(index: Int): Traversable[ObjectType] = Traversable.empty
 
-    override def numElements: Int = Int.MaxValue
+    override def numElements: Int = throw new UnsupportedOperationException()
 
-    override def types: Set[ObjectType] = throw new IllegalArgumentException()
+    override def types: Set[ObjectType] = throw new UnsupportedOperationException()
 }

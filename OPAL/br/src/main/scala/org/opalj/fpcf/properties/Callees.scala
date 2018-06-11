@@ -35,7 +35,9 @@ import scala.collection.Map
 import org.opalj.br.Method
 
 /**
- * TODO
+ * For a given [[Method]], and for each call site (represented by the PC), the set of methods
+ * that are possible call targets.
+ *
  * @author Florian Kuebler
  */
 sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
