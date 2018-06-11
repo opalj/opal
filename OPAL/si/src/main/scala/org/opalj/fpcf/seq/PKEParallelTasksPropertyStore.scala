@@ -35,11 +35,11 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.CountDownLatch
 
 import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.graphs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -75,23 +75,23 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] val scheduledTasksCounter: AtomicInteger = new AtomicInteger(0)
 
-    def scheduledTasks: Int = scheduledTasksCounter.get
+    def scheduledTasksCount: Int = scheduledTasksCounter.get
 
     private[this] val scheduledOnUpdateComputationsCounter = new AtomicInteger(0)
 
-    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter.get
+    def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter.get
 
     private[this] var eagerOnUpdateComputationsCounter = 0
 
-    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
 
     private[this] var fallbacksUsedForComputedPropertiesCounter = 0
 
-    def fallbacksUsedForComputedProperties: Int = fallbacksUsedForComputedPropertiesCounter
+    def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
 
-    private[this] var resolvedCyclesCounter = 0
+    private[this] var resolvedCSCCsCounter = 0
 
-    def resolvedCycles: Int = resolvedCyclesCounter
+    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
     private[this] var quiescenceCounter = 0
 
@@ -115,17 +115,22 @@ final class PKEParallelTasksPropertyStore private (
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
+    @volatile private[this] var latch: CountDownLatch = _
     // The number of property computations and results which have not been completely processed.
     private[this] val openJobs = new AtomicInteger(0)
+
+    /** `decOpenJobs` MUST BE called after the respective task has finished. */
     private[this] def decOpenJobs(): Unit = {
-        /* val count = */ openJobs.decrementAndGet()
-        // println(s"decCount=$count: ${Thread.currentThread().getStackTrace()(2)}")
+        val v = openJobs.decrementAndGet()
+        //println(v)
+        if (v == 0) { latch.countDown() }
     }
     /* Has to be called before the job is actually processed; i.e., termination of the job
      * always has to precede decrementing openJobs. */
     private[this] def incOpenJobs(): Unit = {
-        /* val count = */ openJobs.incrementAndGet()
-        // println(s"incCount=$count: ${Thread.currentThread().getStackTrace()(2)}")
+        val v = openJobs.getAndIncrement()
+        //println(v)
+        if (v == 0) { latch = new CountDownLatch(0) }
     }
 
     /* The list of scheduled property computations  - they will be processed in parallel. */
@@ -368,6 +373,7 @@ final class PKEParallelTasksPropertyStore private (
 
         ps(pkId).get(e) match {
             case null ⇒
+                // TODO consider force in the following cases!
                 // the entity is unknown ...
                 lazyComputations(pkId) match {
                     case null ⇒
@@ -671,7 +677,7 @@ final class PKEParallelTasksPropertyStore private (
                         val newP = PropertyKey.resolveCycle(this, eps)
                         update(e, newP, newP, Nil, cycleMembers)
                     }
-                    resolvedCyclesCounter += 1
+                    resolvedCSCCsCounter += 1
                 }
 
             case MultiResult.id ⇒
@@ -806,15 +812,16 @@ final class PKEParallelTasksPropertyStore private (
         var isInterrupted: Boolean = this.isInterrupted()
         do {
             continueComputation = false
+
             while (!isInterrupted && openJobs.get > 0) {
-                Thread.sleep(250) // we simply check every 250 milliseconds if we are done..
+                latch.await()
                 isInterrupted = this.isInterrupted()
             }
             validateState()
             assert(openJobs.get >= 0, s"unexpected number of openJobs: $openJobs")
 
             if (!isInterrupted) handleExceptions {
-                assert(openJobs.get == 0)
+                assert(openJobs.get == 0, s"unexpected number of open jobs: ${openJobs.get}")
                 quiescenceCounter += 1
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
@@ -880,32 +887,6 @@ final class PKEParallelTasksPropertyStore private (
                         handleResult(CycleResult(cSCCs))
                         continueComputation = true
                     }
-                    /*
-                    for { cSCC ← cSCCs } {
-                        val headEPK = cSCC.head
-                        val e = headEPK.e
-                        val pkId = headEPK.pk.id
-                        val pValue = ps(pkId).get(e)
-                        val lb = pValue.lb
-                        val ub = pValue.ub
-                        val headEPS = IntermediateEP(e, lb, ub)
-                        val newEP = PropertyKey.resolveCycle(this, headEPS)
-                        val cycleAsText =
-                            if (cSCC.size > 10)
-                                cSCC.take(10).mkString("", ",", "...")
-                            else
-                                cSCC.mkString(",")
-                        if (traceCycleResolutions) {
-                            info(
-                                "analysis progress",
-                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
-                            )
-                        }
-                        resolvedCyclesCounter += 1
-                        handleResult(Result(newEP.e, newEP.p))
-                        continueComputation = true
-                    }
-                    */
                 }
 
                 if (!continueComputation) {
@@ -916,7 +897,7 @@ final class PKEParallelTasksPropertyStore private (
                     var pkId = 0
                     var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
-                        ps(pkId).forEach { (e, pValue) ⇒
+                        ps(pkId) forEach { (e, pValue) ⇒
                             val lb = pValue.lb
                             val ub = pValue.ub
                             val isFinal = pValue.isFinal
