@@ -64,13 +64,13 @@ public class Lambdas {
 
 	private int x;
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "lambda$2", line = 69)
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "$forward$lambda$2", line = 69)
 	public void instanceClosure() {
 		Runnable instanceClosure = () -> System.out.println(x);
 		instanceClosure.run();
 	}
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "lambda$3", line = 76)
+	@InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/Lambdas", name = "$forward$lambda$3", line = 76)
 	public void localAndInstanceClosure() {
 		int y = 0;
 		Runnable localAndInstanceClosure = () -> System.out.println(x + y);
