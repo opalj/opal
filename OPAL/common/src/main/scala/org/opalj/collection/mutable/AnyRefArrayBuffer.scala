@@ -83,6 +83,11 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         this
     }
 
+    def ++=(is: Iterator[N]): this.type = {
+        is.foreach(+=)
+        this
+    }
+
     def ++=[N](other: AnyRefArrayBuffer[N]): this.type = {
         if(data.length - size0 >= other.data.length) {
             System.arraycopy(other.data,0,this.data,size0,other.data.length)
