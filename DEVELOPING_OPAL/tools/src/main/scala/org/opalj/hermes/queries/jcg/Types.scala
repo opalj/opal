@@ -31,6 +31,8 @@ package hermes
 package queries
 package jcg
 
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
@@ -52,6 +54,7 @@ import org.opalj.da.ClassFile
 class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     val Class = ObjectType("java/lang/Class")
+    val Object = ObjectType("java/lang/Object")
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -87,8 +90,19 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case CHECKCAST.opcode  ⇒ instructionsLocations(0) += InstructionLocation(methodLocation, pc)
                 case INSTANCEOF.opcode ⇒ instructionsLocations(3) += InstructionLocation(methodLocation, pc)
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒ {
-
-                    instructionsLocations(2) += InstructionLocation(methodLocation, pc)
+                    val ai = BaseAI
+                    val aiResult = ai.apply(method, BaseDomain(project, method))
+                    val operands = aiResult.operandsArray.apply(pc)
+                    if (operands ne null) {
+                        val op1Type = operands(0).asDomainReferenceValue.valueType
+                        val op2Type = operands(1).asDomainReferenceValue.valueType
+                        val isClassRefCheck = op1Type.map {
+                            op1 ⇒ (op1 eq Class) && (op1 eq op2Type.getOrElse(Object))
+                        }.getOrElse(false)
+                        if (isClassRefCheck) {
+                            instructionsLocations(2) += InstructionLocation(methodLocation, pc)
+                        }
+                    }
                 }
                 case INVOKEVIRTUAL.opcode ⇒ {
                     val INVOKEVIRTUAL(declaringClass, name, _) = instruction.asInstanceOf[INVOKEVIRTUAL];
