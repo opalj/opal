@@ -62,22 +62,21 @@ case class InstantiatedTypes private[properties] (
 
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if ((other ne AllTypes) && !types.subsetOf(other.types)) {
-            val x = types.collect {
-                case t if !other.types.contains(t) ⇒ t
-            }
-            println(x)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
         }
     }
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
 
-        val actualNewTypes = newTypes diff _types
-
-        new InstantiatedTypes(_orderedTypes ++ actualNewTypes, _types ++ actualNewTypes)
+        val newOrderedTypes = new ArrayBuffer[ObjectType](_orderedTypes.size + newTypes.size)
+        newOrderedTypes ++= _orderedTypes
+        for { t ← newTypes; if !types.contains(t) } {
+            newOrderedTypes += t
+        }
+        new InstantiatedTypes(newOrderedTypes, _types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Traversable[ObjectType] = _orderedTypes.drop(index)
+    def getNewTypes(index: Int): Iterator[ObjectType] = _orderedTypes.iterator.drop(index)
 
     def numElements: Int = _types.size
 }
@@ -113,7 +112,7 @@ object AllTypes extends InstantiatedTypes(null, null) {
 
     override def toString: String = "AllTypesInstantiated"
 
-    override def getNewTypes(index: Int): Traversable[ObjectType] = Traversable.empty
+    override def getNewTypes(index: Int): Iterator[ObjectType] = Iterator.empty
 
     override def numElements: Int = throw new UnsupportedOperationException()
 

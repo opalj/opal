@@ -67,22 +67,10 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
  */
 final class CallGraph(
         val callees: Map[Method, Map[Int /*PC*/ , Set[Method]]],
-        val callers: Map[Method, Set[(Method, Int /*pc*/ )]]
+        val callers: Map[Method, Set[(Method, Int /*pc*/ )]],
+        val size:    Int
 ) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
-    private[this] val calleesSize = callees.map { case (_, callSites) ⇒ callSites.flatMap(_._2).size }.sum
-    private[this] val callersSize = callers.map(_._2.size).sum
-
-    assert(
-        callersSize == calleesSize,
-        s"the size of callers (size=$callersSize) should equal the size of callees (size=$calleesSize)"
-    )
-    /**
-     * The number of edges in the call graph.
-     */
-    val size: Int = {
-        calleesSize
-    }
 
     override def toString: String = s"CallGraph(size = $size)"
 
@@ -117,13 +105,16 @@ final class CallGraph(
         // add the new edges to the caller map of the call graph
         var newCallers = callers
 
+        val oldCalleesOfMSize = callees.getOrElse(method, Map.empty).iterator.map(_._2.size).sum
+        val calleesOfMSize = newCallees.getOrElse(method, Map.empty).iterator.map(_._2.size).sum
+        assert(calleesOfMSize >= oldCalleesOfMSize)
         calleesOfM.foreach {
             case (pc, tgtsOfM) ⇒
                 tgtsOfM.foreach { tgt ⇒
                     newCallers = newCallers.updated(tgt, newCallers(tgt) + (method → pc))
                 }
         }
-        CallGraph(newCallees, newCallers)
+        CallGraph(newCallees, newCallers, size + (calleesOfMSize - oldCalleesOfMSize))
     }
 
 }
@@ -149,8 +140,9 @@ object CallGraph extends CallGraphPropertyMetaInformation {
 
     def apply(
         callees: Map[Method, Map[Int /*PC*/ , Set[Method]]],
-        callers: Map[Method, Set[(Method, Int /*pc*/ )]]
-    ): CallGraph = new CallGraph(callees, callers)
+        callers: Map[Method, Set[(Method, Int /*pc*/ )]],
+        size:    Int
+    ): CallGraph = new CallGraph(callees, callers, size)
 
     def unapply(
         cg: CallGraph
@@ -250,7 +242,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         println("computed fallback cg")
 
-        new CallGraph(callees.asScala, callers.asScala.withDefaultValue(Set.empty))
+        new CallGraph(callees.asScala, callers.asScala.withDefaultValue(Set.empty), callers.values().iterator().asScala.map(_.size).sum)
     }
 
 }

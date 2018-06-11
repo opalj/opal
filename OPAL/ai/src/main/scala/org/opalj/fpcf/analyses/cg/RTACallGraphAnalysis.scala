@@ -157,7 +157,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         // mutates the calleesOfM that is visible in state and calleesOfM
         // even though both are the same, this is safe, as the underlying structure are sets
-        handleVirtualCallSites(state, instantiatedTypesUB, newReachableMethods, calleesOfM)
+        handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
 
         IncrementalResult(
             Results(
@@ -181,7 +181,7 @@ class RTACallGraphAnalysis private[analyses] (
                 val toBeDropped = state.numTypesProcessed
                 state.numTypesProcessed = ub.numElements
                 ub.getNewTypes(toBeDropped)
-            case _ ⇒ Nil // the initial types are already processed
+            case _ ⇒ Iterator.empty // the initial types are already processed
         }
 
         // the methods that become reachable due to the new types
@@ -359,13 +359,13 @@ class RTACallGraphAnalysis private[analyses] (
 
     def handleVirtualCallSites(
         state:                State,
-        newInstantiatedTypes: Traversable[ObjectType],
+        newInstantiatedTypes: Iterator[ObjectType],
         newReachableMethods:  ArrayBuffer[Method],
         newCalleesOfMap:      mutable.Map[Int /*PC*/ , Set[Method]]
     ): Unit = {
         for {
-            (pc, typeBound, name, descr) ← state.virtualCallSites
             instantiatedType ← newInstantiatedTypes
+            (pc, typeBound, name, descr) ← state.virtualCallSites
         } {
             if (project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes)
                 project.instanceCall(
@@ -406,7 +406,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(Map(method → newCalleesOfM), callers)
+                    new CallGraph(Map(method → newCalleesOfM), callers , callers.map(_._2.size).sum)
                 ))
             case _ ⇒ None
         })
@@ -442,7 +442,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         // here we need a immutable copy of the current state
         val newCallees = Callees(state.calleesOfM)
-        if (instantiatedTypesEOptP.isFinal || newCallees == calleesLB)
+        if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
         else {
             IntermediateResult(

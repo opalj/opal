@@ -54,7 +54,7 @@ class Callees(
         s"Callees(size=${this.size})\n\t$callees"
     }
 
-    def size: Int = {
+    val size: Int = {
         callees.map(_._2.size).sum
     }
 
