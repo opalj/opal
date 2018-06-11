@@ -54,7 +54,7 @@ public class InvokeSpecial {
             return "Superclass";
         }
 
-        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/InvokeSpecial$Superclass", name = "interestingMethod", line = 58)
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/InvokeSpecial$Superclass", name = "$forward$interestingMethod", line = 58)
         public void exampleMethodTest() {
             Supplier<String> s = this::interestingMethod; // reference of a private method
             s.get();
