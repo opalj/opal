@@ -74,14 +74,14 @@ import scala.collection.mutable.ArrayBuffer
 case class State(
         private[cg] val method:            Method,
         private[cg] val virtualCallSites:  Set[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
-        private var _calleesOfM:           mutable.Map[Int /*PC*/ , Set[Method]],
+        private var _calleesOfM:           Map[Int /*PC*/ , Set[Method]],
         private[cg] var numTypesProcessed: Int
 ) {
     private[cg] def addCallEdge(pc: Int, tgt: Method): Unit = {
-        _calleesOfM(pc) += tgt
+        _calleesOfM = calleesOfM.updated(pc, calleesOfM.getOrElse(pc, Set.empty) + tgt)
     }
 
-    private[cg] def calleesOfM: Map[Int, Set[Method]] = _calleesOfM.toMap
+    private[cg] def calleesOfM: Map[Int, Set[Method]] = _calleesOfM
 }
 
 /**
@@ -164,7 +164,7 @@ class RTACallGraphAnalysis private[analyses] (
                 resultForCallees(instantiatedTypesEOptP, state),
                 partialResultForInstantiatedTypes(method, newInstantiatedTypes),
                 // create an immutable view of the calleesOfM, as they get be modified concurrently
-                partialResultForCallGraph(method, calleesOfM.toMap)
+                partialResultForCallGraph(method, calleesOfM)
             ),
             // continue the computation with the newly reachable methods
             newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
@@ -406,7 +406,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(Map(method → newCalleesOfM), callers , callers.map(_._2.size).sum)
+                    new CallGraph(Map(method → newCalleesOfM), callers, callers.map(_._2.size).sum)
                 ))
             case _ ⇒ None
         })
