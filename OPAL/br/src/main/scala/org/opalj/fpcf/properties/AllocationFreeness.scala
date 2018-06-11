@@ -44,8 +44,6 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.GETFIELD
-import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFreeMethod
-import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
 
 import scala.annotation.switch
 
@@ -71,6 +69,7 @@ sealed abstract class AllocationFreeness
      */
     final def key: PropertyKey[AllocationFreeness] = AllocationFreeness.key
 
+    final val aggregatedProperty = new VirtualMethodAllocationFreeness(this)
 }
 
 object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
@@ -130,8 +129,6 @@ case object AllocationFreeMethod extends AllocationFreeness {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {}
 
-    override lazy val aggregatedProperty: VirtualMethodAllocationFreeness = VAllocationFreeMethod
-
     override def meet(other: AllocationFreeness): AllocationFreeness = other
 }
 
@@ -144,8 +141,6 @@ case object MethodWithAllocations extends AllocationFreeness {
         if (other ne MethodWithAllocations)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
-
-    override lazy val aggregatedProperty: VirtualMethodAllocationFreeness = VMethodWithAllocations
 
     override def meet(other: AllocationFreeness): AllocationFreeness = this
 }
