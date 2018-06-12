@@ -565,7 +565,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             }
 
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
-        def createForwardingMethod(m: Method): (MethodTemplate, String) = {
+        def createForwardingMethod(
+            m:          Method,
+            name:       String,
+            descriptor: MethodDescriptor
+        ): MethodTemplate = {
 
             // Access flags for the forwarder are the same as the target method but without private
             // modifier. For interfaces, ACC_PUBLIC is required and constructors are forwarded by
@@ -573,12 +577,6 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             var accessFlags = m.accessFlags & ~ACC_PRIVATE.mask
             if (receiverIsInterface) accessFlags |= ACC_PUBLIC.mask
             if (m.isConstructor) accessFlags |= ACC_STATIC.mask
-
-            val name = "$forward$"+m.name
-
-            val descriptor =
-                if (m.isConstructor) m.descriptor.copy(returnType = receiverType)
-                else m.descriptor
 
             val isVirtualMethodReference = ClassFileFactory.isVirtualMethodReference(
                 invocationInstruction,
@@ -647,9 +645,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
             val code = Code(maxStack, maxLocals, bytecodeInsts, IndexedSeq.empty, Seq.empty)
 
-            val method = Method(accessFlags, name, descriptor, Seq(code))
-
-            (method, name)
+            Method(accessFlags, name, descriptor, Seq(code))
         }
 
         // If the target method is private, we have to generate a forwarding method that is
@@ -660,21 +656,36 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val updatedClassFile = privateTargetMethod match {
             case Some(m) ⇒
-                val (forwarder, forwardingName) = createForwardingMethod(m)
+                val forwardingName = "$forward$"+m.name
+                val descriptor =
+                    if (m.isConstructor) m.descriptor.copy(returnType = receiverType)
+                    else m.descriptor
+
+                val forwarderO = classFile.findMethod(forwardingName, descriptor)
+
+                val (forwarder, cf) = forwarderO match {
+                    case Some(f) ⇒ (f, classFile)
+                    case None ⇒
+                        val f = createForwardingMethod(m, forwardingName, descriptor)
+                        val cf = classFile.copy(methods = classFile.methods.map(_.copy()) :+ f)
+                        (f, cf)
+                }
+
                 val isInterface = classFile.isInterfaceDeclaration
-                val descriptor = forwarder.descriptor
+
                 // Update the implMethod and other information to match the forwarder
                 implMethod = if (forwarder.isStatic) {
                     InvokeStaticMethodHandle(thisType, isInterface, forwardingName, descriptor)
                 } else if (isInterface) {
                     InvokeInterfaceMethodHandle(thisType, forwardingName, descriptor)
                 } else {
-                    InvokeVirtualMethodHandle(thisType, forwardingName, forwarder.descriptor)
+                    InvokeVirtualMethodHandle(thisType, forwardingName, descriptor)
                 }
                 invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
                 receiverType = thisType
                 receiverIsInterface = classFile.isInterfaceDeclaration
-                classFile.copy(methods = classFile.methods.map(_.copy()) :+ forwarder)
+
+                cf
             case None ⇒ classFile
         }
 

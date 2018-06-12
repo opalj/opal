@@ -39,7 +39,7 @@ sealed trait CompileTimeConstancyPropertyMetaInformation extends PropertyMetaInf
 }
 
 /**
- * Describes whether a [[org.opalj.br.Field]] is initialized deterministcally to the same value on
+ * Describes whether a [[org.opalj.br.Field]] is initialized deterministically to the same value on
  * every execution of the program.
  *
  * @author Dominik Helm
@@ -67,7 +67,8 @@ object CompileTimeConstancy extends CompileTimeConstancyPropertyMetaInformation 
             else
                 CompileTimeVaryingField
         },
-        (_: PropertyStore, eps: EPS[Field, CompileTimeConstancy]) ⇒ eps.ub
+        (_: PropertyStore, eps: EPS[Field, CompileTimeConstancy]) ⇒ eps.ub,
+        (_: PropertyStore, _: Entity) ⇒ None
     )
 }
 

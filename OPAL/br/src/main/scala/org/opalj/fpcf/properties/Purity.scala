@@ -30,6 +30,8 @@ package org.opalj
 package fpcf
 package properties
 
+import scala.annotation.switch
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
@@ -43,23 +45,6 @@ import org.opalj.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.fpcf.properties.Purity.PureFlags
 import org.opalj.fpcf.properties.Purity.SideEffectFreeFlags
 import org.opalj.fpcf.properties.Purity.NotCompileTimePure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
-import org.opalj.fpcf.properties.VirtualMethodPurity.VContextuallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VContextuallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDContextuallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDContextuallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDExternallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDExternallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VExternallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VExternallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
-import org.opalj.fpcf.properties.VirtualMethodPurity.VPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
-
-import scala.annotation.switch
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -194,6 +179,8 @@ sealed abstract class Purity
     def modifiesParameters: Boolean = (flags & ModifiesParameters) != 0
     def usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
 
+    final val aggregatedProperty = new VirtualMethodPurity(this)
+
     /**
      * Combines this purity value with another one to represent the progress by a purity
      * analysis in one phase.
@@ -298,8 +285,6 @@ object Purity extends PurityPropertyMetaInformation {
 case object CompileTimePure extends Purity {
     final val flags = 0 // <=> no flag is set
 
-    final lazy val aggregatedProperty = VCompileTimePure
-
     final val isRefinable = false
     override def meet(other: Purity): Purity = other
 }
@@ -311,8 +296,6 @@ case object CompileTimePure extends Purity {
  */
 case object Pure extends Purity {
     final val flags = PureFlags
-
-    final lazy val aggregatedProperty = VPure
 }
 
 /**
@@ -323,8 +306,6 @@ case object Pure extends Purity {
  */
 case object SideEffectFree extends Purity {
     final val flags = SideEffectFreeFlags
-
-    final lazy val aggregatedProperty = VSideEffectFree
 }
 
 /**
@@ -337,8 +318,6 @@ case object SideEffectFree extends Purity {
  */
 case object ExternallyPure extends Purity {
     final val flags = ExternallyPureFlags
-
-    final lazy val aggregatedProperty = VExternallyPure
 }
 
 /**
@@ -352,8 +331,6 @@ case object ExternallyPure extends Purity {
  */
 case object ExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags
-
-    final lazy val aggregatedProperty = VExternallySideEffectFree
 }
 
 /**
@@ -366,8 +343,6 @@ case object ExternallySideEffectFree extends Purity {
  */
 case object ContextuallyPure extends Purity {
     final val flags = ContextuallyPureFlags
-
-    final lazy val aggregatedProperty = VContextuallyPure
 }
 
 /**
@@ -381,8 +356,6 @@ case object ContextuallyPure extends Purity {
  */
 case object ContextuallySideEffectFree extends Purity {
     final val flags = ContextuallySideEffectFreeFlags
-
-    final lazy val aggregatedProperty = VContextuallySideEffectFree
 }
 
 /**
@@ -393,8 +366,6 @@ case object ContextuallySideEffectFree extends Purity {
  */
 case object DPure extends Purity {
     final val flags = PureFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDPure
 }
 
 /**
@@ -405,8 +376,6 @@ case object DPure extends Purity {
  */
 case object DSideEffectFree extends Purity {
     final val flags = SideEffectFreeFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDSideEffectFree
 }
 
 /**
@@ -418,8 +387,6 @@ case object DSideEffectFree extends Purity {
  */
 case object DExternallyPure extends Purity {
     final val flags = ExternallyPureFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDExternallyPure
 }
 
 /**
@@ -430,8 +397,6 @@ case object DExternallyPure extends Purity {
  */
 case object DExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDExternallySideEffectFree
 }
 
 /**
@@ -443,8 +408,6 @@ case object DExternallySideEffectFree extends Purity {
  */
 case object DContextuallyPure extends Purity {
     final val flags = ContextuallyPureFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDContextuallyPure
 }
 
 /**
@@ -455,8 +418,6 @@ case object DContextuallyPure extends Purity {
  */
 case object DContextuallySideEffectFree extends Purity {
     final val flags = ContextuallySideEffectFreeFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDContextuallySideEffectFree
 }
 
 /**
@@ -474,8 +435,6 @@ sealed abstract class ClassifiedImpure extends Purity {
  * analysis is not able to derive a more precise result; no more dependency exist.
  */
 case object ImpureByAnalysis extends ClassifiedImpure {
-    final lazy val aggregatedProperty = VImpureByAnalysis
-
     override def meet(other: Purity): Purity = {
         other match {
             case ImpureByLackOfInformation ⇒ ImpureByLackOfInformation
@@ -486,7 +445,5 @@ case object ImpureByAnalysis extends ClassifiedImpure {
 
 /** The method is (finally classified as) impure; this also models the fallback. */
 case object ImpureByLackOfInformation extends ClassifiedImpure {
-    final lazy val aggregatedProperty = VImpureByLackOfInformation
-
     override def meet(other: Purity): Purity = this
 }
