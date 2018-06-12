@@ -89,7 +89,7 @@ interface S1_a extends S0_1 {
     void m();
 }
 interface S1_c extends S0_1, S0_2 {
-    // this is the maximally specific method w.r.t. Intf.m()
+    // this is the maximally specific method w.r.t. m()
     default void m(){ Helper.println("S1_c.m"); };
 }
 /* Won't compile in Java due to conflicting methods: */ interface S2_1 extends S1_a, S1_c { }
