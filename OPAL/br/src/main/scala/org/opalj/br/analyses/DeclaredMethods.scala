@@ -36,7 +36,7 @@ import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
-import org.opalj.br.analyses.DeclaredMethodsKey.PackagePrivateMethodContext
+import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -52,17 +52,26 @@ class DeclaredMethods(
 ) {
 
     def apply(
-        packageName: String,
-        classType:   ObjectType,
-        name:        String,
-        descriptor:  MethodDescriptor
+        declaredType: ObjectType,
+        packageName:  String,
+        classType:    ObjectType,
+        name:         String,
+        descriptor:   MethodDescriptor
     ): DeclaredMethod = {
         val dmSet = data.computeIfAbsent(classType, _ ⇒ new ConcurrentHashMap)
 
-        var method = dmSet.get(new PackagePrivateMethodContext(packageName, name, descriptor))
+        var method =
+            dmSet.get(new MethodContextQuery(p, declaredType, packageName, name, descriptor))
+
         if (method == null && ((classType eq MethodHandle) || (classType eq VarHandle))) {
             method = dmSet.get(
-                new PackagePrivateMethodContext(packageName, name, SignaturePolymorphicMethod)
+                new MethodContextQuery(
+                    p,
+                    declaredType,
+                    packageName,
+                    name,
+                    SignaturePolymorphicMethod
+                )
             )
         }
 
@@ -81,7 +90,7 @@ class DeclaredMethods(
 
     def apply(method: Method): DefinedMethod = {
         val classType = method.classFile.thisType
-        data.get(classType).get(MethodContext(method)).asInstanceOf[DefinedMethod]
+        data.get(classType).get(MethodContext(p, classType, method)).asInstanceOf[DefinedMethod]
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {

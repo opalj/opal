@@ -192,7 +192,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         isMethodOverridable: Method ⇒ Answer
     ): Option[String] = {
         val callerType = caller.classFile.thisType
-        val VirtualFunctionCall(_, _, _, name, descr, receiver, _) = call
+        val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
 
         val value = receiver.asVar.value.asDomainReferenceValue
         val receiverType = value.valueType
@@ -206,8 +206,13 @@ object UnusedResults extends DefaultOneStepAnalysis {
             val callee = project.instanceCall(callerType, receiverType.get, name, descr)
             handleCall(caller, callee, call.pc)
         } else {
-            val callee =
-                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
+            val callee = declaredMethods(
+                dc.asObjectType,
+                callerType.packageName,
+                receiverType.get.asObjectType,
+                name,
+                descr
+            )
 
             if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
                 None // We don't know all overrides, ignore the call (it may be impure)

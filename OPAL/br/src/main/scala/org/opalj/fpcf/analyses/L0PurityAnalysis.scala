@@ -68,7 +68,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Determines the purity of the method starting with the instruction with the given

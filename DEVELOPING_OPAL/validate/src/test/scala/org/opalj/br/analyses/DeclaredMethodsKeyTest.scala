@@ -112,11 +112,15 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         val descriptor = MethodDescriptor(getValue(annotation, "descriptor").asStringValue.value)
         val declaringClass = getValue(annotation, "declaringClass").asClassValue.value.asObjectType
 
-        val method = FixtureProject.classFile(declaringClass).get.findMethod(name, descriptor).get
+        val methodO = FixtureProject.classFile(declaringClass).get.findMethod(name, descriptor)
+
+        if (methodO.isEmpty)
+            fail(s"method $declaringClass.${descriptor.toJava(name)} not found in fixture project")
+        val method = methodO.get
 
         val expected = DefinedMethod(classType, method)
 
-        it(s"${classType.simpleName}: ${declaringClass.simpleName}.$name$descriptor") {
+        it(s"${classType.simpleName}: ${declaringClass.simpleName}.${descriptor.toJava(name)}") {
             assert(declaredMethods.contains(expected))
         }
 
