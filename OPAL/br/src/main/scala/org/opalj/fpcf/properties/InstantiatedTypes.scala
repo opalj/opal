@@ -94,7 +94,8 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
             (_: PropertyStore, _: ProjectLike) ⇒ {
                 AllTypes
             },
-            (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub
+            (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub,
+            (_: PropertyStore, _: ProjectLike) ⇒ None
         )
     }
 

@@ -136,7 +136,8 @@ object CallGraph extends CallGraphPropertyMetaInformation {
             (_: PropertyStore, p: SomeProject) ⇒ {
                 fallbackCG(p)
             },
-            (_: PropertyStore, eps: EPS[SomeProject, CallGraph]) ⇒ eps.ub
+            (_: PropertyStore, eps: EPS[SomeProject, CallGraph]) ⇒ eps.ub,
+            (_: PropertyStore, _: SomeProject) ⇒ None
         )
     }
 
