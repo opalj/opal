@@ -137,7 +137,7 @@ object StaticAndDefaultInterfaceMethods extends App {
         minor_version = 0, major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
         this_class = 1 /*mr/Intf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = IndexedSeq(5),
+        interfaces = IndexedSeq(5) /*mr/SuperIntf*/,
         // Fields.empty,
         methods = IndexedSeq(
             Method_Info(
@@ -167,4 +167,25 @@ object StaticAndDefaultInterfaceMethods extends App {
     val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/Intf.class")
     val assembledIntfFile = Files.write(assembledIntfPath, assembledIntf)
     println("Created class file: "+assembledIntfFile.toAbsolutePath())
+
+    val subIntfCF = ClassFile(
+        Array[Constant_Pool_Entry](
+            /*  0 */ null,
+            /*  1 */ CONSTANT_Class_info(2),
+            /*  2 */ CONSTANT_Utf8("mr/SubIntf"),
+            /*  3 */ CONSTANT_Class_info(4),
+            /*  4 */ CONSTANT_Utf8("java/lang/Object"),
+            /*  5 */ CONSTANT_Class_info(6),
+            /*  6 */ CONSTANT_Utf8("mr/Intf"),
+        ),
+        minor_version = 0, major_version = 52,
+        access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
+        this_class = 1 /*mr/SubIntf*/ , super_class = 3 /*extends java.lang.Object*/ ,
+        interfaces = IndexedSeq(5) //mr/Intf
+    )
+    val assembledSubIntf = Assembler(subIntfCF)
+    val assembledSubIntfPath =
+        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SubIntf.class")
+    val assembledSubIntfFile = Files.write(assembledSubIntfPath, assembledSubIntf)
+    println("Created class file: "+assembledSubIntfFile.toAbsolutePath())
 }
