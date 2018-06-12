@@ -42,6 +42,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.CallGraph
 import org.opalj.fpcf.properties.Callees
@@ -128,7 +129,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         // the upper bound for type instantiations, seen so far
         // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: Set[ObjectType] = instantiatedTypesEOptP match {
+        val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case EPS(_, _, ub: InstantiatedTypes) ⇒
                 ub.types
 
@@ -198,16 +199,16 @@ class RTACallGraphAnalysis private[analyses] (
 
     def handleStmts(
         method:              Method,
-        instantiatedTypesUB: Set[ObjectType],
+        instantiatedTypesUB: UIDSet[ObjectType],
         newReachableMethods: ArrayBuffer[Method]
-    ): (Set[ObjectType], IntMap[Set[Method]], ArrayBuffer[(Int, ReferenceType, String, MethodDescriptor)]) = {
+    ): (UIDSet[ObjectType], IntMap[Set[Method]], ArrayBuffer[(Int, ReferenceType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
         var calleesOfM = IntMap.empty[Set[Method]]
 
         // the set of types for which we find an allocation which was not present before
-        var newInstantiatedTypes = Set.empty[ObjectType]
+        var newInstantiatedTypes = UIDSet.empty[ObjectType]
 
         val stmts = tacaiProvider(method).stmts
 
@@ -366,7 +367,7 @@ class RTACallGraphAnalysis private[analyses] (
     ): IntMap[Set[Method]] = {
         var result = newCalleesOfMap
         for {
-            instantiatedType ← newInstantiatedTypes
+            instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
             if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             tgt ← project.instanceCall(
@@ -415,7 +416,7 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     def partialResultForInstantiatedTypes(
-        method: Method, newInstantiatedTypes: Set[ObjectType]
+        method: Method, newInstantiatedTypes: UIDSet[ObjectType]
     ): PartialResult[SomeProject, InstantiatedTypes] = {
         PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
             {

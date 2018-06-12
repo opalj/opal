@@ -33,9 +33,10 @@ package properties
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.collection.mutable.AnyRefArrayBuffer
 
 import scala.collection.Set
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * Represent the set of types that have allocations reachable from the respective entry points.
@@ -49,10 +50,10 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 
 case class InstantiatedTypes private[properties] (
         // todo use boolean array here
-        private val _orderedTypes: ArrayBuffer[ObjectType], private val _types: UIDSet[ObjectType]
+        private val _orderedTypes: AnyRefArrayBuffer[ObjectType], private val _types: UIDSet[ObjectType]
 ) extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
 
-    def types: Set[ObjectType] = _types
+    def types: UIDSet[ObjectType] = _types
 
     assert(_orderedTypes == null || _orderedTypes.size == _types.size)
 
@@ -68,7 +69,7 @@ case class InstantiatedTypes private[properties] (
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
 
-        val newOrderedTypes = new ArrayBuffer[ObjectType](_orderedTypes.size + newTypes.size)
+        val newOrderedTypes = new AnyRefArrayBuffer[ObjectType](_orderedTypes.size + newTypes.size)
         newOrderedTypes ++= _orderedTypes
         for { t ← newTypes; if !types.contains(t) } {
             newOrderedTypes += t
@@ -76,16 +77,15 @@ case class InstantiatedTypes private[properties] (
         new InstantiatedTypes(newOrderedTypes, _types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Iterator[ObjectType] = _orderedTypes.iterator.drop(index)
+    def getNewTypes(index: Int): Iterator[ObjectType] = _orderedTypes.iteratorFrom(index)
 
     def numElements: Int = _types.size
 }
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
-    def initial(types: Set[ObjectType]): InstantiatedTypes = {
-        val typesSeq = types.toSeq
-        new InstantiatedTypes(ArrayBuffer(typesSeq: _*), UIDSet(typesSeq: _*))
+    def initial(types: UIDSet[ObjectType]): InstantiatedTypes = {
+        new InstantiatedTypes(new AnyRefArrayBuffer[ObjectType]() ++= types.iterator, types)
     }
 
     final val key: PropertyKey[InstantiatedTypes] = {
@@ -98,9 +98,9 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
         )
     }
 
-    def initialTypes: Set[ObjectType] = {
+    def initialTypes: UIDSet[ObjectType] = {
         // TODO make this configurable
-        Set(ObjectType.String)
+        UIDSet1(ObjectType.String)
     }
 }
 
@@ -116,5 +116,5 @@ object AllTypes extends InstantiatedTypes(null, null) {
 
     override def numElements: Int = throw new UnsupportedOperationException()
 
-    override def types: Set[ObjectType] = throw new UnsupportedOperationException()
+    override def types: UIDSet[ObjectType] = throw new UnsupportedOperationException()
 }
