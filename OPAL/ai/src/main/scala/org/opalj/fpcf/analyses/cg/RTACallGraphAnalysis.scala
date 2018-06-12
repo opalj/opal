@@ -305,7 +305,7 @@ class RTACallGraphAnalysis private[analyses] (
                         call.name,
                         call.descriptor
                     )
-                    result = handleCall(pc, tgt.toSet, newReachableMethods, calleesOfM)
+                    result = handleCall(pc, tgt.toSet, newReachableMethods, result)
                 } else {
                     val typeBound =
                         project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
@@ -320,6 +320,7 @@ class RTACallGraphAnalysis private[analyses] (
                 }
             }
         }
+
         result
     }
 
