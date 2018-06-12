@@ -466,7 +466,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     PropertyKey.create[Node, ReachableNodes](
                         s"ReachableNodes(t=${System.nanoTime()})",
                         (_: PropertyStore, e: Node) ⇒ AllNodes,
-                        (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.ub
+                        (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.ub,
+                        (ps: PropertyStore, e: Entity) ⇒ None
                     )
             }
             case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
@@ -862,7 +863,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 PropertyKey.create(
                     s"TreeLevel(t=${System.nanoTime()}",
                     (ps: PropertyStore, e: Entity) ⇒ ???,
-                    (ps: PropertyStore, eps: SomeEPS) ⇒ ???
+                    (ps: PropertyStore, eps: SomeEPS) ⇒ ???,
+                    (ps: PropertyStore, e: Entity) ⇒ None
                 )
             }
             case class TreeLevel(length: Int) extends Property {
@@ -1154,7 +1156,8 @@ object Marker {
         PropertyKey.create[Entity, MarkerProperty](
             "Marker",
             (ps: PropertyStore, e: Entity) ⇒ NotMarked,
-            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
+            (ps: PropertyStore, e: Entity) ⇒ None
         )
     }
 
@@ -1173,7 +1176,8 @@ object Palindromes {
         PropertyKey.create[Entity, PalindromeProperty](
             "Palindrome",
             (ps: PropertyStore, e: Entity) ⇒ NoPalindrome,
-            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
+            (ps: PropertyStore, e: Entity) ⇒ None
         )
     }
 
@@ -1191,7 +1195,8 @@ object Palindromes {
         PropertyKey.create[Entity, SuperPalindromeProperty](
             "SuperPalindrome",
             (ps: PropertyStore, e: Entity) ⇒ NoSuperPalindrome,
-            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
+            (ps: PropertyStore, e: Entity) ⇒ None
         )
     }
 
@@ -1242,7 +1247,8 @@ object ReachableNodesCount {
         PropertyKey.create[Node, ReachableNodesCount](
             s"ReachableNodesCount",
             (_: PropertyStore, e: Node) ⇒ TooManyNodesReachable,
-            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ TooManyNodesReachable
+            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ TooManyNodesReachable,
+            (ps: PropertyStore, e: Entity) ⇒ None
         )
 }
 case class ReachableNodesCount(value: Int) extends OrderedProperty {

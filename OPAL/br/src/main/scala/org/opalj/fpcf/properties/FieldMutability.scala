@@ -108,7 +108,8 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
                         throw new IllegalArgumentException(m)
                 }
             },
-            (_, eps: EPS[Field, FieldMutability]) ⇒ eps.ub
+            (_, eps: EPS[Field, FieldMutability]) ⇒ eps.ub,
+            (_: PropertyStore, _: Entity) ⇒ None
         )
     }
 

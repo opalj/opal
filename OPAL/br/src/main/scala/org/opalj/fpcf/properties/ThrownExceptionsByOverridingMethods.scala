@@ -69,8 +69,8 @@ object ThrownExceptionsByOverridingMethods
         PropertyKey.create[br.Method, ThrownExceptionsByOverridingMethods](
             name = "ThrownExceptionsByOverridingMethods",
             fallbackPropertyComputation _,
-            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒
-                eps.ub
+            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒ eps.ub,
+            (_: PropertyStore, _: Entity) ⇒ None
         )
     }
 

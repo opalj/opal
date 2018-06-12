@@ -118,7 +118,8 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                 if (hasAllocation) MethodWithAllocations else AllocationFreeMethod
             } else MethodWithAllocations
         },
-        (_: PropertyStore, eps: EPS[DeclaredMethod, AllocationFreeness]) ⇒ eps.ub
+        (_: PropertyStore, eps: EPS[DeclaredMethod, AllocationFreeness]) ⇒ eps.ub,
+        (_: PropertyStore, _: Entity) ⇒ None
     )
 }
 

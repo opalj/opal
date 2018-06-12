@@ -75,6 +75,8 @@ final class PKESequentialPropertyStore private (
      */
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
+    @volatile var useFastTrackPropertyComputations: Boolean = true
+
     private[this] var scheduledTasksCounter: Int = 0
     def scheduledTasksCount: Int = scheduledTasksCounter
 
@@ -197,27 +199,41 @@ final class PKESequentialPropertyStore private (
         ps(pkId).get(e) match {
             case null ⇒
                 // the entity is unknown ...
-                lazyComputations(pkId) match {
-                    case null ⇒
-                        if (debug && computedPropertyKinds == null) {
-                            throw new IllegalStateException("setup phase was not called")
-                        }
-                        if (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) {
-                            epk
-                        } else {
-                            val p = PropertyKey.fallbackProperty(this, e, pk)
-                            if (force) { set(e, p) }
-                            FinalEP(e, p)
-                        }
+                val isComputed = computedPropertyKinds(pkId)
+                val fastTrackPropertyOption: Option[P] =
+                    if (isComputed && useFastTrackPropertyComputations)
+                        PropertyKey.fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                    else
+                        None
+                fastTrackPropertyOption match {
+                    case Some(p) ⇒
+                        set(e, p)
+                        FinalEP(e, p.asInstanceOf[P])
+                    case None ⇒
+                        lazyComputations(pkId) match {
+                            case null ⇒
+                                if (debug && computedPropertyKinds == null) {
+                                    throw new IllegalStateException("setup phase was not called")
+                                }
+                                if (isComputed || delayedPropertyKinds(pkId)) {
+                                    epk
+                                } else {
+                                    val p = PropertyKey.fallbackPropertyBasedOnPkId(this, e, pkId)
+                                    if (force) {
+                                        set(e, p)
+                                    }
+                                    FinalEP(e, p.asInstanceOf[P])
+                                }
 
-                    case lc: PropertyComputation[E] @unchecked ⇒
-                        // create PropertyValue to ensure that we do not schedule
-                        // multiple (lazy) computations => the entity is now known
-                        ps(pkId).put(e, PropertyValue.lazilyComputed)
-                        scheduleLazyComputationForEntity(e)(lc)
-                        // return the "current" result
-                        epk
+                            case lc: PropertyComputation[E] @unchecked ⇒
+                                // create PropertyValue to ensure that we do not schedule
+                                // multiple (lazy) computations => the entity is now known
+                                ps(pkId).put(e, PropertyValue.lazilyComputed)
+                                scheduleLazyComputationForEntity(e)(lc)
+                                // return the "current" result
+                                epk
 
+                        }
                 }
 
             case pValue ⇒

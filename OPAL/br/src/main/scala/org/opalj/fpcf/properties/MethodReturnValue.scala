@@ -67,7 +67,8 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
         (_: PropertyStore, m: DeclaredMethod) ⇒ {
             MethodReturnValue(ValueInformation(m.descriptor.returnType))
         },
-        (_: PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ eps.ub
+        (_: PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ eps.ub,
+        (_: PropertyStore, _: Entity) ⇒ None
     )
 
 }
