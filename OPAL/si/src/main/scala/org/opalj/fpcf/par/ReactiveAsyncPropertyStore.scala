@@ -137,7 +137,7 @@ class ReactiveAsyncPropertyStore private (
     val lazyTasks = TrieMap.empty[Int, PropertyComputation[_]]
 
     // Tasks that were already scheduled.
-    val startedLazyTasks = TrieMap.empty[(Int, Entity), Boolean]
+    val startedLazyTasks = TrieMap.empty[SomeEPK, Boolean]
 
     /**
      * Returns a consistent snapshot of the stored properties.
@@ -191,7 +191,7 @@ class ReactiveAsyncPropertyStore private (
      * properties with the entity.
      */
     override def isKnown(e: Entity): Boolean =
-        ps.exists(psE ⇒ psE.contains(e)) || startedLazyTasks.keySet.exists(k ⇒ k._2 == e)
+        ps.exists(psE ⇒ psE.contains(e)) || startedLazyTasks.keySet.exists(k ⇒ k.e == e)
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean =
         isKnown(e) && ps(pk.id).contains(e) && {
@@ -224,7 +224,7 @@ class ReactiveAsyncPropertyStore private (
                 // We haven't calculated the property yet. Check if the property has to be computed
                 // lazily
                 lazyTasks.get(pkId).foreach { pc ⇒
-                    if (startedLazyTasks.putIfAbsent((pkId, e), true).isEmpty) {
+                    if (startedLazyTasks.putIfAbsent(EPK(e, pk), true).isEmpty) {
                         incCounter("apply.lazy.schedule")
                         scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[E]])
                     } else {
@@ -329,7 +329,7 @@ class ReactiveAsyncPropertyStore private (
             .filter {
                 case (_, cc) ⇒
                     val pv = cc.cell.getResult
-                    pv.lb == lb && pv.ub == ub
+                    pv != null && pv.lb == lb && pv.ub == ub
             }
             .map(_._1)
     }
@@ -799,11 +799,12 @@ class ReactiveAsyncPropertyStore private (
                 // X11Renderer$X11TracingRenderer. Therefore, we don't have a result for XDrawArc in
                 // class X11Renderer.
                 .map { cell ⇒
-                    if (cell.getResult() != null || cell.isADependee) {
+                    val key = cell.key.asInstanceOf[RAKey]
+                    if (!delayedPropertyKinds.contains(key.pk) && (cell.getResult() != null || cell.isADependee)) {
                         (cell, new PropertyValue(PropertyKey.fallbackProperty(
                             ReactiveAsyncPropertyStore.this,
-                            cell.key.asInstanceOf[RAKey].e,
-                            cell.key.asInstanceOf[RAKey].pk
+                            key.e,
+                            key.pk
                         )))
                     } else {
                         incCounter("FallbackCalls.getResult==null")
@@ -862,6 +863,6 @@ object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
         logContext: LogContext
     ): ReactiveAsyncPropertyStore = {
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
-        new ReactiveAsyncPropertyStore(contextMap, Math.max(NumberOfThreadsForCPUBoundTasks, 2))
+        new ReactiveAsyncPropertyStore(contextMap, NumberOfThreadsForCPUBoundTasks)
     }
 }
