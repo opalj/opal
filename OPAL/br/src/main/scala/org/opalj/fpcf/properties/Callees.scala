@@ -31,8 +31,8 @@ package fpcf
 package properties
 
 import org.opalj.br.Method
+import org.opalj.collection.immutable.IntTrieSet
 
-import scala.collection.Set
 import scala.collection.immutable.IntMap
 
 /**
@@ -47,7 +47,7 @@ sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 }
 
 class Callees(
-        val callees: IntMap[Set[Method]]
+        val callees: IntMap[IntTrieSet]
 ) extends Property with OrderedProperty with CalleesPropertyMetaInformation {
     final def key: PropertyKey[Callees] = Callees.key
 
@@ -97,7 +97,7 @@ object Callees extends CalleesPropertyMetaInformation {
         )
     }
 
-    def apply(callees: IntMap[Set[Method]]): Callees = new Callees(callees)
+    def apply(callees: IntMap[IntTrieSet]): Callees = new Callees(callees)
 
-    def unapply(callees: Callees): Option[IntMap[Set[Method]]] = Some(callees.callees)
+    def unapply(callees: Callees): Option[IntMap[IntTrieSet]] = Some(callees.callees)
 }

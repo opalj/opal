@@ -41,6 +41,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.CallGraph
@@ -74,14 +75,14 @@ import scala.collection.mutable.ArrayBuffer
 case class State(
         private[cg] val method:            Method,
         private[cg] val virtualCallSites:  Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
-        private var _calleesOfM:           IntMap[Set[Method]], // key = PC
+        private var _calleesOfM:           IntMap[IntTrieSet], // key = PC
         private[cg] var numTypesProcessed: Int
 ) {
-    private[cg] def addCallEdge(pc: Int, tgt: Method): Unit = {
-        _calleesOfM = calleesOfM.updated(pc, calleesOfM.getOrElse(pc, Set.empty) + tgt)
+    private[cg] def addCallEdge(pc: Int, tgtId: Int): Unit = {
+        _calleesOfM = calleesOfM.updated(pc, calleesOfM.getOrElse(pc, IntTrieSet.empty) + tgtId)
     }
 
-    private[cg] def calleesOfM: IntMap[Set[Method]] = _calleesOfM
+    private[cg] def calleesOfM: IntMap[IntTrieSet] = _calleesOfM
 }
 
 /**
@@ -201,11 +202,11 @@ class RTACallGraphAnalysis private[analyses] (
         method:              Method,
         instantiatedTypesUB: UIDSet[ObjectType],
         newReachableMethods: ArrayBuffer[Method]
-    ): (UIDSet[ObjectType], IntMap[Set[Method]], Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
+    ): (UIDSet[ObjectType], IntMap[IntTrieSet], Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
-        var calleesOfM = IntMap.empty[Set[Method]]
+        var calleesOfM = IntMap.empty[IntTrieSet]
 
         // the set of types for which we find an allocation which was not present before
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
@@ -289,9 +290,9 @@ class RTACallGraphAnalysis private[analyses] (
         call:                Call[V] with VirtualCall[V],
         pc:                  Int,
         newReachableMethods: ArrayBuffer[Method],
-        calleesOfM:          IntMap[Set[Method]],
+        calleesOfM:          IntMap[IntTrieSet],
         virtualCallSites:    ArrayBuffer[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
-    ): IntMap[Set[Method]] = {
+    ): IntMap[IntTrieSet] = {
 
         var result = calleesOfM
         val rvs = call.receiver.asVar.value.asDomainReferenceValue.allValues
@@ -354,15 +355,16 @@ class RTACallGraphAnalysis private[analyses] (
     def handleCall(
         pc: Int, targets: Set[Method],
         newReachableMethods: ArrayBuffer[Method],
-        calleesOfM:          IntMap[Set[Method]]
-    ): IntMap[Set[Method]] = {
+        calleesOfM:          IntMap[IntTrieSet]
+    ): IntMap[IntTrieSet] = {
 
         var result = calleesOfM
         for {
             tgt ← targets
         } {
+            val tgtId = methodIds(tgt)
             // add call edge to CG
-            result = result.updated(pc, result.getOrElse(pc, Set.empty) + tgt)
+            result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
 
             // the callee is now reachable and should be processed, if not done already
             addNewReachableMethod(tgt, newReachableMethods)
@@ -377,8 +379,8 @@ class RTACallGraphAnalysis private[analyses] (
         state:                State,
         newInstantiatedTypes: Iterator[ObjectType],
         newReachableMethods:  ArrayBuffer[Method],
-        newCalleesOfM:        IntMap[Set[Method]]
-    ): IntMap[Set[Method]] = {
+        newCalleesOfM:        IntMap[IntTrieSet]
+    ): IntMap[IntTrieSet] = {
         var result = newCalleesOfM
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
@@ -390,17 +392,18 @@ class RTACallGraphAnalysis private[analyses] (
                 state.method.classFile.thisType, instantiatedType, name, descr
             )
         } {
+            val tgtId = methodIds(tgt)
             addNewReachableMethod(tgt, newReachableMethods)
             // in case newCalleesOfM equals state.calleesOfM this is safe
-            result = result.updated(pc, result.getOrElse(pc, Set.empty) + tgt)
-            state.addCallEdge(pc, tgt)
+            result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
+            state.addCallEdge(pc, tgtId)
         }
         result
     }
 
     def partialResultForCallGraph(
         method:        Method,
-        newCalleesOfM: IntMap[Set[Method]]
+        newCalleesOfM: IntMap[IntTrieSet]
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
@@ -420,8 +423,10 @@ class RTACallGraphAnalysis private[analyses] (
                 newCalleesOfM.foreach {
                     case (pc, tgtsOfM) ⇒
                         tgtsOfM.foreach { tgt ⇒
-                            val tgtId = methodIds(tgt)
-                            callers = callers.updated(tgtId, callers.getOrElse(tgtId, Set.empty) + CallGraph.toLong(methodId, pc))
+                            callers = callers.updated(
+                                tgt,
+                                callers.getOrElse(tgt, Set.empty) + CallGraph.toLong(methodId, pc)
+                            )
                         }
                 }
                 Some(EPS(
