@@ -404,7 +404,7 @@ class RTACallGraphAnalysis private[analyses] (
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
-                val newCG = ub.updated(method, newCalleesOfM)
+                val newCG = ub.updated(method, methodIds, newCalleesOfM)
 
                 // todo shouldn't it be newCG.size > ub.size
                 assert(newCG.size >= ub.size)
@@ -415,11 +415,13 @@ class RTACallGraphAnalysis private[analyses] (
                     Some(EPS(project, lb, newCG))
 
             case EPK(_, _) ⇒
-                var callers = Map.empty[Method, Set[(Method, Int)]].withDefaultValue(Set.empty)
+                val methodId = methodIds(method)
+                var callers = IntMap.empty[Set[Long]]
                 newCalleesOfM.foreach {
                     case (pc, tgtsOfM) ⇒
                         tgtsOfM.foreach { tgt ⇒
-                            callers = callers.updated(tgt, callers(tgt) + (method → pc.toInt))
+                            val tgtId = methodIds(tgt)
+                            callers = callers.updated(tgtId, callers.getOrElse(tgtId, Set.empty) + CallGraph.toLong(methodId, pc))
                         }
                 }
                 Some(EPS(
