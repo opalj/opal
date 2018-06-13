@@ -103,7 +103,8 @@ object InterpretationFailedException {
                 s"InterpretationFailedException(\n\tsource=$source,"+
                     s"\n\tai=${ai.getClass},\n\tcause=$cause,"+
                     s"\n\tpc=$pc,"+
-                    s"\n\toperands=${operandsArray(pc)},\n\tregisters=${localsArray(pc).zipWithIndex}"+
+                    s"\n\toperands=${operandsArray(pc)},"+
+                    s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"+
                     s"\n)"
             }
 
