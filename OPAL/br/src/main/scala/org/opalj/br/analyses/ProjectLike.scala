@@ -919,7 +919,7 @@ object ProjectLike {
                         val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
                         (analyzedTypes, Set(method))
 
-                    case None ⇒
+                    case _ /* None OR "the method was either private or static" */ ⇒
                         if (superinterfaceTypes.isEmpty) {
                             (newAnalyzedSuperinterfaceTypes, Set.empty)
                         } else if (superinterfaceTypes.isSingletonSet) {
