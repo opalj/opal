@@ -37,18 +37,22 @@ import org.scalatest.FunSpec
  * A test for testing behavior that is valid bytecode but can not be generated from valid Java code.
  *
  * @author Dominik Helm
+ * @author Michael Eichberg
  */
 class NonJavaTests extends FunSpec {
 
     describe("Project.instanceMethods") {
 
         val sourceFolder = locateTestResources("StaticAndDefaultInterfaceMethods", "bc")
-        println(sourceFolder)
         val project = Project(sourceFolder)
-        val interfaceType = ObjectType("mr/Intf")
+        val superIntfType = ObjectType("mr/SuperIntf")
+        val intfType = ObjectType("mr/Intf")
+        val subIntfType = ObjectType("mr/SubIntf")
 
         it("should not contain the default method \"m\" from SuperIntf that is inaccesible in Intf") {
-            assert(project.instanceMethods(interfaceType) forall { mdc ⇒ mdc.name != "m" })
+            assert(project.instanceMethods(superIntfType).size == 1)
+            assert(project.instanceMethods(intfType).isEmpty)
+            assert(project.instanceMethods(subIntfType).size == 1)
         }
     }
 
