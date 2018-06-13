@@ -36,7 +36,6 @@ import java.util.function.{Function ⇒ JFunction}
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
-import org.opalj.collection.immutable.UIDSet
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -131,15 +130,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                 val methodO = if (subClassFile.isInterfaceDeclaration)
                                     p.resolveInterfaceMethodReference(subtype, m.name, m.descriptor)
                                 else
-                                    // TODO Reconsider this code once issue #151 is resolved
-                                    p.resolveMethodReference(subtype, m.name, m.descriptor) orElse {
-                                        p.findMaximallySpecificSuperinterfaceMethods(
-                                            p.classHierarchy.allSuperinterfacetypes(subtype),
-                                            m.name,
-                                            m.descriptor,
-                                            UIDSet.empty[ObjectType]
-                                        )._2.headOption
-                                    }
+                                    p.resolveMethodReference(
+                                        subtype,
+                                        m.name,
+                                        m.descriptor,
+                                        forceLookupInSuperinterfacesOnFailure = true
+                                    )
                                 val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                                 val vm = DefinedMethod(subtype, methodO.get)
                                 val context = MethodContext(p, classType, methodO.get)
