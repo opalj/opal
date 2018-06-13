@@ -29,8 +29,7 @@
 package org.opalj
 package br
 
-import java.io.File
-
+import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.scalatest.FunSpec
 
@@ -42,12 +41,14 @@ import org.scalatest.FunSpec
 class NonJavaTests extends FunSpec {
 
     describe("Project.instanceMethods") {
-        val sourceFolder = new File("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods")
+
+        val sourceFolder = locateTestResources("StaticAndDefaultInterfaceMethods", "bc")
+        println(sourceFolder)
         val project = Project(sourceFolder)
         val interfaceType = ObjectType("mr/Intf")
 
         it("should not contain the default method from SuperIntf that is inaccesible through Intf") {
-            assert(!project.instanceMethods(interfaceType).exists{mdc =>
+            assert(!project.instanceMethods(interfaceType).exists { mdc ⇒
                 mdc.name == "m" && !mdc.method.isStatic
             })
         }
