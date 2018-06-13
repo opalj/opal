@@ -34,13 +34,11 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.junit.runner.RunWith
-
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
-
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
@@ -87,9 +85,10 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with RefineDefUseUsingOrigins // this should not really affect the results...
 
     protected[this] def analyzeDefUse(
-        m:                Method,
-        r:                AIResult { val domain: DefUseDomain },
-        identicalOrigins: AtomicLong
+        m:                        Method,
+        r:                        AIResult { val domain: DefUseDomain },
+        identicalOrigins:         AtomicLong,
+        refinedDefUseInformation: Boolean
     ): Unit = {
         val d: r.domain.type = r.domain
         val dt = DominatorsPerformanceEvaluation.time('Dominators) { d.dominatorTree }
@@ -105,17 +104,18 @@ class RecordDefUseTest extends FunSpec with Matchers {
         val instructions = code.instructions
         val ehs = code.exceptionHandlers
 
-        // (2) TEST
-        // Tests if the def => use information is consistent; i.e., a use lists
-        // the def site
-        //
         for {
-            (ops, pc) ← r.operandsArray.zipWithIndex
+            (ops, pc) ← r.operandsArray.iterator.zipWithIndex
             if ops ne null // let's filter only the executed instructions
             instruction = instructions(pc)
             if !instruction.isStackManagementInstruction
         } {
             val usedOperands = instruction.numberOfPoppedOperands(NotRequired)
+
+            // (2) TEST
+            // Tests if the def => use information is consistent; i.e., a use lists
+            // the def site
+            //
 
             // An instruction which pushes a value, is not necessarily a "valid"
             // def-site which creates a new value.
@@ -137,14 +137,15 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     fail(s"use at $useSite has no def site $pc ($instruction)")
                 }
             }
-            val exceptionOrigin = ValueOriginForVMLevelValue(pc)
-            d.safeUsedBy(exceptionOrigin) foreach { useSite ⇒
+            d.safeExternalExceptionsUsedBy(pc) foreach { useSite ⇒
                 // let's see if we have a corresponding use...
                 val useInstruction = instructions(useSite)
                 val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
                 val hasDefSite =
                     (0 until poppedOperands).exists { poIndex ⇒
-                        d.operandOrigin(useSite, poIndex).contains(exceptionOrigin)
+                        val defSites = d.operandOrigin(useSite, poIndex)
+                        defSites.contains(ai.ValueOriginForMethodExternalException(pc)) ||
+                            defSites.contains(ai.ValueOriginForImmediateVMException(pc))
                     } || {
                         useInstruction.readsLocal &&
                             d.localOrigin(useSite, useInstruction.indexOfReadLocal).contains(pc)
@@ -154,11 +155,11 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 }
             }
 
+            // (3) TEST
+            // Tests if the def/use information for reference values corresponds to the
+            // def/use information (implicitly) collected by the corresponding domain.
+            //
             for { (op, opIndex) ← ops.toIterator.zipWithIndex } {
-                // (3) TEST
-                // Tests if the def/use information for reference values corresponds to the
-                // def/use information (implicitly) collected by the corresponding domain.
-                //
                 val defUseOrigins =
                     try {
                         d.operandOrigin(pc, opIndex)
@@ -171,10 +172,15 @@ class RecordDefUseTest extends FunSpec with Matchers {
                         defUseOrigins.contains(o) ||
                         defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo))
                     )) {
+                        val instruction = code.instructions(pc)
+                        val isHandler = code.exceptionHandlers.exists(_.handlerPC == pc)
                         val message =
-                            s"{pc=$pc[operand=$opIndex] deviating def/use info: "+
+                            s"{pc=$pc:$instruction[isHandler=$isHandler][operand=$opIndex] "+
+                                s"deviating def/use info: "+
                                 s"domain=$domainOrigins vs defUse=$defUseOrigins}"
-                        fail(message)
+                        val messageHeader =
+                            if (refinedDefUseInformation) "[using domain.origin]" else ""
+                        fail(messageHeader + message)
                     }
                 }
                 identicalOrigins.incrementAndGet
@@ -213,7 +219,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val m = methodInfo.method
                 try {
-                    analyzeDefUse(m, BaseAI(m, new DefUseDomain(m, project)), identicalOrigins)
+                    val aiResult = BaseAI(m, new DefUseDomain(m, project))
+                    analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = false)
                 } catch {
                     case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
                 }
@@ -224,7 +231,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
             project.parForeachMethodWithBody() { methodInfo ⇒
                 val m = methodInfo.method
                 try {
-                    analyzeDefUse(m, BaseAI(m, new RefinedDefUseDomain(m, project)), identicalOrigins)
+                    val aiResult = BaseAI(m, new RefinedDefUseDomain(m, project))
+                    analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = true)
                 } catch {
                     case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
                 }
@@ -284,7 +292,6 @@ class RecordDefUseTest extends FunSpec with Matchers {
             evaluateProject(projectName, projectFactory)
             projectsCount += 1
         }
-
-        info(s"analyzed $projectsCount project")
+        info(s"analyzed $projectsCount projects w.r.t. the correctness of the def-use information")
     }
 }

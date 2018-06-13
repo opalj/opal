@@ -82,6 +82,7 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
         oldLocals:                Locals,
         targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
+        forceJoin:                Boolean,
         newOperands:              Operands,
         newLocals:                Locals
     ): (Operands, Locals) = {
@@ -98,12 +99,12 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, operands1, locals1
+                targetPC, isExceptionalControlFlow, forceJoin, operands1, locals1
             )
         } else {
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, newOperands, newLocals
+                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
             )
         }
     }

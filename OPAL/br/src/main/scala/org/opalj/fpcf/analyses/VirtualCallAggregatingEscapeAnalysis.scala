@@ -33,7 +33,6 @@ package analyses
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.AtMost
@@ -137,7 +136,7 @@ object EagerVirtualCallAggregatingEscapeAnalysis
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        val vfps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
+        val vfps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         propertyStore.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
         analysis
     }

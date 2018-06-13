@@ -33,12 +33,14 @@ package reader
 import java.lang.invoke.LambdaMetafactory
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.annotation.switch
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.Info
@@ -200,12 +202,12 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                             // class in the same package, we have to declare the method as public.
                             // For more information see:
                             //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
-                            (m.accessFlags & ~bi.ACC_PRIVATE.mask) | bi.ACC_PUBLIC.mask
+                            (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
                         } else {
                             // Make the class package private if it is private, so the lambda can
                             // access its methods.
                             // Note: No access modifier means package private
-                            m.accessFlags & ~bi.ACC_PRIVATE.mask
+                            m.accessFlags & ~ACC_PRIVATE.mask
                         }
                     m.copy(accessFlags = syntheticLambdaMethodAccessFlags)
                 } else {
@@ -227,6 +229,15 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                     Info,
                     Some("load-time transformation"),
                     "Groovy's INVOKEDYNAMICs are not rewritten"
+                ))
+            }
+            updatedClassFile
+        } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
+            if (logUnknownInvokeDynamics) {
+                OPALLogger.logOnce(StandardLogMessage(
+                    Info,
+                    Some("load-time transformation"),
+                    "Java10's StringConcatFactory INVOKEDYNAMICs are not yet rewritten"
                 ))
             }
             updatedClassFile
@@ -281,7 +292,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * The scala compiler (and possibly other JVM bytecode compilers) add a
+     * The scala compiler (and possibly other comilers targeting JVM bytecode) add a
      * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
      * Serializable. This method is called when the serialized lambda is deserialized.
      * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
@@ -366,11 +377,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      * @see More information about lambda deserialization and lambda meta factory:
      *      [https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html]
      *
-     * @param classFile The classfile to parse
-     * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instruction
-     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
-     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     * @param classFile The classfile to parse.
+     * @param instructions The instructions of the method we are currently parsing.
+     * @param pc The program counter of the current instruction.
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace.
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java8LambdaResolution(
         classFile:     ClassFile,
@@ -393,31 +404,14 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             ) = bootstrapArguments
         var implMethod = tempImplMethod
 
+        val thisType = classFile.thisType
+
         val (markerInterfaces, bridges, serializable) =
             extractAltMetafactoryArguments(altMetafactoryArgs)
 
         val MethodCallMethodHandle(
             targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor
             ) = implMethod
-
-        // Check if the target method is accessible from the lambda. If not, make it package
-        // private, so the lambda can access it.
-        val updatedClassFile = classFile.copy(
-            methods = classFile.methods.map { m ⇒
-                if (m.isPrivate &&
-                    classFile.findMethod(targetMethodName, targetMethodDescriptor).isDefined) {
-                    // Interface methods must be either public or private, see
-                    //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
-                    if (classFile.isInterfaceDeclaration) {
-                        m.copy(accessFlags = (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask)
-                    } else {
-                        m.copy(accessFlags = m.accessFlags & ~ACC_PRIVATE.mask)
-                    }
-                } else {
-                    m.copy()
-                }
-            }
-        )
 
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
@@ -449,28 +443,13 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         }
 
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(classFile.thisType)),
+            ObjectType(newLambdaTypeName(thisType)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
             superInterfaceTypesBuilder.result()
         )
 
-        val invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
-
-        val needsBridgeMethod = samMethodType !=
-            instantiatedMethodType
-
-        val bridgeMethodDescriptorBuilder = IndexedSeq.newBuilder[MethodDescriptor]
-        if (needsBridgeMethod) {
-            bridgeMethodDescriptorBuilder += samMethodType
-        }
-        // If the bridge has the same method descriptor like the instantiatedMethodType or
-        // samMethodType, they are already present in the proxy class. Do not add them again.
-        // This happens in scala patternmatching for example.
-        bridgeMethodDescriptorBuilder ++= bridges
-            .filterNot(_.equals(samMethodType))
-            .filterNot(_.equals(instantiatedMethodType))
-        val bridgeMethodDescriptors = bridgeMethodDescriptorBuilder.result()
+        var invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
 
         /*
         Check the type of the invoke instruction using the instruction's opcode.
@@ -534,7 +513,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
           More information:
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
         */
-        val receiverType =
+        var receiverType =
             if (invocationInstruction != INVOKEVIRTUAL.opcode &&
                 invocationInstruction != INVOKEINTERFACE.opcode) {
                 targetMethodOwner
@@ -562,7 +541,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         The Proxy Factory must get the correct value to build the correct variant of the
         INVOKESTATIC instruction.
          */
-        val receiverIsInterface =
+        var receiverIsInterface =
             implMethod match {
 
                 case _: InvokeInterfaceMethodHandle    ⇒ true
@@ -585,8 +564,140 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 case other ⇒ throw new UnknownError("unexpected handle: "+other)
             }
 
+        // Creates forwarding method for private method `m` that can be accessed by the proxy class.
+        def createForwardingMethod(
+            m:          Method,
+            name:       String,
+            descriptor: MethodDescriptor
+        ): MethodTemplate = {
+
+            // Access flags for the forwarder are the same as the target method but without private
+            // modifier. For interfaces, ACC_PUBLIC is required and constructors are forwarded by
+            // a static method.
+            var accessFlags = m.accessFlags & ~ACC_PRIVATE.mask
+            if (receiverIsInterface) accessFlags |= ACC_PUBLIC.mask
+            if (m.isConstructor) accessFlags |= ACC_STATIC.mask
+
+            // if the receiver method is not static, we need to push the receiver object
+            // onto the stack by an ALOAD_0 unless we have a method reference where the receiver
+            // will be explicitly provided
+            val loadReceiverObject: Array[Instruction] =
+                if (invocationInstruction == INVOKESTATIC.opcode) {
+                    Array()
+                } else if (m.isConstructor) {
+                    Array(NEW(receiverType), null, null, DUP)
+                } else {
+                    Array(ALOAD_0)
+                }
+
+            // If the forwarder is not static, `this` occupies variable 0.
+            val variableOffset = if ((accessFlags & ACC_STATIC.mask) != 0) 0 else 1
+
+            // Instructions to push the parameters onto the stack
+            val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
+                descriptor, descriptor, variableOffset, Seq.empty, classFile.thisType
+            )
+
+            val recType = implMethod.receiverType.asObjectType
+
+            // The call instruction itself
+            val forwardCall: Array[Instruction] = (invocationInstruction: @switch) match {
+                case INVOKESTATIC.opcode ⇒
+                    val invoke = INVOKESTATIC(recType, receiverIsInterface, m.name, m.descriptor)
+                    Array(invoke, null, null)
+
+                case INVOKESPECIAL.opcode ⇒
+                    val invoke = INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
+                    Array(invoke, null, null)
+
+                case INVOKEINTERFACE.opcode ⇒
+                    val invoke = INVOKEINTERFACE(recType, m.name, m.descriptor)
+                    Array(invoke, null, null, null, null)
+
+                case INVOKEVIRTUAL.opcode ⇒
+                    val invoke = INVOKEVIRTUAL(implMethod.receiverType, m.name, m.descriptor)
+                    Array(invoke, null, null)
+            }
+
+            // The return instruction matching the return type
+            val returnInst = ReturnInstruction(descriptor.returnType)
+
+            val bytecodeInsts = loadReceiverObject ++ forwardParameters ++ forwardCall :+ returnInst
+
+            val receiverObjectStackSize = if (invocationInstruction == INVOKESTATIC.opcode) 0 else 1
+            val parametersStackSize = implMethod.methodDescriptor.requiredRegisters
+            val returnValueStackSize = descriptor.returnType.operandSize
+
+            val maxStack =
+                1 + // Required if, e.g., we first have to create and initialize an object;
+                    // which is done by "dup"licating the new created, but not yet initialized
+                    // object reference on the stack.
+                    math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
+
+            val maxLocals = 1 + receiverObjectStackSize + parametersStackSize + returnValueStackSize
+
+            val code = Code(maxStack, maxLocals, bytecodeInsts, IndexedSeq.empty, Seq.empty)
+
+            Method(accessFlags, name, descriptor, Seq(code))
+        }
+
+        // If the target method is private, we have to generate a forwarding method that is
+        // accessible by the proxy class, i.e. not private.
+        val privateTargetMethod = classFile.methods.find { m ⇒
+            m.isPrivate && m.name == targetMethodName && m.descriptor == targetMethodDescriptor
+        }
+
+        val updatedClassFile = privateTargetMethod match {
+            case Some(m) ⇒
+                val forwardingName = "$forward$"+m.name
+                val descriptor =
+                    if (m.isConstructor) m.descriptor.copy(returnType = receiverType)
+                    else m.descriptor
+
+                val forwarderO = classFile.findMethod(forwardingName, descriptor)
+
+                val (forwarder, cf) = forwarderO match {
+                    case Some(f) ⇒ (f, classFile)
+                    case None ⇒
+                        val f = createForwardingMethod(m, forwardingName, descriptor)
+                        val cf = classFile.copy(methods = classFile.methods.map(_.copy()) :+ f)
+                        (f, cf)
+                }
+
+                val isInterface = classFile.isInterfaceDeclaration
+
+                // Update the implMethod and other information to match the forwarder
+                implMethod = if (forwarder.isStatic) {
+                    InvokeStaticMethodHandle(thisType, isInterface, forwardingName, descriptor)
+                } else if (isInterface) {
+                    InvokeInterfaceMethodHandle(thisType, forwardingName, descriptor)
+                } else {
+                    InvokeVirtualMethodHandle(thisType, forwardingName, descriptor)
+                }
+                invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
+                receiverType = thisType
+                receiverIsInterface = classFile.isInterfaceDeclaration
+
+                cf
+            case None ⇒ classFile
+        }
+
+        val needsBridgeMethod = samMethodType != instantiatedMethodType
+
+        val bridgeMethodDescriptorBuilder = IndexedSeq.newBuilder[MethodDescriptor]
+        if (needsBridgeMethod) {
+            bridgeMethodDescriptorBuilder += samMethodType
+        }
+        // If the bridge has the same method descriptor like the instantiatedMethodType or
+        // samMethodType, they are already present in the proxy class. Do not add them again.
+        // This happens in scala patternmatching for example.
+        bridgeMethodDescriptorBuilder ++= bridges
+            .filterNot(_.equals(samMethodType))
+            .filterNot(_.equals(instantiatedMethodType))
+        val bridgeMethodDescriptors = bridgeMethodDescriptorBuilder.result()
+
         val proxy: ClassFile = ClassFileFactory.Proxy(
-            classFile.thisType,
+            thisType,
             classFile.isInterfaceDeclaration,
             typeDeclaration,
             functionalInterfaceMethodName,
@@ -772,6 +883,13 @@ object LambdaExpressionsRewriting {
         invokedynamic.bootstrapMethod.handle match {
             case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
                 ismh.receiverType.asObjectType.packageName.startsWith("org/codehaus/groovy")
+            case _ ⇒ false
+        }
+    }
+
+    def isJava10StringConcatInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(ObjectType.StringConcatFactory, _, _, _) ⇒ true
             case _ ⇒ false
         }
     }

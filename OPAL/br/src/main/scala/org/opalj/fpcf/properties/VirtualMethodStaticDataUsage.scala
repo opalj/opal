@@ -60,9 +60,9 @@ sealed case class VirtualMethodStaticDataUsage(
 object VirtualMethodStaticDataUsage
     extends VirtualMethodStaticDataUsagePropertyMetaInformation {
 
-    final val VUsesNoStaticData = new VirtualMethodStaticDataUsage(UsesNoStaticData)
-    final val VUsesConstantDataOnly = new VirtualMethodStaticDataUsage(UsesConstantDataOnly)
-    final val VUsesVaryingData = new VirtualMethodStaticDataUsage(UsesVaryingData)
+    final val VUsesNoStaticData = UsesNoStaticData.aggregatedProperty
+    final val VUsesConstantDataOnly = UsesConstantDataOnly.aggregatedProperty
+    final val VUsesVaryingData = UsesVaryingData.aggregatedProperty
 
     /**
      * The key associated with every virtual method allocation freeness property. The name is

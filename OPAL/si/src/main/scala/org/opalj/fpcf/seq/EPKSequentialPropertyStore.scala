@@ -50,8 +50,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  - we have a `depender`.
  *
  *  Compared to the [[PKESequentialPropertyStore]] this implementation can be considered a
- *  bare-bone implementation that primarily supports required features. Furthermore, this
- *  implementation is less polished w.r.t. the usage of data-structures.
+ *  bare-bone implementation that primarily supports the strictly required features.
+ *  Furthermore, this implementation is less polished w.r.t. the usage of data-structures.
  */
 final class EPKSequentialPropertyStore private (
         val ctx: Map[Type, AnyRef]
@@ -77,15 +77,19 @@ final class EPKSequentialPropertyStore private (
     type PKId = Long
 
     private[this] var scheduledTasksCounter: Int = 0
-    def scheduledTasks: Int = scheduledTasksCounter
+    def scheduledTasksCount: Int = scheduledTasksCounter
 
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
-    def scheduledOnUpdateComputations: Int = scheduledOnUpdateComputationsCounter
+    def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
     private[this] var eagerOnUpdateComputationsCounter: Int = 0
-    def eagerOnUpdateComputations: Int = eagerOnUpdateComputationsCounter
+    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
+
+    private[this] var resolvedCSCCsCounter: Int = 0
+    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
     private[this] var quiescenceCounter = 0
+    def quiescenceCount: Int = quiescenceCounter
 
     // --------------------------------------------------------------------------------------------
     //
@@ -295,7 +299,9 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    def force(e: Entity, pk: SomePropertyKey): Unit = apply(EPK(e, pk), true)
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply(EPK(e, pk), true)
+    }
 
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
@@ -338,6 +344,11 @@ final class EPKSequentialPropertyStore private (
             if (lb.isOrderedProperty) {
                 val ubAsOP = ub.asOrderedProperty
                 ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+            }
+            if (newDependees.nonEmpty && lb == ub) {
+                throw new IllegalArgumentException(
+                    s"final property $lb with dependees: $newDependees"
+                )
             }
         }
         ps.get(e) match {
@@ -498,14 +509,10 @@ final class EPKSequentialPropertyStore private (
     ): Unit = handleExceptions {
         r.id match {
 
-            case NoResult.id ⇒
-            // A computation reported no result; i.e., it is not possible to
-            // compute a/some property/properties for a given entity.
-
-            case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
-                handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+            case NoResult.id ⇒ {
+                // A computation reported no result; i.e., it is not possible to
+                // compute a/some property/properties for a given entity.
+            }
 
             case Results.id ⇒
                 val Results(results) = r
@@ -515,9 +522,16 @@ final class EPKSequentialPropertyStore private (
                 val MultiResult(results) = r
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
+            case IncrementalResult.id ⇒
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                handleResult(ir)
+                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+
             //
             // Methods which actually store results...
             //
+
+            case ExternalResult.id ⇒ throw new UnknownError(s"unexteped result: $r")
 
             case Result.id ⇒
                 val Result(e, p) = r
@@ -576,12 +590,20 @@ final class EPKSequentialPropertyStore private (
 
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
                                 eagerOnUpdateComputationsCounter += 1
-                                if (dependeePValue.isFinal) {
-                                    handleResult(c(FinalEP(dependeeE, dependeePValue.ub)))
-                                } else {
-                                    val newEP = EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
-                                    handleResult(c(newEP))
+                                val newR =
+                                    if (dependeePValue.isFinal) {
+                                        c(FinalEP(dependeeE, dependeePValue.ub))
+                                    } else {
+                                        val newEP = EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
+                                        c(newEP)
+                                    }
+                                if (debug && newR == r) {
+                                    throw new IllegalStateException(
+                                        "an on-update continuation resulted in the same result as before:\n"+
+                                            s"\told: $r\n\tnew: $newR"
+                                    )
                                 }
+                                handleResult(newR)
                                 return ;
                             }
                         }
@@ -688,7 +710,11 @@ final class EPKSequentialPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        assert(tasks.isEmpty)
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "setup phase can only be called as long as no tasks are scheduled"
+            )
+        }
 
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
@@ -730,11 +756,11 @@ final class EPKSequentialPropertyStore private (
                         val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
                         val fallbackResult = Result(e, fallbackProperty)
                         if (traceFallbacks) {
-                            info(
-                                "analysis progress",
-                                s"used fallback $fallbackProperty for $e "+
-                                    "(though an analysis was supposedly scheduled)"
-                            )
+                            var message = s"used fallback $fallbackProperty for $e"
+                            if (computedPropertyKinds.contains(pkId)) {
+                                message += " (though an analysis was supposedly scheduled)"
+                            }
+                            info("analysis progress", message)
                         }
                         handleResult(fallbackResult)
                         continueComputation = true
@@ -768,24 +794,26 @@ final class EPKSequentialPropertyStore private (
                     for {
                         cSCC ← cSCCs
                     } {
+                        resolvedCSCCsCounter
                         val headEPK = cSCC.head
                         val e = headEPK.e
                         val lb = ps(e)(headEPK.pk.id.toLong).lb
                         val ub = ps(e)(headEPK.pk.id.toLong).ub
                         val headEPS = IntermediateEP(e, lb, ub)
-                        val newEP = PropertyKey.resolveCycle(this, headEPS)
-                        val cycleAsText =
-                            if (cSCC.size > 10)
-                                cSCC.take(10).mkString("", ",", "...")
-                            else
-                                cSCC.mkString(",")
+                        val newP = PropertyKey.resolveCycle(this, headEPS)
                         if (traceCycleResolutions) {
+                            val cycleAsText =
+                                if (cSCC.size > 10)
+                                    cSCC.take(10).mkString("", ",", "...")
+                                else
+                                    cSCC.mkString(",")
+
                             info(
                                 "analysis progress",
-                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText ⇒ $newEP"
+                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updatding $e:ub=$ub with $newP"
                             )
                         }
-                        update(newEP.e, newEP.p, newEP.p, Nil)
+                        update(e, newP, newP, Nil)
                         continueComputation = true
                     }
                 }
@@ -794,6 +822,8 @@ final class EPKSequentialPropertyStore private (
                     // We used no fallbacks and found no cycles, but we may still have
                     // (collaboratively computed) properties (e.g. CallGraph) which are
                     // not yet final; let's finalize them!
+
+                    var toBeFinalized: List[(AnyRef, Property)] = Nil
                     for {
                         (e, pkIdPV) ← ps
                         (pkLongId, pValue) ← pkIdPV
@@ -808,9 +838,16 @@ final class EPKSequentialPropertyStore private (
                             lb != ub &&
                             !delayedPropertyKinds.contains(pkId) &&
                             pValue.dependees.isEmpty) {
-                            update(e, ub, ub, Nil) // commit as Final value
-                            continueComputation = true
+                            toBeFinalized ::= ((e, ub))
                         }
+                    }
+                    if (toBeFinalized.nonEmpty) {
+                        toBeFinalized foreach { ep ⇒
+                            val (e, p) = ep
+                            update(e, p, p, Nil) // commit as Final value
+                        }
+
+                        continueComputation = true
                     }
                 }
             }

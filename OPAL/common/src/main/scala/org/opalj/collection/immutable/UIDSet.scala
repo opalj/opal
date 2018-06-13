@@ -194,6 +194,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     //
     // METHODS DEFINED BY UIDTrieSet
     //
+
     override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
     override def idIterator: IntIterator = IntIterator(value.id)
     override def idSet: IntTrieSet = IntTrieSet1(value.id)
@@ -309,9 +310,11 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     //
     // METHODS DEFINED BY UIDSet
     //
+
     override def findById(id: Int): Option[T] = {
         if (value1.id == id) Some(value1) else if (value2.id == id) Some(value2) else None
     }
+
     override def idIterator: IntIterator = IntIterator(value1.id, value2.id)
     override def idSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id)
     override def isSingletonSet: Boolean = false
@@ -431,6 +434,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     //
     // METHODS DEFINED BY UIDSet
     //
+
     override def findById(id: Int): Option[T] = {
         if (value1.id == id)
             Some(value1)
@@ -440,6 +444,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             Some(value3)
         else None
     }
+
     override def idIterator: IntIterator = IntIterator(value1.id, value2.id, value3.id)
     override def idSet: IntTrieSet = IntTrieSet.from(value1.id, value2.id, value3.id)
     override def isSingletonSet: Boolean = false

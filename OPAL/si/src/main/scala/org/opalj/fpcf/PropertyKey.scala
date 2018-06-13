@@ -54,16 +54,21 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ FinalEP[E, P]
+    type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
     // TODO let's use a presized AtomicRefrenceArray (using SupportedPropertyKinds as the size)
     private[this] val keysLock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
 
-    private[this] val fallbackProperties = {
+    private[this] val fallbackPropertyComputations = {
         ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
     }
+
+    private[this] val fastTrackPropertyComputations = {
+        ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Option[Property]]
+    }
+
 
     private[this] val cycleResolutionStrategies = {
         ArrayBuffer.empty[CycleResolutionStrategy[Entity, Property]]
@@ -86,11 +91,18 @@ object PropertyKey {
      * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
      *              computations. In the vast majority of cases it is sufficient to just commit
      *              the given value.
+     * @param fastTrackPropertyComputation (Optionally) called by the property store if the property
+     *              is computed in the current phase and is queried the first time
+     *              (see `PropertyStore.setupPhase`). This method is expected to either provide
+     *              a precise analysis very fast or to not provide a result at all.
+     *              I.e., it is expected to derive only those properties that can trivially be
+     *              derived precisely.
      */
     def create[E <: Entity, P <: Property](
         name:                        String,
         fallbackPropertyComputation: (PropertyStore, E) ⇒ P,
-        cycleResolutionStrategy:     CycleResolutionStrategy[E, P]
+        cycleResolutionStrategy:     CycleResolutionStrategy[E, P],
+        fastTrackPropertyComputation : (PropertyStore, E) ⇒ Option[P],
     ): PropertyKey[P] = {
         withWriteLock(keysLock) {
             if (propertyKeyNames.contains(name)) {
@@ -106,8 +118,10 @@ object PropertyKey {
                 )
             }
             propertyKeyNames += name
-            fallbackProperties +=
+            fallbackPropertyComputations +=
                 fallbackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Property]
+            fastTrackPropertyComputations +=
+                fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
             cycleResolutionStrategies +=
                 cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
 
@@ -118,9 +132,15 @@ object PropertyKey {
     def create[E <: Entity, P <: Property](
         name:                    String,
         fallbackProperty:        P,
-        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.toUBEP
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P] = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.ub,
+        fastTrackPropertyComputation : (PropertyStore, E) ⇒ Option[P] = (_ : PropertyStore,_ : Entity) => None
     ): PropertyKey[P] = {
-        create(name, (ps: PropertyStore, e: Entity) ⇒ fallbackProperty, cycleResolutionStrategy)
+        create(
+            name,
+            (ps: PropertyStore, e: Entity) ⇒ fallbackProperty,
+            cycleResolutionStrategy,
+            fastTrackPropertyComputation
+        )
     }
 
     //
@@ -151,18 +171,39 @@ object PropertyKey {
         e:    Entity,
         pkId: Int
     ): Property = {
-        withReadLock(keysLock) { fallbackProperties(pkId)(ps, e) }
+        withReadLock(keysLock) {
+            val fallbackPropertyComputation = fallbackPropertyComputations(pkId)
+            fallbackPropertyComputation(ps, e)
+        }
     }
 
     /**
      * @note This method is intended to be called by the framework.
      */
-
-    def resolveCycle[E <: Entity, P <: Property](
-        ps: PropertyStore, eps: EPS[E, P]
-    ): FinalEP[E, P] = {
+    def fastTrackProperty[P <: Property](
+                                           ps: PropertyStore,
+                                           e:  Entity,
+                                           pk: PropertyKey[P]
+                                       ): Option[P] = {
+        fastTrackPropertyBasedOnPkId(ps, e, pk.id).asInstanceOf[Option[P]]
+    }
+    private[fpcf] def fastTrackPropertyBasedOnPkId(
+                                                     ps:   PropertyStore,
+                                                     e:    Entity,
+                                                     pkId: Int
+                                                 ): Option[Property] = {
         withReadLock(keysLock) {
-            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[FinalEP[E, P]]
+            val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
+            fastTrackPropertyComputation(ps, e)
+        }
+    }
+
+    /**
+     * @note This method is intended to be called by the framework.
+     */
+    def resolveCycle[E <: Entity, P <: Property](ps: PropertyStore, eps: EPS[E, P]    ): P = {
+        withReadLock(keysLock) {
+            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[P]
         }
     }
 

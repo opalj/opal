@@ -46,11 +46,11 @@ import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
@@ -97,7 +97,7 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
             case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
             // Empty methods still have a return instruction and therefore a body size of 1
             if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
-                m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.size != 1 ⇒
+                m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.length != 1 ⇒
                 (m, p)
         }
 

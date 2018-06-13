@@ -244,7 +244,7 @@ public class MethodReferences {
     }
 
     public interface SomeInterface {
-        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$SomeInterface", name = "lambda$0", parameterTypes = {  }, line = 246)
+        @InvokedMethod(resolution = DYNAMIC, receiverType = "lambdas/methodreferences/MethodReferences$SomeInterface", name = "$forward$lambda$0", parameterTypes = {  }, line = 246)
         default Runnable foo() {
             return () -> System.out.println("Hello world! " + getSomeInt());
         }

@@ -45,7 +45,7 @@ case object ExceptionsRaisedByCalledMethods extends Enumeration {
 
     /**
      * If no information about the potentially thrown exceptions by a method is available the
-     * assumption is made that the methods are (at least) throw those exceptions that are
+     * assumption is made that a method is (at least) throwing those exceptions that are
      * explicitly handled by the calling method.
      */
     final val AllExplicitlyHandled = Value

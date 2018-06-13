@@ -367,27 +367,32 @@ class FieldLocalityAnalysis private[analyses] (
                 val callee = project.specialCall(dc, isI, name, desc)
                 handleConcreteCall(callee)
 
-            case Assignment(_, _, VirtualFunctionCall(_, _, _, name, desc, receiver, _)) ⇒
+            case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒
                 val callerType = caller.classFile.thisType
                 val value = receiver.asVar.value.asDomainReferenceValue
-                val receiverType = value.valueType
+                val mostPreciseType = value.valueType
 
-                if (receiverType.isEmpty) {
+                if (mostPreciseType.isEmpty) {
                     false // Receiver is null, call will never be executed
-                } else if (receiverType.get.isArrayType) {
+                } else if (mostPreciseType.get.isArrayType) {
                     val callee =
                         project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
                     handleConcreteCall(callee)
 
                 } else if (value.isPrecise) {
                     val callee =
-                        project.instanceCall(callerType, receiverType.get, name, desc)
+                        project.instanceCall(callerType, mostPreciseType.get, name, desc)
                     handleConcreteCall(callee)
 
                 } else {
                     val packageName = callerType.packageName
-                    val callee =
-                        declaredMethods(packageName, receiverType.get.asObjectType, name, desc)
+                    val callee = declaredMethods(
+                        rcvrType.asObjectType,
+                        packageName,
+                        mostPreciseType.get.asObjectType,
+                        name,
+                        desc
+                    )
 
                     if (!callee.hasDefinition ||
                         isOverridableMethod(callee.methodDefinition).isNotNo) {

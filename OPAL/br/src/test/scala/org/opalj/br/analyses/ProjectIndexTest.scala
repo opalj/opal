@@ -58,7 +58,7 @@ class ProjectIndexTest extends FlatSpec with Matchers {
 
     behavior of "A ProjectIndex w.r.t. finding methods"
 
-    it should ("find a unique method by its signature") in {
+    it should "find a unique method by its signature" in {
         val name = "someMethod"
         val descriptor = MethodDescriptor.NoArgsAndReturnVoid
         val methods = methodsProjectIndex.findMethods(name, descriptor)
@@ -66,7 +66,7 @@ class ProjectIndexTest extends FlatSpec with Matchers {
         methods.forall(m ⇒ m.name == name && m.descriptor == descriptor) should be(true)
     }
 
-    it should ("find multiple methods with the same signature if the method is overridden or reimplemented") in {
+    it should "find multiple methods with the same signature if the method is overridden or reimplemented" in {
         val name = "publicMethod"
         val descriptor = MethodDescriptor.NoArgsAndReturnVoid
         val methods = methodsProjectIndex.findMethods(name, descriptor)

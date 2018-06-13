@@ -73,6 +73,7 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
     val WRITES_FIELD = Value("the method WRITES the value stored in the FIELD")
     val DECLARING_CLASS_OF_ACCESSED_FIELD = Value("the method ACCESSES a FIELD that is DECLARED by CLASS")
     val TYPE_OF_ACCESSED_FIELD = Value("the method ACCESSES a FIELD with TYPE")
+    val LOADS_CONSTANT = Value("the method DEFINES the constant")
 
     val CALLS_METHOD = Value("the method CALLS the METHOD")
     val DECLARING_CLASS_OF_CALLED_METHOD = Value("the CALLED METHOD is DECLARED by TYPE")
@@ -130,6 +131,7 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
             case WRITES_FIELD                      ⇒ "write field"
             case DECLARING_CLASS_OF_ACCESSED_FIELD ⇒ "access field declared by"
             case TYPE_OF_ACCESSED_FIELD            ⇒ "access field"
+            case LOADS_CONSTANT                    ⇒ "load constant"
             case CALLS_METHOD                      ⇒ "call method"
             case DECLARING_CLASS_OF_CALLED_METHOD  ⇒ "call method declared by"
             case PARAMETER_TYPE_OF_CALLED_METHOD   ⇒ "call method with parameter"

@@ -54,6 +54,7 @@ import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
@@ -63,7 +64,6 @@ import org.opalj.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
@@ -74,6 +74,7 @@ import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ContextuallySideEffectFree
@@ -110,6 +111,8 @@ object Purity {
             "[-noJDK] (do not analyze any JDK methods)\n"+
             "[-individual] (reports the purity result for each method)\n"+
             "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
+            "[-eagerTAC] (eagerly precompute TAC for all methods)\n"+
+            "[-debug] (enable debug output from PropertyStore)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
@@ -149,6 +152,8 @@ object Purity {
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
+        eagerTAC:              Boolean,
+        debug:                 Boolean,
         evaluationDir:         Option[File]
     ): Unit = {
         val classFiles = JavaClassFileReader().ClassFiles(cp)
@@ -172,19 +177,27 @@ object Purity {
         else baseConfig
 
         val project = time {
-            Project(classFiles, JDKFiles, false, Traversable.empty)
+            Project(
+                classFiles,
+                JDKFiles,
+                libraryClassFilesAreInterfacesOnly = false,
+                Traversable.empty
+            )
         } { t ⇒ projectTime = t.toSeconds }
 
-        time {
-            project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain(project))
-            val tacai = project.get(DefaultTACAIKey)
-            project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            tacai
-        } { t ⇒ tacTime = t.toSeconds }
+        if (eagerTAC) {
+            time {
+                project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain(project))
+                val tacai = project.get(DefaultTACAIKey)
+                project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
+            } { t ⇒ tacTime = t.toSeconds }
+        }
 
         val propertyStore = time {
             project.get(PropertyStoreKey)
         } { t ⇒ propertyStoreTime = t.toSeconds }
+
+        PropertyStore.updateDebug(debug)
 
         analysis match {
             case LazyL0PurityAnalysis ⇒
@@ -281,46 +294,46 @@ object Purity {
                     )
                 } else {
                     for (m ← compileTimePure) {
-                        resultsWriter.println(s"{c} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {c}")
                     }
                     for (m ← pure) {
-                        resultsWriter.println(s"{} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {}")
                     }
                     for (m ← dPure) {
-                        resultsWriter.println(s"{d} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {d}")
                     }
                     for (m ← sideEffectFree) {
-                        resultsWriter.println(s"{n} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n}")
                     }
                     for (m ← dSideEffectFree) {
-                        resultsWriter.println(s"{n,d} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,d}")
                     }
                     for (m ← externallyPure) {
-                        resultsWriter.println(s"{r} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {r}")
                     }
                     for (m ← dExternallyPure) {
-                        resultsWriter.println(s"{r,d} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {r,d}")
                     }
                     for (m ← externallySideEffectFree) {
-                        resultsWriter.println(s"{n,r} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,r}")
                     }
                     for (m ← dExternallySideEffectFree) {
-                        resultsWriter.println(s"{n,r,d} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,r,d}")
                     }
                     for (m ← contextuallyPure) {
-                        resultsWriter.println(s"{p} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {p}")
                     }
                     for (m ← dContextuallyPure) {
-                        resultsWriter.println(s"{p,d} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {p,d}")
                     }
                     for (m ← contextuallySideEffectFree) {
-                        resultsWriter.println(s"{n,p} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,p}")
                     }
                     for (m ← dContextuallySideEffectFree) {
-                        resultsWriter.println(s"{n,p,d} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,p,d}")
                     }
                     for (m ← lbImpure) {
-                        resultsWriter.println(s"{i^} => ${m.definedMethod.toJava}")
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {i}")
                     }
                 }
             } finally {
@@ -358,6 +371,8 @@ object Purity {
         var withoutJDK = false
         var individual = false
         var cwa = false
+        var eagerTAC = false
+        var debug = false
         var multiProjects = false
         var evaluationDir: Option[File] = None
 
@@ -382,10 +397,13 @@ object Purity {
                 case "-rater"       ⇒ raterName = Some(readNextArg())
                 case "-individual"  ⇒ individual = true
                 case "-closedWorld" ⇒ cwa = true
+                case "-eagerTAC"    ⇒ eagerTAC = true
+                case "-debug"       ⇒ debug = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-noJDK"       ⇒ withoutJDK = true
-                case "-JDK"         ⇒ { cp = JRELibraryFolder; withoutJDK = true }
+                case "-JDK" ⇒
+                    cp = JRELibraryFolder; withoutJDK = true
 
                 case unknown ⇒
                     Console.println(usage)
@@ -447,11 +465,24 @@ object Purity {
                         withoutJDK,
                         individual,
                         cwa,
+                        eagerTAC,
+                        debug,
                         evaluationDir
                     )
                 }
             } else {
-                evaluate(cp, analysis, d, rater, withoutJDK, individual, cwa, evaluationDir)
+                evaluate(
+                    cp,
+                    analysis,
+                    d,
+                    rater,
+                    withoutJDK,
+                    individual,
+                    cwa,
+                    eagerTAC,
+                    debug,
+                    evaluationDir
+                )
             }
         }(t ⇒ Console.out.println("evaluation time: "+t.toSeconds))
 

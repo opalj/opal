@@ -5,8 +5,8 @@
 // ⚡️ java.lang.Throwable → 1
 
 // java.lang.Throwable →
-1:/*pc=2:*/ caught java.lang.Throwable /* <= {exception@0,param1}*/
-2:/*pc=4:*/ {exception@0, param1}/*java.lang.Throwable*/.printStackTrace()
+1:/*pc=2:*/ caught java.lang.Throwable /* <= {exception[VM]@0,param1}*/
+2:/*pc=4:*/ {exception[VM]@0, param1}/*java.lang.Throwable*/.printStackTrace()
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
 // 2 →

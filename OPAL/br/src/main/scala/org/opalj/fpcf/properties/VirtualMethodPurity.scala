@@ -61,21 +61,21 @@ object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
     def apply(name: String): Option[VirtualMethodPurity] =
         if (name.charAt(0) == 'V') Purity(name.substring(1)).map(_.aggregatedProperty) else None
 
-    final val VCompileTimePure = new VirtualMethodPurity(CompileTimePure)
-    final val VPure = new VirtualMethodPurity(Pure)
-    final val VSideEffectFree = new VirtualMethodPurity(SideEffectFree)
-    final val VExternallyPure = new VirtualMethodPurity(ExternallyPure)
-    final val VExternallySideEffectFree = new VirtualMethodPurity(ExternallySideEffectFree)
-    final val VContextuallyPure = new VirtualMethodPurity(ContextuallyPure)
-    final val VContextuallySideEffectFree = new VirtualMethodPurity(ContextuallySideEffectFree)
-    final val VDPure = new VirtualMethodPurity(DPure)
-    final val VDSideEffectFree = new VirtualMethodPurity(DSideEffectFree)
-    final val VDExternallyPure = new VirtualMethodPurity(DExternallyPure)
-    final val VDExternallySideEffectFree = new VirtualMethodPurity(DExternallySideEffectFree)
-    final val VDContextuallyPure = new VirtualMethodPurity(DContextuallyPure)
-    final val VDContextuallySideEffectFree = new VirtualMethodPurity(DContextuallySideEffectFree)
-    final val VImpureByAnalysis = new VirtualMethodPurity(ImpureByAnalysis)
-    final val VImpureByLackOfInformation = new VirtualMethodPurity(ImpureByLackOfInformation)
+    final val VCompileTimePure = CompileTimePure.aggregatedProperty
+    final val VPure = Pure.aggregatedProperty
+    final val VSideEffectFree = SideEffectFree.aggregatedProperty
+    final val VExternallyPure = ExternallyPure.aggregatedProperty
+    final val VExternallySideEffectFree = ExternallySideEffectFree.aggregatedProperty
+    final val VContextuallyPure = ContextuallyPure.aggregatedProperty
+    final val VContextuallySideEffectFree = ContextuallySideEffectFree.aggregatedProperty
+    final val VDPure = DPure.aggregatedProperty
+    final val VDSideEffectFree = DSideEffectFree.aggregatedProperty
+    final val VDExternallyPure = DExternallyPure.aggregatedProperty
+    final val VDExternallySideEffectFree = DExternallySideEffectFree.aggregatedProperty
+    final val VDContextuallyPure = DContextuallyPure.aggregatedProperty
+    final val VDContextuallySideEffectFree = DContextuallySideEffectFree.aggregatedProperty
+    final val VImpureByAnalysis = ImpureByAnalysis.aggregatedProperty
+    final val VImpureByLackOfInformation = ImpureByLackOfInformation.aggregatedProperty
 
     /**
      * The key associated with every purity property. The name is "VirtualMethodPurity";

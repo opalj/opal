@@ -29,6 +29,7 @@
 package org.opalj
 package ai
 
+import org.opalj.ai.domain.TheMethod
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.IntArrayStack
@@ -47,6 +48,7 @@ import org.opalj.collection.mutable.IntArrayStack
  */
 sealed trait InterpretationFailedException {
     def cause: Throwable
+
     val domain: Domain
     val ai: AI[_ >: domain.type]
     val pc: Int
@@ -92,7 +94,21 @@ object InterpretationFailedException {
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
-        }
 
+            final override def toString: String = {
+                val source = domain match {
+                    case d: TheMethod ⇒ d.method.toJava
+                    case _            ⇒ "N/A"
+                }
+                s"InterpretationFailedException(\n\tsource=$source,"+
+                    s"\n\tai=${ai.getClass},\n\tcause=$cause,"+
+                    s"\n\tpc=$pc,"+
+                    s"\n\toperands=${operandsArray(pc)},"+
+                    s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"+
+                    s"\n)"
+            }
+
+            final override def getMessage(): String = toString
+        }
     }
 }

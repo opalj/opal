@@ -44,10 +44,9 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
     ): Computation[Nothing, ExceptionValue] = {
         refIsNull(pc, value) match {
             case Yes ⇒
-                ThrowsException(NullPointerException(ValueOriginForVMLevelValue(pc)))
+                ThrowsException(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMonitorAccess ⇒
-                val npe = NullPointerException(ValueOriginForVMLevelValue(pc))
-                ComputationWithSideEffectOrException(npe)
+                ComputationWithSideEffectOrException(VMNullPointerException(pc))
             case _ /* No OR Unknown but throwNullPointerExceptionOnMonitorAccess is No */ ⇒
                 ComputationWithSideEffectOnly
         }

@@ -228,7 +228,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
         e match {
             case m: DefinedMethod  ⇒ determineUsage(m)
             case m: DeclaredMethod ⇒ Result(m, UsesVaryingData)
-            case e ⇒
+            case _ ⇒
                 throw new UnknownError("static constant usage is only defined for methods")
         }
     }

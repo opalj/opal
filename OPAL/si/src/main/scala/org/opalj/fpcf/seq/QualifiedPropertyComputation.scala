@@ -30,6 +30,13 @@ package org.opalj
 package fpcf
 package seq
 
+/**
+ * We generally distinguish between tasks that compute properties which are explicitly required
+ * and those tasks which are not yet / no longer required, because no strictly depending analyses
+ * requires them (anymore.)
+ *
+ * @author Michael Eichberg
+ */
 private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit) {
     def isLazy: Boolean
 }
@@ -44,7 +51,7 @@ private[seq] sealed abstract class EagerTask extends QualifiedTask {
     final def isLazy: Boolean = false
 }
 
-private[seq] case class EagerPropertyComputationTask[E <: Entity](
+private[seq] final case class EagerPropertyComputationTask[E <: Entity](
         ps: PropertyStore,
         e:  E,
         pc: PropertyComputation[E]
@@ -53,7 +60,7 @@ private[seq] case class EagerPropertyComputationTask[E <: Entity](
     override def apply(): Unit = ps.handleResult(pc(e), wasLazilyTriggered = false)
 }
 
-private[seq] case class EagerOnFinalUpdateComputationTask[E <: Entity, P <: Property](
+private[seq] final case class EagerOnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps: PropertyStore,
         r:  FinalEP[E, P],
         c:  OnUpdateContinuation
@@ -62,7 +69,7 @@ private[seq] case class EagerOnFinalUpdateComputationTask[E <: Entity, P <: Prop
     override def apply(): Unit = ps.handleResult(c(r), wasLazilyTriggered = false)
 }
 
-private[seq] case class EagerOnUpdateComputationTask[E <: Entity, P <: Property](
+private[seq] final case class EagerOnUpdateComputationTask[E <: Entity, P <: Property](
         ps:  PropertyStore,
         epk: EPK[E, P],
         c:   OnUpdateContinuation
@@ -88,18 +95,19 @@ private[seq] sealed abstract class LazyTask extends QualifiedTask {
     final def isLazy: Boolean = true
 }
 
-private[seq] case class LazyPropertyComputationTask[E <: Entity](
+private[seq] final case class LazyPropertyComputationTask[E <: Entity](
         ps: PropertyStore,
         e:  E,
         pc: PropertyComputation[E]
 ) extends LazyTask {
+
     override def apply(): Unit = {
-        // TODO check if required
+        // TODO check if required // ps.hasDependees(e,pk)
         ps.handleResult(pc(e), wasLazilyTriggered = true)
     }
 }
 
-private[seq] case class LazyOnFinalUpdateComputationTask[E <: Entity, P <: Property](
+private[seq] final case class LazyOnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps: PropertyStore,
         r:  FinalEP[E, P],
         c:  OnUpdateContinuation
@@ -111,7 +119,7 @@ private[seq] case class LazyOnFinalUpdateComputationTask[E <: Entity, P <: Prope
     }
 }
 
-private[seq] case class LazyOnUpdateComputationTask[E <: Entity, P <: Property](
+private[seq] final case class LazyOnUpdateComputationTask[E <: Entity, P <: Property](
         ps:  PropertyStore,
         epk: EPK[E, P],
         c:   OnUpdateContinuation

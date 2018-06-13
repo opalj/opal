@@ -60,8 +60,8 @@ sealed case class VirtualMethodAllocationFreeness(
 object VirtualMethodAllocationFreeness
     extends VirtualMethodAllocationFreenessPropertyMetaInformation {
 
-    final val VAllocationFreeMethod = new VirtualMethodAllocationFreeness(AllocationFreeMethod)
-    final val VMethodWithAllocations = new VirtualMethodAllocationFreeness(MethodWithAllocations)
+    final val VAllocationFreeMethod = AllocationFreeMethod.aggregatedProperty
+    final val VMethodWithAllocations = MethodWithAllocations.aggregatedProperty
 
     /**
      * The key associated with every virtual method allocation freeness property. The name is

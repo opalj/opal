@@ -32,8 +32,7 @@ package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
+import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -275,8 +274,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def removeRVFDependee(dm: DeclaredMethod): Unit = rvfDependees -= dm
         def removeVirtualRVFDependee(dm: DeclaredMethod): Unit = virtualRVFDependees -= dm
 
-        def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit =
+        def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit = {
             staticDataUsage = eps
+        }
     }
 
     type StateType = State
@@ -389,7 +389,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         defSites:           IntTrieSet,
         excludedDefSites:   IntTrieSet
     )(implicit state: State): Boolean = {
-        if (isVMLevelValue(defSite))
+        if (isImmediateVMException(defSite))
             return true; // VMLevelValues are freshly created
 
         if (defSite == OriginOfThis) {
@@ -404,8 +404,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         val stmt = state.code(defSite)
-        if (stmt.astID != Assignment.ASTID)
-            println()
         assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
 
         val rhs = stmt.asAssignment.expr
@@ -734,21 +732,21 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var newFieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.fieldLocalityDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, ((eop, newData))))
+            if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, (eop, newData)))
         }
         state.fieldLocalityDependees = newFieldLocalityDependees
 
         var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.rvfDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newRVFDependees += ((dependee, ((eop, newData))))
+            if (newData.nonEmpty) newRVFDependees += ((dependee, (eop, newData)))
         }
         state.rvfDependees = newRVFDependees
 
         var newVRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.virtualRVFDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newVRVFDependees += ((dependee, ((eop, newData))))
+            if (newData.nonEmpty) newVRVFDependees += ((dependee, (eop, newData)))
         }
         state.virtualRVFDependees = newVRVFDependees
 
@@ -766,6 +764,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 newVPurityDependees += ((dependee, eAndD))
         }
         state.virtualPurityDependees = newVPurityDependees
+
+        //state.recomputeDependees()
     }
 
     /**
@@ -777,14 +777,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for ((eop, _) ← state.purityDependees.valuesIterator) {
             eop match {
                 case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb
-                case _             ⇒ return ; // Nothing to be done, lower bound must still be LBImpure
+                case _             ⇒ return ; // Nothing to be done, lower bound is still LBImpure
             }
         }
 
         for ((eop, _) ← state.virtualPurityDependees.valuesIterator) {
             eop match {
                 case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb.individualProperty
-                case _             ⇒ return ; // Nothing to be done, lower bound must still be LBImpure
+                case _             ⇒ return ; // Nothing to be done, lower bound is still LBImpure
             }
         }
 
@@ -883,7 +883,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.removeVirtualRVFDependee(e)
                 dependees._2.foreach { e ⇒
                     checkLocalityOfReturn(
-                        eps.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                        eps.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
                         e
                     )
                 }
@@ -902,14 +902,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             cleanupDependees() // Remove dependees that we don't need anymore.
         adjustLowerBound()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        val dependees = state.dependees
+        if (dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
-                state.dependees,
+                dependees,
                 c
             )
         }
@@ -966,10 +967,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for {
             bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
-            if isImmediateVMException(pc)
+            if isSourceOfImmediateException(pc)
         } {
-            val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
-            val ratedResult = rater.handleException(origin)
+            val throwingStmt = state.code(pc)
+            val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)
         }
@@ -987,10 +988,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.ubPurity ne CompileTimePure)
             cleanupDependees()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        val dependees = state.dependees
+        if (dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
             Result(definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(definedMethod, state.lbPurity, state.ubPurity, state.dependees, c)
+            IntermediateResult(definedMethod, state.lbPurity, state.ubPurity, dependees, c)
         }
     }
 }

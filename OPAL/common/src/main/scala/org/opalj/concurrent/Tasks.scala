@@ -30,30 +30,62 @@ package org.opalj
 package concurrent
 
 // OLD import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.Condition
 import scala.concurrent.ExecutionContext
 // OLD import scala.concurrent.Future
 // OLD import scala.util.Failure
-import scala.collection.JavaConverters._
 
 import org.opalj.concurrent.Locking.withLock
 
 sealed trait Tasks[T] {
 
+    /** Returns the current tasks count; primarily intended to be used for debugging purposes! */
+    def currentTasksCount: Int
+
+    def hasExceptions: Boolean
+
+    def currentExceptions: ConcurrentExceptions
+
+    def abortDueToExternalException(exception: Throwable): Unit
+
     def submit(t: T): Unit
 
-    def join(): Iterable[Throwable]
+    def join(): Unit
 
 }
 
+/**
+ * @param  abortOnExceptions If abort due to external exception is set to `false`, endless
+ *         recursion may occur!
+ * @tparam T Type of the processed data.
+ */
 final class SequentialTasks[T](
-        val process:   (Tasks[T], T) ⇒ Unit,
-        isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
+        val process:                               (Tasks[T], T) ⇒ Unit,
+        val abortOnExceptions:                     Boolean              = false,
+        @volatile private[this] var isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
 ) extends Tasks[T] {
 
-    private val tasksQueue = scala.collection.mutable.Queue.empty[T]
+    private[this] val tasksQueue = scala.collection.mutable.Queue.empty[T]
+    private[this] var concurrentExceptions: ConcurrentExceptions = _
+
+    def currentTasksCount: Int = tasksQueue.size
+
+    def hasExceptions: Boolean = concurrentExceptions != null
+
+    def currentExceptions: ConcurrentExceptions = {
+        if (concurrentExceptions == null) {
+            throw new IllegalStateException("no exceptions have been thrown while processing the tasks")
+        } else {
+            throw concurrentExceptions
+        }
+    }
+
+    def abortDueToExternalException(exception: Throwable): Unit = {
+        isInterrupted = () ⇒ true
+        if (concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
+        concurrentExceptions.addSuppressed(exception)
+    }
 
     def submit(t: T): Unit = {
         if (isInterrupted())
@@ -62,16 +94,25 @@ final class SequentialTasks[T](
         tasksQueue += t
     }
 
-    def join(): Iterable[Throwable] = {
-        var throwables = List.empty[Throwable]
+    def join(): Unit = {
         while (tasksQueue.nonEmpty) {
             try {
                 process(this, tasksQueue.dequeue)
             } catch {
-                case t: Throwable ⇒ throwables ::= t
+                case t: Throwable ⇒ {
+                    if (concurrentExceptions == null) concurrentExceptions = new ConcurrentExceptions()
+                    concurrentExceptions.addSuppressed(t)
+                    if (abortOnExceptions) {
+                        this.isInterrupted = () ⇒ true
+                        throw concurrentExceptions;
+                    }
+                }
             }
         }
-        throwables
+
+        if (concurrentExceptions != null) {
+            throw concurrentExceptions;
+        }
     }
 }
 
@@ -94,19 +135,32 @@ final class SequentialTasks[T](
  * @author Michael Eichberg
  */
 final class ConcurrentTasks[T](
-        val process:   (Tasks[T], T) ⇒ Unit,
-        isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
+        val process:                               (Tasks[T], T) ⇒ Unit,
+        val abortOnExceptions:                     Boolean              = false,
+        @volatile private[this] var isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
 )(
         implicit
         val executionContext: ExecutionContext
 ) extends Tasks[T] { self ⇒
 
-    private[this] var tasksCount = 0
+    @volatile private[this] var tasksCount = 0
     private[this] val tasksLock: ReentrantLock = new ReentrantLock()
     private[this] val isFinished: Condition = tasksLock.newCondition()
-    // OLD private[this] final val tasksLock = new Object
-    // OLD private[this] val tasksCount = new AtomicInteger(0)
-    private[this] val exceptions = new ConcurrentLinkedQueue[Throwable]()
+    @volatile private[this] var exceptions: ConcurrentExceptions = _ /*null*/ // lazy initialized
+
+    def currentTasksCount: Int = tasksCount
+
+    def hasExceptions: Boolean = exceptions != null
+
+    def currentExceptions: ConcurrentExceptions = exceptions
+
+    def abortDueToExternalException(exception: Throwable): Unit = {
+        isInterrupted = () ⇒ true
+        self.synchronized {
+            if (exceptions == null) exceptions = new ConcurrentExceptions()
+            exceptions.addSuppressed(exception)
+        }
+    }
 
     def submit(t: T): Unit = {
         if (isInterrupted())
@@ -114,9 +168,15 @@ final class ConcurrentTasks[T](
         val runnable = new Runnable {
             def run(): Unit = {
                 try {
-                    process(self, t)
+                    if (!isInterrupted()) process(self, t)
                 } catch {
-                    case cause: Throwable ⇒ exceptions.add(cause)
+                    case userException: Throwable ⇒ self.synchronized {
+                        if (exceptions == null) exceptions = new ConcurrentExceptions()
+                        exceptions.addSuppressed(userException)
+                        if (abortOnExceptions) {
+                            isInterrupted = () ⇒ true // prevent further submissions...
+                        }
+                    }
                 } finally {
                     withLock(tasksLock) {
                         val newTasksCount = tasksCount - 1
@@ -130,7 +190,14 @@ final class ConcurrentTasks[T](
         try {
             executionContext.execute(runnable)
         } catch {
-            case _: Throwable ⇒
+            case unexpectedException: Throwable ⇒
+                self.synchronized {
+                    if (exceptions == null) exceptions = new ConcurrentExceptions()
+                    exceptions.addSuppressed(unexpectedException)
+                    if (abortOnExceptions) {
+                        isInterrupted = () ⇒ true
+                    }
+                }
                 withLock(tasksLock) {
                     val newTasksCount = tasksCount - 1
                     tasksCount = newTasksCount
@@ -164,13 +231,15 @@ final class ConcurrentTasks[T](
      *
      * '''`join` must not be called by a thread that actually executes a task!'''
      */
-    def join(): Iterable[Throwable] = {
+    def join(): Unit = {
         withLock(tasksLock) {
             while (tasksCount > 0) {
                 // if tasksCount is zero we may already be finished or there were never any tasks...
                 isFinished.await()
             }
-            exceptions.asScala
+        }
+        if (exceptions != null) {
+            throw exceptions;
         }
     }
 
@@ -200,16 +269,17 @@ final class ConcurrentTasks[T](
 object Tasks {
 
     def apply[T](
-        process:       (Tasks[T], T) ⇒ Unit,
-        isInterrupted: () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
+        process:           (Tasks[T], T) ⇒ Unit,
+        abortOnExceptions: Boolean              = false,
+        isInterrupted:     () ⇒ Boolean         = () ⇒ Thread.currentThread().isInterrupted()
     )(
         implicit
         executionContext: ExecutionContext
     ): Tasks[T] = {
         if (executionContext eq null) {
-            new SequentialTasks[T](process, isInterrupted)
+            new SequentialTasks[T](process, abortOnExceptions, isInterrupted)
         } else {
-            new ConcurrentTasks[T](process, isInterrupted)(executionContext)
+            new ConcurrentTasks[T](process, abortOnExceptions, isInterrupted)(executionContext)
         }
     }
 

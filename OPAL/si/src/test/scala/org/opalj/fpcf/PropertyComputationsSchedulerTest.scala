@@ -64,7 +64,8 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         pks(i) = PropertyKey.create[Null, Null](
             "p"+(i),
             (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, eps: SomeEPS) ⇒ ???
+            (ps: PropertyStore, eps: SomeEPS) ⇒ ???,
+            (ps: PropertyStore, e: Entity) ⇒ None
         )
     }
 

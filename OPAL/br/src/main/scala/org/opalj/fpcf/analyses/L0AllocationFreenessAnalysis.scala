@@ -51,7 +51,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
     import project.nonVirtualCall
 
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Retrieves and commits the methods allocation freeness as calculated for its declaring class
