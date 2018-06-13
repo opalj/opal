@@ -48,7 +48,7 @@ import org.opalj.da.Code_attribute
 import org.opalj.da.Code
 
 /**
- * Generates two interfaces SuperIntf and Intf where Intf inherits from
+ * Generates three interfaces SuperIntf, Intf and SubIntf where Intf inherits from
  * SuperIntf and where Intf defines a static method that has the same
  * name and descriptor as a default method defined SuperIntf.
  *
@@ -137,7 +137,7 @@ object StaticAndDefaultInterfaceMethods extends App {
         minor_version = 0, major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
         this_class = 1 /*mr/Intf*/ , super_class = 3 /*extends java.lang.Object*/ ,
-        interfaces = IndexedSeq(5) /*mr/SuperIntf*/,
+        interfaces = IndexedSeq(5) /*mr/SuperIntf*/ ,
         // Fields.empty,
         methods = IndexedSeq(
             Method_Info(
@@ -147,17 +147,16 @@ object StaticAndDefaultInterfaceMethods extends App {
                     Code_attribute(
                         attribute_name_index = 9,
                         max_stack = 1, max_locals = 1,
-                        code =
-                            new Code(
-                                Array[Byte](
-                                    18, // ldc
-                                    10, // #10
-                                    (0xff & 184).toByte, // invokestatic
-                                    0, // -> Methodref
-                                    12, //    #12
-                                    (0xff & 177).toByte // return
-                                )
+                        code = new Code(
+                            Array[Byte](
+                                18, // ldc
+                                10, // #10
+                                (0xff & 184).toByte, // invokestatic
+                                0, // -> Methodref
+                                12, //    #12
+                                (0xff & 177).toByte // return
                             )
+                        )
                     )
                 )
             )
@@ -176,7 +175,7 @@ object StaticAndDefaultInterfaceMethods extends App {
             /*  3 */ CONSTANT_Class_info(4),
             /*  4 */ CONSTANT_Utf8("java/lang/Object"),
             /*  5 */ CONSTANT_Class_info(6),
-            /*  6 */ CONSTANT_Utf8("mr/Intf"),
+            /*  6 */ CONSTANT_Utf8("mr/Intf")
         ),
         minor_version = 0, major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,

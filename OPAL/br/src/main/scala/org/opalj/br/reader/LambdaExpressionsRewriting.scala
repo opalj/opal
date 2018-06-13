@@ -578,18 +578,11 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             if (receiverIsInterface) accessFlags |= ACC_PUBLIC.mask
             if (m.isConstructor) accessFlags |= ACC_STATIC.mask
 
-            val isVirtualMethodReference = ClassFileFactory.isVirtualMethodReference(
-                invocationInstruction,
-                receiverType,
-                descriptor,
-                instantiatedMethodType
-            )
-
             // if the receiver method is not static, we need to push the receiver object
             // onto the stack by an ALOAD_0 unless we have a method reference where the receiver
             // will be explicitly provided
             val loadReceiverObject: Array[Instruction] =
-                if (invocationInstruction == INVOKESTATIC.opcode || isVirtualMethodReference) {
+                if (invocationInstruction == INVOKESTATIC.opcode) {
                     Array()
                 } else if (m.isConstructor) {
                     Array(NEW(receiverType), null, null, DUP)

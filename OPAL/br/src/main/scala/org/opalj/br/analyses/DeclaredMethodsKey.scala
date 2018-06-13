@@ -36,7 +36,6 @@ import java.util.function.{Function ⇒ JFunction}
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
-import org.opalj.collection.immutable.UIDSet
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -131,20 +130,21 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                 val methodO = if (subClassFile.isInterfaceDeclaration)
                                     p.resolveInterfaceMethodReference(subtype, m.name, m.descriptor)
                                 else
-                                    // TODO Reconsider this code once issue #151 is resolved
-                                    p.resolveMethodReference(subtype, m.name, m.descriptor) orElse {
-                                        p.findMaximallySpecificSuperinterfaceMethods(
-                                            p.classHierarchy.allSuperinterfacetypes(subtype),
-                                            m.name,
-                                            m.descriptor,
-                                            UIDSet.empty[ObjectType]
-                                        )._2.headOption
-                                    }
+                                    p.resolveMethodReference(
+                                        subtype,
+                                        m.name,
+                                        m.descriptor,
+                                        forceLookupInSuperinterfacesOnFailure = true
+                                    )
                                 val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                                 val vm = DefinedMethod(subtype, methodO.get)
-                                val oldVM = subtypeDms.put(MethodContext(methodO.get), vm)
+                                val context = MethodContext(p, classType, methodO.get)
+                                val oldVM = subtypeDms.put(context, vm)
                                 if (oldVM != null && oldVM != vm) {
-                                    //throw new UnknownError("creation of declared methods failed")
+                                    throw new UnknownError(
+                                        "creation of declared methods failed:\n\t"+
+                                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                                    )
                                 }
                                 (null, false, false) // Continue traversal on non-overridden method
                             } else {
@@ -153,9 +153,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     }
                 }
                 val vm = DefinedMethod(classType, m)
-                val oldVM = dms.put(MethodContext(m), vm)
+                val oldVM = dms.put(MethodContext(p, classType, m), vm)
                 if (oldVM != null && oldVM != vm) {
-                    //throw new UnknownError("creation of declared methods failed")
+                    throw new UnknownError(
+                        "creation of declared methods failed:\n\t"+
+                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                    )
                 }
             }
             for {
@@ -164,15 +167,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 mc ← p.instanceMethods(classType)
             } {
                 val vm = DefinedMethod(classType, mc.method)
-                val oldVM = dms.put(MethodContext(mc.method), vm)
+                val oldVM = dms.put(MethodContext(p, classType, mc.method), vm)
                 if (oldVM != null && oldVM != vm) {
-                    if (oldVM.methodDefinition.classFile.thisType.simpleName != "JComponent" &&
-                        vm.methodDefinition.classFile.thisType.simpleName != "JComponent" &&
-                        !(oldVM.methodDefinition.isPackagePrivate && !vm.methodDefinition.isPackagePrivate
-                            || vm.methodDefinition.isPackagePrivate && !oldVM.methodDefinition.isPackagePrivate) &&
-                        !(!vm.methodDefinition.isAbstract && oldVM.methodDefinition.isAbstract)) {
-                        //throw new UnknownError(s"creation of declared methods failed:\n\t$oldVM\n\t\tvs.(new)\n\t$vm}")
-                    }
+                    throw new UnknownError(
+                        "creation of declared methods failed:\n\t"+
+                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                    )
                 }
             }
         }
@@ -225,43 +225,107 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
          * Factory method for [[MethodContext]]/[[PackagePrivateMethodContext]] depending on
          * whether the given method is package-private or not.
          */
-        def apply(method: Method): MethodContext = {
+        def apply(project: SomeProject, objectType: ObjectType, method: Method): MethodContext = {
             if (method.isPackagePrivate)
                 new PackagePrivateMethodContext(
                     method.classFile.thisType.packageName,
                     method.name,
                     method.descriptor
                 )
+            else if (project.instanceMethods(objectType).exists { m ⇒
+                method.name == m.name &&
+                    method.descriptor == m.descriptor &&
+                    m.method.isPackagePrivate
+            })
+                new ShadowsPackagePrivateMethodContext(method.name, method.descriptor)
             else
                 new MethodContext(method.name, method.descriptor)
         }
     }
 
     /**
-     * Represents a (potentially) package-private method by its declaring package and signature.
-     * The hashCode method is the same as the one in [[MethodContext]] (i.e. it does not include
-     * the package name), so it can be used to query a HashMap for a `MethodContext`, in which
-     * case the equals method guarantees that it matches a `MethodContext` with the same signature
-     * regardless of the package name. It only matches another [[PackagePrivateMethodContext]] if
-     * the package names are the same, though.
+     * Represents a package-private method by its declaring package and signature.
+     * The hashCode method is that from [[MethodContext]] (i.e. it does not include the package
+     * name), so it can be used to query a HashMap for a `MethodContext`, in which case the
+     * equals method guarantees that it matches a `MethodContext` with the same signature regardless
+     * of the package name. It only matches another [[PackagePrivateMethodContext]] if the package
+     * names are the same, though.
      */
-    private[analyses] class PackagePrivateMethodContext(
+    private[this] class PackagePrivateMethodContext(
             val packageName: String,
             methodName:      String,
             descriptor:      MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {
+            case that: MethodContextQuery ⇒ that.equals(this)
             case that: PackagePrivateMethodContext ⇒
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor
+            case _: ShadowsPackagePrivateMethodContext ⇒ false
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
             case _ ⇒ false
         }
-
-        override def hashCode(): Int = methodName.hashCode * 31 + descriptor.hashCode()
     }
 
+    /**
+     * Represents a protected or public method that shadows one or more package-private methods
+     * from supertypes in other packages.
+     * The hashCode method is that from [[MethodContext]], so it can be used to query a HashMap for
+     * a `MethodContext`, in which case the equals method guarantees that it matches a
+     * `MethodContext` with the same signature regardless of the package name.
+     */
+    private[this] class ShadowsPackagePrivateMethodContext(
+            methodName: String,
+            descriptor: MethodDescriptor
+    ) extends MethodContext(methodName, descriptor) {
+
+        override def equals(other: Any): Boolean = other match {
+            case that: MethodContextQuery       ⇒ that.equals(this)
+            case _: PackagePrivateMethodContext ⇒ false
+            case that: MethodContext ⇒
+                methodName == that.methodName && descriptor == that.descriptor
+            case _ ⇒ false
+        }
+    }
+
+    /**
+     * Represents a virtual call site by the declared receiver type, the package of the caller and
+     * the method signature.
+     * Used to query a HashMap for different kinds of [[MethodContext]]s, which all share the same
+     * hashCode, but differ in their equality with this type.
+     */
+    private[analyses] class MethodContextQuery(
+            project:          SomeProject,
+            val receiverType: ObjectType,
+            val packageName:  String,
+            methodName:       String,
+            descriptor:       MethodDescriptor
+    ) extends MethodContext(methodName, descriptor) {
+
+        override def equals(other: Any): Boolean = other match {
+            case that: PackagePrivateMethodContext ⇒
+                packageName == that.packageName &&
+                    methodName == that.methodName &&
+                    descriptor == that.descriptor &&
+                    !project.instanceMethods(receiverType).exists { m ⇒
+                        methodName == m.name &&
+                            descriptor == m.descriptor &&
+                            m.isPublic || m.method.isProtected
+                    }
+            case that: ShadowsPackagePrivateMethodContext ⇒
+                methodName == that.methodName &&
+                    descriptor == that.descriptor &&
+                    project.instanceMethods(receiverType).exists { m ⇒
+                        methodName == m.name &&
+                            descriptor == m.descriptor &&
+                            m.isPublic || m.method.isProtected
+                    }
+            case that: MethodContext ⇒
+                methodName == that.methodName && descriptor == that.descriptor
+            case _ ⇒ false
+        }
+    }
 }

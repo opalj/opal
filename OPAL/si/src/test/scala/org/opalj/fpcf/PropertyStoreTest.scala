@@ -257,7 +257,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps.set("aba", NoPalindrome)
                 ps.waitOnPhaseCompletion()
             } catch {
-                case _: IllegalStateException ⇒ // eager exception : OK
+                case AbortedDueToException(_: IllegalStateException) ⇒ // eager exception : OK
+                case _: IllegalStateException                        ⇒ // eager exception : OK
             }
         }
 

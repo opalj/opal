@@ -87,7 +87,7 @@ class ConfiguredPurity(
 
                 mdo match {
                     case Some(md) ⇒ Seq(
-                        declaredMethods(classType.packageName, classType, methodName, md)
+                        declaredMethods(classType, classType.packageName, classType, methodName, md)
                     )
                     case None ⇒ cfo.map { cf ⇒
                         cf.findMethod(methodName).map(declaredMethods(_)).toIterable

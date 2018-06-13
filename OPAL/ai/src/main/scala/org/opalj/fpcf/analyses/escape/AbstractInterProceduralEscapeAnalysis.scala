@@ -170,7 +170,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         } else /* non-null, not precise object type */ {
 
             val callee =
-                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
+                declaredMethods(
+                    dc.asObjectType,
+                    callerType.packageName,
+                    receiverType.get.asObjectType,
+                    name,
+                    descr
+                )
 
             if (!callee.hasDefinition ||
                 context.isMethodOverridable(callee.methodDefinition).isNotNo) {
@@ -227,7 +233,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     //IMPROVE
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
-                    val fp = context.virtualFormalParameters(context.declaredMethods(method))(param)
+                    val fp =
+                        context.virtualFormalParameters(context.declaredMethods(method))(param)
 
                     // for self recursive calls, we do not need handle the call any further
                     if (fp != context.entity) {

@@ -169,9 +169,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                     IntermediateResult(e, NoFreshReturnValue, FreshReturnValue, Set(eOptP), c)
             }
 
-            handleReturnValueFreshness(
-                propertyStore(declaredMethods(m), ReturnValueFreshness.key)
-            )
+            handleReturnValueFreshness(propertyStore(declaredMethods(m), ReturnValueFreshness.key))
 
         case _ ⇒ throw new RuntimeException(s"Unsupported entity $e")
     }
@@ -292,8 +290,13 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             val callee = project.instanceCall(thisType, receiverType.get, name, desc)
             handleConcreteCall(callee)
         } else {
-            val callee =
-                declaredMethods(thisType.packageName, receiverType.get.asObjectType, name, desc)
+            val callee = declaredMethods(
+                dc.asObjectType,
+                thisType.packageName,
+                receiverType.get.asObjectType,
+                name,
+                desc
+            )
 
             // unknown method
             if (!callee.hasDefinition ||

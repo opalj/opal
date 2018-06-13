@@ -359,8 +359,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *          by this method.
      * @param   forceLookupInSuperinterfacesOnFailure If true (default: false) the method tries
      *          to look up the method in a super interface if it can't find it in the available
-     *          super classes. (This setting is only relevant if the class hierarchy is not
-     *          complete.)
+     *          super classes.
      * @return  The resolved method `Some(`'''METHOD'''`)` or `None`.
      *          (To get the defining class file use the project's respective method.)
      */
@@ -381,13 +380,16 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             case Success(method)                                 ⇒ Some(method)
             case Empty if !forceLookupInSuperinterfacesOnFailure ⇒ None
             case _ /*Failure | (Empty && lookupInSuperinterfacesOnFailure) */ ⇒
-                val superinterfaceTypes = classHierarchy.superinterfaceTypes(receiverType).get
+                val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(receiverType)
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes, name, descriptor,
                         analyzedSuperinterfaceTypes = UIDSet.empty[ObjectType]
                     )
-                methods.headOption // either it is THE max. specific method or some ...
+                // Either it is THE max. specific method or some "arbitrary" method.
+                // recall that we already give precedence to non-abstract
+                // methods in the find... methods
+                methods.headOption
         }
     }
 
@@ -475,8 +477,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * @return  [[org.opalj.Success]]`(method)` if the method was found;
      *          `Empty` if the project is incomplete and the method could not be found;
      *          `Failure` if the method could not be found though the project is seemingly complete.
-     *          I.e., if `Failure` is returned the analyzed code basis is most likely
-     *          inconsistent.
+     *          I.e., if `Failure` is returned the method is not defined by a concrete class
+     *          and is either a default method defined by an interface or the analyzed code
+     *          basis is inconsistent.
      */
     def resolveClassMethodReference(
         receiverType: ObjectType,
@@ -919,7 +922,7 @@ object ProjectLike {
                         val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
                         (analyzedTypes, Set(method))
 
-                    case None ⇒
+                    case _ /* None OR "the method was either private or static" */ ⇒
                         if (superinterfaceTypes.isEmpty) {
                             (newAnalyzedSuperinterfaceTypes, Set.empty)
                         } else if (superinterfaceTypes.isSingletonSet) {
@@ -961,7 +964,9 @@ object ProjectLike {
         objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile],
         classHierarchy:        ClassHierarchy
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
+
         val anchor = ((analyzedSuperinterfaceTypes, Set.empty[Method]))
+
         superinterfaceTypes.foldLeft(anchor) { (currentResult, interfaceType) ⇒
             val (currentAnalyzedSuperinterfaceTypes, currentMethods) = currentResult
             val (analyzedSuperinterfaceTypes, methods) =
@@ -992,18 +997,19 @@ object ProjectLike {
                 methods.iterator.filter(m ⇒ !currentMethods.contains(m)) foreach { method ⇒
                     val newMethodDeclaringClassType = method.classFile.thisType
                     var addNewMethod = true
-                    currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒
-                        val specificMethodDeclaringClassType = method.classFile.thisType
-                        if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
-                            addNewMethod = false
-                            true
-                        } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
-                            false
-                        } else {
-                            //... we have an incomplete class hierarchy; let's keep both methods
-                            true
+                    currentMaximallySpecificMethods =
+                        currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod ⇒
+                            val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
+                            if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
+                                addNewMethod = false
+                                true
+                            } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
+                                false
+                            } else {
+                                //... we have an incomplete class hierarchy; let's keep both methods
+                                true
+                            }
                         }
-                    }
                     if (addNewMethod) additionalMaximallySpecificMethods += method
                 }
                 currentMaximallySpecificMethods ++= additionalMaximallySpecificMethods
@@ -1018,5 +1024,4 @@ object ProjectLike {
             }
         }
     }
-
 }

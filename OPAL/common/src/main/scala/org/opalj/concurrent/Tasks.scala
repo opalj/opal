@@ -55,6 +55,11 @@ sealed trait Tasks[T] {
 
 }
 
+/**
+ * @param  abortOnExceptions If abort due to external exception is set to `false`, endless
+ *         recursion may occur!
+ * @tparam T Type of the processed data.
+ */
 final class SequentialTasks[T](
         val process:                               (Tasks[T], T) ⇒ Unit,
         val abortOnExceptions:                     Boolean              = false,

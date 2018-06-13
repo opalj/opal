@@ -452,8 +452,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             val callee = project.instanceCall(state.declClass, rcvrType.get, name, descr)
             onPrecise(callee)
         } else {
-            val callee =
-                declaredMethods(state.declClass.packageName, rcvrType.get.asObjectType, name, descr)
+            val callee = declaredMethods(
+                receiverType.asObjectType,
+                state.declClass.packageName,
+                rcvrType.get.asObjectType,
+                name,
+                descr
+            )
 
             if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
                 onUnknown() // We don't know all overrides
@@ -482,8 +487,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case Success(callee) if callee eq state.method ⇒
                 return true; // Self-recursive calls don't need to be checked
             case Success(callee) ⇒ declaredMethods(callee)
-            case _ ⇒
-                declaredMethods(state.declClass.packageName, receiverType, name, descriptor)
+            case _ ⇒ declaredMethods(
+                receiverType,
+                state.declClass.packageName,
+                receiverType,
+                name,
+                descriptor
+            )
         }
         val calleePurity = propertyStore(dm, Purity.key)
         checkMethodPurity(calleePurity, (receiver, params))

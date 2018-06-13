@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
@@ -61,14 +62,20 @@ class PurityTests extends PropertiesTest {
     override def withRT = true
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerL0PurityAnalysis),
-            Set(
-                LazyL0FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis
+        val as = try {
+            executeAnalyses(
+                Set(EagerL0PurityAnalysis),
+                Set(
+                    LazyL0FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis
+                )
             )
-        )
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed.foreach(e ⇒ e.printStackTrace())
+                throw ce;
+        }
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
