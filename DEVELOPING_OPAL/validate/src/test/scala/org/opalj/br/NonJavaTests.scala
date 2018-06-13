@@ -47,10 +47,8 @@ class NonJavaTests extends FunSpec {
         val project = Project(sourceFolder)
         val interfaceType = ObjectType("mr/Intf")
 
-        it("should not contain the default method from SuperIntf that is inaccesible through Intf") {
-            assert(!project.instanceMethods(interfaceType).exists { mdc ⇒
-                mdc.name == "m" && !mdc.method.isStatic
-            })
+        it("should not contain the default method \"m\" from SuperIntf that is inaccesible in Intf") {
+            assert(project.instanceMethods(interfaceType) forall { mdc ⇒ mdc.name != "m" })
         }
     }
 
