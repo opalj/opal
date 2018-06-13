@@ -61,7 +61,7 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
     }
 
-    def contains(t : ObjectType) : Boolean = {
+    def contains(t: ObjectType): Boolean = {
         interfaceTypes.containsId(t.id) || classTypes.containsId(t.id)
     }
 
