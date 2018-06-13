@@ -1311,7 +1311,7 @@ object Project {
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
         }
 
-        val tasks = new SequentialTasks[ObjectType](computeDefinedMethods)
+        val tasks = new SequentialTasks[ObjectType](computeDefinedMethods, abortOnExceptions = true)
         classHierarchy.rootTypes.foreach(tasks.submit)
         try {
             tasks.join()
