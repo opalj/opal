@@ -1161,8 +1161,6 @@ object Project {
 
         import ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
-        // IMPROVE Instead of a Chain => Array (for the value) use a sorted trie (set) or something similar which is always sorted.
-
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
         // information about all super types is available (already stored in instanceMethods)
@@ -1174,6 +1172,9 @@ object Project {
         val methods: AnyRefMap[ObjectType, Chain[MethodDeclarationContext]] = {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
+
+        // HERE "overridden" is to be taken with a grain of salt...
+        var staticallyOverriddenDefaultMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
         /* Returns `true` if the potentially available information is not yet available. */
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
@@ -1292,17 +1293,35 @@ object Project {
                 case Some(classFile) ⇒
                     for {
                         declaredMethod ← classFile.methods
-                        if declaredMethod.isVirtualMethodDeclaration
                     } {
-                        val declaredMethodContext = MethodDeclarationContext(declaredMethod)
-                        // We have to filter multiple methods when we inherit (w.r.t. the
-                        // visibility) multiple conflicting methods!
-                        definedMethods =
-                            definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+                        if (declaredMethod.isVirtualMethodDeclaration) {
+                            val declaredMethodContext = MethodDeclarationContext(declaredMethod)
+                            // We have to filter multiple methods when we inherit (w.r.t. the
+                            // visibility) multiple conflicting methods!
+                            definedMethods =
+                                definedMethods.filterNot(declaredMethodContext.directlyOverrides)
 
-                        // Recall that it is possible to make a method "abstract" again...
-                        if (declaredMethod.isNotAbstract) {
-                            definedMethods :&:= declaredMethodContext
+                            // Recall that it is possible to make a method "abstract" again...
+                            if (declaredMethod.isNotAbstract) {
+                                definedMethods :&:= declaredMethodContext
+                            }
+                        } else if (classFile.isInterfaceDeclaration && declaredMethod.isStatic) {
+                            val declaredMethodName = declaredMethod.name
+                            val declaredMethodDescriptor = declaredMethod.descriptor
+                            if (definedMethods.exists { mdc ⇒
+                                mdc.name == declaredMethodName &&
+                                    mdc.descriptor == declaredMethodDescriptor
+                            }) {
+                                // In this case we may have an "overriding" of a default method by
+                                // a static method defined by the current interface...
+                                // If so – we have to remove the default method from the set
+                                // of defined methods for THIS SPECIFIC INTERFACE ONlY; however,
+                                // we can only remove it later on, because the default method is
+                                // visible again in subclasses/subinterfaces and we therefore
+                                // first have to propagate it.
+                                staticallyOverriddenDefaultMethods ::=
+                                    ((objectType, declaredMethodName, declaredMethodDescriptor))
+                            }
                         }
                     }
                 case None ⇒ // ... reached only in case of rather incomplete projects...
@@ -1319,6 +1338,14 @@ object Project {
             case ce: ConcurrentExceptions ⇒
                 ce.getSuppressed foreach { e ⇒
                     error("project setup", "computing the defined methods failed", e)
+                }
+        }
+
+        staticallyOverriddenDefaultMethods foreach { sodm ⇒
+            val (declaringType, name, descriptor) = sodm
+            methods(declaringType) =
+                methods(declaringType) filter { mdc ⇒
+                    mdc.descriptor != descriptor || mdc.name != name
                 }
         }
 
