@@ -32,6 +32,7 @@ package analyses
 
 import java.net.URL
 import java.io.File
+import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.lang.ref.SoftReference
@@ -40,15 +41,14 @@ import scala.annotation.switch
 import scala.collection.Set
 import scala.collection.Map
 import scala.collection.SortedMap
-import scala.collection.mutable.TreeSet
-import scala.collection.mutable.AnyRefMap
-import scala.collection.mutable.OpenHashMap
+import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.concurrent.Tasks
@@ -1161,6 +1161,8 @@ object Project {
 
         import ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
+        // IMPROVE Instead of a Chain => Array (for the value) use a sorted trie (set) or something similar which is always sorted.
+
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
         // information about all super types is available (already stored in instanceMethods)
@@ -1169,7 +1171,7 @@ object Project {
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
 
-        val methods: AnyRefMap[ObjectType, TreeSet[MethodDeclarationContext]] = {
+        val methods: AnyRefMap[ObjectType, Chain[MethodDeclarationContext]] = {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
@@ -1191,7 +1193,7 @@ object Project {
 
             val superclassType = classHierarchy.superclassType(objectType)
 
-            val inheritedClassMethods: TreeSet[MethodDeclarationContext] =
+            val inheritedClassMethods: Chain[MethodDeclarationContext] =
                 if (superclassType.isDefined) {
                     val theSuperclassType = superclassType.get
                     val superclassTypeMethods = methods.get(theSuperclassType)
@@ -1210,9 +1212,9 @@ object Project {
                             inheritedClassMethods
                         }
                     } else
-                        TreeSet.empty
+                        Naught
                 } else {
-                    TreeSet.empty
+                    Naught
                 }
 
             // We have to select the most maximally specific methods, recall that:
@@ -1223,7 +1225,7 @@ object Project {
             //  -   we assume that the project is valid; i.e., there is
             //      always at most one maximally specific method and if not, then
             //      the subclass resolves the conflict by defining the method.
-            var definedMethods: TreeSet[MethodDeclarationContext] = inheritedClassMethods
+            var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
 
             val superinterfaceTypesOption = classHierarchy.superinterfaceTypes(objectType)
             if (superinterfaceTypesOption.isDefined) {
@@ -1234,8 +1236,8 @@ object Project {
                 }
 
                 // We have to filter (remove) those interfaces that are directly and indirectly
-                // inherited. In this case the potentially(!) correct method is defined by the
-                // interface which also implements the indirectly inherited interface!
+                // inherited. In this case the potentially(!) correct method is defined by the interface
+                // which also implements the indirectly inherited interface!
                 // Concrete case:
                 // interface S { default void m(){;} }
                 // interface SL extends S { abstract void m(); /* m is made abstract!!! */ }
@@ -1256,9 +1258,10 @@ object Project {
                         definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                             definedMethod.name == inheritedInterfaceMethod.name
                     }) {
-                        definedMethods += inheritedInterfaceMethod
+                        definedMethods :&:= inheritedInterfaceMethod
                     }
                 }
+
                 for {
                     superinterfaceType ← superinterfaceTypes
                     superinterfaceTypeMethods ← methods.get(superinterfaceType)
@@ -1270,6 +1273,7 @@ object Project {
                         indirectlyInheritedInterfacesMethods :&:= superinterfaceTypeMethod
                     }
                 }
+
                 // let's keep the contexts related to the maximally specific methods.
                 indirectlyInheritedInterfacesMethods foreach { mdc ⇒
                     val (_, maximallySpecificSuperiniterfaceMethod) =
@@ -1288,18 +1292,17 @@ object Project {
                 case Some(classFile) ⇒
                     for {
                         declaredMethod ← classFile.methods
+                        if declaredMethod.isVirtualMethodDeclaration
                     } {
-                        if (declaredMethod.isVirtualMethodDeclaration) {
-                            val declaredMethodContext = MethodDeclarationContext(declaredMethod)
-                            // We have to filter multiple methods when we inherit (w.r.t. the
-                            // visibility) multiple conflicting methods!
-                            definedMethods =
-                                definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+                        val declaredMethodContext = MethodDeclarationContext(declaredMethod)
+                        // We have to filter multiple methods when we inherit (w.r.t. the
+                        // visibility) multiple conflicting methods!
+                        definedMethods =
+                            definedMethods.filterNot(declaredMethodContext.directlyOverrides)
 
-                            // Recall that it is possible to make a method "abstract" again...
-                            if (declaredMethod.isNotAbstract) {
-                                definedMethods += declaredMethodContext
-                            }
+                        // Recall that it is possible to make a method "abstract" again...
+                        if (declaredMethod.isNotAbstract) {
+                            definedMethods :&:= declaredMethodContext
                         }
                     }
                 case None ⇒ // ... reached only in case of rather incomplete projects...
@@ -1319,7 +1322,11 @@ object Project {
                 }
         }
 
-        val result = methods.mapValuesNow { mdcs ⇒ ConstArray.from(mdcs.toArray) }
+        val result = methods.mapValuesNow { mdcs ⇒
+            val sortedMethods = mdcs.toArray
+            sortArray(sortedMethods, MethodDeclarationContextOrdering)
+            ConstArray.from(sortedMethods)
+        }
         result.repack
         result
     } { t ⇒ info("project setup", s"computing defined methods took ${t.toSeconds}") }
