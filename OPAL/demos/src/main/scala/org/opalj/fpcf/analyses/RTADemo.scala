@@ -40,7 +40,7 @@ import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.properties.CallGraph
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.log.OPALLogger.info
-import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.SimpleTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
 
 object RTADemo extends DefaultOneStepAnalysis {
@@ -55,7 +55,7 @@ object RTADemo extends DefaultOneStepAnalysis {
         // Get the TAC code for all methods to make it possible to measure the time for
         // the analysis itself.
         time {
-            val tac = project.get(DefaultTACAIKey)
+            val tac = project.get(SimpleTACAIKey)
             project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 

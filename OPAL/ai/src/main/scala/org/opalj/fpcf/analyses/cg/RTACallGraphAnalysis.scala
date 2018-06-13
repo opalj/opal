@@ -39,7 +39,6 @@ import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
@@ -74,7 +73,7 @@ import scala.collection.mutable.ArrayBuffer
 
 case class State(
         private[cg] val method:            Method,
-        private[cg] val virtualCallSites:  ArrayBuffer[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)],
+        private[cg] val virtualCallSites:  Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
         private var _calleesOfM:           IntMap[Set[Method]], // key = PC
         private[cg] var numTypesProcessed: Int
 ) {
@@ -147,7 +146,7 @@ class RTACallGraphAnalysis private[analyses] (
         //  2. methods (+ pc) called by the current method
         //  3. compute the call sites of virtual calls, whose targets are not yet final
         //  4. add newly reachable methods
-        var (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
+        val (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
             method, instantiatedTypesUB, newReachableMethods
         )
 
@@ -156,13 +155,14 @@ class RTACallGraphAnalysis private[analyses] (
 
         val state = State(method, virtualCallSites, calleesOfM, numTypesProcessed)
 
-        calleesOfM = handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
+        // here we can ignore the return value, as the state also gets updated
+        handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
 
         IncrementalResult(
             Results(
                 resultForCallees(instantiatedTypesEOptP, state),
                 partialResultForInstantiatedTypes(method, newInstantiatedTypes),
-                partialResultForCallGraph(method, calleesOfM)
+                partialResultForCallGraph(method, state.calleesOfM)
             ),
             // continue the computation with the newly reachable methods
             newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
@@ -201,7 +201,7 @@ class RTACallGraphAnalysis private[analyses] (
         method:              Method,
         instantiatedTypesUB: UIDSet[ObjectType],
         newReachableMethods: ArrayBuffer[Method]
-    ): (UIDSet[ObjectType], IntMap[Set[Method]], ArrayBuffer[(Int, ReferenceType, String, MethodDescriptor)]) = {
+    ): (UIDSet[ObjectType], IntMap[Set[Method]], Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
@@ -213,7 +213,7 @@ class RTACallGraphAnalysis private[analyses] (
         val stmts = tacaiProvider(method).stmts
 
         // the virtual call sites, where we can not determine the precise tgts
-        val virtualCallSites: ArrayBuffer[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)] = new ArrayBuffer((stmts.length / 3) + 1)
+        val virtualCallSites: ArrayBuffer[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = new ArrayBuffer((stmts.length / 3) + 1)
 
         // for allocation sites, add new types
         // for calls, add new edges
@@ -290,8 +290,9 @@ class RTACallGraphAnalysis private[analyses] (
         pc:                  Int,
         newReachableMethods: ArrayBuffer[Method],
         calleesOfM:          IntMap[Set[Method]],
-        virtualCallSites:    ArrayBuffer[(Int /*PC*/ , ReferenceType, String, MethodDescriptor)]
+        virtualCallSites:    ArrayBuffer[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
     ): IntMap[Set[Method]] = {
+
         var result = calleesOfM
         val rvs = call.receiver.asVar.value.asDomainReferenceValue.allValues
         for (rv ← rvs) {
@@ -316,12 +317,21 @@ class RTACallGraphAnalysis private[analyses] (
                             typeBound
                         else
                             call.declaringClass
-                    virtualCallSites += ((pc, receiverType, call.name, call.descriptor))
+
+                    if (receiverType.isArrayType) {
+                        val tgts = project.instanceCall(
+                            method.classFile.thisType, receiverType, call.name, call.descriptor
+                        ).toSet
+                        result = handleCall(pc, tgts, newReachableMethods, result)
+                    } else {
+                        virtualCallSites += ((pc, receiverType.asObjectType, call.name, call.descriptor))
+                    }
                 }
             }
         }
 
         result
+
     }
 
     def addNewReachableMethod(m: Method, reachableMethods: ArrayBuffer[Method]): Unit = {
@@ -360,23 +370,28 @@ class RTACallGraphAnalysis private[analyses] (
         result
     }
 
+    // modifies state
+    // modifies newReachable methods
+    // returns updated newCalleesOfM
     def handleVirtualCallSites(
         state:                State,
         newInstantiatedTypes: Iterator[ObjectType],
         newReachableMethods:  ArrayBuffer[Method],
-        newCalleesOfMap:      IntMap[Set[Method]]
+        newCalleesOfM:        IntMap[Set[Method]]
     ): IntMap[Set[Method]] = {
-        var result = newCalleesOfMap
+        var result = newCalleesOfM
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
+
+            // todo if project.classHierarchy.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
             if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             tgt ← project.instanceCall(
                 state.method.classFile.thisType, instantiatedType, name, descr
             )
         } {
             addNewReachableMethod(tgt, newReachableMethods)
-            // in case newCalleesOfM eq state.calleesOfM this is safe
+            // in case newCalleesOfM equals state.calleesOfM this is safe
             result = result.updated(pc, result.getOrElse(pc, Set.empty) + tgt)
             state.addCallEdge(pc, tgt)
         }
@@ -446,6 +461,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         // here we need a immutable copy of the current state
         val newCallees = Callees(state.calleesOfM)
+        // todo equal size or equal callees?
         if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
         else {

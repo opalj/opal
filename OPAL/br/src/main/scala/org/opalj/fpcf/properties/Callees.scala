@@ -56,7 +56,7 @@ class Callees(
     }
 
     val size: Int = {
-        callees.map(_._2.size).sum
+        callees.iterator.map(_._2.size).sum
     }
 
     def canEqual(other: Any): Boolean = other.isInstanceOf[Callees]
@@ -73,16 +73,16 @@ class Callees(
         state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
     }
 
-    private def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
+    /*private def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
         pcToTgts: (Int, Set[Method]) ⇒ pcToTgts._2.map((tgt: Method) ⇒ (pcToTgts._1, tgt))
-    }
+    }*/
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
      * value is above the given value in the underlying lattice.)
      */
     override def checkIsEqualOrBetterThan(e: Entity, other: Callees): Unit = {
-        if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
+        if (other.size < size)//todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 }
