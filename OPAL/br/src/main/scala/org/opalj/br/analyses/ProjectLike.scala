@@ -380,7 +380,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             case Success(method)                                 ⇒ Some(method)
             case Empty if !forceLookupInSuperinterfacesOnFailure ⇒ None
             case _ /*Failure | (Empty && lookupInSuperinterfacesOnFailure) */ ⇒
-                val superinterfaceTypes = classHierarchy.superinterfaceTypes(receiverType).get
+                val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(receiverType)
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes, name, descriptor,
