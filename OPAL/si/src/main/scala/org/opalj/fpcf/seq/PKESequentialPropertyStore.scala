@@ -44,6 +44,7 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
+import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -205,7 +206,7 @@ final class PKESequentialPropertyStore private (
                 val isComputed = computedPropertyKinds(pkId)
                 val fastTrackPropertyOption: Option[P] =
                     if (isComputed && useFastTrackPropertyComputations)
-                        PropertyKey.fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                        fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
                     else
                         None
                 fastTrackPropertyOption match {
@@ -222,7 +223,7 @@ final class PKESequentialPropertyStore private (
                                 if (isComputed || delayedPropertyKinds(pkId)) {
                                     epk
                                 } else {
-                                    val p = PropertyKey.fallbackPropertyBasedOnPkId(this, e, pkId)
+                                    val p = fallbackPropertyBasedOnPkId(this, e, pkId)
                                     if (force) {
                                         set(e, p)
                                     }
