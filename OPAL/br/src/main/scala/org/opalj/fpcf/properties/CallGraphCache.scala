@@ -90,7 +90,7 @@ class CallGraphCache[Contour, Value] private[this] (
     // RECALL: scala.collection.concurrent.Map's getOrElseUpdate
     //          is – as of Scala 2.11.0 – NOT THREAD SAFE
 
-    import java.util.concurrent.{ConcurrentHashMap => CHMap}
+    import java.util.concurrent.{ConcurrentHashMap ⇒ CHMap}
 
     private[this] val baseCache: CHMap[ObjectType, Value] = new CHMap(512)
 

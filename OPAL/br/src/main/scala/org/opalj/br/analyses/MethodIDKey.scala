@@ -30,6 +30,7 @@ package org.opalj
 package br
 package analyses
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
 /**
@@ -37,20 +38,30 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
  *
  * @author Florian Kuebler
  */
-object MethodIDKey extends ProjectInformationKey[Method ⇒ Int, Nothing] {
+object MethodIDKey extends ProjectInformationKey[MethodIDs, Nothing] {
 
     override protected def requirements: ProjectInformationKeys = Nil
 
-    override protected def compute(project: SomeProject): Method ⇒ Int = {
-        val result = new Object2IntOpenHashMap[Method]()
+    override protected def compute(project: SomeProject): MethodIDs = {
+        val method2Id = new Object2IntOpenHashMap[Method]()
+        val id2Method = new Int2ObjectOpenHashMap[Method]()
 
         var curID = 0
         project.allMethods.foreach { m ⇒
             val id = curID
             curID += 1
-            result.put(m, id)
+            method2Id.put(m, id)
+            id2Method.put(id, m)
         }
 
-        result.getInt
+        new MethodIDs(method2Id.getInt, id2Method.get)
     }
+}
+
+final class MethodIDs private[analyses] (
+        private[this] val method2Id: Method ⇒ Int, private[this] val id2Method: Int ⇒ Method
+) {
+    def apply(method: Method): Int = method2Id(method)
+
+    def apply(id: Int): Method = id2Method(id)
 }

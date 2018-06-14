@@ -386,8 +386,8 @@ class RTACallGraphAnalysis private[analyses] (
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
 
-            // todo if project.classHierarchy.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
-            if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
+            if project.classHierarchy.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
+            //if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             tgt ← project.instanceCall(
                 state.method.classFile.thisType, instantiatedType, name, descr
             )
@@ -407,7 +407,7 @@ class RTACallGraphAnalysis private[analyses] (
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
-                val newCG = ub.updated(method, methodIds, newCalleesOfM)
+                val newCG = ub.updated(method, newCalleesOfM)
 
                 // todo shouldn't it be newCG.size > ub.size
                 assert(newCG.size >= ub.size)
@@ -432,7 +432,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(Map(method → newCalleesOfM), callers, callers.map(_._2.size).sum)
+                    new CallGraph(Map(method → newCalleesOfM), callers, callers.map(_._2.size).sum, methodIds)
                 ))
             case _ ⇒ None
         })
@@ -464,10 +464,10 @@ class RTACallGraphAnalysis private[analyses] (
     def resultForCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: State
     ): PropertyComputationResult = {
-        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method))
+        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method), methodIds)
 
         // here we need a immutable copy of the current state
-        val newCallees = Callees(state.calleesOfM)
+        val newCallees = Callees(state.calleesOfM, methodIds)
         // todo equal size or equal callees?
         if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)

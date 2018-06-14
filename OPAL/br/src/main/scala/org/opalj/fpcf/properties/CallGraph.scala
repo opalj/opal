@@ -37,6 +37,7 @@ import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.MethodIDKey
+import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -47,9 +48,11 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.InvocationInstruction
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 
+import scala.annotation.switch
 import scala.collection.Set
 import scala.collection.Map
 import scala.collection.JavaConverters._
@@ -70,10 +73,10 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 final class CallGraph(
-        val callees: Map[Method, IntMap[IntTrieSet]],
-        val callers: IntMap[Set[Long /*MethodId + PC*/ ]],
-        //val callers: Map[Method, Set[(Method, Int /*pc*/ )]],
-        val size: Int
+        val callees:   Map[Method, IntMap[IntTrieSet]], //TODO
+        val callers:   IntMap[Set[Long /*MethodId + PC*/ ]],
+        val size:      Int,
+        val methodIds: MethodIDs
 ) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
 
@@ -89,7 +92,7 @@ final class CallGraph(
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 
-    def updated(method: Method, methodIds: Method ⇒ Int, calleesOfM: IntMap[IntTrieSet]): CallGraph = {
+    def updated(method: Method, calleesOfM: IntMap[IntTrieSet]): CallGraph = {
         val methodId = methodIds(method)
 
         // add the new edges to the callee map of the call graph
@@ -121,7 +124,7 @@ final class CallGraph(
                     newCallers = newCallers.updated(tgt, newCallers.getOrElse(tgt, Set.empty) + CallGraph.toLong(methodId, pc))
                 }
         }
-        CallGraph(newCallees, newCallers, size + (calleesOfMSize - oldCalleesOfMSize))
+        CallGraph(newCallees, newCallers, size + (calleesOfMSize - oldCalleesOfMSize), methodIds)
     }
 
 }
@@ -147,10 +150,11 @@ object CallGraph extends CallGraphPropertyMetaInformation {
     }
 
     def apply(
-        callees: Map[Method, IntMap[IntTrieSet]],
-        callers: IntMap[Set[Long]],
-        size:    Int
-    ): CallGraph = new CallGraph(callees, callers, size)
+        callees:   Map[Method, IntMap[IntTrieSet]],
+        callers:   IntMap[Set[Long]],
+        size:      Int,
+        methodIDs: MethodIDs
+    ): CallGraph = new CallGraph(callees, callers, size, methodIDs)
 
     def unapply(
         cg: CallGraph
@@ -179,7 +183,11 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val callees = new ConcurrentHashMap[Method, IntMap[IntTrieSet]]
         val callers = new ConcurrentHashMap[Int, Set[Long]]()
 
-        val callGraphCache = new CallGraphCache[(String /*same package*/ , MethodSignature), Set[Method]](project)
+        // we need the kind as a method can be called via super and via invokeinterface with same signature and package
+        val staticCallCache = new CallGraphCache[MethodSignature, IntTrieSet](project)
+        val specialCallCache = new CallGraphCache[MethodSignature, IntTrieSet](project)
+        val interfaceCallCache = new CallGraphCache[MethodSignature, IntTrieSet](project)
+        val virtualCallCache = new CallGraphCache[(String, MethodSignature), IntTrieSet](project)
 
         project.parForeachMethod() { m ⇒
             val methodId = methodIds(m)
@@ -188,33 +196,47 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                     var calleesOfM = IntMap.empty[IntTrieSet]
                     code.collectWithIndex {
                         case PCAndInstruction(pc, instr: InvocationInstruction) ⇒
-                            val tgts = instr match {
+                            val tgts = (instr.opcode: @switch) match {
 
-                                case call: INVOKESTATIC ⇒
+                                case INVOKESTATIC.opcode ⇒
+                                    val call = instr.asInstanceOf[INVOKESTATIC]
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
-                                    callGraphCache.getOrElseUpdate(
-                                        call.declaringClass, ("", methodSignature)
+                                    staticCallCache.getOrElseUpdate(
+                                        call.declaringClass, methodSignature
                                     ) {
-                                        project.staticCall(call).toSet
+                                        project.staticCall(call) match {
+                                            case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
+                                            case _            ⇒ IntTrieSet.empty
+                                        }
                                     }
 
-                                case call: INVOKESPECIAL ⇒
+                                case INVOKESPECIAL.opcode ⇒
+                                    val call = instr.asInstanceOf[INVOKESPECIAL]
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
-                                    callGraphCache.getOrElseUpdate(
-                                        call.declaringClass, ("", methodSignature)
+                                    specialCallCache.getOrElseUpdate(
+                                        call.declaringClass, methodSignature
                                     ) {
-                                        project.specialCall(call).toSet
+                                        project.specialCall(call) match {
+                                            case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
+                                            case _            ⇒ IntTrieSet.empty
+                                        }
                                     }
 
-                                case call: INVOKEINTERFACE ⇒
+                                case INVOKEINTERFACE.opcode ⇒
+                                    val call = instr.asInstanceOf[INVOKEINTERFACE]
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
-                                    callGraphCache.getOrElseUpdate(
-                                        call.declaringClass, ("", methodSignature)
+                                    interfaceCallCache.getOrElseUpdate(
+                                        call.declaringClass, methodSignature
                                     ) {
-                                        project.interfaceCall(call)
+                                        project.interfaceCall(
+                                            call
+                                        ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
+                                            r + methodIds(tgt)
+                                        }
                                     }
 
-                                case call: INVOKEVIRTUAL ⇒
+                                case INVOKEVIRTUAL.opcode ⇒
+                                    val call = instr.asInstanceOf[INVOKEVIRTUAL]
                                     val methodSignature = MethodSignature(call.name, call.methodDescriptor)
                                     /*val samePackage = call.declaringClass.isObjectType &&
                                         m.classFile.thisType.packageName ==
@@ -226,27 +248,27 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                         else
                                             call.declaringClass.asObjectType
 
-                                    callGraphCache.getOrElseUpdate(
+                                    virtualCallCache.getOrElseUpdate(
                                         objType, (m.classFile.thisType.packageName, methodSignature)
                                     ) {
-                                        project.virtualCall(m.classFile.thisType.packageName, call)
+                                        project.virtualCall(
+                                            m.classFile.thisType.packageName, call
+                                        ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
+                                            r + methodIds(tgt)
+                                        }
                                     }
 
-                                case _: INVOKEDYNAMIC ⇒
+                                case INVOKEDYNAMIC.opcode ⇒
                                     OPALLogger.logOnce(
                                         Warn(
                                             "analysis",
                                             "unresolved invokedynamics are not handled. please use appropriate reading configuration"
                                         )
                                     )(project.logContext)
-                                    Set.empty[Method]
+                                    IntTrieSet.empty
                             }
 
-                            val tgtIds = tgts.foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
-                                r + methodIds(tgt)
-                            }
-
-                            tgtIds.foreach { tgt ⇒
+                            tgts.foreach { tgt ⇒
                                 callers.compute(tgt, (_: Int, prev: Set[Long]) ⇒ {
                                     val methodAndPC: Long = CallGraph.toLong(methodId, pc)
                                     if (prev == null)
@@ -256,7 +278,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                 })
                             }
 
-                            calleesOfM += (pc → tgtIds)
+                            calleesOfM += (pc → tgts)
                     }
 
                     callees.put(m, calleesOfM)
@@ -267,7 +289,14 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         println("computed fallback cg")
 
-        new CallGraph(callees.asScala, IntMap[Set[Long]](callers.asScala.toSeq: _*), callers.values().iterator().asScala.map(_.size).sum)
+        val size = callers.values().iterator().asScala.map(_.size).sum
+
+        new CallGraph(
+            callees.asScala,
+            IntMap[Set[Long]](callers.asScala.toSeq: _*),
+            size,
+            methodIds
+        )
     }
 
 }

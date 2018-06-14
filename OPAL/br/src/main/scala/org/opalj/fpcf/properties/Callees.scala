@@ -31,6 +31,9 @@ package fpcf
 package properties
 
 import org.opalj.br.Method
+import org.opalj.br.analyses.MethodIDKey
+import org.opalj.br.analyses.MethodIDs
+import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 
 import scala.collection.immutable.IntMap
@@ -47,16 +50,22 @@ sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 }
 
 class Callees(
-        val callees: IntMap[IntTrieSet]
+        val calleesIds: IntMap[IntTrieSet],
+        val methodIds:  MethodIDs
 ) extends Property with OrderedProperty with CalleesPropertyMetaInformation {
     final def key: PropertyKey[Callees] = Callees.key
+
+    def callees: Map[Int /*PC*/ , Set[Method]] = calleesIds.map {
+        case (pc, tgts) ⇒
+            (pc, tgts.mapToAny[Method](methodIds.apply))
+    }
 
     override def toString: String = {
         s"Callees(size=${this.size})\n\t$callees"
     }
 
     val size: Int = {
-        callees.iterator.map(_._2.size).sum
+        calleesIds.iterator.map(_._2.size).sum
     }
 
     def canEqual(other: Any): Boolean = other.isInstanceOf[Callees]
@@ -64,12 +73,12 @@ class Callees(
     override def equals(other: Any): Boolean = other match {
         case that: Callees ⇒
             (that canEqual this) &&
-                callees == that.callees
+                calleesIds == that.calleesIds
         case _ ⇒ false
     }
 
     override def hashCode(): Int = {
-        val state = Seq(callees)
+        val state = Seq(calleesIds)
         state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
     }
 
@@ -82,7 +91,7 @@ class Callees(
      * value is above the given value in the underlying lattice.)
      */
     override def checkIsEqualOrBetterThan(e: Entity, other: Callees): Unit = {
-        if (other.size < size)//todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
+        if (other.size < size) //todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 }
@@ -92,12 +101,15 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            Callees(IntMap.empty),
-            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub
+            (ps: PropertyStore, _: Method) ⇒ Callees(IntMap.empty, ps.context[SomeProject].get(MethodIDKey)),
+            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub,
+            (_: PropertyStore, _: Method) ⇒ None
         )
     }
 
-    def apply(callees: IntMap[IntTrieSet]): Callees = new Callees(callees)
+    def apply(callees: IntMap[IntTrieSet], methodIDs: MethodIDs): Callees = {
+        new Callees(callees, methodIDs)
+    }
 
-    def unapply(callees: Callees): Option[IntMap[IntTrieSet]] = Some(callees.callees)
+    def unapply(callees: Callees): Option[IntMap[IntTrieSet]] = Some(callees.calleesIds)
 }
