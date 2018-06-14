@@ -67,7 +67,6 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 
-import scala.collection.Map
 import scala.collection.Set
 import scala.collection.immutable.IntMap
 import scala.collection.mutable.ArrayBuffer
@@ -163,7 +162,7 @@ class RTACallGraphAnalysis private[analyses] (
             Results(
                 resultForCallees(instantiatedTypesEOptP, state),
                 partialResultForInstantiatedTypes(method, newInstantiatedTypes),
-                partialResultForCallGraph(method, state.calleesOfM)
+                partialResultForCallGraph(methodID, state.calleesOfM)
             ),
             // continue the computation with the newly reachable methods
             newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
@@ -192,7 +191,7 @@ class RTACallGraphAnalysis private[analyses] (
         IncrementalResult(
             Results(
                 resultForCallees(instantiatedTypesEOptP, state),
-                partialResultForCallGraph(state.method, newCalleesOfM)
+                partialResultForCallGraph(methodIds(state.method), newCalleesOfM)
             ),
             newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
         )
@@ -402,12 +401,12 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     def partialResultForCallGraph(
-        method:        Method,
+        methodId:      Int,
         newCalleesOfM: IntMap[IntTrieSet]
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
             case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
-                val newCG = ub.updated(method, newCalleesOfM)
+                val newCG = ub.updated(methodId, newCalleesOfM)
 
                 // todo shouldn't it be newCG.size > ub.size
                 assert(newCG.size >= ub.size)
@@ -418,7 +417,6 @@ class RTACallGraphAnalysis private[analyses] (
                     Some(EPS(project, lb, newCG))
 
             case EPK(_, _) ⇒
-                val methodId = methodIds(method)
                 var callers = IntMap.empty[Set[Long]]
                 newCalleesOfM.foreach {
                     case (pc, tgtsOfM) ⇒
@@ -432,7 +430,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(Map(method → newCalleesOfM), callers, callers.map(_._2.size).sum, methodIds)
+                    new CallGraph(IntMap(methodId → newCalleesOfM), callers, callers.map(_._2.size).sum, methodIds)
                 ))
             case _ ⇒ None
         })
@@ -464,7 +462,7 @@ class RTACallGraphAnalysis private[analyses] (
     def resultForCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: State
     ): PropertyComputationResult = {
-        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(state.method), methodIds)
+        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(methodIds(state.method)), methodIds)
 
         // here we need a immutable copy of the current state
         val newCallees = Callees(state.calleesOfM, methodIds)

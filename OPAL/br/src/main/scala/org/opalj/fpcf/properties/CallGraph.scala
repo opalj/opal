@@ -32,7 +32,6 @@ package properties
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
@@ -53,9 +52,9 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 
 import scala.annotation.switch
-import scala.collection.Set
-import scala.collection.Map
 import scala.collection.JavaConverters._
+import scala.collection.Map
+import scala.collection.Set
 import scala.collection.immutable.IntMap
 
 sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
@@ -73,7 +72,7 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 final class CallGraph(
-        val callees:   Map[Method, IntMap[IntTrieSet]], //TODO
+        val callees:   IntMap[IntMap[IntTrieSet]],
         val callers:   IntMap[Set[Long /*MethodId + PC*/ ]],
         val size:      Int,
         val methodIds: MethodIDs
@@ -92,8 +91,7 @@ final class CallGraph(
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 
-    def updated(method: Method, calleesOfM: IntMap[IntTrieSet]): CallGraph = {
-        val methodId = methodIds(method)
+    def updated(methodId: Int, calleesOfM: IntMap[IntTrieSet]): CallGraph = {
 
         // add the new edges to the callee map of the call graph
         var newCallees = callees
@@ -101,12 +99,12 @@ final class CallGraph(
         calleesOfM.foreach {
             case (pc, tgtsOfM) ⇒
                 newCallees = newCallees.updated(
-                    method,
+                    methodId,
                     newCallees.getOrElse(
-                        method, IntMap.empty[IntTrieSet]
+                        methodId, IntMap.empty[IntTrieSet]
                     ).updated(
                         pc, newCallees.getOrElse(
-                        method, IntMap.empty[IntTrieSet]
+                        methodId, IntMap.empty[IntTrieSet]
                     ).getOrElse(pc, IntTrieSet.empty) ++ tgtsOfM
                     )
                 )
@@ -115,8 +113,8 @@ final class CallGraph(
         // add the new edges to the caller map of the call graph
         var newCallers = callers
 
-        val oldCalleesOfMSize = callees.getOrElse(method, Map.empty).iterator.map(_._2.size).sum
-        val calleesOfMSize = newCallees.getOrElse(method, Map.empty).iterator.map(_._2.size).sum
+        val oldCalleesOfMSize = callees.getOrElse(methodId, Map.empty).iterator.map(_._2.size).sum
+        val calleesOfMSize = newCallees.getOrElse(methodId, Map.empty).iterator.map(_._2.size).sum
         assert(calleesOfMSize >= oldCalleesOfMSize)
         calleesOfM.foreach {
             case (pc, tgtsOfM) ⇒
@@ -150,7 +148,7 @@ object CallGraph extends CallGraphPropertyMetaInformation {
     }
 
     def apply(
-        callees:   Map[Method, IntMap[IntTrieSet]],
+        callees:   IntMap[IntMap[IntTrieSet]],
         callers:   IntMap[Set[Long]],
         size:      Int,
         methodIDs: MethodIDs
@@ -158,7 +156,7 @@ object CallGraph extends CallGraphPropertyMetaInformation {
 
     def unapply(
         cg: CallGraph
-    ): Option[(Map[Method, IntMap[IntTrieSet]], IntMap[Set[Long]])] =
+    ): Option[(IntMap[IntMap[IntTrieSet]], IntMap[Set[Long]])] =
         Some(cg.callees → cg.callers)
 
     def toLong(methodId: Int, pc: Int): Long = {
@@ -180,7 +178,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     override protected def compute(project: SomeProject): CallGraph = {
         val methodIds = project.get(MethodIDKey)
 
-        val callees = new ConcurrentHashMap[Method, IntMap[IntTrieSet]]
+        val callees = new ConcurrentHashMap[Int, IntMap[IntTrieSet]]
         val callers = new ConcurrentHashMap[Int, Set[Long]]()
 
         // we need the kind as a method can be called via super and via invokeinterface with same signature and package
@@ -281,9 +279,9 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                             calleesOfM += (pc → tgts)
                     }
 
-                    callees.put(m, calleesOfM)
+                    callees.put(methodId, calleesOfM)
                 case None ⇒
-                    callees.put(m, IntMap.empty)
+                    callees.put(methodId, IntMap.empty)
             }
         }
 
@@ -292,7 +290,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val size = callers.values().iterator().asScala.map(_.size).sum
 
         new CallGraph(
-            callees.asScala,
+            IntMap[IntMap[IntTrieSet]](callees.asScala.toSeq: _*),
             IntMap[Set[Long]](callers.asScala.toSeq: _*),
             size,
             methodIds
