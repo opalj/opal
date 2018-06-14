@@ -235,6 +235,9 @@ abstract class PropertyStore {
     /** The number of times the property store reached quiescence. */
     def quiescenceCount: Int
 
+    /** The number of properties that were computed using a fast-track. */
+    def fastTrackPropertiesCount: Int
+
     //
     //
     // CORE FUNCTIONALITY

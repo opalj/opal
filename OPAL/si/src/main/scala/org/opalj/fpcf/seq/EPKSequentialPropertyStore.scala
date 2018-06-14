@@ -91,6 +91,8 @@ final class EPKSequentialPropertyStore private (
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
+    def fastTrackPropertiesCount: Int = 0 // The EPK store does not support fast track properties
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES

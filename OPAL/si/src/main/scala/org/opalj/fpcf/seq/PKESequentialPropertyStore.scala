@@ -95,6 +95,9 @@ final class PKESequentialPropertyStore private (
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
+    private[this] var fastTrackPropertiesCounter = 0
+    def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -207,6 +210,7 @@ final class PKESequentialPropertyStore private (
                         None
                 fastTrackPropertyOption match {
                     case Some(p) ⇒
+                        fastTrackPropertiesCounter += 1
                         set(e, p)
                         FinalEP(e, p.asInstanceOf[P])
                     case None ⇒

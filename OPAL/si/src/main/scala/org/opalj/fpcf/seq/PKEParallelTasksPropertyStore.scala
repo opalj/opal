@@ -97,6 +97,8 @@ final class PKEParallelTasksPropertyStore private (
 
     def quiescenceCount: Int = quiescenceCounter
 
+    def fastTrackPropertiesCount: Int = 0 // TODO Not yet supported
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
