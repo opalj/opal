@@ -28,7 +28,7 @@
  */
 package org.opalj
 package fpcf
-package seq
+package par
 
 import java.lang.System.identityHashCode
 import java.util.concurrent.LinkedBlockingQueue
@@ -435,7 +435,7 @@ final class PKEParallelTasksPropertyStore private (
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
      */
-    private[seq] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = ps(pkId).get(e)
+    private[par] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = ps(pkId).get(e)
 
     /**
      * Updates the entity; returns true if no property already existed and is also not computed;
