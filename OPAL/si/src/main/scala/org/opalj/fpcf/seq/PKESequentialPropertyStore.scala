@@ -689,18 +689,18 @@ final class PKESequentialPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback and cycle resolution:
-        var isInterrupted: Boolean = false
+        var isSuspended: Boolean = false
         do {
             continueComputation = false
 
-            while (!tasks.isEmpty && !isInterrupted) {
+            while (!tasks.isEmpty && !isSuspended) {
                 val task = tasks.pollFirst()
                 task.apply()
-                isInterrupted = this.isInterrupted()
+                isSuspended = this.isSuspended()
             }
             if (tasks.isEmpty) quiescenceCounter += 1
 
-            if (!isInterrupted) {
+            if (!isSuspended) {
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
@@ -825,7 +825,7 @@ final class PKESequentialPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug && !isInterrupted) {
+        if (debug && !isSuspended) {
             // let's search for "unsatisfied computations" related to "forced properties"
             // TODO support forced properties if we have real lazy evaluation...
             val maxPKIndex = ps.length

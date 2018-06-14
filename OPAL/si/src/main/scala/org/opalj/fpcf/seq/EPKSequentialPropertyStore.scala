@@ -725,17 +725,17 @@ final class EPKSequentialPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback and cycle resolution:
-        var isInterrupted: Boolean = false
+        var isSuspended: Boolean = false
         do {
             continueComputation = false
 
-            while (tasks.nonEmpty && !isInterrupted) {
+            while (tasks.nonEmpty && !isSuspended) {
                 tasks.take().apply()
-                isInterrupted = this.isInterrupted()
+                isSuspended = this.isSuspended()
             }
             if (tasks.isEmpty) quiescenceCounter += 1
 
-            if (!isInterrupted) {
+            if (!isSuspended) {
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
@@ -855,7 +855,7 @@ final class EPKSequentialPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug && !isInterrupted) {
+        if (debug && !isSuspended) {
             // let's search for "unsatisfied computations"
             for {
                 // entity =>

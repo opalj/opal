@@ -167,8 +167,7 @@ abstract class PropertyStore {
      * and calling `waitOnPhaseCompletion` again. I.e., interruption can be used for debugging
      * purposes!
      */
-    // TODO Rename to isSuspended to avoid confusion with Thread.isInterrupted..
-    @volatile var isInterrupted: () ⇒ Boolean = concurrent.defaultIsInterrupted
+    @volatile var isSuspended: () ⇒ Boolean = concurrent.defaultIsInterrupted
 
     //
     //
@@ -524,9 +523,9 @@ abstract class PropertyStore {
      * that do not contain any properties for which we will compute (in a future phase) any
      * more refined values. Then the values will be made final.
      *
-     * If the store is interrupted, waitOnPhaseCompletion will return as soon as all running
-     * computations are finished. By updating the isInterrupted state and calling
-     * waitOnPhaseCompletion again computations can be continued.
+     * If the store is suspended, waitOnPhaseCompletion will return as soon as all running
+     * computations are finished. By updating the `isSuspended` state and calling
+     * `waitOnPhaseCompletion` again computations can be continued.
      *
      * @note If a second thread is used to register [[org.opalj.fpcf.PropertyComputation]] functions
      *       no guarantees are given; it is recommended to schedule all property computation
