@@ -33,6 +33,42 @@ package properties
 import scala.annotation.switch
 
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
+import org.opalj.br.instructions.BALOAD
+import org.opalj.br.instructions.DASTORE
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.BASTORE
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.FRETURN
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.IASTORE
+import org.opalj.br.instructions.DRETURN
+import org.opalj.br.instructions.CALOAD
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.CASTORE
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.MONITOREXIT
+import org.opalj.br.instructions.LALOAD
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.LASTORE
+import org.opalj.br.instructions.SASTORE
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.FALOAD
+import org.opalj.br.instructions.DALOAD
+import org.opalj.br.instructions.FASTORE
+import org.opalj.br.instructions.SALOAD
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.IALOAD
+import org.opalj.br.instructions.GETFIELD
 import org.opalj.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
 import org.opalj.fpcf.properties.Purity.ExternallyPureFlags
@@ -214,7 +250,78 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", ImpureByLackOfInformation)
+    final val key = PropertyKey.create[DeclaredMethod, Purity](
+        "Purity",
+        ImpureByLackOfInformation,
+        fastTrackPropertyComputation = (ps: PropertyStore, dm: DeclaredMethod) ⇒ {
+            if (!dm.hasDefinition) Some(ImpureByLackOfInformation)
+            else if (dm.methodDefinition.classFile.thisType ne dm.declaringClassType) None
+            else {
+                val method = dm.methodDefinition
+                val declaringClassType = method.classFile.thisType
+                val methodDescriptor = method.descriptor
+                val methodName = method.name
+                val body = method.body
+
+                val isImpure = body.isEmpty || method.isSynchronized
+
+                val hasReferenceTypeParamOrReturn = method.returnType.isReferenceType ||
+                    method.parameterTypes.exists(_.isReferenceType)
+
+                val isPure = !isImpure && !hasReferenceTypeParamOrReturn &&
+                    body.get.instructions.forall { instruction ⇒
+                        (instruction ne null) && ((instruction.opcode: @switch) match {
+                            case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
+
+                                case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
+                                    // We have a self-recursive call; such calls do not influence
+                                    // the computation of the method's purity and are ignored.
+                                    // Let's continue with the evaluation of the next instruction.
+                                    true
+
+                                case mii: NonVirtualMethodInvocationInstruction ⇒ false
+                            }
+
+                            case GETSTATIC.opcode | GETFIELD.opcode |
+                                PUTFIELD.opcode | PUTSTATIC.opcode |
+                                AALOAD.opcode | AASTORE.opcode |
+                                BALOAD.opcode | BASTORE.opcode |
+                                CALOAD.opcode | CASTORE.opcode |
+                                SALOAD.opcode | SASTORE.opcode |
+                                IALOAD.opcode | IASTORE.opcode |
+                                LALOAD.opcode | LASTORE.opcode |
+                                DALOAD.opcode | DASTORE.opcode |
+                                FALOAD.opcode | FASTORE.opcode |
+                                ARRAYLENGTH.opcode |
+                                MONITORENTER.opcode | MONITOREXIT.opcode |
+                                INVOKEDYNAMIC.opcode |
+                                INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                                false
+
+                            case ARETURN.opcode |
+                                IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
+                                RETURN.opcode ⇒
+                                // if we have a monitor instruction the method is impure anyway..
+                                // hence, we can ignore the monitor related implicit exception
+                                true
+
+                            case _ ⇒
+                                // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
+                                // as long as no implicit exceptions are raised.
+                                // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
+                                instruction.jvmExceptions.isEmpty
+                            // JVM Exceptions reify the stack and, hence, make the method impure as
+                            // the calling context is now an explicit part of the method's result.
+                            //Impure
+                        })
+                    }
+
+                if (isImpure) Some(ImpureByAnalysis)
+                else if (isPure) Some(CompileTimePure)
+                else None
+            }
+        }
+    )
 
     final val NotCompileTimePure = 0x1
     final val IsNonDeterministic = 0x2
