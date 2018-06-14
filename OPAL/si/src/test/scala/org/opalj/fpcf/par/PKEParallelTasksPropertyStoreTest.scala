@@ -26,10 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.seq
-
-import org.opalj.fpcf.PropertyStoreTestWithDebugging
-import org.opalj.fpcf.PropertyStore
+package org.opalj.fpcf
+package par
 
 class PKEParallelTasksPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
