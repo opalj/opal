@@ -59,14 +59,15 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * @return `true` if the entity is associated with a (preliminary) property.
      */
     def hasProperty: Boolean
-
     def hasNoProperty: Boolean = !hasProperty
+    def asEPS: EPS[E, P]
 
     /**
      * Returns `true` if and only if we have a property and the property was stored in the
      * store using `(Multi)Result`.
      */
     def isFinal: Boolean
+    def asFinal: FinalEP[E, P]
 
     final def isRefinable: Boolean = !isFinal
 
@@ -164,6 +165,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
     final override def hasProperty: Boolean = true
+    final override def asEPS: EPS[E, P] = this
 
 }
 
@@ -203,6 +205,7 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 ) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -238,6 +241,7 @@ object IntermediateEP {
 final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
     override def isFinal: Boolean = true
+    override def asFinal: FinalEP[E, P] = this
 
     override def lb: P = ub
 
@@ -287,8 +291,10 @@ final class EPK[+E <: Entity, +P <: Property](
     override def ub: Nothing = throw new UnsupportedOperationException()
 
     override def isFinal: Boolean = false
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
 
     override def hasProperty: Boolean = false
+    override def asEPS: EPS[E, P] = throw new ClassCastException()
 
     override def toEPK: this.type = this
 
