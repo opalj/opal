@@ -117,7 +117,7 @@ import org.opalj.log.OPALLogger.error
  * to "incomprehensible" results will not be reported. Hence, after debugging an analysis turn
  * debugging (and assertions!) off to get the best performance.
  *
- * We will throw IllegalArgumentException`s iff a parameter is in itself invalid. E.g., the lower
+ * We will throw `IllegalArgumentException`'s iff a parameter is in itself invalid. E.g., the lower
  * and upper bound do not have the same [[PropertyKind]]. In all other cases `IllegalStateException`s
  * are thrown. All exceptions are either thrown immediately or eventually, when
  * [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
@@ -415,7 +415,7 @@ abstract class PropertyStore {
      * if the property is computed lazily and no "eager computation" requires the results
      * anymore. Force also ensures that the property is stored in the store even if
      * the fallback value is used.
-     * Using `force` is in particular necessary in a case where a specific analysis should
+     * Using `force` is in particular necessary in cases where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
      * but strictly required for some elements.
      * E.g., if you want to compute a property for some piece of code, but not for those
@@ -425,9 +425,8 @@ abstract class PropertyStore {
      * want to compute them for all.
      *
      * @note   Triggers lazy evaluations.
-     * @see `apply(epk:EPK)` for details.
      */
-    def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
+    def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit
 
     /**
      * Registers a function that lazily computes a property for an element
@@ -507,12 +506,7 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then `handleResult` will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def handleResult(r: PropertyComputationResult, wasLazilyTriggered: Boolean): Unit
-
-    /** Calls `handleResult(r,false)`. */
-    final def handleResult(r: PropertyComputationResult): Unit = {
-        handleResult(r, wasLazilyTriggered = false)
-    }
+    def handleResult(r: PropertyComputationResult, forceEvaluation: Boolean = false): Unit
 
     /**
      * Awaits the completion of all property computation functions which were previously registered.

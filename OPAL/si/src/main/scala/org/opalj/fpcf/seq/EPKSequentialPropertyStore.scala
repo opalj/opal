@@ -301,7 +301,7 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         apply(EPK(e, pk), true)
     }
 
@@ -506,8 +506,8 @@ final class EPKSequentialPropertyStore private (
     }
 
     override def handleResult(
-        r:                  PropertyComputationResult,
-        wasLazilyTriggered: Boolean /* currently ignored */
+        r:               PropertyComputationResult,
+        forceEvaluation: Boolean // ignored
     ): Unit = handleExceptions {
         r.id match {
 
@@ -518,7 +518,7 @@ final class EPKSequentialPropertyStore private (
 
             case Results.id ⇒
                 val Results(results) = r
-                results.foreach(handleResult)
+                results.foreach(r ⇒ handleResult(r, forceEvaluation))
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r

@@ -267,7 +267,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         apply[E, P](EPK(e, pk), true)
     }
 
@@ -294,7 +294,7 @@ final class PKESequentialPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.addLast(new LazyPropertyComputationTask(this, e, pc))
+        tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
@@ -303,7 +303,7 @@ final class PKESequentialPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.addLast(new EagerPropertyComputationTask(this, e, pc))
+        tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
     /**
@@ -414,14 +414,13 @@ final class PKESequentialPropertyStore private (
                         val (dependerEPK, onUpdateContinuation) = depender
                         val t: QualifiedTask =
                             if (newPValueIsFinal) {
-                                // TODO....
-                                new EagerOnFinalUpdateComputationTask(
+                                new OnFinalUpdateComputationTask(
                                     this,
                                     FinalEP(e, ub),
                                     onUpdateContinuation
                                 )
                             } else {
-                                new EagerOnUpdateComputationTask(
+                                new OnUpdateComputationTask(
                                     this,
                                     epk,
                                     onUpdateContinuation
@@ -477,8 +476,8 @@ final class PKESequentialPropertyStore private (
     }
 
     override def handleResult(
-        r:                  PropertyComputationResult,
-        wasLazilyTriggered: Boolean
+        r:               PropertyComputationResult,
+        forceEvaluation: Boolean // TODO Support "force"
     ): Unit = handleExceptions {
 
         r.id match {
@@ -494,7 +493,7 @@ final class PKESequentialPropertyStore private (
 
             case Results.id ⇒
                 val Results(results) = r
-                results.foreach(handleResult)
+                results.foreach(r ⇒ handleResult(r, forceEvaluation))
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
@@ -573,7 +572,7 @@ final class PKESequentialPropertyStore private (
                                             s"\told: $r\n\tnew: $newR"
                                     )
                                 }
-                                handleResult(newR, wasLazilyTriggered)
+                                handleResult(newR)
                                 return ;
                             }
                         }
@@ -599,9 +598,8 @@ final class PKESequentialPropertyStore private (
                                     val t =
                                         OnFinalUpdateComputationTask(
                                             this,
-                                            dependeeE, dependeePValue.ub,
-                                            c,
-                                            wasLazilyTriggered
+                                            FinalEP(dependeeE, dependeePValue.ub),
+                                            c
                                         )
                                     if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)
                                         tasks.addLast(t)
@@ -612,8 +610,7 @@ final class PKESequentialPropertyStore private (
                                         OnUpdateComputationTask(
                                             this,
                                             EPK(dependeeE, dependeePK),
-                                            c,
-                                            wasLazilyTriggered
+                                            c
                                         )
                                     if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
                                         tasks.addLast(t)
