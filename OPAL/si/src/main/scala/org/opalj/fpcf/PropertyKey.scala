@@ -56,7 +56,6 @@ object PropertyKey {
 
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
-    // TODO let's use a presized AtomicRefrenceArray (using SupportedPropertyKinds as the size)
     private[this] val keysLock = new ReentrantReadWriteLock
 
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
