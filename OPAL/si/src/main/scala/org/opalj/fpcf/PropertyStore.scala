@@ -584,7 +584,7 @@ abstract class PropertyStore {
         throw t;
     }
 
-    protected[this] def handleExceptions[U](f: ⇒ U): U = {
+    @inline protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
             throw AbortedDueToException(exception)
 
