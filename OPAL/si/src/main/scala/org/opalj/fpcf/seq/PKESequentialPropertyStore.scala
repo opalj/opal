@@ -44,6 +44,7 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
+import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -94,6 +95,9 @@ final class PKESequentialPropertyStore private (
 
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
+
+    private[this] var fastTrackPropertiesCounter = 0
+    def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
     // --------------------------------------------------------------------------------------------
     //
@@ -202,11 +206,12 @@ final class PKESequentialPropertyStore private (
                 val isComputed = computedPropertyKinds(pkId)
                 val fastTrackPropertyOption: Option[P] =
                     if (isComputed && useFastTrackPropertyComputations)
-                        PropertyKey.fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                        fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
                     else
                         None
                 fastTrackPropertyOption match {
                     case Some(p) ⇒
+                        fastTrackPropertiesCounter += 1
                         set(e, p)
                         FinalEP(e, p.asInstanceOf[P])
                     case None ⇒
@@ -218,7 +223,7 @@ final class PKESequentialPropertyStore private (
                                 if (isComputed || delayedPropertyKinds(pkId)) {
                                     epk
                                 } else {
-                                    val p = PropertyKey.fallbackPropertyBasedOnPkId(this, e, pkId)
+                                    val p = fallbackPropertyBasedOnPkId(this, e, pkId)
                                     if (force) {
                                         set(e, p)
                                     }
@@ -685,18 +690,18 @@ final class PKESequentialPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback and cycle resolution:
-        var isInterrupted: Boolean = false
+        var isSuspended: Boolean = false
         do {
             continueComputation = false
 
-            while (!tasks.isEmpty && !isInterrupted) {
+            while (!tasks.isEmpty && !isSuspended) {
                 val task = tasks.pollFirst()
                 task.apply()
-                isInterrupted = this.isInterrupted()
+                isSuspended = this.isSuspended()
             }
             if (tasks.isEmpty) quiescenceCounter += 1
 
-            if (!isInterrupted) {
+            if (!isSuspended) {
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
 
@@ -821,7 +826,7 @@ final class PKESequentialPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug && !isInterrupted) {
+        if (debug && !isSuspended) {
             // let's search for "unsatisfied computations" related to "forced properties"
             // TODO support forced properties if we have real lazy evaluation...
             val maxPKIndex = ps.length

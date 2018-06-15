@@ -81,7 +81,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
             ps.scheduleEagerComputationForEntity("a") { e ⇒
-                ps.isInterrupted = () ⇒ true
+                ps.isSuspended = () ⇒ true
                 val dependee = EPK("d", Palindromes.PalindromeKey)
                 ps(dependee) // we use a fake dependency...
                 IntermediateResult(
@@ -105,7 +105,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps("d", Palindromes.PalindromeKey) should be(EPK("d", Palindromes.PalindromeKey))
 
             // let's test that – if we resume the computation – the results are as expected!
-            ps.isInterrupted = () ⇒ false
+            ps.isSuspended = () ⇒ false
             ps.waitOnPhaseCompletion()
             ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
@@ -163,7 +163,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.hasProperty("aba", superPalindromeKey) should be(false)
 
             ps.scheduleEagerComputationForEntity("a") { e ⇒
-                ps.isInterrupted = () ⇒ true
+                ps.isSuspended = () ⇒ true
                 val dependee = EPK("d", Palindromes.PalindromeKey)
                 ps[String, Palindromes.PalindromeProperty](dependee) // we use a fake dependency...
                 IntermediateResult(
@@ -179,7 +179,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             }
 
             if (!ps.hasProperty("a", palindromeKey)) {
-                ps.isInterrupted = () ⇒ false
+                ps.isSuspended = () ⇒ false
                 ps.waitOnPhaseCompletion()
                 ps.hasProperty("a", palindromeKey) should be(true)
             }

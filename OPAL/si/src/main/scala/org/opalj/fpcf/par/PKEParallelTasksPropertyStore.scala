@@ -28,7 +28,7 @@
  */
 package org.opalj
 package fpcf
-package seq
+package par
 
 import java.lang.System.identityHashCode
 import java.util.concurrent.LinkedBlockingQueue
@@ -97,6 +97,8 @@ final class PKEParallelTasksPropertyStore private (
 
     def quiescenceCount: Int = quiescenceCounter
 
+    def fastTrackPropertiesCount: Int = 0 // TODO Not yet supported
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -143,7 +145,7 @@ final class PKEParallelTasksPropertyStore private (
                 override def run(): Unit = {
                     do {
                         handleExceptions {
-                            while (!store.isInterrupted()) {
+                            while (!store.isSuspended()) {
                                 try {
                                     // As a sideeffect, we may have (implicit) calls to schedule...
                                     // and implicit handleResult calls; both will increase openJobs.
@@ -165,7 +167,7 @@ final class PKEParallelTasksPropertyStore private (
                             }
                         }
                         // the user suspended the store... we are not really "done"
-                        if (store.isInterrupted()) Thread.sleep(1000)
+                        if (store.isSuspended()) Thread.sleep(1000)
                     } while (!thread.isInterrupted())
                 }
             }
@@ -191,7 +193,7 @@ final class PKEParallelTasksPropertyStore private (
             override def run(): Unit = {
                 do {
                     handleExceptions {
-                        while (!store.isInterrupted()) {
+                        while (!store.isSuspended()) {
                             try {
                                 storeUpdates.poll(60, TimeUnit.SECONDS) match {
 
@@ -213,7 +215,7 @@ final class PKEParallelTasksPropertyStore private (
                             }
                         }
                     }
-                    if (store.isInterrupted()) Thread.sleep(1000)
+                    if (store.isSuspended()) Thread.sleep(1000)
                 } while (!thread.isInterrupted())
             }
         }
@@ -224,7 +226,7 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     private[this] def shutdownPropertyStore(): Unit = {
-        isInterrupted = () ⇒ true
+        isSuspended = () ⇒ true
         // We use the "Thread"s' interrupt method to finally abort the threads...
         if (storeUpdatesProcessor ne null) storeUpdatesProcessor.interrupt()
         storeUpdatesProcessor = null
@@ -433,7 +435,7 @@ final class PKEParallelTasksPropertyStore private (
     /**
      * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
      */
-    private[seq] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = ps(pkId).get(e)
+    private[par] def getPropertyValue(e: Entity, pkId: Int): PropertyValue = ps(pkId).get(e)
 
     /**
      * Updates the entity; returns true if no property already existed and is also not computed;
@@ -809,18 +811,18 @@ final class PKEParallelTasksPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback and cycle resolution:
-        var isInterrupted: Boolean = this.isInterrupted()
+        var isSuspended: Boolean = this.isSuspended()
         do {
             continueComputation = false
 
-            while (!isInterrupted && openJobs.get > 0) {
+            while (!isSuspended && openJobs.get > 0) {
                 latch.await()
-                isInterrupted = this.isInterrupted()
+                isSuspended = this.isSuspended()
             }
             validateState()
             assert(openJobs.get >= 0, s"unexpected number of openJobs: $openJobs")
 
-            if (!isInterrupted) handleExceptions {
+            if (!isSuspended) handleExceptions {
                 assert(openJobs.get == 0, s"unexpected number of open jobs: ${openJobs.get}")
                 quiescenceCounter += 1
                 // We have reached quiescence. let's check if we have to
@@ -923,7 +925,7 @@ final class PKEParallelTasksPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug && !isInterrupted) {
+        if (debug && !isSuspended) {
             // let's search for "unsatisfied computations" related to "forced properties"
             // TODO support forced properties
             val maxPKIndex = ps.length
