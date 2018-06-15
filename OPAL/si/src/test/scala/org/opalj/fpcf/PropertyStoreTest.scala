@@ -1059,9 +1059,14 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                 )
             }
             ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
-            assertThrows[IllegalArgumentException] {
+            try {
                 ps.scheduleEagerComputationForEntity(Node("a"))(aAnalysis)
                 ps.waitOnPhaseCompletion()
+            } catch {
+                case _: IllegalArgumentException ⇒ // OK - EXPECTED
+                case e: Throwable ⇒
+                    e.printStackTrace()
+                    fail(s"unexpected exception: ${e.getMessage}")
             }
         }
 
