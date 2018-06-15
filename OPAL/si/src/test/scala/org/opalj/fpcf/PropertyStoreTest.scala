@@ -234,6 +234,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
             val ps = createPropertyStore()
+            ps.setupPhase(Set.empty, Set.empty)
 
             ps.set("aba", Palindrome)
             ps.set("aba", SuperPalindrome)
