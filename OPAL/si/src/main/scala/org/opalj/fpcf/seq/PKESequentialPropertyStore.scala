@@ -117,9 +117,9 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
+    private[this] var computedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
 
-    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
+    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
 
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
@@ -711,24 +711,26 @@ final class PKESequentialPropertyStore private (
                 val maxPKIndex = ps.length
                 var pkId = 0
                 while (pkId < maxPKIndex) {
-                    ps(pkId).forEach { (e, pValue) ⇒
-                        // Check that we have no running computations and that the
-                        // property will not be computed later on.
-                        if (pValue.ub == null && !delayedPropertyKinds(pkId)) {
-                            assert(pValue.dependees.isEmpty)
+                    if (!delayedPropertyKinds(pkId)) {
+                        ps(pkId).forEach { (e, pValue) ⇒
+                            // Check that we have no running computations and that the
+                            // property will not be computed later on.
+                            if (pValue.ub == null) {
+                                assert(pValue.dependees.isEmpty)
 
-                            val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                            if (traceFallbacks) {
-                                var message = s"used fallback $fallbackProperty for $e"
-                                if (computedPropertyKinds(pkId)) {
-                                    message += " (though an analysis was supposedly scheduled)"
+                                val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
+                                if (traceFallbacks) {
+                                    var message = s"used fallback $fallbackProperty for $e"
+                                    if (computedPropertyKinds(pkId)) {
+                                        message += " (though an analysis was supposedly scheduled)"
+                                    }
+                                    trace("analysis progress", message)
                                 }
-                                trace("analysis progress", message)
-                            }
-                            fallbacksUsedForComputedPropertiesCounter += 1
-                            update(e, fallbackProperty, fallbackProperty, Nil)
+                                fallbacksUsedForComputedPropertiesCounter += 1
+                                update(e, fallbackProperty, fallbackProperty, Nil)
 
-                            continueComputation = true
+                                continueComputation = true
+                            }
                         }
                     }
                     pkId += 1
@@ -796,17 +798,13 @@ final class PKESequentialPropertyStore private (
                     var pkId = 0
                     var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
-                        ps(pkId).forEach { (e, pValue) ⇒
-                            val lb = pValue.lb
-                            val ub = pValue.ub
-                            val isFinal = pValue.isFinal
-                            // Check that we have no running computations and that the
-                            // property will not be computed later on.
-                            if (!isFinal &&
-                                lb != ub &&
-                                !delayedPropertyKinds(pkId) &&
-                                pValue.dependees.isEmpty) {
-                                toBeFinalized ::= ((e, ub))
+                        if (!delayedPropertyKinds(pkId)) {
+                            ps(pkId).forEach { (e, pValue) ⇒
+                                // Check that we have no running computations and that the
+                                // property will not be computed later on.
+                                if (!pValue.isFinal && pValue.lb != pValue.ub && pValue.dependees.isEmpty) {
+                                    toBeFinalized ::= ((e, pValue.ub))
+                                }
                             }
                         }
                         pkId += 1
@@ -816,7 +814,6 @@ final class PKESequentialPropertyStore private (
                             val (e, p) = ep
                             update(e, p, p, Nil) // commit as Final value
                         }
-
                         continueComputation = true
                     }
                 }
