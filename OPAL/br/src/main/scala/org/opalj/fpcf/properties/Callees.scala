@@ -51,7 +51,7 @@ sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 
 class Callees(
         val calleesIds: IntMap[IntTrieSet],
-        val methodIds:  MethodIDs
+        private[this] val methodIds:  MethodIDs
 ) extends Property with OrderedProperty with CalleesPropertyMetaInformation {
     final def key: PropertyKey[Callees] = Callees.key
 

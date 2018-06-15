@@ -207,13 +207,14 @@ class RTACallGraphAnalysis private[analyses] (
         // for each call site in the current method, the set of methods that might called
         var calleesOfM = IntMap.empty[IntTrieSet]
 
+        // the virtual call sites, where we can not determine the precise tgts
+        var virtualCallSites = List.empty[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
+
         // the set of types for which we find an allocation which was not present before
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
 
         val stmts = tacaiProvider(method).stmts
 
-        // the virtual call sites, where we can not determine the precise tgts
-        val virtualCallSites: ArrayBuffer[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = new ArrayBuffer((stmts.length / 3) + 1)
 
         // for allocation sites, add new types
         // for calls, add new edges
@@ -261,14 +262,18 @@ class RTACallGraphAnalysis private[analyses] (
                     )
 
                 case VirtualFunctionCallStatement(call) ⇒
-                    calleesOfM = handleVirtualCall(
+                    val r = handleVirtualCall(
                         method, call, call.pc, newReachableMethods, calleesOfM, virtualCallSites
                     )
+                    calleesOfM = r._1
+                    virtualCallSites = r._2
 
                 case call: VirtualMethodCall[V] ⇒
-                    calleesOfM = handleVirtualCall(
+                    val r = handleVirtualCall(
                         method, call, call.pc, newReachableMethods, calleesOfM, virtualCallSites
                     )
+                    calleesOfM = r._1
+                    virtualCallSites = r._2
 
                 case Assignment(_, _, _: Invokedynamic[V]) | ExprStmt(_, _: Invokedynamic[V]) ⇒
                     OPALLogger.logOnce(
@@ -290,10 +295,11 @@ class RTACallGraphAnalysis private[analyses] (
         pc:                  Int,
         newReachableMethods: ArrayBuffer[Method],
         calleesOfM:          IntMap[IntTrieSet],
-        virtualCallSites:    ArrayBuffer[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
-    ): IntMap[IntTrieSet] = {
+        virtualCallSites:    List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
+    ): (IntMap[IntTrieSet], List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]) = {
 
-        var result = calleesOfM
+        var resCalleesOfM = calleesOfM
+        var resVirtualCallSites = virtualCallSites
         val rvs = call.receiver.asVar.value.asDomainReferenceValue.allValues
         for (rv ← rvs) {
             // for null there is no call
@@ -306,7 +312,7 @@ class RTACallGraphAnalysis private[analyses] (
                         call.name,
                         call.descriptor
                     )
-                    result = handleCall(pc, tgt.toSet, newReachableMethods, result)
+                    resCalleesOfM = handleCall(pc, tgt.toSet, newReachableMethods, resCalleesOfM)
                 } else {
                     val typeBound =
                         project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
@@ -322,15 +328,15 @@ class RTACallGraphAnalysis private[analyses] (
                         val tgts = project.instanceCall(
                             method.classFile.thisType, receiverType, call.name, call.descriptor
                         ).toSet
-                        result = handleCall(pc, tgts, newReachableMethods, result)
+                        resCalleesOfM = handleCall(pc, tgts, newReachableMethods, resCalleesOfM)
                     } else {
-                        virtualCallSites += ((pc, receiverType.asObjectType, call.name, call.descriptor))
+                        resVirtualCallSites ::= ((pc, receiverType.asObjectType, call.name, call.descriptor))
                     }
                 }
             }
         }
 
-        result
+        (resCalleesOfM, resVirtualCallSites)
 
     }
 

@@ -32,6 +32,7 @@ package properties
 
 import java.util.concurrent.ConcurrentHashMap
 
+import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
@@ -72,10 +73,10 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 final class CallGraph(
-        val callees:   IntMap[IntMap[IntTrieSet]],
-        val callers:   IntMap[Set[Long /*MethodId + PC*/ ]],
-        val size:      Int,
-        val methodIds: MethodIDs
+        val callees:                 IntMap[IntMap[IntTrieSet]],
+        val callers:                 IntMap[Set[Long /*MethodId + PC*/ ]],
+        val size:                    Int,
+        private[this] val methodIds: MethodIDs
 ) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
 
@@ -86,7 +87,7 @@ final class CallGraph(
      * value is above the given value in the underlying lattice).
      */
     override def checkIsEqualOrBetterThan(e: Entity, other: CallGraph): Unit = {
-        //TODO here compare real edges
+        // for better performance, we just compare the size
         if (size > other.size)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
@@ -123,6 +124,27 @@ final class CallGraph(
                 }
         }
         CallGraph(newCallees, newCallers, size + (calleesOfMSize - oldCalleesOfMSize), methodIds)
+    }
+
+    /**
+     * Returns the callsites (pc) of `method` and the resolved targets.
+     * @return A mapping from pc to target methods.
+     */
+    def calleesOf(method: Method): IntMap[Set[Method]] = {
+        val methodId = methodIds(method)
+        val calleesOfM = callees(methodId)
+        calleesOfM map { case (pc, tgtIds) ⇒ (pc, tgtIds.mapToAny[Method](methodIds.apply)) }
+    }
+
+    /**
+     * Returns the methods and program counters that call the `method`.
+     */
+    def callersOf(method: Method): Set[(Method, Int /*PC*/ )] = {
+        val methodId = methodIds(method)
+        val callersOfM = callers(methodId)
+        callersOfM.map(CallGraph.toMethodAndPc) map {
+            case (callerId, pc) ⇒ (methodIds(callerId), pc)
+        }
     }
 
 }
@@ -284,8 +306,6 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                     callees.put(methodId, IntMap.empty)
             }
         }
-
-        println("computed fallback cg")
 
         val size = callers.values().iterator().asScala.map(_.size).sum
 
