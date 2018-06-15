@@ -42,6 +42,9 @@ sealed abstract class PropertyComputationResult {
 /**
  * Used if the analysis found no entities for which a property could be computed.
  *
+ * @note A `NoResult` can only be used as the result of an initial computation. Hence, an
+ *       `OnUpdateContinuation` must never return `NoResult`.
+ *
  * In some cases it makes sense to do, e.g., an analysis per class to compute the properties
  * for some fields.
  */
@@ -226,7 +229,7 @@ private[fpcf] object Results {
 }
 
 /**
- * PartialResults are used for properties of entities which are computed collaboratively/in
+ * `PartialResult`s are used for properties of entities which are computed collaboratively/in
  * a piecewise fashion. PartialResults cannot be used for properties which are (also) computed
  * by lazy property computations.
  *
