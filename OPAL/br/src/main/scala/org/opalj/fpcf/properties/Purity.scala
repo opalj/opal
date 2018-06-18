@@ -263,12 +263,10 @@ object Purity extends PurityPropertyMetaInformation {
                 val methodName = method.name
                 val body = method.body
 
-                val isImpure = body.isEmpty || method.isSynchronized
+                val isImpure = body.isEmpty
 
-                val hasReferenceTypeParamOrReturn = method.returnType.isReferenceType ||
-                    method.parameterTypes.exists(_.isReferenceType)
-
-                val isPure = !isImpure && !hasReferenceTypeParamOrReturn &&
+                val isPure =
+                    !isImpure && !method.isSynchronized && !method.returnType.isReferenceType &&
                     body.get.instructions.forall { instruction ⇒
                         (instruction ne null) && ((instruction.opcode: @switch) match {
                             case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
