@@ -276,11 +276,11 @@ private[fpcf] case class ExternalResult(
 private[fpcf] object ExternalResult { private[fpcf] final val id = 7 }
 
 /** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
-private[fpcf] case class CycleResult(
-        cycles: List[Iterable[SomeEOptionP]]
+private[fpcf] case class CSCCsResult(
+        csccs: List[Iterable[SomeEPK]]
 ) extends FinalPropertyComputationResult {
 
-    private[fpcf] final def id = CycleResult.id
+    private[fpcf] final def id = CSCCsResult.id
 
 }
-private[fpcf] object CycleResult { private[fpcf] final val id = 8 }
+private[fpcf] object CSCCsResult { private[fpcf] final val id = 8 }

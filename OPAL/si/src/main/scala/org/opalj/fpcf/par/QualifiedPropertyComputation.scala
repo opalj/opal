@@ -37,152 +37,130 @@ package par
  *
  * @author Michael Eichberg
  */
-private[par] sealed abstract class QualifiedTask extends (() ⇒ Unit) {
-    def isLazy: Boolean
+private[par] sealed trait QualifiedTask[E <: Entity] extends (() ⇒ Unit) {
+
+    def isInitialTask: Boolean
+    def asInitialTask: InitialPropertyComputationTask[E] = throw new ClassCastException()
 }
 
-// -------------------------------------------------------------------------------------------------
-//
-// EAGER TASKS
-//
-// -------------------------------------------------------------------------------------------------
-
-private[par] sealed abstract class EagerTask extends QualifiedTask {
-    final def isLazy: Boolean = false
+private[par] sealed trait FirstPropertyComputationTask[E <: Entity] extends QualifiedTask[E] {
+    def e: Entity
 }
 
-private[par] final case class EagerPropertyComputationTask[E <: Entity](
-        ps: PropertyStore,
-        e:  E,
-        pc: PropertyComputation[E]
-) extends EagerTask {
+private[par] final case class InitialPropertyComputationTask[E <: Entity](
+        ps:              PropertyStore,
+        e:               E,
+        pc:              PropertyComputation[E],
+        forceEvaluation: Boolean
+) extends FirstPropertyComputationTask[E] {
 
-    override def apply(): Unit = ps.handleResult(pc(e), wasLazilyTriggered = false)
+    override def apply(): Unit = {
+        val r = pc(e)
+        ps.handleResult(r, forceEvaluation)
+    }
+
+    override def isInitialTask: Boolean = true
+    override def asInitialTask: InitialPropertyComputationTask[E] = this
 }
 
-private[par] final case class EagerOnFinalUpdateComputationTask[E <: Entity, P <: Property](
-        ps: PropertyStore,
-        r:  FinalEP[E, P],
-        c:  OnUpdateContinuation
-) extends EagerTask {
-
-    override def apply(): Unit = ps.handleResult(c(r), wasLazilyTriggered = false)
+private[par] sealed abstract class TriggeredTask[E <: Entity] extends QualifiedTask[E] {
+    final override def isInitialTask: Boolean = false
 }
 
-private[par] final case class EagerOnUpdateComputationTask[E <: Entity, P <: Property](
-        ps:  PropertyStore,
-        epk: EPK[E, P],
-        c:   OnUpdateContinuation
-) extends EagerTask {
+private[par] final case class PropertyComputationTask[E <: Entity](
+        ps:   PropertyStore,
+        e:    E,
+        pkId: Int,
+        pc:   PropertyComputation[E]
+) extends TriggeredTask[E] with FirstPropertyComputationTask[E] {
+
+    override def apply(): Unit = ps.handleResult(pc(e), forceEvaluation = false)
+}
+
+private[par] sealed abstract class ContinuationTask[E <: Entity] extends TriggeredTask[E] {
+    def dependeeE: Entity
+    def dependeePKId: Int
+}
+
+private[par] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
+        ps:              PropertyStore,
+        dependeeFinalEP: FinalEP[E, P],
+        c:               OnUpdateContinuation
+) extends ContinuationTask[E] {
+
+    override def dependeeE: E = dependeeFinalEP.e
+
+    override def dependeePKId: Int = dependeeFinalEP.p.id
+
+    override def apply(): Unit = ps.handleResult(c(dependeeFinalEP), forceEvaluation = false)
+}
+
+private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
+        ps:          PropertyStore,
+        dependeeEPK: EPK[E, P],
+        c:           OnUpdateContinuation
+) extends ContinuationTask[E] {
+
+    override def dependeeE: E = dependeeEPK.e
+
+    override def dependeePKId: Int = dependeeEPK.pk.id
 
     override def apply(): Unit = {
         // get the most current pValue when the depender
         // is eventually evaluated; the effectiveness
         // of this check depends on the scheduling strategy(!)
-        val pValue = ps(epk)
-        val eps = EPS(epk.e, pValue.lb, pValue.ub)
-        ps.handleResult(c(eps), wasLazilyTriggered = false)
+        val pValue = ps(dependeeEPK)
+        val eps = EPS(dependeeEPK.e, pValue.lb, pValue.ub)
+        ps.handleResult(c(eps), forceEvaluation = false)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-//
-// LAZY TASKS
-//
-// -------------------------------------------------------------------------------------------------
+private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <: Property](
+        ps:             PropertyStore,
+        dependeeEPK:    EPK[E, P],
+        previousResult: PropertyComputationResult,
+        c:              OnUpdateContinuation
+) extends ContinuationTask[E] {
 
-private[par] sealed abstract class LazyTask extends QualifiedTask {
-    final def isLazy: Boolean = true
-}
+    override def dependeeE: E = dependeeEPK.e
 
-private[par] final case class LazyPropertyComputationTask[E <: Entity](
-        ps: PropertyStore,
-        e:  E,
-        pc: PropertyComputation[E]
-) extends LazyTask {
+    override def dependeePKId: Int = dependeeEPK.pk.id
 
     override def apply(): Unit = {
-        // TODO check if required // ps.hasDependees(e,pk)
-        ps.handleResult(pc(e), wasLazilyTriggered = true)
+        // Get the most current pValue when the depender is eventually evaluated;
+        // the effectiveness of this check depends on the scheduling strategy(!).
+        val newResult = c(ps(dependeeEPK).asEPS)
+        if (PropertyStore.Debug && newResult == previousResult) {
+            throw new IllegalStateException(
+                s"an on-update continuation resulted in the same result as before: $newResult"
+            )
+        }
+        ps.handleResult(newResult, forceEvaluation = false)
     }
 }
 
-private[par] final case class LazyOnFinalUpdateComputationTask[E <: Entity, P <: Property](
-        ps: PropertyStore,
-        r:  FinalEP[E, P],
-        c:  OnUpdateContinuation
-) extends LazyTask {
+private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity, P <: Property](
+        ps:              PropertyStore,
+        dependeeFinalEP: FinalEP[E, P],
+        previousResult:  PropertyComputationResult,
+        c:               OnUpdateContinuation
+) extends ContinuationTask[E] {
 
-    override def apply(): Unit = {
-        // TODO check if required
-        ps.handleResult(c(r), wasLazilyTriggered = true)
-    }
-}
+    override def dependeeE: E = dependeeFinalEP.e
 
-private[par] final case class LazyOnUpdateComputationTask[E <: Entity, P <: Property](
-        ps:  PropertyStore,
-        epk: EPK[E, P],
-        c:   OnUpdateContinuation
-) extends LazyTask {
+    override def dependeePKId: Int = dependeeFinalEP.pk.id
 
     override def apply(): Unit = {
         // get the most current pValue when the depender
         // is eventually evaluated; the effectiveness
         // of this check depends on the scheduling strategy(!)
-        val pValue = ps(epk)
-        // TODO check if required
-        val eps = EPS(epk.e, pValue.lb, pValue.ub)
-        ps.handleResult(c(eps), wasLazilyTriggered = true)
-    }
-}
-
-// -------------------------------------------------------------------------------------------------
-//
-// FACTORIES FOR EAGER/LAZY TASKS
-//
-// -------------------------------------------------------------------------------------------------
-
-private[par] object OnFinalUpdateComputationTask {
-
-    def apply[E <: Entity, P <: Property](
-        ps:            PropertyStore,
-        e:             E,
-        p:             P,
-        c:             OnUpdateContinuation,
-        performLazily: Boolean
-    ): QualifiedTask = {
-        apply(ps, FinalEP(e, p), c, performLazily)
-    }
-
-    def apply[E <: Entity, P <: Property](
-        ps:            PropertyStore,
-        r:             FinalEP[E, P],
-        c:             OnUpdateContinuation,
-        performLazily: Boolean
-    ): QualifiedTask = {
-        if (performLazily) {
-            new LazyOnFinalUpdateComputationTask(ps, r, c)
-        } else {
-            new EagerOnFinalUpdateComputationTask(ps, r, c)
+        val newResult = c(dependeeFinalEP)
+        if (PropertyStore.Debug && newResult == previousResult) {
+            throw new IllegalStateException(
+                s"an on-update continuation resulted in the same result as before: $newResult"
+            )
         }
+        ps.handleResult(newResult, forceEvaluation = false)
     }
-
-}
-
-private[par] object OnUpdateComputationTask {
-
-    def apply[E <: Entity, P <: Property](
-        ps:            PropertyStore,
-        epk:           EPK[E, P],
-        c:             OnUpdateContinuation,
-        performLazily: Boolean
-    ): QualifiedTask = {
-        if (performLazily) {
-            new LazyOnUpdateComputationTask(ps, epk, c)
-        } else {
-            new EagerOnUpdateComputationTask(ps, epk, c)
-        }
-    }
-
 }
 
