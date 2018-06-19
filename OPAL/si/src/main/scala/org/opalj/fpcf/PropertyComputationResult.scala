@@ -181,7 +181,8 @@ case class IntermediateResult[P <: Property](
     }
 
     override def toString: String = {
-        s"IntermediateResult($e,lb=$lb,ub=$ub,dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+        s"IntermediateResult($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,"+
+            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
 private[fpcf] object IntermediateResult {
