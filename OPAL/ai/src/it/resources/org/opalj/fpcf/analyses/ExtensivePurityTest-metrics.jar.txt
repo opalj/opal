@@ -1,0 +1,6 @@
+DefinedMethod(ObjectType(metrics/fanin_fanout/AddExpression),<init>,MethodDescriptor((metrics.fanin_fanout.Expression, metrics.fanin_fanout.Expression): void),metrics.fanin_fanout.AddExpression{ public void <init>(metrics.fanin_fanout.Expression,metrics.fanin_fanout.Expression) }) => ImpureByAnalysis
+DefinedMethod(ObjectType(metrics/fanin_fanout/AddExpression),eval,MethodDescriptor((): int),metrics.fanin_fanout.AddExpression{ public int eval() }) => ImpureByAnalysis
+DefinedMethod(ObjectType(metrics/fanin_fanout/Constant),<init>,MethodDescriptor((java.lang.Integer): void),metrics.fanin_fanout.Constant{ public void <init>(java.lang.Integer) }) => ImpureByAnalysis
+DefinedMethod(ObjectType(metrics/fanin_fanout/Constant),eval,MethodDescriptor((): int),metrics.fanin_fanout.Constant{ public int eval() }) => ImpureByAnalysis
+DefinedMethod(ObjectType(metrics/fanin_fanout/ExpressionInterpreter),<init>,MethodDescriptor((): void),metrics.fanin_fanout.ExpressionInterpreter{ public void <init>() }) => ImpureByAnalysis
+DefinedMethod(ObjectType(metrics/fanin_fanout/ExpressionInterpreter),main,MethodDescriptor((java.lang.String[]): void),metrics.fanin_fanout.ExpressionInterpreter{ public static void main(java.lang.String[]) }) => ImpureByAnalysis

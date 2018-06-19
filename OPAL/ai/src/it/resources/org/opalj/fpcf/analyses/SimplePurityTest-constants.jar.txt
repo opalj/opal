@@ -1,0 +1,2 @@
+DefinedMethod(ObjectType(constants/Point),<clinit>,MethodDescriptor((): void),constants.Point{ static void <clinit>() }) => ImpureByAnalysis
+DefinedMethod(ObjectType(constants/Point),<init>,MethodDescriptor((int, int): void),constants.Point{ public void <init>(int,int) }) => Pure

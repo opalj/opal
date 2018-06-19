@@ -1,0 +1,15 @@
+DefinedMethod(ObjectType(arrays/ArrayAccess),<init>,MethodDescriptor((): void),arrays.ArrayAccess{ public void <init>() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),get2DIntArray,MethodDescriptor((): int[][]),arrays.ArrayAccess{ static int[][] get2DIntArray() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray0,MethodDescriptor((): java.lang.Object[]),arrays.ArrayAccess{ static java.lang.Object[] getArray0() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray100,MethodDescriptor((): java.lang.Object[]),arrays.ArrayAccess{ static java.lang.Object[] getArray100() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray10InitializedByLoop,MethodDescriptor((): int[]),arrays.ArrayAccess{ static int[] getArray10InitializedByLoop() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray10InitializedByLoopStartingWithLastIndex,MethodDescriptor((): int[]),arrays.ArrayAccess{ static int[] getArray10InitializedByLoopStartingWithLastIndex() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray1WithObject,MethodDescriptor((): java.lang.Object[]),arrays.ArrayAccess{ static java.lang.Object[] getArray1WithObject() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray1WithSelfReference,MethodDescriptor((): java.lang.Object[]),arrays.ArrayAccess{ static java.lang.Object[] getArray1WithSelfReference() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getArray3DirectlyInitialized,MethodDescriptor((): int[]),arrays.ArrayAccess{ static int[] getArray3DirectlyInitialized() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getStringArray,MethodDescriptor((): java.lang.String[]),arrays.ArrayAccess{ static java.lang.String[] getStringArray() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),getUpdatedStringArray,MethodDescriptor((): java.lang.String[]),arrays.ArrayAccess{ static java.lang.String[] getUpdatedStringArray() }) => ImpureByAnalysis
+DefinedMethod(ObjectType(arrays/ArrayAccess),selfReferencingArrays,MethodDescriptor((): java.lang.Object),arrays.ArrayAccess{ static java.lang.Object selfReferencingArrays() }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),updateArray,MethodDescriptor((int, int[]): int[]),arrays.ArrayAccess{ static int[] updateArray(int,int[]) }) => DContextuallySideEffectFree
+DefinedMethod(ObjectType(arrays/ArrayAccess),updateArrayValid,MethodDescriptor((int): int[]),arrays.ArrayAccess{ static int[] updateArrayValid(int) }) => Pure
+DefinedMethod(ObjectType(arrays/ArrayAccess),updateArrayValidBasedOnLength,MethodDescriptor((int, int[]): int[]),arrays.ArrayAccess{ static int[] updateArrayValidBasedOnLength(int,int[]) }) => DContextuallySideEffectFree

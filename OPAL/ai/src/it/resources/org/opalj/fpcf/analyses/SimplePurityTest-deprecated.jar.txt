@@ -1,0 +1,2 @@
+DefinedMethod(ObjectType(deprecated/DeprecatedByAnnotation),<init>,MethodDescriptor((): void),deprecated.DeprecatedByAnnotation{ public void <init>() }) => Pure
+DefinedMethod(ObjectType(deprecated/DeprecatedByJavaDoc),<init>,MethodDescriptor((): void),deprecated.DeprecatedByJavaDoc{ public void <init>() }) => Pure

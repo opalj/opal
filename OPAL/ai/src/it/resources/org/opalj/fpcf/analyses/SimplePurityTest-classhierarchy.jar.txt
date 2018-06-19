@@ -1,0 +1,4 @@
+DefinedMethod(ObjectType(classhierarchy/CRoot),<init>,MethodDescriptor((): void),classhierarchy.CRoot{ public void <init>() }) => Pure
+DefinedMethod(ObjectType(classhierarchy/CRootA),<init>,MethodDescriptor((): void),classhierarchy.CRootA{ public void <init>() }) => Pure
+DefinedMethod(ObjectType(classhierarchy/CRootAAABBC),<init>,MethodDescriptor((): void),classhierarchy.CRootAAABBC{ public void <init>() }) => Pure
+DefinedMethod(ObjectType(classhierarchy/CRootAAB),<init>,MethodDescriptor((): void),classhierarchy.CRootAAB{ public void <init>() }) => Pure

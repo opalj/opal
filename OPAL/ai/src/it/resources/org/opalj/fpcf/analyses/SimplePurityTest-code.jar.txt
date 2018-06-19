@@ -1,0 +1,17 @@
+DefinedMethod(ObjectType(code/BoundedBuffer),<init>,MethodDescriptor((int): void),code.BoundedBuffer{ public void <init>(int) }) => DPure
+DefinedMethod(ObjectType(code/BoundedBuffer),put,MethodDescriptor((int): void),code.BoundedBuffer{ public void put(int) }) => ImpureByAnalysis
+DefinedMethod(ObjectType(code/ImmutableList$1),<init>,MethodDescriptor((code.ImmutableList): void),code.ImmutableList$1{ void <init>(code.ImmutableList) }) => Pure
+DefinedMethod(ObjectType(code/ImmutableList$1),hasNext,MethodDescriptor((): boolean),code.ImmutableList$1{ public boolean hasNext() }) => SideEffectFree
+DefinedMethod(ObjectType(code/ImmutableList$1),next,MethodDescriptor((): java.lang.Object),code.ImmutableList$1{ public java.lang.Object next() }) => DExternallySideEffectFree
+DefinedMethod(ObjectType(code/ImmutableList$1),remove,MethodDescriptor((): void),code.ImmutableList$1{ public void remove() }) => DPure
+DefinedMethod(ObjectType(code/ImmutableList),<init>,MethodDescriptor((java.lang.Object): void),code.ImmutableList{ public void <init>(java.lang.Object) }) => Pure
+DefinedMethod(ObjectType(code/ImmutableList),<init>,MethodDescriptor((java.lang.Object, code.ImmutableList): void),code.ImmutableList{ private void <init>(java.lang.Object,code.ImmutableList) }) => Pure
+DefinedMethod(ObjectType(code/ImmutableList),access$0,MethodDescriptor((code.ImmutableList): java.lang.Object),code.ImmutableList{ static java.lang.Object access$0(code.ImmutableList) }) => DSideEffectFree
+DefinedMethod(ObjectType(code/ImmutableList),access$1,MethodDescriptor((code.ImmutableList): code.ImmutableList),code.ImmutableList{ static code.ImmutableList access$1(code.ImmutableList) }) => DSideEffectFree
+DefinedMethod(ObjectType(code/ImmutableList),get,MethodDescriptor((): java.lang.Object),code.ImmutableList{ public java.lang.Object get() }) => SideEffectFree
+DefinedMethod(ObjectType(code/ImmutableList),getIterator,MethodDescriptor((): java.util.Iterator),code.ImmutableList{ public java.util.Iterator getIterator() }) => Pure
+DefinedMethod(ObjectType(code/ImmutableList),getNext,MethodDescriptor((): code.ImmutableList),code.ImmutableList{ public code.ImmutableList getNext() }) => SideEffectFree
+DefinedMethod(ObjectType(code/ImmutableList),prepend,MethodDescriptor((java.lang.Object): code.ImmutableList),code.ImmutableList{ public code.ImmutableList prepend(java.lang.Object) }) => Pure
+DefinedMethod(ObjectType(code/Quicksort),<init>,MethodDescriptor((): void),code.Quicksort{ public void <init>() }) => Pure
+DefinedMethod(ObjectType(code/Quicksort),exch,MethodDescriptor((double[], int, int): void),code.Quicksort{ private static void exch(double[],int,int) }) => Pure
+DefinedMethod(ObjectType(code/Quicksort),partition,MethodDescriptor((double[], int, int): int),code.Quicksort{ static int partition(double[],int,int) }) => DSideEffectFree

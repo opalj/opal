@@ -1,0 +1,3 @@
+DefinedMethod(ObjectType(signatures/A),<init>,MethodDescriptor((): void),signatures.A{ public void <init>() }) => ImpureByAnalysis
+DefinedMethod(ObjectType(signatures/A),foo,MethodDescriptor((java.lang.Object, java.io.Serializable, java.util.Map, java.util.List): void),signatures.A{ public void foo(java.lang.Object,java.io.Serializable,java.util.Map,java.util.List) }) => Pure
+DefinedMethod(ObjectType(signatures/B),<init>,MethodDescriptor((): void),signatures.B{ public void <init>() }) => Pure
