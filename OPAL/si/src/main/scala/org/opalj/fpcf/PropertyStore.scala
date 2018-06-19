@@ -491,6 +491,9 @@ abstract class PropertyStore {
      * This is of particular interest to start an incremental computation
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierarchy in a top-down manner.
      *
+     * @note   It is NOT possible to use scheduleEagerComputationForEntity for properties which
+     *         are also computed using a lazy property computation; use `force` instead!
+     *
      * @note   If any computation resulted in an exception, then the scheduling will fail and
      *         the exception related to the failing computation will be thrown again.
      */
