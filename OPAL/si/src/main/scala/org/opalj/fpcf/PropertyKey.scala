@@ -109,11 +109,10 @@ object PropertyKey {
             }
 
             lastKeyId += 1
-            if (lastKeyId == PropertyKind.SupportedPropertyKinds) {
+            if (lastKeyId >= PropertyKind.SupportedPropertyKinds) {
                 throw new IllegalStateException(
-                    "maximum number of property keys exceeded "+
-                        PropertyKind.SupportedPropertyKinds+
-                        ";increase PropertyKind.SupportedPropertyKinds"
+                    s"maximum number of property keys (${PropertyKind.SupportedPropertyKinds}) "+
+                        "exceeded; increase PropertyKind.SupportedPropertyKinds"
                 )
             }
             propertyKeyNames += name
