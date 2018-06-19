@@ -155,6 +155,11 @@ case class IntermediateResult[P <: Property](
                     "(use IncrementalResult for collaboratively computed results)"
             )
         }
+        if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
+            throw new IllegalArgumentException(
+                s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
     }
 
     private[fpcf] final def id = IntermediateResult.id
