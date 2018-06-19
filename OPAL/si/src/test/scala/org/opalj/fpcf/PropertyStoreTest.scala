@@ -693,7 +693,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     info(
                         s"(id of first permutation = ${dropCount + 1}) number of executed tasks:"+ps.scheduledTasksCount+
                             "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputationsCount+
-                            "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputationsCount
+                            "; number of immediate onUpdateContinuations:"+ps.immediateOnUpdateComputationsCount
                     )
                 }
             }
@@ -992,7 +992,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 info(
                     s"number of executed tasks:"+ps.scheduledTasksCount+
                         "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputationsCount+
-                        "; number of eager onUpdateContinuations:"+ps.eagerOnUpdateComputationsCount
+                        "; number of immediate onUpdateContinuations:"+ps.immediateOnUpdateComputationsCount
                 )
             }
         }

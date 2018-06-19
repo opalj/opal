@@ -215,7 +215,7 @@ abstract class PropertyStore {
      * The number of times a property was directly computed again due to an updated
      * dependee.
      */
-    def eagerOnUpdateComputationsCount: Int
+    def immediateOnUpdateComputationsCount: Int
 
     /**
      * The number of resolved closed strongly connected components.

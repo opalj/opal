@@ -84,8 +84,8 @@ final class PKESequentialPropertyStore private (
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
     def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
-    private[this] var eagerOnUpdateComputationsCounter: Int = 0
-    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
+    private[this] var immediateOnUpdateComputationsCounter: Int = 0
+    def immediateOnUpdateComputationsCount: Int = immediateOnUpdateComputationsCounter
 
     private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
     def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
@@ -558,7 +558,7 @@ final class PKESequentialPropertyStore private (
                             val dependeePKId = newDependee.pk.id
                             val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
-                                eagerOnUpdateComputationsCounter += 1
+                                immediateOnUpdateComputationsCounter += 1
                                 val newEP =
                                     if (dependeePValue.isFinal) {
                                         FinalEP(dependeeE, dependeePValue.ub)
