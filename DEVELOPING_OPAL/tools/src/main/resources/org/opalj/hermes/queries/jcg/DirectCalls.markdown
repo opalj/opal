@@ -26,12 +26,35 @@ class Class {
 [//]: # (END)
 
 ##DC2
-[//]: # (MAIN: dc2/Class)
+[//]: # (MAIN: dc/Class)
+Tests the resolution of a constructor call (<init>)
+```java
+// dc/Class.java
+package dc;
+
+import lib.annotations.callgraph.IndirectCall;
+
+public class Class {
+    
+    public Class(){
+        
+    }
+    
+    @IndirectCall(name = "<init>", line = 13, resolvedTargets = "Ldc/Class;")
+    public static void main(String[] args){
+        Class cls = new Class();
+    }
+}
+```
+[//]: # (END)
+
+##DC3
+[//]: # (MAIN: dc/Class)
 Tests the resolution of a private method call when another method with the same name but
 different signature is presence.
 ```java
-// dc2/Class.java
-package dc2;
+// dc/Class.java
+package dc;
 
 import lib.annotations.callgraph.CallSite;
 
@@ -40,7 +63,7 @@ class Class {
     private void method(){ /* do something*/}
     private void method(int num){ /* do something*/}
     
-    @CallSite(name = "method", line = 13, resolvedTargets = "Ldc2/Class;")
+    @CallSite(name = "method", line = 13, resolvedTargets = "Ldc/Class;")
     public static void main(String[] args){
         Class cls = new Class();
         cls.method();
@@ -49,19 +72,19 @@ class Class {
 ```
 [//]: # (END)
 
-##DC3
-[//]: # (MAIN: dc3/Class)
+##DC4
+[//]: # (MAIN: dc/Class)
 Tests the resolution of a super call in the form ```super.<methodName>```. The method call should
 only be propagated to the immediate super class.
 ```java
-// dc3/Class.java
-package dc3;
+// dc/Class.java
+package dc;
 
 import lib.annotations.callgraph.CallSite;
 
 class Class extends Superclass {
     
-    @CallSite(name = "method", line = 9, resolvedTargets = "Ldc3/Superclass;", prohibitedTargets = "Ldc3/Rootclass;")
+    @CallSite(name = "method", line = 9, resolvedTargets = "Ldc/Superclass;", prohibitedTargets = "Ldc/Rootclass;")
     protected void method(){ 
         super.method(); 
     }
@@ -78,29 +101,6 @@ class Superclass extends Rootclass {
 
 class Rootclass {
     protected void method(){ /* do something irrelevant */ }
-}
-```
-[//]: # (END)
-
-##DC4
-[//]: # (MAIN: dc4/Class)
-Tests the resolution of a constructor call (<init>)
-```java
-// dc4/Class.java
-package dc4;
-
-import lib.annotations.callgraph.IndirectCall;
-
-public class Class {
-    
-    public Class(){
-        
-    }
-    
-    @IndirectCall(name = "<init>", line = 13, resolvedTargets = "Ldc4/Class;", prohibitedTargets = {"Ldc4/AlternativeClass;", "Ldc4/SubClass;"})
-    public static void main(String[] args){
-        Class cls = new Class();
-    }
 }
 ```
 [//]: # (END)

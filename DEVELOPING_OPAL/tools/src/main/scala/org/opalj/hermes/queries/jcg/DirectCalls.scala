@@ -32,6 +32,7 @@ package queries
 package jcg
 
 import org.opalj.br.MethodWithBody
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
@@ -49,9 +50,9 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def featureIDs: Seq[String] = {
         Seq(
             "DC1", /* 0 --- static method call */
-            "DC2", /* 1 --- private method call */
+            "DC2", /* 3 --- constructor call */
             "DC3", /* 2 --- call on super */
-            "DC4" /* 3 --- constructor call */
+            "DC4" /* 1 --- private method call */
         )
     }
 
@@ -83,19 +84,24 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val kindID = invokeKind match {
                 case _: INVOKESTATIC ⇒ 0
                 case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) ⇒ {
+                    println(declaringClass.toJava)
                     if (name != "<init>") {
                         if (declType eq declaringClass) {
                             if (project.specialCall(invSpec).value.isPrivate) {
-                                1
+                                2
                             } else {
                                 -1
                             }
                         } else {
                             // call on super
-                            2
+                            3
                         }
                     } else {
-                        3
+                        val superTypes = project.classHierarchy.directSupertypes(declType);
+                        val isSuperConstructor = superTypes.contains(declaringClass)
+                        if ((declaringClass ne ObjectType.Object) && !isSuperConstructor) {
+                            1
+                        } else -1
                     }
                 }
             }
