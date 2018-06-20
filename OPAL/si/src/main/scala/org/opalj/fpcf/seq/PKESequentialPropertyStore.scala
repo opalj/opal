@@ -838,6 +838,8 @@ final class PKESequentialPropertyStore private (
             }
         }
     }
+
+    def shutdown(): Unit = {}
 }
 
 /**

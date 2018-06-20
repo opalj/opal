@@ -57,6 +57,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
 
         it("directly after creation it should be empty (entities(...) and properties(...))") {
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
             ps.entities(_ ⇒ true) should be('Empty)
             ps.entities(Palindromes.Palindrome, Palindromes.Palindrome) should be('Empty)
@@ -74,10 +76,14 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.entities(Palindromes.PalindromeKey) should be('Empty)
             ps.properties("<DOES NOT EXIST>") should be('Empty)
             ps.toString(true).length should be > (0)
+
+            ps.shutdown()
         }
 
         it("should be possible to interrupt the computations") {
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
             ps.scheduleEagerComputationForEntity("a") { e ⇒
@@ -109,12 +115,16 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.waitOnPhaseCompletion()
             ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
+
+            ps.shutdown()
         }
 
         it("should not crash when e1 has two dependencies e2 and e3 "+
             "and e2 is set while e1 was not yet executed but had a EPK for e2 in its dependencies "+
             "(test for a lost updated)") {
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
             ps.scheduleEagerComputationForEntity("a") { e ⇒
@@ -134,20 +144,28 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps("a", Palindromes.PalindromeKey) should be(FinalEP("a", Palindrome))
             ps("d", Palindromes.PalindromeKey) should be(FinalEP("d", Palindrome))
             ps("e", Palindromes.PalindromeKey) should be(EPK("e", Palindromes.PalindromeKey))
+
+            ps.shutdown()
         }
 
         it("should be able to perform queries w.r.t. unknown entities / property keys") {
-            val pk = Palindromes.PalindromeKey
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+            val pk = Palindromes.PalindromeKey
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
             ps("aba", pk) should be(EPK("aba", pk))
             ps(EPK("aa", pk)) should be(EPK("aa", pk))
+
+            ps.shutdown()
         }
 
         it("should be possible to test if a store has a property") {
-            import Palindromes.Palindrome
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+            import Palindromes.Palindrome
             ps.setupPhase(Set(Palindromes.PalindromeKey, Palindromes.SuperPalindromeKey), Set.empty)
 
             val palindromeKey = Palindromes.PalindromeKey
@@ -183,15 +201,19 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps.waitOnPhaseCompletion()
                 ps.hasProperty("a", palindromeKey) should be(true)
             }
+
+            ps.shutdown()
         }
 
         // test SET
 
         it("set should set an entity's property \"immediately\"") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
             val pk = Palindromes.PalindromeKey
-            val ps = createPropertyStore()
             ps.setupPhase(Set(Palindrome.key), Set.empty)
 
             ps.set("aba", Palindrome)
@@ -201,16 +223,20 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.set("abca", NoPalindrome)
             ps.waitOnPhaseCompletion()
             ps("abca", pk) should be(FinalEP("abca", NoPalindrome))
+
+            ps.shutdown()
         }
 
         it("should allow setting different properties w.r.t. one entity") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.SuperPalindrome
             import Palindromes.NoPalindrome
             import Palindromes.NoSuperPalindrome
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
-            val ps = createPropertyStore()
             ps.setupPhase(Set(Palindrome.key), Set.empty)
 
             ps.set("aba", Palindrome)
@@ -224,16 +250,20 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.waitOnPhaseCompletion()
             ps("abca", ppk) should be(FinalEP("abca", NoPalindrome))
             ps("abca", sppk) should be(FinalEP("abca", NoSuperPalindrome))
+
+            ps.shutdown()
         }
 
         it("should be able to enumerate all explicitly set properties of an entity") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.SuperPalindrome
             import Palindromes.NoPalindrome
             import Palindromes.NoSuperPalindrome
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
-            val ps = createPropertyStore()
             ps.setupPhase(Set.empty, Set.empty)
 
             ps.set("aba", Palindrome)
@@ -245,13 +275,17 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps.entities(sppk).map(_.e).toSet should be(Set("aba", "abca"))
             val expected = Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome))
             ps.properties("aba").toSet should be(expected)
+
+            ps.shutdown()
         }
 
         it("should not set an entity's property if it already has a property") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+            ps.setupPhase(Set.empty, Set.empty)
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
-            val ps = createPropertyStore()
-            ps.setupPhase(Set.empty, Set.empty)
 
             ps.set("aba", Palindrome)
 
@@ -262,13 +296,16 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 case AbortedDueToException(_: IllegalStateException) ⇒ // expected!
                 case _: IllegalStateException                        ⇒ // expected!
             }
+
+            ps.shutdown()
         }
 
         it("should contain the results (at least) for all entities for which we scheduled a computation") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
-
-            val ps = createPropertyStore()
             ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
             val pk = Palindromes.PalindromeKey
@@ -297,16 +334,18 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps.properties(e).map(_.ub).toSet should be(Set(expected))
                 ps.properties(e).map(_.lb).toSet should be(Set(expected))
             }
+
+            ps.shutdown()
         }
 
         it("should trigger a lazy property computation only lazily") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
-
             val pk = Palindromes.PalindromeKey
-            val ps = createPropertyStore()
             ps.setupPhase(Set(pk), Set.empty)
-
             ps.registerLazyPropertyComputation(
                 pk,
                 (e: Entity) ⇒ {
@@ -319,18 +358,19 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 }
             )
             ps("aba", pk) should be(EPK("aba", pk))
-
             ps.waitOnPhaseCompletion()
-
             ps("aba", pk) should be(FinalEP("aba", Palindrome))
+
+            ps.shutdown()
         }
 
         it("should not trigger a lazy property computation multiple times") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
-
             val pk = Palindromes.PalindromeKey
-            val ps = createPropertyStore()
             ps.setupPhase(Set(pk), Set.empty)
 
             val invocationCount = new AtomicInteger(0)
@@ -351,17 +391,20 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             if (invocationCount.get != 1) {
                 fail(s"invocation count should be 1; was ${invocationCount.get}")
             }
+
+            ps.shutdown()
         }
 
         it("should complete the computation of dependent lazy computations before the phase ends") {
+            val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
             import Palindromes.NoSuperPalindrome
             import Palindromes.SuperPalindrome
             val ppk = Palindromes.PalindromeKey
             val sppk = Palindromes.SuperPalindromeKey
-
-            val ps = createPropertyStore()
             ps.setupPhase(Set(ppk, sppk), Set.empty)
 
             val invocationCount = new AtomicInteger(0)
@@ -428,6 +471,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps("e", ppk) should be(FinalEP("e", Palindrome))
             ps("e", sppk) should be(FinalEP("e", SuperPalindrome))
             ps("e", Marker.MarkerKey) should be(FinalEP("e", Marker.IsMarked))
+
+            ps.shutdown()
         }
 
         describe("handling of computations with multiple updates") {
@@ -665,6 +710,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 for (nodeEntitiesPermutation ← nodeEntities.permutations.drop(dropCount).take(10)) {
 
                     val ps = createPropertyStore()
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
                     ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
                     ps.registerLazyPropertyComputation(
                         ReachableNodesCount.Key, reachableNodesCountAnalysis(ps)
@@ -702,12 +749,15 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                         case t: Throwable ⇒
                             throw t;
                     }
+
+                    ps.shutdown()
                 }
             }
 
             it("should be possible using lazily scheduled computations") {
-
                 val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
                 ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
                 ps.registerLazyPropertyComputation(
                     ReachableNodes.Key, reachableNodesAnalysis(ps)
@@ -732,11 +782,14 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps(nodeR, ReachableNodes.Key) should be(
                     FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                 )
+
+                ps.shutdown()
             }
 
             it("should be possible to use lazily scheduled mutually dependent computations") {
-
                 val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
                 ps.setupPhase(Set(ReachableNodes.Key, ReachableNodesCount.Key), Set.empty)
                 ps.registerLazyPropertyComputation(
                     ReachableNodes.Key, reachableNodesAnalysis(ps)
@@ -791,11 +844,14 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     case t: Throwable ⇒
                         throw t;
                 }
+
+                ps.shutdown()
             }
 
             it("should be possible when a lazy computation depends on properties for which no analysis is scheduled") {
-
                 val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
                 ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
                 // WE DO NOT SCHEDULE ReachableNodes
                 ps.registerLazyPropertyComputation(
@@ -818,11 +874,14 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
                 ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
                 ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
+
+                ps.shutdown()
             }
 
             it("should be possible when a lazy computation depends on properties for which analysis seems to be scheduled, but no analysis actually produces results") {
-
                 val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
                 ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
                 // WE DO NOT SCHEDULE ReachableNodes
                 ps.registerLazyPropertyComputation(
@@ -845,6 +904,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
                 ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
                 ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
+
+                ps.shutdown()
             }
 
         }
@@ -889,6 +950,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             }
 
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(TreeLevelKey), Set.empty)
 
             /* The following analysis only uses the new information given to it and updates
@@ -901,7 +964,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             }
 
             ps.scheduleEagerComputationForEntity(nodeRoot)(analysis(0))
-            ps.waitOnPhaseCompletion
+            ps.waitOnPhaseCompletion()
 
             ps(nodeRoot, TreeLevelKey) should be(FinalEP(nodeRoot, TreeLevel(0)))
             ps(nodeRRoot, TreeLevelKey) should be(FinalEP(nodeRRoot, TreeLevel(1)))
@@ -909,12 +972,15 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             ps(nodeLRRoot, TreeLevelKey) should be(FinalEP(nodeLRRoot, TreeLevel(2)))
             ps(nodeLRoot, TreeLevelKey) should be(FinalEP(nodeLRoot, TreeLevel(1)))
             ps(nodeLLRoot, TreeLevelKey) should be(FinalEP(nodeLLRoot, TreeLevel(2)))
+
+            ps.shutdown()
         }
 
         it("should never pass a `PropertyIsLazilyComputed` to clients") {
-            val ppk = Palindromes.PalindromeKey
-
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+            val ppk = Palindromes.PalindromeKey
             ps.setupPhase(Set(ppk), Set.empty)
 
             ps.registerLazyPropertyComputation(
@@ -924,25 +990,25 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     Result(e, p)
                 }
             )
-            ps.scheduleEagerComputationForEntity(
-                "aaa"
-            ) { s: String ⇒
-                    ps("a", ppk) match {
-                        case epk: EPK[_, _] ⇒
-                            IntermediateResult(
-                                s, NoPalindrome, Palindrome,
-                                List(epk),
-                                (eps: SomeEPS) ⇒ {
-                                    if (eps.lb == PropertyIsLazilyComputed ||
-                                        eps.ub == PropertyIsLazilyComputed)
-                                        fail("clients should never see PropertyIsLazilyComputed")
-                                    else
-                                        Result(s, Palindrome)
-                                }
-                            )
-                        case _ ⇒ fail("unexpected result")
-                    }
+            ps.scheduleEagerComputationForEntity("aaa") { s: String ⇒
+                ps("a", ppk) match {
+                    case epk: EPK[_, _] ⇒
+                        IntermediateResult(
+                            s, NoPalindrome, Palindrome,
+                            List(epk),
+                            (eps: SomeEPS) ⇒ {
+                                if (eps.lb == PropertyIsLazilyComputed ||
+                                    eps.ub == PropertyIsLazilyComputed)
+                                    fail("clients should never see PropertyIsLazilyComputed")
+                                else
+                                    Result(s, Palindrome)
+                            }
+                        )
+                    case _ ⇒ fail("unexpected result")
                 }
+            }
+
+            ps.shutdown()
         }
 
         it("should be possible to execute an analysis which analyzes a huge circle") {
@@ -964,6 +1030,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
 
                 // 2. we create the store
                 val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
                 ps.setupPhase(Set(Purity.Key), Set.empty)
 
                 def purityAnalysis(node: Node): PropertyComputationResult = {
@@ -1002,6 +1070,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     }
                 }
 
+                ps.shutdown()
+
                 info(s"test succeeded with $testSize node(s) in a circle")
                 info(
                     s"number of executed tasks:"+ps.scheduledTasksCount+
@@ -1028,6 +1098,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val nodeB = Node("b")
 
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
             def aAnalysis(ignored: Node): PropertyComputationResult = {
@@ -1048,6 +1120,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                 case e: Throwable ⇒
                     fail(e.getMessage)
             }
+
+            ps.shutdown()
         }
 
         it("should catch non-monotonic updates related to the lower bound") {
@@ -1060,6 +1134,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val nodeD = Node("d")
 
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
             def c(n: Node)(eOptP: SomeEOptionP): PropertyComputationResult = {
@@ -1114,6 +1190,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                     e.printStackTrace()
                     fail(e.getMessage)
             }
+
+            ps.shutdown()
         }
 
         it("should catch non-monotonic updates related to the upper bound") {
@@ -1126,6 +1204,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val nodeD = Node("d")
 
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
             def c(n: Node)(eOptP: SomeEOptionP): PropertyComputationResult = {
@@ -1179,6 +1259,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                     e.printStackTrace()
                     fail(e.getMessage)
             }
+
+            ps.shutdown()
         }
 
         it("should catch updates when the upper bound is lower than the lower bound") {
@@ -1190,6 +1272,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val nodeD = Node("d")
 
             val ps = createPropertyStore()
+            info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
             def c(n: Node)(eOptP: SomeEOptionP): PropertyComputationResult = {
@@ -1243,6 +1327,8 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                     e.printStackTrace()
                     fail(e.getMessage)
             }
+
+            ps.shutdown()
         }
     }
 

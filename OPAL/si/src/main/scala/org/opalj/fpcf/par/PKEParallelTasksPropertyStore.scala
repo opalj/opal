@@ -43,7 +43,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable
-
 import org.opalj.graphs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -52,6 +51,7 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.log.GlobalLogContext
 
 /**
  * A concurrent implementation of the property store which parallels the execution of the scheduled
@@ -213,7 +213,7 @@ final class PKEParallelTasksPropertyStore private (
         @inline def processTask(): Unit = {
             try {
                 handleExceptions {
-                    val t = tasks.poll(60, TimeUnit.SECONDS)
+                    val t = tasks.poll(5L, TimeUnit.SECONDS)
                     if (t != null) {
                         // As a sideeffect of processing a task, we may have (implicit) calls
                         // to schedule and also implicit handleResult calls; both will
@@ -243,8 +243,12 @@ final class PKEParallelTasksPropertyStore private (
                 thread ⇒
                 override def run(): Unit = {
                     do {
-                        while (!store.isSuspended()) { processTask() }
-                        if (store.isSuspended()) Thread.sleep(1000)
+                        while (!store.isSuspended()) {
+                            processTask()
+                            if (thread.isInterrupted())
+                                return ;
+                        }
+                        Thread.sleep(1000)
                     } while (!thread.isInterrupted())
                 }
             }
@@ -296,14 +300,16 @@ final class PKEParallelTasksPropertyStore private (
         }
     }
 
-    private[this] var storeUpdatesProcessor = {
+    @volatile private[this] var storeUpdatesProcessor: Thread = {
 
         @inline def processUpdate(): Unit = {
             try {
                 handleExceptions {
-                    storeUpdates.poll(60, TimeUnit.SECONDS) match {
+                    storeUpdates.poll(5L, TimeUnit.SECONDS) match {
 
-                        case null ⇒ // nothing to do at the moment...
+                        case null ⇒
+                            println(s"property store@${System.identityHashCode(store).toHexString} is idle")
+                        // nothing to do at the moment...
 
                         case PropertyUpdate(r, forceEvaluation, forceDependerNotification) ⇒
                             doHandleResult(r, forceEvaluation, forceDependerNotification)
@@ -336,11 +342,16 @@ final class PKEParallelTasksPropertyStore private (
         val t = new Thread(propertyStoreThreads, "OPAL - Property Updates Processor") { thread ⇒
             override def run(): Unit = {
                 do {
-                    while (!store.isSuspended()) { processUpdate() }
-                    if (store.isSuspended()) Thread.sleep(1000)
-                } while (!thread.isInterrupted())
+                    do {
+                        while (!store.isSuspended()) {
+                            processUpdate()
+                            if (thread.isInterrupted())
+                                return ;
+                        }
+                        Thread.sleep(1000)
+                    } while (!thread.isInterrupted())
+                } while (true)
             }
-
         }
         t.setDaemon(true)
         t.setPriority(8)
@@ -355,34 +366,43 @@ final class PKEParallelTasksPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    private[this] def shutdownPropertyStore(): Unit = {
-        isSuspended = () ⇒ true
-        // We use the "Thread"s' interrupt method to finally abort the threads...
-        if (storeUpdatesProcessor ne null) storeUpdatesProcessor.interrupt()
-        storeUpdatesProcessor = null
-        if (tasksProcessors ne null) tasksProcessors.interrupt()
-        tasksProcessors = null
+    def shutdown(): Unit = {
+        if (storeUpdatesProcessor == null)
+            return ;
+
+        store.isSuspended = () ⇒ true
 
         if (latch != null) latch.countDown()
+
+        // We use the "Thread"s' interrupt method to finally abort the threads...
+        storeUpdatesProcessor.interrupt()
+        storeUpdatesProcessor = null
+        tasksProcessors.interrupt()
+
+        info(
+            "analysis progress",
+            "shutting down PropertyStore@"+System.identityHashCode(this).toHexString
+        )(GlobalLogContext)
     }
 
     override def finalize(): Unit = {
         // DEPRECATED: super.finalize()
-        shutdownPropertyStore()
+        shutdown()
     }
 
     private[this] def handleUncaughtException(t: Thread, e: Throwable): Unit = {
+        shutdown()
         e match {
             case underlyingException: AbortedDueToException ⇒ /*ignore*/
+            case ie: InterruptedException                   ⇒ /*ignore*/
             case t: Throwable                               ⇒ collectException(e)
         }
-        shutdownPropertyStore()
     }
 
     protected[this] override def onFirstException(t: Throwable): Unit = {
         if (tracer.isDefined) tracer.get.firstException(t)
         super.onFirstException(t)
-        shutdownPropertyStore()
+        shutdown()
     }
 
     // --------------------------------------------------------------------------------------------
@@ -921,12 +941,18 @@ final class PKEParallelTasksPropertyStore private (
         var isSuspended: Boolean = this.isSuspended()
         do {
             continueComputation = false
-
             while (!isSuspended && openJobs.get > 0) {
-                latch.await()
+                try {
+                    latch.await()
+                } catch {
+                    case ie: InterruptedException ⇒
+                        info(
+                            "analysis progress",
+                            "processing aborted due to thread interruption"
+                        )
+                }
                 validateState()
                 isSuspended = this.isSuspended()
-
             }
 
             assert(openJobs.get >= 0, s"unexpected number of openJobs: $openJobs")

@@ -171,7 +171,9 @@ abstract class PropertyStore {
      * and calling `waitOnPhaseCompletion` again. I.e., interruption can be used for debugging
      * purposes!
      */
-    @volatile var isSuspended: () ⇒ Boolean = concurrent.defaultIsInterrupted
+    @volatile var isSuspended: () ⇒ Boolean = () ⇒ false
+
+    def shutdown(): Unit
 
     //
     //

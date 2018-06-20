@@ -872,6 +872,8 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
+    def shutdown(): Unit = {}
+
 }
 
 /**
