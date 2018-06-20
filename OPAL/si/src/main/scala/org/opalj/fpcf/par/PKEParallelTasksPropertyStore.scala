@@ -31,7 +31,6 @@ package fpcf
 package par
 
 import java.lang.System.identityHashCode
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
@@ -56,17 +55,15 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
  * A concurrent implementation of the property store which parallels the execution of the scheduled
- * tasks and on-update continuations.
+ * computations.
  *
- * Entities are generally only stored on demand. I.e.,
- *  - they have a property OR
- *  - a computation is already scheduled that will compute the property OR
- *  - we have a `depender`.
+ * Entities are stored after computation.
  *
  * ==Implementation==
- * The idea is to use one specific thread (`store updates thread for processing updates
+ * The idea is to use one specific thread (the `store updates thread) for processing updates
  * to the store. This enables us to avoid any synchronization w.r.t. updating the
  * depender/dependee relations.
+ *
  * For processing the scheduled computations we use
  * `NumberOfThreadsForProcessingPropertyComputations` threads.
  *
@@ -74,35 +71,32 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  */
 final class PKEParallelTasksPropertyStore private (
         val ctx:                                              Map[Type, AnyRef],
-        val NumberOfThreadsForProcessingPropertyComputations: Int
+        val NumberOfThreadsForProcessingPropertyComputations: Int,
+        val tracer:                                           Option[PropertyStoreTracer]
 )(
         implicit
         val logContext: LogContext
 ) extends PropertyStore {
     store ⇒
 
+    // Tasks are allowed to schedule further tasks... therefore, the scheduled tasks counter
+    // has to be thread-safe.
     private[this] val scheduledTasksCounter: AtomicInteger = new AtomicInteger(0)
-
     def scheduledTasksCount: Int = scheduledTasksCounter.get
 
-    @volatile private[this] var scheduledOnUpdateComputationsCounter = 0
+    @volatile private[this] var fallbacksUsedCounter: AtomicInteger = new AtomicInteger(0)
+    def fallbacksUsedCount: Int = fallbacksUsedCounter.get
 
+    @volatile private[this] var scheduledOnUpdateComputationsCounter = 0
     def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
     @volatile private[this] var immediateOnUpdateComputationsCounter = 0
-
     def immediateOnUpdateComputationsCount: Int = immediateOnUpdateComputationsCounter
 
-    @volatile private[this] var fallbacksUsedForComputedPropertiesCounter = 0
-
-    def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
-
     @volatile private[this] var resolvedCSCCsCounter = 0
-
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
     @volatile private[this] var quiescenceCounter = 0
-
     def quiescenceCount: Int = quiescenceCounter
 
     def fastTrackPropertiesCount: Int = 0 // TODO Not yet supported
@@ -132,9 +126,13 @@ final class PKEParallelTasksPropertyStore private (
     }
     // Contains all those EPKs that should be computed until we have a final result.
     // When we have computed a final result, the epk will be deleted.
-    private[this] val forcedComputations: Array[ConcurrentHashMap[Entity, Entity] /*used as a set*/ ] = {
+    private[this] val forcedComputations: Array[ConcurrentHashMap[Entity, Entity] /*...a set*/ ] = {
         Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
     }
+
+    @volatile private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/
+
+    @volatile private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/
 
     // ---------------------------------------------------------------------------------------------
     // The following three data-structures are never read or updated concurrently;
@@ -159,66 +157,97 @@ final class PKEParallelTasksPropertyStore private (
     // task/force an initial evaluation.
     @volatile private[this] var latch: CountDownLatch = _
 
-    // The number of property computations and results which have not been completely processed.
+    /**
+     * The number of property computations and results which have not been completely processed.
+     */
     private[this] val openJobs = new AtomicInteger(0)
-    /** MUST BE CALLED AFTER the respective task was processed. */
+    /**
+     * MUST BE CALLED AFTER the respective task was processed.
+     */
     private[this] def decOpenJobs(): Unit = {
         val v = openJobs.decrementAndGet()
         if (v == 0) { latch.countDown() }
     }
-    /* MUST BE CALLED BEFORE the job is actually processed; i.e., termination of the job
-     * always has to precede decrementing openJobs. */
+    /**
+     * MUST BE CALLED BEFORE the job is actually processed; i.e., termination of the job
+     * always has to precede decrementing openJobs.
+     */
     private[this] def incOpenJobs(): Unit = {
         val v = openJobs.getAndIncrement()
         if (v == 0) { latch = new CountDownLatch(0) }
+    }
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // Handling property computations.
+    //
+    // --------------------------------------------------------------------------------------------
+
+    private[this] val propertyStoreThreads: ThreadGroup = {
+        new ThreadGroup(s"OPAL - Property Store ${store.hashCode().toHexString} Threads")
     }
 
     /**
      * The list of scheduled (on update) property computations -
      * they will be processed in parallel.
      */
-    private[this] val propertyStoreThreads = {
-        new ThreadGroup(s"OPAL - Property Store ${store.hashCode().toHexString} Threads")
-    }
     private[this] val tasks = new LinkedBlockingDeque[QualifiedTask[_ <: Entity]]()
-    private[this] var tasksProcessors = {
+
+    private[this] def prependTask(task: QualifiedTask[_ <: Entity]): Unit = {
+        incOpenJobs()
+        if (!tasks.offerFirst(task)) {
+            decOpenJobs()
+            throw new UnknownError(s"prepending task $task to unbounded queue failed")
+        }
+    }
+
+    private[this] def appendTask(task: QualifiedTask[_ <: Entity]): Unit = {
+        incOpenJobs()
+        if (!tasks.offerLast(task)) {
+            decOpenJobs()
+            throw new UnknownError(s"appending task $task to unbounded queue failed")
+        }
+    }
+
+    private[this] var tasksProcessors: ThreadGroup = {
+
+        @inline def processTask(): Unit = {
+            try {
+                handleExceptions {
+                    val t = tasks.poll(60, TimeUnit.SECONDS)
+                    if (t != null) {
+                        // As a sideeffect of processing a task, we may have (implicit) calls
+                        // to schedule and also implicit handleResult calls; both will
+                        // increase openJobs.
+                        if (t.isInitialTask) {
+                            t.apply()
+                        } else {
+                            // TODO check if required; i.e., if we are forced or have dependees.
+                            t.apply()
+                        }
+                        decOpenJobs()
+                    }
+                }
+            } catch {
+                case ie: InterruptedException ⇒
+                    // No element was taken from the queue; hence, we must not decrement open jobs.
+                    throw ie;
+                case t: Throwable ⇒
+                    decOpenJobs()
+                    throw t;
+            }
+        }
+
         val tg = new ThreadGroup(propertyStoreThreads, "OPAL - Property Computations Processors")
         for { i ← 1 to NumberOfThreadsForProcessingPropertyComputations } {
-            val t = new Thread(tg, s"OPAL - Property Computations Processor $i") { thread ⇒
-                override def run(): Unit = do {
-                    handleExceptions {
-                        while (!store.isSuspended()) {
-                            try {
-                                // As a sideeffect of processing a task, we may have
-                                // (implicit) calls to schedule
-                                // and implicit handleResult calls;
-                                // both will increase openJobs.
-                                val t = tasks.poll(60, TimeUnit.SECONDS)
-                                if (t != null) {
-                                    if (t.isInitialTask) {
-                                        t.apply()
-                                    } else {
-                                        // TODO check if required; i.e., if we are forced or have dependees.
-                                        t.apply()
-                                    }
-                                    decOpenJobs()
-                                }
-                            } catch {
-                                case ie: InterruptedException ⇒
-                                    // In this case no element was taken from the queue,
-                                    // because the thread waiting for another task was
-                                    // interrupted; hence, we must not decrement open jobs.
-                                    throw ie;
-                                case t: Throwable ⇒
-                                    decOpenJobs()
-                                    throw t;
-                            }
-                        }
-                    }
-                    // the user suspended the store... we are not really "done"
-                    if (store.isSuspended()) Thread.sleep(1000)
-                } while (!thread.isInterrupted())
-
+            val t = new Thread(tg, s"OPAL - Property Computations Processor $i") {
+                thread ⇒
+                override def run(): Unit = {
+                    do {
+                        while (!store.isSuspended()) { processTask() }
+                        if (store.isSuspended()) Thread.sleep(1000)
+                    } while (!thread.isInterrupted())
+                }
             }
             t.setDaemon(true)
             t.setUncaughtExceptionHandler(store.handleUncaughtException)
@@ -227,57 +256,91 @@ final class PKEParallelTasksPropertyStore private (
         tg
     }
 
+    // --------------------------------------------------------------------------------------------
+    //
+    // Handling PropertyStore updates.
+    //
+    // --------------------------------------------------------------------------------------------
+
     private[this] sealed trait StoreUpdate
+
     private[this] case class PropertyUpdate(
-            pcr:             PropertyComputationResult,
-            forceEvaluation: Boolean
+            pcr:                       PropertyComputationResult,
+            forceEvaluation:           Boolean,
+            forceDependerNotification: Boolean
     ) extends StoreUpdate
+
     private[this] case class TriggeredLazyComputation[E <: Entity](
             e:    E,
             pkId: Int,
             pc:   PropertyComputation[E]
     ) extends StoreUpdate
 
-    /* The list of jobs which update the store. */
-    private[this] val storeUpdates = new LinkedBlockingQueue[StoreUpdate]()
+    /**
+     * The jobs which update the store.
+     */
+    private[this] val storeUpdates = new LinkedBlockingDeque[StoreUpdate]()
+
+    private[this] def prependStoreUpdate(update: StoreUpdate): Unit = {
+        incOpenJobs()
+        if (!storeUpdates.offerFirst(update)) {
+            decOpenJobs()
+            throw new UnknownError(s"prepending store update $update to unbounded queue failed")
+        }
+    }
+
+    private[this] def appendStoreUpdate(update: StoreUpdate): Unit = {
+        incOpenJobs()
+        if (!storeUpdates.offerLast(update)) {
+            decOpenJobs()
+            throw new UnknownError(s"appending store update $update to unbounded queue failed")
+        }
+    }
+
     private[this] var storeUpdatesProcessor = {
-        val t = new Thread(propertyStoreThreads, "OPAL - Property Updates Processor") { thread ⇒
-            override def run(): Unit = do {
+
+        @inline def processUpdate(): Unit = {
+            try {
                 handleExceptions {
-                    while (!store.isSuspended()) {
-                        try {
-                            storeUpdates.poll(60, TimeUnit.SECONDS) match {
+                    storeUpdates.poll(60, TimeUnit.SECONDS) match {
 
-                                case null ⇒ // nothing to do at the moment...
+                        case null ⇒ // nothing to do at the moment...
 
-                                case PropertyUpdate(r, forceEvaluation) ⇒
-                                    doHandleResult(r, forceEvaluation)
-                                    decOpenJobs()
+                        case PropertyUpdate(r, forceEvaluation, forceDependerNotification) ⇒
+                            doHandleResult(r, forceEvaluation, forceDependerNotification)
+                            decOpenJobs()
 
-                                case TriggeredLazyComputation(e, pkId, lc) ⇒
-                                    if (triggeredLazyComputations(pkId).add(e)) {
-                                        scheduledTasksCounter.incrementAndGet()
-                                        incOpenJobs()
-                                        tasks.offer(new PropertyComputationTask[Entity](
-                                            store, e, pkId, lc
-                                        ))
-                                    }
-                                    decOpenJobs()
+                        case TriggeredLazyComputation(e, pkId, lc) ⇒
+                            // Recall, that -- once we have a final result -- all meta data
+                            // is deleted; in particular information about triggeredLazyComputations.
+                            if (properties(pkId).get(e) == null &&
+                                triggeredLazyComputations(pkId).add(e)) {
+                                if (tracer.isDefined)
+                                    tracer.get.schedulingLazyComputation(e, pkId)
+
+                                scheduledTasksCounter.incrementAndGet()
+                                appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
                             }
-                        } catch {
-                            case ie: InterruptedException ⇒
-                                // In this case no element was taken from the queue,
-                                // because the thread waiting for another task was
-                                // interrupted; hence, we must not decrement open jobs.
-                                throw ie;
-                            case t: Throwable ⇒
-                                decOpenJobs()
-                                throw t;
-                        }
+                            decOpenJobs()
                     }
                 }
-                if (store.isSuspended()) Thread.sleep(1000)
-            } while (!thread.isInterrupted())
+            } catch {
+                case ie: InterruptedException ⇒
+                    // No element was taken from the queue; hence, we must not decrement open jobs.
+                    throw ie;
+                case t: Throwable ⇒
+                    decOpenJobs()
+                    throw t;
+            }
+        }
+
+        val t = new Thread(propertyStoreThreads, "OPAL - Property Updates Processor") { thread ⇒
+            override def run(): Unit = {
+                do {
+                    while (!store.isSuspended()) { processUpdate() }
+                    if (store.isSuspended()) Thread.sleep(1000)
+                } while (!thread.isInterrupted())
+            }
 
         }
         t.setDaemon(true)
@@ -287,6 +350,12 @@ final class PKEParallelTasksPropertyStore private (
         t
     }
 
+    // --------------------------------------------------------------------------------------------
+    //
+    // Failure handling
+    //
+    // --------------------------------------------------------------------------------------------
+
     private[this] def shutdownPropertyStore(): Unit = {
         isSuspended = () ⇒ true
         // We use the "Thread"s' interrupt method to finally abort the threads...
@@ -294,6 +363,8 @@ final class PKEParallelTasksPropertyStore private (
         storeUpdatesProcessor = null
         if (tasksProcessors ne null) tasksProcessors.interrupt()
         tasksProcessors = null
+
+        if (latch != null) latch.countDown()
     }
 
     override def finalize(): Unit = {
@@ -310,8 +381,32 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     protected[this] override def onFirstException(t: Throwable): Unit = {
+        if (tracer.isDefined) tracer.get.firstException(t)
         super.onFirstException(t)
         shutdownPropertyStore()
+    }
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // Core functionality
+    //
+    // --------------------------------------------------------------------------------------------
+
+    override def toString(printProperties: Boolean): String = {
+        if (printProperties) {
+            val ps = for {
+                (eEPSs, pkId) ← properties.iterator.zipWithIndex.take(PropertyKey.maxId + 1)
+                propertyKindName = PropertyKey.name(pkId)
+                eEPS ← eEPSs.entrySet().asScala.iterator
+            } yield {
+                val e = eEPS.getKey
+                val p = eEPS.getValue
+                s"$e -> $propertyKindName[$pkId]=$p"
+            }
+            ps.mkString("PropertyStore(\n\t", "\n\t", "\n")
+        } else {
+            s"PropertyStore(properties=${properties.iterator.map(_.size).sum})"
+        }
     }
 
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
@@ -325,10 +420,6 @@ final class PKEParallelTasksPropertyStore private (
         }
         lazyComputations.set(pk.id, pc.asInstanceOf[SomePropertyComputation])
     }
-
-    // Have to be set before usage:
-    @volatile private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/
-    @volatile private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/
 
     override def isKnown(e: Entity): Boolean = properties.exists(_.containsKey(e))
 
@@ -369,21 +460,14 @@ final class PKEParallelTasksPropertyStore private (
         properties(pk.id).values().iterator().asScala.asInstanceOf[Iterator[EPS[Entity, P]]]
     }
 
-    override def toString(printProperties: Boolean): String = {
-        if (printProperties) {
-            val ps = for {
-                (eEPSs, pkId) ← properties.iterator.zipWithIndex.take(PropertyKey.maxId + 1)
-                propertyKindName = PropertyKey.name(pkId)
-                eEPS ← eEPSs.entrySet().asScala.iterator
-            } yield {
-                val e = eEPS.getKey
-                val p = eEPS.getValue
-                s"$e -> $propertyKindName[$pkId]=$p"
-            }
-            ps.mkString("PropertyStore(\n\t", "\n\t", "\n")
-        } else {
-            s"PropertyStore(properties=${properties.iterator.map(_.size).sum})"
-        }
+    // Thread Safe!
+    private[this] def scheduleComputationForEntity[E <: Entity](
+        e:               E,
+        pc:              PropertyComputation[E],
+        forceEvaluation: Boolean
+    ): Unit = {
+        scheduledTasksCounter.incrementAndGet()
+        appendTask(new InitialPropertyComputationTask[E](this, e, pc, forceEvaluation))
     }
 
     // Thread Safe!
@@ -391,27 +475,8 @@ final class PKEParallelTasksPropertyStore private (
         e: E
     )(
         pc: PropertyComputation[E]
-    ): Unit = handleExceptions {
+    ): Unit = {
         scheduleComputationForEntity(e, pc, forceEvaluation = true)
-    }
-
-    // Thread Safe!
-    private[this] def scheduleComputationForEntity[E <: Entity](
-        e:               E,
-        pc:              PropertyComputation[E],
-        forceEvaluation: Boolean
-    ): Unit = handleExceptions {
-        scheduledTasksCounter.incrementAndGet()
-        incOpenJobs()
-        val t = new InitialPropertyComputationTask[E](
-            this,
-            e, pc,
-            forceEvaluation
-        )
-        if (!tasks.offer(t)) {
-            error("analysis progress", s"couldn't add computation for $e(pc=$pc)")
-            decOpenJobs()
-        }
     }
 
     // Thread Safe!
@@ -419,15 +484,8 @@ final class PKEParallelTasksPropertyStore private (
         e:    E,
         pkId: Int,
         pc:   PropertyComputation[E]
-    ): Unit = handleExceptions {
-        incOpenJobs()
-        if (!storeUpdates.offer(TriggeredLazyComputation(e, pkId, pc))) {
-            error(
-                "analysis progress",
-                s"couldn't add triggered lazy computation for $e(PropertyKed.id=$pkId)"
-            )
-            decOpenJobs()
-        }
+    ): Unit = {
+        appendStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
     }
 
     // Thread Safe!
@@ -448,7 +506,10 @@ final class PKEParallelTasksPropertyStore private (
                             // is not always just a bottom value!)
                             scheduleLazyComputationForEntity(
                                 e, pkId,
-                                (_: E) ⇒ Result(e, PropertyKey.fallbackProperty(store, e, pk))
+                                (_: E) ⇒ {
+                                    fallbacksUsedCounter.incrementAndGet()
+                                    Result(e, PropertyKey.fallbackProperty(store, e, pk))
+                                }
                             ) // <= handles redundant starts
                         }
 
@@ -462,6 +523,7 @@ final class PKEParallelTasksPropertyStore private (
         }
     }
 
+    // Thread Safe!
     final def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
         apply(epk.e, epk.pk)
     }
@@ -470,6 +532,8 @@ final class PKEParallelTasksPropertyStore private (
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         val pkId = pk.id
         if (forcedComputations(pkId).put(e, e) == null) {
+            if (tracer.isDefined) tracer.get.force(e, pkId)
+
             val lc = lazyComputations.get(pkId)
             if (lc != null && properties(pkId).get(e) == null) {
                 scheduleLazyComputationForEntity(e, pkId, lc) // <= handles redundant starts
@@ -481,10 +545,11 @@ final class PKEParallelTasksPropertyStore private (
      * Removes the e/pk from `dependees` and also removes it from the dependers of the
      * e/pk's dependees.
      */
-    // CONCURRENCY NOTE:
-    // ONLY TO BE CALLED BY "doHandleResult"; I.E., FROM THE STORE UPDATES PROCESSING THREAD
     private[this] def clearDependees(epk: SomeEPK): Unit = {
-        assert(Thread.currentThread() == storeUpdatesProcessor)
+        assert(
+            Thread.currentThread() == storeUpdatesProcessor,
+            "only to be called by the store updates processing thread"
+        )
 
         val pkId = epk.pk.id
         val dependeesOfEntity = this.dependees(pkId)
@@ -498,23 +563,26 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     /**
-     * Updates the entity and notifies all dependers.
+     * Updates the entity and optionally notifies all dependers.
      */
-    // CONCURRENCY NOTE:
-    // ONLY TO BE CALLED BY "doHandleResult"; I.E., FROM THE STORE UPDATES PROCESSING THREAD
     private[this] def updateAndNotify(
         e:  Entity,
         lb: Property, ub: Property,
-        notify: Boolean = true
-    ): Unit = {
-        assert(Thread.currentThread() == storeUpdatesProcessor)
-
+        notifyDependersAboutNonFinalUpdates: Boolean = true,
+        forceDependerNotification:           Boolean = false
+    ): Boolean = {
+        assert(
+            Thread.currentThread() == storeUpdatesProcessor,
+            "only to be called by the store updates processing thread"
+        )
         if (debug) {
             if (e == null) {
                 throw new IllegalArgumentException("the entity must not be null")
             }
             if (ub.key != lb.key) {
-                throw new IllegalArgumentException("property keys for lower and upper bound don't match")
+                throw new IllegalArgumentException(
+                    s"property keys for lower $lb and upper $ub bound don't match"
+                )
             }
             if (lb.isOrderedProperty) {
                 val ubAsOP = ub.asOrderedProperty
@@ -525,10 +593,13 @@ final class PKEParallelTasksPropertyStore private (
         val pk = ub.key
         val pkId = pk.id
         val newEPS = EPS[Entity, Property](e, lb, ub)
-
-        // 1. Check and update property:
         val propertiesOfEntity = properties(pkId)
+
+        // 1. update property
         val oldEPS = propertiesOfEntity.put(e, newEPS)
+        if (tracer.isDefined) tracer.get.update(oldEPS, newEPS)
+
+        // 2. check if update was ok
         if (debug && oldEPS != null) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
@@ -558,67 +629,82 @@ final class PKEParallelTasksPropertyStore private (
             }
         }
 
-        // let's test if we have a relevant update
-        if (notify && newEPS != oldEPS) {
-            // 3. Notify dependers if necessary
+        // 3. handle relevant updates
+        val isFinal = newEPS.isFinal
+        val relevantUpdate = newEPS != oldEPS
+        if (isFinal ||
+            forceDependerNotification ||
+            (notifyDependersAboutNonFinalUpdates && relevantUpdate)) {
+            // 3.1. notify dependers
             val oldDependersOption = this.dependers(pkId).remove(e)
             if (oldDependersOption.isDefined) {
                 oldDependersOption.get foreach { oldDepender ⇒
                     val (oldDependerEPK, c) = oldDepender
+
+                    if (tracer.isDefined) tracer.get.notification(newEPS, oldDependerEPK)
 
                     // Clear depender => dependee lists.
                     // Given that we will trigger the depender, we now have to remove the
                     // respective onUpdateContinuation from all dependees of the respective
                     // depender to avoid that the onUpdateContinuation is triggered multiple times!
                     clearDependees(oldDependerEPK)
-                    incOpenJobs()
-                    if (newEPS.isFinal) {
-                        immediateOnUpdateComputationsCounter += 1
-                        tasks.offerFirst(new OnFinalUpdateComputationTask(this, FinalEP(e, ub), c))
+                    scheduledOnUpdateComputationsCounter += 1
+                    if (isFinal) {
+                        prependTask(new OnFinalUpdateComputationTask(this, FinalEP(e, ub), c))
                     } else {
-                        scheduledOnUpdateComputationsCounter += 1
-                        tasks.offerLast(new OnUpdateComputationTask(this, EPK(e, ub), c))
+                        appendTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
                     }
                 }
             }
-            // 4. perform clean-up
-            if (newEPS.isFinal) {
+
+            // 3.2. perform clean-up if necessary/possible
+            if (isFinal) {
+                if (tracer.isDefined) tracer.get.metaInformationDeleted(newEPS.asFinal)
                 forcedComputations(pkId).remove(e)
                 triggeredLazyComputations(pkId).remove(e)
             }
         }
+        relevantUpdate
     }
 
+    // Thread safe!
     override def set(e: Entity, p: Property): Unit = handleExceptions {
         if (debug && lazyComputations.get(p.key.id) != null) {
             throw new IllegalStateException(
-                s"$e: setting $p is not supported; lazy computation is scheduled"
+                s"$e: setting $p is not supported; lazy computation is registered"
             )
         }
-
-        handleResult(ExternalResult(e, p))
+        val r = ExternalResult(e, p)
+        prependStoreUpdate(PropertyUpdate(r, /*doesn't matte:*/ false, /*doesn't matter:*/ false))
     }
 
     override def handleResult(
         r:               PropertyComputationResult,
         forceEvaluation: Boolean
-    ): Unit = handleExceptions {
-        incOpenJobs()
-        if (!storeUpdates.offer(PropertyUpdate(r, forceEvaluation))) {
-            // THIS SHOULD NEVER HAPPEN, BECAUSE THE QUEUE IS UNBOUNDED
-            decOpenJobs()
-            throw new UnknownError(s"couldn't add $r to the unbounded store updates queue")
-        }
+    ): Unit = {
+        appendStoreUpdate(PropertyUpdate(r, forceEvaluation, false))
     }
 
-    // CONCURRENCY NOTE:
-    // ONLY TO BE CALLED BY THE RESULTS PROCESSING THREAD!
-    private[this] def doHandleResult(
-        r:               PropertyComputationResult,
-        forceEvaluation: Boolean
-    ): Unit = handleExceptions {
+    // Thread safe!
+    private[par] def handleResult(
+        r:                         PropertyComputationResult,
+        forceEvaluation:           Boolean,
+        forceDependerNotification: Boolean
+    ): Unit = {
+        appendStoreUpdate(PropertyUpdate(r, forceEvaluation, forceDependerNotification))
+    }
 
-        assert(Thread.currentThread() == storeUpdatesProcessor)
+    private[this] def doHandleResult(
+        r:                         PropertyComputationResult,
+        forceEvaluation:           Boolean,
+        forceDependerNotification: Boolean
+    ): Unit = {
+        assert(
+            Thread.currentThread() == storeUpdatesProcessor,
+            "only to be called by the store updates processing thread"
+        )
+
+        if (tracer.isDefined) tracer.get.handlingResult(r, forceEvaluation)
 
         r.id match {
 
@@ -627,13 +713,17 @@ final class PKEParallelTasksPropertyStore private (
                 // compute a/some property/properties for a given entity.
             }
 
+            //
+            // Result containers
+            //
+
             case Results.id ⇒
                 val Results(results) = r
-                results foreach { r ⇒ doHandleResult(r, forceEvaluation) }
+                results foreach { r ⇒ doHandleResult(r, forceEvaluation, false) }
 
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
-                doHandleResult(ir, forceEvaluation)
+                doHandleResult(ir, forceEvaluation, false)
                 npcs foreach { npc ⇒
                     val (pc, e) = npc
                     scheduleComputationForEntity(e, pc, forceEvaluation)
@@ -647,48 +737,6 @@ final class PKEParallelTasksPropertyStore private (
                 val Result(e, p) = r
                 clearDependees(EPK(e, p.key))
                 updateAndNotify(e, p, p)
-
-            case ExternalResult.id ⇒
-                val ExternalResult(e, p) = r
-                if (debug) {
-                    if (properties(p.id).get(e) != null) {
-                        throw new IllegalStateException(s"$e: already has a property")
-                    }
-                    if (dependees(p.id).contains(e)) {
-                        throw new IllegalStateException(s"$e: is already computed/has dependees")
-                    }
-                }
-                updateAndNotify(e, p, p)
-
-            case CSCCsResult.id ⇒
-                val CSCCsResult(cSCCs) = r
-                for (cSCC ← cSCCs) {
-                    if (traceCycleResolutions) {
-                        val cycleAsText =
-                            if (cSCC.size > 10)
-                                cSCC.take(10).mkString("", ",", "...")
-                            else
-                                cSCC.mkString(",")
-                        info(
-                            "analysis progress",
-                            s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText"
-                        )
-                    }
-                    // 1. Kill for every member its dependee => depender relation to prevent inner
-                    //    cSCC notfications (i.e.,  don't kill the dependers)
-                    // 2. update all cycle members and inform the dependers (which, due to step 1,
-                    //    do not contain members of the cSCC.)
-                    // 3. clean-up all temporary information
-                    cSCC.foreach(clearDependees)
-                    for (epk ← cSCC) {
-                        val e = epk.e
-                        val pkId = epk.pk.id
-                        val eps = properties(pkId).get(e)
-                        val newP = PropertyKey.resolveCycle(this, eps)
-                        updateAndNotify(e, newP, newP)
-                    }
-                    resolvedCSCCsCounter += 1
-                }
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
@@ -708,15 +756,58 @@ final class PKEParallelTasksPropertyStore private (
                     updateAndNotify(newEPS.e, newEPS.lb, newEPS.ub)
                 }
 
-            case IntermediateResult.id ⇒
-                val IntermediateResult(e, lb, ub, newDependees, c) = r
-                val pk = ub.key
-                val pkId = pk.id
-                if (forceEvaluation) {
-                    forcedComputations(pkId).put(e, e)
+            case ExternalResult.id ⇒
+                val ExternalResult(e, p) = r
+                if (debug) {
+                    val pkId = p.id
+                    val oldP = properties(pkId).get(e)
+                    if (oldP != null) {
+                        throw new IllegalStateException(s"$e: already has a property $oldP")
+                    }
+                    if (dependees(pkId).contains(e)) {
+                        throw new IllegalStateException(s"$e: is already computed/has dependees")
+                    }
+                }
+                updateAndNotify(e, p, p)
+
+            case CSCCsResult.id ⇒
+                val CSCCsResult(cSCCs) = r
+                for (cSCC ← cSCCs) {
+                    if (traceCycleResolutions) {
+                        val cSCCAsText =
+                            if (cSCC.size > 10)
+                                cSCC.take(10).mkString("", ",", "...")
+                            else
+                                cSCC.mkString(",")
+                        info(
+                            "analysis progress",
+                            s"resolving cSCC(iteration:$quiescenceCounter): $cSCCAsText"
+                        )
+                    }
+                    // 1. Kill for every member its dependee => depender relation to prevent inner
+                    //    cSCC notifications (i.e.,  don't kill the dependers)
+                    // 2. update all cycle members and inform the dependers (which, due to step 1,
+                    //    do not contain members of the cSCC.)
+                    // 3. clean-up all temporary information
+                    cSCC.foreach(clearDependees)
+                    for (epk ← cSCC) {
+                        val e = epk.e
+                        val pkId = epk.pk.id
+                        val eps = properties(pkId).get(e)
+                        val newP = PropertyKey.resolveCycle(this, eps)
+                        updateAndNotify(e, newP, newP)
+                    }
+                    resolvedCSCCsCounter += 1
                 }
 
+            case IntermediateResult.id ⇒
+                val IntermediateResult(e, lb, ub, seenDependees, c) = r
+                val pk = ub.key
+                val pkId = pk.id
                 val epk = EPK(e, pk)
+
+                if (forceEvaluation) forcedComputations(pkId).put(e, e)
+
                 // Given that "on notification" dependees are eagerly killed, clearing
                 // dependees is not necessary!
                 if (debug && dependees(pkId).contains(e)) {
@@ -729,62 +820,79 @@ final class PKEParallelTasksPropertyStore private (
                     )
                 }
 
-                // 1. let's check if a listed dependee is already updated...
-                //    If so, we directly schedule a task again to compute the property.
-                val newDependeesIterator = newDependees.toIterator
-                while (newDependeesIterator.hasNext) {
-                    val newDependee = newDependeesIterator.next()
+                // 1. let's check if a seen dependee is already updated; if so, we directly
+                //    schedule a task again to compute the property.
+                val seenDependeesIterator = seenDependees.toIterator
+                while (seenDependeesIterator.hasNext) {
+                    val seenDependee = seenDependeesIterator.next()
 
-                    if (debug && newDependee.isFinal) {
+                    if (debug && seenDependee.isFinal) {
                         throw new IllegalStateException(
-                            s"$e (lb=$lb, ub=$ub): dependency to final property: $newDependee"
+                            s"$e (lb=$lb, ub=$ub): dependency to final property: $seenDependee"
                         )
                     }
 
-                    val newDependeeE = newDependee.e
-                    val newDependeePKId = newDependee.pk.id
-                    val propertiesOfEntity = properties(newDependeePKId)
-                    // newDependee is guaranteed to be not null
+                    val seenDependeeE = seenDependee.e
+                    val seenDependeePKId = seenDependee.pk.id
+                    val propertiesOfEntity = properties(seenDependeePKId)
+                    // seenDependee is guaranteed to be not null
                     // currentDependee may be null => newDependee is an EPK => no update
-                    val currentDependee = propertiesOfEntity.get(newDependeeE)
-                    if (currentDependee != null && newDependee != currentDependee) {
+                    val currentDependee = propertiesOfEntity.get(seenDependeeE)
+                    if (currentDependee != null && seenDependee != currentDependee) {
                         // Make the current result available for other threads, but
-                        // do not yet trigger dependers...
-                        updateAndNotify(e, lb, ub, notify = false)
-
+                        // do not yet trigger dependers; however, we have to ensure
+                        // that the dependers are eventually triggered if any update
+                        // was relevant!
+                        val relevantUpdate =
+                            updateAndNotify(
+                                e, lb, ub,
+                                notifyDependersAboutNonFinalUpdates = false,
+                                forceDependerNotification = false
+                            )
+                        if (tracer.isDefined)
+                            tracer.get.immediateDependeeUpdate(e, lb, ub, seenDependee, currentDependee)
                         immediateOnUpdateComputationsCounter += 1
-                        incOpenJobs()
                         if (currentDependee.isFinal) {
-                            tasks.offerFirst(
-                                ImmediateOnFinalUpdateComputationTask(store, currentDependee.asFinal, r, c)
+                            prependTask(
+                                ImmediateOnFinalUpdateComputationTask(
+                                    store,
+                                    currentDependee.asFinal,
+                                    previousResult = r,
+                                    forceDependerNotification || relevantUpdate,
+                                    c
+                                )
                             )
                         } else {
-                            tasks.offerLast(
-                                ImmediateOnUpdateComputationTask(store, currentDependee.toEPK, r, c)
+                            appendTask(
+                                ImmediateOnUpdateComputationTask(
+                                    store,
+                                    currentDependee.toEPK,
+                                    previousResult = r,
+                                    forceDependerNotification || relevantUpdate,
+                                    c
+                                )
                             )
                         }
 
                         return ;
                     }
                 }
-                // all potential dependee updates are taken into account; otherwise we have an
-                // early return
+
+                // When we reach this point, all potential dependee updates are taken into account;
+                // otherwise we would have had an early return
 
                 // 2.1.  Update the value (trigger dependers/clear old dependees).
-                updateAndNotify(e, lb, ub)
+                updateAndNotify(e, lb, ub, forceDependerNotification = forceDependerNotification)
 
                 // 2.2.  The most current value of every dependee was taken into account
                 //       register with new (!) dependees.
-                if (newDependees.nonEmpty) {
-                    this.dependees(pkId).put(e, newDependees)
-
-                    val dependency = (epk, c)
-                    newDependees foreach { dependee ⇒
-                        val dependeeE = dependee.e
-                        val dependeePKId = dependee.pk.id
-                        this.dependers(dependeePKId).getOrElseUpdate(dependeeE, AnyRefMap.empty) +=
-                            dependency
-                    }
+                this.dependees(pkId).put(e, seenDependees)
+                val dependency = (epk, c)
+                seenDependees foreach { dependee ⇒
+                    val dependeeE = dependee.e
+                    val dependeePKId = dependee.pk.id
+                    dependers(dependeePKId).getOrElseUpdate(dependeeE, AnyRefMap.empty) +=
+                        dependency
                 }
         }
     }
@@ -817,16 +925,20 @@ final class PKEParallelTasksPropertyStore private (
 
             while (!isSuspended && openJobs.get > 0) {
                 latch.await()
+                validateState()
                 isSuspended = this.isSuspended()
+
             }
-            validateState()
+
             assert(openJobs.get >= 0, s"unexpected number of openJobs: $openJobs")
 
-            if (!isSuspended) handleExceptions {
+            if (!isSuspended) {
                 assert(openJobs.get == 0, s"unexpected number of open jobs: ${openJobs.get}")
-                quiescenceCounter += 1
+
                 // We have reached quiescence. let's check if we have to
                 // fill in fallbacks or if we have to resolve cyclic computations.
+                quiescenceCounter += 1
+                if (tracer.isDefined) tracer.get.reachedQuiescence()
 
                 // 1. Let's search all EPKs for which we have no analyses scheduled in the
                 //    future and use the fall back for them.
@@ -850,7 +962,7 @@ final class PKEParallelTasksPropertyStore private (
                                     }
                                     trace("analysis progress", message)
                                 }
-                                fallbacksUsedForComputedPropertiesCounter += 1
+                                fallbacksUsedCounter.incrementAndGet()
                                 handleResult(Result(e, fallbackProperty))
 
                                 continueComputation = true
@@ -958,7 +1070,22 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
         val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
         new PKEParallelTasksPropertyStore(
             contextMap,
-            NumberOfThreadsForProcessingPropertyComputations
+            NumberOfThreadsForProcessingPropertyComputations,
+            tracer = None
+        )
+    }
+
+    def apply(
+        tracer: PropertyStoreTracer
+    )(
+        implicit
+        logContext: LogContext
+    ): PKEParallelTasksPropertyStore = {
+
+        new PKEParallelTasksPropertyStore(
+            Map.empty,
+            NumberOfThreadsForProcessingPropertyComputations,
+            Some(tracer)
         )
     }
 }

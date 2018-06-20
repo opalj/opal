@@ -251,6 +251,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
             import Palindromes.Palindrome
             import Palindromes.NoPalindrome
             val ps = createPropertyStore()
+            ps.setupPhase(Set.empty, Set.empty)
 
             ps.set("aba", Palindrome)
 
@@ -258,8 +259,8 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps.set("aba", NoPalindrome)
                 ps.waitOnPhaseCompletion()
             } catch {
-                case AbortedDueToException(_: IllegalStateException) ⇒ // eager exception : OK
-                case _: IllegalStateException                        ⇒ // eager exception : OK
+                case AbortedDueToException(_: IllegalStateException) ⇒ // expected!
+                case _: IllegalStateException                        ⇒ // expected!
             }
         }
 
@@ -347,7 +348,9 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
 
             ps.waitOnPhaseCompletion()
 
-            invocationCount.get should be(1)
+            if (invocationCount.get != 1) {
+                fail(s"invocation count should be 1; was ${invocationCount.get}")
+            }
         }
 
         it("should complete the computation of dependent lazy computations before the phase ends") {
@@ -506,14 +509,14 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 // incremental computation
                 def c(dependee: SomeEPS): PropertyComputationResult = {
                     // Get the set of currently reachable nodes:
-                    val eps @ EPS(_, _ /*lb*/ , ReachableNodes(depeendeeReachableNodes)) = dependee
+                    val eps @ EPS(dependeeE, _ /*lb*/ , ReachableNodes(depeendeeReachableNodes)) = dependee
 
                     // Compute the new set of reachable nodes:
                     allDependees ++= depeendeeReachableNodes
                     val newUB = ReachableNodes(allDependees)
 
                     // Adapt the set of dependeePs to ensure termination
-                    dependeePs = dependeePs.filter { _.e ne dependee.e }
+                    dependeePs = dependeePs.filter { _.e ne dependeeE }
                     if (!eps.isFinal) {
                         dependeePs ++=
                             Traversable(dependee.asInstanceOf[EOptionP[Entity, _ <: ReachableNodes]])
@@ -671,30 +674,34 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
 
                     ps.waitOnPhaseCompletion()
 
-                    ps(nodeA, ReachableNodes.Key) should be(
-                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
-                    )
-                    ps(nodeB, ReachableNodes.Key) should be(
-                        FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    ps(nodeC, ReachableNodes.Key) should be(
-                        FinalEP(nodeC, ReachableNodes(Set()))
-                    )
-                    ps(nodeD, ReachableNodes.Key) should be(
-                        FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    ps(nodeE, ReachableNodes.Key) should be(
-                        FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    ps(nodeR, ReachableNodes.Key) should be(
-                        FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-
                     info(
                         s"(id of first permutation = ${dropCount + 1}) number of executed tasks:"+ps.scheduledTasksCount+
                             "; number of scheduled onUpdateContinuations:"+ps.scheduledOnUpdateComputationsCount+
                             "; number of immediate onUpdateContinuations:"+ps.immediateOnUpdateComputationsCount
                     )
+                    try {
+                        ps(nodeA, ReachableNodes.Key) should be(
+                            FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                        )
+                        ps(nodeB, ReachableNodes.Key) should be(
+                            FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeC, ReachableNodes.Key) should be(
+                            FinalEP(nodeC, ReachableNodes(Set()))
+                        )
+                        ps(nodeD, ReachableNodes.Key) should be(
+                            FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeE, ReachableNodes.Key) should be(
+                            FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeR, ReachableNodes.Key) should be(
+                            FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                    } catch {
+                        case t: Throwable ⇒
+                            throw t;
+                    }
                 }
             }
 
@@ -741,45 +748,49 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                     ps.force(node, ReachableNodesCount.Key)
                 }
                 ps.waitOnPhaseCompletion()
-
-                ps(nodeA, ReachableNodes.Key) should be(
-                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
-                )
-                ps(nodeB, ReachableNodes.Key) should be(
-                    FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                )
-                ps(nodeC, ReachableNodes.Key) should be(
-                    FinalEP(nodeC, ReachableNodes(Set()))
-                )
-                ps(nodeD, ReachableNodes.Key) should be(
-                    FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                )
-                ps(nodeE, ReachableNodes.Key) should be(
-                    FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                )
-                ps(nodeR, ReachableNodes.Key) should be(
-                    FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                )
-                // now let's check if we have the correct notification of the
-                // of the lazily dependent computations
-                ps(nodeA, ReachableNodesCount.Key) should be(
-                    FinalEP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
-                )
-                ps(nodeB, ReachableNodesCount.Key) should be(
-                    FinalEP(nodeB, ReachableNodesCount(5))
-                )
-                ps(nodeC, ReachableNodesCount.Key) should be(
-                    FinalEP(nodeC, ReachableNodesCount(0))
-                )
-                ps(nodeD, ReachableNodesCount.Key) should be(
-                    FinalEP(nodeD, ReachableNodesCount(5))
-                )
-                ps(nodeE, ReachableNodesCount.Key) should be(
-                    FinalEP(nodeE, ReachableNodesCount(5))
-                )
-                ps(nodeR, ReachableNodesCount.Key) should be(
-                    FinalEP(nodeR, ReachableNodesCount(5))
-                )
+                try {
+                    ps(nodeA, ReachableNodes.Key) should be(
+                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                    )
+                    ps(nodeB, ReachableNodes.Key) should be(
+                        FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    ps(nodeC, ReachableNodes.Key) should be(
+                        FinalEP(nodeC, ReachableNodes(Set()))
+                    )
+                    ps(nodeD, ReachableNodes.Key) should be(
+                        FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    ps(nodeE, ReachableNodes.Key) should be(
+                        FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    ps(nodeR, ReachableNodes.Key) should be(
+                        FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                    )
+                    // now let's check if we have the correct notification of the
+                    // of the lazily dependent computations
+                    ps(nodeA, ReachableNodesCount.Key) should be(
+                        FinalEP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
+                    )
+                    ps(nodeB, ReachableNodesCount.Key) should be(
+                        FinalEP(nodeB, ReachableNodesCount(5))
+                    )
+                    ps(nodeC, ReachableNodesCount.Key) should be(
+                        FinalEP(nodeC, ReachableNodesCount(0))
+                    )
+                    ps(nodeD, ReachableNodesCount.Key) should be(
+                        FinalEP(nodeD, ReachableNodesCount(5))
+                    )
+                    ps(nodeE, ReachableNodesCount.Key) should be(
+                        FinalEP(nodeE, ReachableNodesCount(5))
+                    )
+                    ps(nodeR, ReachableNodesCount.Key) should be(
+                        FinalEP(nodeR, ReachableNodesCount(5))
+                    )
+                } catch {
+                    case t: Throwable ⇒
+                        throw t;
+                }
             }
 
             it("should be possible when a lazy computation depends on properties for which no analysis is scheduled") {
@@ -1019,13 +1030,11 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
             val ps = createPropertyStore()
             ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
-            def aContinuation(bStringEOptionP: SomeEOptionP): PropertyComputationResult = ???
-
             def aAnalysis(ignored: Node): PropertyComputationResult = {
                 val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
                 new IntermediateResult(
                     nodeA, ReachableNodesCount(10), ReachableNodesCount(20), List(bEOptionP),
-                    aContinuation
+                    (bStringEOptionP: SomeEOptionP) ⇒ ???
                 )
             }
 

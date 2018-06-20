@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package par
 
+import org.opalj.fpcf.PropertyStore.{Debug ⇒ debug}
 /**
  * We generally distinguish between tasks that compute properties which are explicitly required
  * and those tasks which are not yet / no longer required, because no strictly depending analyses
@@ -48,7 +49,7 @@ private[par] sealed trait FirstPropertyComputationTask[E <: Entity] extends Qual
 }
 
 private[par] final case class InitialPropertyComputationTask[E <: Entity](
-        ps:              PropertyStore,
+        ps:              PKEParallelTasksPropertyStore,
         e:               E,
         pc:              PropertyComputation[E],
         forceEvaluation: Boolean
@@ -68,7 +69,7 @@ private[par] sealed abstract class TriggeredTask[E <: Entity] extends QualifiedT
 }
 
 private[par] final case class PropertyComputationTask[E <: Entity](
-        ps:   PropertyStore,
+        ps:   PKEParallelTasksPropertyStore,
         e:    E,
         pkId: Int,
         pc:   PropertyComputation[E]
@@ -83,7 +84,7 @@ private[par] sealed abstract class ContinuationTask[E <: Entity] extends Trigger
 }
 
 private[par] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
-        ps:              PropertyStore,
+        ps:              PKEParallelTasksPropertyStore,
         dependeeFinalEP: FinalEP[E, P],
         c:               OnUpdateContinuation
 ) extends ContinuationTask[E] {
@@ -96,7 +97,7 @@ private[par] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Pro
 }
 
 private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
-        ps:          PropertyStore,
+        ps:          PKEParallelTasksPropertyStore,
         dependeeEPK: EPK[E, P],
         c:           OnUpdateContinuation
 ) extends ContinuationTask[E] {
@@ -116,10 +117,11 @@ private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property
 }
 
 private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <: Property](
-        ps:             PropertyStore,
-        dependeeEPK:    EPK[E, P],
-        previousResult: PropertyComputationResult,
-        c:              OnUpdateContinuation
+        ps:                        PKEParallelTasksPropertyStore,
+        dependeeEPK:               EPK[E, P],
+        previousResult:            PropertyComputationResult,
+        forceDependerNotification: Boolean,
+        c:                         OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
     override def dependeeE: E = dependeeEPK.e
@@ -130,20 +132,21 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
         // Get the most current pValue when the depender is eventually evaluated;
         // the effectiveness of this check depends on the scheduling strategy(!).
         val newResult = c(ps(dependeeEPK).asEPS)
-        if (PropertyStore.Debug && newResult == previousResult) {
+        if (debug && newResult == previousResult) {
             throw new IllegalStateException(
                 s"an on-update continuation resulted in the same result as before: $newResult"
             )
         }
-        ps.handleResult(newResult, forceEvaluation = false)
+        ps.handleResult(newResult, forceEvaluation = false, forceDependerNotification)
     }
 }
 
 private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity, P <: Property](
-        ps:              PropertyStore,
-        dependeeFinalEP: FinalEP[E, P],
-        previousResult:  PropertyComputationResult,
-        c:               OnUpdateContinuation
+        ps:                        PKEParallelTasksPropertyStore,
+        dependeeFinalEP:           FinalEP[E, P],
+        previousResult:            PropertyComputationResult,
+        forceDependerNotification: Boolean,
+        c:                         OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
     override def dependeeE: E = dependeeFinalEP.e
@@ -151,16 +154,15 @@ private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity,
     override def dependeePKId: Int = dependeeFinalEP.pk.id
 
     override def apply(): Unit = {
-        // get the most current pValue when the depender
-        // is eventually evaluated; the effectiveness
-        // of this check depends on the scheduling strategy(!)
+        // get the most current pValue when the depender is eventually evaluated;
+        // the effectiveness of this check depends on the scheduling strategy(!)
         val newResult = c(dependeeFinalEP)
-        if (PropertyStore.Debug && newResult == previousResult) {
+        if (debug && newResult == previousResult) {
             throw new IllegalStateException(
                 s"an on-update continuation resulted in the same result as before: $newResult"
             )
         }
-        ps.handleResult(newResult, forceEvaluation = false)
+        ps.handleResult(newResult, forceEvaluation = false, forceDependerNotification)
     }
 }
 

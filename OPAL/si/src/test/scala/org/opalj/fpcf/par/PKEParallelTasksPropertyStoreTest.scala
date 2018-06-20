@@ -32,7 +32,7 @@ package par
 class PKEParallelTasksPropertyStoreTest extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val ps = PKEParallelTasksPropertyStore()
+        val ps = PKEParallelTasksPropertyStore(new RecordAllPropertyStoreTracer)
         ps.suppressError = true
         ps
     }

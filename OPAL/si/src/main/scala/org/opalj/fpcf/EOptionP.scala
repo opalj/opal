@@ -59,7 +59,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * @return `true` if the entity is associated with a (preliminary) property.
      */
     def hasProperty: Boolean
-    def hasNoProperty: Boolean = !hasProperty
+    final def hasNoProperty: Boolean = !hasProperty
     def asEPS: EPS[E, P]
 
     /**
@@ -67,9 +67,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * store using `(Multi)Result`.
      */
     def isFinal: Boolean
-    def asFinal: FinalEP[E, P]
-
     final def isRefinable: Boolean = !isFinal
+    def asFinal: FinalEP[E, P]
 
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
