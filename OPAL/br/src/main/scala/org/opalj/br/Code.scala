@@ -1170,19 +1170,17 @@ final class Code private (
     }
 
     /**
-     * Collects all instructions for which the given function is defined. The order in
-     * which the instructions are collected is reversed when compared to the order in the
-     * instructions array.
+     * Collects all instructions for which the given function is defined.
      */
-    def collectInstructionsWithIndex[B <: AnyRef](
-        f: PartialFunction[Instruction, B]
+    def collectInstructionsWithPC[B <: AnyRef](
+        f: PartialFunction[PCAndInstruction, B]
     ): List[PCAndAnyRef[B]] = {
         val max_pc = instructions.length
         var result: List[PCAndAnyRef[B]] = List.empty
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            val r: Any = f.applyOrElse(PCAndInstruction(pc,instruction), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
                 result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
             }
