@@ -267,52 +267,52 @@ object Purity extends PurityPropertyMetaInformation {
 
                 val isPure =
                     !isImpure && !method.isSynchronized && !method.returnType.isReferenceType &&
-                    body.get.instructions.forall { instruction ⇒
-                        (instruction ne null) && ((instruction.opcode: @switch) match {
-                            case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
+                        body.get.instructions.forall { instruction ⇒
+                            (instruction ne null) && ((instruction.opcode: @switch) match {
+                                case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
 
-                                case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
-                                    // We have a self-recursive call; such calls do not influence
-                                    // the computation of the method's purity and are ignored.
-                                    // Let's continue with the evaluation of the next instruction.
+                                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
+                                        // We have a self-recursive call; such calls do not influence
+                                        // the computation of the method's purity and are ignored.
+                                        // Let's continue with the evaluation of the next instruction.
+                                        true
+
+                                    case mii: NonVirtualMethodInvocationInstruction ⇒ false
+                                }
+
+                                case GETSTATIC.opcode | GETFIELD.opcode |
+                                    PUTFIELD.opcode | PUTSTATIC.opcode |
+                                    AALOAD.opcode | AASTORE.opcode |
+                                    BALOAD.opcode | BASTORE.opcode |
+                                    CALOAD.opcode | CASTORE.opcode |
+                                    SALOAD.opcode | SASTORE.opcode |
+                                    IALOAD.opcode | IASTORE.opcode |
+                                    LALOAD.opcode | LASTORE.opcode |
+                                    DALOAD.opcode | DASTORE.opcode |
+                                    FALOAD.opcode | FASTORE.opcode |
+                                    ARRAYLENGTH.opcode |
+                                    MONITORENTER.opcode | MONITOREXIT.opcode |
+                                    INVOKEDYNAMIC.opcode |
+                                    INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                                    false
+
+                                case ARETURN.opcode |
+                                    IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
+                                    RETURN.opcode ⇒
+                                    // if we have a monitor instruction the method is impure anyway..
+                                    // hence, we can ignore the monitor related implicit exception
                                     true
 
-                                case mii: NonVirtualMethodInvocationInstruction ⇒ false
-                            }
-
-                            case GETSTATIC.opcode | GETFIELD.opcode |
-                                PUTFIELD.opcode | PUTSTATIC.opcode |
-                                AALOAD.opcode | AASTORE.opcode |
-                                BALOAD.opcode | BASTORE.opcode |
-                                CALOAD.opcode | CASTORE.opcode |
-                                SALOAD.opcode | SASTORE.opcode |
-                                IALOAD.opcode | IASTORE.opcode |
-                                LALOAD.opcode | LASTORE.opcode |
-                                DALOAD.opcode | DASTORE.opcode |
-                                FALOAD.opcode | FASTORE.opcode |
-                                ARRAYLENGTH.opcode |
-                                MONITORENTER.opcode | MONITOREXIT.opcode |
-                                INVOKEDYNAMIC.opcode |
-                                INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                                false
-
-                            case ARETURN.opcode |
-                                IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
-                                RETURN.opcode ⇒
-                                // if we have a monitor instruction the method is impure anyway..
-                                // hence, we can ignore the monitor related implicit exception
-                                true
-
-                            case _ ⇒
-                                // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
-                                // as long as no implicit exceptions are raised.
-                                // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
-                                instruction.jvmExceptions.isEmpty
-                            // JVM Exceptions reify the stack and, hence, make the method impure as
-                            // the calling context is now an explicit part of the method's result.
-                            //Impure
-                        })
-                    }
+                                case _ ⇒
+                                    // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
+                                    // as long as no implicit exceptions are raised.
+                                    // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
+                                    instruction.jvmExceptions.isEmpty
+                                // JVM Exceptions reify the stack and, hence, make the method impure as
+                                // the calling context is now an explicit part of the method's result.
+                                //Impure
+                            })
+                        }
 
                 if (isImpure) Some(ImpureByAnalysis)
                 else if (isPure) Some(CompileTimePure)

@@ -332,7 +332,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         onParameter:        Purity,
         treatThisAsFresh:   Boolean,
         treatParamsAsFresh: Boolean,
-        excludedDefSites:   IntTrieSet   = EmptyIntTrieSet
+        excludedDefSites:   IntTrieSet = EmptyIntTrieSet
     )(implicit state: State): Boolean = {
         if (expr.isConst)
             return true;

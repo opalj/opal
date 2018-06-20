@@ -1180,7 +1180,7 @@ final class Code private (
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(PCAndInstruction(pc,instruction), AnyToAnyThis)
+            val r: Any = f.applyOrElse(PCAndInstruction(pc, instruction), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
                 result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
             }
