@@ -50,9 +50,9 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def featureIDs: Seq[String] = {
         Seq(
             "DC1", /* 0 --- static method call */
-            "DC2", /* 3 --- constructor call */
+            "DC2", /* 1 --- constructor call */
             "DC3", /* 2 --- call on super */
-            "DC4" /* 1 --- private method call */
+            "DC4" /* 3 --- private method call */
         )
     }
 
