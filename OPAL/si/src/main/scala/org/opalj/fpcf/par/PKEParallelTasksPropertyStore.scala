@@ -169,8 +169,7 @@ final class PKEParallelTasksPropertyStore private (
         if (v == 0) { latch.countDown() }
     }
     /**
-     * MUST BE CALLED BEFORE the job is actually processed; i.e., termination of the job
-     * always has to precede decrementing openJobs.
+     * MUST BE CALLED BEFORE the job is actually processed.
      */
     private[this] def incOpenJobs(): Unit = {
         val v = openJobs.getAndIncrement()
