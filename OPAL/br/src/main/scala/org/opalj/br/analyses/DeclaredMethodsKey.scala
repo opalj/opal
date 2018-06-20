@@ -313,7 +313,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     !project.instanceMethods(receiverType).exists { m ⇒
                         methodName == m.name &&
                             descriptor == m.descriptor &&
-                            m.isPublic || m.method.isProtected
+                            (m.isPublic || m.method.isProtected)
                     }
             case that: ShadowsPackagePrivateMethodContext ⇒
                 methodName == that.methodName &&
@@ -321,7 +321,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     project.instanceMethods(receiverType).exists { m ⇒
                         methodName == m.name &&
                             descriptor == m.descriptor &&
-                            m.isPublic || m.method.isProtected
+                            (m.isPublic || m.method.isProtected)
                     }
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
