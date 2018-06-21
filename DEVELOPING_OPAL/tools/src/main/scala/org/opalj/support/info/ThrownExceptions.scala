@@ -40,6 +40,7 @@ import org.opalj.br.collection.TypesSet
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
@@ -118,10 +119,19 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         val perMethodsReport =
             if (parameters.contains(SuppressPerMethodReports))
                 ""
-            else
-                epsThrowingExceptions.map { p ⇒
-                    p.e.asInstanceOf[Method].toJava(p.ub.toString)
-                }.toList.sorted.mkString("\n")
+            else {
+                val epsThrowingExceptionsByClassFile = epsThrowingExceptions groupBy (_.e.asInstanceOf[Method].classFile)
+                epsThrowingExceptionsByClassFile.map { e ⇒
+                    val (cf, epsThrowingExceptionsPerMethod) = e
+                    cf.thisType.toJava+"{"+
+                        epsThrowingExceptionsPerMethod.map { eps: SomeEPS ⇒
+                            val m: Method = eps.e.asInstanceOf[Method]
+                            m.descriptor.toJava(m.name)+" "+eps.ub.toString
+                        }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n")+
+                        "}"
+
+                }.mkString("\n", "\n", "\n")
+            }
 
         BasicReport(
             "\nThrown Exceptions Information:\n"+
