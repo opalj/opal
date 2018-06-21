@@ -308,8 +308,7 @@ final class PKEParallelTasksPropertyStore private (
                     storeUpdates.poll(5L, TimeUnit.SECONDS) match {
 
                         case null ⇒
-                            println(s"property store@${System.identityHashCode(store).toHexString} is idle")
-                        // nothing to do at the moment...
+                        // nothing to do at the moment... let's check if we have to abort
 
                         case PropertyUpdate(r, forceEvaluation, forceDependerNotification) ⇒
                             doHandleResult(r, forceEvaluation, forceDependerNotification)
