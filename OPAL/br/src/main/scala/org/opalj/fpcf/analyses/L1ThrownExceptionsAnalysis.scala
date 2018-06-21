@@ -99,8 +99,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             case m: Method ⇒
                 determineThrownExceptions(m)
             case e ⇒
-                val m = s"the ThrownExceptions property is only defined for methods; found $e"
-                throw new UnknownError(m)
+                throw new UnknownError(s"ThrownExceptions is only defined for methods; not $e")
         }
     }
 
@@ -165,6 +164,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         instruction match {
                             case mii: NonVirtualMethodInvocationInstruction ⇒
                                 project.nonVirtualCall(mii) match {
+                                    case Success(`m`) ⇒ true // we basically ignore self-dependencies
                                     case Success(callee) ⇒
                                         // Query the store for information about the callee
                                         ps(callee, ThrownExceptions.key) match {
@@ -214,6 +214,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         case _                   ⇒ None
                     }
                     calleeOption match {
+                        case Some(`m`) ⇒ // nothing to do...
                         case Some(callee) ⇒
                             // Check the class hierarchy for thrown exceptions
                             ps(callee, ThrownExceptionsByOverridingMethods.key) match {

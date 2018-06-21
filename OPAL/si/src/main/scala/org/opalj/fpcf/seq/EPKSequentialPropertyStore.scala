@@ -82,8 +82,8 @@ final class EPKSequentialPropertyStore private (
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
     def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
-    private[this] var eagerOnUpdateComputationsCounter: Int = 0
-    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
+    private[this] var immediateOnUpdateComputationsCounter: Int = 0
+    def immediateOnUpdateComputationsCount: Int = immediateOnUpdateComputationsCounter
 
     private[this] var resolvedCSCCsCounter: Int = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
@@ -301,7 +301,7 @@ final class EPKSequentialPropertyStore private (
         }
     }
 
-    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         apply(EPK(e, pk), true)
     }
 
@@ -506,8 +506,8 @@ final class EPKSequentialPropertyStore private (
     }
 
     override def handleResult(
-        r:                  PropertyComputationResult,
-        wasLazilyTriggered: Boolean /* currently ignored */
+        r:               PropertyComputationResult,
+        forceEvaluation: Boolean // ignored
     ): Unit = handleExceptions {
         r.id match {
 
@@ -518,7 +518,7 @@ final class EPKSequentialPropertyStore private (
 
             case Results.id ⇒
                 val Results(results) = r
-                results.foreach(handleResult)
+                results.foreach(r ⇒ handleResult(r, forceEvaluation))
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
@@ -591,7 +591,7 @@ final class EPKSequentialPropertyStore private (
                             val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
 
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
-                                eagerOnUpdateComputationsCounter += 1
+                                immediateOnUpdateComputationsCounter += 1
                                 val newR =
                                     if (dependeePValue.isFinal) {
                                         c(FinalEP(dependeeE, dependeePValue.ub))
@@ -871,6 +871,8 @@ final class EPKSequentialPropertyStore private (
             }
         }
     }
+
+    def shutdown(): Unit = {}
 
 }
 

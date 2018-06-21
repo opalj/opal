@@ -78,24 +78,26 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         assert(declaredMethods.size == numDeclaredMethods, "duplicate methods found")
     }
 
-    var numAnnotated = 0
+    var annotated: Set[DeclaredMethod] = Set.empty
 
-    for {
-        cf ← FixtureProject.allProjectClassFiles
-        annotations = cf.runtimeInvisibleAnnotations
-        if annotations.nonEmpty
-        annotation ← annotations
-        annotationType = annotation.annotationType
-        if annotationType == singleAnnotationType || annotationType == multiAnnotationType
-    } {
+    for (cf ← FixtureProject.allProjectClassFiles) {
         val classType = cf.thisType
-        if (annotationType == singleAnnotationType)
-            checkDeclaredMethod(classType, annotation)
-        else {
-            for (value ← getValue(annotation, "value").asArrayValue.values) {
-                val annotation = value.asAnnotationValue.annotation
-                checkDeclaredMethod(classType, annotation)
-            }
+        it(classType.simpleName) {
+            val annotations = cf.runtimeInvisibleAnnotations
+            if (annotations.nonEmpty)
+                for {
+                    annotation ← annotations
+                    annotationType = annotation.annotationType
+                } {
+                    if (annotationType == singleAnnotationType)
+                        checkDeclaredMethod(classType, annotation)
+                    else if (annotationType == multiAnnotationType) {
+                        for (value ← getValue(annotation, "value").asArrayValue.values) {
+                            val annotation = value.asAnnotationValue.annotation
+                            checkDeclaredMethod(classType, annotation)
+                        }
+                    }
+                }
         }
     }
 
@@ -103,8 +105,11 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
     // there may not be any additional defined method. There may be VirtualDeclaredMethods for
     // predefined methods from the JDK, though.
     it("should not create excess declared methods") {
-        val definedMethods = declaredMethods.filter(_.hasDefinition)
-        assert(definedMethods.size == numAnnotated, "found unexpected defined methods")
+        val excessMethods = declaredMethods.filter(m ⇒ m.hasDefinition && !annotated.contains(m))
+        if (excessMethods.nonEmpty)
+            fail(
+                "fonud unexpected methods: \n\t"+excessMethods.mkString("\n\t")
+            )
     }
 
     def checkDeclaredMethod(classType: ObjectType, annotation: Annotation): Unit = {
@@ -120,11 +125,13 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
 
         val expected = DefinedMethod(classType, method)
 
-        it(s"${classType.simpleName}: ${declaringClass.simpleName}.${descriptor.toJava(name)}") {
-            assert(declaredMethods.contains(expected))
-        }
-
-        numAnnotated += 1
+        if (declaredMethods.contains(expected))
+            annotated += expected
+        else
+            fail(
+                s"No declared method for ${classType.simpleName}: "+
+                    s"${declaringClass.simpleName}.${descriptor.toJava(name)}"
+            )
     }
 
     def getValue(a: Annotation, name: String): ElementValue = {

@@ -84,8 +84,8 @@ final class PKESequentialPropertyStore private (
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
     def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
-    private[this] var eagerOnUpdateComputationsCounter: Int = 0
-    def eagerOnUpdateComputationsCount: Int = eagerOnUpdateComputationsCounter
+    private[this] var immediateOnUpdateComputationsCounter: Int = 0
+    def immediateOnUpdateComputationsCount: Int = immediateOnUpdateComputationsCounter
 
     private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
     def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
@@ -117,9 +117,9 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
+    private[this] var computedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
 
-    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/ // has to be set before usage
+    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
 
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
@@ -267,7 +267,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         apply[E, P](EPK(e, pk), true)
     }
 
@@ -294,7 +294,7 @@ final class PKESequentialPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.addLast(new LazyPropertyComputationTask(this, e, pc))
+        tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
@@ -303,7 +303,7 @@ final class PKESequentialPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.addLast(new EagerPropertyComputationTask(this, e, pc))
+        tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
     /**
@@ -414,14 +414,13 @@ final class PKESequentialPropertyStore private (
                         val (dependerEPK, onUpdateContinuation) = depender
                         val t: QualifiedTask =
                             if (newPValueIsFinal) {
-                                // TODO....
-                                new EagerOnFinalUpdateComputationTask(
+                                new OnFinalUpdateComputationTask(
                                     this,
                                     FinalEP(e, ub),
                                     onUpdateContinuation
                                 )
                             } else {
-                                new EagerOnUpdateComputationTask(
+                                new OnUpdateComputationTask(
                                     this,
                                     epk,
                                     onUpdateContinuation
@@ -477,8 +476,8 @@ final class PKESequentialPropertyStore private (
     }
 
     override def handleResult(
-        r:                  PropertyComputationResult,
-        wasLazilyTriggered: Boolean
+        r:               PropertyComputationResult,
+        forceEvaluation: Boolean // TODO Support "force"
     ): Unit = handleExceptions {
 
         r.id match {
@@ -494,7 +493,7 @@ final class PKESequentialPropertyStore private (
 
             case Results.id ⇒
                 val Results(results) = r
-                results.foreach(handleResult)
+                results.foreach(r ⇒ handleResult(r, forceEvaluation))
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
@@ -559,7 +558,7 @@ final class PKESequentialPropertyStore private (
                             val dependeePKId = newDependee.pk.id
                             val dependeePValue = getPropertyValue(dependeeE, dependeePKId)
                             if (isDependeeUpdated(dependeePValue, newDependee)) {
-                                eagerOnUpdateComputationsCounter += 1
+                                immediateOnUpdateComputationsCounter += 1
                                 val newEP =
                                     if (dependeePValue.isFinal) {
                                         FinalEP(dependeeE, dependeePValue.ub)
@@ -573,7 +572,7 @@ final class PKESequentialPropertyStore private (
                                             s"\told: $r\n\tnew: $newR"
                                     )
                                 }
-                                handleResult(newR, wasLazilyTriggered)
+                                handleResult(newR)
                                 return ;
                             }
                         }
@@ -599,9 +598,8 @@ final class PKESequentialPropertyStore private (
                                     val t =
                                         OnFinalUpdateComputationTask(
                                             this,
-                                            dependeeE, dependeePValue.ub,
-                                            c,
-                                            wasLazilyTriggered
+                                            FinalEP(dependeeE, dependeePValue.ub),
+                                            c
                                         )
                                     if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)
                                         tasks.addLast(t)
@@ -612,8 +610,7 @@ final class PKESequentialPropertyStore private (
                                         OnUpdateComputationTask(
                                             this,
                                             EPK(dependeeE, dependeePK),
-                                            c,
-                                            wasLazilyTriggered
+                                            c
                                         )
                                     if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
                                         tasks.addLast(t)
@@ -714,24 +711,26 @@ final class PKESequentialPropertyStore private (
                 val maxPKIndex = ps.length
                 var pkId = 0
                 while (pkId < maxPKIndex) {
-                    ps(pkId).forEach { (e, pValue) ⇒
-                        // Check that we have no running computations and that the
-                        // property will not be computed later on.
-                        if (pValue.ub == null && !delayedPropertyKinds(pkId)) {
-                            assert(pValue.dependees.isEmpty)
+                    if (!delayedPropertyKinds(pkId)) {
+                        ps(pkId).forEach { (e, pValue) ⇒
+                            // Check that we have no running computations and that the
+                            // property will not be computed later on.
+                            if (pValue.ub == null) {
+                                assert(pValue.dependees.isEmpty)
 
-                            val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                            if (traceFallbacks) {
-                                var message = s"used fallback $fallbackProperty for $e"
-                                if (computedPropertyKinds(pkId)) {
-                                    message += " (though an analysis was supposedly scheduled)"
+                                val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
+                                if (traceFallbacks) {
+                                    var message = s"used fallback $fallbackProperty for $e"
+                                    if (computedPropertyKinds(pkId)) {
+                                        message += " (though an analysis was supposedly scheduled)"
+                                    }
+                                    trace("analysis progress", message)
                                 }
-                                trace("analysis progress", message)
-                            }
-                            fallbacksUsedForComputedPropertiesCounter += 1
-                            update(e, fallbackProperty, fallbackProperty, Nil)
+                                fallbacksUsedForComputedPropertiesCounter += 1
+                                update(e, fallbackProperty, fallbackProperty, Nil)
 
-                            continueComputation = true
+                                continueComputation = true
+                            }
                         }
                     }
                     pkId += 1
@@ -799,17 +798,13 @@ final class PKESequentialPropertyStore private (
                     var pkId = 0
                     var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
-                        ps(pkId).forEach { (e, pValue) ⇒
-                            val lb = pValue.lb
-                            val ub = pValue.ub
-                            val isFinal = pValue.isFinal
-                            // Check that we have no running computations and that the
-                            // property will not be computed later on.
-                            if (!isFinal &&
-                                lb != ub &&
-                                !delayedPropertyKinds(pkId) &&
-                                pValue.dependees.isEmpty) {
-                                toBeFinalized ::= ((e, ub))
+                        if (!delayedPropertyKinds(pkId)) {
+                            ps(pkId).forEach { (e, pValue) ⇒
+                                // Check that we have no running computations and that the
+                                // property will not be computed later on.
+                                if (!pValue.isFinal && pValue.lb != pValue.ub && pValue.dependees.isEmpty) {
+                                    toBeFinalized ::= ((e, pValue.ub))
+                                }
                             }
                         }
                         pkId += 1
@@ -819,7 +814,6 @@ final class PKESequentialPropertyStore private (
                             val (e, p) = ep
                             update(e, p, p, Nil) // commit as Final value
                         }
-
                         continueComputation = true
                     }
                 }
@@ -844,6 +838,8 @@ final class PKESequentialPropertyStore private (
             }
         }
     }
+
+    def shutdown(): Unit = {}
 }
 
 /**

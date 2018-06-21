@@ -42,6 +42,9 @@ sealed abstract class PropertyComputationResult {
 /**
  * Used if the analysis found no entities for which a property could be computed.
  *
+ * @note A `NoResult` can only be used as the result of an initial computation. Hence, an
+ *       `OnUpdateContinuation` must never return `NoResult`.
+ *
  * In some cases it makes sense to do, e.g., an analysis per class to compute the properties
  * for some fields.
  */
@@ -152,6 +155,11 @@ case class IntermediateResult[P <: Property](
                     "(use IncrementalResult for collaboratively computed results)"
             )
         }
+        if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
+            throw new IllegalArgumentException(
+                s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
     }
 
     private[fpcf] final def id = IntermediateResult.id
@@ -173,7 +181,8 @@ case class IntermediateResult[P <: Property](
     }
 
     override def toString: String = {
-        s"IntermediateResult($e,lb=$lb,ub=$ub,dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+        s"IntermediateResult($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,"+
+            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
 private[fpcf] object IntermediateResult {
@@ -226,7 +235,7 @@ private[fpcf] object Results {
 }
 
 /**
- * PartialResults are used for properties of entities which are computed collaboratively/in
+ * `PartialResult`s are used for properties of entities which are computed collaboratively/in
  * a piecewise fashion. PartialResults cannot be used for properties which are (also) computed
  * by lazy property computations.
  *
@@ -267,11 +276,11 @@ private[fpcf] case class ExternalResult(
 private[fpcf] object ExternalResult { private[fpcf] final val id = 7 }
 
 /** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
-private[fpcf] case class CycleResult(
-        cycles: List[Iterable[SomeEOptionP]]
+private[fpcf] case class CSCCsResult(
+        csccs: List[Iterable[SomeEPK]]
 ) extends FinalPropertyComputationResult {
 
-    private[fpcf] final def id = CycleResult.id
+    private[fpcf] final def id = CSCCsResult.id
 
 }
-private[fpcf] object CycleResult { private[fpcf] final val id = 8 }
+private[fpcf] object CSCCsResult { private[fpcf] final val id = 8 }
