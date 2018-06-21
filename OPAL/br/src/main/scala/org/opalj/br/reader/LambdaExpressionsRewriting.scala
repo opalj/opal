@@ -162,7 +162,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
-        s"${surroundingType.packageName}/${surroundingType.simpleName}$$Lambda$$+"+
+        s"${surroundingType.packageName}/${surroundingType.simpleName}$$Lambda$$"+
             s"${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
