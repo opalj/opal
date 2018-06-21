@@ -272,7 +272,7 @@ object LazyTypeImmutabilityAnalysis
 
         // An optimization, if the analysis also includes the JDK.
         ps.set(ObjectType.Object, MutableType)
-
+        ps.waitOnPhaseCompletion() // wait for ps.set to complete
         ps.registerLazyPropertyComputation(TypeImmutability.key, analysis.doDetermineTypeMutability(typeExtensibility))
         analysis
 

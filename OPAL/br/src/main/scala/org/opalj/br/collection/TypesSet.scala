@@ -90,9 +90,18 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
     }
 
     override def toString: String = {
+        if (upperTypeBounds.isEmpty && concreteTypes.isEmpty)
+            return "EmptyTypesSet";
+
+        if (upperTypeBounds.isEmpty)
+            return concreteTypes.map(_.toJava).mkString("PreciseTypesSet(", ",", ")")
+
+        if (concreteTypes.isEmpty)
+            return upperTypeBounds.map(_.toJava).mkString("UpperTypeBoundsSet(", ",", ")")
+
         upperTypeBounds.map(_.toJava).mkString(
             concreteTypes.map(_.toJava).mkString(
-                "TypesSet(concreteTypes={",
+                "TypesSet(preciseTypes={",
                 ",",
                 "},upperTypeBounds={"
             ),

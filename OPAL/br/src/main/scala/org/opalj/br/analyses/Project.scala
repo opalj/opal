@@ -1174,7 +1174,7 @@ object Project {
         }
 
         // HERE "overridden" is to be taken with a grain of salt...
-        var staticallyOverriddenDefaultMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
+        var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
         /* Returns `true` if the potentially available information is not yet available. */
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
@@ -1305,21 +1305,21 @@ object Project {
                             if (declaredMethod.isNotAbstract) {
                                 definedMethods :&:= declaredMethodContext
                             }
-                        } else if (classFile.isInterfaceDeclaration && declaredMethod.isStatic) {
+                        } else if (declaredMethod.isStatic) {
                             val declaredMethodName = declaredMethod.name
                             val declaredMethodDescriptor = declaredMethod.descriptor
                             if (definedMethods.exists { mdc ⇒
                                 mdc.name == declaredMethodName &&
                                     mdc.descriptor == declaredMethodDescriptor
                             }) {
-                                // In this case we may have an "overriding" of a default method by
-                                // a static method defined by the current interface...
-                                // If so – we have to remove the default method from the set
-                                // of defined methods for THIS SPECIFIC INTERFACE ONlY; however,
-                                // we can only remove it later on, because the default method is
+                                // In this case we may have an "overriding" of an instance method by
+                                // a static method defined by the current interface or class type.
+                                // If so – we have to remove the instance method from the set
+                                // of defined methods for THIS SPECIFIC CLASS/INTERFACE ONlY; however,
+                                // we can only remove it later on, because the instance method is
                                 // visible again in subclasses/subinterfaces and we therefore
                                 // first have to propagate it.
-                                staticallyOverriddenDefaultMethods ::=
+                                staticallyOverriddenInstanceMethods ::=
                                     ((objectType, declaredMethodName, declaredMethodDescriptor))
                             }
                         }
@@ -1341,7 +1341,7 @@ object Project {
                 }
         }
 
-        staticallyOverriddenDefaultMethods foreach { sodm ⇒
+        staticallyOverriddenInstanceMethods foreach { sodm ⇒
             val (declaringType, name, descriptor) = sodm
             methods(declaringType) =
                 methods(declaringType) filter { mdc ⇒

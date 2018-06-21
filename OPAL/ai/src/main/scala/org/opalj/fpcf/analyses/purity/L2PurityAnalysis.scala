@@ -828,29 +828,29 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
         val oldPurity = state.ubPurity
-        eps.ub match {
-            case _: Purity ⇒
+        eps.ub.key match {
+            case Purity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
                 val dependees = state.purityDependees(e)
                 state.removePurityDependee(e)
                 dependees._2.foreach { e ⇒
                     checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]], e)
                 }
-            case _: VirtualMethodPurity ⇒
+            case VirtualMethodPurity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
                 val dependees = state.virtualPurityDependees(e)
                 state.removeVirtualPurityDependee(e)
                 dependees._2.foreach { e ⇒
                     checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]], e)
                 }
-            case _: FieldMutability ⇒
+            case FieldMutability.key ⇒
                 val e = eps.e.asInstanceOf[Field]
                 val dependees = state.fieldMutabilityDependees(e)
                 state.removeFieldMutabilityDependee(e)
                 dependees._2.foreach { e ⇒
                     checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldMutability]], e)
                 }
-            case _: ClassImmutability ⇒
+            case ClassImmutability.key ⇒
                 val e = eps.e.asInstanceOf[ObjectType]
                 val dependees = state.classImmutabilityDependees(e)
                 state.removeClassImmutabilityDependee(e)
@@ -860,14 +860,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         e
                     )
                 }
-            case _: TypeImmutability ⇒
+            case TypeImmutability.key ⇒
                 val e = eps.e.asInstanceOf[ObjectType]
                 val dependees = state.typeImmutabilityDependees(e)
                 state.removeTypeImmutabilityDependee(e)
                 dependees._2.foreach { e ⇒
                     checkTypeMutability(eps.asInstanceOf[EOptionP[ObjectType, TypeImmutability]], e)
                 }
-            case _: ReturnValueFreshness ⇒
+            case ReturnValueFreshness.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
                 val dependees = state.rvfDependees(e)
                 state.removeRVFDependee(e)
@@ -877,7 +877,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         e
                     )
                 }
-            case _: VirtualMethodReturnValueFreshness ⇒
+            case VirtualMethodReturnValueFreshness.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
                 val dependees = state.virtualRVFDependees(e)
                 state.removeVirtualRVFDependee(e)
@@ -887,14 +887,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         e
                     )
                 }
-            case _: FieldLocality ⇒
+            case FieldLocality.key ⇒
                 val e = eps.e.asInstanceOf[Field]
                 val dependees = state.fieldLocalityDependees(e)
                 state.removeFieldLocalityDependee(e)
                 dependees._2.foreach { e ⇒
                     checkLocalityOfField(eps.asInstanceOf[EOptionP[Field, FieldLocality]], e)
                 }
-            case _: StaticDataUsage ⇒
+            case StaticDataUsage.key ⇒
                 checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
         }
 
@@ -959,7 +959,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         /* Synchronized methods have a visible side effect on the receiver */
         if (method.isSynchronized)
-            atMost(ExternallyPure)
+            if (method.isStatic) return Result(definedMethod, ImpureByAnalysis);
+            else atMost(ExternallyPure)
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific

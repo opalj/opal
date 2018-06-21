@@ -220,7 +220,7 @@ package object graphs {
      */
     def closedSCCs[N >: Null <: AnyRef](
         ns: Traversable[N],
-        es: N ⇒ Traversable[N]
+        es: N ⇒ Traversable[N] // TODO Improve(?) N => Iterator[N]
     ): List[Iterable[N]] = {
 
         val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
