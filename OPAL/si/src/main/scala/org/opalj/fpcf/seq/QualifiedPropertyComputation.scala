@@ -35,10 +35,7 @@ package seq
  *
  * @author Michael Eichberg
  */
-private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit) {
-
-    // EMPTY
-}
+private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit)
 
 private[seq] final case class PropertyComputationTask[E <: Entity](
         ps: PropertyStore,
