@@ -827,7 +827,7 @@ object LambdaExpressionsRewriting {
 
     final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
-    final val LambdaNameRegEx = "[a-z0-9\\/.]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+    final val LambdaNameRegEx = "[a-zA-Z0-9\\/.$]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
 
     final val LambdaExpressionsConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"LambdaExpressions."
