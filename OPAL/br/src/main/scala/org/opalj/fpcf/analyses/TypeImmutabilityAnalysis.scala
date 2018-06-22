@@ -97,9 +97,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ IntermediateEP(_, lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    IntermediateResult(t, thisLB, thisUB, Seq(eps), c,CheapPropertyComputation)
+                    IntermediateResult(t, thisLB, thisUB, Seq(eps), c, CheapPropertyComputation)
                 case epk ⇒
-                    IntermediateResult(t, MutableType, ImmutableType, Seq(epk), c,CheapPropertyComputation)
+                    IntermediateResult(t, MutableType, ImmutableType, Seq(epk), c, CheapPropertyComputation)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
