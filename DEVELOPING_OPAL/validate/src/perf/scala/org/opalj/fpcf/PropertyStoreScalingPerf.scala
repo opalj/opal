@@ -58,10 +58,6 @@ import org.opalj.sbt.perf.spec.PerfSpec
 import org.opalj.support.info.Purity.supportingAnalyses
 
 
-class L1T_RtJarPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
-    override def fixutureFile: File = RTJar
-}
-
 class L1T_ColumbusPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = locateTestResources("classfiles/Columbus 2008_10_16 - target 1.6.jar", "bi")
 }
@@ -82,12 +78,12 @@ class L1T_FastUtilPropertyStorePerf extends PropertyStoreScalingPerf with L1Thro
     override def fixutureFile: File = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/fastutil-8.1.0.jar", "bi")
 }
 
-class L1T_JreLibPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
-    override def fixutureFile: File = JRELibraryFolder
+class L1T_RtJarPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
+    override def fixutureFile: File = RTJar
 }
 
-class L2P_RtJarPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
-    override def fixutureFile: File = RTJar
+class L1T_JreLibPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
+    override def fixutureFile: File = JRELibraryFolder
 }
 
 class L2P_ColumbusPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
@@ -110,11 +106,16 @@ class L2P_FastUtilPropertyStorePerf extends PropertyStoreScalingPerf with L2Puri
     override def fixutureFile: File = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/fastutil-8.1.0.jar", "bi")
 }
 
+class L2P_RtJarPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = RTJar
+}
+
 class L2P_JreLibPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
     override def fixutureFile: File = JRELibraryFolder
 }
 
 trait L1ThrownExceptionsPerf extends PropertyStoreScalingPerf {
+    override def analysisName: String = "L1ThrownExceptionsAnalysis"
     override def runAnalysis(ps: PropertyStore, p: SomeProject): Unit = {
         ps.setupPhase(
             Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
@@ -126,6 +127,7 @@ trait L1ThrownExceptionsPerf extends PropertyStoreScalingPerf {
 }
 
 trait L2PurityPerf extends PropertyStoreScalingPerf {
+    override def analysisName: String = "L2PurityAnalysis"
     override def runAnalysis(ps: PropertyStore, p: SomeProject): Unit = {
         ps.setupPhase(
             Set(
@@ -155,15 +157,24 @@ trait PropertyStoreScalingPerf extends PerfSpec {
 
     def fixutureFile: File
     def runAnalysis(ps: PropertyStore, p: SomeProject): Unit
+    def analysisName: String
 
     val baseConfig: Config = ConfigFactory.load()
     val propertyStoreImplementation = ConfigKeyPrefix+"PropertyStoreImplementation"
 
-    println(s"*** Running measurement for ${fixutureFile.getName} " +
-        s"containing ${buildProject("").allMethodsWithBody.size} methods with body ***")
+    val totalEntities = buildProject("").allClassFiles.size +
+        buildProject("").allMethodsWithBody.size +
+        buildProject("").allFields.size
+
+    println(s"*** Running measurement for ${fixutureFile.getName} ***\n" +
+        s"\t${buildProject("").allClassFiles.size} class files\n" +
+        s"\t${buildProject("").allMethodsWithBody.size} methods with body\n" +
+        s"\t${buildProject("").allFields.size} fields\n" +
+        s"\t$totalEntities total entities"
+    )
     Console.out.flush()
 
-    measure(s"ReactiveAsyncPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
+    measure(s"ReactiveAsyncPropertyStore - $analysisName - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.par.ReactiveAsyncPropertyStore")
         val ps = project.get(PropertyStoreKey)
         runAnalysis(ps, project)
@@ -173,7 +184,7 @@ trait PropertyStoreScalingPerf extends PerfSpec {
         ps
     }
 
-    measure(s"PKESequentialPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
+    measure(s"PKESequentialPropertyStore - $analysisName - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.seq.PKESequentialPropertyStore")
         val ps = project.get(PropertyStoreKey)
         runAnalysis(ps, project)
@@ -183,7 +194,7 @@ trait PropertyStoreScalingPerf extends PerfSpec {
         ps
     }
 
-    measure(s"EPKSequentialPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
+    measure(s"EPKSequentialPropertyStore - $analysisName - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.seq.EPKSequentialPropertyStore")
         val ps = project.get(PropertyStoreKey)
         runAnalysis(ps, project)
