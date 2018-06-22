@@ -140,7 +140,7 @@ final class PKEParallelTasksPropertyStore private (
     // The following three data-structures are never read or updated concurrently;
     // they are only read/updated by the store updates thread.
     //
-    private[this] val dependers: Array[AnyRefMap[Entity, AnyRefMap[SomeEPK, OnUpdateContinuation]]] = {
+    private[this] val dependers: Array[AnyRefMap[Entity, AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]]] = {
         Array.fill(SupportedPropertyKinds) { AnyRefMap.empty }
     }
     private[this] val dependees: Array[AnyRefMap[Entity, Traversable[SomeEOptionP]]] = {
@@ -637,7 +637,7 @@ final class PKEParallelTasksPropertyStore private (
             val oldDependersOption = this.dependers(pkId).remove(e)
             if (oldDependersOption.isDefined) {
                 oldDependersOption.get foreach { oldDepender ⇒
-                    val (oldDependerEPK, c) = oldDepender
+                    val (oldDependerEPK, (c, onUpdateContinuationHint)) = oldDepender
 
                     if (tracer.isDefined) tracer.get.notification(newEPS, oldDependerEPK)
 
@@ -647,10 +647,14 @@ final class PKEParallelTasksPropertyStore private (
                     // depender to avoid that the onUpdateContinuation is triggered multiple times!
                     clearDependees(oldDependerEPK)
                     scheduledOnUpdateComputationsCounter += 1
-                    if (isFinal) {
-                        prependTask(new OnFinalUpdateComputationTask(this, FinalEP(e, ub), c))
+                    if (onUpdateContinuationHint == CheapPropertyComputation) {
+                        prependStoreUpdate(PropertyUpdate(c(newEPS), false, false))
                     } else {
-                        appendTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
+                        if (isFinal) {
+                            prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                        } else {
+                            appendTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
+                        }
                     }
                 }
             }
@@ -813,7 +817,7 @@ final class PKEParallelTasksPropertyStore private (
                 }
 
             case IntermediateResult.id ⇒
-                val IntermediateResult(e, lb, ub, seenDependees, c) = r
+                val IntermediateResult(e, lb, ub, seenDependees, c, onUpdateContinuationHint) = r
                 val pk = ub.key
                 val pkId = pk.id
                 val epk = EPK(e, pk)
@@ -855,35 +859,43 @@ final class PKEParallelTasksPropertyStore private (
                         // do not yet trigger dependers; however, we have to ensure
                         // that the dependers are eventually triggered if any update
                         // was relevant!
-                        val relevantUpdate =
+                        val newForceDependerNotification =
                             updateAndNotify(
                                 e, lb, ub,
                                 notifyDependersAboutNonFinalUpdates = false,
                                 forceDependerNotification = false
-                            )
+                            ) || forceDependerNotification
+
+                        immediateOnUpdateComputationsCounter += 1
                         if (tracer.isDefined)
                             tracer.get.immediateDependeeUpdate(e, lb, ub, seenDependee, currentDependee)
-                        immediateOnUpdateComputationsCounter += 1
-                        if (currentDependee.isFinal) {
-                            prependTask(
-                                ImmediateOnFinalUpdateComputationTask(
-                                    store,
-                                    currentDependee.asFinal,
-                                    previousResult = r,
-                                    forceDependerNotification || relevantUpdate,
-                                    c
-                                )
-                            )
+
+                        if (onUpdateContinuationHint == CheapPropertyComputation) {
+                            val r = c(currentDependee)
+                            // we want to avoid potential stack-overflow errors...
+                            prependStoreUpdate(PropertyUpdate(r, false, newForceDependerNotification))
                         } else {
-                            appendTask(
-                                ImmediateOnUpdateComputationTask(
-                                    store,
-                                    currentDependee.toEPK,
-                                    previousResult = r,
-                                    forceDependerNotification || relevantUpdate,
-                                    c
+                            if (currentDependee.isFinal) {
+                                prependTask(
+                                    ImmediateOnFinalUpdateComputationTask(
+                                        store,
+                                        currentDependee.asFinal,
+                                        previousResult = r,
+                                        newForceDependerNotification,
+                                        c
+                                    )
                                 )
-                            )
+                            } else {
+                                appendTask(
+                                    ImmediateOnUpdateComputationTask(
+                                        store,
+                                        currentDependee.toEPK,
+                                        previousResult = r,
+                                        newForceDependerNotification,
+                                        c
+                                    )
+                                )
+                            }
                         }
 
                         return ;
@@ -899,7 +911,7 @@ final class PKEParallelTasksPropertyStore private (
                 // 2.2.  The most current value of every dependee was taken into account
                 //       register with new (!) dependees.
                 this.dependees(pkId).put(e, seenDependees)
-                val dependency = (epk, c)
+                val dependency = (epk, (c, onUpdateContinuationHint))
                 seenDependees foreach { dependee ⇒
                     val dependeeE = dependee.e
                     val dependeePKId = dependee.pk.id

@@ -84,7 +84,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
         var dependees = Set.empty[EOptionP[Entity, Property]]
 
-        // Get all subtypes, inclusive the current method as well
+        // Get all subtypes, including the current method
         val allSubtypes = project.classHierarchy.allSubtypes(m.classFile.thisType, reflexive = true)
         allSubtypes foreach { subType ⇒
             project.classFile(subType).foreach(_.findMethod(m.name, m.descriptor) match {
@@ -138,7 +138,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
                 Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
             } else {
                 val result = new ThrownExceptionsByOverridingMethods(exceptions)
-                IntermediateResult(m, SomeException, result, dependees, c)
+                IntermediateResult(m, SomeException, result, dependees, c, CheapPropertyComputation)
             }
         }
 
@@ -146,7 +146,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
             Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
         } else {
             val result = new ThrownExceptionsByOverridingMethods(exceptions)
-            IntermediateResult(m, SomeException, result, dependees, c)
+            IntermediateResult(m, SomeException, result, dependees, c, CheapPropertyComputation)
         }
     }
 }

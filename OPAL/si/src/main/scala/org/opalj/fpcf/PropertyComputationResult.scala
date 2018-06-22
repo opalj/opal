@@ -140,7 +140,8 @@ case class IntermediateResult[P <: Property](
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
 ) extends PropertyComputationResult {
 
     if (PropertyStore.Debug) {
@@ -175,7 +176,7 @@ case class IntermediateResult[P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(e, lb, ub, otherDependees, _) if (
+            case IntermediateResult(e, lb, ub, otherDependees, _, _) if (
                 (this.e eq e) && this.lb == lb && this.ub == ub
             ) ⇒
                 val dependees = this.dependees
@@ -195,6 +196,14 @@ case class IntermediateResult[P <: Property](
 private[fpcf] object IntermediateResult {
     private[fpcf] final val id = 3
 }
+
+sealed trait PropertyComputationHint
+final case object DefaultPropertyComputation extends PropertyComputationHint
+/**
+ * The on update continuation is extremely cheap and -- therefore -- can/should be processed in
+ * the current thread, it is extremely unlikely that we will gain anything from parallelization.
+ */
+final case object CheapPropertyComputation extends PropertyComputationHint
 
 /**
  * Encapsulates some result and also some computations that should be scheduled after the results

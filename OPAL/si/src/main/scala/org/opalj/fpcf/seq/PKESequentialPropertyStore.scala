@@ -498,7 +498,7 @@ final class PKESequentialPropertyStore private (
                 newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
             case IntermediateResult.id ⇒
-                val IntermediateResult(e, lb, ub, newDependees, c) = r
+                val IntermediateResult(e, lb, ub, newDependees, c, _) = r
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
                     if (dependee.isFinal) {
