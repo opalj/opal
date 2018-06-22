@@ -1268,11 +1268,7 @@ object Project {
                     superinterfaceTypeMethods ← methods.get(superinterfaceType)
                     superinterfaceTypeMethod ← superinterfaceTypeMethods
                 } {
-                    if (superinterfaceTypeMethod.method.declaringClassFile.thisType == superinterfaceType) {
-                        processInheritedInterfaceMethod(superinterfaceTypeMethod)
-                    } else {
-                        indirectlyInheritedInterfacesMethods :&:= superinterfaceTypeMethod
-                    }
+                    indirectlyInheritedInterfacesMethods :&:= superinterfaceTypeMethod
                 }
 
                 // let's keep the contexts related to the maximally specific methods.
@@ -1280,10 +1276,16 @@ object Project {
                     val (_, maximallySpecificSuperiniterfaceMethod) =
                         findMaximallySpecificSuperinterfaceMethods(
                             superinterfaceTypes,
-                            mdc.method.name, mdc.method.descriptor,
+                            mdc.name, mdc.descriptor,
                             UIDSet.empty[ObjectType]
                         )(objectTypeToClassFile, classHierarchy)
-                    if (maximallySpecificSuperiniterfaceMethod.contains(mdc.method)) {
+                    if (maximallySpecificSuperiniterfaceMethod.size > 1) {
+                        // If there are multiple maximally specific interface methods, actually
+                        // none of them can be invoked
+                        definedMethods = definedMethods.filterNot { m ⇒
+                            m.name == mdc.name && m.descriptor == mdc.descriptor
+                        }
+                    } else if (maximallySpecificSuperiniterfaceMethod.contains(mdc.method)) {
                         processInheritedInterfaceMethod(mdc)
                     }
                 }
@@ -1653,9 +1655,9 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-                if (useOldConfigAsFallback) config.withFallback(project.config) else config,
-                projectLogger = OPALLogger.logger(project.logContext.successor)
-            )
+            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
+            projectLogger = OPALLogger.logger(project.logContext.successor)
+        )
     }
 
     /**

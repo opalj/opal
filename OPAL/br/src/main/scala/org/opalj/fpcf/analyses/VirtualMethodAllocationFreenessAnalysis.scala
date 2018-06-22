@@ -49,20 +49,29 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineAllocationFreeness(dm: DeclaredMethod): PropertyComputationResult = {
-        if (!dm.hasDefinition) return Result(dm, VMethodWithAllocations);
+        if (!dm.hasDefinition && !dm.hasMultipleDefinitions)
+            return Result(dm, VMethodWithAllocations);
 
-        val m = dm.methodDefinition
         var dependees: Set[EOptionP[DeclaredMethod, AllocationFreeness]] = Set.empty
 
         val cfo = if (dm.declaringClassType.isArrayType) project.ObjectClassFile
         else project.classFile(dm.declaringClassType.asObjectType)
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType.asObjectType, m.name, m.descriptor)
-            else
+                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+            else if(dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
                 project.virtualCall(
-                    m.classFile.thisType.packageName, dm.declaringClassType, m.name, m.descriptor
+                    dm.methodDefinition.classFile.thisType.packageName,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
                 )
+            else project.virtualCall(
+                "" /* package is irrelevant, must be public interface methods */,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {

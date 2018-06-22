@@ -53,9 +53,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineUsage(dm: DeclaredMethod): PropertyComputationResult = {
-        if (!dm.hasDefinition) return Result(dm, VUsesVaryingData);
+        if (!dm.hasDefinition && !dm.hasMultipleDefinitions) return Result(dm, VUsesVaryingData);
 
-        val m = dm.methodDefinition
         var dependees: Set[EOptionP[DeclaredMethod, StaticDataUsage]] = Set.empty
 
         var maxLevel: StaticDataUsage = UsesNoStaticData
@@ -64,11 +63,20 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         else project.classFile(dm.declaringClassType.asObjectType)
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType.asObjectType, m.name, m.descriptor)
-            else
+                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+            else if(dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
                 project.virtualCall(
-                    m.classFile.thisType.packageName, dm.declaringClassType, m.name, m.descriptor
+                    dm.methodDefinition.classFile.thisType.packageName,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
                 )
+            else project.virtualCall(
+                "" /* package is irrelevant, must be public interface methods */,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {

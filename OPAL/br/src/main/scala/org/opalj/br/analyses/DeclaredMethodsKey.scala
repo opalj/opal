@@ -36,6 +36,8 @@ import java.util.function.{Function ⇒ JFunction}
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.ConstArray
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -126,25 +128,57 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     p.classHierarchy.processSubtypes(classType)(null) {
                         (_: Null, subtype: ObjectType) ⇒
                             val subClassFile = p.classFile(subtype).get
+                            val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
-                                val methodO = if (subClassFile.isInterfaceDeclaration)
-                                    p.resolveInterfaceMethodReference(subtype, m.name, m.descriptor)
-                                else
+                                val methodO = if (subClassFile.isInterfaceDeclaration) {
+                                    subClassFile.findMethod(m.name, m.descriptor).orElse {
+                                        val objectClassFile = p.classFile(ObjectType.Object).get
+                                        objectClassFile.findMethod(m.name, m.descriptor).orElse {
+                                            val superinterfaceTypes =
+                                                p.classHierarchy.superinterfaceTypes(subtype).get
+                                            val (_, methods) =
+                                                p.findMaximallySpecificSuperinterfaceMethods(
+                                                    superinterfaceTypes,
+                                                    m.name,
+                                                    m.descriptor,
+                                                    UIDSet.empty[ObjectType]
+                                                )
+                                            if (methods.size > 1 && !methods.head.isAbstract) {
+                                                val vm = MultiplyDefinedMethod(
+                                                    subtype,
+                                                    ConstArray(methods.toSeq: _*)
+                                                )
+                                                val context = new MethodContext(m.name, m.descriptor)
+                                                val oldVM = subtypeDms.put(context, vm)
+                                                if (oldVM != null && oldVM != vm) {
+                                                    /*throw new UnknownError*/ println(
+                                                        "creation of declared methods failed:\n\t"+
+                                                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                                                    )
+                                                }
+                                                None
+                                            } else {
+                                                methods.headOption
+                                            }
+                                        }
+                                    }
+                                } else
                                     p.resolveMethodReference(
                                         subtype,
                                         m.name,
                                         m.descriptor,
                                         forceLookupInSuperinterfacesOnFailure = true
                                     )
-                                val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
-                                val vm = DefinedMethod(subtype, methodO.get)
-                                val context = MethodContext(p, classType, methodO.get)
-                                val oldVM = subtypeDms.put(context, vm)
-                                if (oldVM != null && oldVM != vm) {
-                                    throw new UnknownError(
-                                        "creation of declared methods failed:\n\t"+
-                                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
-                                    )
+                                if (methodO.isDefined) {
+                                    val vm = DefinedMethod(subtype, methodO.get)
+                                    val context = MethodContext(p, classType, methodO.get)
+                                    val oldVM = subtypeDms.put(context, vm)
+                                    if (oldVM != null && oldVM != vm) {
+                                        /*throw new UnknownError*/ println(
+                                            "creation of declared methods failed:\n\t"+
+                                                s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                                        )
+                                    }
                                 }
                                 (null, false, false) // Continue traversal on non-overridden method
                             } else {
@@ -155,12 +189,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 val vm = DefinedMethod(classType, m)
                 val oldVM = dms.put(MethodContext(p, classType, m), vm)
                 if (oldVM != null && oldVM != vm) {
-                    throw new UnknownError(
+                    /*throw new UnknownError*/ println(
                         "creation of declared methods failed:\n\t"+
                             s"$oldVM\n\t\tvs.(new)\n\t$vm}"
                     )
                 }
             }
+
             for {
                 // all non-private, non-abstract instance methods present in the current class file,
                 // including methods derived from any supertype that are not overridden by this type
@@ -169,7 +204,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 val vm = DefinedMethod(classType, mc.method)
                 val oldVM = dms.put(MethodContext(p, classType, mc.method), vm)
                 if (oldVM != null && oldVM != vm) {
-                    throw new UnknownError(
+                    /*throw new UnknownError*/ println(
                         "creation of declared methods failed:\n\t"+
                             s"$oldVM\n\t\tvs.(new)\n\t$vm}"
                     )

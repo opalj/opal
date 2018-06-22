@@ -29,6 +29,8 @@
 package org.opalj
 package br
 
+import org.opalj.collection.immutable.ConstArray
+
 /**
  * Represents a declared method of a class identified by [[declaringClassType]];
  * that is, a method which belongs to the API of the class itself or a super class thereof.
@@ -56,6 +58,12 @@ sealed abstract class DeclaredMethod {
      */
     def hasDefinition: Boolean
 
+    /**
+     * If `true`, there are multiple methods that define this method and they can be accessed using
+     * [[foreachMethodDefinition]].
+     */
+    def hasMultipleDefinitions: Boolean = false
+
     /** The definition of this method; defined iff [[hasDefinition]] returns `true`. */
     def asDefinedMethod: DefinedMethod
 
@@ -66,6 +74,11 @@ sealed abstract class DeclaredMethod {
      * The behavior of this method is undefined if [[hasDefinition]] return false.
      */
     def methodDefinition: Method
+
+    /**
+     * Executes the given function for each method definition of a (Multiply)DefinedMethod.
+     */
+    def foreachMethodDefinition[U](fun: Method => U): Unit
 
     override def hashCode: Int = {
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
@@ -86,6 +99,8 @@ final case class VirtualDeclaredMethod(
 
     override def hasDefinition: Boolean = false
     override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
+    override def foreachMethodDefinition[U](fun: Method => U): Unit =
+        throw new UnsupportedOperationException("not available")
     override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
 
     override def equals(other: Any): Boolean = {
@@ -119,6 +134,7 @@ final case class DefinedMethod(
     override def hasDefinition: Boolean = true
     override def asDefinedMethod: DefinedMethod = this
     override def methodDefinition: Method = definedMethod
+    override def foreachMethodDefinition[U](fun: Method => U): Unit = fun(definedMethod)
 
     override def hashCode: Int = (definedMethod.hashCode() * 41) + super.hashCode
 
@@ -134,5 +150,21 @@ final case class DefinedMethod(
 
     override def toString: String = {
         s"DefinedMethod($declaringClassType,$name,$descriptor,${definedMethod.toJava})"
+    }
+}
+
+final case class MultiplyDefinedMethod(
+        declaringClassType: ReferenceType,
+        definedMethods:     ConstArray[Method]
+) extends DeclaredMethod {
+    override def name: String = definedMethods.head.name
+    override def descriptor: MethodDescriptor = definedMethods.head.descriptor
+
+    override def hasDefinition: Boolean = false
+    override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
+    override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
+
+    override def foreachMethodDefinition[U](fun: Method => U): Unit = {
+        definedMethods.foreach(fun)
     }
 }
