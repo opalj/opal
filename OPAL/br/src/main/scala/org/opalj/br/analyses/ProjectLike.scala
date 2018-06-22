@@ -738,10 +738,10 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // Depending on the set of open/closed packages it may be the case that the method
         // cannot be a receiver, because it is actually always overridden; however, we don't
         // do any checks related to this issue.
-        val initialMethods = instanceMethods.get(declaringClass)
-        if (initialMethods.isEmpty)
+        val initialMethodsOption = instanceMethods.get(declaringClass)
+        if (initialMethodsOption.isEmpty)
             return methods;
-        find(initialMethods.get) { mdc ⇒
+        find(initialMethodsOption.get) { mdc ⇒
             mdc.method.compare(name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 
@@ -805,14 +805,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         val declaringClassType = declaringType.asObjectType
         var methods = SomeSet.empty[Method]
 
-        val initialMethods = instanceMethods.get(declaringClassType)
-        if (initialMethods.isEmpty)
+        val initialMethodsOption = instanceMethods.get(declaringClassType)
+        if (initialMethodsOption.isEmpty)
             return methods;
 
         // Let's find the (concrete) method defined by this type or a supertype if it exists.
         // We have to check the declaring package if the method has package visibility to ensure
         // that we find the correct method!
-        find(initialMethods.get) { mdc ⇒
+        find(initialMethodsOption.get) { mdc ⇒
             mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 

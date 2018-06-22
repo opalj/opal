@@ -191,6 +191,8 @@ abstract class PropertyStore {
 
     final def traceCycleResolutions: Boolean = PropertyStore.TraceCycleResolutions
 
+    @volatile var useFastTrackPropertyComputations: Boolean = true
+
     /**
      * Returns a consistent snapshot of the stored properties.
      *
@@ -542,35 +544,25 @@ abstract class PropertyStore {
      */
     def waitOnPhaseCompletion(): Unit
 
-    @volatile private[this] var exception: Throwable = _ /*null*/
-
     /** ONLY INTENDED TO BE USED BY TESTS TO AVOID MISGUIDING TEST REPORTS! */
-    @volatile private[fpcf] var suppressError: Boolean = false
-
-    /**
-     * Throws the caught exception; if an exception was caught!
-     * This method is NOT intended to be called concurrently; it is only intended to be called
-     * when we are in a state of quiescence.
-     */
-    protected[this] def validateState(): Unit = {
-        if (exception ne null) {
-            throw exception;
-        }
-    }
+    private[fpcf] var suppressError: Boolean = false
 
     /**
      * Called when the first top-level exception occurs.
      * Intended to be overridden by subclasses.
      */
     protected[this] def onFirstException(t: Throwable): Unit = {
+        shutdown()
         if (!suppressError) {
             error("analysis progress", "analysis resulted in exception", t)
         }
     }
 
+    @volatile protected[this] var exception: Throwable = _ /*null*/
+
     protected[this] def collectException(t: Throwable): Unit = {
-        if (exception ne null) {
-            if (exception ne t) {
+        if (exception != null) {
+            if (exception != t && !exception.isInstanceOf[InterruptedException]) {
                 exception.addSuppressed(t)
             }
         } else {
@@ -589,30 +581,23 @@ abstract class PropertyStore {
         }
     }
 
-    protected[this] def collectAndThrowException(t: Throwable): Nothing = {
+    @inline protected[this] def collectAndThrowException(t: Throwable): Nothing = {
         collectException(t)
         throw t;
     }
 
     @inline protected[this] def handleExceptions[U](f: ⇒ U): U = {
         if (exception ne null)
-            throw AbortedDueToException(exception)
+            throw exception;
 
         try {
             f
         } catch {
-            case ct: ControlThrowable     ⇒ throw ct;
-            case a: AbortedDueToException ⇒ throw a.cause;
-            case t: Throwable             ⇒ collectAndThrowException(t)
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable         ⇒ collectAndThrowException(t)
         }
     }
-
 }
-
-case class AbortedDueToException(cause: Throwable) extends RuntimeException(
-    s"processing aborted due to previous exception: ${cause.getMessage}",
-    cause
-)
 
 object PropertyStore {
 

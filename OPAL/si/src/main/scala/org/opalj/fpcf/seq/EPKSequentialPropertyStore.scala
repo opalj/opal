@@ -58,7 +58,7 @@ final class EPKSequentialPropertyStore private (
 )(
         implicit
         val logContext: LogContext
-) extends PropertyStore { store ⇒
+) extends SeqPropertyStore { store ⇒
 
     /**
      * Controls in which order updates are processed/scheduled.
@@ -337,22 +337,7 @@ final class EPKSequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null")
         }
         val pkId = ub.key.id.toLong
-        if (debug) {
-            if (ub.key != lb.key) {
-                throw new IllegalArgumentException(
-                    s"lower and upper bound have different keys: lb=$lb vs. ub=$ub"
-                );
-            }
-            if (lb.isOrderedProperty) {
-                val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
-            }
-            if (newDependees.nonEmpty && lb == ub) {
-                throw new IllegalArgumentException(
-                    s"final property $lb with dependees: $newDependees"
-                )
-            }
-        }
+
         ps.get(e) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
@@ -548,7 +533,7 @@ final class EPKSequentialPropertyStore private (
                 newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
             case IntermediateResult.id ⇒
-                val IntermediateResult(e, lb, ub, newDependees, c) = r
+                val IntermediateResult(e, lb, ub, newDependees, c, _) = r
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
                     if (dependee.isFinal) {
