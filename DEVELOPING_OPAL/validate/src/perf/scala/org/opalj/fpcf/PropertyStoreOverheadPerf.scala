@@ -143,7 +143,7 @@ abstract class PropertyStoreOverheadPerf extends PerfSpec {
         val entities = ps.entities({_ => true})
         entities
             .flatMap { e =>
-                ps.properties(e).map(_.ub)
+                ps.properties(e).map(_.ub) // Only ub, because the EPS contains the entity as well
             }
             .toList
     }
