@@ -2952,7 +2952,7 @@ DefinedMethod(ObjectType(org/bson/io/BSONByteBuffer),toString,MethodDescriptor((
 DefinedMethod(ObjectType(org/bson/io/BSONByteBuffer),wrap,MethodDescriptor((byte[]): org.bson.io.BSONByteBuffer),org.bson.io.BSONByteBuffer{ public static org.bson.io.BSONByteBuffer wrap(byte[]) }) => ImpureByAnalysis
 DefinedMethod(ObjectType(org/bson/io/BSONByteBuffer),wrap,MethodDescriptor((byte[], int, int): org.bson.io.BSONByteBuffer),org.bson.io.BSONByteBuffer{ public static org.bson.io.BSONByteBuffer wrap(byte[],int,int) }) => ImpureByAnalysis
 DefinedMethod(ObjectType(org/bson/io/BasicOutputBuffer),<init>,MethodDescriptor((): void),org.bson.io.BasicOutputBuffer{ public void <init>() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(org/bson/io/BasicOutputBuffer),_ensure,MethodDescriptor((int): void),org.bson.io.BasicOutputBuffer{ void _ensure(int) }) => DExternallySideEffectFree
+DefinedMethod(ObjectType(org/bson/io/BasicOutputBuffer),_ensure,MethodDescriptor((int): void),org.bson.io.BasicOutputBuffer{ void _ensure(int) }) => ImpureByAnalysis
 DefinedMethod(ObjectType(org/bson/io/BasicOutputBuffer),asString,MethodDescriptor((): java.lang.String),org.bson.io.BasicOutputBuffer{ public java.lang.String asString() }) => ImpureByAnalysis
 DefinedMethod(ObjectType(org/bson/io/BasicOutputBuffer),asString,MethodDescriptor((java.lang.String): java.lang.String),org.bson.io.BasicOutputBuffer{ public java.lang.String asString(java.lang.String) }) => ImpureByAnalysis
 DefinedMethod(ObjectType(org/bson/io/BasicOutputBuffer),getPosition,MethodDescriptor((): int),org.bson.io.BasicOutputBuffer{ public int getPosition() }) => SideEffectFree

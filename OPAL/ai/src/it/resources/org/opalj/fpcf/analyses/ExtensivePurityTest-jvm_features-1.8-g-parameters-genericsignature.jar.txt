@@ -9,7 +9,7 @@ DefinedMethod(ObjectType(call_targets/SuperCalls),stringValues,MethodDescriptor(
 DefinedMethod(ObjectType(class_types/EmptyEnumeration),<clinit>,MethodDescriptor((): void),class_types.EmptyEnumeration{ static void <clinit>() }) => ImpureByAnalysis
 DefinedMethod(ObjectType(class_types/EmptyEnumeration),<init>,MethodDescriptor((java.lang.String, int): void),class_types.EmptyEnumeration{ private void <init>(java.lang.String,int) }) => ImpureByAnalysis
 DefinedMethod(ObjectType(class_types/EmptyEnumeration),valueOf,MethodDescriptor((java.lang.String): class_types.EmptyEnumeration),class_types.EmptyEnumeration{ public static class_types.EmptyEnumeration valueOf(java.lang.String) }) => ImpureByAnalysis
-DefinedMethod(ObjectType(class_types/EmptyEnumeration),values,MethodDescriptor((): class_types.EmptyEnumeration[]),class_types.EmptyEnumeration{ public static class_types.EmptyEnumeration[] values() }) => DPure
+DefinedMethod(ObjectType(class_types/EmptyEnumeration),values,MethodDescriptor((): class_types.EmptyEnumeration[]),class_types.EmptyEnumeration{ public static class_types.EmptyEnumeration[] values() }) => ImpureByAnalysis
 DefinedMethod(ObjectType(class_types/ExtExtSAMInterface),max,MethodDescriptor((int, int): int),class_types.ExtExtSAMInterface{ public static int max(int,int) }) => CompileTimePure
 DefinedMethod(ObjectType(class_types/ExtExtSAMInterface),printDoIt,MethodDescriptor((): void),class_types.SAMInterface{ public void printDoIt() }) => DPure
 DefinedMethod(ObjectType(class_types/ExtExtSAMInterface),printExtended,MethodDescriptor((): void),class_types.ExtSAMInterface{ public void printExtended() }) => DPure
@@ -26,7 +26,7 @@ DefinedMethod(ObjectType(class_types/SAMInterfaceDemo),lambda$1,MethodDescriptor
 DefinedMethod(ObjectType(class_types/SomeEnumeration),<clinit>,MethodDescriptor((): void),class_types.SomeEnumeration{ static void <clinit>() }) => ImpureByAnalysis
 DefinedMethod(ObjectType(class_types/SomeEnumeration),<init>,MethodDescriptor((java.lang.String, int): void),class_types.SomeEnumeration{ private void <init>(java.lang.String,int) }) => ImpureByAnalysis
 DefinedMethod(ObjectType(class_types/SomeEnumeration),valueOf,MethodDescriptor((java.lang.String): class_types.SomeEnumeration),class_types.SomeEnumeration{ public static class_types.SomeEnumeration valueOf(java.lang.String) }) => ImpureByAnalysis
-DefinedMethod(ObjectType(class_types/SomeEnumeration),values,MethodDescriptor((): class_types.SomeEnumeration[]),class_types.SomeEnumeration{ public static class_types.SomeEnumeration[] values() }) => DPure
+DefinedMethod(ObjectType(class_types/SomeEnumeration),values,MethodDescriptor((): class_types.SomeEnumeration[]),class_types.SomeEnumeration{ public static class_types.SomeEnumeration[] values() }) => ImpureByAnalysis
 DefinedMethod(ObjectType(class_types/SomeInterface),printDoIt,MethodDescriptor((): void),class_types.SAMInterface{ public void printDoIt() }) => DPure
 DefinedMethod(ObjectType(class_types/SomeInterface),printIt,MethodDescriptor((java.lang.String): void),class_types.SomeInterface{ public static void printIt(java.lang.String) }) => DPure
 DefinedMethod(ObjectType(default_methods/BaseInterface),printDoIt,MethodDescriptor((): void),default_methods.BaseInterface{ public void printDoIt() }) => DPure
