@@ -52,8 +52,6 @@ import org.opalj.da.ClassFile
 class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     case class CacheKey(otID: Int, method: String, opcode: Int)
-
-    val counterMap = new ConcurrentHashMap[Int, Int]()
     val relInvokeCache = new ConcurrentHashMap[CacheKey, Boolean]()
 
     override def featureIDs: Seq[String] = {
@@ -72,7 +70,6 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
         project:              Project[S],
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        counterMap.clear()
         val instructionsLocations = Array.fill(6)(new LocationsContainer[S])
 
         for {
@@ -122,8 +119,6 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
                                 // in order to check the linearization order
-                                val value = counterMap.getOrDefault(ot, 0)
-                                counterMap.put(ot.id, value + 1)
                                 val typeInheritMultipleIntWithSameIDM = project.classHierarchy.allSuperinterfacetypes(ot, false).count { it ⇒
                                     val cf = project.classFile(it)
                                     if (cf.nonEmpty) {
@@ -134,7 +129,6 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
                                     }
                                 }
                                 subtypeWithMultipleInterfaces |= typeInheritMultipleIntWithSameIDM > 1
-                                if (typeInheritMultipleIntWithSameIDM > 2) println(typeInheritMultipleIntWithSameIDM)
                             }
                             isIDM
                         } else
@@ -158,16 +152,6 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
                 instructionsLocations(kindID) += l
             }
         }
-
-        val sb = new StringBuffer()
-
-        val keys = counterMap.keys()
-        while (keys.hasMoreElements) {
-            val key = keys.nextElement()
-            sb.append(s"${project.classHierarchy.getObjectType(key)}: ${counterMap.get(key)}\n")
-        }
-
-        println(sb.toString)
 
         instructionsLocations;
     }
