@@ -81,6 +81,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     }
 
                     ps = p.get(PropertyStoreKey)
+                    PropertyStore.updateDebug(true)
 
                     time {
                         p.get(FPCFAnalysesManagerKey).runAll(analyses)
