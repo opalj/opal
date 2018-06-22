@@ -36,44 +36,113 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerVirtualMethodThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.FieldLocality
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.ThrownExceptions
 import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.sbt.perf.spec.PerfSpec
+import org.opalj.support.info.Purity.supportingAnalyses
 
 
-class RtJarPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_RtJarPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = RTJar
 }
 
-class ColumbusPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_ColumbusPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = locateTestResources("classfiles/Columbus 2008_10_16 - target 1.6.jar", "bi")
 }
 
-class GroovyPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_GroovyPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = locateTestResources("classfiles/groovy-2.2.1-indy.jar", "bi")
 }
 
-class ScalaLibPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_ScalaLibPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = locateTestResources("classfiles/scala-2.12.4/scala-library-2.12.4.jar", "bi")
 }
 
-class ScalaCompilerPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_ScalaCompilerPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = locateTestResources("classfiles/scala-2.12.4/scala-compiler-2.12.4.jar", "bi")
 }
 
-class FastUtilPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_FastUtilPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/fastutil-8.1.0.jar", "bi")
 }
 
-class JreLibPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePerf {
+class L1T_JreLibPropertyStorePerf extends PropertyStoreScalingPerf with L1ThrownExceptionsPerf {
     override def fixutureFile: File = JRELibraryFolder
+}
+
+class L2P_RtJarPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = RTJar
+}
+
+class L2P_ColumbusPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = locateTestResources("classfiles/Columbus 2008_10_16 - target 1.6.jar", "bi")
+}
+
+class L2P_GroovyPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = locateTestResources("classfiles/groovy-2.2.1-indy.jar", "bi")
+}
+
+class L2P_ScalaLibPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = locateTestResources("classfiles/scala-2.12.4/scala-library-2.12.4.jar", "bi")
+}
+
+class L2P_ScalaCompilerPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = locateTestResources("classfiles/scala-2.12.4/scala-compiler-2.12.4.jar", "bi")
+}
+
+class L2P_FastUtilPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/fastutil-8.1.0.jar", "bi")
+}
+
+class L2P_JreLibPropertyStorePerf extends PropertyStoreScalingPerf with L2PurityPerf {
+    override def fixutureFile: File = JRELibraryFolder
+}
+
+trait L1ThrownExceptionsPerf extends PropertyStoreScalingPerf {
+    override def runAnalysis(ps: PropertyStore, p: SomeProject): Unit = {
+        ps.setupPhase(
+            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
+        )
+
+        EagerL1ThrownExceptionsAnalysis.start(p, ps)
+        EagerVirtualMethodThrownExceptionsAnalysis.start(p, ps)
+    }
+}
+
+trait L2PurityPerf extends PropertyStoreScalingPerf {
+    override def runAnalysis(ps: PropertyStore, p: SomeProject): Unit = {
+        ps.setupPhase(
+            Set(
+                org.opalj.fpcf.properties.Purity.key,
+                FieldMutability.key,
+                ClassImmutability.key,
+                TypeImmutability.key,
+                VirtualMethodPurity.key,
+                FieldLocality.key,
+                ReturnValueFreshness.key,
+                VirtualMethodReturnValueFreshness.key
+            )
+        )
+
+        supportingAnalyses(2).foreach(_.startLazily(p, ps))
+        EagerL2PurityAnalysis.start(p, ps)
+    }
 }
 
 /**
@@ -81,10 +150,11 @@ class JreLibPropertyStorePerf extends L1ThrownExceptionsAnalysisPropertyStorePer
   *
   * @author Andreas Muttscheller
   */
-trait L1ThrownExceptionsAnalysisPropertyStorePerf extends PerfSpec {
+trait PropertyStoreScalingPerf extends PerfSpec {
     implicit val logContext: LogContext = GlobalLogContext
 
     def fixutureFile: File
+    def runAnalysis(ps: PropertyStore, p: SomeProject): Unit
 
     val baseConfig: Config = ConfigFactory.load()
     val propertyStoreImplementation = ConfigKeyPrefix+"PropertyStoreImplementation"
@@ -96,12 +166,7 @@ trait L1ThrownExceptionsAnalysisPropertyStorePerf extends PerfSpec {
     measure(s"ReactiveAsyncPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.par.ReactiveAsyncPropertyStore")
         val ps = project.get(PropertyStoreKey)
-        ps.setupPhase(
-            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
-        )
-
-        EagerL1ThrownExceptionsAnalysis.start(project, ps)
-        EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
+        runAnalysis(ps, project)
 
         ps.waitOnPhaseCompletion()
         Runtime.getRuntime.gc()
@@ -111,12 +176,7 @@ trait L1ThrownExceptionsAnalysisPropertyStorePerf extends PerfSpec {
     measure(s"PKESequentialPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.seq.PKESequentialPropertyStore")
         val ps = project.get(PropertyStoreKey)
-        ps.setupPhase(
-            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
-        )
-
-        EagerL1ThrownExceptionsAnalysis.start(project, ps)
-        EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
+        runAnalysis(ps, project)
 
         ps.waitOnPhaseCompletion()
         Runtime.getRuntime.gc()
@@ -126,12 +186,7 @@ trait L1ThrownExceptionsAnalysisPropertyStorePerf extends PerfSpec {
     measure(s"EPKSequentialPropertyStore - L1ThrownExceptionsAnalysis - ${fixutureFile.getName}") {
         val project = buildProject("org.opalj.fpcf.seq.EPKSequentialPropertyStore")
         val ps = project.get(PropertyStoreKey)
-        ps.setupPhase(
-            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
-        )
-
-        EagerL1ThrownExceptionsAnalysis.start(project, ps)
-        EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
+        runAnalysis(ps, project)
 
         ps.waitOnPhaseCompletion()
         Runtime.getRuntime.gc()
