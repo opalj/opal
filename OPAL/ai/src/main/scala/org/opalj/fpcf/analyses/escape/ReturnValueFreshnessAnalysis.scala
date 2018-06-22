@@ -479,7 +479,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 NoFreshReturnValue,
                 state.ubRVF,
                 state.dependees,
-                continuation
+                continuation,
+                CheapPropertyComputation
             )
         else
             Result(state.dm, state.ubRVF)
