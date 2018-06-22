@@ -76,8 +76,6 @@ final class PKESequentialPropertyStore private (
      */
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
-    @volatile var useFastTrackPropertyComputations: Boolean = true
-
     private[this] var scheduledTasksCounter: Int = 0
     def scheduledTasksCount: Int = scheduledTasksCounter
 
