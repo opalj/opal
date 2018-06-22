@@ -324,22 +324,6 @@ final class PKESequentialPropertyStore private (
             throw new IllegalArgumentException("the entity must not be null");
         }
         val pkId = ub.key.id
-        if (debug) {
-            if (ub.key != lb.key) {
-                throw new IllegalArgumentException(
-                    s"lower and upper bound have different keys: lb=$lb vs. ub=$ub"
-                );
-            }
-            if (lb.isOrderedProperty) {
-                val ubAsOP = ub.asOrderedProperty
-                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
-            }
-            if (newDependees.nonEmpty && lb == ub) {
-                throw new IllegalArgumentException(
-                    s"final property $lb with dependees: $newDependees"
-                )
-            }
-        }
         ps(pkId).get(e) match {
             case null ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
@@ -651,8 +635,7 @@ final class PKESequentialPropertyStore private (
 
                             case dependeePValue ⇒
                                 throw new UnknownError(
-                                    "fatal internal error; "+
-                                        "can't update dependees of final property"
+                                    "fatal internal error: can't update dependees of final property"
                                 )
                         }
                     }

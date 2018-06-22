@@ -145,19 +145,26 @@ case class IntermediateResult[P <: Property](
 
     if (PropertyStore.Debug) {
         if (lb == ub) {
-            throw new IllegalArgumentException(
-                s"intermediate result with equal bounds: $this"
-            )
+            throw new IllegalArgumentException(s"intermediate result with equal bounds: $this")
         }
         if (dependees.isEmpty) {
             throw new IllegalArgumentException(
-                s"intermediate result $this without open dependencies "+
-                    "(use IncrementalResult for collaboratively computed results)"
+                s"intermediate result without dependencies: $this"+
+                    " (use PartialResult for collaboratively computed results)"
             )
         }
         if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
+        if (lb.isOrderedProperty) {
+            val ubAsOP = ub.asOrderedProperty
+            ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+        }
+        if (ub.key != lb.key) {
+            throw new IllegalArgumentException(
+                s"property keys for lower ${lb.key} and upper ${ub.key} bound don't match"
             )
         }
     }
