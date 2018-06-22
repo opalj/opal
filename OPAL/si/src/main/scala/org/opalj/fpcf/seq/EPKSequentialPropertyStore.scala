@@ -58,7 +58,7 @@ final class EPKSequentialPropertyStore private (
 )(
         implicit
         val logContext: LogContext
-) extends PropertyStore { store ⇒
+) extends SeqPropertyStore { store ⇒
 
     /**
      * Controls in which order updates are processed/scheduled.
