@@ -105,12 +105,12 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
-        for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {
+        /*for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {
             println(s"$e : AtMostEscapeViaAbnormalReturn")
         }
         for (e ← propertyStore.finalEntities(AtMost(EscapeInCallee))) {
             println(s"$e : AtMostEscapeInCallee")
-        }
+        }*/
 
         def countAS(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[DefinitionSite])
         def countFP(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[VirtualFormalParameter])
