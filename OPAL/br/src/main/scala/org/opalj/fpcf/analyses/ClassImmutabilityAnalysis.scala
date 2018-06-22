@@ -513,6 +513,7 @@ object LazyClassImmutabilityAnalysis
         val analysis = new ClassImmutabilityAnalysis(project)
 
         setResultsAnComputeEntities(project, propertyStore)
+        propertyStore.waitOnPhaseCompletion() // wait for completion of setting results
         propertyStore.registerLazyPropertyComputation(
             ClassImmutability.key, analysis.doDetermineClassImmutability
         )

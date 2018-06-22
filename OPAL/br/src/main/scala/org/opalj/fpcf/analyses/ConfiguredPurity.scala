@@ -102,6 +102,8 @@ class ConfiguredPurity(
             dm
         }
 
+    propertyStore.waitOnPhaseCompletion() // wait until setting configured purities is completed
+
     def wasSet(dm: DeclaredMethod): Boolean = {
         methods.contains(dm)
     }
