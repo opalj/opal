@@ -996,8 +996,7 @@ class ClassHierarchy private (
         objectType: ObjectType,
         reflexive:  Boolean    = false
     ): UIDSet[ObjectType] = {
-        var supertypes = UIDSet.empty[ObjectType]
-        foreachSupertype(objectType) { t ⇒ if (isInterface(t).isYes) supertypes += t }
+        var supertypes = supertypeInformation(objectType).interfaceTypes
         if (reflexive && isInterface(objectType).isYes) supertypes += objectType
         supertypes
     }
