@@ -62,7 +62,7 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
             "J8PC2", /* 1 --- call on interface (with IDM) that must not be resolved to it */
             "J8PC3", /* 2 --- call on class which transitively calls an method that potentially could target an IDM */
             "J8PC4", /* 3 --- call on class type which must be resolved to an IDM */
-            "J8PC5", /* 4 --- */
+            "J8PC5", /* 4 --- call that's dispatched to IDM where the class inherits from multiple interfaces with that idm (sig. wise) */
             "J8PC6" /* 5 --- call to static interface method */
         )
     }
@@ -89,7 +89,6 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
             }
         } {
             val pc = pcAndInvocation.pc
-            //TODO rewrite to opcode
             val invokeKind = pcAndInvocation.value
 
             val l = InstructionLocation(methodLocation, pc)
