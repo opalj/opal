@@ -131,8 +131,8 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpe
 }
 
 object EagerVirtualReturnValueFreshnessAnalysis
-        extends VirtualReturnValueFreshnessAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends VirtualReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
@@ -144,8 +144,8 @@ object EagerVirtualReturnValueFreshnessAnalysis
 }
 
 object LazyVirtualReturnValueFreshnessAnalysis
-        extends VirtualReturnValueFreshnessAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends VirtualReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
     override def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
         propertyStore.registerLazyPropertyComputation(
