@@ -389,14 +389,20 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptions(exceptions))
             } else {
-                IntermediateResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
+                IntermediateResult(
+                    m, SomeException, new ThrownExceptions(exceptions),
+                    dependees, c, CheapPropertyComputation
+                )
             }
         }
 
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptions(exceptions))
         } else {
-            IntermediateResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
+            IntermediateResult(
+                m, SomeException, new ThrownExceptions(exceptions),
+                dependees, c, CheapPropertyComputation
+            )
         }
     }
 }
