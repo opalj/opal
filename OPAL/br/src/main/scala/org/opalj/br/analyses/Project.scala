@@ -1228,66 +1228,73 @@ object Project {
             //      the subclass resolves the conflict by defining the method.
             var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
 
-            val superinterfaceTypesOption = classHierarchy.superinterfaceTypes(objectType)
-            if (superinterfaceTypesOption.isDefined) {
-                val superinterfaceTypes = superinterfaceTypesOption.get
-                if (superinterfaceTypes.exists(notYetAvailable)) {
-                    tasks.submit(objectType)
-                    return ;
-                }
+            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType)
 
-                // We have to filter (remove) those interfaces that are directly and indirectly
-                // inherited. In this case the potentially(!) correct method is defined by the interface
-                // which also implements the indirectly inherited interface!
-                // Concrete case:
-                // interface S { default void m(){;} }
-                // interface SL extends S { abstract void m(); /* m is made abstract!!! */ }
-                // interface SR extends S { }
-                // The concrete method m defined by S does NOT belong to the interface of SB(!):
-                // interface SB extends SL,SR { }
-                //
-                // Hence, when we have to find the correct method, we first have to determine
-                // that - in case of SB - the only relevant super interfaces are SL and SR, but
-                // not S.
-                var indirectlyInheritedInterfacesMethods: Chain[MethodDeclarationContext] = Naught
-                def processInheritedInterfaceMethod(
-                    inheritedInterfaceMethod: MethodDeclarationContext
-                ): Unit = {
-                    // The relevant interface methods are public, hence, the package
-                    // name is not relevant!
-                    if (!definedMethods.exists { definedMethod ⇒
-                        definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                            definedMethod.name == inheritedInterfaceMethod.name
-                    }) {
-                        definedMethods :&:= inheritedInterfaceMethod
-                    }
+            // We have to filter (remove) those interfaces that are directly and indirectly
+            // inherited. In this case the potentially(!) correct method is defined by the interface
+            // which also implements the indirectly inherited interface!
+            // Concrete case:
+            // interface S { default void m(){;} }
+            // interface SL extends S { abstract void m(); /* m is made abstract!!! */ }
+            // interface SR extends S { }
+            // The concrete method m defined by S does NOT belong to the interface of SB(!):
+            // interface SB extends SL,SR { }
+            //
+            // Hence, when we have to find the correct method, we first have to determine
+            // that - in case of SB - the only relevant super interfaces are SL and SR, but
+            // not S.
+            var interfaceMethods: Chain[Method] = Naught
+            def processMaximallySpecificSuperinterfaceMethod(
+                inheritedInterfaceMethod: Method
+            ): Unit = {
+                // The relevant interface methods are public, hence, the package
+                // name is not relevant!
+                val methodO = definedMethods.find { definedMethod ⇒
+                    definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                        definedMethod.name == inheritedInterfaceMethod.name
                 }
-
-                for {
-                    superinterfaceType ← superinterfaceTypes
-                    superinterfaceTypeMethods ← methods.get(superinterfaceType)
-                    superinterfaceTypeMethod ← superinterfaceTypeMethods
-                } {
-                    indirectlyInheritedInterfacesMethods :&:= superinterfaceTypeMethod
-                }
-
-                // let's keep the contexts related to the maximally specific methods.
-                indirectlyInheritedInterfacesMethods foreach { mdc ⇒
-                    val (_, maximallySpecificSuperiniterfaceMethod) =
-                        findMaximallySpecificSuperinterfaceMethods(
-                            superinterfaceTypes,
-                            mdc.name, mdc.descriptor,
-                            UIDSet.empty[ObjectType]
-                        )(objectTypeToClassFile, classHierarchy)
-                    if (maximallySpecificSuperiniterfaceMethod.size > 1) {
-                        // If there are multiple maximally specific interface methods, actually
-                        // none of them can be invoked
-                        definedMethods = definedMethods.filterNot { m ⇒
-                            m.name == mdc.name && m.descriptor == mdc.descriptor
+                if(methodO.isDefined){
+                    // If there already is a method and it is from an interface, then it is not
+                    // maximally specific and must be replaced. If it is from a class however, we
+                    // must keep it.
+                    if(classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown){
+                        definedMethods = definedMethods.filterNot { definedMethod ⇒
+                            definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                                definedMethod.name == inheritedInterfaceMethod.name
                         }
-                    } else if (maximallySpecificSuperiniterfaceMethod.contains(mdc.method)) {
-                        processInheritedInterfaceMethod(mdc)
+                        if(!inheritedInterfaceMethod.isAbstract)
+                            definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                     }
+                }else {
+                    if(!inheritedInterfaceMethod.isAbstract)
+                    definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
+                }
+            }
+
+            for {
+                superinterfaceType ← superinterfaceTypes
+                superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)
+                superinterfaceTypeMethod ← superinterfaceClassfile.methods
+            } {
+                interfaceMethods :&:= superinterfaceTypeMethod
+            }
+
+            // let's keep the contexts related to the maximally specific methods.
+            interfaceMethods foreach { interfaceMethod ⇒
+                val (_, maximallySpecificSuperiniterfaceMethod) =
+                    findMaximallySpecificSuperinterfaceMethods(
+                        superinterfaceTypes,
+                        interfaceMethod.name, interfaceMethod.descriptor,
+                        UIDSet.empty[ObjectType]
+                    )(objectTypeToClassFile, classHierarchy)
+                if (maximallySpecificSuperiniterfaceMethod.size > 1) {
+                    // If there are multiple maximally specific interface methods, actually
+                    // none of them can be invoked
+                    definedMethods = definedMethods.filterNot { m ⇒
+                        interfaceMethod.name == m.name && interfaceMethod.descriptor == m.descriptor
+                    }
+                } else if (maximallySpecificSuperiniterfaceMethod.contains(interfaceMethod)) {
+                    processMaximallySpecificSuperinterfaceMethod(interfaceMethod)
                 }
             }
 
@@ -1655,9 +1662,9 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
-            projectLogger = OPALLogger.logger(project.logContext.successor)
-        )
+                if (useOldConfigAsFallback) config.withFallback(project.config) else config,
+                projectLogger = OPALLogger.logger(project.logContext.successor)
+            )
     }
 
     /**
