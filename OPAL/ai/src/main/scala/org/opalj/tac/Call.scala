@@ -59,7 +59,6 @@ object Call {
     }
 }
 
-
 object MethodCallParameters {
 
     def unapply[V <: Var[V]](astNode: ASTNode[V]): Option[Seq[Expr[V]]] = {

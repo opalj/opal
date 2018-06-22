@@ -215,7 +215,6 @@ class RTACallGraphAnalysis private[analyses] (
 
         val stmts = tacaiProvider(method).stmts
 
-
         // for allocation sites, add new types
         // for calls, add new edges
         for (stmt ← stmts) {

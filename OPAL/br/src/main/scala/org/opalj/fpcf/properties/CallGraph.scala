@@ -224,11 +224,11 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     staticCallCache.getOrElseUpdate(
                                         call.declaringClass, methodSignature
                                     ) {
-                                        project.staticCall(call) match {
-                                            case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
-                                            case _            ⇒ IntTrieSet.empty
+                                            project.staticCall(call) match {
+                                                case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
+                                                case _            ⇒ IntTrieSet.empty
+                                            }
                                         }
-                                    }
 
                                 case INVOKESPECIAL.opcode ⇒
                                     val call = instr.asInstanceOf[INVOKESPECIAL]
@@ -236,11 +236,11 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     specialCallCache.getOrElseUpdate(
                                         call.declaringClass, methodSignature
                                     ) {
-                                        project.specialCall(call) match {
-                                            case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
-                                            case _            ⇒ IntTrieSet.empty
+                                            project.specialCall(call) match {
+                                                case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
+                                                case _            ⇒ IntTrieSet.empty
+                                            }
                                         }
-                                    }
 
                                 case INVOKEINTERFACE.opcode ⇒
                                     val call = instr.asInstanceOf[INVOKEINTERFACE]
@@ -248,12 +248,12 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     interfaceCallCache.getOrElseUpdate(
                                         call.declaringClass, methodSignature
                                     ) {
-                                        project.interfaceCall(
-                                            call
-                                        ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
-                                            r + methodIds(tgt)
+                                            project.interfaceCall(
+                                                call
+                                            ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
+                                                r + methodIds(tgt)
+                                            }
                                         }
-                                    }
 
                                 case INVOKEVIRTUAL.opcode ⇒
                                     val call = instr.asInstanceOf[INVOKEVIRTUAL]
@@ -274,8 +274,8 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                         project.virtualCall(
                                             m.classFile.thisType.packageName, call
                                         ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
-                                            r + methodIds(tgt)
-                                        }
+                                                r + methodIds(tgt)
+                                            }
                                     }
 
                                 case INVOKEDYNAMIC.opcode ⇒
