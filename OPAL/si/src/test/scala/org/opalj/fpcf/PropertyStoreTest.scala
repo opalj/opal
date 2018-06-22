@@ -293,8 +293,7 @@ sealed abstract class PropertyStoreTest extends FunSpec with Matchers with Befor
                 ps.set("aba", NoPalindrome)
                 ps.waitOnPhaseCompletion()
             } catch {
-                case AbortedDueToException(_: IllegalStateException) ⇒ // expected!
-                case _: IllegalStateException                        ⇒ // expected!
+                case _: IllegalStateException ⇒ // expected!
             }
 
             ps.shutdown()
@@ -1115,10 +1114,9 @@ abstract class PropertyStoreTestWithDebugging extends PropertyStoreTest {
                 ps.waitOnPhaseCompletion()
                 fail("invalid update not detected")
             } catch {
-                case iae: IllegalArgumentException if iae.getMessage.contains("is not equal or better than") ⇒
-                // OK - EXPECTED
-                case e: Throwable ⇒
-                    fail(e.getMessage)
+                case iae: IllegalArgumentException if (
+                    iae.getMessage.contains("is not equal or better than")
+                ) ⇒ // OK - EXPECTED
             }
 
             ps.shutdown()
