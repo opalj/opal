@@ -39,7 +39,6 @@ import org.opalj.fpcf.properties.StaticDataUsage
 import org.opalj.fpcf.properties.UsesNoStaticData
 import org.opalj.fpcf.properties.UsesVaryingData
 import org.opalj.fpcf.properties.UsesConstantDataOnly
-import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
 
 /**
@@ -64,7 +63,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
                 project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
-            else if(dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
+            else if (dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
                 project.virtualCall(
                     dm.methodDefinition.classFile.thisType.packageName,
                     dm.declaringClassType,
@@ -72,7 +71,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                     dm.descriptor
                 )
             else project.virtualCall(
-                "" /* package is irrelevant, must be public interface methods */,
+                "" /* package is irrelevant, must be public interface methods */ ,
                 dm.declaringClassType,
                 dm.name,
                 dm.descriptor
@@ -82,7 +81,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
                 case FinalEP(_, UsesNoStaticData)     ⇒
                 case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
                 case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
@@ -96,7 +95,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             eps match {
                 case FinalEP(_, UsesNoStaticData)     ⇒
                 case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
                 case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
@@ -108,7 +107,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             } else {
                 IntermediateResult(
                     dm,
-                    VMethodWithAllocations,
+                    VUsesVaryingData,
                     maxLevel.aggregatedProperty,
                     dependees,
                     c
@@ -121,7 +120,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         } else {
             IntermediateResult(
                 dm,
-                VMethodWithAllocations,
+                VUsesVaryingData,
                 maxLevel.aggregatedProperty,
                 dependees,
                 c

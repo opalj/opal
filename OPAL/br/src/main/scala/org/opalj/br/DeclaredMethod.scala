@@ -78,7 +78,7 @@ sealed abstract class DeclaredMethod {
     /**
      * Executes the given function for each method definition of a (Multiply)DefinedMethod.
      */
-    def foreachMethodDefinition[U](fun: Method => U): Unit
+    def foreachMethodDefinition[U](fun: Method ⇒ U): Unit
 
     override def hashCode: Int = {
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
@@ -99,7 +99,7 @@ final case class VirtualDeclaredMethod(
 
     override def hasDefinition: Boolean = false
     override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
-    override def foreachMethodDefinition[U](fun: Method => U): Unit =
+    override def foreachMethodDefinition[U](fun: Method ⇒ U): Unit =
         throw new UnsupportedOperationException("not available")
     override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
 
@@ -134,7 +134,7 @@ final case class DefinedMethod(
     override def hasDefinition: Boolean = true
     override def asDefinedMethod: DefinedMethod = this
     override def methodDefinition: Method = definedMethod
-    override def foreachMethodDefinition[U](fun: Method => U): Unit = fun(definedMethod)
+    override def foreachMethodDefinition[U](fun: Method ⇒ U): Unit = fun(definedMethod)
 
     override def hashCode: Int = (definedMethod.hashCode() * 41) + super.hashCode
 
@@ -164,7 +164,7 @@ final case class MultiplyDefinedMethod(
     override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
     override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
 
-    override def foreachMethodDefinition[U](fun: Method => U): Unit = {
+    override def foreachMethodDefinition[U](fun: Method ⇒ U): Unit = {
         definedMethods.foreach(fun)
     }
 }

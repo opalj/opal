@@ -61,7 +61,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
                 project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
-            else if(dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
+            else if (dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
                 project.virtualCall(
                     dm.methodDefinition.classFile.thisType.packageName,
                     dm.declaringClassType,
@@ -69,7 +69,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
                     dm.descriptor
                 )
             else project.virtualCall(
-                "" /* package is irrelevant, must be public interface methods */,
+                "" /* package is irrelevant, must be public interface methods */ ,
                 dm.declaringClassType,
                 dm.name,
                 dm.descriptor

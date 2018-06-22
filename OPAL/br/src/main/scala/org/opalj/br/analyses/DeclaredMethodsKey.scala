@@ -103,6 +103,64 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * Collects all declared methods.
      */
     override protected def compute(p: SomeProject): DeclaredMethods = {
+        val objectClassFile = p.classFile(ObjectType.Object)
+        def findInterfaceMethod(
+            cf:         ClassFile,
+            name:       String,
+            descriptor: MethodDescriptor
+        ): Option[(MethodContext, DeclaredMethod)] = {
+            def lookupInObject(): Option[Method] = {
+                objectClassFile flatMap { classFile ⇒
+                    classFile.findMethod(name, descriptor) filter { m ⇒ m.isPublic && !m.isStatic }
+                }
+            }
+
+            val classType = cf.thisType
+
+            if (cf.isInterfaceDeclaration) {
+                val methodO = cf.findMethod(name, descriptor) orElse lookupInObject()
+                if (methodO.isDefined) {
+                    val vm = DefinedMethod(classType, methodO.get)
+                    val context = MethodContext(p, classType, methodO.get)
+                    Some((context, vm))
+                } else {
+                    val superinterfaceTypes =
+                        p.classHierarchy.superinterfaceTypes(classType).get
+                    val (_, methods) =
+                        p.findMaximallySpecificSuperinterfaceMethods(
+                            superinterfaceTypes,
+                            name,
+                            descriptor,
+                            UIDSet.empty[ObjectType]
+                        )
+                    if (methods.size > 1 && !methods.head.isAbstract) {
+                        val vm = MultiplyDefinedMethod(
+                            classType,
+                            ConstArray(methods.toSeq: _*)
+                        )
+                        val context = new MethodContext(name, descriptor)
+                        Some((context, vm))
+                    } else {
+                        methods.headOption map { method ⇒
+                            val vm = DefinedMethod(classType, method)
+                            val context = MethodContext(p, classType, method)
+                            (context, vm)
+                        }
+                    }
+                }
+            } else
+                p.resolveMethodReference(
+                    classType,
+                    name,
+                    descriptor,
+                    forceLookupInSuperinterfacesOnFailure = true
+                ) map { method ⇒
+                    val vm = DefinedMethod(classType, method)
+                    val context = MethodContext(p, classType, method)
+                    (context, vm)
+                }
+        }
+
         val result: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
             new ConcurrentHashMap
 
@@ -130,55 +188,16 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             val subClassFile = p.classFile(subtype).get
                             val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
-                                val methodO = if (subClassFile.isInterfaceDeclaration) {
-                                    subClassFile.findMethod(m.name, m.descriptor).orElse {
-                                        val objectClassFile = p.classFile(ObjectType.Object).get
-                                        objectClassFile.findMethod(m.name, m.descriptor).orElse {
-                                            val superinterfaceTypes =
-                                                p.classHierarchy.superinterfaceTypes(subtype).get
-                                            val (_, methods) =
-                                                p.findMaximallySpecificSuperinterfaceMethods(
-                                                    superinterfaceTypes,
-                                                    m.name,
-                                                    m.descriptor,
-                                                    UIDSet.empty[ObjectType]
-                                                )
-                                            if (methods.size > 1 && !methods.head.isAbstract) {
-                                                val vm = MultiplyDefinedMethod(
-                                                    subtype,
-                                                    ConstArray(methods.toSeq: _*)
-                                                )
-                                                val context = new MethodContext(m.name, m.descriptor)
-                                                val oldVM = subtypeDms.put(context, vm)
-                                                if (oldVM != null && oldVM != vm) {
-                                                    /*throw new UnknownError*/ println(
-                                                        "creation of declared methods failed:\n\t"+
-                                                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
-                                                    )
-                                                }
-                                                None
-                                            } else {
-                                                methods.headOption
-                                            }
+                                val cAndDm = findInterfaceMethod(subClassFile, m.name, m.descriptor)
+                                cAndDm foreach {
+                                    case (context, dm) ⇒
+                                        val oldDm = subtypeDms.put(context, dm)
+                                        if (oldDm != null && oldDm != dm) {
+                                            throw new UnknownError(
+                                                "creation of declared methods failed:\n\t"+
+                                                    s"$oldDm\n\t\tvs.(new)\n\t$dm}"
+                                            )
                                         }
-                                    }
-                                } else
-                                    p.resolveMethodReference(
-                                        subtype,
-                                        m.name,
-                                        m.descriptor,
-                                        forceLookupInSuperinterfacesOnFailure = true
-                                    )
-                                if (methodO.isDefined) {
-                                    val vm = DefinedMethod(subtype, methodO.get)
-                                    val context = MethodContext(p, classType, methodO.get)
-                                    val oldVM = subtypeDms.put(context, vm)
-                                    if (oldVM != null && oldVM != vm) {
-                                        /*throw new UnknownError*/ println(
-                                            "creation of declared methods failed:\n\t"+
-                                                s"$oldVM\n\t\tvs.(new)\n\t$vm}"
-                                        )
-                                    }
                                 }
                                 (null, false, false) // Continue traversal on non-overridden method
                             } else {
@@ -186,12 +205,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             }
                     }
                 }
-                val vm = DefinedMethod(classType, m)
-                val oldVM = dms.put(MethodContext(p, classType, m), vm)
-                if (oldVM != null && oldVM != vm) {
-                    /*throw new UnknownError*/ println(
+                val dm = DefinedMethod(classType, m)
+                val oldDm = dms.put(MethodContext(p, classType, m), dm)
+                if (oldDm != null && oldDm != dm) {
+                    throw new UnknownError(
                         "creation of declared methods failed:\n\t"+
-                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                            s"$oldDm\n\t\tvs.(new)\n\t$dm}"
                     )
                 }
             }
@@ -201,12 +220,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 // including methods derived from any supertype that are not overridden by this type
                 mc ← p.instanceMethods(classType)
             } {
-                val vm = DefinedMethod(classType, mc.method)
-                val oldVM = dms.put(MethodContext(p, classType, mc.method), vm)
-                if (oldVM != null && oldVM != vm) {
-                    /*throw new UnknownError*/ println(
+                val dm = DefinedMethod(classType, mc.method)
+                val oldDm = dms.put(MethodContext(p, classType, mc.method), dm)
+                if (oldDm != null && oldDm != dm) {
+                    throw new UnknownError(
                         "creation of declared methods failed:\n\t"+
-                            s"$oldVM\n\t\tvs.(new)\n\t$vm}"
+                            s"$oldDm\n\t\tvs.(new)\n\t$dm}"
                     )
                 }
             }
@@ -215,16 +234,16 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         // Special handling for signature-polymorphic methods
         if (p.classFile(MethodHandle).isEmpty) {
             val dms = result.computeIfAbsent(MethodHandle, _ ⇒ new ConcurrentHashMap)
-            for (vm ← methodHandleSignaturePolymorphicMethods) {
-                if (dms.put(new MethodContext(vm.name, vm.descriptor), vm) != null) {
+            for (dm ← methodHandleSignaturePolymorphicMethods) {
+                if (dms.put(new MethodContext(dm.name, dm.descriptor), dm) != null) {
                     throw new UnknownError("creation of declared methods failed")
                 }
             }
         }
         if (p.classFile(VarHandle).isEmpty) {
             val dms = result.computeIfAbsent(VarHandle, _ ⇒ new ConcurrentHashMap)
-            for (vm ← varHandleSignaturePolymorphicMethods) {
-                if (dms.put(new MethodContext(vm.name, vm.descriptor), vm) != null) {
+            for (dm ← varHandleSignaturePolymorphicMethods) {
+                if (dms.put(new MethodContext(dm.name, dm.descriptor), dm) != null) {
                     throw new UnknownError("creation of declared methods failed")
                 }
             }
