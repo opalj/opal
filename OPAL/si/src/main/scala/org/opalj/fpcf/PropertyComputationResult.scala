@@ -291,3 +291,12 @@ private[fpcf] case class CSCCsResult(
 
 }
 private[fpcf] object CSCCsResult { private[fpcf] final val id = 8 }
+
+/** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
+private[fpcf] case class IdempotentResult(
+        finalEP: SomeFinalEP
+) extends FinalPropertyComputationResult {
+    private[fpcf] final def id = IdempotentResult.id
+
+}
+private[fpcf] object IdempotentResult { private[fpcf] final val id = 9 }
