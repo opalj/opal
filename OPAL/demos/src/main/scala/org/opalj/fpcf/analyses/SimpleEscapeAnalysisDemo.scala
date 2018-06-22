@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.Project
 import java.net.URL
 
 import org.opalj.ai.common.DefinitionSite
@@ -38,28 +37,29 @@ import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeViaStaticField
-import org.opalj.fpcf.properties.NoEscape
+import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
+import org.opalj.fpcf.properties.EscapeViaParameter
 import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
 import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
+import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
+import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.NoEscape
 import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.info
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * A small demo that shows how to use the [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]]
@@ -92,6 +92,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
+        PropertyStore.updateDebug(true)
 
         // Get the TAC code for all methods to make it possible to measure the time for
         // the analysis itself.
@@ -101,6 +102,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
+            propertyStore.setupPhase(Set(EscapeProperty.key))
             EagerSimpleEscapeAnalysis.start(project)
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
