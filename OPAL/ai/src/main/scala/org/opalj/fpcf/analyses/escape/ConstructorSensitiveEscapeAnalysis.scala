@@ -67,7 +67,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     abstract protected[this] override def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        assert(call.name == "<init>", "caller is not an interface")
+        assert(call.name == "<init>", "method is not a constructor")
         assert(context.usesDefSite(call.receiver), "call receiver does not use def-site")
 
         // the object constructor will not escape the this local
@@ -81,11 +81,12 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         constructor match {
             case Success(callee) ⇒
                 // check if the this local escapes in the callee
-                val escapeState = context.propertyStore(
-                    context.virtualFormalParameters(context.declaredMethods(callee))(0),
-                    EscapeProperty.key
-                )
-                handleEscapeState(escapeState)
+
+                val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
+                if (fp != context.entity) {
+                    val escapeState = context.propertyStore(fp, EscapeProperty.key)
+                    handleEscapeState(escapeState)
+                }
             case /* unknown method */ _ ⇒ state.meetMostRestrictive(AtMost(NoEscape))
         }
     }
