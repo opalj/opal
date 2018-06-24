@@ -123,7 +123,8 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                     cf.thisType.toJava+"{"+
                         epsThrowingExceptionsPerMethod.map { eps: SomeEPS ⇒
                             val m: Method = eps.e.asInstanceOf[Method]
-                            m.descriptor.toJava(m.name)+" "+eps.ub.toString
+                            val ThrownExceptionsProperty(types) = eps.ub
+                            m.descriptor.toJava(m.name)+" throws "+types.toString
                         }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n")+
                         "}"
 
