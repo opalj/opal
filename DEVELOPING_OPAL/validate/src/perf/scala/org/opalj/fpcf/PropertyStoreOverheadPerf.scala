@@ -53,15 +53,15 @@ import org.opalj.log.LogContext
 import org.opalj.sbt.perf.spec.PerfSpec
 import org.opalj.support.info.Purity.supportingAnalyses
 
-class L1TE_RAPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalyisOverhead {
+class L1TE_RAPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalysisOverhead {
     override def getPropertyStore: String = "org.opalj.fpcf.par.ReactiveAsyncPropertyStore"
 }
 
-class L1TE_EPKPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalyisOverhead {
+class L1TE_EPKPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalysisOverhead {
     override def getPropertyStore: String = "org.opalj.fpcf.seq.EPKSequentialPropertyStore"
 }
 
-class L1TE_PKEPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalyisOverhead {
+class L1TE_PKEPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalysisOverhead {
     override def getPropertyStore: String = "org.opalj.fpcf.seq.PKESequentialPropertyStore"
 }
 
@@ -77,7 +77,8 @@ class L2P_PKEPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L2
     override def getPropertyStore: String = "org.opalj.fpcf.seq.PKESequentialPropertyStore"
 }
 
-trait L1ThrownExceptionsAnalyisOverhead extends PropertyStoreOverheadPerf {
+trait L1ThrownExceptionsAnalysisOverhead extends PropertyStoreOverheadPerf {
+    override def analysisName: String = "L1ThrownExceptionsAnalysis"
     override def startAnalysis(): Unit = {
         ps.setupPhase(
             Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
@@ -89,6 +90,7 @@ trait L1ThrownExceptionsAnalyisOverhead extends PropertyStoreOverheadPerf {
 }
 
 trait L2PurityAnalysisOverhead extends PropertyStoreOverheadPerf {
+    override def analysisName: String = "L2PurityAnalysis"
     override def startAnalysis(): Unit = {
         ps.setupPhase(
             Set(
@@ -117,12 +119,13 @@ abstract class PropertyStoreOverheadPerf extends PerfSpec {
     implicit val logContext: LogContext = GlobalLogContext
 
     def getPropertyStore: String
+    def analysisName: String
     def startAnalysis(): Unit
 
     val baseConfig: Config = ConfigFactory.load()
     val propertyStoreImplementation = ConfigKeyPrefix+"PropertyStoreImplementation"
 
-    println(s"*** Running analysis using $getPropertyStore ***")
+    println(s"*** Running $analysisName using $getPropertyStore ***")
     Console.out.flush()
 
     val project = buildProject(getPropertyStore)

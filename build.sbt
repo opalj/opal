@@ -306,7 +306,7 @@ lazy val `OPAL-Validate` = (project in file("DEVELOPING_OPAL/validate"))
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
     libraryDependencies ++= Dependencies.validate,
     compileOrder in Test := CompileOrder.Mixed,
-    forkedJvmOptions in Perf := Seq("-Xmx8192M")
+    forkedJvmOptions in Perf := Seq("-Xmx10240M")
   )
   .dependsOn(DeveloperTools % "compile->compile;test->test;it->it;it->test")
   .configs(IntegrationTest)
