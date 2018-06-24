@@ -341,7 +341,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         if (!areAllExceptionsCollected) {
             assert(
                 result ne null,
-                "all exceptions are exepcted to be collected but the set is null"
+                "all exceptions are expected to be collected but the set is null"
             )
             return Result(m, result);
         }
@@ -375,14 +375,16 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     UnknownExceptionIsThrown |
                     AnalysisLimitation |
                     UnresolvedInvokeDynamicInstruction ⇒
-                    return Result(m, MethodCalledThrowsUnknownExceptions)
+                    return Result(m, MethodCalledThrowsUnknownExceptions);
+
                 case te: ThrownExceptions ⇒
                     exceptions = exceptions ++ te.types.concreteTypes
 
                 // Properties from ThrownExceptionsByOverridingMethods
                 case ThrownExceptionsByOverridingMethods.SomeException |
                     ThrownExceptionsByOverridingMethods.MethodIsOverridable ⇒
-                    return Result(m, MethodCalledThrowsUnknownExceptions)
+                    return Result(m, MethodCalledThrowsUnknownExceptions);
+
                 case tebom: ThrownExceptionsByOverridingMethods ⇒
                     exceptions = exceptions ++ tebom.exceptions.concreteTypes
             }
@@ -408,10 +410,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 }
 
 abstract class ThrownExceptionsAnalysis extends ComputationSpecification {
-    override def uses: Set[PropertyKind] = {
-        Set(ThrownExceptionsByOverridingMethods)
-    }
-
+    override def uses: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
     override def derives: Set[PropertyKind] = Set(ThrownExceptions)
 }
 
@@ -436,15 +435,6 @@ object EagerL1ThrownExceptionsAnalysis
         analysis
     }
 
-    /** Registers an analysis to compute the thrown exceptions lazily. */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
-            ThrownExceptions.key,
-            analysis.lazilyDetermineThrownExceptions
-        )
-        analysis
-    }
 }
 
 /**
