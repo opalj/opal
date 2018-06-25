@@ -305,7 +305,7 @@ object Purity extends PurityPropertyMetaInformation {
                                     true
 
                                 // Reference comparisons may have different results for structurally equal values
-                                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
+                                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
                                     false
 
                                 case _ ⇒

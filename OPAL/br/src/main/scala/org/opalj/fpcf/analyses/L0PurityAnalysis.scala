@@ -192,7 +192,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 // hence, we can ignore the monitor related implicit exception
 
                 // Reference comparisons may have different results for structurally equal values
-                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
                     return Result(definedMethod, ImpureByAnalysis);
 
                 case _ ⇒
