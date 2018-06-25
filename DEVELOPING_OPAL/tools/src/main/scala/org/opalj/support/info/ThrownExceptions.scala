@@ -44,7 +44,8 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
-import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger
+import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -83,6 +84,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
+        var executionTime: Nanoseconds = Nanoseconds.None
         val ps: PropertyStore = time {
 
             if (parameters.contains(AnalysisLevelL0)) {
@@ -90,9 +92,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 val ps = project.get(PropertyStoreKey)
                 ps.setupPhase(Set.empty) // <= ALWAYS REQUIRED.
                 // We have to query the properties...
-                project.allMethods.foreach { m ⇒
-                    ps.force(m, ThrownExceptionsProperty.key)
-                }
+                project.allMethods foreach { m ⇒ ps.force(m, ThrownExceptionsProperty.key) }
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
@@ -101,9 +101,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                     EagerL1ThrownExceptionsAnalysis
                 )
             }
-        } { t ⇒
-            info("analysis progress", "execution time: "+t.toSeconds)(project.logContext)
-        }
+        } { t ⇒ executionTime = t }
 
         val allMethods = ps.entities(ThrownExceptionsProperty.key).toIterable
         val (epsNotThrowingExceptions, otherEPS) =
@@ -126,12 +124,18 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                     cf.thisType.toJava+"{"+
                         epsThrowingExceptionsPerMethod.map { eps: SomeEPS ⇒
                             val m: Method = eps.e.asInstanceOf[Method]
-                            m.descriptor.toJava(m.name)+" "+eps.ub.toString
+                            val ThrownExceptionsProperty(types) = eps.ub
+                            m.descriptor.toJava(m.name)+" throws "+types.toString
                         }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n")+
                         "}"
 
                 }.mkString("\n", "\n", "\n")
             }
+
+        OPALLogger.info(
+            "analysis framework",
+            ps.statistics.map(e ⇒ e.toString()).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+        )(project.logContext)
 
         BasicReport(
             "\nThrown Exceptions Information:\n"+
@@ -144,7 +148,8 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 s"${methodsThrowingExceptions.size + epsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions == 0: ${epsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions == 0 and private: ${privateMethodsNotThrowingExceptions.size}\n"+
-                s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n"
+                s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n"+
+                s"execution time: ${executionTime.toSeconds}\n"
         )
     }
 }

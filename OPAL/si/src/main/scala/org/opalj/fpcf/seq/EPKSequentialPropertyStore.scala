@@ -93,6 +93,16 @@ final class EPKSequentialPropertyStore private (
 
     def fastTrackPropertiesCount: Int = 0 // The EPK store does not support fast track properties
 
+    def statistics: Map[String, Int] = {
+        Map(
+            "scheduled tasks" -> scheduledTasksCount,
+            "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
+            "immediate on update computations" -> immediateOnUpdateComputationsCount,
+            "quiescence" -> quiescenceCount,
+            "resolved cSCCs" -> resolvedCSCCsCount
+        )
+    }
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -197,7 +207,8 @@ final class EPKSequentialPropertyStore private (
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
-        e: E
+        e:  E,
+        pk: SomePropertyKey
     )(
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
@@ -230,7 +241,7 @@ final class EPKSequentialPropertyStore private (
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
                         ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
-                        scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                        scheduleEagerComputationForEntity(e, pk)(lc.asInstanceOf[PropertyComputation[E]])
                         // return the "current" result
                         epk
 
@@ -259,7 +270,7 @@ final class EPKSequentialPropertyStore private (
                             // create PropertyValue to ensure that we do not schedule
                             // multiple (lazy) computations => the entity is now known
                             pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
-                            scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                            scheduleEagerComputationForEntity(e, pk)(lc.asInstanceOf[PropertyComputation[E]])
                             epk
 
                         case None ⇒
@@ -510,9 +521,12 @@ final class EPKSequentialPropertyStore private (
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+                npcs foreach { npc ⇒
+                    val (pc, e, pk) = npc
+                    scheduleEagerComputationForEntity(e, pk)(pc)
+                }
 
             //
             // Methods which actually store results...

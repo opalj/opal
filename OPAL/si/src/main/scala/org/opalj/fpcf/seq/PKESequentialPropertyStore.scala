@@ -97,6 +97,17 @@ final class PKESequentialPropertyStore private (
     private[this] var fastTrackPropertiesCounter = 0
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
+    def statistics: Map[String, Int] = {
+        Map(
+            "scheduled tasks" -> scheduledTasksCount,
+            "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
+            "fast-track properties" -> fastTrackPropertiesCount,
+            "computations of fallback properties for computed properties" -> fallbacksUsedForComputedPropertiesCounter,
+            "quiescence" -> quiescenceCount,
+            "resolved cSCCs" -> resolvedCSCCsCount
+        )
+    }
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -296,7 +307,8 @@ final class PKESequentialPropertyStore private (
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
-        e: E
+        e:  E,
+        pk: SomePropertyKey
     )(
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
@@ -469,9 +481,11 @@ final class PKESequentialPropertyStore private (
             // compute a/some property/properties for a given entity.
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+                npcs foreach { npc ⇒
+                    val (pc, e, pk) = npc; scheduleEagerComputationForEntity(e, pk)(pc)
+                }
 
             case Results.id ⇒
                 val Results(results) = r

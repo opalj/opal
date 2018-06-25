@@ -56,6 +56,8 @@ import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
+import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.PropertyMatcher
 
 /**
@@ -309,6 +311,17 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
         } // to ensure that this project is not "polluted"
+        p.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                val ps = PKEParallelTasksPropertyStore.create(
+                    new RecordAllPropertyStoreTracer,
+                    context.iterator.map(_.asTuple).toMap
+                )(p.logContext)
+                PropertyStore.updateDebug(true)
+                ps
+            }
+        )
         val ps = p.get(PropertyStoreKey)
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
