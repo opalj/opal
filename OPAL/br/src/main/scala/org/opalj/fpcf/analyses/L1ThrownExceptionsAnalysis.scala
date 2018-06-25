@@ -425,7 +425,7 @@ object EagerL1ThrownExceptionsAnalysis
      */
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(project)
-        val allMethods = project.allMethodsWithBody
+        val allMethods = project.allMethods
         propertyStore.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
