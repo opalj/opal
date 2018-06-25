@@ -87,7 +87,7 @@ sealed abstract class IntTrieSet
     def +!(value: Int): IntTrieSet
 
     /**
-     * @see [[+!]] for details!
+     * @see `+!(Int)` for details!
      */
     final def ++!(that: IntTrieSet): IntTrieSet = {
         that.foldLeft(this)(_ +! _) // We have to expand `this`!

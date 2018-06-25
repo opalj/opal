@@ -33,6 +33,7 @@ package par
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable.ArrayBuffer
+import java.io.File
 
 trait PropertyStoreTracer {
 
@@ -76,6 +77,8 @@ trait PropertyStoreTracer {
 
 sealed trait StoreEvent {
     def eventId: Int
+
+    def toTxt : String
 }
 
 case class LazyComputationScheduled(
@@ -87,6 +90,10 @@ case class LazyComputationScheduled(
     override def toString: String = {
         s"LazyComputationScheduled($eventId,$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
     }
+
+    override def toTxt: String = {
+        s"$eventId: LazyComputationScheduled($e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+    }
 }
 
 case class PropertyUpdate(
@@ -96,13 +103,20 @@ case class PropertyUpdate(
 ) extends StoreEvent {
 
     override def toString: String = s"PropertyUpdate($eventId,oldEPS=$oldEPS,newEPS=$newEPS)"
+    override def toTxt: String = s"$eventId: PropertyUpdate(oldEPS=$oldEPS,newEPS=$newEPS)"
 }
 
 case class DependerNotification(
         eventId:     Int,
         newEPS:      SomeEPS,
         dependerEPK: SomeEPK
-) extends StoreEvent
+) extends StoreEvent {
+
+    override def toTxt : String = {
+        s"$eventId: DependerNotification(newEPS=$newEPS, dependerEPK=$dependerEPK)"
+    }
+
+}
 
 case class ImmediateDependeeUpdate(
         eventId: Int,
@@ -110,27 +124,57 @@ case class ImmediateDependeeUpdate(
         lb:      Property, ub: Property,
         processedDependee: SomeEOptionP,
         currentDependee:   SomeEPS
-) extends StoreEvent
+) extends StoreEvent {
+
+    override def toTxt : String = {
+        s"$eventId: ImmediateDependeeUpdate($e@${System.identityHashCode(e).toHexString},"+
+            s"lb=$lb,processedDependee=$processedDependee, currentDependee=$currentDependee)"
+    }
+
+}
 
 case class HandlingResult(
         eventId:         Int,
         r:               PropertyComputationResult,
         forceEvaluation: Boolean
-) extends StoreEvent
+) extends StoreEvent {
+
+    override def toTxt : String = {
+        s"$eventId: HandlingResult($r,forceEvaluation=$forceEvaluation)"
+    }
+
+}
 
 case class MetaInformationDeleted(
         eventId: Int,
         finalEP: SomeFinalEP
-) extends StoreEvent
+) extends StoreEvent {
+
+    override def toTxt : String = {
+        s"$eventId: MetaInformationDeleted(${finalEP.toEPK})"
+    }
+
+}
 
 case class FirstException(
         eventId:    Int,
         t:          Throwable,
         thread:     String,
         stackTrace: String
-) extends StoreEvent
+) extends StoreEvent {
 
-case class ReachedQuiescence(eventId: Int) extends StoreEvent
+    override def toTxt : String = {
+        s"$eventId: FirstException(\n\t$t,\n\t$thread,\n\t$stackTrace\n)"
+    }
+
+}
+
+case class ReachedQuiescence(eventId: Int) extends StoreEvent {
+
+    override def toTxt : String = {
+        s"$eventId: ReachedQuiescence"
+    }
+}
 
 class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
 
@@ -162,7 +206,10 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         events += DependerNotification(eventCounter.incrementAndGet(), newEPS, dependerEPK)
     }
 
-    def immediateDependeeUpdate(e: Entity, lb: Property, ub: Property, processedDependee: SomeEOptionP, currentDependee: SomeEPS) = {
+    def immediateDependeeUpdate(
+                                   e: Entity, lb: Property, ub: Property,
+                                   processedDependee: SomeEOptionP, currentDependee: SomeEPS
+                               ): Unit = {
         events += ImmediateDependeeUpdate(
             eventCounter.incrementAndGet(),
             e, lb, ub,
@@ -190,5 +237,22 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
             Thread.currentThread().getName,
             Thread.currentThread().getStackTrace.mkString("\n\t", "\n\t", "\n") // dropWhile(_.getMethodName != "handleException")
         )
+    }
+
+    def toTxt : String = {
+        allEvents.map{e =>
+            e match {
+                case _: HandlingResult => "\n"+e.toString
+                case e => "\t"+e.toString
+            }
+        }.mkString("Events [\n","\n","\n]")
+    }
+
+    def writeAsTxt : File = {
+        org.opalj.io.write(toTxt,"Property Store Events",".txt")
+    }
+
+    def writeAsTxtAndOpen : File = {
+        org.opalj.io.writeAndOpen(toTxt,"Property Store Events",".txt")
     }
 }

@@ -219,8 +219,9 @@ final case object CheapPropertyComputation extends PropertyComputationHint
  * hierarchy.
  */
 case class IncrementalResult[E <: Entity](
-        result:           PropertyComputationResult,
-        nextComputations: Traversable[(PropertyComputation[E], E)]
+        result:                   PropertyComputationResult,
+        nextComputations:         Traversable[(PropertyComputation[E], E)],
+        propertyComputationsHint: PropertyComputationHint                  = DefaultPropertyComputation
 ) extends PropertyComputationResult {
 
     private[fpcf] final def id = IncrementalResult.id
