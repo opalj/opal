@@ -93,6 +93,16 @@ final class EPKSequentialPropertyStore private (
 
     def fastTrackPropertiesCount: Int = 0 // The EPK store does not support fast track properties
 
+    def statistics: Map[String, Int] = {
+        Map(
+            "scheduled tasks" -> scheduledTasksCount,
+            "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
+            "immediate on update computations" -> immediateOnUpdateComputationsCount,
+            "quiescence" -> quiescenceCount,
+            "resolved cSCCs" -> resolvedCSCCsCount
+        )
+    }
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -510,7 +520,7 @@ final class EPKSequentialPropertyStore private (
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 

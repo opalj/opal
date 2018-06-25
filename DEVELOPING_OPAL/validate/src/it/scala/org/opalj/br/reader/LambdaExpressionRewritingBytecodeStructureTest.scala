@@ -143,7 +143,7 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
                 val verifiedMethodsCount =
                     testProject(lambdas, (p, m) ⇒ BaseDomain(p, m)) +
                         testProject(lambdas, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
-            info(s"interpreted ${verifiedMethodsCount / 2} methods")
+                info(s"interpreted ${verifiedMethodsCount / 2} methods")
             }
         }
 

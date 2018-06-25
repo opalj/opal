@@ -44,6 +44,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
+import org.opalj.log.OPALLogger
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -130,6 +131,11 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
 
                 }.mkString("\n", "\n", "\n")
             }
+
+        OPALLogger.info(
+            "analysis framework",
+            ps.statistics.map(e ⇒ e.toString()).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+        )(project.logContext)
 
         BasicReport(
             "\nThrown Exceptions Information:\n"+

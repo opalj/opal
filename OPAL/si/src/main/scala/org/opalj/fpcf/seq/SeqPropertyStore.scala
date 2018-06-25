@@ -35,6 +35,4 @@ package seq
  *
  * @author Michael Eichberg
  */
-abstract class SeqPropertyStore extends PropertyStore {
-
-}
+abstract class SeqPropertyStore extends PropertyStore

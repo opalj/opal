@@ -97,6 +97,17 @@ final class PKESequentialPropertyStore private (
     private[this] var fastTrackPropertiesCounter = 0
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
+    def statistics: Map[String, Int] = {
+        Map(
+            "scheduled tasks" -> scheduledTasksCount,
+            "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
+            "fast-track properties" -> fastTrackPropertiesCount,
+            "computations of fallback properties for computed properties" -> fallbacksUsedForComputedPropertiesCounter,
+            "quiescence" -> quiescenceCount,
+            "resolved cSCCs" -> resolvedCSCCsCount
+        )
+    }
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -202,33 +213,34 @@ final class PKESequentialPropertyStore private (
             case null ⇒
                 // the entity is unknown ...
                 val isComputed = computedPropertyKinds(pkId)
-                val fastTrackPropertyOption: Option[P] =
-                    if (isComputed && useFastTrackPropertyComputations)
-                        fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
-                    else
-                        None
-                fastTrackPropertyOption match {
-                    case Some(p) ⇒
-                        fastTrackPropertiesCounter += 1
-                        set(e, p)
-                        FinalEP(e, p.asInstanceOf[P])
-                    case None ⇒
-                        lazyComputations(pkId) match {
-                            case null ⇒
-                                if (debug && computedPropertyKinds == null) {
-                                    throw new IllegalStateException("setup phase was not called")
-                                }
-                                if (isComputed || delayedPropertyKinds(pkId)) {
-                                    epk
-                                } else {
-                                    val p = fallbackPropertyBasedOnPkId(this, e, pkId)
-                                    if (force) {
-                                        set(e, p)
-                                    }
-                                    FinalEP(e, p.asInstanceOf[P])
-                                }
 
-                            case lc: PropertyComputation[E] @unchecked ⇒
+                lazyComputations(pkId) match {
+                    case null ⇒
+                        if (debug && computedPropertyKinds == null) {
+                            throw new IllegalStateException("setup phase was not called")
+                        }
+                        if (isComputed || delayedPropertyKinds(pkId)) {
+                            epk
+                        } else {
+                            val p = fallbackPropertyBasedOnPkId(this, e, pkId)
+                            if (force) {
+                                set(e, p)
+                            }
+                            FinalEP(e, p.asInstanceOf[P])
+                        }
+
+                    case lc: PropertyComputation[E] @unchecked ⇒
+                        val fastTrackPropertyOption: Option[P] =
+                            if (isComputed && useFastTrackPropertyComputations)
+                                fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                            else
+                                None
+                        fastTrackPropertyOption match {
+                            case Some(p) ⇒
+                                fastTrackPropertiesCounter += 1
+                                set(e, p)
+                                FinalEP(e, p.asInstanceOf[P])
+                            case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
                                 // multiple (lazy) computations => the entity is now known
                                 ps(pkId).put(e, PropertyValue.lazilyComputed)
@@ -469,7 +481,7 @@ final class PKESequentialPropertyStore private (
             // compute a/some property/properties for a given entity.
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ ) = r
+                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 

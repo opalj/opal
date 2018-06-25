@@ -245,6 +245,9 @@ abstract class PropertyStore {
     /** The number of properties that were computed using a fast-track. */
     def fastTrackPropertiesCount: Int
 
+    /** Core statistics. */
+    def statistics: Map[String, Int]
+
     //
     //
     // CORE FUNCTIONALITY
