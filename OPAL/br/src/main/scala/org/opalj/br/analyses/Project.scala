@@ -1253,27 +1253,27 @@ object Project {
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
                 }
-                if(methodO.isDefined){
+                if (methodO.isDefined) {
                     // If there already is a method and it is from an interface, then it is not
                     // maximally specific and must be replaced. If it is from a class however, we
                     // must keep it.
-                    if(classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown){
+                    if (classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown) {
                         definedMethods = definedMethods.filterNot { definedMethod ⇒
                             definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                                 definedMethod.name == inheritedInterfaceMethod.name
                         }
-                        if(!inheritedInterfaceMethod.isAbstract)
+                        if (!inheritedInterfaceMethod.isAbstract)
                             definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                     }
-                }else {
-                    if(!inheritedInterfaceMethod.isAbstract)
-                    definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
+                } else {
+                    if (!inheritedInterfaceMethod.isAbstract)
+                        definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                 }
             }
 
             for {
                 superinterfaceType ← superinterfaceTypes
-                superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)
+                superinterfaceClassfile ← objectTypeToClassFile(superinterfaceType)
                 superinterfaceTypeMethod ← superinterfaceClassfile.methods
             } {
                 interfaceMethods :&:= superinterfaceTypeMethod
