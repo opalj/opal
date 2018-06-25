@@ -140,24 +140,32 @@ case class IntermediateResult[P <: Property](
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
 ) extends PropertyComputationResult {
 
     if (PropertyStore.Debug) {
         if (lb == ub) {
-            throw new IllegalArgumentException(
-                s"intermediate result with equal bounds: $this"
-            )
+            throw new IllegalArgumentException(s"intermediate result with equal bounds: $this")
         }
         if (dependees.isEmpty) {
             throw new IllegalArgumentException(
-                s"intermediate result $this without open dependencies "+
-                    "(use IncrementalResult for collaboratively computed results)"
+                s"intermediate result without dependencies: $this"+
+                    " (use PartialResult for collaboratively computed results)"
             )
         }
         if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
+        if (lb.isOrderedProperty) {
+            val ubAsOP = ub.asOrderedProperty
+            ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+        }
+        if (ub.key != lb.key) {
+            throw new IllegalArgumentException(
+                s"property keys for lower ${lb.key} and upper ${ub.key} bound don't match"
             )
         }
     }
@@ -168,7 +176,7 @@ case class IntermediateResult[P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(e, lb, ub, otherDependees, _) if (
+            case IntermediateResult(e, lb, ub, otherDependees, _, _) if (
                 (this.e eq e) && this.lb == lb && this.ub == ub
             ) ⇒
                 val dependees = this.dependees
@@ -188,6 +196,14 @@ case class IntermediateResult[P <: Property](
 private[fpcf] object IntermediateResult {
     private[fpcf] final val id = 3
 }
+
+sealed trait PropertyComputationHint
+final case object DefaultPropertyComputation extends PropertyComputationHint
+/**
+ * The on update continuation is extremely cheap and -- therefore -- can/should be processed in
+ * the current thread, it is extremely unlikely that we will gain anything from parallelization.
+ */
+final case object CheapPropertyComputation extends PropertyComputationHint
 
 /**
  * Encapsulates some result and also some computations that should be scheduled after the results
@@ -284,3 +300,12 @@ private[fpcf] case class CSCCsResult(
 
 }
 private[fpcf] object CSCCsResult { private[fpcf] final val id = 8 }
+
+/** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
+private[fpcf] case class IdempotentResult(
+        finalEP: SomeFinalEP
+) extends FinalPropertyComputationResult {
+    private[fpcf] final def id = IdempotentResult.id
+
+}
+private[fpcf] object IdempotentResult { private[fpcf] final val id = 9 }

@@ -26,31 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf
-package par
+package org.opalj
+package fpcf
+package seq
 
-class PKEParallelTasksPropertyStoreTestWithDebugging
-    extends PropertyStoreTestWithDebugging(
-        List(DefaultPropertyComputation, CheapPropertyComputation)
-    ) {
-
-    def createPropertyStore(): PropertyStore = {
-        val ps = PKEParallelTasksPropertyStore(new RecordAllPropertyStoreTracer)
-        ps.suppressError = true
-        ps
-    }
-
-}
-
-class PKEParallelTasksPropertyStoreTestWithoutDebugging
-    extends PropertyStoreTestWithoutDebugging(
-        List(DefaultPropertyComputation, CheapPropertyComputation)
-    ) {
-
-    def createPropertyStore(): PropertyStore = {
-        val ps = PKEParallelTasksPropertyStore(new RecordAllPropertyStoreTracer)
-        ps.suppressError = true
-        ps
-    }
+/**
+ * Non-concurrent implementation of the property store.
+ *
+ * @author Michael Eichberg
+ */
+abstract class SeqPropertyStore extends PropertyStore {
 
 }
