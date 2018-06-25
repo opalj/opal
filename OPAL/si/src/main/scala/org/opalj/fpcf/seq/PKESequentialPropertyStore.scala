@@ -307,8 +307,7 @@ final class PKESequentialPropertyStore private (
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
-        e:  E,
-        pk: SomePropertyKey
+        e: E
     )(
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
@@ -483,9 +482,7 @@ final class PKESequentialPropertyStore private (
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
-                npcs foreach { npc ⇒
-                    val (pc, e, pk) = npc; scheduleEagerComputationForEntity(e, pk)(pc)
-                }
+                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
             case Results.id ⇒
                 val Results(results) = r

@@ -499,16 +499,8 @@ final class PKEParallelTasksPropertyStore private (
     private[this] def scheduleComputationForEntity[E <: Entity](
         e:               E,
         pc:              PropertyComputation[E],
-        pk:              SomePropertyKey,
         forceEvaluation: Boolean
     ): Unit = {
-        /*
-val fastTrackPropertyOption: Option[P] =
-    if (isComputedPropertyKind && useFastTrackPropertyComputations)
-        fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
-    else
-        None
-*/
         scheduledTasksCounter.incrementAndGet()
         appendTask(new InitialPropertyComputationTask[E](this, e, pc, forceEvaluation))
     }
@@ -524,12 +516,11 @@ val fastTrackPropertyOption: Option[P] =
 
     // Thread Safe!
     override def scheduleEagerComputationForEntity[E <: Entity](
-        e:  E,
-        pk: SomePropertyKey
+        e: E
     )(
         pc: PropertyComputation[E]
     ): Unit = {
-        scheduleComputationForEntity(e, pc, pk, forceEvaluation = true)
+        scheduleComputationForEntity(e, pc, forceEvaluation = true)
     }
 
     // Thread Safe!
@@ -762,7 +753,7 @@ val fastTrackPropertyOption: Option[P] =
     }
 
     // Used to store immediate results, which need to be handled immediately
-    // private[this] var resultsToHandle: List[PropertyComputationResult] = Nil
+    private[this] var resultsToHandle: List[PropertyComputationResult] = Nil
 
     private[this] def doHandleResult(
         r:                         PropertyComputationResult,
@@ -794,19 +785,18 @@ val fastTrackPropertyOption: Option[P] =
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs, propertyComputationsHint) = r
                 doHandleResult(ir, forceEvaluation, false)
-                /*
                 if (propertyComputationsHint == CheapPropertyComputation) {
                     npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
-                        val (pc, e, pk) = npc
+                        val (pc, e) = npc
                         resultsToHandle ::= pc(e)
                     }
                 } else {
-                    */
-                npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
-                    val (pc, e, pk) = npc
-                    scheduleComputationForEntity(e, pc, pk, forceEvaluation)
+                    npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        val (pc, e) = npc
+                        scheduleComputationForEntity(e, pc, forceEvaluation)
+
+                    }
                 }
-            // }
 
             //
             // Methods which actually store results...
