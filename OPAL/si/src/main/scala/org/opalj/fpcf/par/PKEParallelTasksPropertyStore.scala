@@ -1009,8 +1009,7 @@ final class PKEParallelTasksPropertyStore private (
                         val dependeesOfEntity = this.dependees(pkId)
                         val dependersOfEntity = this.dependers(pkId)
                         this.properties(pkId) forEach { (e, eps) ⇒
-                            if (dependeesOfEntity.contains(e) &&
-                                dependersOfEntity.contains(e)) {
+                            if (dependeesOfEntity.contains(e) && dependersOfEntity.contains(e)) {
                                 epks += eps.toEPK
                             }
                         }
@@ -1115,4 +1114,20 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
             Some(tracer)
         )
     }
+
+    def create(
+        tracer:  PropertyStoreTracer,
+        context: Map[Type, AnyRef] // ,PropertyStoreContext[_ <: AnyRef]*
+    )(
+        implicit
+        logContext: LogContext
+    ): PKEParallelTasksPropertyStore = {
+
+        new PKEParallelTasksPropertyStore(
+            context,
+            NumberOfThreadsForProcessingPropertyComputations,
+            Some(tracer)
+        )
+    }
+
 }
