@@ -31,9 +31,11 @@ package fpcf
 package par
 
 import java.util.concurrent.atomic.AtomicInteger
+import java.io.File
 
 import scala.collection.mutable.ArrayBuffer
-import java.io.File
+
+import org.opalj.io
 
 trait PropertyStoreTracer {
 
@@ -78,7 +80,7 @@ trait PropertyStoreTracer {
 sealed trait StoreEvent {
     def eventId: Int
 
-    def toTxt : String
+    def toTxt: String
 }
 
 case class LazyComputationScheduled(
@@ -112,7 +114,7 @@ case class DependerNotification(
         dependerEPK: SomeEPK
 ) extends StoreEvent {
 
-    override def toTxt : String = {
+    override def toTxt: String = {
         s"$eventId: DependerNotification(newEPS=$newEPS, dependerEPK=$dependerEPK)"
     }
 
@@ -126,7 +128,7 @@ case class ImmediateDependeeUpdate(
         currentDependee:   SomeEPS
 ) extends StoreEvent {
 
-    override def toTxt : String = {
+    override def toTxt: String = {
         s"$eventId: ImmediateDependeeUpdate($e@${System.identityHashCode(e).toHexString},"+
             s"lb=$lb,processedDependee=$processedDependee, currentDependee=$currentDependee)"
     }
@@ -139,7 +141,7 @@ case class HandlingResult(
         forceEvaluation: Boolean
 ) extends StoreEvent {
 
-    override def toTxt : String = {
+    override def toTxt: String = {
         s"$eventId: HandlingResult($r,forceEvaluation=$forceEvaluation)"
     }
 
@@ -150,7 +152,7 @@ case class MetaInformationDeleted(
         finalEP: SomeFinalEP
 ) extends StoreEvent {
 
-    override def toTxt : String = {
+    override def toTxt: String = {
         s"$eventId: MetaInformationDeleted(${finalEP.toEPK})"
     }
 
@@ -163,7 +165,7 @@ case class FirstException(
         stackTrace: String
 ) extends StoreEvent {
 
-    override def toTxt : String = {
+    override def toTxt: String = {
         s"$eventId: FirstException(\n\t$t,\n\t$thread,\n\t$stackTrace\n)"
     }
 
@@ -171,7 +173,7 @@ case class FirstException(
 
 case class ReachedQuiescence(eventId: Int) extends StoreEvent {
 
-    override def toTxt : String = {
+    override def toTxt: String = {
         s"$eventId: ReachedQuiescence"
     }
 }
@@ -207,9 +209,9 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     }
 
     def immediateDependeeUpdate(
-                                   e: Entity, lb: Property, ub: Property,
-                                   processedDependee: SomeEOptionP, currentDependee: SomeEPS
-                               ): Unit = {
+        e: Entity, lb: Property, ub: Property,
+        processedDependee: SomeEOptionP, currentDependee: SomeEPS
+    ): Unit = {
         events += ImmediateDependeeUpdate(
             eventCounter.incrementAndGet(),
             e, lb, ub,
@@ -239,20 +241,20 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         )
     }
 
-    def toTxt : String = {
-        allEvents.map{e =>
+    def toTxt: String = {
+        allEvents.map { e ⇒
             e match {
-                case _: HandlingResult => "\n"+e.toString
-                case e => "\t"+e.toString
+                case _: HandlingResult ⇒ "\n"+e.toTxt
+                case e                 ⇒ "\t"+e.toTxt
             }
-        }.mkString("Events [\n","\n","\n]")
+        }.mkString("Events [\n", "\n", "\n]")
     }
 
-    def writeAsTxt : File = {
-        org.opalj.io.write(toTxt,"Property Store Events",".txt")
+    def writeAsTxt: File = {
+        io.write(toTxt, "Property Store Events", ".txt").toFile
     }
 
-    def writeAsTxtAndOpen : File = {
-        org.opalj.io.writeAndOpen(toTxt,"Property Store Events",".txt")
+    def writeAsTxtAndOpen: File = {
+        io.writeAndOpen(toTxt, "Property Store Events", ".txt")
     }
 }

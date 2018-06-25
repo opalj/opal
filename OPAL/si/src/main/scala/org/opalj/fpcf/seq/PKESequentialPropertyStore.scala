@@ -213,33 +213,34 @@ final class PKESequentialPropertyStore private (
             case null ⇒
                 // the entity is unknown ...
                 val isComputed = computedPropertyKinds(pkId)
-                val fastTrackPropertyOption: Option[P] =
-                    if (isComputed && useFastTrackPropertyComputations)
-                        fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
-                    else
-                        None
-                fastTrackPropertyOption match {
-                    case Some(p) ⇒
-                        fastTrackPropertiesCounter += 1
-                        set(e, p)
-                        FinalEP(e, p.asInstanceOf[P])
-                    case None ⇒
-                        lazyComputations(pkId) match {
-                            case null ⇒
-                                if (debug && computedPropertyKinds == null) {
-                                    throw new IllegalStateException("setup phase was not called")
-                                }
-                                if (isComputed || delayedPropertyKinds(pkId)) {
-                                    epk
-                                } else {
-                                    val p = fallbackPropertyBasedOnPkId(this, e, pkId)
-                                    if (force) {
-                                        set(e, p)
-                                    }
-                                    FinalEP(e, p.asInstanceOf[P])
-                                }
 
-                            case lc: PropertyComputation[E] @unchecked ⇒
+                lazyComputations(pkId) match {
+                    case null ⇒
+                        if (debug && computedPropertyKinds == null) {
+                            throw new IllegalStateException("setup phase was not called")
+                        }
+                        if (isComputed || delayedPropertyKinds(pkId)) {
+                            epk
+                        } else {
+                            val p = fallbackPropertyBasedOnPkId(this, e, pkId)
+                            if (force) {
+                                set(e, p)
+                            }
+                            FinalEP(e, p.asInstanceOf[P])
+                        }
+
+                    case lc: PropertyComputation[E] @unchecked ⇒
+                        val fastTrackPropertyOption: Option[P] =
+                            if (isComputed && useFastTrackPropertyComputations)
+                                fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                            else
+                                None
+                        fastTrackPropertyOption match {
+                            case Some(p) ⇒
+                                fastTrackPropertiesCounter += 1
+                                set(e, p)
+                                FinalEP(e, p.asInstanceOf[P])
+                            case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
                                 // multiple (lazy) computations => the entity is now known
                                 ps(pkId).put(e, PropertyValue.lazilyComputed)

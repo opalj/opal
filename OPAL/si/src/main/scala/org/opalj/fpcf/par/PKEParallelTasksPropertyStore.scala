@@ -535,31 +535,17 @@ final class PKEParallelTasksPropertyStore private (
                 }
                 val isComputedPropertyKind = computedPropertyKinds(pkId)
 
-                val fastTrackPropertyOption: Option[P] =
-                    if (isComputedPropertyKind && useFastTrackPropertyComputations)
-                        fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
-                    else
-                        None
+                lazyComputations.get(pkId) match {
+                    case null ⇒
+                        if (!isComputedPropertyKind && !delayedPropertyKinds(pkId)) {
+                            // ... a property is queried that is not going to be computed...
+                            fallbacksUsedCounter.incrementAndGet()
 
-                fastTrackPropertyOption match {
-                    case Some(p) ⇒
-                        fastTrackPropertiesCounter.incrementAndGet()
-                        val finalEP = FinalEP(e, p)
-                        handleResult(IdempotentResult(finalEP))
-                        finalEP
-
-                    case None ⇒
-                        lazyComputations.get(pkId) match {
-                            case null ⇒
-                                if (!isComputedPropertyKind && !delayedPropertyKinds(pkId)) {
-                                    // ... a property is queried that is not going to be computed...
-                                    fallbacksUsedCounter.incrementAndGet()
-
-                                    // STRATEGIE 1
-                                    // We schedule the computation of the fallback to avoid that the
-                                    // fallback is computed multiple times (which – in some cases –
-                                    // is not always just a bottom value!)
-                                    /*
+                            // STRATEGIE 1
+                            // We schedule the computation of the fallback to avoid that the
+                            // fallback is computed multiple times (which – in some cases –
+                            // is not always just a bottom value!)
+                            /*
                                     scheduleLazyComputationForEntity(
                                         e, pkId,
                                         (_: E) ⇒ {
@@ -567,22 +553,41 @@ final class PKEParallelTasksPropertyStore private (
                                         }
                                     )
                                     */
-                                    // STRATEGIE 2
-                                    // We directly compute the property and store it to make
-                                    // it accessible later on...
-                                    val p = PropertyKey.fallbackProperty(store, e, pk)
-                                    val finalEP = FinalEP(e, p)
-                                    handleResult(IdempotentResult(finalEP))
-                                    finalEP
-                                } else {
-                                    EPK(e, pk)
-                                }
+                            // STRATEGIE 2
+                            // We directly compute the property and store it to make
+                            // it accessible later on...
+                            val p = PropertyKey.fallbackProperty(store, e, pk)
+                            val finalEP = FinalEP(e, p)
+                            handleResult(IdempotentResult(finalEP))
+                            finalEP
+                        } else {
+                            EPK(e, pk)
+                        }
 
-                            case lc: PropertyComputation[E] @unchecked ⇒
+                    case lc: PropertyComputation[E] @unchecked ⇒
+                        // Currently, we do not support eagerly scheduled computations and
+                        // fasttrack properties. In that case, we could have a scheduled
+                        // computation and "in parallel" a request by another thread. This
+                        // would trigger the fasttrack evaluation and then result in the
+                        // situation where we already have a (final) result and we then get
+                        // the result of the scheduled computation.
+                        val fastTrackPropertyOption: Option[P] =
+                            if (isComputedPropertyKind && useFastTrackPropertyComputations)
+                                fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                            else
+                                None
+
+                        fastTrackPropertyOption match {
+                            case Some(p) ⇒
+                                fastTrackPropertiesCounter.incrementAndGet()
+                                val finalEP = FinalEP(e, p)
+                                prependStoreUpdate(PropertyUpdate(IdempotentResult(finalEP), false, true))
+                                finalEP
+
+                            case None ⇒
                                 scheduleLazyComputationForEntity(e, pkId, lc)
                                 EPK(e, pk)
                         }
-
                 }
 
             case eps ⇒
