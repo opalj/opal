@@ -207,7 +207,8 @@ final class EPKSequentialPropertyStore private (
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
-        e: E
+        e:  E,
+        pk: SomePropertyKey
     )(
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
@@ -240,7 +241,7 @@ final class EPKSequentialPropertyStore private (
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
                         ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
-                        scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                        scheduleEagerComputationForEntity(e, pk)(lc.asInstanceOf[PropertyComputation[E]])
                         // return the "current" result
                         epk
 
@@ -269,7 +270,7 @@ final class EPKSequentialPropertyStore private (
                             // create PropertyValue to ensure that we do not schedule
                             // multiple (lazy) computations => the entity is now known
                             pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
-                            scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
+                            scheduleEagerComputationForEntity(e, pk)(lc.asInstanceOf[PropertyComputation[E]])
                             epk
 
                         case None ⇒
@@ -522,7 +523,10 @@ final class EPKSequentialPropertyStore private (
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
-                npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
+                npcs foreach { npc ⇒
+                    val (pc, e, pk) = npc
+                    scheduleEagerComputationForEntity(e, pk)(pc)
+                }
 
             //
             // Methods which actually store results...

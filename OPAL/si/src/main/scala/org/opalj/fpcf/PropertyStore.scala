@@ -491,11 +491,12 @@ abstract class PropertyStore {
      * @see [[scheduleEagerComputationForEntity]] for details.
      */
     def scheduleEagerComputationsForEntities[E <: Entity](
-        es: TraversableOnce[E]
+        es: TraversableOnce[E],
+        pk: SomePropertyKey
     )(
         c: PropertyComputation[E]
     ): Unit = {
-        es.foreach(e ⇒ scheduleEagerComputationForEntity(e)(c))
+        es.foreach(e ⇒ scheduleEagerComputationForEntity(e, pk)(c))
     }
 
     /**
@@ -509,7 +510,11 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then the scheduling will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
+    def scheduleEagerComputationForEntity[E <: Entity](
+        e: E, pk: SomePropertyKey
+    )(
+        pc: PropertyComputation[E]
+    ): Unit
 
     /**
      * Processes the result eventually; generally, not directly called by analyses.
