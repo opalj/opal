@@ -31,10 +31,11 @@ package fpcf
 package par
 
 import java.util.concurrent.atomic.AtomicInteger
+import java.io.File
 
 import scala.collection.mutable.ArrayBuffer
-import java.io.File
-import java.nio.file.Path
+
+import org.opalj.io
 
 trait PropertyStoreTracer {
 
@@ -74,14 +75,6 @@ trait PropertyStoreTracer {
     def reachedQuiescence(): Unit
 
     def firstException(t: Throwable): Unit
-
-    //
-    // Functionality to debug it
-    //
-
-    def writeAsTxt: Path
-
-    def writeAsTxtAndOpen: File
 }
 
 sealed trait StoreEvent {
@@ -251,17 +244,17 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     def toTxt: String = {
         allEvents.map { e ⇒
             e match {
-                case _: HandlingResult ⇒ "\n"+e.toString
-                case e                 ⇒ "\t"+e.toString
+                case _: HandlingResult ⇒ "\n"+e.toTxt
+                case e                 ⇒ "\t"+e.toTxt
             }
         }.mkString("Events [\n", "\n", "\n]")
     }
 
-    def writeAsTxt: Path = {
-        org.opalj.io.write(toTxt, "Property Store Events", ".txt")
+    def writeAsTxt: File = {
+        io.write(toTxt, "Property Store Events", ".txt").toFile
     }
 
     def writeAsTxtAndOpen: File = {
-        org.opalj.io.writeAndOpen(toTxt, "Property Store Events", ".txt")
+        io.writeAndOpen(toTxt, "Property Store Events", ".txt")
     }
 }
