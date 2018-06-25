@@ -428,10 +428,10 @@ object EagerL1ThrownExceptionsAnalysis
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
      * in general, the analysis is expected to be registered as a lazy computation.
      */
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1ThrownExceptionsAnalysis(project)
-        val allMethods = project.allMethods
-        propertyStore.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
+    def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val analysis = new L1ThrownExceptionsAnalysis(p)
+        val allMethods = p.allMethods
+        ps.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
 
