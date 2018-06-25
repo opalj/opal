@@ -103,6 +103,19 @@ final class PKEParallelTasksPropertyStore private (
     private[this] val fastTrackPropertiesCounter: AtomicInteger = new AtomicInteger(0)
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter.get
 
+    private[this] var redundantIdempotentResultsCounter = 0
+    def redundantIdempotentResultsCount: Int = redundantIdempotentResultsCounter
+
+    def statistics : Map[String,Int] = {
+        Map(
+            "scheduled tasks" -> scheduledTasksCount,
+            "fast-track properties" -> fastTrackPropertiesCount,
+            "idempotent results/redundant fast-track property computations" -> redundantIdempotentResultsCount,
+            "quiescence" -> quiescenceCount,
+            "resolved cSCCs" -> resolvedCSCCsCount
+        )
+    }
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE DATA STRUCTURES
@@ -747,10 +760,14 @@ final class PKEParallelTasksPropertyStore private (
                 val propertiesOfEntity = properties(pkId)
                 if (!propertiesOfEntity.containsKey(e)) {
                     updateAndNotify(e, p, p)
-                } else /*we already have a value*/ if (debug) {
-                    val oldEP = propertiesOfEntity.get(e)
-                    if (oldEP != ep) {
-                        throw new IllegalArgumentException(s"$e: unexpected update $oldEP => $ep")
+                } else {
+                    /*we already have a value*/
+                    redundantIdempotentResultsCounter += 1
+                    if (debug) {
+                        val oldEP = propertiesOfEntity.get(e)
+                        if (oldEP != ep) {
+                            throw new IllegalArgumentException(s"$e: unexpected update $oldEP => $ep")
+                        }
                     }
                 }
 
