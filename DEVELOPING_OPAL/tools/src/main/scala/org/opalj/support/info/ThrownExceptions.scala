@@ -44,7 +44,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
-import org.opalj.log.OPALLogger
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -132,16 +131,10 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 }.mkString("\n", "\n", "\n")
             }
 
-        OPALLogger.info(
-            "analysis framework",
-            ps.statistics.map(e ⇒ e.toString()).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
-        )(project.logContext)
+        val psStatistics = ps.statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("Property Store Statistics:\n\t", "\n\t", "\n")
 
-        BasicReport(
-            "\nThrown Exceptions Information:\n"+
-                perMethodsReport+"\n"+
-                ps.toString(printProperties = false)+
-                "\nStatistics:\n"+
+        val analysisStatistics: String =
+            "\nStatistics:\n"+
                 "#methods with a thrown exceptions property: "+
                 s"${allMethods.size} (${project.methodsCount})\n"+
                 "#methods with exceptions information more precise than _ <: Throwable: "+
@@ -150,6 +143,13 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 s" ... #exceptions == 0 and private: ${privateMethodsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n"+
                 s"execution time: ${executionTime.toSeconds}\n"
+
+        BasicReport(
+            psStatistics+
+                "\nThrown Exceptions Information:\n"+
+                perMethodsReport+"\n"+
+                ps.toString(printProperties = false) +
+                analysisStatistics
         )
     }
 }

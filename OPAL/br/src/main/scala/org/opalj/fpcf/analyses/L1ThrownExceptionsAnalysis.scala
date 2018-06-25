@@ -127,7 +127,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val initialExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val initialExceptions = new BRMutableTypesSet(project.classHierarchy)
 
         var result: ThrownExceptions = null
 
