@@ -329,7 +329,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()
-        ps.shutdown()
         TestContext(p, ps, as ++ las)
     }
 }
