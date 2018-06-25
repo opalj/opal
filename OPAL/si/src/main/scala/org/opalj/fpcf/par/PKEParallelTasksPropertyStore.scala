@@ -1084,7 +1084,7 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 
     @volatile var NumberOfThreadsForProcessingPropertyComputations: Int = {
         // We need at least one thread for processing property computations.
-        Math.max(NumberOfThreadsForCPUBoundTasks - 1, 1)
+        Math.max(NumberOfThreadsForCPUBoundTasks, 1)
     }
 
     def apply(
