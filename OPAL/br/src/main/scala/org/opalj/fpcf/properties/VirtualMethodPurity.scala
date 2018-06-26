@@ -64,16 +64,8 @@ object VirtualMethodPurity extends VirtualMethodPurityPropertyMetaInformation {
     final val VCompileTimePure = CompileTimePure.aggregatedProperty
     final val VPure = Pure.aggregatedProperty
     final val VSideEffectFree = SideEffectFree.aggregatedProperty
-    final val VExternallyPure = ExternallyPure.aggregatedProperty
-    final val VExternallySideEffectFree = ExternallySideEffectFree.aggregatedProperty
-    final val VContextuallyPure = ContextuallyPure.aggregatedProperty
-    final val VContextuallySideEffectFree = ContextuallySideEffectFree.aggregatedProperty
     final val VDPure = DPure.aggregatedProperty
     final val VDSideEffectFree = DSideEffectFree.aggregatedProperty
-    final val VDExternallyPure = DExternallyPure.aggregatedProperty
-    final val VDExternallySideEffectFree = DExternallySideEffectFree.aggregatedProperty
-    final val VDContextuallyPure = DContextuallyPure.aggregatedProperty
-    final val VDContextuallySideEffectFree = DContextuallySideEffectFree.aggregatedProperty
     final val VImpureByAnalysis = ImpureByAnalysis.aggregatedProperty
     final val VImpureByLackOfInformation = ImpureByLackOfInformation.aggregatedProperty
 

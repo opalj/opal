@@ -30,6 +30,7 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
@@ -40,10 +41,14 @@ import org.scalatest.FlatSpec
  */
 class PurityPropertyTest extends FlatSpec with Matchers {
 
+    val contextuallyPure = ContextuallyPure(IntTrieSet(1))
+    val contextuallySideEffectFree = ContextuallySideEffectFree(IntTrieSet(1))
+    val dContextuallyPure = DContextuallyPure(IntTrieSet(1))
+    val dContextuallySideEffectFree = DContextuallySideEffectFree(IntTrieSet(1))
+
     val allPurities: List[Purity] = List(
-        CompileTimePure, Pure, SideEffectFree, ExternallyPure, ExternallySideEffectFree,
-        DPure, DSideEffectFree, DExternallyPure, DExternallySideEffectFree,
-        ContextuallyPure, ContextuallySideEffectFree, ImpureByAnalysis, ImpureByLackOfInformation
+        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree,
+        contextuallyPure, contextuallySideEffectFree, ImpureByAnalysis, ImpureByLackOfInformation
     )
 
     val doesntModifyReceiver: Set[Purity] = Set(
@@ -51,8 +56,7 @@ class PurityPropertyTest extends FlatSpec with Matchers {
     )
 
     val doesntModifyParams: Set[Purity] = Set(
-        CompileTimePure, Pure, SideEffectFree, ExternallyPure, ExternallySideEffectFree,
-        DPure, DSideEffectFree, DExternallyPure, DExternallySideEffectFree
+        CompileTimePure, Pure, SideEffectFree, DPure, DSideEffectFree
     )
 
     "purity levels" should "have the right properties" in {
@@ -64,8 +68,7 @@ class PurityPropertyTest extends FlatSpec with Matchers {
         }
 
         val deterministic: Set[Purity] = Set(
-            CompileTimePure, Pure, ExternallyPure, ContextuallyPure, DPure,
-            DExternallyPure, DContextuallyPure
+            CompileTimePure, Pure, contextuallyPure, DPure, dContextuallyPure
         )
 
         for (prop ← allPurities) {
@@ -75,16 +78,8 @@ class PurityPropertyTest extends FlatSpec with Matchers {
             )
         }
 
-        for (prop ← allPurities) {
-            assert(
-                prop.modifiesReceiver != doesntModifyReceiver.contains(prop),
-                s"$prop.modifiesReceiver was ${prop.modifiesReceiver}"
-            )
-        }
-
         val doesntUseDomainSpecificActions: Set[Purity] = Set(
-            CompileTimePure, Pure, SideEffectFree, ExternallyPure, ExternallySideEffectFree,
-            ContextuallyPure, ContextuallySideEffectFree
+            CompileTimePure, Pure, SideEffectFree, contextuallyPure, contextuallySideEffectFree
         )
 
         for (prop ← allPurities) {
@@ -97,17 +92,6 @@ class PurityPropertyTest extends FlatSpec with Matchers {
 
     they should "be converted correctly" in {
         for { prop ← allPurities } {
-            if (doesntModifyReceiver.contains(prop) || prop.isInstanceOf[ClassifiedImpure])
-                assert(
-                    prop.withoutExternal == prop,
-                    s"$prop.withoutExternal modified $prop (was ${prop.withoutExternal})"
-                )
-            else
-                assert(
-                    prop.withoutExternal.flags ==
-                        (prop.flags & ~Purity.ModifiesReceiver & ~Purity.ModifiesParameters),
-                    s"$prop.withoutExternal was incorrect (was ${prop.withoutExternal})"
-                )
             if (doesntModifyParams.contains(prop) || prop.isInstanceOf[ClassifiedImpure])
                 assert(
                     prop.withoutContextual == prop,
@@ -145,93 +129,18 @@ class PurityPropertyTest extends FlatSpec with Matchers {
         }
 
         assert((Pure meet SideEffectFree) == SideEffectFree)
-        assert((Pure meet ExternallyPure) == ExternallyPure)
-        assert((Pure meet ExternallySideEffectFree) == ExternallySideEffectFree)
         assert((Pure meet DPure) == DPure)
         assert((Pure meet DSideEffectFree) == DSideEffectFree)
-        assert((Pure meet DExternallyPure) == DExternallyPure)
-        assert((Pure meet DExternallySideEffectFree) == DExternallySideEffectFree)
         assert((Pure meet ImpureByAnalysis) == ImpureByAnalysis)
 
-        assert((SideEffectFree meet ExternallyPure) == ExternallySideEffectFree)
-        assert((SideEffectFree meet ExternallySideEffectFree) == ExternallySideEffectFree)
         assert((SideEffectFree meet DPure) == DSideEffectFree)
         assert((SideEffectFree meet DSideEffectFree) == DSideEffectFree)
-        assert((SideEffectFree meet DExternallyPure) == DExternallySideEffectFree)
-        assert((SideEffectFree meet DExternallySideEffectFree) == DExternallySideEffectFree)
         assert((SideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis)
-
-        assert(
-            (ExternallyPure meet ExternallySideEffectFree) == ExternallySideEffectFree,
-            "LBExternallyPure meet LBExternallySideEffectFree was not LBExternallySideEffectFree"+
-                s" (was ${ExternallyPure meet ExternallySideEffectFree})"
-        )
-        assert(
-            (ExternallyPure meet DPure) == DExternallyPure,
-            "LBExternallyPure meet LBDPure was not LBDExternallyPure"+
-                s" (was ${ExternallyPure meet DPure})"
-        )
-        assert(
-            (ExternallyPure meet DSideEffectFree) == DExternallySideEffectFree,
-            "LBExternallyPure meet LBDSideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${ExternallyPure meet DSideEffectFree})"
-        )
-        assert(
-            (ExternallyPure meet DExternallyPure) == DExternallyPure,
-            "LBExternallyPure meet LBDExternallyPure was not LBDExternallyPure"+
-                s" (was ${ExternallyPure meet DExternallyPure})"
-        )
-        assert(
-            (ExternallyPure meet DExternallySideEffectFree) == DExternallySideEffectFree,
-            "LBExternallyPure meet LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${ExternallyPure meet DExternallySideEffectFree})"
-        )
-        assert(
-            (ExternallyPure meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBExternallyPure meet LBImpure was not LBImpure"+
-                s" (was ${ExternallyPure meet ImpureByAnalysis})"
-        )
-
-        assert(
-            (ExternallySideEffectFree meet DPure) == DExternallySideEffectFree,
-            "LBExternallySideEffectFree meet LBDPure was not LBDExternallySideEffectFree"+
-                s" (was ${ExternallySideEffectFree meet DPure})"
-        )
-        assert(
-            (ExternallySideEffectFree meet DSideEffectFree) == DExternallySideEffectFree,
-            "LBExternallySideEffectFree meet LBDSideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${ExternallySideEffectFree meet DSideEffectFree})"
-        )
-        assert(
-            (ExternallySideEffectFree meet DExternallyPure) == DExternallySideEffectFree,
-            "LBExternallySideEffectFree meet LBDExternallyPure was not LBDExternallySideEffectFree"+
-                s" (was ${ExternallySideEffectFree meet DExternallyPure})"
-        )
-        assert(
-            (ExternallySideEffectFree meet DExternallySideEffectFree) == DExternallySideEffectFree,
-            "LBExternallySideEffectFree meet LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${ExternallySideEffectFree meet DExternallySideEffectFree})"
-        )
-        assert(
-            (ExternallySideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBExternallySideEffectFree meet LBImpure was not LBImpure"+
-                s" (was ${ExternallySideEffectFree meet ImpureByAnalysis})"
-        )
 
         assert(
             (DPure meet DSideEffectFree) == DSideEffectFree,
             "LBDPure meet LBDSideEffectFree was not LBDSideEffectFree"+
                 s" (was ${DPure meet DSideEffectFree})"
-        )
-        assert(
-            (DPure meet DExternallyPure) == DExternallyPure,
-            "LBDPure meet LBDExternallyPure was not LBDExternallyPure"+
-                s" (was ${DPure meet DExternallyPure})"
-        )
-        assert(
-            (DPure meet DExternallySideEffectFree) == DExternallySideEffectFree,
-            "LBDPure meet LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${DPure meet DExternallySideEffectFree})"
         )
         assert(
             (DPure meet ImpureByAnalysis) == ImpureByAnalysis,
@@ -240,36 +149,10 @@ class PurityPropertyTest extends FlatSpec with Matchers {
         )
 
         assert(
-            (DSideEffectFree meet DExternallyPure) == DExternallySideEffectFree,
-            "LBDSideEffectFree meet LBDExternallyPure was not LBDExternallySideEffectFree"+
-                s" (was ${DSideEffectFree meet DExternallyPure})"
-        )
-        assert(
-            (DSideEffectFree meet DExternallySideEffectFree) == DExternallySideEffectFree,
-            "LBDSideEffectFree meet LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${DSideEffectFree meet DExternallySideEffectFree})"
-        )
-        assert(
             (DSideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis,
             "LBDSideEffectFree meet LBImpure was not LBImpure"+
                 s" (was ${DSideEffectFree meet ImpureByAnalysis})"
         )
 
-        assert(
-            (DExternallyPure meet DExternallySideEffectFree) == DExternallySideEffectFree,
-            "LBDExternallyPure meet LBDExternallySideEffectFree was not LBDExternallySideEffectFree"+
-                s" (was ${DExternallyPure meet DExternallySideEffectFree})"
-        )
-        assert(
-            (DExternallyPure meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBDExternallyPure meet LBImpure was not LBImpure"+
-                s" (was ${DExternallyPure meet ImpureByAnalysis})"
-        )
-
-        assert(
-            (DExternallySideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis,
-            "LBDExternallySideEffectFree meet LBImpure was not LBImpure"+
-                s" (was ${DExternallySideEffectFree meet ImpureByAnalysis})"
-        )
     }
 }

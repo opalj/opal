@@ -271,9 +271,9 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, useSites: IntTrieSet
+        value: d.DomainValue, defSites: IntTrieSet
     ): UVar[d.DomainValue] = {
-        new UVar[d.DomainValue](value, useSites)
+        new UVar[d.DomainValue](value, defSites)
     }
 
     def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](

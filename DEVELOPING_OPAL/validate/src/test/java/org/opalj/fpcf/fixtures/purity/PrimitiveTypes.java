@@ -30,7 +30,6 @@ package org.opalj.fpcf.fixtures.purity;
 
 import org.opalj.fpcf.analyses.L0PurityAnalysis;
 import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**
@@ -87,14 +86,14 @@ class PrimitiveTypes {
         return nonFinalStaticField;
     }
 
-    @ExternallyPure("Modifies instance field")
+    @ContextuallyPure(value = "Modifies instance field", modifies = {0})
     @Impure(value = "Modifies instance field",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public void setNonFinalField(int newValue) {
         nonFinalField = newValue;
     }
 
-    @ContextuallyPure("Only modifies field of parameter")
+    @ContextuallyPure(value = "Only modifies field of parameter", modifies = {0})
     @Impure(value="Modifies field of different instance",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public static void setNonFinalFieldStatic(PrimitiveTypes other, int newValue) {
@@ -140,7 +139,7 @@ class PrimitiveTypes {
 
     // Impure methods depending on final fields
 
-    @ExternallyPure("Modifies instance field")
+    @ContextuallyPure(value = "Modifies instance field", modifies = {0})
     @Impure(value = "Modifies instance field",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public void impure_0_0() {

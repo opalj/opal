@@ -181,13 +181,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def checkMethodPurity(
         ep:     EOptionP[DeclaredMethod, Property],
-        params: (Option[Expr[V]], Seq[Expr[V]])
+        params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
         case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
             atMost(ImpureByAnalysis)
             false
         case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
-            if (ub.modifiesReceiver) {
+            if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
             } else {
@@ -199,7 +199,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 true
             }
         case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
-            if (ub.modifiesReceiver) {
+            if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
             } else {
@@ -280,7 +280,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.ubPurity ne oldPurity)
             cleanupDependees()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
@@ -326,7 +326,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         declClass,
                         "fillInStackTrace",
                         MethodDescriptor("()Ljava/lang/Throwable;"),
-                        None,
                         List.empty,
                         Success(mdc.method)
                     )
@@ -363,7 +362,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             cleanupDependees()
         }
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
