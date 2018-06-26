@@ -356,8 +356,9 @@ object Purity {
                     "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
                     "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
                     "\nImpure:                                "+lbImpure.size
-
             println(result)
+
+            println(project.get(PropertyStoreKey).statistics.mkString("\n"))
         }
     }
 
