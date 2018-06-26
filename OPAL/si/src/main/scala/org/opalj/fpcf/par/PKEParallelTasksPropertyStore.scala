@@ -104,7 +104,7 @@ final class PKEParallelTasksPropertyStore private (
     private[this] var scheduledLazyTasksCounter = 0
     def scheduledLazyTasksCount: Int = scheduledLazyTasksCounter
 
-    @volatile private[this] var fallbacksUsedCounter: AtomicInteger = new AtomicInteger(0)
+    private[this] val fallbacksUsedCounter: AtomicInteger = new AtomicInteger(0)
     def fallbacksUsedCount: Int = fallbacksUsedCounter.get
 
     @volatile private[this] var scheduledOnUpdateComputationsCounter = 0
@@ -125,6 +125,8 @@ final class PKEParallelTasksPropertyStore private (
         directDependeeUpdatesCounter + scheduledDependeeUpdatesCounter
     }
 
+    private[this] val maxTasksQueueSize: AtomicInteger = new AtomicInteger(-1)
+
     @volatile private[this] var resolvedCSCCsCounter = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
@@ -144,7 +146,8 @@ final class PKEParallelTasksPropertyStore private (
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
             "useless partial result computations" -> uselessPartialResultComputationCount,
             "quiescence" -> quiescenceCount,
-            "resolved cSCCs" -> resolvedCSCCsCount
+            "resolved cSCCs" -> resolvedCSCCsCount,
+            "max tasks queue size" -> maxTasksQueueSize.get
         )
     }
 
@@ -255,6 +258,14 @@ final class PKEParallelTasksPropertyStore private (
     @volatile private[this] var tasksProcessors: ThreadGroup = {
 
         @inline def processTask(): Unit = {
+            var currentMaxTasksQueueSize = maxTasksQueueSize.get
+            var newMaxTasksQueueSize = Math.max(maxTasksQueueSize.get, tasksSemaphore.availablePermits())
+            while (currentMaxTasksQueueSize < newMaxTasksQueueSize &&
+                !maxTasksQueueSize.compareAndSet(currentMaxTasksQueueSize, newMaxTasksQueueSize)) {
+                currentMaxTasksQueueSize = maxTasksQueueSize.get
+                newMaxTasksQueueSize = Math.max(maxTasksQueueSize.get, tasksSemaphore.availablePermits())
+            }
+
             tasksSemaphore.acquire()
             val task = tasks.pollFirst()
             try {
