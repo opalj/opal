@@ -158,12 +158,15 @@ class RTACallGraphAnalysis private[analyses] (
         // here we can ignore the return value, as the state also gets updated
         handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
 
+        var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
+        if (newInstantiatedTypes.nonEmpty)
+            results +:= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
+
+        if (state.calleesOfM.nonEmpty)
+            results +:= partialResultForCallGraph(methodID, state.calleesOfM)
+
         IncrementalResult(
-            Results(
-                resultForCallees(instantiatedTypesEOptP, state),
-                partialResultForInstantiatedTypes(method, newInstantiatedTypes),
-                partialResultForCallGraph(methodID, state.calleesOfM)
-            ),
+            Results(results),
             // continue the computation with the newly reachable methods
             newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
         )
@@ -188,11 +191,12 @@ class RTACallGraphAnalysis private[analyses] (
         // the new edges in the call graph due to the new types
         val newCalleesOfM = handleVirtualCallSites(state, newInstantiatedTypes, newReachableMethods, IntMap.empty)
 
+        var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
+        if (newCalleesOfM.nonEmpty)
+            results +:= partialResultForCallGraph(methodIds(state.method), state.calleesOfM)
+
         IncrementalResult(
-            Results(
-                resultForCallees(instantiatedTypesEOptP, state),
-                partialResultForCallGraph(methodIds(state.method), newCalleesOfM)
-            ),
+            Results(results),
             newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
         )
     }
