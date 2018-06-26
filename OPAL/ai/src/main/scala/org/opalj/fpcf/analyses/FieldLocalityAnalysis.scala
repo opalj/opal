@@ -576,7 +576,8 @@ class FieldLocalityAnalysis private[analyses] (
                 NoLocalField,
                 state.temporaryState,
                 state.dependees,
-                continuation
+                continuation,
+                CheapPropertyComputation
             )
     }
 }
