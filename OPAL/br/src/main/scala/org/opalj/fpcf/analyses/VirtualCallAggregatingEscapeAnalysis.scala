@@ -30,7 +30,7 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DefinedMethod
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -57,8 +57,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
-        assert(dm.isInstanceOf[DefinedMethod])
-        val m = dm.methodDefinition
+        assert(!dm.isInstanceOf[VirtualDeclaredMethod])
 
         if (dm.declaringClassType.isArrayType) {
             ??? //TODO handle case
@@ -70,18 +69,22 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         val maybeFile = project.classFile(dm.declaringClassType.asObjectType)
 
-        val methods = if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration) {
-            project.interfaceCall(
-                /* use the package in which the concrete method context is defined */
-                dm.declaringClassType.asObjectType, dm.name, dm.descriptor
+        val methods =
+            if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration)
+                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+            else if (dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
+                project.virtualCall(
+                    dm.methodDefinition.classFile.thisType.packageName,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
+                )
+            else project.virtualCall(
+                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
             )
-        } else {
-            project.virtualCall(
-                /* use the package in which the concrete method context is defined */
-                m.classFile.thisType.packageName,
-                dm.declaringClassType, dm.name, dm.descriptor
-            )
-        }
 
         for (method ← methods) {
             val vfp = formalParameters(declaredMethods(method))(-1 - fp.origin)

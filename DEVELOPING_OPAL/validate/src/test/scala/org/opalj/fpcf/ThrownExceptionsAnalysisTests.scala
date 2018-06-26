@@ -57,8 +57,10 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
     describe("no analysis is scheduled and fallback is used") {
         val as = executeAnalyses(Set.empty)
-        val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
         val TestContext(p, ps, _) = as
+
+        val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+        ps.setupPhase(Set.empty, Set.empty)
         for {
             (e, _, annotations) ← methodsWithAnnotations(as.project)
             if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
@@ -71,11 +73,9 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
         ps.waitOnPhaseCompletion()
 
-        validateProperties(
-            as,
-            methodsWithAnnotations(as.project),
-            pk
-        )
+        validateProperties(as, methodsWithAnnotations(as.project), pk)
+
+        ps.shutdown()
     }
 
     describe("L1ThrownExceptionsAnalysis and EagerVirtualMethodAllocationFreenessAnalysis are executed") {
@@ -83,6 +83,8 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
             EagerVirtualMethodAllocationFreenessAnalysis,
             EagerL1ThrownExceptionsAnalysis
         ))
+        val TestContext(_, ps, _) = as
+
         validateProperties(
             as,
             methodsWithAnnotations(as.project),
@@ -92,6 +94,8 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
                 "ThrownExceptionsAreUnknown"
             )
         )
+
+        ps.shutdown()
     }
 
 }

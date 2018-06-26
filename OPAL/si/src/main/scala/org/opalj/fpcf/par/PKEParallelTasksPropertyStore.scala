@@ -33,9 +33,10 @@ package par
 import java.lang.System.identityHashCode
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingDeque
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReferenceArray
 
 import scala.reflect.runtime.universe.Type
@@ -232,42 +233,38 @@ final class PKEParallelTasksPropertyStore private (
      * The list of scheduled (on update) property computations -
      * they will be processed in parallel.
      */
-    private[this] val tasks = new LinkedBlockingDeque[QualifiedTask[_ <: Entity]]()
+    private[this] val tasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
+    private[this] val tasksSemaphore = new Semaphore(0)
 
     private[this] def prependTask(task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        if (!tasks.offerFirst(task)) {
-            decOpenJobs()
-            throw new UnknownError(s"prepending task $task to unbounded queue failed")
-        }
+        tasks.offerFirst(task)
+        tasksSemaphore.release()
     }
 
     private[this] def appendTask(task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        if (!tasks.offerLast(task)) {
-            decOpenJobs()
-            throw new UnknownError(s"appending task $task to unbounded queue failed")
-        }
+        tasks.offerLast(task)
+        tasksSemaphore.release()
     }
 
     @volatile private[this] var tasksProcessors: ThreadGroup = {
 
         @inline def processTask(): Unit = {
-            val task = tasks.poll(5L, TimeUnit.SECONDS)
-            if (task != null) {
-                try {
-                    // As a sideeffect of processing a task, we may have (implicit) calls
-                    // to schedule and also implicit handleResult calls; both will
-                    // increase openJobs.
-                    if (task.isInitialTask) {
-                        task.apply()
-                    } else {
-                        // TODO check if required; i.e., if we are forced or have dependees.
-                        task.apply()
-                    }
-                } finally {
-                    decOpenJobs()
+            tasksSemaphore.acquire()
+            val task = tasks.pollFirst()
+            try {
+                // As a sideeffect of processing a task, we may have (implicit) calls
+                // to schedule and also implicit handleResult calls; both will
+                // increase openJobs.
+                if (task.isInitialTask) {
+                    task.apply()
+                } else {
+                    // TODO check if required; i.e., if we are forced or have dependees.
+                    task.apply()
                 }
+            } finally {
+                decOpenJobs()
             }
         }
 
@@ -316,48 +313,44 @@ final class PKEParallelTasksPropertyStore private (
      * The jobs which update the store.
      */
     private[this] val storeUpdates = new LinkedBlockingDeque[StoreUpdate]()
+    private[this] val storeUpdatesSemaphore = new Semaphore(0)
 
     private[this] def prependStoreUpdate(update: StoreUpdate): Unit = {
         incOpenJobs()
-        if (!storeUpdates.offerFirst(update)) {
-            decOpenJobs()
-            throw new UnknownError(s"prepending store update $update to unbounded queue failed")
-        }
+        storeUpdates.offerFirst(update)
+        storeUpdatesSemaphore.release()
     }
 
     private[this] def appendStoreUpdate(update: StoreUpdate): Unit = {
         incOpenJobs()
-        if (!storeUpdates.offerLast(update)) {
-            decOpenJobs()
-            throw new UnknownError(s"appending store update $update to unbounded queue failed")
-        }
+        storeUpdates.offerLast(update)
+        storeUpdatesSemaphore.release()
     }
 
     @volatile private[this] var storeUpdatesProcessor: Thread = {
 
         @inline def processUpdate(): Unit = {
-            val update = storeUpdates.poll(5L, TimeUnit.SECONDS)
-            if (update != null) {
-                try {
-                    update match {
-                        case PropertyUpdate(r, forceEvaluation, forceDependerNotification) ⇒
-                            doHandleResult(r, forceEvaluation, forceDependerNotification)
+            storeUpdatesSemaphore.acquire()
+            val update = storeUpdates.pollFirst()
+            try {
+                update match {
+                    case PropertyUpdate(r, forceEvaluation, forceDependerNotification) ⇒
+                        doHandleResult(r, forceEvaluation, forceDependerNotification)
 
-                        case TriggeredLazyComputation(e, pkId, lc) ⇒
-                            // Recall, that -- once we have a final result -- all meta data
-                            // is deleted; in particular information about triggeredLazyComputations.
-                            val currentP = properties(pkId).get(e)
-                            if (currentP == null && triggeredLazyComputations(pkId).add(e)) {
-                                if (tracer.isDefined)
-                                    tracer.get.schedulingLazyComputation(e, pkId)
+                    case TriggeredLazyComputation(e, pkId, lc) ⇒
+                        // Recall, that -- once we have a final result -- all meta data
+                        // is deleted; in particular information about triggeredLazyComputations.
+                        val currentP = properties(pkId).get(e)
+                        if (currentP == null && triggeredLazyComputations(pkId).add(e)) {
+                            if (tracer.isDefined)
+                                tracer.get.schedulingLazyComputation(e, pkId)
 
-                                scheduledLazyTasksCounter += 1
-                                appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
-                            }
-                    }
-                } finally {
-                    decOpenJobs()
+                            scheduledLazyTasksCounter += 1
+                            appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
+                        }
                 }
+            } finally {
+                decOpenJobs()
             }
         }
 

@@ -31,7 +31,6 @@ package fpcf
 package properties
 
 import scala.annotation.switch
-
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.GETSTATIC
@@ -69,6 +68,8 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.ARRAYLENGTH
 import org.opalj.br.instructions.IALOAD
 import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.IF_ACMPNE
+import org.opalj.br.instructions.IF_ACMPEQ
 import org.opalj.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
 import org.opalj.fpcf.properties.Purity.ExternallyPureFlags
@@ -302,6 +303,10 @@ object Purity extends PurityPropertyMetaInformation {
                                     // if we have a monitor instruction the method is impure anyway..
                                     // hence, we can ignore the monitor related implicit exception
                                     true
+
+                                // Reference comparisons may have different results for structurally equal values
+                                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                                    false
 
                                 case _ ⇒
                                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure

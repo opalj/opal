@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -191,6 +190,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     RETURN.opcode ⇒
                 // if we have a monitor instruction the method is impure anyway..
                 // hence, we can ignore the monitor related implicit exception
+
+                // Reference comparisons may have different results for structurally equal values
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                    return Result(definedMethod, ImpureByAnalysis);
 
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure

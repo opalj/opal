@@ -78,6 +78,7 @@ object PropertyStoreKey
                 )(project.logContext)
                 psFactory(context)
             case None ⇒
+                // val ps = seq.PKESequentialPropertyStore(context: _*)
                 val ps = par.PKEParallelTasksPropertyStore(context: _*)
                 ps
         }
