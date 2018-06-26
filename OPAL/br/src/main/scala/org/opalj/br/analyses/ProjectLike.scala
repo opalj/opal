@@ -43,6 +43,8 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -450,7 +452,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
         ProjectLike.findMaximallySpecificSuperinterfaceMethods(
             superinterfaceType, name, descriptor, analyzedSuperinterfaceTypes
-        )(this.classFile, this.classHierarchy)
+        )(this.classFile, this.classHierarchy, this.logContext)
     }
 
     /**
@@ -468,7 +470,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
         ProjectLike.findMaximallySpecificSuperinterfaceMethods(
             superinterfaceTypes, name, descriptor, analyzedSuperinterfaceTypes
-        )(this.classFile, this.classHierarchy)
+        )(this.classFile, this.classHierarchy, this.logContext)
     }
 
     /**
@@ -903,7 +905,8 @@ object ProjectLike {
     )(
         implicit
         objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile],
-        classHierarchy:        ClassHierarchy
+        classHierarchy:        ClassHierarchy,
+        logContext:            LogContext
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
 
         val newAnalyzedSuperinterfaceTypes = analyzedSuperinterfaceTypes + superinterfaceType
@@ -915,29 +918,36 @@ object ProjectLike {
 
         objectTypeToClassFile(superinterfaceType) match {
             case Some(classFile) ⇒
-                assert(classFile.isInterfaceDeclaration)
+                if (!classFile.isInterfaceDeclaration) {
+                    OPALLogger.warn(
+                        "project configuration",
+                        "find maximally specific superinterface methods: "+
+                            s"$superinterfaceType is not an interface and therefore ignored"
+                    )
+                    (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
+                } else {
+                    classFile.findMethod(name, descriptor) match {
+                        case Some(method) if !method.isPrivate && !method.isStatic ⇒
+                            val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
+                            (analyzedTypes, Set(method))
 
-                classFile.findMethod(name, descriptor) match {
-                    case Some(method) if !method.isPrivate && !method.isStatic ⇒
-                        val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
-                        (analyzedTypes, Set(method))
-
-                    case _ /* None OR "the method was either private or static" */ ⇒
-                        if (superinterfaceTypes.isEmpty) {
-                            (newAnalyzedSuperinterfaceTypes, Set.empty)
-                        } else if (superinterfaceTypes.isSingletonSet) {
-                            findMaximallySpecificSuperinterfaceMethods(
-                                superinterfaceTypes.head,
-                                name, descriptor,
-                                newAnalyzedSuperinterfaceTypes
-                            )
-                        } else {
-                            findMaximallySpecificSuperinterfaceMethods(
-                                superinterfaceTypes,
-                                name, descriptor,
-                                newAnalyzedSuperinterfaceTypes
-                            )
-                        }
+                        case _ /* None OR "the method was either private or static" */ ⇒
+                            if (superinterfaceTypes.isEmpty) {
+                                (newAnalyzedSuperinterfaceTypes, Set.empty)
+                            } else if (superinterfaceTypes.isSingletonSet) {
+                                findMaximallySpecificSuperinterfaceMethods(
+                                    superinterfaceTypes.head,
+                                    name, descriptor,
+                                    newAnalyzedSuperinterfaceTypes
+                                )
+                            } else {
+                                findMaximallySpecificSuperinterfaceMethods(
+                                    superinterfaceTypes,
+                                    name, descriptor,
+                                    newAnalyzedSuperinterfaceTypes
+                                )
+                            }
+                    }
                 }
 
             case None ⇒
@@ -962,7 +972,8 @@ object ProjectLike {
     )(
         implicit
         objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile],
-        classHierarchy:        ClassHierarchy
+        classHierarchy:        ClassHierarchy,
+        logContext:            LogContext
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
 
         val anchor = ((analyzedSuperinterfaceTypes, Set.empty[Method]))
