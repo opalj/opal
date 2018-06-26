@@ -75,6 +75,8 @@ object RTADemo extends DefaultOneStepAnalysis {
         //    println(ps(m, Callees.key))
         //}
 
+        println(ps.statistics.mkString("\n"))
+
         BasicReport("")
     }
 }
