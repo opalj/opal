@@ -87,6 +87,9 @@ final class PKEParallelTasksPropertyStore private (
     private[this] val scheduledTasksCounter: AtomicInteger = new AtomicInteger(0)
     def scheduledTasksCount: Int = scheduledTasksCounter.get
 
+    private[this] val directInTaskThreadPropertyComputationsCounter: AtomicInteger = new AtomicInteger(0)
+    def directInTaskThreadPropertyComputationsCount: Int = directInTaskThreadPropertyComputationsCounter.get
+
     // Fast-track properties are eagerly computed in the thread requiring the values
     // and are stored using idempotent results
     private[this] val fastTrackPropertiesCounter: AtomicInteger = new AtomicInteger(0)
@@ -131,10 +134,11 @@ final class PKEParallelTasksPropertyStore private (
     def statistics: Map[String, Int] = {
         Map(
             "scheduled tasks" -> scheduledTasksCount,
+            "direct in task thread property computations" -> directInTaskThreadPropertyComputationsCount,
             "scheduled lazy tasks" -> scheduledLazyTasksCount,
             "fast-track properties" -> fastTrackPropertiesCount,
             "direct evaluation of dependers" -> directDependerOnUpdateComputationsCount,
-            "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCounter,
+            "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCount,
             "direct reevaluation of dependees due to updated dependers" -> directDependeeUpdatesCount,
             "computations of fallback properties" -> fallbacksUsedCount,
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
@@ -534,7 +538,6 @@ final class PKEParallelTasksPropertyStore private (
                         if (!isComputedPropertyKind && !delayedPropertyKinds(pkId)) {
                             // ... a property is queried that is not going to be computed...
                             fallbacksUsedCounter.incrementAndGet()
-
                             // STRATEGIE 1
                             // We schedule the computation of the fallback to avoid that the
                             // fallback is computed multiple times (which – in some cases –
@@ -552,7 +555,7 @@ final class PKEParallelTasksPropertyStore private (
                             // it accessible later on...
                             val p = PropertyKey.fallbackProperty(store, e, pk)
                             val finalEP = FinalEP(e, p)
-                            handleResult(IdempotentResult(finalEP))
+                            prependStoreUpdate(PropertyUpdate(IdempotentResult(finalEP), false, true))
                             finalEP
                         } else {
                             EPK(e, pk)
@@ -639,11 +642,12 @@ final class PKEParallelTasksPropertyStore private (
         prependStoreUpdate(PropertyUpdate(r, /*doesn't matte:*/ false, /*doesn't matter:*/ false))
     }
 
-    override def handleResult(
+    // Thread safe!
+    final override def handleResult(
         r:               PropertyComputationResult,
         forceEvaluation: Boolean
     ): Unit = {
-        appendStoreUpdate(PropertyUpdate(r, forceEvaluation, false))
+        handleResult(r, forceEvaluation, false)
     }
 
     // Thread safe!
@@ -652,7 +656,51 @@ final class PKEParallelTasksPropertyStore private (
         forceEvaluation:           Boolean,
         forceDependerNotification: Boolean
     ): Unit = {
-        appendStoreUpdate(PropertyUpdate(r, forceEvaluation, forceDependerNotification))
+        r.id match {
+
+            case NoResult.id ⇒ {
+                // A computation reported no result; i.e., it is not possible to
+                // compute a/some property/properties for a given entity.
+            }
+
+            case IncrementalResult.id ⇒
+                val IncrementalResult(ir, npcs, propertyComputationsHint) = r
+                handleResult(ir, forceEvaluation, forceDependerNotification)
+                if (propertyComputationsHint == CheapPropertyComputation) {
+                    npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        directInTaskThreadPropertyComputationsCounter.incrementAndGet()
+                        val (pc, e) = npc
+                        handleResult(pc(e), forceEvaluation, forceDependerNotification)
+                    }
+                } else {
+                    npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        val (pc, e) = npc
+                        // check if we can/should handle the computations immediately in
+                        // this thread, because there is still enough to do for the other
+                        // threads
+                        if (tasksSemaphore.availablePermits() > NumberOfThreadsForProcessingPropertyComputations * 2) {
+                            directInTaskThreadPropertyComputationsCounter.incrementAndGet()
+                            val (pc, e) = npc
+                            handleResult(pc(e), forceEvaluation, forceDependerNotification)
+                        } else {
+                            scheduleComputationForEntity(e, pc, forceEvaluation)
+                        }
+                    }
+                }
+
+            case Results.id ⇒
+                val Results(furtherResults) = r
+                furtherResults foreach { r ⇒
+                    handleResult(r, forceEvaluation, forceDependerNotification)
+                }
+
+            case IntermediateResult.id ⇒
+                appendStoreUpdate(PropertyUpdate(r, forceEvaluation, forceDependerNotification))
+
+            case _ /*nothing special...*/ ⇒
+                // "final" results are prepended
+                prependStoreUpdate(PropertyUpdate(r, forceEvaluation, forceDependerNotification))
+        }
     }
 
     /**
@@ -796,7 +844,6 @@ final class PKEParallelTasksPropertyStore private (
                         npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                             val (pc, e) = npc
                             scheduleComputationForEntity(e, pc, forceEvaluation)
-
                         }
                     }
 
@@ -1073,8 +1120,8 @@ final class PKEParallelTasksPropertyStore private (
                                 trace("analysis progress", message)
                             }
                             fallbacksUsedCounter.incrementAndGet()
-                            handleResult(Result(e, fallbackProperty))
-
+                            val update = PropertyUpdate(Result(e, fallbackProperty), false, true)
+                            prependStoreUpdate(update)
                             continueComputation = true
                         }
                     }
