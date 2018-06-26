@@ -95,7 +95,13 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         val vextGetter = ps.finalEntities(VExtensibleGetter).toSeq
 
         val message =
-            s"""|# of methods with fresh return value: ${fresh.size}
+
+            s"""|${fresh.mkString("fresh methods:", "\t\n)}", "")}
+                |${getter.mkString("getter methods:", "\t\n)}", "")}
+                |${extGetter.mkString("external getter methods:", "\t\n)}", "")}
+                |${prim.mkString("methods with primitive return value:", "\t\n)}", "")}
+                |${notFresh.mkString("methods that are not fresh at all:", "\t\n)}", "")}
+                |# of methods with fresh return value: ${fresh.size}
                 |# of methods without fresh return value: ${notFresh.size}
                 |# of methods with primitive return value: ${prim.size}
                 |# of methods that are getters: ${getter.size}
