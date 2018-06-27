@@ -33,6 +33,7 @@ package purity
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.isImmediateVMException
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -54,7 +55,6 @@ import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
 import org.opalj.fpcf.properties.ContextuallyPure
-import org.opalj.fpcf.properties.ExternallyPure
 import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.LocalField
@@ -93,6 +93,9 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.SelfReferenceParameter
+import org.opalj.tac.UVar
 
 import scala.annotation.switch
 
@@ -142,8 +145,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
 
-        var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[(Option[Expr[V]], Seq[Expr[V]])])] = Map.empty
-        var virtualPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[(Option[Expr[V]], Seq[Expr[V]])])] = Map.empty
+        var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
+        var virtualPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[Seq[Expr[V]]])] = Map.empty
 
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         var virtualRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
@@ -216,7 +219,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def addPurityDependee(
             dm:     DeclaredMethod,
             eop:    EOptionP[DeclaredMethod, Purity],
-            params: (Option[Expr[V]], Seq[Expr[V]])
+            params: Seq[Expr[V]]
         ): Unit = {
             if (purityDependees.contains(dm)) {
                 val (_, oldParams) = purityDependees(dm)
@@ -229,7 +232,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def addVirtualPurityDependee(
             dm:     DeclaredMethod,
             eop:    EOptionP[DeclaredMethod, VirtualMethodPurity],
-            params: (Option[Expr[V]], Seq[Expr[V]])
+            params: Seq[Expr[V]]
         ): Unit = {
             if (virtualPurityDependees.contains(dm)) {
                 val (_, oldParams) = virtualPurityDependees(dm)
@@ -304,9 +307,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         isLocalInternal(
             expr,
             otherwise,
-            CompileTimePure,
-            CompileTimePure,
-            state.method.isConstructor,
+            _ ⇒ CompileTimePure,
             treatParamsAsFresh = false
         )
     }
@@ -321,18 +322,16 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @param otherwise The maxPurity will be reduced to at most this level if the expression is not
      *                  local
-     * @param onThis The maxPurity will be reduced to at most this level if the expression is the
-     *               this reference
-     * @param treatThisAsFresh The value to be returned if the expression can be the this reference
+     * @param onParameter The maxPurity will be reduced to at most this level if the expression can
+     *                    be a parameter
+     * @param treatParamsAsFresh The value to be returned if the expression can be a parameter
      */
     def isLocalInternal(
         expr:               Expr[V],
         otherwise:          Purity,
-        onThis:             Purity,
-        onParameter:        Purity,
-        treatThisAsFresh:   Boolean,
+        onParameter:        Int ⇒ Purity,
         treatParamsAsFresh: Boolean,
-        excludedDefSites:   IntTrieSet = EmptyIntTrieSet
+        excludedDefSites:   IntTrieSet   = EmptyIntTrieSet
     )(implicit state: State): Boolean = {
         if (expr.isConst)
             return true;
@@ -356,9 +355,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 isLocalDefsite(
                     _,
                     otherwise,
-                    onThis,
                     onParameter,
-                    treatThisAsFresh,
                     treatParamsAsFresh,
                     defSites,
                     excludedDefSites
@@ -375,16 +372,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @param otherwise The maxPurity will be reduced to at most this level if the defsite is not
      *                  local
-     * @param onThis The maxPurity will be reduced to at most this level if the defsite is the this
-     *               reference
-     * @param treatThisAsFresh The value to be returned if the defsite is the this reference
+     * @param onParameter The maxPurity will be reduced to at most this level if the defsite is a
+     *                     parameter
+     * @param treatParamsAsFresh The value to be returned if the defsite is a parameter
      */
     def isLocalDefsite(
         defSite:            Int,
         otherwise:          Purity,
-        onThis:             Purity,
-        onParameter:        Purity,
-        treatThisAsFresh:   Boolean,
+        onParameter:        Int ⇒ Purity,
         treatParamsAsFresh: Boolean,
         defSites:           IntTrieSet,
         excludedDefSites:   IntTrieSet
@@ -392,14 +387,18 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (isImmediateVMException(defSite))
             return true; // VMLevelValues are freshly created
 
+        if (ai.isMethodExternalExceptionOrigin(defSite))
+            return false; // Method external exceptions are not freshly created
+
         if (defSite == OriginOfThis) {
-            if (!state.method.isConstructor)
-                atMost(onThis)
-            return treatThisAsFresh;
+            if (!state.method.isConstructor) {
+                atMost(onParameter(0))
+            }
+            return treatParamsAsFresh | state.method.isConstructor;
         }
 
         if (defSite < 0) {
-            atMost(onParameter)
+            atMost(onParameter(-defSite - 1 - (if (state.method.isStatic) 1 else 0)))
             return treatParamsAsFresh;
         }
 
@@ -428,8 +427,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     true
                 } else false
             case VirtualFunctionCall.ASTID ⇒
-                val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) = rhs
-                onVirtualMethod(declClass, interface, name, rcvr, params, descr,
+                val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, _) = rhs
+                onVirtualMethod(declClass, interface, name, rcvr, descr,
                     callee ⇒ if (callee.hasValue) {
                         val dm = declaredMethods(callee.value)
                         val rvf = propertyStore(dm, ReturnValueFreshness.key)
@@ -451,9 +450,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                             isLocalInternal(
                                 objRef,
                                 otherwise,
-                                onThis,
                                 onParameter,
-                                treatThisAsFresh,
                                 treatParamsAsFresh,
                                 excludedDefSites ++ defSites
                             )
@@ -533,15 +530,20 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean =
         (stmt.astID: @switch) match {
+            case StaticMethodCall.ASTID ⇒
+                val call = stmt.asStaticMethodCall
+                if (!isDomainSpecificCall(call, None)) {
+                    val StaticMethodCall(_, declClass, _, name, descr, params) = stmt
+                    val callee = call.resolveCallTarget(p)
+                    checkPurityOfCall(declClass, name, descr, params, callee)
+                } else true
             // Synchronization on non-escaping local objects/arrays is pure (and useless...)
             case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
                 val objRef = stmt.asSynchronizationStmt.objRef
                 isLocalInternal(
                     objRef,
                     ImpureByAnalysis,
-                    ExternallyPure,
-                    ContextuallyPure,
-                    treatThisAsFresh = true,
+                    param ⇒ ContextuallyPure(IntTrieSet(param)),
                     treatParamsAsFresh = true
                 ) && stmt.forallSubExpressions(checkPurityOfExpr)
 
@@ -551,9 +553,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 isLocalInternal(
                     arrayRef,
                     ImpureByAnalysis,
-                    ExternallyPure,
-                    ContextuallyPure,
-                    treatThisAsFresh = true,
+                    param ⇒ ContextuallyPure(IntTrieSet(param)),
                     treatParamsAsFresh = true
                 ) && stmt.forallSubExpressions(checkPurityOfExpr)
             case PutField.ASTID ⇒
@@ -561,9 +561,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 isLocalInternal(
                     objRef,
                     ImpureByAnalysis,
-                    ExternallyPure,
-                    ContextuallyPure,
-                    treatThisAsFresh = true,
+                    param ⇒ ContextuallyPure(IntTrieSet(param)),
                     treatParamsAsFresh = true
                 ) && stmt.forallSubExpressions(checkPurityOfExpr)
 
@@ -577,7 +575,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def checkMethodPurity(
         ep:     EOptionP[DeclaredMethod, Property],
-        params: (Option[Expr[V]], Seq[Expr[V]])
+        params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
         case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
             atMost(ImpureByAnalysis)
@@ -593,28 +591,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 reducePurityLB(lb)
             }
             // Contextual/external purity is handled below
-            atMost(ub.withoutExternal)
-            if (ub.modifiesParameters)
-                (params._2 ++ params._1.toList).forall {
-                    isLocalInternal(
-                        _,
-                        ImpureByAnalysis,
-                        ub.withoutContextual,
-                        ub,
-                        treatThisAsFresh = true,
-                        treatParamsAsFresh = true
-                    )
-                }
-            else if (ub.modifiesReceiver && params._1.isDefined)
+            atMost(ub.withoutContextual)
+            ub.modifiedParams.forall(param ⇒
                 isLocalInternal(
-                    params._1.get,
+                    params(param),
                     ImpureByAnalysis,
-                    ub,
-                    ImpureByAnalysis,
-                    treatThisAsFresh = true,
-                    treatParamsAsFresh = false
-                )
-            else true
+                    param ⇒ ContextuallyPure(IntTrieSet(param)),
+                    treatParamsAsFresh = true
+                ))
         case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
             if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                 // On conditional, keep dependence
@@ -626,28 +610,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 reducePurityLB(lb)
             }
             // Contextual/external purity is handled below
-            atMost(ub.withoutExternal)
-            if (ub.modifiesParameters)
-                (params._2 ++ params._1.toList).forall {
-                    isLocalInternal(
-                        _,
-                        ImpureByAnalysis,
-                        ub.withoutContextual,
-                        ub,
-                        treatThisAsFresh = true,
-                        treatParamsAsFresh = true
-                    )
-                }
-            else if (ub.modifiesReceiver && params._1.isDefined)
+            atMost(ub.withoutContextual)
+            ub.modifiedParams.forall(param ⇒
                 isLocalInternal(
-                    params._1.get,
+                    params(param),
                     ImpureByAnalysis,
-                    ub,
-                    ImpureByAnalysis,
-                    treatThisAsFresh = true,
-                    treatParamsAsFresh = false
-                )
-            else true
+                    param ⇒ ContextuallyPure(IntTrieSet(param)),
+                    treatParamsAsFresh = true
+                ))
         case EOptionP(_, pk) ⇒
             reducePurityLB(ImpureByAnalysis)
             if (pk == Purity.key)
@@ -750,22 +720,20 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
         state.virtualRVFDependees = newVRVFDependees
 
-        var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[(Option[Expr[V]], Seq[Expr[V]])])] = Map.empty
+        var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
         for ((dependee, eAndD) ← state.purityDependees) {
             if (eAndD._1.hasNoProperty || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
                 newPurityDependees += ((dependee, eAndD))
         }
         state.purityDependees = newPurityDependees
 
-        var newVPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[(Option[Expr[V]], Seq[Expr[V]])])] = Map.empty
+        var newVPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[Seq[Expr[V]]])] = Map.empty
         for ((dependee, eAndD) ← state.virtualPurityDependees) {
             if (eAndD._1.hasNoProperty ||
                 (eAndD._1.lb.individualProperty meet state.ubPurity ne state.ubPurity))
                 newVPurityDependees += ((dependee, eAndD))
         }
         state.virtualPurityDependees = newVPurityDependees
-
-        //state.recomputeDependees()
     }
 
     /**
@@ -903,7 +871,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         adjustLowerBound()
 
         val dependees = state.dependees
-        if (dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
@@ -943,12 +911,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             project.instanceMethods(declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
+                    val d = new DefaultDomainWithCFGAndDefUse(p, method)
+                    val selfReference =
+                        UVar(d)(d.InitializedObjectValue(-1, declClass), SelfReferenceParameter)
                     val impureFillInStackTrace = !checkPurityOfCall(
                         declClass,
                         "fillInStackTrace",
                         MethodDescriptor("()Ljava/lang/Throwable;"),
-                        None,
-                        List.empty,
+                        List(selfReference),
                         Success(mdc.method)
                     )
                     if (impureFillInStackTrace) { // Early return for impure fillInStackTrace
@@ -957,10 +927,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             }
 
-        /* Synchronized methods have a visible side effect on the receiver */
+        // Synchronized methods have a visible side effect on the receiver
+        // Static synchronized methods lock the class which is potentially globally visible
         if (method.isSynchronized)
             if (method.isStatic) return Result(definedMethod, ImpureByAnalysis);
-            else atMost(ExternallyPure)
+            else atMost(ContextuallyPure(IntTrieSet(0)))
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
@@ -990,7 +961,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             cleanupDependees()
 
         val dependees = state.dependees
-        if (dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(definedMethod, state.ubPurity)
         } else {
             IntermediateResult(definedMethod, state.lbPurity, state.ubPurity, dependees, c)

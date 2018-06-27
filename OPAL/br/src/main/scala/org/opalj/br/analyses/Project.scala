@@ -1286,7 +1286,7 @@ object Project {
                         superinterfaceTypes,
                         interfaceMethod.name, interfaceMethod.descriptor,
                         UIDSet.empty[ObjectType]
-                    )(objectTypeToClassFile, classHierarchy)
+                    )(objectTypeToClassFile, classHierarchy, logContext)
                 if (maximallySpecificSuperiniterfaceMethod.size > 1) {
                     // If there are multiple maximally specific interface methods, actually
                     // none of them can be invoked

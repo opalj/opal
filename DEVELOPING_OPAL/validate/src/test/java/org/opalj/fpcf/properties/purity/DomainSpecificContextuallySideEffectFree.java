@@ -52,6 +52,8 @@ public @interface DomainSpecificContextuallySideEffectFree {
      */
     String value(); // default = "N/A";
 
+    int[] modifies();
+
     Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
 
     EP[] eps() default {};

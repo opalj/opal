@@ -108,7 +108,10 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                 else
                     Result(fp, escapeState.asAggregatedProperty)
             else
-                IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                IntermediateResult(
+                    fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
+                    dependees, continuation, CheapPropertyComputation
+                )
         }
 
         def continuation(someEPS: SomeEPS): PropertyComputationResult = {
