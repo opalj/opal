@@ -32,6 +32,7 @@ package analyses
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * A project information key that computes a bijective mapping between methods and an number in the
@@ -46,6 +47,7 @@ object MethodIDKey extends ProjectInformationKey[MethodIDs, Nothing] {
     override protected def compute(project: SomeProject): MethodIDs = {
         val method2Id = new Object2IntOpenHashMap[Method]()
         val id2Method = new Int2ObjectOpenHashMap[Method]()
+        var allMethodIDs = IntTrieSet.empty
 
         var curID = 0
         project.allMethods.foreach { m ⇒
@@ -53,14 +55,17 @@ object MethodIDKey extends ProjectInformationKey[MethodIDs, Nothing] {
             curID += 1
             method2Id.put(m, id)
             id2Method.put(id, m)
+            allMethodIDs += id
         }
 
-        new MethodIDs(method2Id.getInt, id2Method.get)
+        new MethodIDs(method2Id.getInt, id2Method.get, allMethodIDs)
     }
 }
 
 final class MethodIDs private[analyses] (
-        private[this] val method2Id: Method ⇒ Int, private[this] val id2Method: Int ⇒ Method
+        private[this] val method2Id: Method ⇒ Int,
+        private[this] val id2Method: Int ⇒ Method,
+        val allMethodIDs: IntTrieSet
 ) {
     def apply(method: Method): Int = method2Id(method)
 

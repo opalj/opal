@@ -47,8 +47,6 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.InvocationInstruction
-import org.opalj.collection.immutable.IntPair
-import org.opalj.collection.immutable.IntPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.log.OPALLogger
@@ -65,21 +63,8 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = CallGraph
 }
 
-/**
- * Represents a call graph for a specific [[org.opalj.br.analyses.SomeProject]].
- *
- * @param callees For each call-site (method and program counter), the set of potential call targets
- * @param callers For each method m, the set of potential call-sites (method and program counter)
- *                that have m as target.
- *
- * @author Florian Kuebler
- */
-final class CallGraph(
-        private[this] val callees:   IntMap[IntMap[IntTrieSet]],
-        private[this] val callers:   IntMap[Set[Long /*MethodId + PC*/ ]],
-        val size:                    Long,
-        private[this] val methodIds: MethodIDs
-) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
+sealed trait CallGraph extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
+
     def key: PropertyKey[CallGraph] = CallGraph.key
 
     override def toString: String = s"CallGraph(size = $size)"
@@ -93,6 +78,32 @@ final class CallGraph(
         if (size > other.size)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
+
+    def size: Long
+
+    def calleesOf(method: Method): Map[Int, Set[Method]]
+
+    def calleesOf(method: Method, pc: Int): Set[Method]
+
+    def callersOf(method: Method): Set[(Method, Int)]
+
+}
+
+/**
+ * Represents a call graph for a specific [[org.opalj.br.analyses.SomeProject]].
+ *
+ * @param callees For each call-site (method and program counter), the set of potential call targets
+ * @param callers For each method m, the set of potential call-sites (method and program counter)
+ *                that have m as target.
+ *
+ * @author Florian Kuebler
+ */
+final class CallGraphImplementation(
+        private[this] val callees:   IntMap[IntMap[IntTrieSet]],
+        private[this] val callers:   IntMap[Set[Long /*MethodId + PC*/ ]],
+        val size:                    Long,
+        private[this] val methodIds: MethodIDs
+) extends CallGraph {
 
     def updated(methodId: Int, calleesOfM: IntMap[IntTrieSet]): CallGraph = {
 
@@ -125,34 +136,33 @@ final class CallGraph(
                     newCallers = newCallers.updated(tgt, newCallers.getOrElse(tgt, Set.empty) + CallGraph.toLong(methodId, pc))
                 }
         }
-        CallGraph(newCallees, newCallers, size + (calleesOfMSize - oldCalleesOfMSize), methodIds)
+        new CallGraphImplementation(newCallees, newCallers, size + (calleesOfMSize - oldCalleesOfMSize), methodIds)
     }
 
     /**
      * Returns the callsites (pc) of `method` and the resolved targets.
      * @return A mapping from pc to target methods.
      */
-    def calleesOf(method: Method): IntMap[Set[Method]] = {
+    override def calleesOf(method: Method): IntMap[Set[Method]] = {
         val methodId = methodIds(method)
         val calleesOfM = callees(methodId)
         calleesOfM map { case (pc, tgtIds) ⇒ (pc, tgtIds.mapToAny[Method](methodIds.apply)) }
     }
 
-    def calleesOf(method: Method, pc: Int): Set[Method] = {
+    override def calleesOf(method: Method, pc: Int): Set[Method] = {
         val methodId = methodIds(method)
         callees(methodId)(pc).mapToAny(methodIds.apply)
 
     }
 
     def encodedCalleesOf(method: Method): IntMap[IntTrieSet] = {
-
         callees.getOrElse(methodIds(method), IntMap.empty)
     }
 
     /**
      * Returns the methods and program counters that call the `method`.
      */
-    def callersOf(method: Method): Set[(Method, Int /*PC*/ )] = {
+    override def callersOf(method: Method): Set[(Method, Int /*PC*/ )] = {
         val methodId = methodIds(method)
         val callersOfM = callers(methodId)
         callersOfM.map(CallGraph.toMethodAndPc) map {
@@ -168,7 +178,8 @@ object CallGraph extends CallGraphPropertyMetaInformation {
      * Computes a CHA like call graph.
      */
     def fallbackCG(p: SomeProject): CallGraph = {
-        p.get(FallbackCallGraphKey)
+        //p.get(FallbackCallGraphKey)
+        new FallbackCallGraph(p)
     }
 
     final val key: PropertyKey[CallGraph] = {
@@ -182,54 +193,61 @@ object CallGraph extends CallGraphPropertyMetaInformation {
         )
     }
 
-    def apply(
-        callees:   IntMap[IntMap[IntTrieSet]],
-        callers:   IntMap[Set[Long]],
-        size:      Long,
-        methodIDs: MethodIDs
-    ): CallGraph = new CallGraph(callees, callers, size, methodIDs)
-
     def toLong(methodId: Int, pc: Int): Long = {
         (methodId.toLong << 32) | (pc & 0xFFFFFFFFL)
     }
     def toMethodAndPc(methodAndPc: Long): (Int, Int) = {
         ((methodAndPc >> 32).toInt, methodAndPc.toInt)
     }
-
 }
 
-object FallbackCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
+object CallSitesKey extends ProjectInformationKey[Set[(Method, Int)], Nothing] {
     override protected def requirements: ProjectInformationKeys = Nil
 
-    override protected def compute(project: SomeProject): CallGraph = {
-        val methodIDs = project.get(MethodIDKey)
-        val allMethodIDs = project.allMethods.foldLeft(IntTrieSet.empty) {
-            case (r, method) ⇒ r + methodIDs(method)
-        }
-
-        val callSites = project.allMethodsWithBody.iterator.flatMap {
-            m ⇒
-                val pcs = m.body.get.filter { case (_, instr) ⇒ instr.isInvocationInstruction }
-                pcs.mapToAny[IntPair](IntPair(methodIDs(m), _))
+    override protected def compute(project: SomeProject): Set[(Method, Int)] = {
+        project.allMethodsWithBody.iterator.flatMap { m ⇒
+            val pcs = m.body.get.filter { case (_, instr) ⇒ instr.isInvocationInstruction }
+            pcs.mapToAny[(Method, Int)](m → _)
         }.toSet
+    }
+}
 
-        val callees = IntMap(callSites.groupBy(_._1).map {
-            case (m, x) ⇒ m → IntMap(x.toSeq.map { pair ⇒ pair._2 → allMethodIDs }: _*)
-        }.toSeq: _*)
+final class FallbackCallGraph(project: SomeProject) extends CallGraph {
 
-        val callSitesLong = callSites.map { pair ⇒ CallGraph.toLong(pair._1, pair._2) }
+    /*private[this] val callSitesSize = {
+        project.allMethodsWithBody.foldLeft(0L) { (size, m) ⇒
+            size + m.body.get.filter { case (_, instr) ⇒ instr.isInvocationInstruction }.size
+        }
+    }*/
 
-        var callers = IntMap.empty[Set[Long]]
-        var size = 0L
-        allMethodIDs.mapToAnyUsingBuilder[(Int, Set[Long])](
-            (e: (Int, Set[Long])) ⇒ {
-                size += e._2.size
-                callers += ((e._1, e._2))
-            },
-            _ → callSitesLong
-        )
+    private[this] val allMethods = project.allMethods.toSet
 
-        CallGraph(callees, callers, size, methodIDs)
+    override def size: Long = {
+        //Long.MaxValue
+        project.get(CallSitesKey).size.toLong * allMethods.size
+    }
+
+    override def calleesOf(method: Method): Map[Int, Set[Method]] = {
+        if (method.body.isDefined) {
+            method.body.get.withFilter(
+                _.instruction.isInvocationInstruction
+            ).map(_.pc → allMethods).toMap
+        } else {
+            Map.empty
+        }
+    }
+
+    override def calleesOf(method: Method, pc: Int): Set[Method] = {
+        if (method.body.isDefined) {
+            assert(method.body.get.instructions(pc).isInvocationInstruction)
+            project.allMethods.toSet
+        } else {
+            Set.empty
+        }
+    }
+
+    override def callersOf(method: Method): Set[(Method, Int)] = {
+        project.get(CallSitesKey)
     }
 }
 
@@ -267,11 +285,11 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     staticCallCache.getOrElseUpdate(
                                         call.declaringClass, methodSignature
                                     ) {
-                                            project.staticCall(call) match {
-                                                case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
-                                                case _            ⇒ IntTrieSet.empty
-                                            }
+                                        project.staticCall(call) match {
+                                            case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
+                                            case _            ⇒ IntTrieSet.empty
                                         }
+                                    }
 
                                 case INVOKESPECIAL.opcode ⇒
                                     val call = instr.asInstanceOf[INVOKESPECIAL]
@@ -279,11 +297,11 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     specialCallCache.getOrElseUpdate(
                                         call.declaringClass, methodSignature
                                     ) {
-                                            project.specialCall(call) match {
-                                                case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
-                                                case _            ⇒ IntTrieSet.empty
-                                            }
+                                        project.specialCall(call) match {
+                                            case Success(tgt) ⇒ IntTrieSet1(methodIds(tgt))
+                                            case _            ⇒ IntTrieSet.empty
                                         }
+                                    }
 
                                 case INVOKEINTERFACE.opcode ⇒
                                     val call = instr.asInstanceOf[INVOKEINTERFACE]
@@ -291,12 +309,12 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                     interfaceCallCache.getOrElseUpdate(
                                         call.declaringClass, methodSignature
                                     ) {
-                                            project.interfaceCall(
-                                                call
-                                            ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
-                                                r + methodIds(tgt)
-                                            }
+                                        project.interfaceCall(
+                                            call
+                                        ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
+                                            r + methodIds(tgt)
                                         }
+                                    }
 
                                 case INVOKEVIRTUAL.opcode ⇒
                                     val call = instr.asInstanceOf[INVOKEVIRTUAL]
@@ -317,8 +335,8 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                                         project.virtualCall(
                                             m.classFile.thisType.packageName, call
                                         ).foldLeft(IntTrieSet.empty) { (r, tgt) ⇒
-                                                r + methodIds(tgt)
-                                            }
+                                            r + methodIds(tgt)
+                                        }
                                     }
 
                                 case INVOKEDYNAMIC.opcode ⇒
@@ -352,9 +370,7 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         val size = callers.values().iterator().asScala.map(_.size).sum
 
-        println("hey")
-
-        new CallGraph(
+        new CallGraphImplementation(
             IntMap[IntMap[IntTrieSet]](callees.asScala.toSeq: _*),
             IntMap[Set[Long]](callers.asScala.toSeq: _*),
             size.toLong,

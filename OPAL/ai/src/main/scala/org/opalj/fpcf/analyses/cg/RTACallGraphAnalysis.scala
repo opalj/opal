@@ -45,7 +45,9 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.CallGraph
+import org.opalj.fpcf.properties.CallGraphImplementation
 import org.opalj.fpcf.properties.Callees
+import org.opalj.fpcf.properties.CalleesImplementation
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
@@ -414,7 +416,7 @@ class RTACallGraphAnalysis private[analyses] (
         newCalleesOfM: IntMap[IntTrieSet]
     ): PartialResult[SomeProject, CallGraph] = {
         PartialResult(project, CallGraph.key, {
-            case EPS(_, lb: CallGraph, ub: CallGraph) if newCalleesOfM.nonEmpty ⇒
+            case EPS(_, lb: CallGraph, ub: CallGraphImplementation) if newCalleesOfM.nonEmpty ⇒
                 val newCG = ub.updated(methodId, newCalleesOfM)
 
                 // todo shouldn't it be newCG.size > ub.size
@@ -439,7 +441,11 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(IntMap(methodId → newCalleesOfM), callers, callers.map(_._2.size).sum.toLong, methodIds)
+                    new CallGraphImplementation(
+                        IntMap(methodId → newCalleesOfM),
+                        callers,
+                        callers.map(_._2.size).sum.toLong, methodIds
+                    )
                 ))
             case _ ⇒ None
         })
@@ -474,7 +480,7 @@ class RTACallGraphAnalysis private[analyses] (
         val calleesLB = Callees.fallback(state.method, p)
 
         // here we need a immutable copy of the current state
-        val newCallees = Callees(state.calleesOfM, methodIds)
+        val newCallees = new CalleesImplementation(state.calleesOfM, methodIds)
         // todo equal size or equal callees?
         if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)

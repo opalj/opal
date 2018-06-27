@@ -31,7 +31,6 @@ package fpcf
 package properties
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
@@ -49,42 +48,17 @@ sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = Callees
 }
 
-class Callees(
-        val calleesIds:              IntMap[IntTrieSet],
-        private[this] val methodIds: MethodIDs
-) extends Property with OrderedProperty with CalleesPropertyMetaInformation {
-    final def key: PropertyKey[Callees] = Callees.key
+sealed trait Callees extends Property with OrderedProperty with CalleesPropertyMetaInformation {
 
-    def callees: Map[Int /*PC*/ , Set[Method]] = calleesIds.map {
-        case (pc, tgts) ⇒
-            (pc, tgts.mapToAny[Method](methodIds.apply))
-    }
+    def size: Int
+
+    def callees: Map[Int /*PC*/ , Set[Method]]
 
     override def toString: String = {
-        s"Callees(size=${this.size})\n\t$callees"
+        s"Callees(size=${this.size})"
     }
 
-    val size: Int = {
-        calleesIds.iterator.map(_._2.size).sum
-    }
-
-    def canEqual(other: Any): Boolean = other.isInstanceOf[Callees]
-
-    override def equals(other: Any): Boolean = other match {
-        case that: Callees ⇒
-            (that canEqual this) &&
-                calleesIds == that.calleesIds
-        case _ ⇒ false
-    }
-
-    override def hashCode(): Int = {
-        val state = Seq(calleesIds)
-        state.map(_.hashCode()).foldLeft(0)((a, b) ⇒ 31 * a + b)
-    }
-
-    /*private def pcMethodPairs: Set[(Int /*PC*/ , Method)] = callees.toSet.flatMap {
-        pcToTgts: (Int, Set[Method]) ⇒ pcToTgts._2.map((tgt: Method) ⇒ (pcToTgts._1, tgt))
-    }*/
+    final def key: PropertyKey[Callees] = Callees.key
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
@@ -93,6 +67,36 @@ class Callees(
     override def checkIsEqualOrBetterThan(e: Entity, other: Callees): Unit = {
         if (other.size < size) //todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
+    }
+}
+
+final class CalleesImplementation(
+        private[this] val calleesIds: IntMap[IntTrieSet],
+        private[this] val methodIds:  MethodIDs
+) extends Callees {
+
+    override def callees: Map[Int /*PC*/ , Set[Method]] = calleesIds.map {
+        case (pc, tgts) ⇒
+            (pc, tgts.mapToAny[Method](methodIds.apply))
+    }
+
+    override val size: Int = {
+        calleesIds.iterator.map(_._2.size).sum
+    }
+}
+
+class FallbackCallees(project: SomeProject, method: Method) extends Callees {
+
+    private[this] def allMethods = project.allMethods.toSet
+
+    override def size: Int = {
+        //callees.size * project.allMethods.size
+        // todo this is for performance improvement only
+        Int.MaxValue
+    }
+
+    override def callees: Map[Int, Set[Method]] = {
+        method.body.get.withFilter(_.instruction.isInvocationInstruction).map(_.pc → allMethods)
     }
 }
 
@@ -107,14 +111,7 @@ object Callees extends CalleesPropertyMetaInformation {
         )
     }
 
-    def apply(callees: IntMap[IntTrieSet], methodIDs: MethodIDs): Callees = {
-        new Callees(callees, methodIDs)
-    }
-
-    def unapply(callees: Callees): Option[IntMap[IntTrieSet]] = Some(callees.calleesIds)
-
     def fallback(m: Method, p: SomeProject): Callees = {
-        val methodIDs = p.get(MethodIDKey)
-        Callees(p.get(FallbackCallGraphKey).encodedCalleesOf(m), methodIDs)
+        new FallbackCallees(p, m)
     }
 }
