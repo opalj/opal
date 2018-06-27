@@ -33,15 +33,6 @@ import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
-import java.io.PrintStream;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
-
-import static org.opalj.fpcf.properties.purity.DomainSpecific.RaisesExceptions;
-import static org.opalj.fpcf.properties.purity.DomainSpecific.UsesLogging;
-import static org.opalj.fpcf.properties.purity.DomainSpecific.UsesSystemOutOrErr;
-
 /**
  * Test cases for purity in the presence of local as well as non-local fields
  *
@@ -81,9 +72,10 @@ public class Fields implements Cloneable {
         return copy;
     }
 
-    @DomainSpecificExternallySideEffectFree(value = "The array the value is stored in is local",
-    eps = @EP(cf = Fields.class, pk = "FieldLocality", field = "localPrivateField",
-            p = "LocalField")
+    @DomainSpecificContextuallySideEffectFree(value = "The array the value is stored in is local",
+            modifies = {0},
+            eps = @EP(cf = Fields.class, pk = "FieldLocality", field = "localPrivateField",
+                    p = "LocalField")
     )
     @Impure(value = "Analysis doesn't handle local fields/array not recognized as local",
             eps = @EP(cf = Fields.class, pk = "FieldLocality", field = "localPrivateField",
@@ -93,8 +85,8 @@ public class Fields implements Cloneable {
         localPrivateField[0] = value;
     }
 
-
-    @DomainSpecificExternallySideEffectFree(value = "The array the value is stored in is local",
+    @DomainSpecificContextuallySideEffectFree(value = "The array the value is stored in is local",
+            modifies = {0},
             eps = @EP(cf = Fields.class, pk = "FieldLocality", field = "localPackagePrivateField",
                     p = "LocalField")
     )

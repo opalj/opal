@@ -38,10 +38,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import static org.opalj.fpcf.properties.purity.DomainSpecific.RaisesExceptions;
-import static org.opalj.fpcf.properties.purity.DomainSpecific.UsesLogging;
-import static org.opalj.fpcf.properties.purity.DomainSpecific.UsesSystemOutOrErr;
-
 /**
  * Test cases for purity in the presence of domain specific actions
  *
@@ -70,15 +66,17 @@ public class DomainSpecific {
         return 12121 % PrimitiveTypes.nonFinalStaticField;
     }
 
-    @DomainSpecificExternallyPure("Potential DivisionByZeroException, synchronizes on receiver")
+    @DomainSpecificContextuallyPure(
+            value = "Potential DivisionByZeroException, synchronizes on receiver", modifies = {0})
     @Impure(value = "Synchronizes on receiver",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public synchronized int domainSpecificExternallyPure(int i) {
         return 1221 / i;
     }
 
-    @DomainSpecificExternallySideEffectFree(
-            "PotentialDivisionByZeroException, modifies instance field stream")
+    @DomainSpecificContextuallySideEffectFree(
+            value = "PotentialDivisionByZeroException, modifies instance field stream",
+            modifies = {0})
     @Impure(value = "Modifies instance field stream",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public int domainSpecificExternallySideEffectFree() {

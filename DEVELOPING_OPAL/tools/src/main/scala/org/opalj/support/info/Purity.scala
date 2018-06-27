@@ -80,12 +80,8 @@ import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ContextuallySideEffectFree
 import org.opalj.fpcf.properties.DContextuallyPure
 import org.opalj.fpcf.properties.DContextuallySideEffectFree
-import org.opalj.fpcf.properties.DExternallyPure
-import org.opalj.fpcf.properties.DExternallySideEffectFree
 import org.opalj.fpcf.properties.DPure
 import org.opalj.fpcf.properties.DSideEffectFree
-import org.opalj.fpcf.properties.ExternallyPure
-import org.opalj.fpcf.properties.ExternallySideEffectFree
 import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
@@ -105,6 +101,8 @@ object Purity {
     def usage: String = {
         "Usage: java …PurityAnalysisEvaluation \n"+
             "-cp <JAR file/Folder containing class files> OR -JDK\n"+
+            "[-projectDir <directory with project class files relative to cp>]\n"+
+            "[-libDir <directory with library class files relative to cp>]\n"+
             "[-analysis <L0|L1|L2> (Default: L2)]\n"+
             "[-domain <class name of the domain>]\n"+
             "[-rater <class name of the rater>]\n"+
@@ -146,6 +144,8 @@ object Purity {
 
     def evaluate(
         cp:                    File,
+        projectDir:            Option[String],
+        libDir:                Option[String],
         analysis:              FPCFLazyAnalysisScheduler,
         domain:                SomeProject ⇒ Method ⇒ Domain with RecordDefUse,
         rater:                 DomainSpecificRater,
@@ -156,13 +156,22 @@ object Purity {
         debug:                 Boolean,
         evaluationDir:         Option[File]
     ): Unit = {
-        val classFiles = JavaClassFileReader().ClassFiles(cp)
+        val classFiles = projectDir match {
+            case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
+            case None      ⇒ JavaClassFileReader().ClassFiles(cp)
+        }
+
+        val libFiles = libDir match {
+            case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
+            case None      ⇒ Traversable.empty
+        }
+
         val JDKFiles = if (withoutJDK) Traversable.empty
         else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         val dirName = if (cp eq JRELibraryFolder) "JDK" else cp.getName
-        val projectDir = evaluationDir.map(new File(_, dirName))
-        if (projectDir.isDefined && !projectDir.get.exists()) projectDir.get.mkdir()
+        val projectEvalDir = evaluationDir.map(new File(_, dirName))
+        if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
         var projectTime: Seconds = Seconds.None
         var tacTime: Seconds = Seconds.None
@@ -179,7 +188,7 @@ object Purity {
         val project = time {
             Project(
                 classFiles,
-                JDKFiles,
+                libFiles ++ JDKFiles,
                 libraryClassFilesAreInterfacesOnly = false,
                 Traversable.empty
             )
@@ -236,8 +245,8 @@ object Purity {
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
 
-        if (projectDir.isDefined) {
-            val runtime = new File(projectDir.get, "runtime.csv")
+        if (projectEvalDir.isDefined) {
+            val runtime = new File(projectEvalDir.get, "runtime.csv")
             val runtimeNew = !runtime.exists()
             val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
             try {
@@ -259,35 +268,29 @@ object Purity {
         val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
         val pure = purityEs.collect { case FinalEP(m: DefinedMethod, Pure) ⇒ m }
         val sideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, SideEffectFree) ⇒ m }
-        val externallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ExternallyPure) ⇒ m }
-        val externallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ExternallySideEffectFree) ⇒ m }
-        val contextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure) ⇒ m }
-        val contextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree) ⇒ m }
+        val contextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) ⇒ (m, p) }
+        val contextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) ⇒ (m, p) }
         val dPure = purityEs.collect { case FinalEP(m: DefinedMethod, DPure) ⇒ m }
         val dSideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) ⇒ m }
-        val dExternallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DExternallyPure) ⇒ m }
-        val dExternallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DExternallySideEffectFree) ⇒ m }
-        val dContextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure) ⇒ m }
-        val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree) ⇒ m }
+        val dContextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) ⇒ (m, p) }
+        val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) ⇒ (m, p) }
         val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
 
-        if (projectDir.isDefined) {
-            val results = new File(projectDir.get, "method-results.csv")
+        if (projectEvalDir.isDefined) {
+            val results = new File(projectEvalDir.get, "method-results.csv")
             val resultsNew = !results.exists()
             val resultsWriter = new PrintWriter(new FileOutputStream(results, !individual))
             try {
                 if (resultsNew) {
                     results.createNewFile()
                     if (!individual)
-                        resultsWriter.println("{c};{};{d},{n};{n,d},{r};{r,d},{n,r};{n,r,d},"+
-                            "{p};{p,d},{n,p},{n,p,d},{i^};count")
+                        resultsWriter.println("{c};{};{d};{n};{n,d};{p};{p,d};{n,p};{n,p,d}j{i^};count")
                 }
 
                 if (!individual) {
                     resultsWriter.println(
-                        s"${compileTimePure.size};${pure.size};${dPure.size};${sideEffectFree.size};"+
-                            s"${dSideEffectFree.size};${externallyPure.size};${dExternallyPure.size};"+
-                            s"${externallySideEffectFree.size};${dExternallySideEffectFree.size};"+
+                        s"${compileTimePure.size};${pure.size};${dPure.size};"+
+                            s"${sideEffectFree.size};${dSideEffectFree.size};"+
                             s"${contextuallyPure.size};${dContextuallyPure.size};"+
                             s"${contextuallySideEffectFree.size};${dContextuallySideEffectFree.size};"+
                             s"${lbImpure.size};${purityEs.size}"
@@ -308,29 +311,17 @@ object Purity {
                     for (m ← dSideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => {n,d}")
                     }
-                    for (m ← externallyPure) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {r}")
+                    for ((m, p) ← contextuallyPure) {
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {p:$p}")
                     }
-                    for (m ← dExternallyPure) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {r,d}")
+                    for ((m, p) ← dContextuallyPure) {
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {p:$p,d}")
                     }
-                    for (m ← externallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,r}")
+                    for ((m, p) ← contextuallySideEffectFree) {
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,p:$p}")
                     }
-                    for (m ← dExternallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,r,d}")
-                    }
-                    for (m ← contextuallyPure) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {p}")
-                    }
-                    for (m ← dContextuallyPure) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {p,d}")
-                    }
-                    for (m ← contextuallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,p}")
-                    }
-                    for (m ← dContextuallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,p,d}")
+                    for ((m, p) ← dContextuallySideEffectFree) {
+                        resultsWriter.println(s"${m.definedMethod.toJava} => {n,p:$p,d}")
                     }
                     for (m ← lbImpure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => {i}")
@@ -347,25 +338,23 @@ object Purity {
                     "\nAt least domain-specficic pure:        "+dPure.size+
                     "\nAt least side-effect free:             "+sideEffectFree.size+
                     "\nAt least d-s side effect free:         "+dSideEffectFree.size+
-                    "\nAt least externally pure:              "+externallyPure.size+
-                    "\nAt least d-s externally pure:          "+dExternallyPure.size+
-                    "\nAt least externally side-effect free:  "+externallySideEffectFree.size+
-                    "\nAt least d-s ext. side-effect free:    "+dExternallySideEffectFree.size+
                     "\nAt least contextually pure:            "+contextuallyPure.size+
                     "\nAt least d-s contextually pure:        "+dContextuallyPure.size+
                     "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
                     "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
                     "\nImpure:                                "+lbImpure.size
             println(result)
-
-            println(project.get(PropertyStoreKey).statistics.mkString("\n"))
         }
+
+        println(project.get(PropertyStoreKey).statistics.mkString("\n"))
     }
 
     def main(args: Array[String]): Unit = {
 
         // Parameters:
         var cp: File = null
+        var projectDir: Option[String] = None
+        var libDir: Option[String] = None
         var analysisName: Option[String] = None
         var domainName: Option[String] = None
         var raterName: Option[String] = None
@@ -393,6 +382,8 @@ object Purity {
         while (i < args.length) {
             args(i) match {
                 case "-cp"          ⇒ cp = new File(readNextArg())
+                case "-projectDir"  ⇒ projectDir = Some(readNextArg())
+                case "-libDir"      ⇒ libDir = Some(readNextArg())
                 case "-analysis"    ⇒ analysisName = Some(readNextArg())
                 case "-domain"      ⇒ domainName = Some(readNextArg())
                 case "-rater"       ⇒ raterName = Some(readNextArg())
@@ -460,6 +451,8 @@ object Purity {
                     println(subp.getName)
                     evaluate(
                         subp,
+                        projectDir,
+                        libDir,
                         analysis,
                         d,
                         rater,
@@ -474,6 +467,8 @@ object Purity {
             } else {
                 evaluate(
                     cp,
+                    projectDir,
+                    libDir,
                     analysis,
                     d,
                     rater,
