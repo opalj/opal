@@ -390,7 +390,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             } else {
                 IntermediateResult(
                     t, minLocalImmutability, maxLocalImmutability,
-                    dependees.values, c, CheapPropertyComputation // TODO Is it cheap?
+                    dependees.values, c
                 )
 
             }
@@ -399,7 +399,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         //[DEBUG] assert(initialImmutability.isRefinable)
         val result = IntermediateResult(
             t, minLocalImmutability, maxLocalImmutability,
-            dependees.values, c, CheapPropertyComputation // TODO Is it cheap?
+            dependees.values, c
         )
         if (lazyComputation)
             result

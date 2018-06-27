@@ -155,20 +155,19 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         // if the method is inherited, query the result for the one in its defining class
         case DefinedMethod(_, m) ⇒
 
-            def c(someEPS: SomeEPS): PropertyComputationResult = {
-                handleReturnValueFreshness(someEPS)
-            }
-
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
             ): PropertyComputationResult = eOptP match {
                 case FinalEP(_, p) ⇒ Result(e, p)
                 case IntermediateEP(_, lb, ub) ⇒
-                    IntermediateResult(e, lb, ub, Set(eOptP), c, CheapPropertyComputation)
+                    IntermediateResult(
+                        e, lb, ub,
+                        Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
+                    )
                 case _ ⇒
                     IntermediateResult(
                         e, NoFreshReturnValue, FreshReturnValue,
-                        Set(eOptP), c, CheapPropertyComputation
+                        Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
             }
 

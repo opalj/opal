@@ -96,7 +96,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             } else {
                 IntermediateResult(
                     dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                    dependees, c, CheapPropertyComputation
+                    dependees, c
                 )
             }
         }
@@ -106,7 +106,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
         } else {
             IntermediateResult(
                 dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
-                dependees, c, CheapPropertyComputation
+                dependees, c
             )
         }
     }
