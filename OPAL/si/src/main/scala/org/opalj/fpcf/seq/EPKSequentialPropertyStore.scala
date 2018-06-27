@@ -36,7 +36,7 @@ import java.lang.System.identityHashCode
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.LongMap
 import scala.collection.mutable
-import scala.collection.{Map => SomeMap}
+import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet

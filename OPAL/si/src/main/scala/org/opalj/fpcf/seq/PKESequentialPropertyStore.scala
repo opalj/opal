@@ -38,12 +38,12 @@ import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
-import scala.collection.{Map => SomeMap}
+import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.graphs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.{debug => trace}
+import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
@@ -114,7 +114,7 @@ final class PKESequentialPropertyStore private (
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
     def statistics: SomeMap[String, Int] = {
-       mutable.LinkedHashMap(
+        mutable.LinkedHashMap(
             "scheduled tasks" -> scheduledTasksCount,
             "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
             "fast-track properties" -> fastTrackPropertiesCount,
