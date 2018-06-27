@@ -37,6 +37,8 @@ sealed abstract class PropertyComputationResult {
 
     private[fpcf] def id: Int
 
+    private[fpcf] def isIntermediateResult: Boolean = false
+    private[fpcf] def asIntermediateResult: IntermediateResult[_] = throw new ClassCastException
 }
 
 /**
@@ -171,6 +173,9 @@ case class IntermediateResult[P <: Property](
     }
 
     private[fpcf] final def id = IntermediateResult.id
+
+    private[fpcf] final override def isIntermediateResult: Boolean = true
+    private[fpcf] final override def asIntermediateResult: IntermediateResult[_] = this
 
     override def hashCode: Int = e.hashCode * 17 + dependees.hashCode
 

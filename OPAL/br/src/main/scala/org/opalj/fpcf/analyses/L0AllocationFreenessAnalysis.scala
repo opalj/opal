@@ -193,8 +193,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                             MethodWithAllocations,
                             AllocationFreeMethod,
                             dependees,
-                            c,
-                            CheapPropertyComputation
+                            c
                         )
                     }
 
@@ -208,15 +207,14 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                         MethodWithAllocations,
                         AllocationFreeMethod,
                         dependees,
-                        c,
-                        CheapPropertyComputation
+                        c
                     )
             }
         }
 
         IntermediateResult(
             definedMethod, MethodWithAllocations, AllocationFreeMethod,
-            dependees, c, CheapPropertyComputation
+            dependees, c
         )
     }
 

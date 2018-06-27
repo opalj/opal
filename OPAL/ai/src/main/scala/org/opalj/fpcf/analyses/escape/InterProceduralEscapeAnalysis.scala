@@ -99,27 +99,23 @@ class InterProceduralEscapeAnalysis private[analyses] (
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
             case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
-                def handleEscapeState(
-                    eOptionP: SomeEOptionP
-                ): PropertyComputationResult = eOptionP match {
-                    case FinalEP(_, p) ⇒
-                        Result(fp, p)
+                def handleEscapeState(eOptionP: SomeEOptionP): PropertyComputationResult = {
+                    eOptionP match {
+                        case FinalEP(_, p) ⇒
+                            Result(fp, p)
 
-                    case IntermediateEP(_, lb, ub) ⇒
-                        IntermediateResult(
-                            fp, lb, ub,
-                            Set(eOptionP), c, CheapPropertyComputation
-                        )
+                        case IntermediateEP(_, lb, ub) ⇒
+                            IntermediateResult(
+                                fp, lb, ub,
+                                Set(eOptionP), handleEscapeState, CheapPropertyComputation
+                            )
 
-                    case _ ⇒
-                        IntermediateResult(
-                            fp, GlobalEscape, NoEscape,
-                            Set(eOptionP), c, CheapPropertyComputation
-                        )
-                }
-
-                def c(someEPS: SomeEPS): PropertyComputationResult = {
-                    handleEscapeState(someEPS)
+                        case _ ⇒
+                            IntermediateResult(
+                                fp, GlobalEscape, NoEscape,
+                                Set(eOptionP), handleEscapeState, CheapPropertyComputation
+                            )
+                    }
                 }
 
                 val parameterOfBase = virtualFormalParameters(declaredMethods(m))(-i - 1)

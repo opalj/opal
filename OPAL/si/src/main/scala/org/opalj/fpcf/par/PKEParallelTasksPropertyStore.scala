@@ -34,7 +34,6 @@ import java.lang.System.identityHashCode
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReferenceArray
@@ -351,7 +350,7 @@ final class PKEParallelTasksPropertyStore private (
     /**
      * The jobs which update the store.
      */
-    private[this] val storeUpdates = new LinkedBlockingDeque[StoreUpdate]()
+    private[this] val storeUpdates = new ConcurrentLinkedDeque[StoreUpdate]()
     private[this] val storeUpdatesSemaphore = new Semaphore(0)
 
     private[this] def prependStoreUpdate(update: StoreUpdate): Unit = {
