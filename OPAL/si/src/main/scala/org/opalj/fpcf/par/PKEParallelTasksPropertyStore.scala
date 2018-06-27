@@ -529,12 +529,36 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     // Thread Safe!
-    private[this] def scheduleLazyComputationForEntity[E <: Entity](
-        e:    E,
-        pkId: Int,
-        pc:   PropertyComputation[E]
-    ): Unit = {
-        appendStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
+    private[this] def computeOrScheduleLazyComputationForEntity[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): EOptionP[E, P] = {
+        // Currently, we do not support eagerly scheduled computations and
+        // fasttrack properties. In that case, we could have a scheduled
+        // computation and "in parallel" a request by another thread. This
+        // would trigger the fasttrack evaluation and then result in the
+        // situation where we already have a (final) result and we then get
+        // the result of the scheduled computation.
+        val pkId = pk.id
+        val fastTrackPropertyOption =
+            if ((computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) &&
+                useFastTrackPropertyComputations)
+                fastTrackPropertyBasedOnPkId(this, e, pkId)
+            else
+                None
+
+        fastTrackPropertyOption match {
+            case Some(p) ⇒
+                fastTrackPropertiesCounter.incrementAndGet()
+                val finalEP = FinalEP(e, p.asInstanceOf[P])
+                prependStoreUpdate(PropertyUpdate(IdempotentResult(finalEP), false, true))
+                finalEP
+
+            case None ⇒
+                appendStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
+                EPK(e, pk)
+        }
     }
 
     // Thread Safe!
@@ -556,26 +580,12 @@ final class PKEParallelTasksPropertyStore private (
                     /*&& delayedPropertyKinds ne null (not necessary)*/
                     throw new IllegalStateException("setup phase was not called")
                 }
-                val isComputedPropertyKind = computedPropertyKinds(pkId)
 
                 lazyComputations.get(pkId) match {
                     case null ⇒
-                        if (!isComputedPropertyKind && !delayedPropertyKinds(pkId)) {
+                        if (!computedPropertyKinds(pkId) && !delayedPropertyKinds(pkId)) {
                             // ... a property is queried that is not going to be computed...
                             fallbacksUsedCounter.incrementAndGet()
-                            // STRATEGIE 1
-                            // We schedule the computation of the fallback to avoid that the
-                            // fallback is computed multiple times (which – in some cases –
-                            // is not always just a bottom value!)
-                            /*
-                                    scheduleLazyComputationForEntity(
-                                        e, pkId,
-                                        (_: E) ⇒ {
-                                            Result(e, PropertyKey.fallbackProperty(store, e, pk))
-                                        }
-                                    )
-                                    */
-                            // STRATEGIE 2
                             // We directly compute the property and store it to make
                             // it accessible later on...
                             val p = PropertyKey.fallbackProperty(store, e, pk)
@@ -587,29 +597,7 @@ final class PKEParallelTasksPropertyStore private (
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒
-                        // Currently, we do not support eagerly scheduled computations and
-                        // fasttrack properties. In that case, we could have a scheduled
-                        // computation and "in parallel" a request by another thread. This
-                        // would trigger the fasttrack evaluation and then result in the
-                        // situation where we already have a (final) result and we then get
-                        // the result of the scheduled computation.
-                        val fastTrackPropertyOption: Option[P] =
-                            if (isComputedPropertyKind && useFastTrackPropertyComputations)
-                                fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
-                            else
-                                None
-
-                        fastTrackPropertyOption match {
-                            case Some(p) ⇒
-                                fastTrackPropertiesCounter.incrementAndGet()
-                                val finalEP = FinalEP(e, p)
-                                prependStoreUpdate(PropertyUpdate(IdempotentResult(finalEP), false, true))
-                                finalEP
-
-                            case None ⇒
-                                scheduleLazyComputationForEntity(e, pkId, lc)
-                                EPK(e, pk)
-                        }
+                        computeOrScheduleLazyComputationForEntity(e, pk, lc)
                 }
 
             case eps ⇒
@@ -630,7 +618,7 @@ final class PKEParallelTasksPropertyStore private (
 
             val lc = lazyComputations.get(pkId)
             if (lc != null && properties(pkId).get(e) == null) {
-                scheduleLazyComputationForEntity(e, pkId, lc) // <= handles redundant starts
+                computeOrScheduleLazyComputationForEntity(e, pk, lc)
             }
         }
     }
@@ -660,11 +648,11 @@ final class PKEParallelTasksPropertyStore private (
     override def set(e: Entity, p: Property): Unit = handleExceptions {
         if (debug && lazyComputations.get(p.key.id) != null) {
             throw new IllegalStateException(
-                s"$e: setting $p is not supported; lazy computation is registered"
+                s"$e: setting $p is not supported; lazy computation is (already) registered"
             )
         }
         val r = ExternalResult(e, p)
-        prependStoreUpdate(PropertyUpdate(r, /*doesn't matte:*/ false, /*doesn't matter:*/ false))
+        prependStoreUpdate(PropertyUpdate(r, /*doesn't matter:*/ false, /*doesn't matter:*/ false))
     }
 
     // Thread safe!
