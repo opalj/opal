@@ -344,9 +344,9 @@ object Purity {
                     "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
                     "\nImpure:                                "+lbImpure.size
             println(result)
-
-            println(project.get(PropertyStoreKey).statistics.mkString("\n"))
         }
+
+        println(project.get(PropertyStoreKey).statistics.mkString("\n"))
     }
 
     def main(args: Array[String]): Unit = {
