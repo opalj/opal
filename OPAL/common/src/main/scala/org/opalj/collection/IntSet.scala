@@ -68,6 +68,9 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
         foreach { v ⇒ r += f(v) }
         r
     }
+    def mapToAnyUsingBuilder[A](growable: A ⇒ Unit, f: IntFunction[A]): Unit = {
+        foreach { v ⇒ growable(f(v)) }
+    }
     def flatMap(f: Int ⇒ T): T
 
     def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
