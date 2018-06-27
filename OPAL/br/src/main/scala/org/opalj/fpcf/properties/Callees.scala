@@ -101,7 +101,7 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            (ps: PropertyStore, _: Method) ⇒ Callees(IntMap.empty, ps.context[SomeProject].get(MethodIDKey)),
+            (ps: PropertyStore, m: Method) ⇒ Callees.fallback(m, ps.context[SomeProject]),
             (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub,
             (_: PropertyStore, _: Method) ⇒ None
         )
@@ -112,4 +112,9 @@ object Callees extends CalleesPropertyMetaInformation {
     }
 
     def unapply(callees: Callees): Option[IntMap[IntTrieSet]] = Some(callees.calleesIds)
+
+    def fallback(m: Method, p: SomeProject): Callees = {
+        val methodIDs = p.get(MethodIDKey)
+        Callees(p.get(FallbackCallGraphKey).encodedCalleesOf(m), methodIDs)
+    }
 }

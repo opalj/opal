@@ -439,7 +439,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     project,
                     CallGraph.fallbackCG(p),
-                    new CallGraph(IntMap(methodId → newCalleesOfM), callers, callers.map(_._2.size).sum, methodIds)
+                    new CallGraph(IntMap(methodId → newCalleesOfM), callers, callers.map(_._2.size).sum.toLong, methodIds)
                 ))
             case _ ⇒ None
         })
@@ -471,7 +471,7 @@ class RTACallGraphAnalysis private[analyses] (
     def resultForCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: State
     ): PropertyComputationResult = {
-        val calleesLB = Callees(CallGraph.fallbackCG(p).callees(methodIds(state.method)), methodIds)
+        val calleesLB = Callees.fallback(state.method, p)
 
         // here we need a immutable copy of the current state
         val newCallees = Callees(state.calleesOfM, methodIds)

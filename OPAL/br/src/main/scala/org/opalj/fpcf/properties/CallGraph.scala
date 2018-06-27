@@ -47,6 +47,8 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.InvocationInstruction
+import org.opalj.collection.immutable.IntPair
+import org.opalj.collection.immutable.IntPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.log.OPALLogger
@@ -73,9 +75,9 @@ sealed trait CallGraphPropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 final class CallGraph(
-        val callees:                 IntMap[IntMap[IntTrieSet]],
-        val callers:                 IntMap[Set[Long /*MethodId + PC*/ ]],
-        val size:                    Int,
+        private[this] val callees:   IntMap[IntMap[IntTrieSet]],
+        private[this] val callers:   IntMap[Set[Long /*MethodId + PC*/ ]],
+        val size:                    Long,
         private[this] val methodIds: MethodIDs
 ) extends Property with OrderedProperty with CallGraphPropertyMetaInformation {
     def key: PropertyKey[CallGraph] = CallGraph.key
@@ -136,6 +138,17 @@ final class CallGraph(
         calleesOfM map { case (pc, tgtIds) ⇒ (pc, tgtIds.mapToAny[Method](methodIds.apply)) }
     }
 
+    def calleesOf(method: Method, pc: Int): Set[Method] = {
+        val methodId = methodIds(method)
+        callees(methodId)(pc).mapToAny(methodIds.apply)
+
+    }
+
+    def encodedCalleesOf(method: Method): IntMap[IntTrieSet] = {
+
+        callees.getOrElse(methodIds(method), IntMap.empty)
+    }
+
     /**
      * Returns the methods and program counters that call the `method`.
      */
@@ -155,7 +168,7 @@ object CallGraph extends CallGraphPropertyMetaInformation {
      * Computes a CHA like call graph.
      */
     def fallbackCG(p: SomeProject): CallGraph = {
-        p.get(CHACallGraphKey)
+        p.get(FallbackCallGraphKey)
     }
 
     final val key: PropertyKey[CallGraph] = {
@@ -172,14 +185,9 @@ object CallGraph extends CallGraphPropertyMetaInformation {
     def apply(
         callees:   IntMap[IntMap[IntTrieSet]],
         callers:   IntMap[Set[Long]],
-        size:      Int,
+        size:      Long,
         methodIDs: MethodIDs
     ): CallGraph = new CallGraph(callees, callers, size, methodIDs)
-
-    def unapply(
-        cg: CallGraph
-    ): Option[(IntMap[IntMap[IntTrieSet]], IntMap[Set[Long]])] =
-        Some(cg.callees → cg.callers)
 
     def toLong(methodId: Int, pc: Int): Long = {
         (methodId.toLong << 32) | (pc & 0xFFFFFFFFL)
@@ -188,6 +196,41 @@ object CallGraph extends CallGraphPropertyMetaInformation {
         ((methodAndPc >> 32).toInt, methodAndPc.toInt)
     }
 
+}
+
+object FallbackCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
+    override protected def requirements: ProjectInformationKeys = Nil
+
+    override protected def compute(project: SomeProject): CallGraph = {
+        val methodIDs = project.get(MethodIDKey)
+        val allMethodIDs = project.allMethods.foldLeft(IntTrieSet.empty) {
+            case (r, method) ⇒ r + methodIDs(method)
+        }
+
+        val callSites = project.allMethodsWithBody.iterator.flatMap {
+            m ⇒
+                val pcs = m.body.get.filter { case (_, instr) ⇒ instr.isInvocationInstruction }
+                pcs.mapToAny[IntPair](IntPair(methodIDs(m), _))
+        }.toSet
+
+        val callees = IntMap(callSites.groupBy(_._1).map {
+            case (m, x) ⇒ m → IntMap(x.toSeq.map { pair ⇒ pair._2 → allMethodIDs }: _*)
+        }.toSeq: _*)
+
+        val callSitesLong = callSites.map { pair ⇒ CallGraph.toLong(pair._1, pair._2) }
+
+        var callers = IntMap.empty[Set[Long]]
+        var size = 0L
+        allMethodIDs.mapToAnyUsingBuilder[(Int, Set[Long])](
+            (e: (Int, Set[Long])) ⇒ {
+                size += e._2.size
+                callers += ((e._1, e._2))
+            },
+            _ → callSitesLong
+        )
+
+        CallGraph(callees, callers, size, methodIDs)
+    }
 }
 
 /**
@@ -309,10 +352,12 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         val size = callers.values().iterator().asScala.map(_.size).sum
 
+        println("hey")
+
         new CallGraph(
             IntMap[IntMap[IntTrieSet]](callees.asScala.toSeq: _*),
             IntMap[Set[Long]](callers.asScala.toSeq: _*),
-            size,
+            size.toLong,
             methodIds
         )
     }
