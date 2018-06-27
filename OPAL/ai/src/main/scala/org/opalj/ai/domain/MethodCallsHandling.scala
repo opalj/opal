@@ -54,7 +54,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
                 exceptionTypes += exceptionType
                 // We don't know the true type of the exception, we just know the upper bound!
                 exceptionValues ::=
-                    NonNullObjectValue(ValueOriginForVMLevelValue(pc), exceptionType)
+                    NonNullObjectValue(ValueOriginForMethodExternalException(pc), exceptionType)
             }
         }
 

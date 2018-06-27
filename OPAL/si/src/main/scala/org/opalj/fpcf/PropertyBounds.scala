@@ -26,34 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.purity;
-
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.properties.PropertyValidator;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+package org.opalj.fpcf
 
 /**
- * Annotation to state that the annotated method is externally pure.
- *
- * @author Dominik Helm
+ * Encapsulates the bounds of a property.
  */
-@PropertyValidator(key = "Purity", validator = ExternallyPureMatcher.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface ExternallyPure {
-
-    /**
-     * A short reasoning of this property.
-     */
-    String value(); // default = "N/A";
-
-    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
-
-    EP[] eps() default {};
-
-    boolean negate() default false;
-}
+case class PropertyBounds[P <: Property](lb: P, ub: P)

@@ -87,7 +87,7 @@ class ConfiguredPurity(
 
                 mdo match {
                     case Some(md) ⇒ Seq(
-                        declaredMethods(classType.packageName, classType, methodName, md)
+                        declaredMethods(classType, classType.packageName, classType, methodName, md)
                     )
                     case None ⇒ cfo.map { cf ⇒
                         cf.findMethod(methodName).map(declaredMethods(_)).toIterable
@@ -101,6 +101,8 @@ class ConfiguredPurity(
             propertyStore.set(dm, po.get)
             dm
         }
+
+    propertyStore.waitOnPhaseCompletion() // wait until setting configured purities is completed
 
     def wasSet(dm: DeclaredMethod): Boolean = {
         methods.contains(dm)

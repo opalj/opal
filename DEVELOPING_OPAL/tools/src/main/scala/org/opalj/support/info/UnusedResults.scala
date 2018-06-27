@@ -52,7 +52,6 @@ import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -61,6 +60,7 @@ import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
 import org.opalj.fpcf.properties.Pure
@@ -104,7 +104,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         val issues = new ConcurrentLinkedQueue[String]
 
         implicit val p: SomeProject = project
-        implicit val propertyStore = project.get(PropertyStoreKey)
+        implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
@@ -192,7 +192,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         isMethodOverridable: Method ⇒ Answer
     ): Option[String] = {
         val callerType = caller.classFile.thisType
-        val VirtualFunctionCall(_, _, _, name, descr, receiver, _) = call
+        val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
 
         val value = receiver.asVar.value.asDomainReferenceValue
         val receiverType = value.valueType
@@ -206,15 +206,20 @@ object UnusedResults extends DefaultOneStepAnalysis {
             val callee = project.instanceCall(callerType, receiverType.get, name, descr)
             handleCall(caller, callee, call.pc)
         } else {
-            val callee =
-                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
+            val callee = declaredMethods(
+                dc.asObjectType,
+                callerType.packageName,
+                receiverType.get.asObjectType,
+                name,
+                descr
+            )
 
-            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
+            if (!callee.hasSingleDefinedMethod || isMethodOverridable(callee.definedMethod).isNotNo) {
                 None // We don't know all overrides, ignore the call (it may be impure)
             } else {
                 propertyStore(callee, VirtualMethodPurity.key) match {
                     case FinalEP(_, VCompileTimePure | VPure | VSideEffectFree) ⇒
-                        createIssue(caller, callee.methodDefinition, call.pc)
+                        createIssue(caller, callee.definedMethod, call.pc)
                     case _ ⇒ None
                 }
             }

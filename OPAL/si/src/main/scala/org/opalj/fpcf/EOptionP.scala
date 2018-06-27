@@ -59,16 +59,16 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * @return `true` if the entity is associated with a (preliminary) property.
      */
     def hasProperty: Boolean
-
-    def hasNoProperty: Boolean = !hasProperty
+    final def hasNoProperty: Boolean = !hasProperty
+    def asEPS: EPS[E, P]
 
     /**
      * Returns `true` if and only if we have a property and the property was stored in the
      * store using `(Multi)Result`.
      */
     def isFinal: Boolean
-
     final def isRefinable: Boolean = !isFinal
+    def asFinal: FinalEP[E, P]
 
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
@@ -164,15 +164,8 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
     final override def hasProperty: Boolean = true
+    final override def asEPS: EPS[E, P] = this
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case that: EPS[_, _] ⇒ (that.e eq this.e) && this.lb == that.lb && this.ub == that.ub
-            case _               ⇒ false
-        }
-    }
-
-    final override def hashCode: Int = ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
 }
 
 /**
@@ -211,8 +204,18 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 ) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
 
-    final override def toString: String = {
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntermediateEP[_, _] ⇒ (e eq that.e) && lb == that.lb && ub == that.ub
+            case _                          ⇒ false
+        }
+    }
+
+    override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
+
+    override def toString: String = {
         s"IntermediateEP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
     }
 }
@@ -237,12 +240,22 @@ object IntermediateEP {
 final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
     override def isFinal: Boolean = true
+    override def asFinal: FinalEP[E, P] = this
 
-    final override def lb: P = ub
+    override def lb: P = ub
 
-    final def p: P = ub // or lb
+    def p: P = ub // or lb
 
-    final override def toString: String = {
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: FinalEP[_, _] ⇒ (that.e eq this.e) && this.p == that.p
+            case _                   ⇒ false
+        }
+    }
+
+    override def hashCode: Int = ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
+
+    override def toString: String = {
         s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 
@@ -277,8 +290,10 @@ final class EPK[+E <: Entity, +P <: Property](
     override def ub: Nothing = throw new UnsupportedOperationException()
 
     override def isFinal: Boolean = false
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
 
     override def hasProperty: Boolean = false
+    override def asEPS: EPS[E, P] = throw new ClassCastException()
 
     override def toEPK: this.type = this
 

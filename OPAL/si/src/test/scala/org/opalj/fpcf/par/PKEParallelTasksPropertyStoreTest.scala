@@ -26,35 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.purity;
+package org.opalj.fpcf
+package par
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.properties.PropertyValidator;
+class PKEParallelTasksPropertyStoreTestWithDebugging
+    extends PropertyStoreTestWithDebugging(
+        List(DefaultPropertyComputation, CheapPropertyComputation)
+    ) {
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+    def createPropertyStore(): PropertyStore = {
+        val ps = PKEParallelTasksPropertyStore(new RecordAllPropertyStoreTracer)
+        ps.suppressError = true
+        ps
+    }
 
-/**
- * Annotation to state that the annotated method is domain specific externally side effect free.
- *
- * @author Dominik Helm
- */
-@PropertyValidator(key = "Purity", validator = DomainSpecificExternallySideEffectFreeMatcher.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface DomainSpecificExternallySideEffectFree {
+}
 
-    /**
-     * A short reasoning of this property.
-     */
-    String value(); // default = "N/A";
+class PKEParallelTasksPropertyStoreTestWithoutDebugging
+    extends PropertyStoreTestWithoutDebugging(
+        List(DefaultPropertyComputation, CheapPropertyComputation)
+    ) {
 
-    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
+    def createPropertyStore(): PropertyStore = {
+        val ps = PKEParallelTasksPropertyStore(new RecordAllPropertyStoreTracer)
+        ps.suppressError = true
+        ps
+    }
 
-    EP[] eps() default {};
-
-    boolean negate() default false;
 }

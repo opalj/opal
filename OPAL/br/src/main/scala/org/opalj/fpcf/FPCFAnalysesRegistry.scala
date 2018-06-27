@@ -130,10 +130,12 @@ object FPCFAnalysesRegistry {
                 val id = entry.getKey
                 val metaData = entry.getValue.asInstanceOf[ConfigObject]
                 val description = metaData.getOrDefault("description", null).unwrapped.toString
-                val eagerFactory = metaData.getOrDefault("eagerFactory", null).unwrapped.toString
-                register(id, description, eagerFactory, lazyFactory = false)
-                val lazyFactory = metaData.getOrDefault("lazyFactory", null).unwrapped.toString
-                register(id, description, lazyFactory, lazyFactory = true)
+                val eagerFactory = metaData.getOrDefault("eagerFactory", null)
+                if (eagerFactory ne null)
+                    register(id, description, eagerFactory.unwrapped.toString, lazyFactory = false)
+                val lazyFactory = metaData.getOrDefault("lazyFactory", null)
+                if (lazyFactory ne null)
+                    register(id, description, lazyFactory.unwrapped.toString, lazyFactory = true)
             }
         } catch {
             case e: Exception ⇒

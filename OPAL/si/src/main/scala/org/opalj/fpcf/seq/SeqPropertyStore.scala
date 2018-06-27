@@ -26,34 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.purity;
-
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.properties.PropertyValidator;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+package org.opalj
+package fpcf
+package seq
 
 /**
- * Annotation to state that the annotated method is externally side-effect free.
+ * Non-concurrent implementation of the property store.
  *
- * @author Dominik Helm
+ * @author Michael Eichberg
  */
-@PropertyValidator(key = "Purity", validator = ExternallySideEffectFreeMatcher.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface ExternallySideEffectFree {
-
-    /**
-     * A short reasoning of this property.
-     */
-    String value(); // default = "N/A";
-
-    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
-
-    EP[] eps() default {};
-
-    boolean negate() default false;
-}
+abstract class SeqPropertyStore extends PropertyStore

@@ -26,35 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.purity;
+package org.opalj
+package br
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.properties.PropertyValidator;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.analyses.Project
+import org.scalatest.FunSpec
 
 /**
- * Annotation to state that the annotated method is domain specific externally pure.
+ * A test for testing behavior that is valid bytecode but can not be generated from valid Java code.
  *
  * @author Dominik Helm
+ * @author Michael Eichberg
  */
-@PropertyValidator(key = "Purity", validator = DomainSpecificExternallyPureMatcher.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface DomainSpecificExternallyPure {
+class NonJavaTests extends FunSpec {
 
-    /**
-     * A short reasoning of this property.
-     */
-    String value(); // default = "N/A";
+    describe("Project.instanceMethods") {
 
-    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
+        val sourceFolder = locateTestResources("StaticAndDefaultInterfaceMethods", "bc")
+        val project = Project(sourceFolder)
+        val superIntfType = ObjectType("mr/SuperIntf")
+        val intfType = ObjectType("mr/Intf")
+        val subIntfType = ObjectType("mr/SubIntf")
 
-    EP[] eps() default {};
+        it("should not contain the default method \"m\" from SuperIntf that is inaccesible in Intf") {
+            assert(project.instanceMethods(superIntfType).size == 1)
+            assert(project.instanceMethods(intfType).isEmpty)
+            assert(project.instanceMethods(subIntfType).size == 1)
+        }
+    }
 
-    boolean negate() default false;
 }

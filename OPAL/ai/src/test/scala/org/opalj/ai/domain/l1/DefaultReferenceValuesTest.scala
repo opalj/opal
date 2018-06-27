@@ -36,10 +36,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.opalj.collection.mutable.Locals
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
-import org.opalj.collection.immutable.UIDSet2
-import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.TestSupport.biProject
 import org.opalj.value.BaseReferenceValues
@@ -229,6 +226,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
+                        IntTrieSet(111, 222),
                         Unknown, false, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
                         3
                     )
@@ -246,6 +244,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 222),
                         Unknown, true, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
                         3
                     )
@@ -269,6 +268,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 222),
                         Unknown, false, UIDSet(Member),
                         3
                     )
@@ -289,6 +289,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 222),
                         Unknown, false, UIDSet(Throwable),
                         3
                     )
@@ -390,12 +391,14 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet[DomainSingleOriginReferenceValue](v0, v1, v2),
+                        IntTrieSet(111, 444, 555),
                         Yes, true, UIDSet.empty,
                         nextRefId()
                     )
                 val mv2 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(444, 555),
                         No, false, UIDSet(ObjectType.Object),
                         nextRefId()
                     )
@@ -415,12 +418,14 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
+                        IntTrieSet(111, 222),
                         Yes, true, UIDSet.empty,
                         3
                     )
                 val mv2 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v2),
+                        IntTrieSet(111, 222),
                         Unknown, true, UIDSet1(ArrayType(IntegerType)),
                         3
                     )
@@ -436,12 +441,14 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 222),
                         isNull = Yes, true, UIDSet.empty, refId = 3
                     )
 
                 val mv_expected =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
+                        IntTrieSet(111, 222),
                         Unknown, false, UIDSet(ObjectType.Serializable),
                         3
                     )
@@ -463,6 +470,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 222),
                         Yes, true, UIDSet.empty,
                         3
                     )
@@ -470,6 +478,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv_expected =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v1),
+                        IntTrieSet(111, 222),
                         Unknown, false, UIDSet(ArrayType(ObjectType.Serializable)),
                         3
                     )
@@ -496,6 +505,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2_join_v3),
+                        IntTrieSet(111, 222),
                         Unknown, false, UIDSet(ObjectType.Object),
                         -1
                     )
@@ -547,6 +557,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 555),
                         No, true, UIDSet(SecurityException),
                         refId = 3
                     )
@@ -554,6 +565,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv_expected =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 555),
                         No, false, UIDSet(SecurityException),
                         3
                     )
@@ -577,6 +589,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
+                        IntTrieSet(111, 555),
                         No, true, UIDSet(ObjectType.Object),
                         refId = 3
                     )
@@ -584,6 +597,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val mv_expected =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v0, v2),
+                        IntTrieSet(111, 555),
                         Unknown, false, UIDSet(ObjectType.Object),
                         3
                     )

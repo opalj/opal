@@ -67,8 +67,8 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     abstract protected[this] override def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        assert(call.name == "<init>")
-        assert(context.usesDefSite(call.receiver))
+        assert(call.name == "<init>", "caller is not an interface")
+        assert(context.usesDefSite(call.receiver), "call receiver does not use def-site")
 
         // the object constructor will not escape the this local
         if (call.declaringClass eq ObjectType.Object)

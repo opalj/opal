@@ -81,7 +81,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
         // When we have a cycle all properties are necessarily at least conditionally
         // immutable hence, we can leverage the "immutability" of one of the members of
         // the cycle and wait for the automatic propagation...
-        (_: PropertyStore, eps: EPS[ObjectType, TypeImmutability]) ⇒ eps.toUBEP
+        (_: PropertyStore, eps: EPS[ObjectType, TypeImmutability]) ⇒ eps.ub
     )
 }
 

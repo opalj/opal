@@ -32,8 +32,10 @@ package tac
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.VMLevelValuesOriginOffset
-import org.opalj.ai.pcOfVMLevelValue
+import org.opalj.ai.isImmediateVMException
+import org.opalj.ai.isMethodExternalExceptionOrigin
+import org.opalj.ai.pcOfImmediateVMException
+import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -220,12 +222,15 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val n =
             defSites.iterator.map { defSite ⇒
                 val n =
-                    if (defSite <= VMLevelValuesOriginOffset)
-                        "exception@"+pcOfVMLevelValue(defSite)
+                    if (isImmediateVMException(defSite))
+                        "exception[VM]@"+pcOfImmediateVMException(defSite)
+                    else if (isMethodExternalExceptionOrigin(defSite))
+                        "exception@"+pcOfMethodExternalException(defSite)
                     else if (defSite < 0) {
                         "param"+(-defSite - 1).toHexString
-                    } else
+                    } else {
                         "lv"+defSite.toHexString
+                    }
                 if (DUVar.printDomainValue) s"$n/*:$value*/" else n
             }.mkString("{", ", ", "}")
         if (DUVar.printDomainValue) s"$n/*:$value*/" else n
@@ -248,8 +253,8 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
                     defSiteIndex + 1 // we have to skip the "CaughtExceptionStatement" - it can't be a definition site!
                 else
                     defSiteIndex
-            } else if (ai.isVMLevelValue(defSite))
-                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(defSite)))
+            } else if (ai.isImplicitOrExternalException(defSite))
+                ai.remapPC(pcToIndex)(defSite)
             else
                 defSite /* <= it is referencing a parameter */
         }
@@ -266,9 +271,9 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, useSites: IntTrieSet
+        value: d.DomainValue, defSites: IntTrieSet
     ): UVar[d.DomainValue] = {
-        new UVar[d.DomainValue](value, useSites)
+        new UVar[d.DomainValue](value, defSites)
     }
 
     def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](

@@ -30,8 +30,6 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
-import scala.collection.mutable.Queue
-
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
@@ -55,12 +53,13 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFG
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.VMLevelValuesOriginOffset
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.collection.mutable.AnyRefAppendChain
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -205,7 +204,7 @@ object TACAI {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
                     aiVOs.map { aiVO ⇒
-                        if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
+                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
@@ -215,7 +214,7 @@ object TACAI {
                         IntTrieSet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                            if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
                                 aiVO
                             else
                                 aiVOToTACVo(-aiVO - 1)
@@ -228,7 +227,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: Queue[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = Queue.empty
+        val obsoleteUseSites: AnyRefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new AnyRefAppendChain()
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -246,13 +245,13 @@ object TACAI {
                     origins ++= normalizeParameterOrigins(domain.operandOrigin(useSitePC, i))
                     i += 1
                 }
-                obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
+                obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
             }
         }
 
         def killRegisterBasedUsages(useSitePC: Int, index: Int): Unit = {
             val origins = normalizeParameterOrigins(domain.localOrigin(useSitePC, index))
-            obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
+            obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
         }
 
         // The catch handler statements which were added to the code that do not take up
@@ -929,7 +928,7 @@ object TACAI {
         //  - every pc appears at most once in `obsoleteUseSites`
         //  - we do not have deeply nested expressions
         while (obsoleteUseSites.nonEmpty) {
-            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.dequeue()
+            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.take()
             val useSite = useDefMapping.pc
             val defSites = useDefMapping.value
             // Now... we need to go the def site - which has to be an assignment - and kill
@@ -959,7 +958,7 @@ object TACAI {
                     } else {
                         statements(defSiteIndex) = ExprStmt(pc, expr)
                     }
-                } else if (defSite > VMLevelValuesOriginOffset /*&& < 0*/ ) {
+                } else if (ImmediateVMExceptionsOriginOffset < defSite /*&& < 0*/ ) {
                     // We have an obsolete parameter usage; recall that the def-sites are
                     // already "normalized"!
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)

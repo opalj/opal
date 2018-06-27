@@ -94,13 +94,14 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
+    final val IntermediateResultsPropertyComputationHint = CheapPropertyComputation
+
     private[analyses] def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
         e match {
             case m: Method ⇒
                 determineThrownExceptions(m)
             case e ⇒
-                val m = s"the ThrownExceptions property is only defined for methods; found $e"
-                throw new UnknownError(m)
+                throw new UnknownError(s"ThrownExceptions is only defined for methods; not $e")
         }
     }
 
@@ -126,7 +127,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val initialExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val initialExceptions = new BRMutableTypesSet(project.classHierarchy)
 
         var result: ThrownExceptions = null
 
@@ -165,6 +166,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         instruction match {
                             case mii: NonVirtualMethodInvocationInstruction ⇒
                                 project.nonVirtualCall(mii) match {
+                                    case Success(`m`) ⇒ true // we basically ignore self-dependencies
                                     case Success(callee) ⇒
                                         // Query the store for information about the callee
                                         ps(callee, ThrownExceptions.key) match {
@@ -214,6 +216,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         case _                   ⇒ None
                     }
                     calleeOption match {
+                        case Some(`m`) ⇒ // nothing to do...
                         case Some(callee) ⇒
                             // Check the class hierarchy for thrown exceptions
                             ps(callee, ThrownExceptionsByOverridingMethods.key) match {
@@ -340,7 +343,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         if (!areAllExceptionsCollected) {
             assert(
                 result ne null,
-                "all exceptions are exepcted to be collected but the set is null"
+                "all exceptions are expected to be collected but the set is null"
             )
             return Result(m, result);
         }
@@ -374,37 +377,42 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     UnknownExceptionIsThrown |
                     AnalysisLimitation |
                     UnresolvedInvokeDynamicInstruction ⇒
-                    return Result(m, MethodCalledThrowsUnknownExceptions)
+                    return Result(m, MethodCalledThrowsUnknownExceptions);
+
                 case te: ThrownExceptions ⇒
                     exceptions = exceptions ++ te.types.concreteTypes
 
                 // Properties from ThrownExceptionsByOverridingMethods
                 case ThrownExceptionsByOverridingMethods.SomeException |
                     ThrownExceptionsByOverridingMethods.MethodIsOverridable ⇒
-                    return Result(m, MethodCalledThrowsUnknownExceptions)
+                    return Result(m, MethodCalledThrowsUnknownExceptions);
+
                 case tebom: ThrownExceptionsByOverridingMethods ⇒
                     exceptions = exceptions ++ tebom.exceptions.concreteTypes
             }
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptions(exceptions))
             } else {
-                IntermediateResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
+                IntermediateResult(
+                    m, SomeException, new ThrownExceptions(exceptions),
+                    dependees, c, IntermediateResultsPropertyComputationHint
+                )
             }
         }
 
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptions(exceptions))
         } else {
-            IntermediateResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
+            IntermediateResult(
+                m, SomeException, new ThrownExceptions(exceptions),
+                dependees, c, IntermediateResultsPropertyComputationHint
+            )
         }
     }
 }
 
 abstract class ThrownExceptionsAnalysis extends ComputationSpecification {
-    override def uses: Set[PropertyKind] = {
-        Set(ThrownExceptionsByOverridingMethods)
-    }
-
+    override def uses: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
     override def derives: Set[PropertyKind] = Set(ThrownExceptions)
 }
 
@@ -422,20 +430,10 @@ object EagerL1ThrownExceptionsAnalysis
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
      * in general, the analysis is expected to be registered as a lazy computation.
      */
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1ThrownExceptionsAnalysis(project)
-        val allMethods = project.allMethodsWithBody
-        propertyStore.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
-        analysis
-    }
-
-    /** Registers an analysis to compute the thrown exceptions lazily. */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
-            ThrownExceptions.key,
-            analysis.lazilyDetermineThrownExceptions
-        )
+    def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+        val analysis = new L1ThrownExceptionsAnalysis(p)
+        val allMethods = p.allMethods
+        ps.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
 }

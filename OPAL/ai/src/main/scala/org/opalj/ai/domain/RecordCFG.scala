@@ -185,7 +185,7 @@ trait RecordCFG
     ): List[Int /*PC*/ ] = {
 
         if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
-            theJumpBackTargetPCs += successorPC
+            theJumpBackTargetPCs +!= successorPC
         }
 
         val successors =
@@ -198,7 +198,7 @@ trait RecordCFG
         if (successorsOfPC eq null)
             successors(currentPC) = IntTrieSet1(successorPC)
         else {
-            val newSuccessorsOfPC = successorsOfPC + successorPC
+            val newSuccessorsOfPC = successorsOfPC +! successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
         }
 
@@ -224,7 +224,7 @@ trait RecordCFG
         branchTargetPC: Int,
         returnTargetPC: Int
     ): Unit = {
-        theSubroutineStartPCs += branchTargetPC
+        theSubroutineStartPCs +!= branchTargetPC
         super.jumpToSubroutine(pc, branchTargetPC, returnTargetPC)
     }
 
@@ -235,7 +235,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.returnVoid(pc)
     }
 
@@ -249,7 +249,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.ireturn(pc, value)
     }
 
@@ -263,7 +263,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.lreturn(pc, value)
     }
 
@@ -277,7 +277,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.freturn(pc, value)
     }
 
@@ -291,7 +291,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.dreturn(pc, value)
     }
 
@@ -305,7 +305,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.areturn(pc, value)
     }
 
@@ -319,7 +319,7 @@ trait RecordCFG
         pc:             Int,
         exceptionValue: ExceptionValue
     ): Unit = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.abruptMethodExecution(pc, exceptionValue)
     }
 
@@ -472,12 +472,12 @@ trait RecordCFG
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
                 return true;
 
-            visitedSuccessors ++= successorsToVisit
+            visitedSuccessors ++!= successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
                     var newL = l
                     successorsOf(r, regularSuccessorsOnly) foreach { pc ⇒
-                        if (!visitedSuccessors.contains(pc)) newL += pc
+                        if (!visitedSuccessors.contains(pc)) newL +!= pc
                     }
                     newL
                 }
@@ -498,7 +498,7 @@ trait RecordCFG
         if (pc == successorPC)
             return true;
 
-        // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
+        // IMPROVE Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         var visitedSuccessors = Set(pc)
         val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator) // REFACTOR fromSeq(Iterator...)
         while (successorsToVisit.nonEmpty) {
@@ -553,7 +553,7 @@ trait RecordCFG
      * instructions.
      */
     def allReachable(pcs: IntTrieSet): IntTrieSet = {
-        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
+        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++! allReachable(pc) }
     }
 
     /**
@@ -566,8 +566,8 @@ trait RecordCFG
             val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
-                allReachable += succPC
-                successorsToVisit ++= allSuccessorsOf(succPC)
+                allReachable +!= succPC
+                successorsToVisit ++!= allSuccessorsOf(succPC)
             }
         }
         allReachable
@@ -720,11 +720,11 @@ trait RecordCFG
         val predecessors = this.predecessors
         var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
         var nodesToVisit = theExitPCs.toChain
-        val visitedNodes = new mutable.BitSet(code.codeSize)
+        val visitedNodes = new Array[Boolean](code.codeSize)
         while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
             nodesToVisit = nodesToVisit.tail
-            visitedNodes += nextPC
+            visitedNodes(nextPC) = true
             val nextPredecessors = predecessors(nextPC)
             if (nextPredecessors ne null) {
                 nextPredecessors.foreach { predPC ⇒
@@ -732,7 +732,7 @@ trait RecordCFG
                     if (remainingPotentialInfiniteLoopHeaders.isEmpty) {
                         return IntTrieSet.empty;
                     }
-                    if (!visitedNodes.contains(predPC)) {
+                    if (!visitedNodes(predPC)) {
                         nodesToVisit :&:= predPC
                     }
                 }

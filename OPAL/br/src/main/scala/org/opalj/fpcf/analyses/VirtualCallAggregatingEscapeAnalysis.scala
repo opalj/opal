@@ -30,10 +30,9 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DefinedMethod
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.AtMost
@@ -58,8 +57,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
-        assert(dm.isInstanceOf[DefinedMethod])
-        val m = dm.methodDefinition
+        assert(!dm.isInstanceOf[VirtualDeclaredMethod])
 
         if (dm.declaringClassType.isArrayType) {
             ??? //TODO handle case
@@ -71,18 +69,22 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         val maybeFile = project.classFile(dm.declaringClassType.asObjectType)
 
-        val methods = if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration) {
-            project.interfaceCall(
-                /* use the package in which the concrete method context is defined */
-                dm.declaringClassType.asObjectType, dm.name, dm.descriptor
+        val methods =
+            if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration)
+                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
+                project.virtualCall(
+                    dm.definedMethod.classFile.thisType.packageName,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
+                )
+            else project.virtualCall(
+                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
             )
-        } else {
-            project.virtualCall(
-                /* use the package in which the concrete method context is defined */
-                m.classFile.thisType.packageName,
-                dm.declaringClassType, dm.name, dm.descriptor
-            )
-        }
 
         for (method ← methods) {
             val vfp = formalParameters(declaredMethods(method))(-1 - fp.origin)
@@ -106,7 +108,10 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                 else
                     Result(fp, escapeState.asAggregatedProperty)
             else
-                IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                IntermediateResult(
+                    fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
+                    dependees, continuation
+                )
         }
 
         def continuation(someEPS: SomeEPS): PropertyComputationResult = {
@@ -137,7 +142,7 @@ object EagerVirtualCallAggregatingEscapeAnalysis
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        val vfps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
+        val vfps = project.get(VirtualFormalParametersKey).virtualFormalParameters
         propertyStore.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
         analysis
     }

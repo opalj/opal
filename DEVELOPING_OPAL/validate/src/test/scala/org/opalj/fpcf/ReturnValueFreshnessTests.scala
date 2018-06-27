@@ -28,7 +28,8 @@
  */
 package org.opalj
 package fpcf
-import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
+
+import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis

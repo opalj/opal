@@ -586,7 +586,6 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      *
      * @param declaringElement The (source) element with the annotation.
      * @param annotation The annotation that will be analyzed.
-     * @param dependencyType The type of the dependency.
      */
     private def process(
         declaringElement:         VirtualSourceElement,
@@ -619,7 +618,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      * Extracts dependencies related to the method's implementation.
      *
      * @param declaringMethod The method.
-     * @param instructions The instructions that should be analyzed for dependencies.
+     * @param code The code that should be analyzed for dependencies.
      */
     private def process(
         declaringMethod: VirtualMethod,
@@ -634,6 +633,37 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         while (i < instructionCount) {
             val instruction = instructions(i)
             (instruction.opcode: @scala.annotation.switch) match {
+
+                case LDC.opcode /*18*/ ⇒
+                    instruction match {
+                        case LoadString(_) ⇒
+                            processDependency(declaringMethod, ObjectType.String, LOADS_CONSTANT)
+                        case LoadClass(value: ReferenceType) ⇒
+                            processDependency(declaringMethod, value, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ObjectType.Class, LOADS_CONSTANT)
+                        case LoadMethodHandle(_) ⇒
+                            processDependency(declaringMethod, ObjectType.MethodHandle, LOADS_CONSTANT)
+                        case LoadMethodType(_) ⇒
+                            processDependency(declaringMethod, ObjectType.MethodType, LOADS_CONSTANT)
+
+                        case _ ⇒ /*not relevant*/
+                    }
+
+                case LDC_W.opcode /*19*/ ⇒
+                    instruction match {
+                        case LoadString_W(_) ⇒
+                            processDependency(declaringMethod, ObjectType.String, LOADS_CONSTANT)
+                        case LoadClass_W(value: ReferenceType) ⇒
+                            processDependency(declaringMethod, value, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ObjectType.Class, LOADS_CONSTANT)
+                        case LoadMethodHandle_W(_) ⇒
+                            processDependency(declaringMethod, ObjectType.MethodHandle, LOADS_CONSTANT)
+                        case LoadMethodType_W(_) ⇒
+                            processDependency(declaringMethod, ObjectType.MethodType, LOADS_CONSTANT)
+
+                        case _ ⇒ /*not relevant*/
+                    }
+
                 case 178 ⇒
                     val getstatic = as[GETSTATIC](instruction)
                     val declaringClass = getstatic.declaringClass
@@ -756,10 +786,17 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case 187 ⇒
                     processDependency(declaringMethod, as[NEW](instruction).objectType, CREATES)
 
+                case NEWARRAY.opcode ⇒
+                    processDependency(
+                        declaringMethod,
+                        as[NEWARRAY](instruction).arrayType,
+                        CREATES_ARRAY
+                    )
+
                 case 189 ⇒
                     processDependency(
                         declaringMethod,
-                        as[ANEWARRAY](instruction).componentType,
+                        as[ANEWARRAY](instruction).arrayType,
                         CREATES_ARRAY
                     )
 
@@ -990,9 +1027,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 processDependency(source, bt, dType)
             case at: ArrayType ⇒
                 processDependency(source, at, dType)
-                // Recursive call for the dependency on the element type,
-                // which is either an ObjectType or a BaseType.
-                processDependency(source, at.elementType, dType)
+
             case _ /*vt: VoidType*/ ⇒
             // nothing to do
         }

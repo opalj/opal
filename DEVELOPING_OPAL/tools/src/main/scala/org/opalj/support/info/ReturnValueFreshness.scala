@@ -32,15 +32,14 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.FreshReturnValue
@@ -94,18 +93,6 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         val vprim = ps.finalEntities(VPrimitiveReturnValue).toSeq
         val vgetter = ps.finalEntities(VGetter).toSeq
         val vextGetter = ps.finalEntities(VExtensibleGetter).toSeq
-
-        for (ep ← notFresh) {
-            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> Not Fresh")
-        }
-
-        for (ep ← getter) {
-            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> Getter")
-        }
-
-        for (ep ← extGetter) {
-            println(s"${ep.asInstanceOf[DeclaredMethod].toJava} -> Ext. Getter")
-        }
 
         val message =
             s"""|# of methods with fresh return value: ${fresh.size}

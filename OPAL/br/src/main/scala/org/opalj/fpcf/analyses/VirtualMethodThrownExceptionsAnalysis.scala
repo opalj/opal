@@ -80,11 +80,11 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
             return Result(m, MethodIsOverridable);
         }
 
-        val initialExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val initialExceptions = new BRMutableTypesSet(project.classHierarchy)
 
         var dependees = Set.empty[EOptionP[Entity, Property]]
 
-        // Get all subtypes, inclusive the current method as well
+        // Get all subtypes, including the current method
         val allSubtypes = project.classHierarchy.allSubtypes(m.classFile.thisType, reflexive = true)
         allSubtypes foreach { subType ⇒
             project.classFile(subType).foreach(_.findMethod(m.name, m.descriptor) match {
@@ -166,7 +166,9 @@ object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisSched
     def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
         val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
-        ps.scheduleEagerComputationsForEntities(allMethods)(analysis.aggregateExceptionsThrownByOverridingMethods)
+        ps.scheduleEagerComputationsForEntities(allMethods) {
+            analysis.aggregateExceptionsThrownByOverridingMethods
+        }
         analysis
     }
 

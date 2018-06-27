@@ -54,6 +54,7 @@ import org.opalj.br.ComputationalTypeCategory
 import org.opalj.br.instructions._
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.ai.util.XHTML
+import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.Chain.ChainBuilder
 
 /**
@@ -94,7 +95,7 @@ import org.opalj.collection.immutable.Chain.ChainBuilder
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with TheClassHierarchy ⇒
 
     // IDEA:
     // EACH LOCAL VARIABLE IS BASICALLY NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -115,7 +116,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     // of this additional space is `parametersOffset` large and is prepended to
     // the array that mirrors the instructions array.
     private[this] var used: Array[ValueOrigins] = _ // initialized by initProperties
-    private[this] var usedExceptions: Array[ValueOrigins] = _ // initialized by initProperties
+    private[this] var usedExternalExceptions: Array[ValueOrigins] = _ // initialized by initProperties
     protected[this] var parametersOffset: Int = _ // initialized by initProperties
 
     // This array contains the information where each operand value found at a
@@ -149,7 +150,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         this.parametersOffset = -parameterIndex
 
         this.used = new Array(codeSize + parametersOffset)
-        this.usedExceptions = new Array(codeSize)
+        this.usedExternalExceptions = new Array(codeSize)
 
         super.initProperties(code, cfJoins, locals)
     }
@@ -187,19 +188,27 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     def localOrigin(pc: /*PC*/ Int, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
-     * Returns the instructions which use the value or implicit exception identified by the given
-     * value origin. In case of the implicit exception thrown by instruction X, the value
-     * origin is VMLevelValuesOriginOffset - pc.
+     * Returns the instructions which use the value or the external exception identified by
+     * the given value origin. In case of external exceptions thrown by an instruction,
+     * the value origin's pc is `ai.underlyingPC(valueOrigin)`
      */
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = {
-        if (valueOrigin > VMLevelValuesOriginOffset)
+        if (valueOrigin > ImmediateVMExceptionsOriginOffset)
             used(valueOrigin + parametersOffset)
         else
-            usedExceptions(pcOfVMLevelValue(valueOrigin))
+            usedExternalExceptions(underlyingPC(valueOrigin))
     }
 
     def safeUsedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         val usedBy = this.usedBy(valueOrigin)
+        if (usedBy eq null)
+            NoValueOrigins
+        else
+            usedBy
+    }
+
+    def safeExternalExceptionsUsedBy(pc: Int): ValueOrigins = {
+        val usedBy = usedExternalExceptions(pc)
         if (usedBy eq null)
             NoValueOrigins
         else
@@ -245,34 +254,30 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         useSite: /*PC*/ Int
     ): Unit = {
         usedValues foreach { usedValue ⇒
-            if (usedValue > VMLevelValuesOriginOffset) {
+            if (ai.isImplicitOrExternalException(usedValue)) {
+                // we have a usage of an implicit exception or method external exception
+                val usedIndex = ai.underlyingPC(usedValue)
+                val oldUsedExternalExceptions: ValueOrigins = usedExternalExceptions(usedIndex)
+                if (oldUsedExternalExceptions eq null) {
+                    usedExternalExceptions(usedIndex) = ValueOrigins(useSite)
+                } else {
+                    usedExternalExceptions(usedIndex) = oldUsedExternalExceptions +! useSite
+                }
+            } else {
                 val usedIndex = usedValue + parametersOffset
                 val oldUsedInfo: ValueOrigins = used(usedIndex)
                 if (oldUsedInfo eq null) {
                     used(usedIndex) = ValueOrigins(useSite)
                 } else {
-                    val newUsedInfo = oldUsedInfo + useSite
-                    if (newUsedInfo ne oldUsedInfo)
-                        used(usedIndex) = newUsedInfo
-                }
-            } else {
-                // we have a usage of an implicit exception
-                val usedIndex = pcOfVMLevelValue(usedValue)
-                val oldUsedExceptionsInfo: ValueOrigins = usedExceptions(usedIndex)
-                if (oldUsedExceptionsInfo eq null) {
-                    usedExceptions(usedIndex) = ValueOrigins(useSite)
-                } else {
-                    val newUsedExceptionsInfo = oldUsedExceptionsInfo + useSite
-                    if (newUsedExceptionsInfo ne oldUsedExceptionsInfo)
-                        usedExceptions(usedIndex) = newUsedExceptionsInfo
+                    used(usedIndex) = oldUsedInfo +! useSite
                 }
             }
         }
     }
 
     protected[this] def propagate(
-        currentPC: /*PC*/ Int,
-        successorPC: /*PC*/ Int,
+        currentPC:    Int,
+        successorPC:  Int,
         newDefOps:    Chain[ValueOrigins],
         newDefLocals: Registers[ValueOrigins]
     )(
@@ -417,7 +422,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
             forceScheduling
         } else {
-            newDefOps foreach { vo ⇒ require(vo != null, s"$newDefOps contains null") }
+            assert(newDefOps forall { vo ⇒ vo != null }, "null value origin found")
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
@@ -431,17 +436,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
      * E.g., the l1.ReferenceValues domain tracks alias relations and can (when we inline calls)
      * correctly identify those returned values that were passed to it.
      *
-     * @param domainValue The domain value for which the origin information is required.
+     * @param  domainValue The domain value for which the origin information is required.
      *                    If no information is available, `defaultOrigins` should be returned.
-     * @param defaultOrigins The default origin information.
      * @return The origin information for the given `domainValue`.
      */
-    protected[this] def originsOf(
-        domainValue:    DomainValue,
-        defaultOrigins: ValueOrigins
-    ): ValueOrigins = {
-        defaultOrigins
-    }
+    protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = None
 
     protected[this] def newDefOpsForExceptionalControlFlow(
         currentPC:          Int,
@@ -455,22 +454,88 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         // and was explicitly thrown by an athrow instruction or which resulted from
         // a called method or which was created by the JVM).
         // (Whether we had a join or not is irrelevant.)
+        val origins =
+            originsOf(operandsArray(successorPC).head) match {
+                case None ⇒
+                    // We don't have precise origin information...
 
-        val newDefOps = if (currentInstruction.isAthrow) {
-            // The thrown value may be null... in that case the thrown exception is
-            // the VM generated NullPointerException.
-            val thrownValue = operandsArray(currentPC).head
-            val exceptionIsNull = refIsNull(currentPC, thrownValue)
-            var newDefOps = NoValueOrigins
-            if (exceptionIsNull.isYesOrUnknown) newDefOps += ValueOriginForVMLevelValue(currentPC)
-            if (exceptionIsNull.isNoOrUnknown) newDefOps ++= defOps(currentPC).head
-            newDefOps
-        } else {
-            // The instruction implicitly threw the exception... (it was not athrow...)
-            ValueOrigins(ValueOriginForVMLevelValue(currentPC))
-        }
+                    // We now have to determine the source of the exception - whether
+                    // it was (potentially) created externally (i.e., in another method)
+                    // and/or by the JVM.
+                    (currentInstruction.opcode: @switch) match {
+                        case ATHROW.opcode ⇒
+                            // The thrown value may be null... in that case the thrown exception is
+                            // the VM generated NullPointerException.
+                            val thrownValue = operandsArray(currentPC).head
+                            val exceptionIsNull = refIsNull(currentPC, thrownValue)
+                            var newDefOps =
+                                if (exceptionIsNull.isNoOrUnknown) {
+                                    defOps(currentPC).head
+                                } else {
+                                    NoValueOrigins
+                                }
+                            if (throwNullPointerExceptionOnThrow &&
+                                exceptionIsNull.isYesOrUnknown)
+                                newDefOps += ValueOriginForImmediateVMException(currentPC)
+                            newDefOps
 
-        new :&:(originsOf(operandsArray(successorPC).head, newDefOps))
+                        case INVOKEINTERFACE.opcode |
+                            INVOKEVIRTUAL.opcode |
+                            INVOKESPECIAL.opcode ⇒
+                            val mii = currentInstruction.asInstanceOf[MethodInvocationInstruction]
+                            val receiver = operandsArray(currentPC)(mii.methodDescriptor.parametersCount)
+                            var newDefOps = NoValueOrigins
+                            if ( // we have to check that the handler is actually handling
+                            // (implicit) null pointer exceptions
+                            throwNullPointerExceptionOnMethodCall
+                                && refIsNull(currentPC, receiver).isYesOrUnknown
+                                && {
+                                    var foundDefinitiveHandler = false
+                                    code.handlersFor(currentPC) filter { eh ⇒
+                                        !foundDefinitiveHandler && (
+                                            (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
+                                                val isHandled = isSubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                if (isHandled.isYes) {
+                                                    foundDefinitiveHandler = true
+                                                    true
+                                                } else if (isHandled.isYesOrUnknown)
+                                                    true
+                                                else
+                                                    false
+                                            }
+                                        )
+                                    }
+                                }.exists(eh ⇒ eh.handlerPC == successorPC)) {
+                                newDefOps += ValueOriginForImmediateVMException(currentPC)
+                            }
+                            // the configuration option:
+                            //      throwExceptionsOnMethodCall
+                            // is either
+                            //      Any
+                            //      AllExplicitlyHandled
+                            //      Known (most restrictive)
+                            // Given that we have reached this point, we assume that we used
+                            // very shallow analyses and hence have no more precise information.
+                            if (throwExceptionsOnMethodCall != ExceptionsRaisedByCalledMethods.Known) {
+                                newDefOps += ValueOriginForMethodExternalException(currentPC)
+                            }
+                            newDefOps
+
+                        case INVOKEDYNAMIC.opcode | INVOKESTATIC.opcode ⇒
+                            // ... we have no receiver, hence, we can't have a
+                            // VM NullPointerException and therefore the exception
+                            // is not raised by the INVOKEDYNAMIC instruction
+                            ValueOrigins(ValueOriginForMethodExternalException(currentPC))
+
+                        case _ ⇒
+                            // The instruction implicitly threw the exception...
+                            ValueOrigins(ValueOriginForImmediateVMException(currentPC))
+                    }
+
+                case Some(origins) ⇒
+                    origins
+            }
+        new :&:(origins)
     }
 
     /*
@@ -502,8 +567,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 newDefOpsForExceptionalControlFlow(currentPC, currentInstruction, successorPC)
             } else {
                 if (pushesValue)
-                    originsOf(operandsArray(successorPC).head, ValueOrigins(currentPC)) :&:
-                        currentDefOps.drop(usedValues)
+                    (originsOf(operandsArray(successorPC).head) match {
+                        case Some(origins) ⇒ origins
+                        case None          ⇒ ValueOrigins(currentPC)
+                    }) :&: currentDefOps.drop(usedValues)
                 else
                     currentDefOps.drop(usedValues)
             }
@@ -523,8 +590,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
     ): Boolean = {
         val currentDefLocals = defLocals(currentPC)
         updateUsageInformation(currentDefLocals(index), currentPC)
-        val newOrigin = originsOf(localsArray(successorPC)(index), ValueOrigins(currentPC))
-        val newDefLocals = currentDefLocals.updated(index, newOrigin)
+        val newOrigins = originsOf(localsArray(successorPC)(index)) match {
+            case None          ⇒ ValueOrigins(currentPC)
+            case Some(origins) ⇒ origins
+        }
+        val newDefLocals = currentDefLocals.updated(index, newOrigins)
         propagate(currentPC, successorPC, defOps(currentPC), newDefLocals)
     }
 
@@ -1165,8 +1235,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         }
 
         def instructionToString(vo: ValueOrigin): String = {
-            if (vo <= VMLevelValuesOriginOffset)
-                s"<exception thrown by\\linstruction: ${pcOfVMLevelValue(vo)}>"
+            if (ai.isImplicitOrExternalException(vo))
+                s"<exception thrown by\\linstruction: ${ai.underlyingPC(vo)}>"
             else if (vo < 0)
                 s"<parameter: ${-vo - 1}>"
             else
@@ -1182,7 +1252,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         var nodes: Map[ValueOrigin, DefaultMutableNode[ValueOrigin]] =
             defSites.map { defSite ⇒
                 val color =
-                    if (defSite <= VMLevelValuesOriginOffset)
+                    if (ai.isImplicitOrExternalException(defSite))
                         Some("orange")
                     else if (defSite < 0)
                         Some("green")
