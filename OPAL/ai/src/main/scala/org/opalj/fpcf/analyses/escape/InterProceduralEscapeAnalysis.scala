@@ -106,10 +106,16 @@ class InterProceduralEscapeAnalysis private[analyses] (
                         Result(fp, p)
 
                     case IntermediateEP(_, lb, ub) ⇒
-                        IntermediateResult(fp, lb, ub, Set(eOptionP), c)
+                        IntermediateResult(
+                            fp, lb, ub,
+                            Set(eOptionP), c, CheapPropertyComputation
+                        )
 
                     case _ ⇒
-                        IntermediateResult(fp, GlobalEscape, NoEscape, Set(eOptionP), c)
+                        IntermediateResult(
+                            fp, GlobalEscape, NoEscape,
+                            Set(eOptionP), c, CheapPropertyComputation
+                        )
                 }
 
                 def c(someEPS: SomeEPS): PropertyComputationResult = {

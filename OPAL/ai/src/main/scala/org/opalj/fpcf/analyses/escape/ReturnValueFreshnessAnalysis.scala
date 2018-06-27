@@ -164,9 +164,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             ): PropertyComputationResult = eOptP match {
                 case FinalEP(_, p) ⇒ Result(e, p)
                 case IntermediateEP(_, lb, ub) ⇒
-                    IntermediateResult(e, lb, ub, Set(eOptP), c)
+                    IntermediateResult(e, lb, ub, Set(eOptP), c, CheapPropertyComputation)
                 case _ ⇒
-                    IntermediateResult(e, NoFreshReturnValue, FreshReturnValue, Set(eOptP), c)
+                    IntermediateResult(
+                        e, NoFreshReturnValue, FreshReturnValue,
+                        Set(eOptP), c, CheapPropertyComputation
+                    )
             }
 
             handleReturnValueFreshness(propertyStore(declaredMethods(m), ReturnValueFreshness.key))

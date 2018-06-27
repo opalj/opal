@@ -89,7 +89,8 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
                         CompileTimeVaryingField,
                         CompileTimeConstantField,
                         Seq(dependee),
-                        c
+                        c,
+                        CheapPropertyComputation
                     )
             }
         }
@@ -99,7 +100,8 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             CompileTimeVaryingField,
             CompileTimeConstantField,
             Seq(dependee),
-            c
+            c,
+            CheapPropertyComputation
         )
     }
 

@@ -204,7 +204,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             } else {
                                 IntermediateResult(
                                     t, joinedImmutability, maxImmutability,
-                                    dependencies.values, c
+                                    dependencies.values, c, CheapPropertyComputation // TODO really so?
                                 )
                             }
                         }
@@ -237,7 +237,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
                 }
 
-                IntermediateResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
+                IntermediateResult(
+                    t, joinedImmutability, maxImmutability,
+                    dependencies.values, c, CheapPropertyComputation
+                )
             }
         }
     }

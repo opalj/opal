@@ -289,6 +289,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.ubPurity,
                 state.dependees,
                 continuation
+            // TODO Is this still cheap?
             )
         }
     }
@@ -371,6 +372,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.ubPurity,
                 state.dependees,
                 continuation
+            // TODO Is this still cheap?
             )
         }
     }

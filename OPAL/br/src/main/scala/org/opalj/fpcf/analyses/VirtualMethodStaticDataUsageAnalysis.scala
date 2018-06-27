@@ -106,11 +106,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
                 IntermediateResult(
-                    dm,
-                    VUsesVaryingData,
-                    maxLevel.aggregatedProperty,
-                    dependees,
-                    c
+                    dm, VUsesVaryingData, maxLevel.aggregatedProperty,
+                    dependees, c, CheapPropertyComputation
                 )
             }
         }
@@ -119,11 +116,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             Result(dm, maxLevel.aggregatedProperty)
         } else {
             IntermediateResult(
-                dm,
-                VUsesVaryingData,
-                maxLevel.aggregatedProperty,
-                dependees,
-                c
+                dm, VUsesVaryingData, maxLevel.aggregatedProperty,
+                dependees, c, CheapPropertyComputation
             )
         }
     }

@@ -94,14 +94,20 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
                 Result(dm, maxPurity.aggregatedProperty)
             } else {
-                IntermediateResult(dm, VImpureByAnalysis, maxPurity.aggregatedProperty, dependees, c)
+                IntermediateResult(
+                    dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
+                    dependees, c, CheapPropertyComputation
+                )
             }
         }
 
         if (dependees.isEmpty || maxPurity.isInstanceOf[ClassifiedImpure]) {
             Result(dm, maxPurity.aggregatedProperty)
         } else {
-            IntermediateResult(dm, VImpureByAnalysis, maxPurity.aggregatedProperty, dependees, c)
+            IntermediateResult(
+                dm, VImpureByAnalysis, maxPurity.aggregatedProperty,
+                dependees, c, CheapPropertyComputation
+            )
         }
     }
 
