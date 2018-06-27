@@ -171,6 +171,6 @@ final case class MultipleDefinedMethods(
     override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = definedMethods.foreach(f)
 
     override def toString: String = {
-        s"DefinedMethod(${declaringClassType.toJava},definedMethods=${definedMethods.map(_.toJava).mkString("{",", ","}")})"
+        s"DefinedMethod(${declaringClassType.toJava},definedMethods=${definedMethods.map(_.toJava).mkString("{", ", ", "}")})"
     }
 }
