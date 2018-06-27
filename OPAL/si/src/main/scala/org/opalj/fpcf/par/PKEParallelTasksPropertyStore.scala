@@ -143,7 +143,8 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] val maxTasksQueueSize: AtomicInteger = new AtomicInteger(-1)
 
-    private[this] var oneStepFinalUpdate = 0
+    private[this] var updatesCounter = 0
+    private[this] var oneStepFinalUpdatesCounter = 0
 
     @volatile private[this] var resolvedCSCCsCounter = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
@@ -158,7 +159,8 @@ final class PKEParallelTasksPropertyStore private (
             "max tasks queue size" -> maxTasksQueueSize.get,
             "fast-track properties computations" -> fastTrackPropertiesCount,
             "computations of fallback properties (queried but not computed properties)" -> fallbacksUsedCount,
-            "computations which immediately/in one step computed a final result" -> oneStepFinalUpdate,
+            "property store updates" -> updatesCounter,
+            "computations which in one step computed a final result" -> oneStepFinalUpdatesCounter,
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
             "useless partial result computations" -> uselessPartialResultComputationCount,
 
@@ -734,6 +736,7 @@ final class PKEParallelTasksPropertyStore private (
         forceDependerNotification:           Boolean                                     = false,
         pcrs:                                AnyRefArrayStack[PropertyComputationResult]
     ): Boolean = {
+        updatesCounter += 1
         assert(
             Thread.currentThread() == storeUpdatesProcessor,
             "only to be called by the store updates processing thread"
@@ -752,7 +755,7 @@ final class PKEParallelTasksPropertyStore private (
         // 2. check if update was ok
         if (oldEPS == null) {
             if(isFinal)
-                oneStepFinalUpdate += 1
+                oneStepFinalUpdatesCounter += 1
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
