@@ -32,3 +32,11 @@ interface Sub3 extends Super {}
 interface SubSub2 extends Sub2, Sub3 {
     // Super.foo is available here as a default method
 }
+
+abstract class Superclass implements Sub1 {
+    // foo is abstract here
+}
+
+abstract class Subclass extends Superclass implements Super {
+    // foo is still abstract here, as the one from Sub1 is the maximally specific interface method!
+}
