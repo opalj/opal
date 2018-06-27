@@ -636,7 +636,7 @@ final class PKEParallelTasksPropertyStore private (
      * Removes the e/pk from `dependees` and also removes it from the dependers of the
      * e/pk's dependees.
      */
-    private[this] def clearDependees(epk: SomeEPK): Unit = {
+    private[this] def clearDependees(epk: SomeEPK): Int = {
         assert(
             Thread.currentThread() == storeUpdatesProcessor,
             "only to be called by the store updates processing thread"
@@ -644,13 +644,16 @@ final class PKEParallelTasksPropertyStore private (
 
         val pkId = epk.pk.id
         val dependeesOfEntity = this.dependees(pkId)
+        var dependeesCount = 0
         for {
             oldDependees ← dependeesOfEntity.remove(epk.e) // <= the old ones
             EOptionP(oldDependeeE, oldDependeePK) ← oldDependees
             dependersOfOldDependee ← dependers(oldDependeePK.id).get(oldDependeeE)
         } {
+            dependeesCount += 1
             dependersOfOldDependee -= epk
         }
+        dependeesCount
     }
 
     // Thread safe!
@@ -801,14 +804,19 @@ final class PKEParallelTasksPropertyStore private (
                     // Given that we will trigger the depender, we now have to remove the
                     // respective onUpdateContinuation from all dependees of the respective
                     // depender to avoid that the onUpdateContinuation is triggered multiple times!
-                    clearDependees(oldDependerEPK)
+                    val dependeesCount = clearDependees(oldDependerEPK)
                     if (onUpdateContinuationHint == CheapPropertyComputation) {
                         directDependerOnUpdateComputationsCounter += 1
                         pcrs += c(newEPS)
                     } else {
                         scheduledOnUpdateComputationsCounter += 1
                         if (isFinal) {
-                            prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                            if (dependeesCount > 5)
+                                appendTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                            else
+                                prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                        } else if (dependeesCount == 1) {
+                            prependTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
                         } else {
                             appendTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
                         }
