@@ -94,6 +94,8 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
+    final val IntermediateResultsPropertyComputationHint = CheapPropertyComputation
+
     private[analyses] def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
         e match {
             case m: Method ⇒
@@ -125,7 +127,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val initialExceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val initialExceptions = new BRMutableTypesSet(project.classHierarchy)
 
         var result: ThrownExceptions = null
 
@@ -393,7 +395,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             } else {
                 IntermediateResult(
                     m, SomeException, new ThrownExceptions(exceptions),
-                    dependees, c, CheapPropertyComputation
+                    dependees, c, IntermediateResultsPropertyComputationHint
                 )
             }
         }
@@ -403,7 +405,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         } else {
             IntermediateResult(
                 m, SomeException, new ThrownExceptions(exceptions),
-                dependees, c, CheapPropertyComputation
+                dependees, c, IntermediateResultsPropertyComputationHint
             )
         }
     }
@@ -434,7 +436,6 @@ object EagerL1ThrownExceptionsAnalysis
         ps.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
         analysis
     }
-
 }
 
 /**

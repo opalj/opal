@@ -181,13 +181,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def checkMethodPurity(
         ep:     EOptionP[DeclaredMethod, Property],
-        params: (Option[Expr[V]], Seq[Expr[V]])
+        params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
         case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
             atMost(ImpureByAnalysis)
             false
         case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
-            if (ub.modifiesReceiver) {
+            if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
             } else {
@@ -199,7 +199,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 true
             }
         case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
-            if (ub.modifiesReceiver) {
+            if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
             } else {
@@ -280,7 +280,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.ubPurity ne oldPurity)
             cleanupDependees()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
@@ -299,7 +299,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param definedMethod a defined method with body.
      */
     def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
@@ -326,7 +326,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         declClass,
                         "fillInStackTrace",
                         MethodDescriptor("()Ljava/lang/Throwable;"),
-                        None,
                         List.empty,
                         Success(mdc.method)
                     )
@@ -363,7 +362,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             cleanupDependees()
         }
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
@@ -405,7 +404,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity

@@ -394,8 +394,8 @@ class FieldLocalityAnalysis private[analyses] (
                         desc
                     )
 
-                    if (!callee.hasDefinition ||
-                        isOverridableMethod(callee.methodDefinition).isNotNo) {
+                    if (!callee.hasSingleDefinedMethod ||
+                        isOverridableMethod(callee.definedMethod).isNotNo) {
                         true // We don't know all overrides
                     } else {
                         val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
@@ -576,7 +576,8 @@ class FieldLocalityAnalysis private[analyses] (
                 NoLocalField,
                 state.temporaryState,
                 state.dependees,
-                continuation
+                continuation,
+                CheapPropertyComputation
             )
     }
 }

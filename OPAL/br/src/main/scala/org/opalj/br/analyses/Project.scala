@@ -1173,10 +1173,12 @@ object Project {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
-        // HERE "overridden" is to be taken with a grain of salt...
+        // HERE "overridden" is to be taken with a grain of salt, because we have a static
+        // method with the same name and descriptor as an instance method defined by a super
+        // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
-        /* Returns `true` if the potentially available information is not yet available. */
+        // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
             methods.get(superinterfaceType).isEmpty &&
                 // If the class file is not known, we will never have any details;
@@ -1188,7 +1190,7 @@ object Project {
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times; hence, if we are
-            // alread done, just return.
+            // already done, just return.
             if (methods.get(objectType).nonEmpty)
                 return ;
 
@@ -1197,13 +1199,13 @@ object Project {
             val inheritedClassMethods: Chain[MethodDeclarationContext] =
                 if (superclassType.isDefined) {
                     val theSuperclassType = superclassType.get
-                    val superclassTypeMethods = methods.get(theSuperclassType)
                     if (notYetAvailable(theSuperclassType)) {
                         // let's postpone the processing of this object type
                         // because we will get some result in the future
                         tasks.submit(objectType)
                         return ;
                     }
+                    val superclassTypeMethods = methods.get(theSuperclassType)
                     if (superclassTypeMethods.nonEmpty) {
                         val inheritedClassMethods = superclassTypeMethods.get
                         if (classHierarchy.isInterface(objectType).isYes) {
@@ -1243,7 +1245,7 @@ object Project {
             // Hence, when we have to find the correct method, we first have to determine
             // that - in case of SB - the only relevant super interfaces are SL and SR, but
             // not S.
-            var interfaceMethods: Chain[Method] = Naught
+
             def processMaximallySpecificSuperinterfaceMethod(
                 inheritedInterfaceMethod: Method
             ): Unit = {
@@ -1253,48 +1255,70 @@ object Project {
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
                 }
-                if(methodO.isDefined){
+                if (methodO.isDefined) {
                     // If there already is a method and it is from an interface, then it is not
                     // maximally specific and must be replaced. If it is from a class however, we
                     // must keep it.
-                    if(classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown){
+                    if (classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown) {
                         definedMethods = definedMethods.filterNot { definedMethod ⇒
                             definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                                 definedMethod.name == inheritedInterfaceMethod.name
                         }
-                        if(!inheritedInterfaceMethod.isAbstract)
+                        if (!inheritedInterfaceMethod.isAbstract)
                             definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                     }
-                }else {
-                    if(!inheritedInterfaceMethod.isAbstract)
-                    definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
+                } else {
+                    if (!inheritedInterfaceMethod.isAbstract)
+                        definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                 }
             }
 
+            var interfaceMethods: Set[MethodSignature] = Set.empty
+            var uniqueInterfaceMethods: Set[Method] = Set.empty
+            var uniqueInterfaceMethodSignatures: Set[MethodSignature] = Set.empty
             for {
                 superinterfaceType ← superinterfaceTypes
-                superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)
+                superinterfaceClassfile ← objectTypeToClassFile(superinterfaceType)
                 superinterfaceTypeMethod ← superinterfaceClassfile.methods
+                if superinterfaceTypeMethod.isPublic &&
+                    !superinterfaceTypeMethod.isStatic &&
+                    !superinterfaceTypeMethod.isInitializer
             } {
-                interfaceMethods :&:= superinterfaceTypeMethod
+                val signature = superinterfaceTypeMethod.signature
+                if (interfaceMethods.contains(signature)) {
+                    uniqueInterfaceMethodSignatures -= signature
+                    uniqueInterfaceMethods = uniqueInterfaceMethods.filterNot { m ⇒
+                        m.signature == signature
+                    }
+                } else {
+                    interfaceMethods += signature
+                    uniqueInterfaceMethodSignatures += signature
+                    uniqueInterfaceMethods += superinterfaceTypeMethod
+                }
+            }
+
+            uniqueInterfaceMethods foreach { m ⇒
+                processMaximallySpecificSuperinterfaceMethod(m)
             }
 
             // let's keep the contexts related to the maximally specific methods.
-            interfaceMethods foreach { interfaceMethod ⇒
+            interfaceMethods.iterator.filterNot { ms ⇒
+                uniqueInterfaceMethodSignatures.contains(ms)
+            } foreach { interfaceMethod ⇒
                 val (_, maximallySpecificSuperiniterfaceMethod) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes,
                         interfaceMethod.name, interfaceMethod.descriptor,
                         UIDSet.empty[ObjectType]
-                    )(objectTypeToClassFile, classHierarchy)
+                    )(objectTypeToClassFile, classHierarchy, logContext)
                 if (maximallySpecificSuperiniterfaceMethod.size > 1) {
                     // If there are multiple maximally specific interface methods, actually
                     // none of them can be invoked
                     definedMethods = definedMethods.filterNot { m ⇒
                         interfaceMethod.name == m.name && interfaceMethod.descriptor == m.descriptor
                     }
-                } else if (maximallySpecificSuperiniterfaceMethod.contains(interfaceMethod)) {
-                    processMaximallySpecificSuperinterfaceMethod(interfaceMethod)
+                } else if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                    processMaximallySpecificSuperinterfaceMethod(maximallySpecificSuperiniterfaceMethod.head)
                 }
             }
 

@@ -31,7 +31,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -192,6 +191,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 // if we have a monitor instruction the method is impure anyway..
                 // hence, we can ignore the monitor related implicit exception
 
+                // Reference comparisons may have different results for structurally equal values
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                    return Result(definedMethod, ImpureByAnalysis);
+
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
                     // as long as no implicit exceptions are raised.
@@ -311,7 +314,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
      * Determines the purity of the given method.
      */
     def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
@@ -351,7 +354,7 @@ object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L0PurityAnalysis(project)
         val dms = project.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         propertyStore.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
         analysis

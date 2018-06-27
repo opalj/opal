@@ -191,6 +191,7 @@ abstract class PropertyStore {
 
     final def traceCycleResolutions: Boolean = PropertyStore.TraceCycleResolutions
 
+    def supportsFastTrackPropertyComputations: Boolean
     @volatile var useFastTrackPropertyComputations: Boolean = true
 
     /**

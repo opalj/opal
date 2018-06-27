@@ -276,7 +276,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         val value = receiver.asVar.value.asDomainReferenceValue
         val dm = state.dm
-        val m = dm.methodDefinition
+        val m = dm.definedMethod
         val thisType = m.classFile.thisType
 
         val receiverType = value.valueType
@@ -299,8 +299,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             )
 
             // unknown method
-            if (!callee.hasDefinition ||
-                isOverridableMethod(callee.methodDefinition).isYesOrUnknown)
+            if (!callee.hasSingleDefinedMethod ||
+                isOverridableMethod(callee.definedMethod).isYesOrUnknown)
                 return true;
 
             val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
@@ -479,7 +479,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 NoFreshReturnValue,
                 state.ubRVF,
                 state.dependees,
-                continuation
+                continuation,
+                CheapPropertyComputation
             )
         else
             Result(state.dm, state.ubRVF)
@@ -501,7 +502,7 @@ object EagerReturnValueFreshnessAnalysis
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods =
-            project.get(DeclaredMethodsKey).declaredMethods.filter(_.hasDefinition)
+            project.get(DeclaredMethodsKey).declaredMethods.filter(_.hasSingleDefinedMethod)
         val analysis = new ReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis

@@ -54,6 +54,11 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
 
     def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
 
+    def this(e: N, initialSize: Int) {
+        this(new Array[AnyRef](Math.max(initialSize, 1)), 1)
+        data(0) = e
+    }
+
     /**
      * Resets the size of the stack, but does not clear the underlying array; hence,
      * the stack may prevent the garbage collection of the still referenced values.
@@ -86,8 +91,8 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
         this
     }
 
-    final def ++=(is: Traversable[N]): this.type = {
-        is.foreach(push)
+    final def ++=(is: TraversableOnce[N]): this.type = {
+        is foreach { push }
         this
     }
 

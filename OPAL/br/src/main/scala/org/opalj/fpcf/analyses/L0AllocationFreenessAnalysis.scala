@@ -78,10 +78,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         definedMethod: DefinedMethod
     ): PropertyComputationResult = {
 
-        if (definedMethod.methodDefinition.body.isEmpty)
+        if (definedMethod.definedMethod.body.isEmpty)
             return Result(definedMethod, MethodWithAllocations);
 
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
@@ -234,7 +234,7 @@ object EagerL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisSch
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(project)
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)
         analysis

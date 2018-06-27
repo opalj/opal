@@ -260,21 +260,21 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (!isDomainSpecificCall(call, None)) {
                     val StaticMethodCall(_, declClass, _, name, descr, params) = stmt
                     val callee = call.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, None, params, callee)
+                    checkPurityOfCall(declClass, name, descr, params, callee)
                 } else true
             case NonVirtualMethodCall.ASTID ⇒
                 val call = stmt.asNonVirtualMethodCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val NonVirtualMethodCall(_, declClass, _, name, descr, rcvr, params) = stmt
                     val callee = stmt.asNonVirtualMethodCall.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
+                    checkPurityOfCall(declClass, name, descr, rcvr +: params, callee)
                 } else true
             case VirtualMethodCall.ASTID ⇒
                 val call = stmt.asVirtualMethodCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val VirtualMethodCall(_, declClass, isInterface, name, descr, rcvr, params) =
                         stmt
-                    checkPurityOfVirtualCall(declClass, isInterface, name, rcvr, params, descr)
+                    checkPurityOfVirtualCall(declClass, isInterface, name, rcvr +: params, descr)
                 } else true
 
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
@@ -350,21 +350,21 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (!isDomainSpecificCall(expr.asStaticFunctionCall, None)) {
                     val StaticFunctionCall(_, declClass, _, name, descr, params) = expr
                     val callee = expr.asStaticFunctionCall.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, None, params, callee)
+                    checkPurityOfCall(declClass, name, descr, params, callee)
                 } else true
             case NonVirtualFunctionCall.ASTID ⇒
                 val call = expr.asNonVirtualFunctionCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val NonVirtualFunctionCall(_, declClass, _, name, descr, rcvr, params) = expr
                     val callee = call.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
+                    checkPurityOfCall(declClass, name, descr, rcvr +: params, callee)
                 } else true
             case VirtualFunctionCall.ASTID ⇒
                 val call = expr.asVirtualFunctionCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
                         expr
-                    checkPurityOfVirtualCall(declClass, interface, name, rcvr, params, descr)
+                    checkPurityOfVirtualCall(declClass, interface, name, rcvr +: params, descr)
                 } else true
 
             // Field/array loads are pure if the field is (effectively) final or the object/array is
@@ -412,14 +412,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         rcvrType:  ReferenceType,
         interface: Boolean,
         name:      String,
-        rcvr:      Expr[V],
         params:    Seq[Expr[V]],
         descr:     MethodDescriptor
     )(implicit state: StateType): Boolean = {
-        onVirtualMethod(rcvrType, interface, name, rcvr, params, descr,
-            callee ⇒ checkPurityOfCall(rcvrType, name, descr, Some(rcvr), params, callee),
+        onVirtualMethod(rcvrType, interface, name, params.head, descr,
+            callee ⇒ checkPurityOfCall(rcvrType, name, descr, params, callee),
             dm ⇒ checkMethodPurity(
-                propertyStore(dm, VirtualMethodPurity.key), (Some(rcvr), params)
+                propertyStore(dm, VirtualMethodPurity.key), params
             ),
             () ⇒ { atMost(ImpureByAnalysis); false })
     }
@@ -429,7 +428,6 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         interface:    Boolean,
         name:         String,
         receiver:     Expr[V],
-        params:       Seq[Expr[V]],
         descr:        MethodDescriptor,
         onPrecise:    org.opalj.Result[Method] ⇒ Boolean,
         onMultiple:   DeclaredMethod ⇒ Boolean,
@@ -460,7 +458,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 descr
             )
 
-            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
+            if (!callee.hasSingleDefinedMethod || isMethodOverridable(callee.definedMethod).isNotNo) {
                 onUnknown() // We don't know all overrides
             } else {
                 onMultiple(callee)
@@ -476,7 +474,6 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         receiverClass: ReferenceType,
         name:          String,
         descriptor:    MethodDescriptor,
-        receiver:      Option[Expr[V]],
         params:        Seq[Expr[V]],
         methodResult:  org.opalj.Result[Method]
     )(implicit state: StateType): Boolean = {
@@ -496,7 +493,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             )
         }
         val calleePurity = propertyStore(dm, Purity.key)
-        checkMethodPurity(calleePurity, (receiver, params))
+        checkMethodPurity(calleePurity, params)
     }
 
     /**
@@ -506,7 +503,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkMethodPurity(
         ep:     EOptionP[DeclaredMethod, Property],
-        params: (Option[Expr[V]], Seq[Expr[V]])    = (None, Seq.empty)
+        params: Seq[Expr[V]]                       = Seq.empty
     )(implicit state: StateType): Boolean
 
     /**

@@ -29,7 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.ai.domain.TheMethod
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.IntArrayStack
@@ -96,11 +95,7 @@ object InterpretationFailedException {
             val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             final override def toString: String = {
-                val source = domain match {
-                    case d: TheMethod ⇒ d.method.toJava
-                    case _            ⇒ "N/A"
-                }
-                s"InterpretationFailedException(\n\tsource=$source,"+
+                s"InterpretationFailedException(\n\tdomain=$domain,"+
                     s"\n\tai=${ai.getClass},\n\tcause=$cause,"+
                     s"\n\tpc=$pc,"+
                     s"\n\toperands=${operandsArray(pc)},"+

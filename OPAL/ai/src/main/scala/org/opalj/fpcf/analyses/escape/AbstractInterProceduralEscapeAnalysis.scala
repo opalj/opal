@@ -178,15 +178,15 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     descr
                 )
 
-            if (!callee.hasDefinition ||
-                context.isMethodOverridable(callee.methodDefinition).isNotNo) {
+            if (!callee.hasSingleDefinedMethod ||
+                context.isMethodOverridable(callee.definedMethod).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
                 //
                 // to optimize performance, we do not let the analysis run against the existing methods
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val method = callee.methodDefinition
+                val method = callee.definedMethod
                 if (project.isSignaturePolymorphic(method.classFile.thisType, method)) {
                     //IMPROVE
                     // check if this is to much (param contains def-site)

@@ -60,6 +60,20 @@ final class EPKSequentialPropertyStore private (
         val logContext: LogContext
 ) extends SeqPropertyStore { store ⇒
 
+    // --------------------------------------------------------------------------------------------
+    //
+    // CAPABILITIES
+    //
+    // --------------------------------------------------------------------------------------------
+
+    final def supportsFastTrackPropertyComputations: Boolean = false
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // STATISTICS
+    //
+    // --------------------------------------------------------------------------------------------
+
     /**
      * Controls in which order updates are processed/scheduled.
      *

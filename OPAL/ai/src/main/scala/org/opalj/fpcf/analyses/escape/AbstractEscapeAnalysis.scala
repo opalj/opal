@@ -347,7 +347,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             IntermediateResult(
                 context.entity,
                 GlobalEscape, state.mostRestrictiveProperty,
-                state.dependees, continuation
+                state.dependees, continuation, CheapPropertyComputation
             )
         }
     }

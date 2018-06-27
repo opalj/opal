@@ -214,12 +214,12 @@ object UnusedResults extends DefaultOneStepAnalysis {
                 descr
             )
 
-            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
+            if (!callee.hasSingleDefinedMethod || isMethodOverridable(callee.definedMethod).isNotNo) {
                 None // We don't know all overrides, ignore the call (it may be impure)
             } else {
                 propertyStore(callee, VirtualMethodPurity.key) match {
                     case FinalEP(_, VCompileTimePure | VPure | VSideEffectFree) ⇒
-                        createIssue(caller, callee.methodDefinition, call.pc)
+                        createIssue(caller, callee.definedMethod, call.pc)
                     case _ ⇒ None
                 }
             }

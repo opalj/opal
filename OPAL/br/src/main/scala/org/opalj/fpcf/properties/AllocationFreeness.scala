@@ -80,8 +80,8 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
     final val key = PropertyKey.create[DeclaredMethod, AllocationFreeness](
         "AllocationFreeness",
         (_: PropertyStore, dm: DeclaredMethod) ⇒ {
-            if (dm.hasDefinition && dm.methodDefinition.body.isDefined) {
-                val method = dm.methodDefinition
+            if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined) {
+                val method = dm.definedMethod
                 val body = method.body.get
                 val instructions = body.instructions
                 val maxPC = instructions.length
