@@ -50,7 +50,11 @@ import org.opalj.fpcf.properties.TypeImmutability
  */
 class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
-    def doDetermineTypeMutability(typeExtensibility: ObjectType ⇒ Answer)(e: Entity): PropertyComputationResult = e match {
+    def doDetermineTypeMutability(
+        typeExtensibility: ObjectType ⇒ Answer
+    )(
+        e: Entity
+    ): PropertyComputationResult = e match {
         case t: ObjectType ⇒ step1(typeExtensibility)(t)
         case _ ⇒
             val m = e.getClass.getSimpleName+" is not an org.opalj.br.ObjectType"
@@ -86,7 +90,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
-                                IntermediateResult(t, thisLB, thisUB, Seq(eps), c)
+                                IntermediateResult(
+                                    t, thisLB, thisUB,
+                                    Seq(eps), c, CheapPropertyComputation
+                                )
                     }
                 }
             }
@@ -97,9 +104,15 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ IntermediateEP(_, lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    IntermediateResult(t, thisLB, thisUB, Seq(eps), c, CheapPropertyComputation)
+                    IntermediateResult(
+                        t, thisLB, thisUB,
+                        Seq(eps), c, CheapPropertyComputation
+                    )
                 case epk ⇒
-                    IntermediateResult(t, MutableType, ImmutableType, Seq(epk), c, CheapPropertyComputation)
+                    IntermediateResult(
+                        t, MutableType, ImmutableType,
+                        Seq(epk), c, CheapPropertyComputation
+                    )
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -189,7 +202,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 assert(maxImmutability == ImmutableContainerType)
                                 Result(t, maxImmutability)
                             } else {
-                                IntermediateResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
+                                IntermediateResult(
+                                    t, joinedImmutability, maxImmutability,
+                                    dependencies.values, c
+                                )
                             }
                         }
                     }
