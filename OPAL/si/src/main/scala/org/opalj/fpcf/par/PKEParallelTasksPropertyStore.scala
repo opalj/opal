@@ -143,7 +143,7 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] val maxTasksQueueSize: AtomicInteger = new AtomicInteger(-1)
 
-    private[this] var oneStepFinalResult = 0
+    private[this] var oneStepFinalUpdate = 0
 
     @volatile private[this] var resolvedCSCCsCounter = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
@@ -158,7 +158,7 @@ final class PKEParallelTasksPropertyStore private (
             "max tasks queue size" -> maxTasksQueueSize.get,
             "fast-track properties computations" -> fastTrackPropertiesCount,
             "computations of fallback properties (queried but not computed properties)" -> fallbacksUsedCount,
-            "computations which immediately/in one step computed a final result" -> oneStepFinalResult,
+            "computations which immediately/in one step computed a final result" -> oneStepFinalUpdate,
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
             "useless partial result computations" -> uselessPartialResultComputationCount,
 
@@ -742,6 +742,7 @@ final class PKEParallelTasksPropertyStore private (
         val pk = ub.key
         val pkId = pk.id
         val newEPS = EPS[Entity, Property](e, lb, ub)
+        val isFinal = newEPS.isFinal
         val propertiesOfEntity = properties(pkId)
 
         // 1. update property
@@ -750,7 +751,8 @@ final class PKEParallelTasksPropertyStore private (
 
         // 2. check if update was ok
         if (oldEPS == null) {
-            oneStepFinalResult += 1
+            if(isFinal)
+                oneStepFinalUpdate += 1
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
@@ -781,7 +783,6 @@ final class PKEParallelTasksPropertyStore private (
         }
 
         // 3. handle relevant updates
-        val isFinal = newEPS.isFinal
         val relevantUpdate = newEPS != oldEPS
         if (isFinal ||
             forceDependerNotification ||
