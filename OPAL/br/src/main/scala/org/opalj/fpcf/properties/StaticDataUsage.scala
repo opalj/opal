@@ -59,11 +59,11 @@ sealed abstract class StaticDataUsage
 
 object StaticDataUsage extends StaticDataUsagePropertyMetaInformation {
     /**
-     * The key associated with every static constant usage property. The name is
-     * "StaticConstantUsage"; the fallback is "UsesVaryingData".
+     * The key associated with every static data usage property. The name is
+     * "StaticDataUsage"; the fallback is "UsesVaryingData".
      */
     final val key = PropertyKey.create[DeclaredMethod, StaticDataUsage](
-        "StaticConstantUsage",
+        "StaticDataUsage",
         UsesVaryingData
     )
 }

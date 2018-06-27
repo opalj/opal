@@ -31,7 +31,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
@@ -64,7 +64,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
             for (pc ← successors) {
                 if (pc.isCatchNode) {
                     val exceptionType = context.entity match {
-                        case defSite: DefinitionSite ⇒
+                        case defSite: DefinitionSiteLike ⇒
                             val Assignment(_, left, _) = context.code.find(_.pc == defSite.pc).get
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                                 left.value.asDomainReferenceValue.upperTypeBound

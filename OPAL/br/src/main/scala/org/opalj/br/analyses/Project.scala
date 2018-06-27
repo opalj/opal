@@ -1245,7 +1245,7 @@ object Project {
             // Hence, when we have to find the correct method, we first have to determine
             // that - in case of SB - the only relevant super interfaces are SL and SR, but
             // not S.
-            var interfaceMethods: Chain[Method] = Naught
+
             def processMaximallySpecificSuperinterfaceMethod(
                 inheritedInterfaceMethod: Method
             ): Unit = {
@@ -1273,16 +1273,38 @@ object Project {
                 }
             }
 
+            var interfaceMethods: Set[MethodSignature] = Set.empty
+            var uniqueInterfaceMethods: Set[Method] = Set.empty
+            var uniqueInterfaceMethodSignatures: Set[MethodSignature] = Set.empty
             for {
                 superinterfaceType ← superinterfaceTypes
                 superinterfaceClassfile ← objectTypeToClassFile(superinterfaceType)
                 superinterfaceTypeMethod ← superinterfaceClassfile.methods
+                if superinterfaceTypeMethod.isPublic &&
+                    !superinterfaceTypeMethod.isStatic &&
+                    !superinterfaceTypeMethod.isInitializer
             } {
-                interfaceMethods :&:= superinterfaceTypeMethod
+                val signature = superinterfaceTypeMethod.signature
+                if (interfaceMethods.contains(signature)) {
+                    uniqueInterfaceMethodSignatures -= signature
+                    uniqueInterfaceMethods = uniqueInterfaceMethods.filterNot { m ⇒
+                        m.signature == signature
+                    }
+                } else {
+                    interfaceMethods += signature
+                    uniqueInterfaceMethodSignatures += signature
+                    uniqueInterfaceMethods += superinterfaceTypeMethod
+                }
+            }
+
+            uniqueInterfaceMethods foreach { m ⇒
+                processMaximallySpecificSuperinterfaceMethod(m)
             }
 
             // let's keep the contexts related to the maximally specific methods.
-            interfaceMethods foreach { interfaceMethod ⇒
+            interfaceMethods.iterator.filterNot { ms ⇒
+                uniqueInterfaceMethodSignatures.contains(ms)
+            } foreach { interfaceMethod ⇒
                 val (_, maximallySpecificSuperiniterfaceMethod) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes,
@@ -1295,8 +1317,8 @@ object Project {
                     definedMethods = definedMethods.filterNot { m ⇒
                         interfaceMethod.name == m.name && interfaceMethod.descriptor == m.descriptor
                     }
-                } else if (maximallySpecificSuperiniterfaceMethod.contains(interfaceMethod)) {
-                    processMaximallySpecificSuperinterfaceMethod(interfaceMethod)
+                } else if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                    processMaximallySpecificSuperinterfaceMethod(maximallySpecificSuperiniterfaceMethod.head)
                 }
             }
 
