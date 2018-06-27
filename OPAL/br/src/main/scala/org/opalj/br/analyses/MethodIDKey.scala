@@ -34,7 +34,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
 /**
- * TODO
+ * A project information key that computes a bijective mapping between methods and an number in the
+ * range [0, project.allMethods.size)
  *
  * @author Florian Kuebler
  */
