@@ -460,7 +460,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 descr
             )
 
-            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
+            if (!callee.hasSingleDefinedMethod || isMethodOverridable(callee.definedMethod).isNotNo) {
                 onUnknown() // We don't know all overrides
             } else {
                 onMultiple(callee)

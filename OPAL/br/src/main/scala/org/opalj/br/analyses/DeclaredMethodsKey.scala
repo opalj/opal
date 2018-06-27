@@ -134,7 +134,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             UIDSet.empty[ObjectType]
                         )
                     if (methods.size > 1 && !methods.head.isAbstract) {
-                        val vm = MultiplyDefinedMethod(
+                        val vm = MultipleDefinedMethods(
                             classType,
                             ConstArray(methods.toSeq: _*)
                         )

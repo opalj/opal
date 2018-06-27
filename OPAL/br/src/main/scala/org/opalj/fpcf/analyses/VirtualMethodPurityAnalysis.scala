@@ -50,7 +50,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determinePurity(dm: DefinedMethod): PropertyComputationResult = {
-        if (!dm.hasDefinition && !dm.hasMultipleDefinitions)
+        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
             return Result(dm, VImpureByLackOfInformation);
 
         var maxPurity: Purity = CompileTimePure
@@ -61,9 +61,9 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
                 project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
-            else if (dm.hasDefinition && dm.methodDefinition.isPackagePrivate)
+            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
                 project.virtualCall(
-                    dm.methodDefinition.classFile.thisType.packageName,
+                    dm.definedMethod.classFile.thisType.packageName,
                     dm.declaringClassType,
                     dm.name,
                     dm.descriptor

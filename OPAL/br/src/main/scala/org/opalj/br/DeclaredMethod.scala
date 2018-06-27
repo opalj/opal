@@ -42,7 +42,7 @@ sealed abstract class DeclaredMethod {
 
     /**
      * The declaring type; the returned type may not define the method; it could be defined by
-     * a super class.
+     * one or more super classes/interfaces in case of Java 8+.
      */
     def declaringClassType: ReferenceType
 
@@ -53,36 +53,49 @@ sealed abstract class DeclaredMethod {
     def toJava: String = s"${declaringClassType.toJava}{ ${descriptor.toJava(name)} }"
 
     /**
-     * If `true` the method which actually defines this method (which may still be abstract!),
-     * is known and is available using [[asDefinedMethod]].
+     * If `true`, the method which actually defines this method (which may still be abstract!),
+     * is unique, known and is available using [[asDefinedMethod]].
      */
-    def hasDefinition: Boolean
+    def hasSingleDefinedMethod: Boolean
 
-    /**
-     * If `true`, there are multiple methods that define this method and they can be accessed using
-     * [[foreachMethodDefinition]].
-     */
-    def hasMultipleDefinitions: Boolean = false
-
-    /** The definition of this method; defined iff [[hasDefinition]] returns `true`. */
+    /** The definition of this method; defined iff [[hasSingleDefinedMethod]] returns `true`. */
     def asDefinedMethod: DefinedMethod
 
     /**
      * Returns the defined method related to this declared method. The defined method
      * is always either defined by the same class or a superclass thereof.
      *
-     * The behavior of this method is undefined if [[hasDefinition]] return false.
+     * The behavior of this method is undefined if [[hasSingleDefinedMethod]] returns false.
      */
-    def methodDefinition: Method
+    def definedMethod: Method
 
     /**
-     * Executes the given function for each method definition of a (Multiply)DefinedMethod.
+     * If `true`, there are multiple methods that define this method and they can be iterated over
+     * using [[foreachDefinedMethod]].
      */
-    def foreachMethodDefinition[U](fun: Method ⇒ U): Unit
+    def hasMultipleDefinedMethods: Boolean
 
-    override def hashCode: Int = {
-        (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
-    }
+    /**
+     * The definition of this method; defined iff [[hasMultipleDefinedMethods]] returns `true`.
+     */
+    def asMultipleDefinedMethods: MultipleDefinedMethods
+
+    /**
+     * Returns the defined method related to this declared method. The defined method
+     * is always either defined by the same class or a superclass thereof.
+     *
+     * The behavior of this method is undefined if [[hasMultipleDefinedMethods]] returns false.
+     */
+    def definedMethods: ConstArray[Method]
+
+    /**
+     * Executes the given function for each method definition.
+     *
+     * The behavior of this method is undefined if neither [[hasSingleDefinedMethod]] nor
+     * [[hasMultipleDefinedMethods]] returns true.
+     */
+    def foreachDefinedMethod[U](f: Method ⇒ U): Unit
+
 }
 
 /**
@@ -97,25 +110,20 @@ final case class VirtualDeclaredMethod(
         descriptor:         MethodDescriptor
 ) extends DeclaredMethod {
 
-    override def hasDefinition: Boolean = false
-    override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
-    override def foreachMethodDefinition[U](fun: Method ⇒ U): Unit =
-        throw new UnsupportedOperationException("not available")
-    override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
+    override def hasSingleDefinedMethod: Boolean = false
+    override def definedMethod: Method = throw new UnsupportedOperationException();
+    override def asDefinedMethod: DefinedMethod = throw new ClassCastException();
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: VirtualDeclaredMethod ⇒
-                (this.declaringClassType eq that.declaringClassType) &&
-                    this.name == that.name &&
-                    this.descriptor == that.descriptor
-            case _ ⇒
-                false
-        }
+    override def hasMultipleDefinedMethods: Boolean = false
+    override def definedMethods: ConstArray[Method] = throw new UnsupportedOperationException();
+    override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
+
+    override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = {
+        throw new UnsupportedOperationException();
     }
 
     override def toString: String = {
-        s"VirtualDeclaredMethod($declaringClassType,$name,$descriptor)"
+        s"VirtualDeclaredMethod(${declaringClassType.toJava},$name,$descriptor)"
     }
 }
 
@@ -131,40 +139,38 @@ final case class DefinedMethod(
     override def name: String = definedMethod.name
     override def descriptor: MethodDescriptor = definedMethod.descriptor
 
-    override def hasDefinition: Boolean = true
+    override def hasSingleDefinedMethod: Boolean = true
     override def asDefinedMethod: DefinedMethod = this
-    override def methodDefinition: Method = definedMethod
-    override def foreachMethodDefinition[U](fun: Method ⇒ U): Unit = fun(definedMethod)
 
-    override def hashCode: Int = (definedMethod.hashCode() * 41) + super.hashCode
+    override def hasMultipleDefinedMethods: Boolean = false
+    override def definedMethods: ConstArray[Method] = throw new UnsupportedOperationException();
+    override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: DefinedMethod ⇒
-                (this.definedMethod eq that.definedMethod) &&
-                    (this.declaringClassType eq that.declaringClassType)
-            case _ ⇒
-                false
-        }
-    }
+    override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = f(definedMethod)
 
     override def toString: String = {
-        s"DefinedMethod($declaringClassType,$name,$descriptor,${definedMethod.toJava})"
+        s"DefinedMethod(declaringClassType=${declaringClassType.toJava},definedMethod=${definedMethod.toJava})"
     }
 }
 
-final case class MultiplyDefinedMethod(
+final case class MultipleDefinedMethods(
         declaringClassType: ReferenceType,
         definedMethods:     ConstArray[Method]
 ) extends DeclaredMethod {
+
     override def name: String = definedMethods.head.name
     override def descriptor: MethodDescriptor = definedMethods.head.descriptor
 
-    override def hasDefinition: Boolean = false
-    override def asDefinedMethod: DefinedMethod = throw new ClassCastException()
-    override def methodDefinition: Method = throw new UnsupportedOperationException("not available")
+    override def hasSingleDefinedMethod: Boolean = false
+    override def asDefinedMethod: DefinedMethod = throw new ClassCastException();
+    override def definedMethod: Method = throw new UnsupportedOperationException();
 
-    override def foreachMethodDefinition[U](fun: Method ⇒ U): Unit = {
-        definedMethods.foreach(fun)
+    override def hasMultipleDefinedMethods: Boolean = true
+    override def asMultipleDefinedMethods: MultipleDefinedMethods = this
+
+    override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = definedMethods.foreach(f)
+
+    override def toString: String = {
+        s"DefinedMethod(${declaringClassType.toJava},definedMethods=${definedMethods.map(_.toJava).mkString("{",", ","}")})"
     }
 }

@@ -85,10 +85,10 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
         definedMethod: DefinedMethod
     ): PropertyComputationResult = {
 
-        if (definedMethod.methodDefinition.body.isEmpty)
+        if (definedMethod.definedMethod.body.isEmpty)
             return Result(definedMethod, UsesVaryingData);
 
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
@@ -246,7 +246,7 @@ object EagerStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val analysis = new StaticDataUsageAnalysis(project)
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineUsage)
         analysis

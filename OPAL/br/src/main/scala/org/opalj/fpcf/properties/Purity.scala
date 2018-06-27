@@ -255,10 +255,10 @@ object Purity extends PurityPropertyMetaInformation {
         "Purity",
         ImpureByLackOfInformation,
         fastTrackPropertyComputation = (ps: PropertyStore, dm: DeclaredMethod) ⇒ {
-            if (!dm.hasDefinition) Some(ImpureByLackOfInformation)
-            else if (dm.methodDefinition.classFile.thisType ne dm.declaringClassType) None
+            if (!dm.hasSingleDefinedMethod) Some(ImpureByLackOfInformation)
+            else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType) None
             else {
-                val method = dm.methodDefinition
+                val method = dm.definedMethod
                 val declaringClassType = method.classFile.thisType
                 val methodDescriptor = method.descriptor
                 val methodName = method.name
