@@ -62,6 +62,20 @@ final class PKESequentialPropertyStore private (
         val logContext: LogContext
 ) extends SeqPropertyStore { store ⇒
 
+    // --------------------------------------------------------------------------------------------
+    //
+    // CAPABILITIES
+    //
+    // --------------------------------------------------------------------------------------------
+
+    final def supportsFastTrackPropertyComputations: Boolean = true
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // STATISTICS
+    //
+    // --------------------------------------------------------------------------------------------
+
     /**
      * Controls in which order updates are processed/scheduled.
      *

@@ -82,6 +82,20 @@ final class PKEParallelTasksPropertyStore private (
 ) extends PropertyStore {
     store ⇒
 
+    // --------------------------------------------------------------------------------------------
+    //
+    // CAPABILITIES
+    //
+    // --------------------------------------------------------------------------------------------
+
+    final def supportsFastTrackPropertyComputations: Boolean = true
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // STATISTICS
+    //
+    // --------------------------------------------------------------------------------------------
+
     // Tasks are allowed to schedule further tasks... therefore, the scheduled tasks counter
     // has to be thread-safe.
     private[this] val scheduledTasksCounter: AtomicInteger = new AtomicInteger(0)
