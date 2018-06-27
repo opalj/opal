@@ -141,6 +141,8 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] val maxTasksQueueSize: AtomicInteger = new AtomicInteger(-1)
 
+    private[this] var oneStepFinalResult = 0
+
     @volatile private[this] var resolvedCSCCsCounter = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
@@ -159,6 +161,7 @@ final class PKEParallelTasksPropertyStore private (
             "computations of fallback properties" -> fallbacksUsedCount,
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
             "useless partial result computations" -> uselessPartialResultComputationCount,
+            "computations which immediately/in one step computed a final result" -> oneStepFinalResult,
             "quiescence" -> quiescenceCount,
             "resolved cSCCs" -> resolvedCSCCsCount,
             "max tasks queue size" -> maxTasksQueueSize.get
@@ -741,7 +744,9 @@ final class PKEParallelTasksPropertyStore private (
         if (tracer.isDefined) tracer.get.update(oldEPS, newEPS)
 
         // 2. check if update was ok
-        if (debug && oldEPS != null) {
+        if (oldEPS == null) {
+            oneStepFinalResult += 1
+        } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
             val oldLB = oldEPS.lb
