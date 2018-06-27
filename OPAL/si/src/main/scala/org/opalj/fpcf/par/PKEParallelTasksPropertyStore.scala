@@ -44,6 +44,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable
+import scala.collection.{Map ⇒ SomeMap}
+
 import org.opalj.graphs
 import org.opalj.collection.mutable.AnyRefArrayStack
 import org.opalj.log.LogContext
@@ -149,7 +151,7 @@ final class PKEParallelTasksPropertyStore private (
     @volatile private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
-    def statistics: Map[String, Int] = {
+    def statistics: SomeMap[String, Int] = {
         mutable.LinkedHashMap(
             "scheduled tasks" -> scheduledTasksCount,
             "scheduled lazy tasks (fast track computations of lazy properties are not counted)" -> scheduledLazyTasksCount,

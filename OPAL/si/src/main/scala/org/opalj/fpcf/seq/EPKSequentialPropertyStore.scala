@@ -35,6 +35,9 @@ import java.lang.System.identityHashCode
 
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.LongMap
+import scala.collection.mutable
+import scala.collection.{Map => SomeMap}
+
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
@@ -107,8 +110,8 @@ final class EPKSequentialPropertyStore private (
 
     def fastTrackPropertiesCount: Int = 0 // The EPK store does not support fast track properties
 
-    def statistics: Map[String, Int] = {
-        Map(
+    def statistics: SomeMap[String, Int] = {
+        mutable.LinkedHashMap(
             "scheduled tasks" -> scheduledTasksCount,
             "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
             "immediate on update computations" -> immediateOnUpdateComputationsCount,

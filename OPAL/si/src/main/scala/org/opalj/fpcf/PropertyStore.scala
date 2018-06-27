@@ -33,6 +33,8 @@ import scala.util.control.ControlThrowable
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.universe.typeOf
+import scala.collection.{Map ⇒ SomeMap}
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -247,7 +249,7 @@ abstract class PropertyStore {
     def fastTrackPropertiesCount: Int
 
     /** Core statistics. */
-    def statistics: Map[String, Int]
+    def statistics: SomeMap[String, Int]
 
     //
     //
