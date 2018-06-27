@@ -44,6 +44,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable
+import scala.collection.{Map ⇒ SomeMap}
+
 import org.opalj.graphs
 import org.opalj.collection.mutable.AnyRefArrayStack
 import org.opalj.log.LogContext
@@ -149,22 +151,25 @@ final class PKEParallelTasksPropertyStore private (
     @volatile private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
-    def statistics: Map[String, Int] = {
-        Map(
+    def statistics: SomeMap[String, Int] = {
+        mutable.LinkedHashMap(
             "scheduled tasks" -> scheduledTasksCount,
-            "direct in task thread property computations" -> directInTaskThreadPropertyComputationsCount,
-            "scheduled lazy tasks" -> scheduledLazyTasksCount,
-            "fast-track properties" -> fastTrackPropertiesCount,
-            "direct evaluation of dependers" -> directDependerOnUpdateComputationsCount,
-            "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCount,
-            "direct reevaluation of dependees due to updated dependers" -> directDependeeUpdatesCount,
-            "computations of fallback properties" -> fallbacksUsedCount,
+            "scheduled lazy tasks (fast track computations of lazy properties are not counted)" -> scheduledLazyTasksCount,
+            "max tasks queue size" -> maxTasksQueueSize.get,
+            "fast-track properties computations" -> fastTrackPropertiesCount,
+            "computations of fallback properties (queried but not computed properties)" -> fallbacksUsedCount,
+            "computations which immediately/in one step computed a final result" -> oneStepFinalResult,
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
             "useless partial result computations" -> uselessPartialResultComputationCount,
-            "computations which immediately/in one step computed a final result" -> oneStepFinalResult,
-            "quiescence" -> quiescenceCount,
-            "resolved cSCCs" -> resolvedCSCCsCount,
-            "max tasks queue size" -> maxTasksQueueSize.get
+
+            "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCount,
+
+            "direct in task thread property computations (cheap property computation or tasks queue is full enough)" -> directInTaskThreadPropertyComputationsCount,
+            "direct evaluation of dependers (cheap property computation)" -> directDependerOnUpdateComputationsCount,
+            "direct reevaluations of dependee due to updated dependers (cheap property computation)" -> directDependeeUpdatesCount,
+
+            "number of times the store reached quiescence" -> quiescenceCount,
+            "resolved cSCCs" -> resolvedCSCCsCount
         )
     }
 
