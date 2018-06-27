@@ -252,7 +252,7 @@ final class PKESequentialPropertyStore private (
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
                                 fastTrackPropertiesCounter += 1
-                                set(e, p)
+                                set(e, p, isFastTrackProperty = true)
                                 FinalEP(e, p.asInstanceOf[P])
                             case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
@@ -468,11 +468,13 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def set(e: Entity, p: Property): Unit = handleExceptions {
+    override def set(e: Entity, p: Property): Unit = set(e, p, false)
+
+    def set(e: Entity, p: Property, isFastTrackProperty: Boolean): Unit = handleExceptions {
         val key = p.key
         val pkId = key.id
 
-        if (debug && lazyComputations(pkId) != null) {
+        if (debug && !isFastTrackProperty && lazyComputations(pkId) != null) {
             throw new IllegalStateException(
                 s"$e: setting $p is not supported; lazy computation is scheduled for $key"
             )
