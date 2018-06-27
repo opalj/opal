@@ -1173,10 +1173,12 @@ object Project {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
-        // HERE "overridden" is to be taken with a grain of salt...
+        // HERE "overridden" is to be taken with a grain of salt, because we have a static
+        // method with the same name and descriptor as an instance method defined by a super
+        // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
-        /* Returns `true` if the potentially available information is not yet available. */
+        // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
             methods.get(superinterfaceType).isEmpty &&
                 // If the class file is not known, we will never have any details;
@@ -1188,7 +1190,7 @@ object Project {
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times; hence, if we are
-            // alread done, just return.
+            // already done, just return.
             if (methods.get(objectType).nonEmpty)
                 return ;
 
@@ -1197,13 +1199,13 @@ object Project {
             val inheritedClassMethods: Chain[MethodDeclarationContext] =
                 if (superclassType.isDefined) {
                     val theSuperclassType = superclassType.get
-                    val superclassTypeMethods = methods.get(theSuperclassType)
                     if (notYetAvailable(theSuperclassType)) {
                         // let's postpone the processing of this object type
                         // because we will get some result in the future
                         tasks.submit(objectType)
                         return ;
                     }
+                    val superclassTypeMethods = methods.get(theSuperclassType)
                     if (superclassTypeMethods.nonEmpty) {
                         val inheritedClassMethods = superclassTypeMethods.get
                         if (classHierarchy.isInterface(objectType).isYes) {
