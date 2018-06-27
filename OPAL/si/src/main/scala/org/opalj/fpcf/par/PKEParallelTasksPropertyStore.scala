@@ -754,7 +754,7 @@ final class PKEParallelTasksPropertyStore private (
 
         // 2. check if update was ok
         if (oldEPS == null) {
-            if(isFinal)
+            if (isFinal)
                 oneStepFinalUpdatesCounter += 1
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
