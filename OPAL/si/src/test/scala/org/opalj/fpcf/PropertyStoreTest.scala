@@ -489,6 +489,42 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
+            describe("support for fast track properties") {
+
+                it("should correctly handle lazy computations that support fast track properties") {
+                    val ps = createPropertyStore()
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                    if (ps.supportsFastTrackPropertyComputations) {
+
+                        ps.useFastTrackPropertyComputations = true
+                        assert(ps.useFastTrackPropertyComputations)
+
+                        import MarkerWithFastTrack._
+                        ps.setupPhase(Set(MarkerWithFastTrackKey), Set.empty)
+
+                        val entities = (1 to 50).map(i ⇒ "e"+i)
+                        // basically, we should ALWAYS get the result of the fast-track computation..
+                        ps.registerLazyPropertyComputation(
+                            MarkerWithFastTrackKey,
+                            (e: Entity) ⇒ {
+                                entities.filter(_ != e).foreach(ps.apply(_, MarkerWithFastTrackKey))
+                                Result(e, NotMarked)
+                            }
+                        )
+                        entities foreach {
+                            ps.force(_, MarkerWithFastTrackKey)
+                        }
+                        ps.waitOnPhaseCompletion()
+                        entities foreach { e ⇒
+                            ps(e, MarkerWithFastTrackKey) should be(FinalEP(e, IsMarked))
+                        }
+                    }
+
+                    ps.shutdown()
+                }
+            }
+
             describe("handling of computations with multiple updates") {
                 // DESCRIPTION OF A GRAPH (WITH CYCLES)
                 val nodeA = Node("a")
@@ -982,8 +1018,8 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(TreeLevelKey), Set.empty)
 
                 /* The following analysis only uses the new information given to it and updates
-             * the set of observed dependees.
-             */
+                 * the set of observed dependees.
+                 */
                 def analysis(level: Int)(n: Node): PropertyComputationResult = {
                     val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
                         n.targets.map(t ⇒ (analysis(level + 1) _, t))
@@ -1396,6 +1432,30 @@ object Marker {
     }
     case object IsMarked extends MarkerProperty
     case object NotMarked extends MarkerProperty
+}
+
+// Test fixture related to a simple marker property
+object MarkerWithFastTrack {
+
+    final val MarkerWithFastTrackKey = {
+
+        PropertyKey.create[Entity, MarkerWithFastTrackProperty](
+            "MarkerWithFastTrack",
+            (ps: PropertyStore, e: Entity) ⇒ NotMarked,
+            (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
+            (ps: PropertyStore, e: Entity) ⇒ {
+                Thread.sleep(System.nanoTime() % 50)
+                Some(IsMarked)
+            }
+        )
+    }
+
+    sealed trait MarkerWithFastTrackProperty extends Property {
+        type Self = MarkerWithFastTrackProperty
+        def key = MarkerWithFastTrackKey
+    }
+    case object IsMarked extends MarkerWithFastTrackProperty
+    case object NotMarked extends MarkerWithFastTrackProperty
 }
 
 // Test fixture related to Palindromes.
