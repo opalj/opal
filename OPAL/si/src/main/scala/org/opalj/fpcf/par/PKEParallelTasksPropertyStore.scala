@@ -565,7 +565,7 @@ final class PKEParallelTasksPropertyStore private (
                 finalEP
 
             case None ⇒
-                appendStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
+                prependStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
                 EPK(e, pk)
         }
     }
@@ -599,7 +599,8 @@ final class PKEParallelTasksPropertyStore private (
                             // it accessible later on...
                             val p = PropertyKey.fallbackProperty(store, e, pk)
                             val finalEP = FinalEP(e, p)
-                            prependStoreUpdate(PropertyUpdate(IdempotentResult(finalEP), false, true))
+                            val r = IdempotentResult(finalEP)
+                            prependStoreUpdate(PropertyUpdate(r, false, true))
                             finalEP
                         } else {
                             EPK(e, pk)
@@ -756,8 +757,7 @@ final class PKEParallelTasksPropertyStore private (
 
         // 2. check if update was ok
         if (oldEPS == null) {
-            if (isFinal)
-                oneStepFinalUpdatesCounter += 1
+            if (isFinal) oneStepFinalUpdatesCounter += 1
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
@@ -811,10 +811,10 @@ final class PKEParallelTasksPropertyStore private (
                     } else {
                         scheduledOnUpdateComputationsCounter += 1
                         if (isFinal) {
-                            if (dependeesCount > 5)
-                                appendTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
-                            else
+                            if (dependeesCount <= 2)
                                 prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                            else
+                                appendTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
                         } else if (dependeesCount == 1) {
                             prependTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
                         } else {
