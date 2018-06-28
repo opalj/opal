@@ -181,7 +181,11 @@ class ProjectTest extends FlatSpec with Matchers {
     }
 
     it should "not return an abstractly overridden default methods in a class that implements the interface twice" in {
-        assert(!instanceMethods(Subclass).exists(_.name == "foo"))
+        assert(!instanceMethods(Subclass1).exists(_.name == "foo"))
+    }
+
+    it should "not return an abstractly overridden default methods in a class that inherits the default method from its superclass" in {
+        assert(!instanceMethods(Subclass2).exists(_.name == "foo"))
     }
 
     behavior of "A Project's information management methods"
@@ -508,5 +512,6 @@ private object ProjectTest {
 
     val SubSub = ObjectType("interfaces/SubSub")
     val SubSub2 = ObjectType("interfaces/SubSub2")
-    val Subclass = ObjectType("interfaces/Subclass")
+    val Subclass1 = ObjectType("interfaces/Subclass1")
+    val Subclass2 = ObjectType("interfaces/Subclass2")
 }
