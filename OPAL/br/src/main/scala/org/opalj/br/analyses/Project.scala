@@ -1249,32 +1249,30 @@ object Project {
             def processMaximallySpecificSuperinterfaceMethod(
                 inheritedInterfaceMethod: Method
             ): Unit = {
-                if (inheritedInterfaceMethod.isAbstract)
-                    return;
-
-                    // The relevant interface methods are public, hence, the package
-                    // name is not relevant!
-                    definedMethods find { definedMethod ⇒
-                        definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                            definedMethod.name == inheritedInterfaceMethod.name
-                    } match {
-                        case Some(method) =>
-                            // If there is already a method and it is from an interface, then it is not
-                            // maximally specific and must be replaced. If it is from a class however, we
-                            // must keep it.
+                // The relevant interface methods are public, hence, the package
+                // name is not relevant!
+                definedMethods find { definedMethod ⇒
+                    definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                        definedMethod.name == inheritedInterfaceMethod.name
+                } match {
+                    case Some(method) ⇒
+                        // If there is already a method and it is from an interface, then it is not
+                        // maximally specific and must be replaced. If it is from a class however, we
+                        // must keep it.
 
                         val declaringClassType = method.declaringClassType
-                            if (classHierarchy.isInterface(declaringClassType).isYesOrUnknown) {
-                                definedMethods = definedMethods filterNot { definedMethod ⇒
-                                    definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                                        definedMethod.name == inheritedInterfaceMethod.name
-                                }
-
-                                definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
+                        if (classHierarchy.isInterface(declaringClassType).isYesOrUnknown) {
+                            definedMethods = definedMethods filterNot { definedMethod ⇒
+                                definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                                    definedMethod.name == inheritedInterfaceMethod.name
                             }
-                        case None =>
+                            if (!inheritedInterfaceMethod.isAbstract)
+                                definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
+                        }
+                    case None ⇒
+                        if (!inheritedInterfaceMethod.isAbstract)
                             definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
-                    }
+                }
             }
 
             var interfaceMethods: Set[MethodSignature] = Set.empty
