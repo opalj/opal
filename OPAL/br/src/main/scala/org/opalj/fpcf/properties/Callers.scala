@@ -33,9 +33,6 @@ package properties
 import org.opalj.br.Method
 import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntTrieSet
-
-import scala.collection.immutable.IntMap
 
 /**
  * For a given [[Method]], and for each call site (represented by the PC), the set of methods
@@ -43,46 +40,51 @@ import scala.collection.immutable.IntMap
  *
  * @author Florian Kuebler
  */
-sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
+sealed trait CallersPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = Callees
+    final type Self = Callers
 }
 
-sealed trait Callees extends Property with OrderedProperty with CalleesPropertyMetaInformation {
+sealed trait Callers extends Property with OrderedProperty with CallersPropertyMetaInformation {
 
     def size: Int
 
-    def callees(pc: Int): Set[Method]
+    def callers: Set[(Method, Int /*PC*/ )]
 
     override def toString: String = {
         s"Callees(size=${this.size})"
     }
 
-    final def key: PropertyKey[Callees] = Callees.key
+    final def key: PropertyKey[Callers] = Callers.key
 
     /**
      * Tests if this property is equal or better than the given one (better means that the
      * value is above the given value in the underlying lattice.)
      */
-    override def checkIsEqualOrBetterThan(e: Entity, other: Callees): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Callers): Unit = {
         if (other.size < size) //todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 }
 
-final class CalleesImplementation(
-        private[this] val calleesIds: IntMap[IntTrieSet],
-        private[this] val methodIds:  MethodIDs
-) extends Callees {
+final class CallersImplementation(
+        private[this] val encodedCallers: Set[Long /*MethodId + PC*/ ],
+        private[this] val methodIds:      MethodIDs
+) extends Callers {
 
-    override def callees(pc: Int): Set[Method] = calleesIds(pc).mapToAny[Method](methodIds.apply)
+    override def callers: Set[(Method, Int /*PC*/ )] = {
+        for {
+            encodedPair ← encodedCallers
+            (mId, pc) = Callers.toMethodAndPc(encodedPair)
+        } yield methodIds(mId) → pc
+    }
 
     override val size: Int = {
-        calleesIds.iterator.map(_._2.size).sum
+        encodedCallers.size
     }
 }
 
-class FallbackCallees(project: SomeProject, method: Method) extends Callees {
+class FallbackCallers(project: SomeProject, method: Method) extends Callers {
 
     override lazy val size: Int = {
         //callees.size * project.allMethods.size
@@ -90,23 +92,30 @@ class FallbackCallees(project: SomeProject, method: Method) extends Callees {
         Int.MaxValue
     }
 
-    override def callees(pc: Int): Set[Method] = {
-        project.allMethods.toSet
+    override def callers: Set[(Method, Int /*PC*/ )] = {
+        ??? // todo
     }
 }
 
-object Callees extends CalleesPropertyMetaInformation {
+object Callers extends CallersPropertyMetaInformation {
 
-    final val key: PropertyKey[Callees] = {
+    final val key: PropertyKey[Callers] = {
         PropertyKey.create(
-            "Callees",
-            (ps: PropertyStore, m: Method) ⇒ Callees.fallback(m, ps.context[SomeProject]),
-            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub,
+            "Callers",
+            (ps: PropertyStore, m: Method) ⇒ Callers.fallback(m, ps.context[SomeProject]),
+            (_: PropertyStore, eps: EPS[Method, Callers]) ⇒ eps.ub,
             (_: PropertyStore, _: Method) ⇒ None
         )
     }
 
-    def fallback(m: Method, p: SomeProject): Callees = {
-        new FallbackCallees(p, m)
+    def fallback(m: Method, p: SomeProject): Callers = {
+        new FallbackCallers(p, m)
+    }
+
+    def toLong(methodId: Int, pc: Int): Long = {
+        (methodId.toLong << 32) | (pc & 0xFFFFFFFFL)
+    }
+    def toMethodAndPc(methodAndPc: Long): (Int, Int) = {
+        ((methodAndPc >> 32).toInt, methodAndPc.toInt)
     }
 }

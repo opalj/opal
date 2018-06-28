@@ -44,10 +44,10 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
-import org.opalj.fpcf.properties.CallGraph
-import org.opalj.fpcf.properties.CallGraphImplementation
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CalleesImplementation
+import org.opalj.fpcf.properties.Callers
+import org.opalj.fpcf.properties.CallersImplementation
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
@@ -56,12 +56,10 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.GetStatic
 import org.opalj.tac.Invokedynamic
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
 import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.PutStatic
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCallStatement
 import org.opalj.tac.StaticMethodCall
@@ -89,7 +87,7 @@ case class State(
 /**
  * An rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
  * call edges ([[Callees]]). Furthermore, it updates the types for which allocations are present in
- * the [[SomeProject]] ([[InstantiatedTypes]]) and updates the projects [[CallGraph]].
+ * the [[SomeProject]] ([[InstantiatedTypes]]) and updates the [[org.opalj.fpcf.properties.Callers]].
  * @author Florian Kuebler
  */
 class RTACallGraphAnalysis private[analyses] (
@@ -135,8 +133,6 @@ class RTACallGraphAnalysis private[analyses] (
                 ub.types
 
             case _ ⇒
-                for (instantiatedType ← InstantiatedTypes.initialTypes)
-                    addClInitAsNewReachable(instantiatedType, newReachableMethods)
                 InstantiatedTypes.initialTypes
         }
 
@@ -151,9 +147,6 @@ class RTACallGraphAnalysis private[analyses] (
         val (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
             method, instantiatedTypesUB, newReachableMethods
         )
-
-        // for the new instantiated types, <clinit> is now reachable
-        newInstantiatedTypes.foreach(addClInitAsNewReachable(_, newReachableMethods))
 
         val state = State(method, virtualCallSites, calleesOfM, numTypesProcessed)
 
@@ -191,7 +184,9 @@ class RTACallGraphAnalysis private[analyses] (
         val newReachableMethods = ArrayBuffer.empty[Method]
 
         // the new edges in the call graph due to the new types
-        val newCalleesOfM = handleVirtualCallSites(state, newInstantiatedTypes, newReachableMethods, IntMap.empty)
+        val newCalleesOfM = handleVirtualCallSites(
+            state, newInstantiatedTypes, newReachableMethods, IntMap.empty
+        )
 
         var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
         if (newCalleesOfM.nonEmpty)
@@ -228,23 +223,12 @@ class RTACallGraphAnalysis private[analyses] (
                 case Assignment(_, _, New(_, allocatedType)) ⇒
                     if (!instantiatedTypesUB.contains(allocatedType)) {
                         newInstantiatedTypes += allocatedType
-                        addClInitAsNewReachable(allocatedType, newReachableMethods)
                     }
 
                 case ExprStmt(_, New(_, allocatedType)) ⇒
                     if (!instantiatedTypesUB.contains(allocatedType)) {
                         newInstantiatedTypes += allocatedType
-                        addClInitAsNewReachable(allocatedType, newReachableMethods)
                     }
-
-                case Assignment(_, _, GetStatic(_, declaringClass, _, _)) ⇒
-                    addClInitAsNewReachable(declaringClass, newReachableMethods)
-
-                case ExprStmt(_, GetStatic(_, declaringClass, _, _)) ⇒
-                    addClInitAsNewReachable(declaringClass, newReachableMethods)
-
-                case PutStatic(_, declaringClass, _, _, _) ⇒
-                    addClInitAsNewReachable(declaringClass, newReachableMethods)
 
                 case StaticFunctionCallStatement(call) ⇒
                     calleesOfM = handleCall(
@@ -350,14 +334,6 @@ class RTACallGraphAnalysis private[analyses] (
             reachableMethods += m
     }
 
-    def addClInitAsNewReachable(objectType: ObjectType, newReachableMethods: ArrayBuffer[Method]): Unit = {
-        project.classHierarchy.allSupertypes(objectType, reflexive = true) foreach { x ⇒
-            project.classFile(x).foreach { cf ⇒
-                cf.staticInitializer.foreach(addNewReachableMethod(_, newReachableMethods))
-            }
-        }
-    }
-
     /**
      * For a call at `pc` and the set of `targets` (determined by CHA), add corresponding
      * edges for all targets.
@@ -414,40 +390,15 @@ class RTACallGraphAnalysis private[analyses] (
     def partialResultForCallGraph(
         methodId:      Int,
         newCalleesOfM: IntMap[IntTrieSet]
-    ): PartialResult[SomeProject, CallGraph] = {
-        PartialResult(project, CallGraph.key, {
-            case EPS(_, lb: CallGraph, ub: CallGraphImplementation) if newCalleesOfM.nonEmpty ⇒
-                val newCG = ub.updated(methodId, newCalleesOfM)
-
-                // todo shouldn't it be newCG.size > ub.size
-                assert(newCG.size >= ub.size)
-
-                if (newCG.size == ub.size)
-                    None
-                else
-                    Some(EPS(project, lb, newCG))
-
-            case EPK(_, _) ⇒
-                var callers = IntMap.empty[Set[Long]]
-                newCalleesOfM.foreach {
-                    case (pc, tgtsOfM) ⇒
-                        tgtsOfM.foreach { tgt ⇒
-                            callers = callers.updated(
-                                tgt,
-                                callers.getOrElse(tgt, Set.empty) + CallGraph.toLong(methodId, pc)
-                            )
-                        }
-                }
-                Some(EPS(
-                    project,
-                    CallGraph.fallbackCG(p),
-                    new CallGraphImplementation(
-                        IntMap(methodId → newCalleesOfM),
-                        callers,
-                        callers.map(_._2.size).sum.toLong, methodIds
-                    )
-                ))
-            case _ ⇒ None
+    ): Seq[PartialResult[Method, Callers]] = {
+        for {
+            (pc, tgtsOfM) ← newCalleesOfM
+            tgt: Int ← tgtsOfM
+            tgtMethod = methodIds(tgt)
+        } yield PartialResult(tgtMethod, Callers.key, {
+            case EPS(_, lb: Callers, ub: CallersImplementation) ⇒ ???
+            case EPK(_, _)                                      ⇒ ???
+            case _                                              ⇒ throw new IllegalArgumentException()
         })
     }
 
@@ -525,5 +476,5 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallGraph, Callees)
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, Callers, Callees)
 }
