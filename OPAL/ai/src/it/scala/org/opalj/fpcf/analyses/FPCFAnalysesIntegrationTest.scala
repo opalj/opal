@@ -32,10 +32,13 @@ package analyses
 
 import java.io.File
 import java.io.PrintWriter
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
+import java.util.zip.DeflaterOutputStream
+import java.util.zip.InflaterInputStream
 
 import scala.reflect.runtime.universe.runtimeMirror
 import scala.io.Source
-import scala.io.Codec.UTF8
 import org.junit.runner.RunWith
 import org.opalj.br.DeclaredMethod
 import org.scalatest.FunSpec
@@ -100,22 +103,23 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                             !ep.e.toString().contains("Lambda$") &&
                                 ep.ub != PropertyKey.fallbackProperty(ps, ep.e, property.key) &&
                                 (ep.pk != Purity.key ||
-                                    ep.e.asInstanceOf[DeclaredMethod].hasDefinition)
+                                    ep.e.asInstanceOf[DeclaredMethod].hasSingleDefinedMethod)
                         }.toSeq.sortBy(_.e.toString)
                     }
 
                     val actual = actualProperties.map(ep ⇒ s"${ep.e} => ${ep.ub}").toSeq
                     val actualIt = actual.iterator
 
-                    val fileName = s"$name-$projectName.txt"
+                    val fileName = s"$name-$projectName.zip"
 
-                    val expectedInputStream = this.getClass.getResourceAsStream(fileName)
-                    if (expectedInputStream eq null)
+                    val expectedStream = this.getClass.getResourceAsStream(fileName)
+                    if (expectedStream eq null)
                         fail(
                             s"missing expected results: $name; "+
                                 s"current results written to:\n${writeResults(fileName, actual)}"
                         )
-                    val expectedIt = Source.fromInputStream(expectedInputStream)(UTF8).getLines
+                    val expectedIt =
+                        Source.fromInputStream(new InflaterInputStream(expectedStream)).getLines
 
                     while (actualIt.hasNext && expectedIt.hasNext) {
                         val actualLine = actualIt.next()
@@ -156,7 +160,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
     def getConfig: Seq[(String, Set[ComputationSpecification], Seq[PropertyMetaInformation])] = {
         val configInputStream =
             this.getClass.getResourceAsStream("FPCFAnalysesIntegrationTest.config")
-        val configLines = Source.fromInputStream(configInputStream)(UTF8).getLines()
+        val configLines = Source.fromInputStream(configInputStream).getLines()
 
         var curConfig: (String, Set[ComputationSpecification], Seq[PropertyMetaInformation]) = null
         var readProperties = false
@@ -187,7 +191,9 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
 
     def writeResults(fileName: String, actual: Seq[String]): String = {
         val file = new File(fileName)
-        val out = new PrintWriter(file, "UTF-8")
+        val out = new PrintWriter(
+            new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(file)))
+        )
         try {
             actual.foreach(out.println)
         } finally {
