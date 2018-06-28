@@ -60,10 +60,14 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     def baseMethodAllocationFreeness(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, af)                 ⇒ Result(dm, af)
-            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
+            case FinalEP(_, af) ⇒ Result(dm, af)
+            case ep @ IntermediateEP(_, lb, ub) ⇒
+                IntermediateResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
-                IntermediateResult(dm, MethodWithAllocations, AllocationFreeMethod, Seq(epk), c)
+                IntermediateResult(
+                    dm, MethodWithAllocations, AllocationFreeMethod,
+                    Seq(epk), c, CheapPropertyComputation
+                )
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), AllocationFreeness.key))
@@ -196,7 +200,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                 case FinalEP(_, MethodWithAllocations) ⇒
                     Result(definedMethod, MethodWithAllocations)
 
-                case IntermediateEP(_, _, _) ⇒
+                case _: IntermediateEP[_, _] ⇒
                     dependees += eps
                     IntermediateResult(
                         definedMethod,
@@ -208,7 +212,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             }
         }
 
-        IntermediateResult(definedMethod, MethodWithAllocations, AllocationFreeMethod, dependees, c)
+        IntermediateResult(
+            definedMethod, MethodWithAllocations, AllocationFreeMethod,
+            dependees, c
+        )
     }
 
     /** Called when the analysis is scheduled lazily. */

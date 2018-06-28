@@ -67,10 +67,17 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     def baseMethodStaticDataUsage(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, sdu)                ⇒ Result(dm, sdu)
-            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
+            case FinalEP(_, sdu) ⇒ Result(dm, sdu)
+            case ep @ IntermediateEP(_, lb, ub) ⇒
+                IntermediateResult(
+                    dm, lb, ub,
+                    Seq(ep), c, CheapPropertyComputation
+                )
             case epk ⇒
-                IntermediateResult(dm, UsesVaryingData, UsesNoStaticData, Seq(epk), c)
+                IntermediateResult(
+                    dm, UsesVaryingData, UsesNoStaticData,
+                    Seq(epk), c, CheapPropertyComputation
+                )
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), StaticDataUsage.key))
@@ -195,7 +202,10 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     if (dependees.isEmpty)
                         Result(definedMethod, maxLevel)
                     else {
-                        IntermediateResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
+                        IntermediateResult(
+                            definedMethod, UsesVaryingData, maxLevel,
+                            dependees, c, CheapPropertyComputation
+                        )
                     }
 
                 case FinalEP(_, UsesVaryingData) ⇒ Result(definedMethod, UsesVaryingData)
@@ -204,7 +214,10 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     if (dependees.isEmpty)
                         Result(definedMethod, maxLevel)
                     else {
-                        IntermediateResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
+                        IntermediateResult(
+                            definedMethod, UsesVaryingData, maxLevel,
+                            dependees, c, CheapPropertyComputation
+                        )
                     }
 
                 case FinalEP(_, CompileTimeVaryingField) ⇒ Result(definedMethod, UsesVaryingData)
@@ -212,15 +225,24 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                 case IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += eps
-                    IntermediateResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
+                    IntermediateResult(
+                        definedMethod, UsesVaryingData, maxLevel,
+                        dependees, c, CheapPropertyComputation
+                    )
 
                 case IntermediateEP(_, _, _) ⇒
                     dependees += eps
-                    IntermediateResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
+                    IntermediateResult(
+                        definedMethod, UsesVaryingData, maxLevel,
+                        dependees, c, CheapPropertyComputation
+                    )
             }
         }
 
-        IntermediateResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
+        IntermediateResult(
+            definedMethod, UsesVaryingData, maxLevel,
+            dependees, c, CheapPropertyComputation
+        )
     }
 
     /** Called when the analysis is scheduled lazily. */

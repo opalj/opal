@@ -34,7 +34,6 @@ import java.lang.System.identityHashCode
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReferenceArray
@@ -143,7 +142,8 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] val maxTasksQueueSize: AtomicInteger = new AtomicInteger(-1)
 
-    private[this] var oneStepFinalResult = 0
+    private[this] var updatesCounter = 0
+    private[this] var oneStepFinalUpdatesCounter = 0
 
     @volatile private[this] var resolvedCSCCsCounter = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
@@ -158,7 +158,8 @@ final class PKEParallelTasksPropertyStore private (
             "max tasks queue size" -> maxTasksQueueSize.get,
             "fast-track properties computations" -> fastTrackPropertiesCount,
             "computations of fallback properties (queried but not computed properties)" -> fallbacksUsedCount,
-            "computations which immediately/in one step computed a final result" -> oneStepFinalResult,
+            "property store updates" -> updatesCounter,
+            "computations which in one step computed a final result" -> oneStepFinalUpdatesCounter,
             "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
             "useless partial result computations" -> uselessPartialResultComputationCount,
 
@@ -349,7 +350,7 @@ final class PKEParallelTasksPropertyStore private (
     /**
      * The jobs which update the store.
      */
-    private[this] val storeUpdates = new LinkedBlockingDeque[StoreUpdate]()
+    private[this] val storeUpdates = new ConcurrentLinkedDeque[StoreUpdate]()
     private[this] val storeUpdatesSemaphore = new Semaphore(0)
 
     private[this] def prependStoreUpdate(update: StoreUpdate): Unit = {
@@ -564,7 +565,7 @@ final class PKEParallelTasksPropertyStore private (
                 finalEP
 
             case None ⇒
-                appendStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
+                prependStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
                 EPK(e, pk)
         }
     }
@@ -598,7 +599,8 @@ final class PKEParallelTasksPropertyStore private (
                             // it accessible later on...
                             val p = PropertyKey.fallbackProperty(store, e, pk)
                             val finalEP = FinalEP(e, p)
-                            prependStoreUpdate(PropertyUpdate(IdempotentResult(finalEP), false, true))
+                            val r = IdempotentResult(finalEP)
+                            prependStoreUpdate(PropertyUpdate(r, false, true))
                             finalEP
                         } else {
                             EPK(e, pk)
@@ -635,7 +637,7 @@ final class PKEParallelTasksPropertyStore private (
      * Removes the e/pk from `dependees` and also removes it from the dependers of the
      * e/pk's dependees.
      */
-    private[this] def clearDependees(epk: SomeEPK): Unit = {
+    private[this] def clearDependees(epk: SomeEPK): Int = {
         assert(
             Thread.currentThread() == storeUpdatesProcessor,
             "only to be called by the store updates processing thread"
@@ -643,13 +645,16 @@ final class PKEParallelTasksPropertyStore private (
 
         val pkId = epk.pk.id
         val dependeesOfEntity = this.dependees(pkId)
+        var dependeesCount = 0
         for {
             oldDependees ← dependeesOfEntity.remove(epk.e) // <= the old ones
             EOptionP(oldDependeeE, oldDependeePK) ← oldDependees
             dependersOfOldDependee ← dependers(oldDependeePK.id).get(oldDependeeE)
         } {
+            dependeesCount += 1
             dependersOfOldDependee -= epk
         }
+        dependeesCount
     }
 
     // Thread safe!
@@ -734,6 +739,7 @@ final class PKEParallelTasksPropertyStore private (
         forceDependerNotification:           Boolean                                     = false,
         pcrs:                                AnyRefArrayStack[PropertyComputationResult]
     ): Boolean = {
+        updatesCounter += 1
         assert(
             Thread.currentThread() == storeUpdatesProcessor,
             "only to be called by the store updates processing thread"
@@ -742,6 +748,7 @@ final class PKEParallelTasksPropertyStore private (
         val pk = ub.key
         val pkId = pk.id
         val newEPS = EPS[Entity, Property](e, lb, ub)
+        val isFinal = newEPS.isFinal
         val propertiesOfEntity = properties(pkId)
 
         // 1. update property
@@ -750,7 +757,7 @@ final class PKEParallelTasksPropertyStore private (
 
         // 2. check if update was ok
         if (oldEPS == null) {
-            oneStepFinalResult += 1
+            if (isFinal) oneStepFinalUpdatesCounter += 1
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
@@ -781,7 +788,6 @@ final class PKEParallelTasksPropertyStore private (
         }
 
         // 3. handle relevant updates
-        val isFinal = newEPS.isFinal
         val relevantUpdate = newEPS != oldEPS
         if (isFinal ||
             forceDependerNotification ||
@@ -798,14 +804,19 @@ final class PKEParallelTasksPropertyStore private (
                     // Given that we will trigger the depender, we now have to remove the
                     // respective onUpdateContinuation from all dependees of the respective
                     // depender to avoid that the onUpdateContinuation is triggered multiple times!
-                    clearDependees(oldDependerEPK)
+                    val dependeesCount = clearDependees(oldDependerEPK)
                     if (onUpdateContinuationHint == CheapPropertyComputation) {
                         directDependerOnUpdateComputationsCounter += 1
                         pcrs += c(newEPS)
                     } else {
                         scheduledOnUpdateComputationsCounter += 1
                         if (isFinal) {
-                            prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                            if (dependeesCount <= 2)
+                                prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                            else
+                                appendTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                        } else if (dependeesCount == 1) {
+                            prependTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
                         } else {
                             appendTask(new OnUpdateComputationTask(this, EPK(e, ub), c))
                         }

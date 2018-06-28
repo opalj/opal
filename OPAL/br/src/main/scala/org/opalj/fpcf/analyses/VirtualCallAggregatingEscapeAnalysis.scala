@@ -110,7 +110,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
             else
                 IntermediateResult(
                     fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
-                    dependees, continuation, CheapPropertyComputation
+                    dependees, continuation
                 )
         }
 

@@ -650,9 +650,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p)                  ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
-            case epk                            ⇒ IntermediateResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
+            case FinalEP(_, p) ⇒ Result(dm, p)
+            case ep @ IntermediateEP(_, lb, ub) ⇒
+                IntermediateResult(
+                    dm, lb, ub,
+                    Seq(ep), c, CheapPropertyComputation
+                )
+            case epk ⇒
+                IntermediateResult(
+                    dm, ImpureByAnalysis, CompileTimePure,
+                    Seq(epk), c, CheapPropertyComputation
+                )
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))

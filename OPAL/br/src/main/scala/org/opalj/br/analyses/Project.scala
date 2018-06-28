@@ -1173,7 +1173,7 @@ object Project {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
-        // HERE "overridden" is to be taken with a grain of salt, because we have a static
+        // Here, "overridden" is to be taken with a grain of salt, because we have a static
         // method with the same name and descriptor as an instance method defined by a super
         // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
@@ -1251,25 +1251,27 @@ object Project {
             ): Unit = {
                 // The relevant interface methods are public, hence, the package
                 // name is not relevant!
-                val methodO = definedMethods.find { definedMethod ⇒
+                definedMethods find { definedMethod ⇒
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
-                }
-                if (methodO.isDefined) {
-                    // If there already is a method and it is from an interface, then it is not
-                    // maximally specific and must be replaced. If it is from a class however, we
-                    // must keep it.
-                    if (classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown) {
-                        definedMethods = definedMethods.filterNot { definedMethod ⇒
-                            definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                                definedMethod.name == inheritedInterfaceMethod.name
+                } match {
+                    case Some(method) ⇒
+                        // If there is already a method and it is from an interface, then it is not
+                        // maximally specific and must be replaced. If it is from a class however, we
+                        // must keep it.
+
+                        val declaringClassType = method.declaringClassType
+                        if (classHierarchy.isInterface(declaringClassType).isYesOrUnknown) {
+                            definedMethods = definedMethods filterNot { definedMethod ⇒
+                                definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                                    definedMethod.name == inheritedInterfaceMethod.name
+                            }
+                            if (!inheritedInterfaceMethod.isAbstract)
+                                definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                         }
+                    case None ⇒
                         if (!inheritedInterfaceMethod.isAbstract)
                             definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
-                    }
-                } else {
-                    if (!inheritedInterfaceMethod.isAbstract)
-                        definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                 }
             }
 
