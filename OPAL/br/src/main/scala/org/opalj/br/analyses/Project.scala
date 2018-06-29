@@ -45,6 +45,8 @@ import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
+import scala.collection.immutable
+
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -74,6 +76,7 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.collection.mutable.AnyRefArrayBuffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -266,12 +269,33 @@ class Project[Source] private (
     }
 
     /**
+     * The set of all classes defined in a specific package.
+     */
+    // TODO Consider extracting to a ProjectInformationKey
+    // TODO Java 9+
+    final val classesPerPackage: Map[String, immutable.Set[ClassFile]] = {
+        var classesPerPackage = Map.empty[String, AnyRefArrayBuffer[ClassFile]]
+        allClassFiles foreach { cf ⇒
+            val packageName = cf.thisType.packageName
+            val buffer =
+                classesPerPackage.getOrElse(packageName, {
+                    val buffer = new AnyRefArrayBuffer[ClassFile]()
+                    classesPerPackage = classesPerPackage.updated(packageName, buffer)
+                    buffer
+                })
+            buffer += cf
+        }
+        classesPerPackage.mapValues(cfs ⇒ cfs.toSet)
+    }
+
+    /**
      * Computes the set of all definitive functional interfaces in a top-down fashion.
      *
      * @see Java 8 language specification for details!
      *
      * @return The functional interfaces.
      */
+    // TODO Consider extracting to a ProjectInformationKey
     final lazy val functionalInterfaces: UIDSet[ObjectType] = time {
 
         // Core idea: a subtype is only processed after processing all supertypes;
