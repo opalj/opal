@@ -26,12 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.purity;
+package org.opalj.fpcf.properties.compile_time_constancy;
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.Documented;
@@ -39,23 +35,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated method is compile time pure.
+ * Annotation to state that a field is not a compile time constant.
  *
  * @author Dominik Helm
  */
-@PropertyValidator(key = "Purity", validator = CompileTimePureMatcher.class)
+@PropertyValidator(key = "CompileTimeConstancy", validator = CompileTimeVaryingMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface CompileTimePure {
+public @interface CompileTimeVarying {
 
     /**
      * A short reasoning of this property.
      */
     String value(); // default = "N/A";
-
-    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
-
-    EP[] eps() default {};
-
-    boolean negate() default false;
 }
