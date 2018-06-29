@@ -37,7 +37,8 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.properties.CallGraph
+import org.opalj.fpcf.properties.Callees
+import org.opalj.fpcf.properties.Callers
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.SimpleTACAIKey
@@ -69,8 +70,14 @@ object RTADemo extends DefaultOneStepAnalysis {
         ps.waitOnPhaseCompletion()
 
         println(ps(project, InstantiatedTypes.key).ub)
-        println(ps(project, CallGraph.key).ub)
-        println(CallGraph.fallbackCG(project))
+        for (m ← project.allMethods) {
+            ps(m, Callers.key)
+            /*if (callers.isFinal)
+                println(callers)*/
+            ps(m, Callees.key)
+            /*if (callees.isFinal)
+                println(callees)*/
+        }
         // for (m <- project.allMethods) {
         //    println(ps(m, Callees.key))
         //}

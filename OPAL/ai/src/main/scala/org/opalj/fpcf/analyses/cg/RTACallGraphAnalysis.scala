@@ -36,9 +36,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
@@ -72,7 +75,7 @@ import scala.collection.immutable.IntMap
 import scala.collection.mutable.ArrayBuffer
 
 case class State(
-        private[cg] val method:            Method,
+        private[cg] val method:            DefinedMethod,
         private[cg] val virtualCallSites:  Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
         private var _calleesOfM:           IntMap[IntTrieSet], // key = PC
         private[cg] var numTypesProcessed: Int
@@ -98,6 +101,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] val methodIds = project.get(MethodIDKey)
+    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * For each MethodId ([[MethodIDKey]]), it states whether the method has been analysed using
@@ -108,8 +112,18 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     def step1(
-        method: Method
+        declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
+
+        // we only allow defined methods
+        if (!declaredMethod.hasDefinition)
+            return NoResult;
+
+        val method = declaredMethod.methodDefinition
+
+        // we only allow defined methods with declared type eq. to the class of the method
+        if (method.classFile.thisType ne declaredMethod.declaringClassType)
+            return NoResult;
 
         // we must only call this method once per method.
         val methodID = methodIds(method)
@@ -136,9 +150,6 @@ class RTACallGraphAnalysis private[analyses] (
                 InstantiatedTypes.initialTypes
         }
 
-        // the number of types, already seen by the analysis
-        val numTypesProcessed = instantiatedTypesUB.size
-
         // process each stmt in the current method to compute:
         //  1. newly allocated types
         //  2. methods (+ pc) called by the current method
@@ -148,7 +159,12 @@ class RTACallGraphAnalysis private[analyses] (
             method, instantiatedTypesUB, newReachableMethods
         )
 
-        val state = State(method, virtualCallSites, calleesOfM, numTypesProcessed)
+        // the number of types, already seen by the analysis
+        val numTypesProcessed = instantiatedTypesUB.size
+
+        val state = State(
+            declaredMethod.asDefinedMethod, virtualCallSites, calleesOfM, numTypesProcessed
+        )
 
         // here we can ignore the return value, as the state also gets updated
         handleVirtualCallSites(state, instantiatedTypesUB.iterator, newReachableMethods, calleesOfM)
@@ -158,12 +174,12 @@ class RTACallGraphAnalysis private[analyses] (
             results +:= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
 
         if (state.calleesOfM.nonEmpty)
-            results +:= partialResultForCallGraph(methodID, state.calleesOfM)
+            results ++:= partialResultForCallers(declaredMethod.asDefinedMethod, state.calleesOfM)
 
         IncrementalResult(
             Results(results),
             // continue the computation with the newly reachable methods
-            newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
+            newReachableMethods.map(nextMethod ⇒ (step1 _, declaredMethods(nextMethod)))
         )
     }
 
@@ -190,11 +206,11 @@ class RTACallGraphAnalysis private[analyses] (
 
         var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
         if (newCalleesOfM.nonEmpty)
-            results +:= partialResultForCallGraph(methodIds(state.method), state.calleesOfM)
+            results ++:= partialResultForCallers(state.method, state.calleesOfM)
 
         IncrementalResult(
             Results(results),
-            newReachableMethods.map(nextMethod ⇒ (step1 _, nextMethod))
+            newReachableMethods.map(nextMethod ⇒ (step1 _, declaredMethods(nextMethod)))
         )
     }
 
@@ -375,7 +391,7 @@ class RTACallGraphAnalysis private[analyses] (
             if project.classHierarchy.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
             //if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             tgt ← project.instanceCall(
-                state.method.classFile.thisType, instantiatedType, name, descr
+                state.method.methodDefinition.classFile.thisType, instantiatedType, name, descr
             )
         } {
             val tgtId = methodIds(tgt)
@@ -387,18 +403,30 @@ class RTACallGraphAnalysis private[analyses] (
         result
     }
 
-    def partialResultForCallGraph(
-        methodId:      Int,
+    def partialResultForCallers(
+        method:        DefinedMethod,
         newCalleesOfM: IntMap[IntTrieSet]
-    ): Seq[PartialResult[Method, Callers]] = {
+    ): TraversableOnce[PartialResult[DefinedMethod, Callers]] = {
         for {
-            (pc, tgtsOfM) ← newCalleesOfM
-            tgt: Int ← tgtsOfM
-            tgtMethod = methodIds(tgt)
-        } yield PartialResult(tgtMethod, Callers.key, {
-            case EPS(_, lb: Callers, ub: CallersImplementation) ⇒ ???
-            case EPK(_, _)                                      ⇒ ???
-            case _                                              ⇒ throw new IllegalArgumentException()
+            (pc: Int, tgtsOfM: IntTrieSet) ← newCalleesOfM.iterator
+            tgtID: Int ← tgtsOfM.iterator
+            tgtMethod = declaredMethods(methodIds(tgtID))
+        } yield PartialResult[DefinedMethod, Callers](tgtMethod, Callers.key, {
+            case EPS(e, lb: Callers, ub: CallersImplementation) ⇒
+                val newCallers = ub.updated(method, pc)
+                if (ub != newCallers)
+                    Some(EPS(e, lb, newCallers))
+                else
+                    None
+            case EPK(e, _) ⇒
+                Some(EPS(
+                    tgtMethod,
+                    Callers.fallback(tgtMethod, project),
+                    new CallersImplementation(
+                        Set(Callers.toLong(tgtID, pc)), methodIds, declaredMethods
+                    )
+                ))
+            case _ ⇒ throw new IllegalArgumentException()
         })
     }
 
@@ -428,10 +456,10 @@ class RTACallGraphAnalysis private[analyses] (
     def resultForCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: State
     ): PropertyComputationResult = {
-        val calleesLB = Callees.fallback(state.method, p)
+        val calleesLB = Callees.fallback(state.method, p, declaredMethods)
 
         // here we need a immutable copy of the current state
-        val newCallees = new CalleesImplementation(state.calleesOfM, methodIds)
+        val newCallees = new CalleesImplementation(state.calleesOfM, methodIds, declaredMethods)
         // todo equal size or equal callees?
         if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
@@ -470,7 +498,11 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
                 throw new IllegalStateException("Unexpected modification of processedMethods array")
         })
 
-        propertyStore.scheduleEagerComputationsForEntities(entryPoints)(analysis.step1)
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
+        propertyStore.scheduleEagerComputationsForEntities(
+            entryPoints.map(declaredMethods.apply)
+        )(analysis.step1)
         analysis
     }
 

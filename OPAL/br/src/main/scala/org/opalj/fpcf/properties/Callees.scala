@@ -30,7 +30,10 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
@@ -52,7 +55,7 @@ sealed trait Callees extends Property with OrderedProperty with CalleesPropertyM
 
     def size: Int
 
-    def callees(pc: Int): Set[Method]
+    def callees(pc: Int): Set[DeclaredMethod]
 
     override def toString: String = {
         s"Callees(size=${this.size})"
@@ -71,18 +74,25 @@ sealed trait Callees extends Property with OrderedProperty with CalleesPropertyM
 }
 
 final class CalleesImplementation(
-        private[this] val calleesIds: IntMap[IntTrieSet],
-        private[this] val methodIds:  MethodIDs
+        private[this] val calleesIds:      IntMap[IntTrieSet],
+        private[this] val methodIds:       MethodIDs,
+        private[this] val declaredMethods: DeclaredMethods
 ) extends Callees {
 
-    override def callees(pc: Int): Set[Method] = calleesIds(pc).mapToAny[Method](methodIds.apply)
+    override def callees(pc: Int): Set[DeclaredMethod] = {
+        calleesIds(pc).mapToAny[Method](methodIds.apply).map(declaredMethods.apply)
+    }
 
     override val size: Int = {
         calleesIds.iterator.map(_._2.size).sum
     }
 }
 
-class FallbackCallees(project: SomeProject, method: Method) extends Callees {
+class FallbackCallees(
+        private[this] val project:         SomeProject,
+        private[this] val method:          DeclaredMethod,
+        private[this] val declaredMethods: DeclaredMethods
+) extends Callees {
 
     override lazy val size: Int = {
         //callees.size * project.allMethods.size
@@ -90,8 +100,8 @@ class FallbackCallees(project: SomeProject, method: Method) extends Callees {
         Int.MaxValue
     }
 
-    override def callees(pc: Int): Set[Method] = {
-        project.allMethods.toSet
+    override def callees(pc: Int): Set[DeclaredMethod] = {
+        project.allMethods.map(declaredMethods.apply).toSet
     }
 }
 
@@ -100,13 +110,16 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            (ps: PropertyStore, m: Method) ⇒ Callees.fallback(m, ps.context[SomeProject]),
-            (_: PropertyStore, eps: EPS[Method, Callees]) ⇒ eps.ub,
-            (_: PropertyStore, _: Method) ⇒ None
+            (ps: PropertyStore, m: DeclaredMethod) ⇒ {
+                val p = ps.context[SomeProject]
+                Callees.fallback(m, p, p.get(DeclaredMethodsKey))
+            },
+            (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,
+            (_: PropertyStore, _: DeclaredMethod) ⇒ None
         )
     }
 
-    def fallback(m: Method, p: SomeProject): Callees = {
-        new FallbackCallees(p, m)
+    def fallback(m: DeclaredMethod, p: SomeProject, declaredMethods: DeclaredMethods): Callees = {
+        new FallbackCallees(p, m, declaredMethods)
     }
 }

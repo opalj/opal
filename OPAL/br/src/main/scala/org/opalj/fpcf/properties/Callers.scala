@@ -30,12 +30,15 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.SomeProject
 
+import scala.collection.Set
+
 /**
- * For a given [[Method]], and for each call site (represented by the PC), the set of methods
+ * For a given [[DeclaredMethod]], and for each call site (represented by the PC), the set of methods
  * that are possible call targets.
  *
  * @author Florian Kuebler
@@ -49,10 +52,12 @@ sealed trait Callers extends Property with OrderedProperty with CallersPropertyM
 
     def size: Int
 
-    def callers: Set[(Method, Int /*PC*/ )]
+    def callers: Set[(DeclaredMethod, Int /*PC*/ )] //TODO: maybe use traversable instead of set
+
+    def updated(caller: DeclaredMethod, pc: Int): Callers
 
     override def toString: String = {
-        s"Callees(size=${this.size})"
+        s"Callers(size=${this.size})"
     }
 
     final def key: PropertyKey[Callers] = Callers.key
@@ -68,23 +73,36 @@ sealed trait Callers extends Property with OrderedProperty with CallersPropertyM
 }
 
 final class CallersImplementation(
-        private[this] val encodedCallers: Set[Long /*MethodId + PC*/ ],
-        private[this] val methodIds:      MethodIDs
+        private[this] val encodedCallers:  Set[Long /*MethodId + PC*/ ],
+        private[this] val methodIds:       MethodIDs,
+        private[this] val declaredMethods: DeclaredMethods
 ) extends Callers {
 
-    override def callers: Set[(Method, Int /*PC*/ )] = {
+    override def callers: Set[(DeclaredMethod, Int /*PC*/ )] = {
         for {
             encodedPair ← encodedCallers
             (mId, pc) = Callers.toMethodAndPc(encodedPair)
-        } yield methodIds(mId) → pc
+        } yield declaredMethods(methodIds(mId)) → pc
     }
 
     override val size: Int = {
         encodedCallers.size
     }
+
+    override def updated(declaredCaller: DeclaredMethod, pc: Int): Callers = {
+        assert(declaredCaller.hasDefinition)
+        val definedCaller = declaredCaller.asDefinedMethod
+        val caller = definedCaller.methodDefinition
+        assert(definedCaller.declaringClassType eq caller.classFile.thisType)
+
+        new CallersImplementation(
+            encodedCallers + Callers.toLong(methodIds(caller), pc),
+            methodIds, declaredMethods
+        )
+    }
 }
 
-class FallbackCallers(project: SomeProject, method: Method) extends Callers {
+class FallbackCallers(project: SomeProject, method: DeclaredMethod) extends Callers {
 
     override lazy val size: Int = {
         //callees.size * project.allMethods.size
@@ -92,9 +110,11 @@ class FallbackCallers(project: SomeProject, method: Method) extends Callers {
         Int.MaxValue
     }
 
-    override def callers: Set[(Method, Int /*PC*/ )] = {
+    override def callers: Set[(DeclaredMethod, Int /*PC*/ )] = {
         ??? // todo
     }
+
+    override def updated(caller: DeclaredMethod, pc: Int): Callers = this
 }
 
 object Callers extends CallersPropertyMetaInformation {
@@ -102,13 +122,13 @@ object Callers extends CallersPropertyMetaInformation {
     final val key: PropertyKey[Callers] = {
         PropertyKey.create(
             "Callers",
-            (ps: PropertyStore, m: Method) ⇒ Callers.fallback(m, ps.context[SomeProject]),
-            (_: PropertyStore, eps: EPS[Method, Callers]) ⇒ eps.ub,
-            (_: PropertyStore, _: Method) ⇒ None
+            (ps: PropertyStore, m: DeclaredMethod) ⇒ Callers.fallback(m, ps.context[SomeProject]),
+            (_: PropertyStore, eps: EPS[DeclaredMethod, Callers]) ⇒ eps.ub,
+            (_: PropertyStore, _: DeclaredMethod) ⇒ None
         )
     }
 
-    def fallback(m: Method, p: SomeProject): Callers = {
+    def fallback(m: DeclaredMethod, p: SomeProject): Callers = {
         new FallbackCallers(p, m)
     }
 
