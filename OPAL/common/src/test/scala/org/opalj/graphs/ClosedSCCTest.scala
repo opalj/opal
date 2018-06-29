@@ -475,7 +475,35 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                         permutationCounter += 1
                     }
                 }
-            }(t ⇒ info(s"analyzing 20000 permutations took: ${t.toSeconds}"))
+            }(t ⇒ info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
         }
 
+    "a graph with two cSCCs where one is a chain " should
+        "contain two cSCCs" in {
+            val data = List(
+                ("a" → "f"), ("f" → "h"), ("f" → "j"), ("f" -> "i"),
+                ("h" -> "j"), ("j" -> "h"), ("i" -> "j"), ("j" -> "i"),
+                ("a" -> "g"), ("g" -> "h"),
+                ("a" -> "h"),
+                ("a" -> "b"),
+                ("b" -> "d"), ("d" -> "d"), ("d" -> "e"), ("e" -> "r"), ("r" -> "b")
+            )
+            var permutationCounter = 1
+            PerformanceEvaluation.time {
+                data.permutations.take(100).foreach { aPermutation ⇒
+                    val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
+                    val cSCCs = closedSCCs(g).map(_.toSet).toSet
+                    val expected = Set(Set("h", "j", "i"), Set("b", "d", "e", "r"))
+                    if (cSCCs != expected) {
+                        fail(s"the graph $g\n"+
+                            s"created using permutation: $aPermutation\n"+
+                            s"contains two closed SCCs : $expected\n"+
+                            s"found: $cSCCs")
+                    } else {
+                        // info(s"successfully tested permutation $permutationCounter: $aPermutation")
+                        permutationCounter += 1
+                    }
+                }
+            }(t ⇒ info(s"analyzing ${permutationCounter - 1} permutations took: ${t.toSeconds}"))
+        }
 }
