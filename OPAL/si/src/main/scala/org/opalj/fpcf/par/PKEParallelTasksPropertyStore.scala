@@ -768,7 +768,8 @@ final class PKEParallelTasksPropertyStore private (
                 // Given that we will trigger the depender, we now have to remove the
                 // respective onUpdateContinuation from all dependees of the respective
                 // depender to avoid that the onUpdateContinuation is triggered multiple times!
-                //       val oldDependerDependeesCount = clearDependees(oldDependerEPK)
+                //       val oldDependerDependeesCount =
+                clearDependees(oldDependerEPK)
                 if (onUpdateContinuationHint == CheapPropertyComputation) {
                     directDependerOnUpdateComputationsCounter += 1
                     pcrs += c(newEPS)
