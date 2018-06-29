@@ -32,6 +32,8 @@ package analyses
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.ComputationalTypeCategory
+import org.opalj.br.Category2ComputationalTypeCategory
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.instructions._
@@ -93,6 +95,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         if (declaringClassType ne definedMethod.declaringClassType)
             return baseMethodAllocationFreeness(definedMethod.asDefinedMethod);
 
+        // Synchronized methods may raise IllegalMonitorStateExceptions when invoked.
+        if (method.isSynchronized)
+            return Result(definedMethod, MethodWithAllocations);
+
         val methodDescriptor = method.descriptor
         val methodName = method.name
         val body = method.body.get
@@ -103,6 +109,14 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
         var overwritesSelf = false
         var mayOverwriteSelf = true
+
+        def prevPC(pc: Int): Int = {
+            body.pcOfPreviousInstruction(pc)
+        }
+
+        // We need this for numberOfPoppedOperands, but the actual result is irrelevant as we care
+        // only for whether ANY operand is popped, not how many exactly.
+        def someTypeCategory(i: Int): ComputationalTypeCategory = Category2ComputationalTypeCategory
 
         var currentPC = 0
         while (currentPC < maxPC) {
@@ -148,20 +162,42 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
                 case ASTORE_0.opcode if !method.isStatic ⇒
                     if (mayOverwriteSelf) overwritesSelf = true
-                    else // A PUTFIELD may result in a NPE raised (and therefore allocated)
+                    else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
                         return Result(definedMethod, MethodWithAllocations)
 
-                case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
+                case GETFIELD.opcode ⇒ // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)
                         return Result(definedMethod, MethodWithAllocations);
-                    else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
-                        ALOAD_0.opcode)
+                    else if (instructions(prevPC(currentPC)).opcode != ALOAD_0.opcode ||
+                        body.cfJoins.contains(currentPC))
                         return Result(definedMethod, MethodWithAllocations);
                     else mayOverwriteSelf = false
+
+                case PUTFIELD.opcode ⇒ // may allocate NPE (but not on `this`)
+                    if (method.isStatic || overwritesSelf)
+                        return Result(definedMethod, MethodWithAllocations);
+                    else {
+                        val previousPC = prevPC(currentPC)
+                        val previousInst = instructions(previousPC)
+                        val prevPrevInst = instructions(prevPC(previousPC))
+                        // If there is a branch target here, if the previous instruction pops an
+                        // operand, or if the second last instruction is not an ALOAD_0, we
+                        // cannot guarantee that the receiver is `this`.
+                        if (body.cfJoins.contains(currentPC) || body.cfJoins.contains(previousPC) ||
+                            previousInst.numberOfPoppedOperands(someTypeCategory) != 0 ||
+                            prevPrevInst.opcode != ALOAD_0.opcode)
+                            return Result(definedMethod, MethodWithAllocations)
+                        else mayOverwriteSelf = false
+                    }
 
                 case INVOKEDYNAMIC.opcode | INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                     // We don't handle these calls here, just treat them as having allocations
                     return Result(definedMethod, MethodWithAllocations);
+
+                case ARETURN.opcode | IRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
+                    LRETURN.opcode | RETURN.opcode ⇒
+                // if we have a monitor instruction the method has allocations anyway..
+                // hence, we can ignore the monitor related implicit exception
 
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) allocate no objects

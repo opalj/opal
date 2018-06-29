@@ -264,6 +264,8 @@ final class PKEParallelTasksPropertyStore private (
      * they will be processed in parallel.
      */
     private[this] val tasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
+    private[this] val quickTasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
+    private[this] val heavyTasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
     private[this] val tasksSemaphore = new Semaphore(0)
 
     private[this] def prependTask(task: QualifiedTask[_ <: Entity]): Unit = {
@@ -275,6 +277,18 @@ final class PKEParallelTasksPropertyStore private (
     private[this] def appendTask(task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
         tasks.offerLast(task)
+        tasksSemaphore.release()
+    }
+
+    private[this] def appendQuickTask(task: QualifiedTask[_ <: Entity]): Unit = {
+        incOpenJobs()
+        quickTasks.offerLast(task)
+        tasksSemaphore.release()
+    }
+
+    private[this] def appendHeavyTask(task: QualifiedTask[_ <: Entity]): Unit = {
+        incOpenJobs()
+        heavyTasks.offerLast(task)
         tasksSemaphore.release()
     }
 
@@ -290,7 +304,14 @@ final class PKEParallelTasksPropertyStore private (
             }
 
             tasksSemaphore.acquire()
-            val task = tasks.pollFirst()
+            // we know that we will eventually find a task...
+            var task = quickTasks.pollFirst()
+            while (task eq null) {
+                task = tasks.pollFirst()
+                if (task == null) task = quickTasks.pollFirst()
+                if (task == null) task = heavyTasks.pollFirst()
+            }
+
             try {
                 // As a sideeffect of processing a task, we may have (implicit) calls
                 // to schedule and also implicit handleResult calls; both will
@@ -747,21 +768,37 @@ final class PKEParallelTasksPropertyStore private (
                 // Given that we will trigger the depender, we now have to remove the
                 // respective onUpdateContinuation from all dependees of the respective
                 // depender to avoid that the onUpdateContinuation is triggered multiple times!
-                val oldDependerDependeesCount = clearDependees(oldDependerEPK)
+                //       val oldDependerDependeesCount =
+                clearDependees(oldDependerEPK)
                 if (onUpdateContinuationHint == CheapPropertyComputation) {
                     directDependerOnUpdateComputationsCounter += 1
                     pcrs += c(newEPS)
                 } else {
                     scheduledOnUpdateComputationsCounter += 1
+                    val oldDependerDependersCount =
+                        dependers(oldDependerEPK.pk.id).get(oldDependerEPK.e).map(_.size).getOrElse(0)
+                    //                    val queueKey = oldDependerDependeesCount * oldDependerDependersCount
+                    val queueKey = oldDependerDependersCount
                     if (isFinal) {
-                        if (oldDependerDependeesCount <= 2)
-                            prependTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
+                        val t = new OnFinalUpdateComputationTask(this, newEPS.asFinal, c)
+                        if (queueKey <= 1)
+                            appendQuickTask(t)
+                        else if (queueKey <= 2)
+                            prependTask(t)
+                        else if (queueKey <= 4)
+                            appendTask(t)
                         else
-                            appendTask(new OnFinalUpdateComputationTask(this, newEPS.asFinal, c))
-                    } else if (oldDependerDependeesCount == 1) {
-                        prependTask(new OnUpdateComputationTask(this, newEPS.toEPK, c))
+                            appendHeavyTask(t)
                     } else {
-                        appendTask(new OnUpdateComputationTask(this, newEPS.toEPK, c))
+                        val t = new OnUpdateComputationTask(this, newEPS.toEPK, c)
+                        if (queueKey <= 1)
+                            appendQuickTask(t)
+                        else if (queueKey <= 2)
+                            prependTask(t)
+                        else if (queueKey <= 4)
+                            appendTask(t)
+                        else
+                            appendHeavyTask(t)
                     }
                 }
             }
@@ -1066,26 +1103,42 @@ final class PKEParallelTasksPropertyStore private (
                                 pcrs += c(currentDependee)
                             } else {
                                 scheduledDependeeUpdatesCounter += 1
+                                val dependersOption = dependers(pkId).get(e)
+                                val dependersCount =
+                                    if (dependersOption.isDefined) dependersOption.get.size else 0
+
                                 if (currentDependee.isFinal) {
-                                    prependTask(
-                                        ImmediateOnFinalUpdateComputationTask(
-                                            store,
-                                            currentDependee.asFinal,
-                                            previousResult = r,
-                                            forceDependersNotifications,
-                                            c
-                                        )
+                                    val t = ImmediateOnFinalUpdateComputationTask(
+                                        store,
+                                        currentDependee.asFinal,
+                                        previousResult = r,
+                                        forceDependersNotifications,
+                                        c
                                     )
+                                    if (dependersCount <= 1)
+                                        appendQuickTask(t)
+                                    else if (dependersCount <= 2)
+                                        prependTask(t)
+                                    else if (dependersCount <= 3)
+                                        appendTask(t)
+                                    else
+                                        appendHeavyTask(t)
                                 } else {
-                                    appendTask(
-                                        ImmediateOnUpdateComputationTask(
-                                            store,
-                                            currentDependee.toEPK,
-                                            previousResult = r,
-                                            forceDependersNotifications,
-                                            c
-                                        )
+                                    val t = ImmediateOnUpdateComputationTask(
+                                        store,
+                                        currentDependee.toEPK,
+                                        previousResult = r,
+                                        forceDependersNotifications,
+                                        c
                                     )
+                                    if (dependersCount <= 1)
+                                        appendQuickTask(t)
+                                    else if (dependersCount <= 2)
+                                        prependTask(t)
+                                    else if (dependersCount <= 3)
+                                        appendTask(t)
+                                    else
+                                        appendHeavyTask(t)
                                 }
                                 // We will postpone the notification to the point where
                                 // the result(s) are handled...
