@@ -489,7 +489,7 @@ final class PKESequentialPropertyStore private (
 
     override def handleResult(
         r:               PropertyComputationResult,
-        forceEvaluation: Boolean // TODO Support "force"
+        forceEvaluation: Boolean                   = true // acutally ignored, but conceptually "true"
     ): Unit = handleExceptions {
 
         r.id match {
