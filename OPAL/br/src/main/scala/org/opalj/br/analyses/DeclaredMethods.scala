@@ -32,11 +32,14 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -44,11 +47,13 @@ import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
  * @author Dominik Helm
  */
 class DeclaredMethods(
-        val p: SomeProject,
+        private[this] val p: SomeProject,
         // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
         // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
         // methods on type Object when not analyzing the JDK.
-        val data: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]]
+        private[this] val data: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
+        private[this] val id2method: ArrayBuffer[DeclaredMethod],
+        private[this] var method2id: Object2IntOpenHashMap[DeclaredMethod]
 ) {
 
     def apply(
@@ -91,6 +96,14 @@ class DeclaredMethods(
     def apply(method: Method): DefinedMethod = {
         val classType = method.classFile.thisType
         data.get(classType).get(MethodContext(p, classType, method)).asInstanceOf[DefinedMethod]
+    }
+
+    def apply(methodId: Int): DeclaredMethod = {
+        id2method(methodId)
+    }
+
+    def methodID(dm: DeclaredMethod): Int = {
+        method2id.getInt(dm)
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {

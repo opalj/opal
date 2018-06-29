@@ -31,13 +31,16 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.{Function ⇒ JFunction}
+import java.util.function.{Function => JFunction}
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.ConstArray
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -249,7 +252,22 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             }
         }
 
-        new DeclaredMethods(p, result)
+        // assign each declared method a unique id
+        val method2Id = new Object2IntOpenHashMap[DeclaredMethod]()
+        val id2method = new ArrayBuffer[DeclaredMethod](result.size()*10)
+
+        import scala.collection.JavaConverters._
+        var id = 0
+        for {
+            context2Method <- result.elements().asScala
+            dm <- context2Method.elements().asScala
+        } {
+            method2Id.put(dm, id)
+            id2method.append(dm)
+            id += 1
+        }
+
+        new DeclaredMethods(p, result, id2method, method2Id)
     }
 
     /**
