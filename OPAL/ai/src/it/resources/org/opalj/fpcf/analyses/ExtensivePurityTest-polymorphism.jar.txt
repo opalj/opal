@@ -1,8 +1,0 @@
-DefinedMethod(ObjectType(polymorphism/A),<init>,MethodDescriptor((): void),polymorphism.A{ public void <init>() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(polymorphism/A),bar,MethodDescriptor((): void),polymorphism.A{ public void bar() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(polymorphism/A),foo,MethodDescriptor((): void),polymorphism.A{ protected void foo() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(polymorphism/A),m,MethodDescriptor((): void),polymorphism.A{ public void m() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(polymorphism/B),<init>,MethodDescriptor((): void),polymorphism.B{ void <init>() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(polymorphism/B),bar,MethodDescriptor((): void),polymorphism.B{ public void bar() }) => CompileTimePure
-DefinedMethod(ObjectType(polymorphism/B),foo,MethodDescriptor((): void),polymorphism.B{ protected void foo() }) => Pure
-DefinedMethod(ObjectType(polymorphism/B),m,MethodDescriptor((): void),polymorphism.A{ public void m() }) => ImpureByAnalysis

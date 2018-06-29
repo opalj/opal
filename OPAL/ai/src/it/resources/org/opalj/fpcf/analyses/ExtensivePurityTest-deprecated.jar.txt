@@ -1,2 +1,0 @@
-DefinedMethod(ObjectType(deprecated/DeprecatedByAnnotation),<init>,MethodDescriptor((): void),deprecated.DeprecatedByAnnotation{ public void <init>() }) => ImpureByAnalysis
-DefinedMethod(ObjectType(deprecated/DeprecatedByJavaDoc),<init>,MethodDescriptor((): void),deprecated.DeprecatedByJavaDoc{ public void <init>() }) => ImpureByAnalysis

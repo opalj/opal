@@ -1,1 +1,0 @@
-DefinedMethod(ObjectType(types/TypeDeclarations),<init>,MethodDescriptor((): void),types.TypeDeclarations{ public void <init>() }) => Pure

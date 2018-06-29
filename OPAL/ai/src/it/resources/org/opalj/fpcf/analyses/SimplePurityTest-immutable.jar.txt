@@ -1,6 +1,0 @@
-DefinedMethod(ObjectType(immutable/Point),<init>,MethodDescriptor((int, int): void),immutable.Point{ public void <init>(int,int) }) => Pure
-DefinedMethod(ObjectType(immutable/PointWithLazyHashValue),<init>,MethodDescriptor((int, int): void),immutable.PointWithLazyHashValue{ public void <init>(int,int) }) => Pure
-DefinedMethod(ObjectType(immutable/PointWithLazyHashValue),hashCode,MethodDescriptor((): int),immutable.PointWithLazyHashValue{ public int hashCode() }) => ExternallySideEffectFree
-DefinedMethod(ObjectType(immutable/Rectangle),<init>,MethodDescriptor((immutable.Point, immutable.Point): void),immutable.Rectangle{ public void <init>(immutable.Point,immutable.Point) }) => Pure
-DefinedMethod(ObjectType(immutable/Rectangle),getLr,MethodDescriptor((): immutable.Point),immutable.Rectangle{ public immutable.Point getLr() }) => SideEffectFree
-DefinedMethod(ObjectType(immutable/Rectangle),getUl,MethodDescriptor((): immutable.Point),immutable.Rectangle{ public immutable.Point getUl() }) => SideEffectFree
