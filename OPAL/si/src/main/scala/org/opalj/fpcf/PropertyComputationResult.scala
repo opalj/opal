@@ -83,7 +83,7 @@ case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult
 private[fpcf] object Result { private[fpcf] final val id = 1 }
 
 /**
- * Encapsulates the '''final results''' of the computation of a set of properties. Hence, all 
+ * Encapsulates the '''final results''' of the computation of a set of properties. Hence, all
  * results have to be w.r.t. different e/pk pairs.
  *
  * The encapsulated results are not atomically set; they are set one after another.
@@ -207,7 +207,7 @@ private[fpcf] object IntermediateResult {
 /**
  * Hints about the nature of the property computations, which can/are used by the property store
  * to implement different scheduling schemes.
- */ 
+ */
 sealed trait PropertyComputationHint
 
 /**
@@ -216,18 +216,18 @@ sealed trait PropertyComputationHint
 final case object DefaultPropertyComputation extends PropertyComputationHint
 
 /**
- * The property computation is extremely cheap. Therefore, the computation can/should be 
- * processed in the current thread, it is extremely unlikely that we will gain anything 
+ * The property computation is extremely cheap. Therefore, the computation can/should be
+ * processed in the current thread, it is extremely unlikely that we will gain anything
  * from parallelization.
  */
 final case object CheapPropertyComputation extends PropertyComputationHint
 
 /**
  * Encapsulates some result and also some computations that should be computed next.
- * In this case the property store DOES NOT guarantee that the result is processed 
+ * In this case the property store DOES NOT guarantee that the result is processed
  * before the next computations are triggered. Hence, `nextComputations` can query the e/pk
  * related to the previous result, but should not expect to already see the value of the
- * given result(s). 
+ * given result(s).
  *
  * Incremental results are particularly useful to process tree structures such as the class
  * hierarchy.
@@ -235,7 +235,7 @@ final case object CheapPropertyComputation extends PropertyComputationHint
  * @note All computations must compute different e/pk pairs which are not yet computed/scheduled or
  *       for which lazy computations are scheduled.
  *
- * @note To ensure correctness it is absolutely essential that all entities - for which some 
+ * @note To ensure correctness it is absolutely essential that all entities - for which some
  *       property could eventually be computed - has a property before the
  *       property store reaches quiescence. Hence, it is generally not possible that a lazy
  *       computation returns `IncrementalResult` objects.
@@ -274,7 +274,7 @@ private[fpcf] object Results {
 
 /**
  * `PartialResult`s are used for properties of entities which are computed collaboratively/in
- * a piecewise fashion. 
+ * a piecewise fashion.
  *
  * For example, let's assume that we have an entity `Project` which has the property to store
  * the types which are instantiated and which is updated whenever an analysis of a method
