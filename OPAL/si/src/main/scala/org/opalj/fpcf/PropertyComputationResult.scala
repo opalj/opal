@@ -78,11 +78,13 @@ case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult
 
     private[fpcf] final def id = Result.id
 
+    override def toString: String = s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
 }
 private[fpcf] object Result { private[fpcf] final val id = 1 }
 
 /**
- * Encapsulates the '''final results''' of the computation of a set of properties.
+ * Encapsulates the '''final results''' of the computation of a set of properties. Hence, all 
+ * results have to be w.r.t. different e/pk pairs.
  *
  * The encapsulated results are not atomically set; they are set one after another.
  *
@@ -202,26 +204,41 @@ private[fpcf] object IntermediateResult {
     private[fpcf] final val id = 3
 }
 
-sealed trait PropertyComputationHint
-final case object DefaultPropertyComputation extends PropertyComputationHint
 /**
- * The on update continuation is extremely cheap and -- therefore -- can/should be processed in
- * the current thread, it is extremely unlikely that we will gain anything from parallelization.
+ * Hints about the nature of the property computations, which can/are used by the property store
+ * to implement different scheduling schemes.
+ */ 
+sealed trait PropertyComputationHint
+
+/**
+ * A standard property computation.
+ */
+final case object DefaultPropertyComputation extends PropertyComputationHint
+
+/**
+ * The property computation is extremely cheap. Therefore, the computation can/should be 
+ * processed in the current thread, it is extremely unlikely that we will gain anything 
+ * from parallelization.
  */
 final case object CheapPropertyComputation extends PropertyComputationHint
 
 /**
- * Encapsulates some result and also some computations that should be scheduled after the results
- * were stored. I.e., in this case the property store guarantees that all values stored previously
- * can be queried by `nextComputations` if necessary.
- *
- * To ensure correctness it is absolutely essential that all entities - for which some result
- * could eventually be computed - are actually associated with some result before the
- * property store reaches quiescence. Hence, it is generally not possible that a lazy
- * computation returns `IncrementalResult` objects.
+ * Encapsulates some result and also some computations that should be computed next.
+ * In this case the property store DOES NOT guarantee that the result is processed 
+ * before the next computations are triggered. Hence, `nextComputations` can query the e/pk
+ * related to the previous result, but should not expect to already see the value of the
+ * given result(s). 
  *
  * Incremental results are particularly useful to process tree structures such as the class
  * hierarchy.
+ *
+ * @note All computations must compute different e/pk pairs which are not yet computed/scheduled or
+ *       for which lazy computations are scheduled.
+ *
+ * @note To ensure correctness it is absolutely essential that all entities - for which some 
+ *       property could eventually be computed - has a property before the
+ *       property store reaches quiescence. Hence, it is generally not possible that a lazy
+ *       computation returns `IncrementalResult` objects.
  */
 case class IncrementalResult[E <: Entity](
         result:                   PropertyComputationResult,
@@ -236,9 +253,8 @@ case class IncrementalResult[E <: Entity](
 private[fpcf] object IncrementalResult { private[fpcf] final val id = 4 }
 
 /**
- * Just a collection of multiple results.
- *
- * @param results
+ * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
+ * e/pk pairs for which it contains results.
  */
 case class Results(
         results: TraversableOnce[PropertyComputationResult]
@@ -258,14 +274,13 @@ private[fpcf] object Results {
 
 /**
  * `PartialResult`s are used for properties of entities which are computed collaboratively/in
- * a piecewise fashion. PartialResults cannot be used for properties which are (also) computed
- * by lazy property computations.
+ * a piecewise fashion. 
  *
- * For example, let's assume that we have an entity `CFG` which has the property to store
+ * For example, let's assume that we have an entity `Project` which has the property to store
  * the types which are instantiated and which is updated whenever an analysis of a method
  * detects the instantiation of a type. In this case, the analysis of the method could return
- * a MultiResult which contains the (Intermediate)Result for the analysis of the method as
- * such and a PartialResult which will update the information about the overall set of
+ * a [[Results]] which contains the `(Intermediate)Result` for the analysis of the method as
+ * such and a `PartialResult` which will update the information about the overall set of
  * instantiated types.
  *
  * @param e The entity for which we have a partial result.
@@ -286,7 +301,12 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 }
 private[fpcf] object PartialResult { private[fpcf] final val id = 6 }
 
-/** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
+/**************************************************************************************************\
+ *
+ *                              ONLY USED INTERNALLY BY THE FRAMEWORK! 
+ *
+\**************************************************************************************************/
+
 private[fpcf] case class ExternalResult(
         e: Entity,
         p: Property
@@ -297,7 +317,6 @@ private[fpcf] case class ExternalResult(
 }
 private[fpcf] object ExternalResult { private[fpcf] final val id = 7 }
 
-/** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
 private[fpcf] case class CSCCsResult(
         csccs: List[Iterable[SomeEPK]]
 ) extends FinalPropertyComputationResult {
@@ -307,7 +326,6 @@ private[fpcf] case class CSCCsResult(
 }
 private[fpcf] object CSCCsResult { private[fpcf] final val id = 8 }
 
-/** ONLY INTENDED TO BE USED INTERNALLY BY THE FRAMEWORK! */
 private[fpcf] case class IdempotentResult(
         finalEP: SomeFinalEP
 ) extends FinalPropertyComputationResult {

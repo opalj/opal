@@ -519,7 +519,7 @@ final class EPKSequentialPropertyStore private (
 
     override def handleResult(
         r:               PropertyComputationResult,
-        forceEvaluation: Boolean // ignored
+        forceEvaluation: Boolean                   = true // ignored... but conceptually "true"
     ): Unit = handleExceptions {
         r.id match {
 

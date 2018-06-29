@@ -754,7 +754,7 @@ sealed abstract class PropertyStoreTest(
                 // a -> f -> h
                 // a -> f -> j
                 // a -> f -> i
-                //           h <-> j <-> i // this cycle is resolved in multiple steps...
+                //           h <-> j <-> i // this cSCC is a chain..
                 // a -> g -> h
                 // a -> h
                 // a -> b -> c
