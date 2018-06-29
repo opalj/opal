@@ -51,7 +51,7 @@ class DeclaredMethods(
         // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
         // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
         // methods on type Object when not analyzing the JDK.
-        private[this] val data: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
+        private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
         private[this] val id2method: ArrayBuffer[DeclaredMethod],
         private[this] var method2id: Object2IntOpenHashMap[DeclaredMethod]
 ) {

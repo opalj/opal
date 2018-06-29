@@ -31,7 +31,7 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.{Function => JFunction}
+import java.util.function.{Function ⇒ JFunction}
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
@@ -254,13 +254,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
 
         // assign each declared method a unique id
         val method2Id = new Object2IntOpenHashMap[DeclaredMethod]()
-        val id2method = new ArrayBuffer[DeclaredMethod](result.size()*10)
+        val id2method = new ArrayBuffer[DeclaredMethod](result.size() * 10)
 
         import scala.collection.JavaConverters._
         var id = 0
         for {
-            context2Method <- result.elements().asScala
-            dm <- context2Method.elements().asScala
+            context2Method ← result.elements().asScala
+            dm ← context2Method.elements().asScala
         } {
             method2Id.put(dm, id)
             id2method.append(dm)
