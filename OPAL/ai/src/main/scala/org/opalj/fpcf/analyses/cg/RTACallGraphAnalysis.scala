@@ -42,7 +42,6 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.MethodIDKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
@@ -100,15 +99,14 @@ class RTACallGraphAnalysis private[analyses] (
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
-    private[this] val methodIds = project.get(MethodIDKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
-     * For each MethodId ([[MethodIDKey]]), it states whether the method has been analysed using
-     * `step1` or not.
+     * For each MethodId ([[org.opalj.br.analyses.DeclaredMethods]]), it states whether the method
+     * has been analysed using `step1` or not.
      */
     val processedMethods: Array[AtomicBoolean] = {
-        Array.fill(project.allMethods.size) { new AtomicBoolean }
+        Array.fill(project.allMethods.size) { new AtomicBoolean } //TODO this does not work with dms
     }
 
     def step1(
@@ -126,7 +124,7 @@ class RTACallGraphAnalysis private[analyses] (
             return NoResult;
 
         // we must only call this method once per method.
-        val methodID = methodIds(method)
+        val methodID = declaredMethods.methodID(declaredMethod)
         assert(processedMethods(methodID).get())
 
         if (method.body.isEmpty)
@@ -345,9 +343,9 @@ class RTACallGraphAnalysis private[analyses] (
 
     }
 
-    def addNewReachableMethod(m: Method, reachableMethods: ArrayBuffer[Method]): Unit = {
-        if (processedMethods(methodIds(m)).compareAndSet(false, true))
-            reachableMethods += m
+    def addNewReachableMethod(m: DefinedMethod, reachableMethods: ArrayBuffer[Method]): Unit = {
+        if (processedMethods(declaredMethods.methodID(m)).compareAndSet(false, true))
+            reachableMethods += m.methodDefinition
     }
 
     /**
@@ -364,12 +362,13 @@ class RTACallGraphAnalysis private[analyses] (
         for {
             tgt ← targets
         } {
-            val tgtId = methodIds(tgt)
+            val tgtDM = declaredMethods(tgt)
+            val tgtId = declaredMethods.methodID(tgtDM)
             // add call edge to CG
             result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
 
             // the callee is now reachable and should be processed, if not done already
-            addNewReachableMethod(tgt, newReachableMethods)
+            addNewReachableMethod(tgtDM, newReachableMethods)
         }
         result
     }
@@ -394,8 +393,9 @@ class RTACallGraphAnalysis private[analyses] (
                 state.method.methodDefinition.classFile.thisType, instantiatedType, name, descr
             )
         } {
-            val tgtId = methodIds(tgt)
-            addNewReachableMethod(tgt, newReachableMethods)
+            val tgtID = declaredMethods(tgt)
+            val tgtId = declaredMethods.methodID(tgtID)
+            addNewReachableMethod(tgtID, newReachableMethods)
             // in case newCalleesOfM equals state.calleesOfM this is safe
             result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
             state.addCallEdge(pc, tgtId)
@@ -406,12 +406,12 @@ class RTACallGraphAnalysis private[analyses] (
     def partialResultForCallers(
         method:        DefinedMethod,
         newCalleesOfM: IntMap[IntTrieSet]
-    ): TraversableOnce[PartialResult[DefinedMethod, Callers]] = {
+    ): TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
         for {
             (pc: Int, tgtsOfM: IntTrieSet) ← newCalleesOfM.iterator
             tgtID: Int ← tgtsOfM.iterator
-            tgtMethod = declaredMethods(methodIds(tgtID))
-        } yield PartialResult[DefinedMethod, Callers](tgtMethod, Callers.key, {
+            tgtMethod = declaredMethods(tgtID)
+        } yield PartialResult[DeclaredMethod, Callers](tgtMethod, Callers.key, {
             case EPS(e, lb: Callers, ub: CallersImplementation) ⇒
                 val newCallers = ub.updated(method, pc)
                 if (ub != newCallers)
@@ -423,7 +423,7 @@ class RTACallGraphAnalysis private[analyses] (
                     tgtMethod,
                     Callers.fallback(tgtMethod, project),
                     new CallersImplementation(
-                        Set(Callers.toLong(tgtID, pc)), methodIds, declaredMethods
+                        Set(Callers.toLong(tgtID, pc)), declaredMethods
                     )
                 ))
             case _ ⇒ throw new IllegalArgumentException()
@@ -459,7 +459,7 @@ class RTACallGraphAnalysis private[analyses] (
         val calleesLB = Callees.fallback(state.method, p, declaredMethods)
 
         // here we need a immutable copy of the current state
-        val newCallees = new CalleesImplementation(state.calleesOfM, methodIds, declaredMethods)
+        val newCallees = new CalleesImplementation(state.calleesOfM, declaredMethods)
         // todo equal size or equal callees?
         if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
@@ -493,8 +493,9 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
         // ensure that an entry point is not scheduled later on again
         entryPoints.foreach(entrypoint ⇒ {
-            val methodIds = project.get(MethodIDKey)
-            if (!analysis.processedMethods(methodIds(entrypoint)).compareAndSet(false, true))
+            val declaredMethods = project.get(DeclaredMethodsKey)
+            val dm = declaredMethods(entrypoint)
+            if (!analysis.processedMethods(declaredMethods.methodID(dm)).compareAndSet(false, true))
                 throw new IllegalStateException("Unexpected modification of processedMethods array")
         })
 

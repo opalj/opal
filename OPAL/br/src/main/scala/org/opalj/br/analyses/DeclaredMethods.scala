@@ -31,6 +31,7 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
@@ -55,6 +56,7 @@ class DeclaredMethods(
         private[this] val id2method: ArrayBuffer[DeclaredMethod],
         private[this] var method2id: Object2IntOpenHashMap[DeclaredMethod]
 ) {
+    val id = new AtomicInteger(id2method.size)
 
     def apply(
         declaredType: ObjectType,
@@ -86,7 +88,13 @@ class DeclaredMethods(
             // the set already already
             dmSet.computeIfAbsent(
                 new MethodContext(name, descriptor),
-                _ ⇒ VirtualDeclaredMethod(classType, name, descriptor)
+                _ ⇒ {
+                    val vm = VirtualDeclaredMethod(classType, name, descriptor)
+                    val vmId = id.getAndIncrement()
+                    method2id.put(vm, vmId)
+                    id2method += vm
+                    ???
+                }
             )
         } else {
             method

@@ -32,7 +32,6 @@ package properties
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.SomeProject
 
 import scala.collection.Set
@@ -74,7 +73,6 @@ sealed trait Callers extends Property with OrderedProperty with CallersPropertyM
 
 final class CallersImplementation(
         private[this] val encodedCallers:  Set[Long /*MethodId + PC*/ ],
-        private[this] val methodIds:       MethodIDs,
         private[this] val declaredMethods: DeclaredMethods
 ) extends Callers {
 
@@ -82,22 +80,16 @@ final class CallersImplementation(
         for {
             encodedPair ← encodedCallers
             (mId, pc) = Callers.toMethodAndPc(encodedPair)
-        } yield declaredMethods(methodIds(mId)) → pc
+        } yield declaredMethods(mId) → pc
     }
 
     override val size: Int = {
         encodedCallers.size
     }
 
-    override def updated(declaredCaller: DeclaredMethod, pc: Int): Callers = {
-        assert(declaredCaller.hasDefinition)
-        val definedCaller = declaredCaller.asDefinedMethod
-        val caller = definedCaller.methodDefinition
-        assert(definedCaller.declaringClassType eq caller.classFile.thisType)
-
+    override def updated(caller: DeclaredMethod, pc: Int): Callers = {
         new CallersImplementation(
-            encodedCallers + Callers.toLong(methodIds(caller), pc),
-            methodIds, declaredMethods
+            encodedCallers + Callers.toLong(declaredMethods.methodID(caller), pc), declaredMethods
         )
     }
 }

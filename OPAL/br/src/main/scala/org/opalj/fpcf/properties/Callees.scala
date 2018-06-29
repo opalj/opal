@@ -31,17 +31,15 @@ package fpcf
 package properties
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.MethodIDs
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 
 import scala.collection.immutable.IntMap
 
 /**
- * For a given [[Method]], and for each call site (represented by the PC), the set of methods
+ * For a given [[DeclaredMethod]], and for each call site (represented by the PC), the set of methods
  * that are possible call targets.
  *
  * @author Florian Kuebler
@@ -75,12 +73,11 @@ sealed trait Callees extends Property with OrderedProperty with CalleesPropertyM
 
 final class CalleesImplementation(
         private[this] val calleesIds:      IntMap[IntTrieSet],
-        private[this] val methodIds:       MethodIDs,
         private[this] val declaredMethods: DeclaredMethods
 ) extends Callees {
 
     override def callees(pc: Int): Set[DeclaredMethod] = {
-        calleesIds(pc).mapToAny[Method](methodIds.apply).map(declaredMethods.apply)
+        calleesIds(pc).mapToAny[DeclaredMethod](declaredMethods.apply)
     }
 
     override val size: Int = {
