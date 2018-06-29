@@ -770,26 +770,12 @@ final class PKEParallelTasksPropertyStore private (
                     pcrs += c(newEPS)
                 } else {
                     scheduledOnUpdateComputationsCounter += 1
-                    val oldDependerDependersCount = {
-                        val oldDependerDependersOption =
-                            dependers(oldDependerEPK.pk.id).get(oldDependerEPK.e)
-                        if (oldDependerDependersOption.isDefined)
-                            oldDependerDependersOption.get.size
-                        else
-                            0
-                    }
                     if (isFinal) {
-                        val queueId =
-                            if (oldDependerDependeesCount == 1)
-                                0
-                            else
-                                (oldDependerDependersCount + oldDependerDependeesCount) / 4
                         val t = new OnFinalUpdateComputationTask(this, newEPS.asFinal, c)
-                        appendTask(queueId, t)
+                        appendTask(oldDependerDependeesCount, t)
                     } else {
-                        val queueId = oldDependerDependersCount + oldDependerDependeesCount
                         val t = new OnUpdateComputationTask(this, newEPS.toEPK, c)
-                        appendTask(queueId, t)
+                        appendTask(oldDependerDependeesCount, t)
                     }
                 }
             }
@@ -1094,10 +1080,6 @@ final class PKEParallelTasksPropertyStore private (
                                 pcrs += c(currentDependee)
                             } else {
                                 scheduledDependeeUpdatesCounter += 1
-                                val dependersOption = dependers(pkId).get(e)
-                                val dependersCount =
-                                    if (dependersOption.isDefined) dependersOption.get.size else 0
-
                                 if (currentDependee.isFinal) {
                                     val t = ImmediateOnFinalUpdateComputationTask(
                                         store,
@@ -1106,7 +1088,7 @@ final class PKEParallelTasksPropertyStore private (
                                         forceDependersNotifications,
                                         c
                                     )
-                                    appendTask(dependersCount, t)
+                                    appendTask(seenDependees.size, t)
                                 } else {
                                     val t = ImmediateOnUpdateComputationTask(
                                         store,
@@ -1115,7 +1097,7 @@ final class PKEParallelTasksPropertyStore private (
                                         forceDependersNotifications,
                                         c
                                     )
-                                    appendTask(dependersCount, t)
+                                    appendTask(seenDependees.size, t)
                                 }
                                 // We will postpone the notification to the point where
                                 // the result(s) are handled...
