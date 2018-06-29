@@ -105,9 +105,6 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         val instructions = body.instructions
         val maxPC = instructions.length
 
-        if (methodName == "setField")
-            println()
-
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
         var overwritesSelf = false
