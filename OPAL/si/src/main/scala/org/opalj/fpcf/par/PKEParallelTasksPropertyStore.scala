@@ -768,7 +768,7 @@ final class PKEParallelTasksPropertyStore private (
                 // Given that we will trigger the depender, we now have to remove the
                 // respective onUpdateContinuation from all dependees of the respective
                 // depender to avoid that the onUpdateContinuation is triggered multiple times!
-                val oldDependerDependeesCount = clearDependees(oldDependerEPK)
+                //       val oldDependerDependeesCount = clearDependees(oldDependerEPK)
                 if (onUpdateContinuationHint == CheapPropertyComputation) {
                     directDependerOnUpdateComputationsCounter += 1
                     pcrs += c(newEPS)
@@ -776,14 +776,15 @@ final class PKEParallelTasksPropertyStore private (
                     scheduledOnUpdateComputationsCounter += 1
                     val oldDependerDependersCount =
                         dependers(oldDependerEPK.pk.id).get(oldDependerEPK.e).map(_.size).getOrElse(0)
-                    val queueKey = oldDependerDependeesCount * oldDependerDependersCount
+                    //                    val queueKey = oldDependerDependeesCount * oldDependerDependersCount
+                    val queueKey = oldDependerDependersCount
                     if (isFinal) {
                         val t = new OnFinalUpdateComputationTask(this, newEPS.asFinal, c)
                         if (queueKey <= 1)
                             appendQuickTask(t)
-                        else if (queueKey <= 4)
+                        else if (queueKey <= 2)
                             prependTask(t)
-                        else if (queueKey <= 16)
+                        else if (queueKey <= 4)
                             appendTask(t)
                         else
                             appendHeavyTask(t)
@@ -791,9 +792,9 @@ final class PKEParallelTasksPropertyStore private (
                         val t = new OnUpdateComputationTask(this, newEPS.toEPK, c)
                         if (queueKey <= 1)
                             appendQuickTask(t)
-                        else if (queueKey <= 4)
+                        else if (queueKey <= 2)
                             prependTask(t)
-                        else if (queueKey <= 16)
+                        else if (queueKey <= 4)
                             appendTask(t)
                         else
                             appendHeavyTask(t)
