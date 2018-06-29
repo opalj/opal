@@ -1316,17 +1316,26 @@ final class PKEParallelTasksPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug) {
+        if (debug/*HERE, primarily of the property store itself...*/) {
             // let's search for "unsatisfied computations" related to "forced properties"
             val maxPKIndex = SupportedPropertyKinds // PropertyKey.maxId // properties.length
             var pkId = 0
             while (pkId < maxPKIndex) {
                 properties(pkId) forEach { (e, eps) ⇒
-                    if (eps.isFinal && forcedComputations(pkId).containsKey(e)) {
-                        error(
-                            "analysis progress",
-                            s"intermediate property state for forced property: $eps"
-                        )
+                    if (!eps.isFinal) {
+                        if (forcedComputations(pkId).containsKey(e)) {
+                            error(
+                                "analysis progress",
+                                s"intermediate property state for forced property: $eps"
+                            )
+                        }
+                    } else {
+                        if (forcedComputations(pkId).containsKey(e)) {
+                            error(
+                                "analysis progress",
+                                s"dangling forced computations entry: $eps"
+                            )
+                        }
                     }
                 }
                 pkId += 1
