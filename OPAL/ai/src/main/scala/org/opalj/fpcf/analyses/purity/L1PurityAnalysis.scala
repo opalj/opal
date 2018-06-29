@@ -335,6 +335,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             }
 
+        val stmtCount = code.length
+        var s = 0
+        while (s < stmtCount) {
+            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
+                return Result(definedMethod, state.ubPurity)
+            s += 1
+        }
+
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
@@ -347,14 +355,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)
-        }
-
-        val stmtCount = code.length
-        var s = 0
-        while (s < stmtCount) {
-            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(definedMethod, state.ubPurity)
-            s += 1
         }
 
         // Remove unnecessary dependees
