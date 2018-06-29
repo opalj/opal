@@ -176,7 +176,7 @@ class ProjectTest extends FlatSpec with Matchers {
         assert(instanceMethods(SubSub2).exists(_.name == "foo"))
     }
 
-    it should "not return an abstractly overridden default method in interfaceswith multiple parent interfaces" in {
+    it should "not return an abstractly overridden default method in interface with multiple parent interfaces" in {
         assert(!instanceMethods(SubSub).exists(_.name == "foo"))
     }
 
