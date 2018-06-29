@@ -254,7 +254,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
 
         // assign each declared method a unique id
         val method2Id = new Object2IntOpenHashMap[DeclaredMethod]()
-        val id2method = new ArrayBuffer[DeclaredMethod](result.size() * 10)
+        val id2method = new ArrayBuffer[DeclaredMethod](result.size() * 30)
 
         import scala.collection.JavaConverters._
         var id = 0
