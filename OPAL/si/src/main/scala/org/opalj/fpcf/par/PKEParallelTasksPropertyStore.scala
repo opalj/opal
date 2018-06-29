@@ -263,8 +263,8 @@ final class PKEParallelTasksPropertyStore private (
      * The list of scheduled (on update) property computations -
      * they will be processed in parallel.
      */
-    private[this] final val TaskQueues = 16
-    private[this] final val DefaultTaskQueue = 8
+    private[this] final val TaskQueues = 12
+    private[this] final val DefaultTaskQueue = 0
     private[this] val tasks = {
         Array.fill(TaskQueues)(new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]())
     }
@@ -770,16 +770,26 @@ final class PKEParallelTasksPropertyStore private (
                     pcrs += c(newEPS)
                 } else {
                     scheduledOnUpdateComputationsCounter += 1
-                    //val oldDependerDependersCount =
-                    //    dependers(oldDependerEPK.pk.id).get(oldDependerEPK.e).map(_.size).getOrElse(0)
-                    //                    val queueKey = oldDependerDependeesCount * oldDependerDependersCount
-                    val queueKey = oldDependerDependeesCount
+                    val oldDependerDependersCount = {
+                        val oldDependerDependersOption =
+                            dependers(oldDependerEPK.pk.id).get(oldDependerEPK.e)
+                        if (oldDependerDependersOption.isDefined)
+                            oldDependerDependersOption.get.size
+                        else
+                            0
+                    }
                     if (isFinal) {
+                        val queueId =
+                            if (oldDependerDependeesCount == 1)
+                                0
+                            else
+                                (oldDependerDependersCount + oldDependerDependeesCount) / 4
                         val t = new OnFinalUpdateComputationTask(this, newEPS.asFinal, c)
-                        appendTask(queueKey, t)
+                        appendTask(queueId, t)
                     } else {
+                        val queueId = oldDependerDependersCount + oldDependerDependeesCount
                         val t = new OnUpdateComputationTask(this, newEPS.toEPK, c)
-                        appendTask(queueKey, t)
+                        appendTask(queueId, t)
                     }
                 }
             }
