@@ -1317,7 +1317,7 @@ final class PKEParallelTasksPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug/*HERE, primarily of the property store itself...*/) {
+        if (debug /*HERE, primarily of the property store itself...*/ ) {
             // let's search for "unsatisfied computations" related to "forced properties"
             val maxPKIndex = SupportedPropertyKinds // PropertyKey.maxId // properties.length
             var pkId = 0
