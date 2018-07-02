@@ -244,6 +244,7 @@ object Purity {
             }
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
+        propertyStore.shutdown()
 
         if (projectEvalDir.isDefined) {
             val runtime = new File(projectEvalDir.get, "runtime.csv")
@@ -346,7 +347,7 @@ object Purity {
             println(result)
         }
 
-        println(project.get(PropertyStoreKey).statistics.mkString("\n"))
+        println(propertyStore.statistics.mkString("\n"))
     }
 
     def main(args: Array[String]): Unit = {
@@ -448,7 +449,7 @@ object Purity {
         time {
             if (multiProjects) {
                 for (subp ← cp.listFiles().filter(_.isDirectory)) {
-                    println(subp.getName)
+                    println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
                     evaluate(
                         subp,
                         projectDir,
