@@ -106,7 +106,7 @@ class RTACallGraphAnalysis private[analyses] (
      * has been analysed using `step1` or not.
      */
     val processedMethods: Array[AtomicBoolean] = {
-        Array.fill(project.allMethods.size) { new AtomicBoolean } //TODO this does not work with dms
+        Array.fill(declaredMethods.size) { new AtomicBoolean } //TODO this does not work with dms
     }
 
     def step1(
