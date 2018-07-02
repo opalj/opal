@@ -354,9 +354,10 @@ final class PKEParallelTasksPropertyStore private (
     ) extends StoreUpdate
 
     private[this] case class TriggeredLazyComputation[E <: Entity](
-            e:    E,
-            pkId: Int,
-            pc:   PropertyComputation[E]
+            e:                E,
+            pkId:             Int,
+            triggeredByForce: Boolean,
+            pc:               PropertyComputation[E]
     ) extends StoreUpdate
 
     /**
@@ -387,16 +388,22 @@ final class PKEParallelTasksPropertyStore private (
                     case PropertyUpdate(r, forceEvaluation, forceDependersNotifications) ⇒
                         doHandleResult(r, forceEvaluation, forceDependersNotifications)
 
-                    case TriggeredLazyComputation(e, pkId, lc) ⇒
+                    case TriggeredLazyComputation(e, pkId, triggeredByForce, lc) ⇒
                         // Recall, that -- once we have a final result -- all meta data
                         // is deleted; in particular information about triggeredLazyComputations.
                         val currentP = properties(pkId).get(e)
-                        if (currentP == null && triggeredLazyComputations(pkId).add(e)) {
-                            if (tracer.isDefined)
-                                tracer.get.schedulingLazyComputation(e, pkId)
+                        if (currentP == null) {
+                            if (triggeredLazyComputations(pkId).add(e)) {
+                                if (tracer.isDefined) tracer.get.schedulingLazyComputation(e, pkId)
 
-                            scheduledLazyTasksCounter += 1
-                            appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
+                                scheduledLazyTasksCounter += 1
+                                appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
+                            }
+                        } else if (triggeredByForce && currentP.isFinal) {
+                            // it maybe the case that an epk is already final; e.g., if a value
+                            // is first set/computed and then forced; in this case, we have
+                            // to ensure that the meta-information is really deleted
+                            forcedComputations(pkId).remove(e)
                         }
                 }
             } finally {
@@ -551,9 +558,10 @@ final class PKEParallelTasksPropertyStore private (
 
     // Thread Safe!
     private[this] def computeOrScheduleLazyComputationForEntity[E <: Entity, P <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        e:                E,
+        pk:               PropertyKey[P],
+        triggeredByForce: Boolean,
+        pc:               PropertyComputation[E]
     ): EOptionP[E, P] = {
         // Currently, we do not support eagerly scheduled computations and
         // fasttrack properties. In that case, we could have a scheduled
@@ -577,7 +585,7 @@ final class PKEParallelTasksPropertyStore private (
                 finalEP
 
             case None ⇒
-                prependStoreUpdate(TriggeredLazyComputation(e, pkId, pc))
+                prependStoreUpdate(TriggeredLazyComputation(e, pkId, triggeredByForce, pc))
                 EPK(e, pk)
         }
     }
@@ -619,7 +627,7 @@ final class PKEParallelTasksPropertyStore private (
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒
-                        computeOrScheduleLazyComputationForEntity(e, pk, lc)
+                        computeOrScheduleLazyComputationForEntity(e, pk, triggeredByForce = false, lc)
                 }
 
             case eps ⇒
@@ -636,11 +644,17 @@ final class PKEParallelTasksPropertyStore private (
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         val pkId = pk.id
         if (forcedComputations(pkId).put(e, e) == null) {
-            if (tracer.isDefined) tracer.get.force(e, pkId)
 
             val lc = lazyComputations.get(pkId)
-            if (lc != null && properties(pkId).get(e) == null) {
-                computeOrScheduleLazyComputationForEntity(e, pk, lc)
+            if (lc != null) {
+                if (properties(pkId).get(e) == null) {
+                    if (tracer.isDefined) tracer.get.force(e, pkId)
+                    computeOrScheduleLazyComputationForEntity(e, pk, triggeredByForce = true, lc)
+                } else {
+                    // the property was already computed or set...
+                    if (tracer.isDefined) tracer.get.forceForComputedEPK(e, pkId)
+                    forcedComputations(pkId).remove(e)
+                }
             }
         }
     }
