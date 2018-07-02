@@ -996,7 +996,10 @@ class ClassHierarchy private (
         objectType: ObjectType,
         reflexive:  Boolean    = false
     ): UIDSet[ObjectType] = {
-        var supertypes = supertypeInformation(objectType).interfaceTypes
+        var supertypes = supertypeInformation.get(objectType) match {
+            case Some(sti) ⇒ sti.interfaceTypes
+            case None      ⇒ UIDSet.empty[ObjectType]
+        }
         if (reflexive && isInterface(objectType).isYes) supertypes += objectType
         supertypes
     }
