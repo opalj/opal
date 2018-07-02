@@ -104,7 +104,7 @@ sealed abstract class DeclaredMethod {
  * Note that one VirtualDeclaredMethod may represent more than one actual method, because a class
  * may have several package-private methods with the same signature.
  */
-final case class VirtualDeclaredMethod(
+final case class VirtualDeclaredMethod private[br] (
         declaringClassType: ReferenceType,
         name:               String,
         descriptor:         MethodDescriptor
@@ -131,7 +131,7 @@ final case class VirtualDeclaredMethod(
  * Represents a declared method; i.e., a method which belongs to the (public and private) API of a
  * class along with a reference to the original declaration.
  */
-final case class DefinedMethod(
+final case class DefinedMethod private[br] (
         declaringClassType: ReferenceType,
         definedMethod:      Method
 ) extends DeclaredMethod {
@@ -153,7 +153,7 @@ final case class DefinedMethod(
     }
 }
 
-final case class MultipleDefinedMethods(
+final case class MultipleDefinedMethods private[br] (
         declaringClassType: ReferenceType,
         definedMethods:     ConstArray[Method]
 ) extends DeclaredMethod {
