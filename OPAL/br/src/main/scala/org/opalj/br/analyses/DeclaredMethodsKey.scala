@@ -267,7 +267,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             id += 1
         }
 
-        new DeclaredMethods(p, result, id2method, method2Id)
+        new DeclaredMethods(p, result, id2method, method2Id, id)
     }
 
     /**

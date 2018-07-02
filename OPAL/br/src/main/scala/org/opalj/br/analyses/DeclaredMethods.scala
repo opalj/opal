@@ -54,7 +54,8 @@ class DeclaredMethods(
         // methods on type Object when not analyzing the JDK.
         private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
         private[this] val id2method: ArrayBuffer[DeclaredMethod],
-        private[this] var method2id: Object2IntOpenHashMap[DeclaredMethod]
+        private[this] val method2id: Object2IntOpenHashMap[DeclaredMethod],
+        private[this] var _size:     Int
 ) {
     val id = new AtomicInteger(id2method.size)
 
@@ -93,6 +94,7 @@ class DeclaredMethods(
                     val vmId = id.getAndIncrement()
                     method2id.put(vm, vmId)
                     id2method += vm
+                    _size += 1
                     ???
                 }
             )
@@ -119,4 +121,6 @@ class DeclaredMethods(
         // Thread-safe as .values() creates a view of the current state
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }
+
+    def size: Int = _size
 }
