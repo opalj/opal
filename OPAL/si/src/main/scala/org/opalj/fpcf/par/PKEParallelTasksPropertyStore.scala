@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReferenceArray
 
@@ -266,25 +267,19 @@ final class PKEParallelTasksPropertyStore private (
     private[this] final val TaskQueues = 12
     private[this] final val DefaultTaskQueue = 0
     private[this] val tasks = {
-        Array.fill(TaskQueues)(new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]())
+        Array.fill(TaskQueues)(new ConcurrentLinkedQueue[QualifiedTask[_ <: Entity]]())
     }
     private[this] val tasksSemaphore = new Semaphore(0)
 
-    /*private[this] def prependTask(task: QualifiedTask[_ <: Entity]): Unit = {
-        incOpenJobs()
-        tasks(DefaultTaskQueue).offerFirst(task)
-        tasksSemaphore.release()
-    }*/
-
     private[this] def appendTask(task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        tasks(DefaultTaskQueue).offerLast(task)
+        tasks(DefaultTaskQueue).offer(task)
         tasksSemaphore.release()
     }
 
     private[this] def appendTask(queueId: Int, task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        tasks(Math.min(queueId, TaskQueues - 1)).offerLast(task)
+        tasks(Math.min(queueId, TaskQueues - 1)).offer(task)
         tasksSemaphore.release()
     }
 
@@ -304,7 +299,7 @@ final class PKEParallelTasksPropertyStore private (
             var task: QualifiedTask[_ <: Entity] = null
             var queueId = 0
             do {
-                task = tasks(queueId).pollFirst()
+                task = tasks(queueId).poll()
                 queueId = (queueId + 1) % TaskQueues
             } while (task eq null)
 
