@@ -32,9 +32,9 @@ package par
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.io.File
+import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.mutable.ArrayBuffer
-
+import scala.collection.JavaConverters._
 import org.opalj.io
 
 trait PropertyStoreTracer {
@@ -44,6 +44,8 @@ trait PropertyStoreTracer {
     //
 
     def force(e: Entity, pkId: Int): Unit
+
+    def forceForComputedEPK(e: Entity, pkId: Int): Unit
 
     //
     // CALLED SEQUENTIALLY
@@ -90,6 +92,38 @@ sealed trait StoreEvent {
     def toTxt: String
 }
 
+case class Force(
+        eventId: Int,
+        e:       Entity,
+        pkId:    Int
+) extends StoreEvent {
+
+    override def toString: String = {
+        s"Force($eventId,$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+    }
+
+    override def toTxt: String = {
+        s"$eventId: Force($e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+    }
+}
+
+case class ForceForComputedEPK(
+        eventId: Int,
+        e:       Entity,
+        pkId:    Int
+) extends StoreEvent {
+
+    override def toString: String = {
+        s"ForceForComputedEPK($eventId,"+
+            s"$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+    }
+
+    override def toTxt: String = {
+        s"$eventId: ForceForComputedEPK("+
+            s"$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+    }
+}
+
 case class LazyComputationScheduled(
         eventId: Int,
         e:       Entity,
@@ -97,11 +131,13 @@ case class LazyComputationScheduled(
 ) extends StoreEvent {
 
     override def toString: String = {
-        s"LazyComputationScheduled($eventId,$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+        s"LazyComputationScheduled($eventId,"+
+            s"$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
     }
 
     override def toTxt: String = {
-        s"$eventId: LazyComputationScheduled($e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
+        s"$eventId: LazyComputationScheduled("+
+            s"$e@${System.identityHashCode(e).toHexString},${PropertyKey.name(pkId)})"
     }
 }
 
@@ -205,34 +241,38 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
 
     val eventCounter = new AtomicInteger(0)
 
+    private[this] val events = new ConcurrentLinkedQueue[StoreEvent]
+
     //
     // POTENTIALLY CALLED CONCURRENTLY
     //
 
-    def force(e: Entity, pkId: Int): Unit = ()
+    def force(e: Entity, pkId: Int): Unit = {
+        events.offer(Force(eventCounter.incrementAndGet(), e, pkId))
+    }
+
+    def forceForComputedEPK(e: Entity, pkId: Int): Unit = {
+        events.offer(ForceForComputedEPK(eventCounter.incrementAndGet(), e, pkId))
+    }
 
     //
-    // CALLED SEQUENTIALLY
+    // CALLED BY THE STORE UPDATES PROCESSOR THREAD
     //
-
-    private[this] val events = new ArrayBuffer[StoreEvent](2048)
-
-    def allEvents: Iterator[StoreEvent] = events.iterator
 
     def schedulingLazyComputation(e: Entity, pkId: Int): Unit = {
-        events += LazyComputationScheduled(eventCounter.incrementAndGet(), e, pkId)
+        events offer LazyComputationScheduled(eventCounter.incrementAndGet(), e, pkId)
     }
 
     def update(oldEPS: SomeEPS, newEPS: SomeEPS): Unit = {
-        events += PropertyUpdate(eventCounter.incrementAndGet(), oldEPS, newEPS)
+        events offer PropertyUpdate(eventCounter.incrementAndGet(), oldEPS, newEPS)
     }
 
     def notification(newEPS: SomeEPS, dependerEPK: SomeEPK): Unit = {
-        events += DependerNotification(eventCounter.incrementAndGet(), newEPS, dependerEPK)
+        events offer DependerNotification(eventCounter.incrementAndGet(), newEPS, dependerEPK)
     }
 
     def delayedNotification(newEPS: SomeEPS): Unit = {
-        events += DelayedDependersNotification(eventCounter.incrementAndGet(), newEPS)
+        events offer DelayedDependersNotification(eventCounter.incrementAndGet(), newEPS)
     }
 
     def immediateDependeeUpdate(
@@ -240,7 +280,7 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         processedDependee: SomeEOptionP, currentDependee: SomeEPS,
         updateAndNotifyState: UpdateAndNotifyState
     ): Unit = {
-        events += ImmediateDependeeUpdate(
+        events offer ImmediateDependeeUpdate(
             eventCounter.incrementAndGet(),
             e, lb, ub,
             processedDependee,
@@ -255,25 +295,31 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         epksWithNotYetNotifiedDependers: Set[SomeEPK]
     ): Unit = {
         val eventId = eventCounter.incrementAndGet()
-        events += HandlingResult(eventId, r, forceEvaluation, epksWithNotYetNotifiedDependers)
+        events offer HandlingResult(eventId, r, forceEvaluation, epksWithNotYetNotifiedDependers)
     }
 
     def metaInformationDeleted(finalEP: SomeFinalEP): Unit = {
-        events += MetaInformationDeleted(eventCounter.incrementAndGet(), finalEP)
+        events offer MetaInformationDeleted(eventCounter.incrementAndGet(), finalEP)
     }
 
     def reachedQuiescence(): Unit = {
-        events += ReachedQuiescence(eventCounter.incrementAndGet())
+        events offer ReachedQuiescence(eventCounter.incrementAndGet())
     }
 
     def firstException(t: Throwable): Unit = {
-        events += FirstException(
+        events offer FirstException(
             eventCounter.incrementAndGet(),
             t,
             Thread.currentThread().getName,
             Thread.currentThread().getStackTrace.mkString("\n\t", "\n\t", "\n") // dropWhile(_.getMethodName != "handleException")
         )
     }
+
+    //
+    // QUERYING THE EVENTS
+    //
+
+    def allEvents: List[StoreEvent] = events.iterator.asScala.toList.sortWith(_.eventId < _.eventId)
 
     def toTxt: String = {
         allEvents.map { e ⇒
