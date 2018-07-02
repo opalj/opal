@@ -37,6 +37,11 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.JavaConverters._
 import org.opalj.io
 
+/**
+ * Enables the tracing of key events during the analysis progress.
+ *
+ * @author Michael Eichberg
+ */
 trait PropertyStoreTracer {
 
     //
