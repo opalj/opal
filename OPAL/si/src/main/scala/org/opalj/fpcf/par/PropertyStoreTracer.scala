@@ -62,13 +62,20 @@ trait PropertyStoreTracer {
 
     def notification(newEPS: SomeEPS, depender: SomeEPK): Unit
 
+    def delayedNotification(newEPS: SomeEPS): Unit
+
     def immediateDependeeUpdate(
         e: Entity, lb: Property, ub: Property,
-        processedDependee: SomeEOptionP,
-        currentDependee:   SomeEPS
+        processedDependee:    SomeEOptionP,
+        currentDependee:      SomeEPS,
+        updateAndNotifyState: UpdateAndNotifyState
     ): Unit
 
-    def handlingResult(r: PropertyComputationResult, forceEvaluation: Boolean): Unit
+    def handlingResult(
+        r:                               PropertyComputationResult,
+        forceEvaluation:                 Boolean,
+        epksWithNotYetNotifiedDependers: Set[SomeEPK]
+    ): Unit
 
     def metaInformationDeleted(finalEP: SomeFinalEP): Unit
 
@@ -120,29 +127,45 @@ case class DependerNotification(
 
 }
 
+case class DelayedDependersNotification(
+        eventId: Int,
+        newEPS:  SomeEPS
+) extends StoreEvent {
+
+    override def toTxt: String = {
+        s"$eventId: DelayedDependersNotification(newEPS=$newEPS)"
+    }
+
+}
+
 case class ImmediateDependeeUpdate(
         eventId: Int,
         e:       Entity,
         lb:      Property, ub: Property,
-        processedDependee: SomeEOptionP,
-        currentDependee:   SomeEPS
+        processedDependee:    SomeEOptionP,
+        currentDependee:      SomeEPS,
+        updateAndNotifyState: UpdateAndNotifyState
 ) extends StoreEvent {
 
     override def toTxt: String = {
         s"$eventId: ImmediateDependeeUpdate($e@${System.identityHashCode(e).toHexString},"+
-            s"lb=$lb,processedDependee=$processedDependee, currentDependee=$currentDependee)"
+            s"lb=$lb,processedDependee=$processedDependee,currentDependee=$currentDependee,"+
+            s"updateAndNotifyState=$updateAndNotifyState)"
     }
 
 }
 
 case class HandlingResult(
-        eventId:         Int,
-        r:               PropertyComputationResult,
-        forceEvaluation: Boolean
+        eventId:                         Int,
+        r:                               PropertyComputationResult,
+        forceEvaluation:                 Boolean,
+        epksWithNotYetNotifiedDependers: Set[SomeEPK]
 ) extends StoreEvent {
 
     override def toTxt: String = {
-        s"$eventId: HandlingResult($r,forceEvaluation=$forceEvaluation)"
+        s"$eventId: HandlingResult($r,"+
+            s"forceEvaluation=$forceEvaluation,"+
+            s"epksWithNotYetNotifiedDependers=$epksWithNotYetNotifiedDependers)"
     }
 
 }
@@ -208,20 +231,31 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         events += DependerNotification(eventCounter.incrementAndGet(), newEPS, dependerEPK)
     }
 
+    def delayedNotification(newEPS: SomeEPS): Unit = {
+        events += DelayedDependersNotification(eventCounter.incrementAndGet(), newEPS)
+    }
+
     def immediateDependeeUpdate(
         e: Entity, lb: Property, ub: Property,
-        processedDependee: SomeEOptionP, currentDependee: SomeEPS
+        processedDependee: SomeEOptionP, currentDependee: SomeEPS,
+        updateAndNotifyState: UpdateAndNotifyState
     ): Unit = {
         events += ImmediateDependeeUpdate(
             eventCounter.incrementAndGet(),
             e, lb, ub,
             processedDependee,
-            currentDependee
+            currentDependee,
+            updateAndNotifyState
         )
     }
 
-    def handlingResult(r: PropertyComputationResult, forceEvaluation: Boolean): Unit = {
-        events += HandlingResult(eventCounter.incrementAndGet(), r, forceEvaluation)
+    def handlingResult(
+        r:                               PropertyComputationResult,
+        forceEvaluation:                 Boolean,
+        epksWithNotYetNotifiedDependers: Set[SomeEPK]
+    ): Unit = {
+        val eventId = eventCounter.incrementAndGet()
+        events += HandlingResult(eventId, r, forceEvaluation, epksWithNotYetNotifiedDependers)
     }
 
     def metaInformationDeleted(finalEP: SomeFinalEP): Unit = {

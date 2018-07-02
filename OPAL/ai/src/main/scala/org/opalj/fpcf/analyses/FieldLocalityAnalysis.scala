@@ -253,10 +253,13 @@ class FieldLocalityAnalysis private[analyses] (
      */
     def allMethodsHavingAccess(field: Field): Set[Method] = {
         val thisType = field.classFile.thisType
-        var classes: Set[ClassFile] = Set(field.classFile)
-        if (field.isPackagePrivate || field.isProtected) {
-            classes ++= project.allClassFiles.filter(_.thisType.packageName == thisType.packageName)
-        }
+        var classes: Set[ClassFile] =
+            if (field.isPackagePrivate || field.isProtected) {
+                //classes ++= project.allClassFiles.filter(_.thisType.packageName == thisType.packageName)
+                project.classesPerPackage(thisType.packageName) + field.classFile
+            } else {
+                Set(field.classFile)
+            }
         if (field.isProtected) {
             classes ++= project.classHierarchy.allSubclassTypes(thisType, reflexive = false).map(
                 project.classFile(_).get
@@ -394,8 +397,8 @@ class FieldLocalityAnalysis private[analyses] (
                         desc
                     )
 
-                    if (!callee.hasDefinition ||
-                        isOverridableMethod(callee.methodDefinition).isNotNo) {
+                    if (!callee.hasSingleDefinedMethod ||
+                        isOverridableMethod(callee.definedMethod).isNotNo) {
                         true // We don't know all overrides
                     } else {
                         val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)

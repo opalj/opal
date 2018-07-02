@@ -45,6 +45,8 @@ import scala.collection.mutable.{AnyRefMap, OpenHashMap}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
+import scala.collection.immutable
+
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -74,6 +76,7 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.collection.mutable.AnyRefArrayBuffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -266,12 +269,33 @@ class Project[Source] private (
     }
 
     /**
+     * The set of all classes defined in a specific package.
+     */
+    // TODO Consider extracting to a ProjectInformationKey
+    // TODO Java 9+
+    final val classesPerPackage: Map[String, immutable.Set[ClassFile]] = {
+        var classesPerPackage = Map.empty[String, AnyRefArrayBuffer[ClassFile]]
+        allClassFiles foreach { cf ⇒
+            val packageName = cf.thisType.packageName
+            val buffer =
+                classesPerPackage.getOrElse(packageName, {
+                    val buffer = new AnyRefArrayBuffer[ClassFile]()
+                    classesPerPackage = classesPerPackage.updated(packageName, buffer)
+                    buffer
+                })
+            buffer += cf
+        }
+        classesPerPackage.mapValues(cfs ⇒ cfs.toSet)
+    }
+
+    /**
      * Computes the set of all definitive functional interfaces in a top-down fashion.
      *
      * @see Java 8 language specification for details!
      *
      * @return The functional interfaces.
      */
+    // TODO Consider extracting to a ProjectInformationKey
     final lazy val functionalInterfaces: UIDSet[ObjectType] = time {
 
         // Core idea: a subtype is only processed after processing all supertypes;
@@ -1173,10 +1197,12 @@ object Project {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
-        // HERE "overridden" is to be taken with a grain of salt...
+        // Here, "overridden" is to be taken with a grain of salt, because we have a static
+        // method with the same name and descriptor as an instance method defined by a super
+        // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
-        /* Returns `true` if the potentially available information is not yet available. */
+        // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
             methods.get(superinterfaceType).isEmpty &&
                 // If the class file is not known, we will never have any details;
@@ -1188,7 +1214,7 @@ object Project {
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times; hence, if we are
-            // alread done, just return.
+            // already done, just return.
             if (methods.get(objectType).nonEmpty)
                 return ;
 
@@ -1197,13 +1223,13 @@ object Project {
             val inheritedClassMethods: Chain[MethodDeclarationContext] =
                 if (superclassType.isDefined) {
                     val theSuperclassType = superclassType.get
-                    val superclassTypeMethods = methods.get(theSuperclassType)
                     if (notYetAvailable(theSuperclassType)) {
                         // let's postpone the processing of this object type
                         // because we will get some result in the future
                         tasks.submit(objectType)
                         return ;
                     }
+                    val superclassTypeMethods = methods.get(theSuperclassType)
                     if (superclassTypeMethods.nonEmpty) {
                         val inheritedClassMethods = superclassTypeMethods.get
                         if (classHierarchy.isInterface(objectType).isYes) {
@@ -1249,25 +1275,27 @@ object Project {
             ): Unit = {
                 // The relevant interface methods are public, hence, the package
                 // name is not relevant!
-                val methodO = definedMethods.find { definedMethod ⇒
+                definedMethods find { definedMethod ⇒
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
-                }
-                if (methodO.isDefined) {
-                    // If there already is a method and it is from an interface, then it is not
-                    // maximally specific and must be replaced. If it is from a class however, we
-                    // must keep it.
-                    if (classHierarchy.isInterface(methodO.get.declaringClassType).isYesOrUnknown) {
-                        definedMethods = definedMethods.filterNot { definedMethod ⇒
-                            definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
-                                definedMethod.name == inheritedInterfaceMethod.name
+                } match {
+                    case Some(method) ⇒
+                        // If there is already a method and it is from an interface, then it is not
+                        // maximally specific and must be replaced. If it is from a class however, we
+                        // must keep it.
+
+                        val declaringClassType = method.declaringClassType
+                        if (classHierarchy.isInterface(declaringClassType).isYesOrUnknown) {
+                            definedMethods = definedMethods filterNot { definedMethod ⇒
+                                definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                                    definedMethod.name == inheritedInterfaceMethod.name
+                            }
+                            if (!inheritedInterfaceMethod.isAbstract)
+                                definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                         }
+                    case None ⇒
                         if (!inheritedInterfaceMethod.isAbstract)
                             definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
-                    }
-                } else {
-                    if (!inheritedInterfaceMethod.isAbstract)
-                        definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                 }
             }
 

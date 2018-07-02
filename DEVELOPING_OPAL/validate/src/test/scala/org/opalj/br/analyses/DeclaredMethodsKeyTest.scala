@@ -105,7 +105,7 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
     // there may not be any additional defined method. There may be VirtualDeclaredMethods for
     // predefined methods from the JDK, though.
     it("should not create excess declared methods") {
-        val excessMethods = declaredMethods.filter(m ⇒ m.hasDefinition && !annotated.contains(m))
+        val excessMethods = declaredMethods.filter(m ⇒ m.hasSingleDefinedMethod && !annotated.contains(m))
         if (excessMethods.nonEmpty)
             fail(
                 "fonud unexpected methods: \n\t"+excessMethods.mkString("\n\t")

@@ -30,6 +30,7 @@ package org.opalj.collection.mutable
 
 import scala.collection.AbstractIterator
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -70,6 +71,18 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
             throw new IndexOutOfBoundsException(s"$index (size: $size0)");
 
         data(index).asInstanceOf[N]
+    }
+
+    def toArray[T >: N: ClassTag]: Array[T] = {
+        val target = new Array[T](size0)
+        System.arraycopy(data, 0, target, 0, size0)
+        target
+    }
+
+    def toSet[T >: N]: Set[T] = {
+        val b = Set.newBuilder[T]
+        this.foreach(e ⇒ b += e)
+        b.result()
     }
 
     def slice(startIndex: Int, endIndex: Int = size0 - 1): IndexedSeq[N] = {

@@ -35,6 +35,9 @@ import java.lang.System.identityHashCode
 
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.LongMap
+import scala.collection.mutable
+import scala.collection.{Map ⇒ SomeMap}
+
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
@@ -59,6 +62,20 @@ final class EPKSequentialPropertyStore private (
         implicit
         val logContext: LogContext
 ) extends SeqPropertyStore { store ⇒
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // CAPABILITIES
+    //
+    // --------------------------------------------------------------------------------------------
+
+    final def supportsFastTrackPropertyComputations: Boolean = false
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // STATISTICS
+    //
+    // --------------------------------------------------------------------------------------------
 
     /**
      * Controls in which order updates are processed/scheduled.
@@ -93,8 +110,8 @@ final class EPKSequentialPropertyStore private (
 
     def fastTrackPropertiesCount: Int = 0 // The EPK store does not support fast track properties
 
-    def statistics: Map[String, Int] = {
-        Map(
+    def statistics: SomeMap[String, Int] = {
+        mutable.LinkedHashMap(
             "scheduled tasks" -> scheduledTasksCount,
             "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
             "immediate on update computations" -> immediateOnUpdateComputationsCount,
@@ -502,7 +519,7 @@ final class EPKSequentialPropertyStore private (
 
     override def handleResult(
         r:               PropertyComputationResult,
-        forceEvaluation: Boolean // ignored
+        forceEvaluation: Boolean                   = true // ignored... but conceptually "true"
     ): Unit = handleExceptions {
         r.id match {
 

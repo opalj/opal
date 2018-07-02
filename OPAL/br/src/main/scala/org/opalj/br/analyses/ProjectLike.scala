@@ -921,7 +921,7 @@ object ProjectLike {
                 if (!classFile.isInterfaceDeclaration) {
                     OPALLogger.warn(
                         "project configuration",
-                        "find maximally specific superinterface methods: "+
+                        "finding the maximally specific superinterface methods failed: "+
                             s"$superinterfaceType is not an interface and therefore ignored"
                     )
                     (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)

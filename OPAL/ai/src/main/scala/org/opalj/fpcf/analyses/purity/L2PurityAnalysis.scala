@@ -463,23 +463,28 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     def checkLocalityOfField(
         ep:   EOptionP[Field, FieldLocality],
         data: (Expr[V], Purity)
-    )(implicit state: State): Boolean = ep match {
-        case FinalEP(_, LocalField | LocalFieldWithGetter) ⇒
-            true
-        case FinalEP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
-            if (data._1.isVar) {
-                val value = data._1.asVar.value.asDomainReferenceValue
-                value.isPrecise &&
-                    classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo
-            } else false
-        case EPS(_, _, NoLocalField) ⇒
+    )(implicit state: State): Boolean = {
+        val isLocal = ep match {
+            case FinalEP(_, LocalField | LocalFieldWithGetter) ⇒
+                true
+            case FinalEP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
+                if (data._1.isVar) {
+                    val value = data._1.asVar.value.asDomainReferenceValue
+                    value.isPrecise &&
+                        classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo
+                } else
+                    false
+            case EPS(_, _, NoLocalField) ⇒
+                false
+            case _ ⇒
+                reducePurityLB(data._2)
+                if (data._2 meet state.ubPurity ne state.ubPurity)
+                    state.addFieldLocalityDependee(ep.e, ep, data)
+                true
+        }
+        if (!isLocal)
             atMost(data._2)
-            false
-        case _ ⇒
-            reducePurityLB(data._2)
-            if (data._2 meet state.ubPurity ne state.ubPurity)
-                state.addFieldLocalityDependee(ep.e, ep, data)
-            true
+        isLocal
     }
 
     def checkLocalityOfReturn(
@@ -890,7 +895,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param definedMethod A defined method with a body.
      */
     def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
@@ -902,8 +907,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         implicit val state: State =
             new State(CompileTimePure, CompileTimePure, method, definedMethod, declClass, code)
-
-        checkStaticDataUsage(propertyStore(definedMethod, StaticDataUsage.key))
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
@@ -933,6 +936,16 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             if (method.isStatic) return Result(definedMethod, ImpureByAnalysis);
             else atMost(ContextuallyPure(IntTrieSet(0)))
 
+        val stmtCount = code.length
+        var s = 0
+        while (s < stmtCount) {
+            if (!checkPurityOfStmt(code(s))) { // Early return for impure statements
+                assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
+                return Result(definedMethod, state.ubPurity);
+            }
+            s += 1
+        }
+
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
@@ -947,18 +960,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             else atMost(SideEffectFree)
         }
 
-        val stmtCount = code.length
-        var s = 0
-        while (s < stmtCount) {
-            if (!checkPurityOfStmt(code(s))) { // Early return for impure statements
-                return Result(definedMethod, state.ubPurity);
-            }
-            s += 1
-        }
-
-        // Remove dependees we already know we won't need
-        if (state.ubPurity ne CompileTimePure)
-            cleanupDependees()
+        if (state.ubPurity eq CompileTimePure) // Check static data usage only if necessary
+            checkStaticDataUsage(propertyStore(definedMethod, StaticDataUsage.key))
+        else
+            cleanupDependees() // Remove dependees we already know we won't need
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
@@ -1004,7 +1009,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L2PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity

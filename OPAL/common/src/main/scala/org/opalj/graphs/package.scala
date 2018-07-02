@@ -207,10 +207,10 @@ package object graphs {
      * each node belonging to the cSCC can explicitly be reached from another node and no node
      * contains an edge to some node that does not belong to the same cSCC.
      *
+     * Every such set is necessarily minimal/maximal.
+     *
      * @note    This implementation can handle (arbitrarily degenerated) graphs with up to
      *          Int.MaxValue nodes (if the VM is given enough memory!)
-     *
-     * Every such set is necessarily minimal/maximal.
      *
      * @tparam N The type of the graph's nodes. The nodes have to correctly implements equals
      *         and hashCode.

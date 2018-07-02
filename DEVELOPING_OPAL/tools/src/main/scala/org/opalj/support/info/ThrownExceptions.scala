@@ -131,7 +131,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 }.mkString("\n", "\n", "\n")
             }
 
-        val psStatistics = ps.statistics.map(e ⇒ e._1+": "+e._2).toList.sorted.mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+        val psStatistics = ps.statistics.map(e ⇒ e._1+": "+e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
 
         val analysisStatistics: String =
             "\nStatistics:\n"+

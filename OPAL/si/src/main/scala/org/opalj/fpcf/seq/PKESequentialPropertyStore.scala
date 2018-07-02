@@ -37,6 +37,8 @@ import java.util.IdentityHashMap
 import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
+import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.graphs
 import org.opalj.log.LogContext
@@ -61,6 +63,20 @@ final class PKESequentialPropertyStore private (
         implicit
         val logContext: LogContext
 ) extends SeqPropertyStore { store ⇒
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // CAPABILITIES
+    //
+    // --------------------------------------------------------------------------------------------
+
+    final def supportsFastTrackPropertyComputations: Boolean = true
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // STATISTICS
+    //
+    // --------------------------------------------------------------------------------------------
 
     /**
      * Controls in which order updates are processed/scheduled.
@@ -97,8 +113,8 @@ final class PKESequentialPropertyStore private (
     private[this] var fastTrackPropertiesCounter = 0
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
-    def statistics: Map[String, Int] = {
-        Map(
+    def statistics: SomeMap[String, Int] = {
+        mutable.LinkedHashMap(
             "scheduled tasks" -> scheduledTasksCount,
             "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
             "fast-track properties" -> fastTrackPropertiesCount,
@@ -238,7 +254,7 @@ final class PKESequentialPropertyStore private (
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
                                 fastTrackPropertiesCounter += 1
-                                set(e, p)
+                                set(e, p, isFastTrackProperty = true)
                                 FinalEP(e, p.asInstanceOf[P])
                             case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
@@ -454,11 +470,13 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def set(e: Entity, p: Property): Unit = handleExceptions {
+    override def set(e: Entity, p: Property): Unit = set(e, p, false)
+
+    def set(e: Entity, p: Property, isFastTrackProperty: Boolean): Unit = handleExceptions {
         val key = p.key
         val pkId = key.id
 
-        if (debug && lazyComputations(pkId) != null) {
+        if (debug && !isFastTrackProperty && lazyComputations(pkId) != null) {
             throw new IllegalStateException(
                 s"$e: setting $p is not supported; lazy computation is scheduled for $key"
             )
@@ -471,7 +489,7 @@ final class PKESequentialPropertyStore private (
 
     override def handleResult(
         r:               PropertyComputationResult,
-        forceEvaluation: Boolean // TODO Support "force"
+        forceEvaluation: Boolean                   = true // acutally ignored, but conceptually "true"
     ): Unit = handleExceptions {
 
         r.id match {

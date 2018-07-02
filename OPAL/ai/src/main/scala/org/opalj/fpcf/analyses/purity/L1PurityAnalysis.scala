@@ -299,7 +299,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param definedMethod a defined method with body.
      */
     def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
@@ -335,6 +335,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             }
 
+        val stmtCount = code.length
+        var s = 0
+        while (s < stmtCount) {
+            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
+                return Result(definedMethod, state.ubPurity)
+            s += 1
+        }
+
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
@@ -347,14 +355,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)
-        }
-
-        val stmtCount = code.length
-        var s = 0
-        while (s < stmtCount) {
-            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(definedMethod, state.ubPurity)
-            s += 1
         }
 
         // Remove unnecessary dependees
@@ -404,7 +404,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity

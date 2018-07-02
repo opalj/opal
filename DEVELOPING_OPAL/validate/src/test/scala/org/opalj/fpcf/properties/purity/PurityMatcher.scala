@@ -62,7 +62,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev ⇒ ev.asAnnotationValue.annotation)
         val negate = getValue(p, annotationType, a.elementValuePairs, "negate").asInstanceOf[BooleanValue].value
 
-        analyses.exists(as.contains) && (eps.forall(negate ^ evaluateEP(p, as, _, negate)))
+        analyses.exists(as.contains) && eps.forall(negate ^ evaluateEP(p, as, _, negate))
     }
 
     def evaluateEP(
@@ -75,14 +75,16 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val classType = getValue(project, annotationType, ep.elementValuePairs, "cf").asClassValue.value.asObjectType
 
-        val field = getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
-        val method = getValue(project, annotationType, ep.elementValuePairs, "method").asStringValue.value
+        val field =
+            getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
+        val method =
+            getValue(project, annotationType, ep.elementValuePairs, "method").asStringValue.value
 
         val analysesElementValues =
             getValue(project, annotationType, ep.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
-        if (!analyses.isEmpty && !analyses.exists(as.contains)) {
+        if (analyses.nonEmpty && !analyses.exists(as.contains)) {
             return !negate // Analysis specific ep requirement, but analysis was not executed
         }
 
@@ -135,10 +137,10 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case `property` ⇒ true
             case _          ⇒ false
-        })) {
+        }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -251,10 +253,10 @@ class ImpureMatcher extends PurityMatcher(null) {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case _: ClassifiedImpure ⇒ true
             case _                   ⇒ false
-        })) {
+        }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
