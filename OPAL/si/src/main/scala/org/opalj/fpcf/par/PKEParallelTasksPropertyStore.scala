@@ -440,7 +440,10 @@ final class PKEParallelTasksPropertyStore private (
         try {
             f
         } catch {
-            case t: Throwable ⇒ collectException(t)
+            case _: InterruptedException if storeUpdatesProcessor == null ⇒
+            /* ignore; we are shutting down */
+            case t: Throwable ⇒
+                collectException(t)
         }
     }
 
@@ -1293,7 +1296,7 @@ final class PKEParallelTasksPropertyStore private (
             while (pkId < maxPKIndex) {
                 properties(pkId) forEach { (e, eps) ⇒
                     if (!eps.isFinal) {
-                        if (forcedComputations(pkId).containsKey(e)) {
+                        if (forcedComputations(pkId).containsKey(e) && !delayedPropertyKinds(pkId)) {
                             error(
                                 "analysis progress",
                                 s"intermediate property state for forced property: $eps"
@@ -1301,11 +1304,9 @@ final class PKEParallelTasksPropertyStore private (
                         }
                     } else {
                         if (forcedComputations(pkId).containsKey(e)) {
-                            error(
-                                "analysis progress",
-                                s"dangling forced computations entry: $eps"
-                            )
+                            error("analysis progress", s"dangling forced computations entry: $eps")
                         }
+
                     }
                 }
                 pkId += 1
@@ -1373,19 +1374,20 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 
 }
 
-sealed trait UpdateAndNotifyState {
+// USED INTERNALLY
+private[par] sealed trait UpdateAndNotifyState {
     def isNotificationRequired: Boolean
     def areDependersNotified: Boolean
 }
-case object NoRelevantUpdate extends UpdateAndNotifyState {
+private[par] case object NoRelevantUpdate extends UpdateAndNotifyState {
     override def isNotificationRequired: Boolean = false
     override def areDependersNotified: Boolean = false
 }
-case object RelevantUpdateButNoNotification extends UpdateAndNotifyState {
+private[par] case object RelevantUpdateButNoNotification extends UpdateAndNotifyState {
     override def isNotificationRequired: Boolean = true
     override def areDependersNotified: Boolean = false
 }
-case object RelevantUpdateAndNotification extends UpdateAndNotifyState {
+private[par] case object RelevantUpdateAndNotification extends UpdateAndNotifyState {
     override def isNotificationRequired: Boolean = false
     override def areDependersNotified: Boolean = true
 }
