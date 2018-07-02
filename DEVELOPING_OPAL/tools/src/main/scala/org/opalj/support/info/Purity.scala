@@ -343,10 +343,10 @@ object Purity {
                     "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
                     "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
                     "\nImpure:                                "+lbImpure.size
-            println(result)
+            Console.println(result)
         }
 
-        println(project.get(PropertyStoreKey).statistics.mkString("\n"))
+        Console.println(project.get(PropertyStoreKey).statistics.mkString("\n"))
     }
 
     def main(args: Array[String]): Unit = {
@@ -374,7 +374,7 @@ object Purity {
             if (i < args.length) {
                 args(i)
             } else {
-                Console.println(usage)
+                println(usage)
                 throw new IllegalArgumentException(s"missing argument: ${args(i - 1)}")
             }
         }
@@ -443,7 +443,7 @@ object Purity {
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir
 
         val begin = Calendar.getInstance()
-        println(begin.getTime)
+        Console.println(begin.getTime)
 
         time {
             if (multiProjects) {
@@ -480,9 +480,9 @@ object Purity {
                     evaluationDir
                 )
             }
-        }(t ⇒ Console.out.println("evaluation time: "+t.toSeconds))
+        }(t ⇒ println("evaluation time: "+t.toSeconds))
 
         val end = Calendar.getInstance()
-        println(end.getTime)
+        Console.println(end.getTime)
     }
 }
