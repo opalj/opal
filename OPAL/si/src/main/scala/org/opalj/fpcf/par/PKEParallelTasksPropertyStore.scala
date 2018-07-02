@@ -362,7 +362,7 @@ final class PKEParallelTasksPropertyStore private (
     /**
      * The jobs which update the store.
      */
-    private[this] final val StoreUpdateQueues = 4
+    private[this] final val StoreUpdateQueues = 5
     private[this] val storeUpdates = {
         Array.fill(StoreUpdateQueues)(new ConcurrentLinkedQueue[StoreUpdate]())
     }
@@ -750,7 +750,7 @@ final class PKEParallelTasksPropertyStore private (
                 }
 
             case IntermediateResult.id ⇒
-                val queueId = r.asIntermediateResult.dependees.size + 1
+                val queueId = r.asIntermediateResult.dependees.size / 4 + 1
                 val update = PropertyUpdate(r, forceEvaluation, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
