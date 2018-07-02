@@ -114,10 +114,10 @@ class RTACallGraphAnalysis private[analyses] (
     ): PropertyComputationResult = {
 
         // we only allow defined methods
-        if (!declaredMethod.hasDefinition)
+        if (!declaredMethod.hasSingleDefinedMethod)
             return NoResult;
 
-        val method = declaredMethod.methodDefinition
+        val method = declaredMethod.definedMethod
 
         // we only allow defined methods with declared type eq. to the class of the method
         if (method.classFile.thisType ne declaredMethod.declaringClassType)
@@ -345,7 +345,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     def addNewReachableMethod(m: DefinedMethod, reachableMethods: ArrayBuffer[Method]): Unit = {
         if (processedMethods(declaredMethods.methodID(m)).compareAndSet(false, true))
-            reachableMethods += m.methodDefinition
+            reachableMethods += m.definedMethod
     }
 
     /**
@@ -390,7 +390,7 @@ class RTACallGraphAnalysis private[analyses] (
             if project.classHierarchy.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
             //if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             tgt ← project.instanceCall(
-                state.method.methodDefinition.classFile.thisType, instantiatedType, name, descr
+                state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
             )
         } {
             val tgtID = declaredMethods(tgt)
