@@ -1375,19 +1375,19 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 }
 
 // USED INTERNALLY
-private[par] sealed trait UpdateAndNotifyState {
+sealed trait UpdateAndNotifyState {
     def isNotificationRequired: Boolean
     def areDependersNotified: Boolean
 }
-private[par] case object NoRelevantUpdate extends UpdateAndNotifyState {
+case object NoRelevantUpdate extends UpdateAndNotifyState {
     override def isNotificationRequired: Boolean = false
     override def areDependersNotified: Boolean = false
 }
-private[par] case object RelevantUpdateButNoNotification extends UpdateAndNotifyState {
+ case object RelevantUpdateButNoNotification extends UpdateAndNotifyState {
     override def isNotificationRequired: Boolean = true
     override def areDependersNotified: Boolean = false
 }
-private[par] case object RelevantUpdateAndNotification extends UpdateAndNotifyState {
+ case object RelevantUpdateAndNotification extends UpdateAndNotifyState {
     override def isNotificationRequired: Boolean = false
     override def areDependersNotified: Boolean = true
 }
