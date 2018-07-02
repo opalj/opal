@@ -263,32 +263,28 @@ final class PKEParallelTasksPropertyStore private (
      * The list of scheduled (on update) property computations -
      * they will be processed in parallel.
      */
-    private[this] val tasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
-    private[this] val quickTasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
-    private[this] val heavyTasks = new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]()
+    private[this] final val TaskQueues = 12
+    private[this] final val DefaultTaskQueue = 0
+    private[this] val tasks = {
+        Array.fill(TaskQueues)(new ConcurrentLinkedDeque[QualifiedTask[_ <: Entity]]())
+    }
     private[this] val tasksSemaphore = new Semaphore(0)
 
-    private[this] def prependTask(task: QualifiedTask[_ <: Entity]): Unit = {
+    /*private[this] def prependTask(task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        tasks.offerFirst(task)
+        tasks(DefaultTaskQueue).offerFirst(task)
         tasksSemaphore.release()
-    }
+    }*/
 
     private[this] def appendTask(task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        tasks.offerLast(task)
+        tasks(DefaultTaskQueue).offerLast(task)
         tasksSemaphore.release()
     }
 
-    private[this] def appendQuickTask(task: QualifiedTask[_ <: Entity]): Unit = {
+    private[this] def appendTask(queueId: Int, task: QualifiedTask[_ <: Entity]): Unit = {
         incOpenJobs()
-        quickTasks.offerLast(task)
-        tasksSemaphore.release()
-    }
-
-    private[this] def appendHeavyTask(task: QualifiedTask[_ <: Entity]): Unit = {
-        incOpenJobs()
-        heavyTasks.offerLast(task)
+        tasks(Math.min(queueId, TaskQueues - 1)).offerLast(task)
         tasksSemaphore.release()
     }
 
@@ -305,12 +301,12 @@ final class PKEParallelTasksPropertyStore private (
 
             tasksSemaphore.acquire()
             // we know that we will eventually find a task...
-            var task = quickTasks.pollFirst()
-            while (task eq null) {
-                task = tasks.pollFirst()
-                if (task == null) task = quickTasks.pollFirst()
-                if (task == null) task = heavyTasks.pollFirst()
-            }
+            var task: QualifiedTask[_ <: Entity] = null
+            var queueId = 0
+            do {
+                task = tasks(queueId).pollFirst()
+                queueId = (queueId + 1) % TaskQueues
+            } while (task eq null)
 
             try {
                 // As a sideeffect of processing a task, we may have (implicit) calls
@@ -768,37 +764,18 @@ final class PKEParallelTasksPropertyStore private (
                 // Given that we will trigger the depender, we now have to remove the
                 // respective onUpdateContinuation from all dependees of the respective
                 // depender to avoid that the onUpdateContinuation is triggered multiple times!
-                //       val oldDependerDependeesCount =
-                clearDependees(oldDependerEPK)
+                val oldDependerDependeesCount = clearDependees(oldDependerEPK)
                 if (onUpdateContinuationHint == CheapPropertyComputation) {
                     directDependerOnUpdateComputationsCounter += 1
                     pcrs += c(newEPS)
                 } else {
                     scheduledOnUpdateComputationsCounter += 1
-                    val oldDependerDependersCount =
-                        dependers(oldDependerEPK.pk.id).get(oldDependerEPK.e).map(_.size).getOrElse(0)
-                    //                    val queueKey = oldDependerDependeesCount * oldDependerDependersCount
-                    val queueKey = oldDependerDependersCount
                     if (isFinal) {
                         val t = new OnFinalUpdateComputationTask(this, newEPS.asFinal, c)
-                        if (queueKey <= 1)
-                            appendQuickTask(t)
-                        else if (queueKey <= 2)
-                            prependTask(t)
-                        else if (queueKey <= 4)
-                            appendTask(t)
-                        else
-                            appendHeavyTask(t)
+                        appendTask(oldDependerDependeesCount, t)
                     } else {
                         val t = new OnUpdateComputationTask(this, newEPS.toEPK, c)
-                        if (queueKey <= 1)
-                            appendQuickTask(t)
-                        else if (queueKey <= 2)
-                            prependTask(t)
-                        else if (queueKey <= 4)
-                            appendTask(t)
-                        else
-                            appendHeavyTask(t)
+                        appendTask(oldDependerDependeesCount, t)
                     }
                 }
             }
@@ -1103,10 +1080,6 @@ final class PKEParallelTasksPropertyStore private (
                                 pcrs += c(currentDependee)
                             } else {
                                 scheduledDependeeUpdatesCounter += 1
-                                val dependersOption = dependers(pkId).get(e)
-                                val dependersCount =
-                                    if (dependersOption.isDefined) dependersOption.get.size else 0
-
                                 if (currentDependee.isFinal) {
                                     val t = ImmediateOnFinalUpdateComputationTask(
                                         store,
@@ -1115,14 +1088,7 @@ final class PKEParallelTasksPropertyStore private (
                                         forceDependersNotifications,
                                         c
                                     )
-                                    if (dependersCount <= 1)
-                                        appendQuickTask(t)
-                                    else if (dependersCount <= 2)
-                                        prependTask(t)
-                                    else if (dependersCount <= 3)
-                                        appendTask(t)
-                                    else
-                                        appendHeavyTask(t)
+                                    appendTask(seenDependees.size, t)
                                 } else {
                                     val t = ImmediateOnUpdateComputationTask(
                                         store,
@@ -1131,14 +1097,7 @@ final class PKEParallelTasksPropertyStore private (
                                         forceDependersNotifications,
                                         c
                                     )
-                                    if (dependersCount <= 1)
-                                        appendQuickTask(t)
-                                    else if (dependersCount <= 2)
-                                        prependTask(t)
-                                    else if (dependersCount <= 3)
-                                        appendTask(t)
-                                    else
-                                        appendHeavyTask(t)
+                                    appendTask(seenDependees.size, t)
                                 }
                                 // We will postpone the notification to the point where
                                 // the result(s) are handled...
@@ -1318,17 +1277,26 @@ final class PKEParallelTasksPropertyStore private (
             }
         } while (continueComputation)
 
-        if (debug) {
+        if (debug /*HERE, primarily of the property store itself...*/ ) {
             // let's search for "unsatisfied computations" related to "forced properties"
             val maxPKIndex = SupportedPropertyKinds // PropertyKey.maxId // properties.length
             var pkId = 0
             while (pkId < maxPKIndex) {
                 properties(pkId) forEach { (e, eps) ⇒
-                    if (eps.isFinal && forcedComputations(pkId).containsKey(e)) {
-                        error(
-                            "analysis progress",
-                            s"intermediate property state for forced property: $eps"
-                        )
+                    if (!eps.isFinal) {
+                        if (forcedComputations(pkId).containsKey(e)) {
+                            error(
+                                "analysis progress",
+                                s"intermediate property state for forced property: $eps"
+                            )
+                        }
+                    } else {
+                        if (forcedComputations(pkId).containsKey(e)) {
+                            error(
+                                "analysis progress",
+                                s"dangling forced computations entry: $eps"
+                            )
+                        }
                     }
                 }
                 pkId += 1
