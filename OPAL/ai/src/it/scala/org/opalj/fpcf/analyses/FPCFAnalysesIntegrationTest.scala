@@ -96,15 +96,14 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     // Get EPs for the properties we're interested in
                     // Filter for fallback property, as the entities with fallbacks may be different
                     // on each execution.
-                    val actualProperties = properties.iterator.flatMap { property ⇒
+                    val actual = properties.iterator.flatMap { property ⇒
                         ps.entities(property.key).filter { ep ⇒
                             if (ep.isRefinable)
                                 fail(s"intermediate results left over $ep")
                             isRecordedProperty(property.key, ep)
-                        }.toSeq.sortBy(_.e.toString)
-                    }
+                        }.map(ep => s"${ep.e} => ${ep.ub}").toSeq.sorted
+                    }.toSeq
 
-                    val actual = actualProperties.map(ep ⇒ s"${ep.e} => ${ep.ub}").toSeq
                     val actualIt = actual.iterator
 
                     val fileName = s"$name-$projectName.ait"
