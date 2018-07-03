@@ -1279,13 +1279,12 @@ object Project {
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
                 } match {
-                    case Some(method) ⇒
+                    case Some(mdc) ⇒
                         // If there is already a method and it is from an interface, then it is not
                         // maximally specific and must be replaced. If it is from a class however, we
                         // must keep it.
 
-                        val declaringClassType = method.declaringClassType
-                        if (classHierarchy.isInterface(declaringClassType).isYesOrUnknown) {
+                        if (mdc.method.classFile.isInterfaceDeclaration) {
                             definedMethods = definedMethods filterNot { definedMethod ⇒
                                 definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                                     definedMethod.name == inheritedInterfaceMethod.name
