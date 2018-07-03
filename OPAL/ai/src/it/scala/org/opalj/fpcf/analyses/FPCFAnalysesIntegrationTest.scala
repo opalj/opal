@@ -99,18 +99,15 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     val actualProperties = properties.iterator.flatMap { property ⇒
                         ps.entities(property.key).filter { ep ⇒
                             if (ep.isRefinable)
-                                fail(s"intermediate results left over ${ep}")
-                            !ep.e.toString().contains("Lambda$") &&
-                                ep.ub != PropertyKey.fallbackProperty(ps, ep.e, property.key) &&
-                                (ep.pk != Purity.key ||
-                                    ep.e.asInstanceOf[DeclaredMethod].hasSingleDefinedMethod)
+                                fail(s"intermediate results left over $ep")
+                            isRecordedProperty(property.key, ep)
                         }.toSeq.sortBy(_.e.toString)
                     }
 
                     val actual = actualProperties.map(ep ⇒ s"${ep.e} => ${ep.ub}").toSeq
                     val actualIt = actual.iterator
 
-                    val fileName = s"$name-$projectName.zip"
+                    val fileName = s"$name-$projectName.ait"
 
                     val expectedStream = this.getClass.getResourceAsStream(fileName)
                     if (expectedStream eq null)
@@ -143,6 +140,17 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                 }
             }
         }
+    }
+
+    def isRecordedProperty(pk: SomePropertyKey, ep: SomeEPS): Boolean = {
+        // Lambda naming is not stable
+        !ep.e.toString.contains("Lambda$") &&
+            // fallback properties may be set for different entities on different executions
+            // because they are set lazily even for eager analyses
+            ep.ub != PropertyKey.fallbackProperty(ps, ep.e, pk) &&
+            // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
+            // preconfigured that we don't want to record as they contain no additional information
+            (ep.pk != Purity.key || ep.e.asInstanceOf[DeclaredMethod].hasSingleDefinedMethod)
     }
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
@@ -209,6 +217,6 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
  */
 object FPCFAnalysesIntegrationTest {
     var factory: () ⇒ SomeProject = () ⇒ null
-    var p: SomeProject = null
-    var ps: PropertyStore = null
+    var p: SomeProject = _
+    var ps: PropertyStore = _
 }
