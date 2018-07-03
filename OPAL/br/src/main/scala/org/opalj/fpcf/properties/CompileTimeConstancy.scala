@@ -61,7 +61,7 @@ object CompileTimeConstancy extends CompileTimeConstancyPropertyMetaInformation 
      */
     final val key = PropertyKey.create[Field, CompileTimeConstancy](
         "CompileTimeConstancy",
-        (_: PropertyStore, field: Field) ⇒ {
+        (_: PropertyStore, _: FallbackReason, field: Field) ⇒ {
             if (field.isStatic && field.isFinal && field.constantFieldValue.isDefined)
                 CompileTimeConstantField
             else

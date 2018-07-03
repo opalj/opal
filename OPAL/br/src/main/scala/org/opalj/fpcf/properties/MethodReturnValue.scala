@@ -64,7 +64,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, MethodReturnValue](
         "org.opalj.value.MethodReturnValue",
-        (_: PropertyStore, m: DeclaredMethod) ⇒ {
+        (_: PropertyStore, _: FallbackReason, m: DeclaredMethod) ⇒ {
             MethodReturnValue(ValueInformation(m.descriptor.returnType))
         },
         (_: PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ eps.ub,

@@ -99,7 +99,7 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
     final val key: PropertyKey[FieldMutability] = {
         PropertyKey.create(
             PropertyKeyName,
-            (_: PropertyStore, e: Entity) ⇒ {
+            (_: PropertyStore, _: FallbackReason, e: Entity) ⇒ {
                 e match {
                     case f: Field ⇒
                         if (f.isFinal) DeclaredFinalField else NonFinalFieldByAnalysis

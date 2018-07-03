@@ -59,7 +59,9 @@ sealed abstract class FieldLocality extends Property with FieldLocalityMetaInfor
 object FieldLocality extends FieldLocalityMetaInformation {
     final lazy val key: PropertyKey[FieldLocality] = PropertyKey.create(
         "FieldLocality",
-        (_: PropertyStore, f: Field) ⇒ if (f.fieldType.isBaseType) LocalField else NoLocalField,
+        (_: PropertyStore, _: FallbackReason, f: Field) ⇒ {
+            if (f.fieldType.isBaseType) LocalField else NoLocalField
+        },
         (_: PropertyStore, eps: EPS[Field, FieldLocality]) ⇒ eps.ub,
         (_: PropertyStore, _: Entity) ⇒ None
     )

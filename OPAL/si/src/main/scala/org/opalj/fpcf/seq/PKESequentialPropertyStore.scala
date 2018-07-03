@@ -45,6 +45,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
 
@@ -142,6 +143,10 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
+    @volatile private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
+        new Array[Boolean](SupportedPropertyKinds)
+    }
+
     private[this] var computedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
 
     private[this] var delayedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
@@ -228,17 +233,23 @@ final class PKESequentialPropertyStore private (
         ps(pkId).get(e) match {
             case null ⇒
                 // the entity is unknown ...
+                if (debug && computedPropertyKinds == null) {
+                    throw new IllegalStateException("setup phase was not called")
+                }
                 val isComputed = computedPropertyKinds(pkId)
 
                 lazyComputations(pkId) match {
                     case null ⇒
-                        if (debug && computedPropertyKinds == null) {
-                            throw new IllegalStateException("setup phase was not called")
-                        }
                         if (isComputed || delayedPropertyKinds(pkId)) {
                             epk
                         } else {
-                            val p = fallbackPropertyBasedOnPkId(this, e, pkId)
+                            val reason = {
+                                if (previouslyComputedPropertyKinds(pkId))
+                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                else
+                                    PropertyIsNotComputedByAnyAnalysis
+                            }
+                            val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
                             if (force) {
                                 set(e, p)
                             }
@@ -685,6 +696,13 @@ final class PKESequentialPropertyStore private (
                 "setup phase can only be called as long as no tasks are scheduled"
             )
         }
+        val currentComputedPropertyKinds = this.computedPropertyKinds
+        if (currentComputedPropertyKinds != null) {
+            currentComputedPropertyKinds.iterator.zipWithIndex foreach { e ⇒
+                val (isComputed, pkId) = e
+                previouslyComputedPropertyKinds(pkId) = isComputed
+            }
+        }
 
         val newComputedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
         this.computedPropertyKinds = newComputedPropertyKinds
@@ -728,17 +746,20 @@ final class PKESequentialPropertyStore private (
                             // property will not be computed later on.
                             if (pValue.ub == null) {
                                 assert(pValue.dependees.isEmpty)
-
-                                val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
+                                val reason = {
+                                    if (previouslyComputedPropertyKinds(pkId) ||
+                                        computedPropertyKinds(pkId))
+                                        PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                    else
+                                        PropertyIsNotComputedByAnyAnalysis
+                                }
+                                val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
                                 if (traceFallbacks) {
-                                    var message = s"used fallback $fallbackProperty for $e"
-                                    if (computedPropertyKinds(pkId)) {
-                                        message += " (though an analysis was supposedly scheduled)"
-                                    }
+                                    val message = s"used fallback $p (reason=$reason) for $e"
                                     trace("analysis progress", message)
                                 }
                                 fallbacksUsedForComputedPropertiesCounter += 1
-                                update(e, fallbackProperty, fallbackProperty, Nil)
+                                update(e, p, p, Nil)
 
                                 continueComputation = true
                             }
